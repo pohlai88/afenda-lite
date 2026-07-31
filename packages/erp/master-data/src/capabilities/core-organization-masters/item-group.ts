@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	requireMasterCommandPermission,
@@ -10,7 +10,6 @@ import {
 	resolveCommandDeps,
 	resolveStore,
 } from "../../command-options";
-import type { MasterFailureDetails } from "../../contracts/reasons";
 import {
 	MASTER_COMMAND_ITEM_GROUP_ACTIVATE,
 	MASTER_COMMAND_ITEM_GROUP_CREATE,
@@ -59,9 +58,9 @@ async function loadItemGroupPath(
 	path: ItemGroup[],
 ): Promise<Result<ItemGroup[] | null>> {
 	if (visited.has(currentId)) {
-		return fail("CONFLICT", "Item group hierarchy contains a cycle", {
-			reason: "MASTER_INVALID_STATE",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Item group hierarchy contains a cycle",
+		});
 	}
 	visited.add(currentId);
 	const current = await store.getItemGroupById(organizationId, currentId);
@@ -70,14 +69,14 @@ async function loadItemGroupPath(
 	}
 	if (current.data === null) {
 		return path.length === 0
-			? ok(null)
-			: fail("NOT_FOUND", "Item group parent is missing", {
-					reason: "MASTER_CROSS_ORG_REFERENCE",
-				} satisfies MasterFailureDetails);
+			? errorResult.ok(null)
+			: errorResult.fail("NOT_FOUND", {
+					publicMessage: "Item group parent is missing",
+				});
 	}
 	path.unshift(current.data);
 	return current.data.parentId === null
-		? ok(path)
+		? errorResult.ok(path)
 		: loadItemGroupPath(
 				store,
 				organizationId,
@@ -228,9 +227,9 @@ async function transitionItemGroupStatus(
 		return current;
 	}
 	if (current.data === null) {
-		return fail("NOT_FOUND", "Item group not found", {
-			reason: "MASTER_NOT_FOUND",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Item group not found",
+		});
 	}
 	const lifecycle = assertLifecycleTransition(current.data.status, toStatus);
 	if (!lifecycle.ok) {
@@ -243,10 +242,9 @@ async function transitionItemGroupStatus(
 			entityId: parsed.data.id,
 		});
 		if (blockers.length > 0) {
-			return fail("CONFLICT", "Item group has dependency blockers", {
-				reason: "MASTER_DEPENDENCY_BLOCKED",
-				blockers,
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Item group has dependency blockers",
+			});
 		}
 	}
 	const result = await store.transitionItemGroup(
@@ -336,7 +334,7 @@ export async function resolveItemGroupPath(
 		return loadedPath;
 	}
 	if (loadedPath.data === null) {
-		return ok(null);
+		return errorResult.ok(null);
 	}
 	const path = loadedPath.data;
 
@@ -416,7 +414,7 @@ export async function existsItemGroupByCode(
 	if (!result.ok) {
 		return result;
 	}
-	return ok(result.data !== null);
+	return errorResult.ok(result.data !== null);
 }
 
 export async function listItemGroups(

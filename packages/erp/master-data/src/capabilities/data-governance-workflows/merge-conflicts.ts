@@ -1,4 +1,4 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	governanceMergeConflictInvalid,
@@ -181,7 +181,7 @@ export function validateMergeConflictResolutions(input: {
 		});
 	}
 
-	return ok(true);
+	return errorResult.ok(true);
 }
 
 export function unresolvedMergeConflicts(
@@ -260,7 +260,7 @@ function validateMergeConflictResolution(
 	if (validationReason !== null) {
 		return invalidResolution(resolution, validationReason);
 	}
-	return ok(true);
+	return errorResult.ok(true);
 }
 
 function validateConflictIdentityAndValues(

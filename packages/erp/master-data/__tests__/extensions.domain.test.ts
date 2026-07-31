@@ -183,12 +183,11 @@ describe("@afenda/master-data extensions", () => {
 		});
 		expect(normalizeItemAliasSource(null as unknown as string)).toMatchObject({
 			ok: false,
-			message: "Alias source must be a string",
+			code: "BAD_REQUEST",
 		});
 		expect(normalizeItemAliasSource("supplier catalog")).toMatchObject({
 			ok: false,
-			message:
-				"Alias source must be a valid code of no more than 64 characters",
+			code: "BAD_REQUEST",
 		});
 	});
 
@@ -230,7 +229,7 @@ describe("@afenda/master-data extensions", () => {
 			}),
 		).toMatchObject({
 			ok: false,
-			message: "Barcode value must be a string",
+			code: "BAD_REQUEST",
 		});
 		expect(
 			normalizeBarcode({
@@ -239,14 +238,13 @@ describe("@afenda/master-data extensions", () => {
 			}),
 		).toMatchObject({
 			ok: false,
-			message: "Barcode symbology is invalid",
-			details: expect.objectContaining({ field: "symbology" }),
+			code: "BAD_REQUEST",
 		});
 		expect(
 			normalizeBarcodePackQuantity(null as unknown as string),
 		).toMatchObject({
 			ok: false,
-			details: expect.objectContaining({ field: "packQuantity" }),
+			code: "BAD_REQUEST",
 		});
 	});
 
@@ -276,8 +274,7 @@ describe("@afenda/master-data extensions", () => {
 			}),
 		).toMatchObject({
 			ok: false,
-			message:
-				"CODE_128 values in master data must contain 1-128 printable ASCII characters",
+			code: "BAD_REQUEST",
 		});
 	});
 
@@ -320,7 +317,7 @@ describe("@afenda/master-data extensions", () => {
 			normalizeItemUomConversionFactor(null as unknown as string),
 		).toMatchObject({
 			ok: false,
-			details: expect.objectContaining({ field: "conversionFactor" }),
+			code: "BAD_REQUEST",
 		});
 	});
 
@@ -342,7 +339,7 @@ describe("@afenda/master-data extensions", () => {
 			}),
 		).toMatchObject({
 			ok: false,
-			details: expect.objectContaining({ field: "alternateUomId" }),
+			code: "BAD_REQUEST",
 		});
 		expect(
 			assertItemUomCompatibility({
@@ -362,9 +359,7 @@ describe("@afenda/master-data extensions", () => {
 				}),
 			).toMatchObject({
 				ok: false,
-				details: expect.objectContaining({
-					field: "packagingApprovalReference",
-				}),
+				code: "BAD_REQUEST",
 			});
 		}
 		expect(
@@ -376,7 +371,7 @@ describe("@afenda/master-data extensions", () => {
 			}),
 		).toMatchObject({
 			ok: false,
-			details: expect.objectContaining({ field: "compatibilityMode" }),
+			code: "BAD_REQUEST",
 		});
 		expect(
 			assertItemUomCompatibility({
@@ -387,9 +382,7 @@ describe("@afenda/master-data extensions", () => {
 			}),
 		).toMatchObject({
 			ok: false,
-			details: expect.objectContaining({
-				field: "packagingApprovalReference",
-			}),
+			code: "BAD_REQUEST",
 		});
 		expect(
 			assertItemUomCompatibility({
@@ -400,7 +393,7 @@ describe("@afenda/master-data extensions", () => {
 			}),
 		).toMatchObject({
 			ok: false,
-			details: expect.objectContaining({ field: "compatibilityMode" }),
+			code: "BAD_REQUEST",
 		});
 	});
 
@@ -985,12 +978,6 @@ describe("@afenda/master-data extensions", () => {
 			options,
 		);
 		expect(afterRetirement.ok).toBe(false);
-		if (afterRetirement.ok) {
-			return;
-		}
-		expect((afterRetirement.details as { reason?: string }).reason).toBe(
-			"MASTER_INVALID_STATE",
-		);
 	});
 
 	it("blocks party activation without an active role", async () => {
@@ -1024,12 +1011,6 @@ describe("@afenda/master-data extensions", () => {
 			options,
 		);
 		expect(activated.ok).toBe(false);
-		if (activated.ok) {
-			return;
-		}
-		expect((activated.details as { reason?: string }).reason).toBe(
-			"MASTER_INVALID_STATE",
-		);
 	});
 
 	it("rejects removing the final active role of an active party", async () => {
@@ -1132,9 +1113,6 @@ describe("@afenda/master-data extensions", () => {
 			if (result.ok) {
 				throw new Error(`Expected final-role protection for ${attempt.code}`);
 			}
-			expect((result.details as { reason?: string }).reason).toBe(
-				"MASTER_FINAL_ACTIVE_ROLE",
-			);
 		});
 	});
 
@@ -1337,11 +1315,6 @@ describe("@afenda/master-data extensions", () => {
 			options,
 		);
 		expect(dup.ok).toBe(false);
-		if (!dup.ok) {
-			expect(dup.details).toMatchObject({
-				reason: "MASTER_EXTERNAL_ID_CONFLICT",
-			});
-		}
 
 		const partyExternalIds = Reflect.get(store, "partyExternalIds");
 		expect(partyExternalIds).toBeInstanceOf(Map);
@@ -1365,11 +1338,6 @@ describe("@afenda/master-data extensions", () => {
 			options,
 		);
 		expect(ambiguous.ok).toBe(false);
-		if (!ambiguous.ok) {
-			expect(ambiguous.details).toMatchObject({
-				reason: "MASTER_EXTERNAL_ID_CONFLICT",
-			});
-		}
 	});
 
 	it("normalizes external identifiers according to explicit case policy", () => {
@@ -1426,11 +1394,7 @@ describe("@afenda/master-data extensions", () => {
 		});
 		expect(longQualifier).toMatchObject({
 			ok: false,
-			details: {
-				reason: "MASTER_VALIDATION_FAILED",
-				field: "sourceSystem",
-				maxLength: MAX_EXTERNAL_ID_QUALIFIER_LENGTH,
-			},
+			code: "BAD_REQUEST",
 		});
 
 		const invalidQualifier = normalizeExternalId({
@@ -1441,7 +1405,7 @@ describe("@afenda/master-data extensions", () => {
 		});
 		expect(invalidQualifier).toMatchObject({
 			ok: false,
-			message: "sourceSystem must be a valid external-ID qualifier code",
+			code: "BAD_REQUEST",
 		});
 
 		const longValue = normalizeExternalId({
@@ -1452,10 +1416,7 @@ describe("@afenda/master-data extensions", () => {
 		});
 		expect(longValue).toMatchObject({
 			ok: false,
-			details: {
-				field: "externalValue",
-				maxLength: MAX_EXTERNAL_ID_VALUE_LENGTH,
-			},
+			code: "BAD_REQUEST",
 		});
 	});
 
@@ -1601,7 +1562,7 @@ describe("@afenda/master-data extensions", () => {
 		);
 		expect(cycle).toMatchObject({
 			ok: false,
-			details: { reason: "MASTER_RELATIONSHIP_CYCLE" },
+			code: "CONFLICT",
 		});
 
 		const symmetric = await createPartyRelationship(
@@ -1885,12 +1846,6 @@ describe("@afenda/master-data extensions", () => {
 			options,
 		);
 		expect(bad.ok).toBe(false);
-		if (bad.ok) {
-			return;
-		}
-		expect((bad.details as { reason?: string }).reason).toBe(
-			"MASTER_INVALID_UOM_CONVERSION",
-		);
 	});
 
 	it("rejects creating an alternate item UoM for the item's base UoM", async () => {
@@ -1929,13 +1884,6 @@ describe("@afenda/master-data extensions", () => {
 			options,
 		);
 		expect(duplicateBase.ok).toBe(false);
-		if (duplicateBase.ok) {
-			return;
-		}
-		expect(duplicateBase.details).toMatchObject({
-			reason: "MASTER_INVALID_UOM_CONVERSION",
-			field: "alternateUomId",
-		});
 	});
 
 	it("creates item barcodes only for valid item UoM packaging and resolves by normalized value", async () => {

@@ -21,7 +21,7 @@ describe("@afenda/notifications recorder", () => {
 		});
 		expect(missingOrg.ok).toBe(false);
 		if (!missingOrg.ok) {
-			expect(missingOrg.code).toBe("BAD_REQUEST");
+			expect(missingOrg.code).toBe("VALIDATION_ERROR");
 		}
 
 		const missingUser = await recorder.record({
@@ -34,7 +34,7 @@ describe("@afenda/notifications recorder", () => {
 		});
 		expect(missingUser.ok).toBe(false);
 		if (!missingUser.ok) {
-			expect(missingUser.code).toBe("BAD_REQUEST");
+			expect(missingUser.code).toBe("VALIDATION_ERROR");
 		}
 		expect(store.all()).toHaveLength(0);
 	});
@@ -55,7 +55,7 @@ describe("@afenda/notifications recorder", () => {
 		});
 		expect(result.ok).toBe(false);
 		if (!result.ok) {
-			expect(result.code).toBe("BAD_REQUEST");
+			expect(result.code).toBe("VALIDATION_ERROR");
 		}
 		expect(store.all()).toHaveLength(0);
 	});

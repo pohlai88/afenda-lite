@@ -1,5 +1,6 @@
 "use client";
 
+import type { Result as ActionResult } from "@afenda/errors";
 import {
 	Alert,
 	AlertDescription,
@@ -30,7 +31,6 @@ import { registerLegalCompanyDraftFormAction } from "@/app/actions/register-lega
 import { setCompanyJurisdictionProfileFormAction } from "@/app/actions/set-company-jurisdiction-profile";
 import { supersedeCompanyJurisdictionProfileFormAction } from "@/app/actions/supersede-company-jurisdiction-profile";
 import { updateLegalCompanyProfileFormAction } from "@/app/actions/update-legal-company-profile";
-import type { ActionResult } from "@/modules/platform/schemas/action-result";
 
 export type LegalCompanyWorkspaceParty = Readonly<{
 	id: string;

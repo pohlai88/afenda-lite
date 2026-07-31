@@ -1,5 +1,6 @@
 "use server";
 
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import {
 	recordBreakEnd,
 	recordBreakStart,
@@ -8,15 +9,10 @@ import {
 } from "@afenda/human-resources";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runMemberPermissionAction } from "@/app/actions/run-member-permission-action";
 import { createHumanResourcesCommandOptions } from "@/lib/erp/human-resources-command-options";
 import { createHumanResourcesIdentityResolverPort } from "@/lib/erp/human-resources-identity-resolver-port";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 const attendanceEventSchema = z.object({
@@ -50,11 +46,9 @@ export async function recordOwnAttendanceAction(
 				timeZone: formData.get("timeZone"),
 			});
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Choose a valid attendance event.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Choose a valid attendance event.",
+				});
 			}
 
 			const identity =
@@ -65,10 +59,7 @@ export async function recordOwnAttendanceAction(
 					},
 				);
 			if (!identity.ok || identity.data === null) {
-				return actionFail(
-					"FORBIDDEN",
-					"Your account is not linked to an active employee record.",
-				);
+				return errorResult.fail("FORBIDDEN");
 			}
 
 			const occurredAt = new Date();

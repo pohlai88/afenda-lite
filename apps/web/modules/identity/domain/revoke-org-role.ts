@@ -1,5 +1,5 @@
 import type { platformRoleAssignment } from "@afenda/db";
-import type { ResultFailure } from "@afenda/errors/result";
+import type { ResultFailure } from "@afenda/errors";
 
 export interface RevokeOrgRoleInput {
 	assignmentId: string;

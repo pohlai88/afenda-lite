@@ -1,6 +1,6 @@
 /** Item template attribute option commands and queries. */
 
-import { fail, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	requireMasterCommandPermission,
@@ -10,7 +10,6 @@ import type {
 	MasterCommandOptions,
 	MasterQueryOptions,
 } from "../../command-options";
-import type { MasterFailureDetails } from "../../contracts/reasons";
 import {
 	MASTER_COMMAND_ITEM_TEMPLATE_ATTRIBUTE_OPTION_CREATE,
 	MASTER_QUERY_ITEM_TEMPLATE_ATTRIBUTE_OPTION_LIST,
@@ -61,32 +60,21 @@ export async function addItemTemplateAttributeOption(
 		return context;
 	}
 	if (context.data === null) {
-		return fail("NOT_FOUND", "Item template attribute not found", {
-			reason: "MASTER_NOT_FOUND",
-			field: "attributeId",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Item template attribute not found",
+		});
 	}
 	if (!isOptionCompatibleAttributeDataType(context.data.attribute.dataType)) {
-		return fail(
-			"CONFLICT",
-			"Options can only be added to option-compatible attributes",
-			{
-				reason: "MASTER_INVALID_STATE",
-				field: "attributeId",
-			} satisfies MasterFailureDetails,
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage:
+				"Options can only be added to option-compatible attributes",
+		});
 	}
 	if (context.data.template.status !== "draft") {
-		return fail(
-			"CONFLICT",
-			"Attribute options can only be added while the template is draft",
-			{
-				reason: "MASTER_INVALID_STATE",
-				field: "attributeId",
-				actualStatus: context.data.template.status,
-				requiredStatus: "draft",
-			} satisfies MasterFailureDetails,
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage:
+				"Attribute options can only be added while the template is draft",
+		});
 	}
 	return store.addItemTemplateAttributeOption(
 		{
@@ -136,20 +124,15 @@ export async function listItemTemplateAttributeOptions(
 		return context;
 	}
 	if (context.data === null) {
-		return fail("NOT_FOUND", "Item template attribute not found", {
-			reason: "MASTER_NOT_FOUND",
-			field: "attributeId",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Item template attribute not found",
+		});
 	}
 	if (!isOptionCompatibleAttributeDataType(context.data.attribute.dataType)) {
-		return fail(
-			"CONFLICT",
-			"Options can only be listed for option-compatible attributes",
-			{
-				reason: "MASTER_INVALID_STATE",
-				field: "attributeId",
-			} satisfies MasterFailureDetails,
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage:
+				"Options can only be listed for option-compatible attributes",
+		});
 	}
 	return store.listItemTemplateAttributeOptions(
 		parsed.data.organizationId,

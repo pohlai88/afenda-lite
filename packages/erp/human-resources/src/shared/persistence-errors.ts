@@ -1,5 +1,9 @@
-import { normalizePostgresUnknown } from "@afenda/errors/adapters/postgres";
-import { fail, failFromAppError, type Result } from "@afenda/errors/result";
+import {
+	errorIngress,
+	errorProject,
+	errorResult,
+	type Result,
+} from "@afenda/errors";
 
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
@@ -155,84 +159,99 @@ export function isPostgresUniqueConstraint(
  */
 export function mapPersistenceFailure(
 	error: unknown,
-	fallbackMessage: string,
+	_fallbackMessage: string,
 ): Result<never> {
 	if (isCreateIdempotencyUniqueViolation(error)) {
-		return fail(
-			"CONFLICT",
-			"Idempotency key conflict",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Idempotency key conflict",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_CONFLICT,
+			),
+		});
 	}
 	if (isEmployeeNumberUniqueViolation(error)) {
 		return mapEmployeeNumberDuplicate();
 	}
 	if (isPostgresUniqueConstraint(error, HR_REGEX_4)) {
-		return fail(
-			"CONFLICT",
-			"Person is already linked to a worker",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Person is already linked to a worker",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_CONFLICT,
+			),
+		});
 	}
 	if (isPostgresUniqueConstraint(error, HR_REGEX_5)) {
-		return fail(
-			"CONFLICT",
-			"Employee is already linked to a worker",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Employee is already linked to a worker",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_CONFLICT,
+			),
+		});
 	}
 	if (isPostgresUniqueConstraint(error, HR_REGEX_6)) {
-		return fail(
-			"CONFLICT",
-			"Open record already exists",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Open record already exists",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_CONFLICT,
+			),
+		});
 	}
 	if (isPostgresUniqueConstraint(error, HR_REGEX_7)) {
-		return fail(
-			"CONFLICT",
-			"Duplicate reference",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_DUPLICATE),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Duplicate reference",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_DUPLICATE,
+			),
+		});
 	}
 	if (
 		isPostgresCheckViolation(error) &&
 		HR_REGEX_8.test(postgresConstraintName(error))
 	) {
-		return fail(
-			"BAD_REQUEST",
-			"End date must be on or after start date",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "End date must be on or after start date",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
 	if (isPostgresForeignKeyViolation(error)) {
-		return fail(
-			"NOT_FOUND",
-			"Referenced record not found",
-			humanResourcesErrorDetails(
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Referenced record not found",
+			internalContext: humanResourcesErrorDetails(
 				HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 			),
-		);
+		});
 	}
 
-	return failFromAppError(normalizePostgresUnknown(error, fallbackMessage));
-}
-
-export function mapEmployeeNumberDuplicate(
-	message = "Employee number already exists",
-): Result<never> {
-	return fail(
-		"CONFLICT",
-		message,
-		humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_DUPLICATE),
+	const projected = errorProject.result(
+		errorIngress.postgres(error, { operation: "persistence.postgres" }),
+	);
+	return errorResult.withContext(
+		projected,
+		humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
 	);
 }
 
+export function mapEmployeeNumberDuplicate(
+	_message = "Employee number already exists",
+): Result<never> {
+	return errorResult.fail("CONFLICT", {
+		publicMessage: "The request conflicts with current state",
+		internalContext: humanResourcesErrorDetails(
+			HUMAN_RESOURCES_ERROR_DUPLICATE,
+		),
+	});
+}
+
 export function mapNotFound(
-	message: string,
-	details:
+	_message: string,
+	_details:
 		| typeof HUMAN_RESOURCES_ERROR_NOT_FOUND
 		| typeof HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE = HUMAN_RESOURCES_ERROR_NOT_FOUND,
 ): Result<never> {
-	return fail("NOT_FOUND", message, humanResourcesErrorDetails(details));
+	return errorResult.fail("NOT_FOUND", {
+		publicMessage: "The requested resource was not found",
+		internalContext: humanResourcesErrorDetails(_details),
+	});
 }

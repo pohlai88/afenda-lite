@@ -1,4 +1,4 @@
-import { fail, type Result } from "@afenda/errors/result";
+import type { Result } from "@afenda/errors";
 
 import type {
 	HumanResourcesEmployeeId,
@@ -49,7 +49,7 @@ function toCycleFailure<T>(result: {
 	message: string;
 	details?: unknown;
 }): Result<T> {
-	return fail(result.code, result.message, result.details);
+	return result;
 }
 
 async function publishPerformanceCycleFromDraft(

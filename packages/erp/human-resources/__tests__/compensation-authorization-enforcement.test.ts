@@ -21,6 +21,7 @@ import type { EmployeeCompensation } from "../src/types";
 import { createMappingIdentityResolver } from "./helpers/identity-resolver";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
+import { humanResourcesContextFromResult } from "./helpers/result-details";
 
 const ORGANIZATION_ID = "org-comp-auth";
 const SETUP_ACTOR = "comp-admin";
@@ -181,7 +182,10 @@ describe("compensation authorization enforcement", () => {
 
 		expect(result).toMatchObject({
 			ok: false,
-			details: { denyCode: "subject_scope_denied" },
+			code: "FORBIDDEN",
+		});
+		expect(humanResourcesContextFromResult(result)).toMatchObject({
+			denyCode: "subject_scope_denied",
 		});
 	});
 

@@ -8,7 +8,7 @@ import {
 	createAuditRecorder,
 	type RecordAuditCommand,
 } from "@afenda/audit";
-import type { Result } from "@afenda/errors/result";
+import type { Result } from "@afenda/errors";
 
 import { readRequestAttribution } from "@/modules/platform/domain/request-attribution";
 

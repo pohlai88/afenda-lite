@@ -47,10 +47,14 @@ components:
                 - FORBIDDEN
                 - NOT_FOUND
                 - CONFLICT
+                - CONCURRENCY_CONFLICT
                 - VALIDATION_ERROR
                 - RATE_LIMITED
                 - INTERNAL_ERROR
                 - SERVICE_UNAVAILABLE
+            messageKey:
+              type: string
+              minLength: 1
             message:
               type: string
               minLength: 1
@@ -58,6 +62,7 @@ components:
               nullable: true
           required:
             - code
+            - messageKey
             - message
       required:
         - error

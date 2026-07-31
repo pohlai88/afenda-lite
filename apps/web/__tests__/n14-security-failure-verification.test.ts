@@ -79,7 +79,6 @@ import { assignOrgRoleAction } from "../app/actions/assign-org-role";
 import { inviteOrgMemberAction } from "../app/actions/invite-org-member";
 import { revokeOrgRoleAction } from "../app/actions/revoke-org-role";
 import { hasPermission } from "../modules/identity/domain/has-permission";
-import { PERMISSION_DENIED_MESSAGE } from "../modules/identity/domain/session-permission";
 
 const hasPermissionMock = vi.mocked(hasPermission);
 
@@ -117,10 +116,9 @@ describe("N14 action permission denial", () => {
 
 		const result = await assignOrgRoleAction(null, formData);
 
-		expect(result).toEqual({
+		expect(result).toMatchObject({
 			ok: false,
 			code: "FORBIDDEN",
-			message: PERMISSION_DENIED_MESSAGE["org.roles.manage"],
 		});
 		expect(hasPermissionMock).toHaveBeenCalledWith({
 			orgId: operatorSession.orgId,
@@ -138,10 +136,9 @@ describe("N14 action permission denial", () => {
 
 		const result = await revokeOrgRoleAction(null, formData);
 
-		expect(result).toEqual({
+		expect(result).toMatchObject({
 			ok: false,
 			code: "FORBIDDEN",
-			message: PERMISSION_DENIED_MESSAGE["org.roles.manage"],
 		});
 		expect(hasPermissionMock).toHaveBeenCalledWith({
 			orgId: operatorSession.orgId,
@@ -159,10 +156,9 @@ describe("N14 action permission denial", () => {
 
 		const result = await inviteOrgMemberAction(null, formData);
 
-		expect(result).toEqual({
+		expect(result).toMatchObject({
 			ok: false,
 			code: "FORBIDDEN",
-			message: PERMISSION_DENIED_MESSAGE["clients.invite"],
 		});
 		expect(hasPermissionMock).toHaveBeenCalledWith({
 			orgId: operatorSession.orgId,

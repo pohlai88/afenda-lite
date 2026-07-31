@@ -1,4 +1,4 @@
-import { fail, ok } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 import { describe, expect, it } from "vitest";
 
 import type {
@@ -111,7 +111,6 @@ describe("HR-ENT-04 contextual authorization", () => {
 		expect(result).toMatchObject({
 			ok: false,
 			code: "FORBIDDEN",
-			message: "Cross-tenant human resources access denied",
 		});
 	});
 
@@ -162,7 +161,7 @@ describe("HR-ENT-04 contextual authorization", () => {
 			}),
 		).resolves.toMatchObject({
 			ok: false,
-			message: "Self-approval is not permitted",
+			code: "FORBIDDEN",
 		});
 		await expect(
 			authorizeHumanResourcesSensitiveResource({
@@ -174,7 +173,7 @@ describe("HR-ENT-04 contextual authorization", () => {
 			}),
 		).resolves.toMatchObject({
 			ok: false,
-			message: "Separation of duties policy denied access",
+			code: "FORBIDDEN",
 		});
 	});
 
@@ -183,7 +182,7 @@ describe("HR-ENT-04 contextual authorization", () => {
 		const audit = {
 			async record(inputValue1: unknown) {
 				records.push(inputValue1);
-				return await ok({ id: "break-glass-1" });
+				return await errorResult.ok({ id: "break-glass-1" });
 			},
 		};
 		const input = {
@@ -221,7 +220,7 @@ describe("HR-ENT-04 contextual authorization", () => {
 					...input.breakGlass,
 					audit: {
 						async record() {
-							return await fail("INTERNAL_ERROR", "Audit unavailable");
+							return await errorResult.fail("INTERNAL_ERROR");
 						},
 					},
 				},

@@ -1,11 +1,6 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type { PayrollRunId } from "../brands";
-import {
-	PAYROLL_ERROR_NOT_FOUND,
-	PAYROLL_ERROR_VALIDATION,
-	payrollErrorDetails,
-} from "../error-codes";
 import type { MutationPorts } from "../ports";
 import type { PayrollStore } from "../store";
 import type { PayrollException, PayrollRun, PayrollRunStatus } from "../types";
@@ -20,13 +15,11 @@ export async function loadPayrollRun(
 		return loaded;
 	}
 	if (loaded.data === null) {
-		return fail(
-			"NOT_FOUND",
-			"Payroll run not found",
-			payrollErrorDetails(PAYROLL_ERROR_NOT_FOUND),
-		);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Payroll run not found",
+		});
 	}
-	return ok(loaded.data);
+	return errorResult.ok(loaded.data);
 }
 
 export async function persistPayrollRunExceptions(
@@ -66,7 +59,7 @@ export async function persistPayrollRunExceptions(
 		}
 		created.push(result.data);
 	}
-	return ok(created);
+	return errorResult.ok(created);
 }
 
 export function transitionPayrollRun(
@@ -128,11 +121,11 @@ export function requirePayrollRunCalculator(
 		typeof calculator !== "object" ||
 		typeof (calculator as { calculate?: unknown }).calculate !== "function"
 	) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Payroll run calculator port is required",
-			payrollErrorDetails(PAYROLL_ERROR_VALIDATION),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "Payroll run calculator port is required",
+		});
 	}
-	return ok(calculator as import("../ports").PayrollRunCalculatorPort);
+	return errorResult.ok(
+		calculator as import("../ports").PayrollRunCalculatorPort,
+	);
 }

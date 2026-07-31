@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import { and, db, eq, hrHireAttempt } from "@afenda/db";
-import { ok } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 import { assertExpectedVersion } from "../../shared/concurrency";
 import { conflict, notFound } from "../../shared/domain-guards";
 import {
@@ -33,7 +33,7 @@ export const drizzleHireOrchestrationMethods: Pick<
 
 		const [row] = rows;
 		if (row === undefined) {
-			return ok(null);
+			return errorResult.ok(null);
 		}
 
 		const mapped = mapHireAttemptRow(row);
@@ -41,7 +41,7 @@ export const drizzleHireOrchestrationMethods: Pick<
 			return mapped;
 		}
 
-		return ok({
+		return errorResult.ok({
 			attempt: mapped.data,
 			requestFingerprint: row.requestFingerprint,
 		});
@@ -63,7 +63,7 @@ export const drizzleHireOrchestrationMethods: Pick<
 			(row) => row.status === "in_progress" || row.status === "completed",
 		);
 		if (open === undefined) {
-			return ok(null);
+			return errorResult.ok(null);
 		}
 
 		return mapHireAttemptRow(open);
@@ -125,7 +125,7 @@ export const drizzleHireOrchestrationMethods: Pick<
 					idempotencyKey: record.idempotencyKey,
 				});
 				if (replay.ok && replay.data !== null) {
-					return ok(replay.data.attempt);
+					return errorResult.ok(replay.data.attempt);
 				}
 			}
 			if (isPostgresUniqueViolation(error)) {

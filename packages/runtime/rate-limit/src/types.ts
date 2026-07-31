@@ -50,7 +50,7 @@ interface RateLimitUnavailableFailure {
 
 /**
  * Discriminated limit outcome for BFF / Action adapters.
- * Prefer `toRateLimitAppError` over hand-mapping at each call site.
+ * Prefer `toRateLimitFailure` over hand-mapping at each call site.
  */
 export type RateLimitResult = RateLimitSuccess | RateLimitFailure;
 

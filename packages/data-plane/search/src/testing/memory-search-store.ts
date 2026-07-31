@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import { sanitizeSearchMetadata } from "../sanitize";
 import type { SearchStore } from "../store";
@@ -62,7 +62,7 @@ export class MemorySearchStore implements SearchStore {
 			updatedAt: now,
 		};
 		this.documents.set(key, document);
-		return Promise.resolve(ok(document));
+		return Promise.resolve(errorResult.ok(document));
 	}
 
 	upsertBatch(inputs: SearchUpsertInput[]): Promise<Result<SearchDocument[]>> {
@@ -80,13 +80,15 @@ export class MemorySearchStore implements SearchStore {
 				accumulated.data.push(result.data);
 				return accumulated;
 			},
-			Promise.resolve(ok<SearchDocument[]>([])),
+			Promise.resolve(errorResult.ok([])),
 		);
 	}
 
 	delete(input: SearchDeleteInput): Promise<Result<{ deleted: boolean }>> {
 		const key = this.key(input.organizationId, input.entity, input.documentId);
-		return Promise.resolve(ok({ deleted: this.documents.delete(key) }));
+		return Promise.resolve(
+			errorResult.ok({ deleted: this.documents.delete(key) }),
+		);
 	}
 
 	listDocumentIds(input: SearchListIdsInput): Promise<Result<string[]>> {
@@ -99,7 +101,7 @@ export class MemorySearchStore implements SearchStore {
 				ids.push(doc.documentId);
 			}
 		}
-		return Promise.resolve(ok(ids));
+		return Promise.resolve(errorResult.ok(ids));
 	}
 
 	search(options: SearchQueryOptions): Promise<Result<SearchHit[]>> {
@@ -129,7 +131,9 @@ export class MemorySearchStore implements SearchStore {
 		}
 		hits.sort((a, b) => b.score - a.score);
 		return Promise.resolve(
-			ok(hits.slice(options.offset, options.offset + options.limit)),
+			errorResult.ok(
+				hits.slice(options.offset, options.offset + options.limit),
+			),
 		);
 	}
 }

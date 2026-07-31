@@ -1,9 +1,7 @@
 // biome-ignore-all lint/suspicious/useAwait: The deterministic memory adapter implements asynchronous governance ports.
 // biome-ignore-all lint/suspicious/noShadow: Domain-local callbacks intentionally mirror governance records.
 import { randomUUID } from "node:crypto";
-import { fail, ok } from "@afenda/errors/result";
-
-import { corporateAdministrationErrorDetails } from "../../error-codes";
+import { errorResult } from "@afenda/errors";
 import {
 	governanceBodyMatchesAsOf,
 	governanceMembershipMatchesAsOf,
@@ -24,14 +22,14 @@ export function createMemoryCorporateAdministrationGovernanceStore(): Governance
 
 	return {
 		async getGovernanceBody(input) {
-			return ok(
+			return errorResult.ok(
 				cloneNullable(
 					bodies.get(key(input.organizationId, input.governanceBodyId)),
 				),
 			);
 		},
 		async listGovernanceBodiesAsOf(input) {
-			return ok(
+			return errorResult.ok(
 				[...bodies.values()]
 					.filter(
 						(row) =>
@@ -83,7 +81,7 @@ export function createMemoryCorporateAdministrationGovernanceStore(): Governance
 				updatedAt: now,
 			};
 			bodies.set(key(input.organizationId, id), row);
-			return ok(clone(row));
+			return errorResult.ok(clone(row));
 		},
 		async amendGovernanceBody(input) {
 			const current = bodies.get(
@@ -106,7 +104,7 @@ export function createMemoryCorporateAdministrationGovernanceStore(): Governance
 				updatedAt: new Date(input.recordedAt),
 			};
 			bodies.set(key(input.organizationId, updated.id), updated);
-			return ok(clone(updated));
+			return errorResult.ok(clone(updated));
 		},
 		async retireGovernanceBody(input) {
 			const current = bodies.get(
@@ -130,10 +128,10 @@ export function createMemoryCorporateAdministrationGovernanceStore(): Governance
 				updatedAt: new Date(input.recordedAt),
 			};
 			bodies.set(key(input.organizationId, updated.id), updated);
-			return ok(clone(updated));
+			return errorResult.ok(clone(updated));
 		},
 		async getGovernanceMembership(input) {
-			return ok(
+			return errorResult.ok(
 				cloneNullable(
 					memberships.get(
 						key(input.organizationId, input.governanceMembershipId),
@@ -142,7 +140,7 @@ export function createMemoryCorporateAdministrationGovernanceStore(): Governance
 			);
 		},
 		async listGovernanceMemberships(input) {
-			return ok(
+			return errorResult.ok(
 				[...memberships.values()]
 					.filter(
 						(row) =>
@@ -153,7 +151,7 @@ export function createMemoryCorporateAdministrationGovernanceStore(): Governance
 			);
 		},
 		async listGovernanceMembershipsAsOf(input) {
-			return ok(
+			return errorResult.ok(
 				[...memberships.values()]
 					.filter(
 						(row) =>
@@ -199,7 +197,7 @@ export function createMemoryCorporateAdministrationGovernanceStore(): Governance
 				updatedAt: now,
 			};
 			memberships.set(key(input.organizationId, id), row);
-			return ok(clone(row));
+			return errorResult.ok(clone(row));
 		},
 		async changeGovernanceMembership(input) {
 			const current = memberships.get(
@@ -226,7 +224,7 @@ export function createMemoryCorporateAdministrationGovernanceStore(): Governance
 				updatedAt: new Date(input.recordedAt),
 			};
 			memberships.set(key(input.organizationId, updated.id), updated);
-			return ok(clone(updated));
+			return errorResult.ok(clone(updated));
 		},
 		async endGovernanceMembership(input) {
 			const current = memberships.get(
@@ -250,7 +248,7 @@ export function createMemoryCorporateAdministrationGovernanceStore(): Governance
 				updatedAt: new Date(input.recordedAt),
 			};
 			memberships.set(key(input.organizationId, updated.id), updated);
-			return ok(clone(updated));
+			return errorResult.ok(clone(updated));
 		},
 	};
 }
@@ -267,31 +265,21 @@ function cloneNullable<T>(value: T | undefined): T | null {
 	return value === undefined ? null : clone(value);
 }
 
-function conflict(field: string) {
-	return fail(
-		"CONFLICT",
-		"Corporate Administration governance conflicts with existing history.",
-		corporateAdministrationErrorDetails("CORPORATE_ADMINISTRATION_CONFLICT", {
-			field,
-		}),
-	);
+function conflict(_field: string) {
+	return errorResult.fail("CONFLICT", {
+		publicMessage:
+			"Corporate Administration governance conflicts with existing history.",
+	});
 }
 
 function notFound() {
-	return fail(
-		"NOT_FOUND",
-		"Corporate Administration record was not found.",
-		corporateAdministrationErrorDetails("CORPORATE_ADMINISTRATION_NOT_FOUND"),
-	);
+	return errorResult.fail("NOT_FOUND", {
+		publicMessage: "Corporate Administration record was not found.",
+	});
 }
 
-function stale(expectedVersion: number, actualVersion: number) {
-	return fail(
-		"CONFLICT",
-		"Corporate Administration record version is stale.",
-		corporateAdministrationErrorDetails(
-			"CORPORATE_ADMINISTRATION_STALE_VERSION",
-			{ expectedVersion, actualVersion },
-		),
-	);
+function stale(_expectedVersion: number, _actualVersion: number) {
+	return errorResult.fail("CONFLICT", {
+		publicMessage: "Corporate Administration record version is stale.",
+	});
 }

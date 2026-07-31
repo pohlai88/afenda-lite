@@ -1,11 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
-
-import {
-	PAYROLL_ERROR_INVALID_STATE,
-	PAYROLL_ERROR_NOT_FOUND,
-	PAYROLL_ERROR_VALIDATION,
-	payrollErrorDetails,
-} from "../error-codes";
+import { errorResult, type Result } from "@afenda/errors";
 import type { PayrollEmployeeQueryPort } from "../ports";
 
 export type PayrollEmployeeFacts = NonNullable<
@@ -19,11 +12,7 @@ export async function requirePayrollEmployeeAtDate(input: {
 	effectiveDate: string;
 }): Promise<Result<PayrollEmployeeFacts>> {
 	if (input.employees === undefined) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Payroll employee query port is not configured",
-			payrollErrorDetails(PAYROLL_ERROR_VALIDATION),
-		);
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 
 	const employee = await input.employees.getPayrollEmployee({
@@ -33,27 +22,23 @@ export async function requirePayrollEmployeeAtDate(input: {
 	});
 
 	if (employee === null) {
-		return fail(
-			"NOT_FOUND",
-			"Employee not found for payroll at effective date",
-			payrollErrorDetails(PAYROLL_ERROR_NOT_FOUND),
-		);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Employee not found for payroll at effective date",
+		});
 	}
 
-	return ok(employee);
+	return errorResult.ok(employee);
 }
 
 export function assertEmployeeEligibleForPayroll(
 	employee: PayrollEmployeeFacts,
 ): Result<PayrollEmployeeFacts> {
 	if (employee.employmentStatus === "terminated") {
-		return fail(
-			"CONFLICT",
-			"Employee is terminated and ineligible for payroll",
-			payrollErrorDetails(PAYROLL_ERROR_INVALID_STATE),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Employee is terminated and ineligible for payroll",
+		});
 	}
-	return ok(employee);
+	return errorResult.ok(employee);
 }
 
 export function assertEmployeePayGroupMatch(input: {
@@ -61,13 +46,11 @@ export function assertEmployeePayGroupMatch(input: {
 	expectedPayGroupId: string;
 }): Result<PayrollEmployeeFacts> {
 	if (input.employee.payGroupId !== input.expectedPayGroupId) {
-		return fail(
-			"CONFLICT",
-			"Employee pay group does not match payroll configuration",
-			payrollErrorDetails(PAYROLL_ERROR_INVALID_STATE),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Employee pay group does not match payroll configuration",
+		});
 	}
-	return ok(input.employee);
+	return errorResult.ok(input.employee);
 }
 
 export function assertCurrencyAlignment(input: {
@@ -75,13 +58,12 @@ export function assertCurrencyAlignment(input: {
 	actualCurrencyCode: string;
 }): Result<void> {
 	if (input.expectedCurrencyCode !== input.actualCurrencyCode) {
-		return fail(
-			"CONFLICT",
-			"Currency does not match pay group or employee compensation",
-			payrollErrorDetails(PAYROLL_ERROR_INVALID_STATE),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage:
+				"Currency does not match pay group or employee compensation",
+		});
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertInputBeforeCutoff(input: {
@@ -89,11 +71,9 @@ export function assertInputBeforeCutoff(input: {
 	cutoffDate: string;
 }): Result<void> {
 	if (input.effectiveFrom > input.cutoffDate) {
-		return fail(
-			"CONFLICT",
-			"Input effective date is after period cutoff",
-			payrollErrorDetails(PAYROLL_ERROR_INVALID_STATE),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Input effective date is after period cutoff",
+		});
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }

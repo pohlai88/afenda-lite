@@ -7,9 +7,6 @@ import {
 	createPaymentAccount,
 	getPaymentApplicationAvailability,
 	getPaymentById,
-	PAYMENTS_ERROR_PAYMENT_NOT_FOUND,
-	PAYMENTS_ERROR_REFUND_LIMIT_EXCEEDED,
-	PAYMENTS_ERROR_TRANSFER_INVALID,
 	postPayment,
 	postRefund,
 	reversePayment,
@@ -201,13 +198,10 @@ describe("payments domain conflicts", () => {
 		if (excessive.ok) {
 			return;
 		}
-		expect(
-			(excessive.details as { paymentsCode?: string } | undefined)
-				?.paymentsCode,
-		).toBe(PAYMENTS_ERROR_REFUND_LIMIT_EXCEEDED);
+		expect(excessive.code).toBe("CONFLICT");
 	});
 
-	it("attaches domain paymentsCode on not-found, transfer, and credit-target rejects", async () => {
+	it("normalizes domain rejects to canonical error codes", async () => {
 		const store = createMemoryPaymentsStore();
 		const options = { store, authorization };
 		const missing = await getPaymentApplicationAvailability(
@@ -220,10 +214,7 @@ describe("payments domain conflicts", () => {
 		);
 		expect(missing.ok).toBe(false);
 		if (!missing.ok) {
-			expect(
-				(missing.details as { paymentsCode?: string } | undefined)
-					?.paymentsCode,
-			).toBe(PAYMENTS_ERROR_PAYMENT_NOT_FOUND);
+			expect(missing.code).toBe("NOT_FOUND");
 		}
 
 		const account = await createPaymentAccount(
@@ -258,10 +249,7 @@ describe("payments domain conflicts", () => {
 		});
 		expect(sameAccount.ok).toBe(false);
 		if (!sameAccount.ok) {
-			expect(
-				(sameAccount.details as { paymentsCode?: string } | undefined)
-					?.paymentsCode,
-			).toBe(PAYMENTS_ERROR_TRANSFER_INVALID);
+			expect(sameAccount.code).toBe("CONFLICT");
 		}
 
 		const draft = await createDraftPayment(
@@ -302,7 +290,7 @@ describe("payments domain conflicts", () => {
 		);
 		expect(creditTarget.ok).toBe(false);
 		if (!creditTarget.ok) {
-			expect(creditTarget.code).toBe("BAD_REQUEST");
+			expect(creditTarget.code).toBe("VALIDATION_ERROR");
 		}
 	});
 

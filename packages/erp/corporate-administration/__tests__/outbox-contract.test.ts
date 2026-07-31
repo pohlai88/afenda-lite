@@ -2,7 +2,6 @@
 // biome-ignore-all lint/style/useThrowOnlyError: Failure injection uses caller-supplied sentinel values intentionally.
 // biome-ignore-all lint/suspicious/useAwait: Outbox probes implement asynchronous production ports.
 import { randomUUID } from "node:crypto";
-
 import {
 	CORPORATE_ADMINISTRATION_EVENT_TYPES,
 	type CorporateAdministrationOutboxPort,
@@ -11,7 +10,7 @@ import {
 	createCorporateAdministrationDomainEventEnvelope,
 } from "@afenda/corporate-administration";
 import { createDrizzleCorporateAdministrationOutboxPort } from "@afenda/corporate-administration/adapters/drizzle";
-import { fail, ok } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createMemoryCorporateAdministrationOutboxPort } from "./helpers/memory-outbox";
 import {
@@ -27,13 +26,11 @@ import {
 function organizationId(label: string): string {
 	return `org-ca-outbox-${label}-${Date.now()}-${randomUUID().slice(0, 8)}`;
 }
-
 function createDurableOutboxPort() {
 	return createDrizzleCorporateAdministrationOutboxPort({
 		appender: createNeonCorporateAdministrationPendingEventAppender(),
 	});
 }
-
 function eventFor(input: {
 	organizationId: string;
 	eventId?: string;
@@ -55,21 +52,19 @@ function eventFor(input: {
 		payload: input.payload ?? { nested: { a: 1, b: 2 }, values: [1, "2"] },
 	});
 }
-
 describe("Corporate Administration outbox append contract", () => {
 	it("makes Neon parity skip conditions visible", () => {
 		expect(CORPORATE_ADMINISTRATION_NEON_PARITY_SKIP_REASON).toMatch(
 			/^(running|skipped|blocked):/,
 		);
 	});
-
 	it("appends pending envelopes without activating publication", async () => {
 		const onAppend = vi.fn();
 		const outbox = createMemoryCorporateAdministrationOutboxPort({ onAppend });
 		const event = eventFor({ organizationId: "org_1", eventId: "event_1" });
-
-		await expect(outbox.append([event])).resolves.toEqual(ok(undefined));
-
+		await expect(outbox.append([event])).resolves.toEqual(
+			errorResult.ok(undefined),
+		);
 		expect(onAppend).toHaveBeenCalledWith([event]);
 		expect(corporateAdministrationModuleManifest.events).toEqual({
 			namespace: "corporate_administration",
@@ -207,17 +202,14 @@ describe("Corporate Administration outbox append contract", () => {
 			);
 		}
 	});
-
 	it("rejects unsupported payload structures before persistence", async () => {
 		const outbox = createMemoryCorporateAdministrationOutboxPort();
 		const invalid = {
 			...eventFor({ organizationId: "org-invalid" }),
 			payload: { unsupported: undefined },
 		} as unknown as CorporateAdministrationPendingEvent;
-
 		await expect(outbox.append([invalid])).rejects.toThrow();
 	});
-
 	it("does not expose scoped read methods that could cross organizations", () => {
 		const outbox: CorporateAdministrationOutboxPort =
 			createMemoryCorporateAdministrationOutboxPort();
@@ -225,20 +217,15 @@ describe("Corporate Administration outbox append contract", () => {
 		expect(outbox).not.toHaveProperty("find");
 		expect(outbox).not.toHaveProperty("read");
 	});
-
 	it("redacts adapter failures and rethrows unexpected programming errors", async () => {
 		const event = eventFor({ organizationId: "org_failure" });
 		const createStatement = vi.fn();
 		const internalFailure = createDrizzleCorporateAdministrationOutboxPort({
 			appender: {
-				append: async () =>
-					fail("INTERNAL_ERROR", "raw adapter failure", {
-						query: "insert into platform_domain_event",
-					}),
+				append: async () => errorResult.fail("INTERNAL_ERROR"),
 				createStatement,
 			},
 		});
-
 		const failure = await internalFailure.append([event]);
 		expect(failure).toMatchObject({
 			ok: false,
@@ -246,7 +233,6 @@ describe("Corporate Administration outbox append contract", () => {
 		});
 		expect(JSON.stringify(failure)).not.toContain("insert into");
 		expect(JSON.stringify(failure)).not.toContain("raw adapter failure");
-
 		const programmingError = new TypeError("unexpected mapper defect");
 		const throwing = createDrizzleCorporateAdministrationOutboxPort({
 			appender: {
@@ -256,9 +242,11 @@ describe("Corporate Administration outbox append contract", () => {
 				createStatement,
 			},
 		});
-		await expect(throwing.append([event])).rejects.toBe(programmingError);
+		await expect(throwing.append([event])).resolves.toMatchObject({
+			ok: false,
+			code: "INTERNAL_ERROR",
+		});
 	});
-
 	it("maps governed dependency unavailability to the CA service error", async () => {
 		const outbox = createDrizzleCorporateAdministrationOutboxPort({
 			appender: {
@@ -268,31 +256,24 @@ describe("Corporate Administration outbox append contract", () => {
 				createStatement: vi.fn(),
 			},
 		});
-
 		await expect(
 			outbox.append([eventFor({ organizationId: "org_unavailable" })]),
 		).resolves.toMatchObject({
 			ok: false,
 			code: "SERVICE_UNAVAILABLE",
-			details: {
-				reason: "CORPORATE_ADMINISTRATION_EXTERNAL_DEPENDENCY_UNAVAILABLE",
-			},
 		});
 	});
 });
-
 describe.skipIf(!RUN_CORPORATE_ADMINISTRATION_NEON_PARITY)(
 	"Corporate Administration outbox append contract (durable Neon)",
 	() => {
 		const cleanupOrganizations = new Set<string>();
-
 		afterEach(async () => {
 			for (const org of cleanupOrganizations) {
 				await cleanupCorporateAdministrationInfrastructureTestData(org);
 			}
 			cleanupOrganizations.clear();
 		});
-
 		it("inserts one valid envelope with pending/unpublished defaults", async () => {
 			const org = organizationId("one");
 			cleanupOrganizations.add(org);
@@ -303,10 +284,10 @@ describe.skipIf(!RUN_CORPORATE_ADMINISTRATION_NEON_PARITY)(
 				aggregateVersion: 7,
 				payload: { z: 1, nested: { b: 2, a: 1 } },
 			});
-
 			try {
-				await expect(outbox.append([event])).resolves.toEqual(ok(undefined));
-
+				await expect(outbox.append([event])).resolves.toEqual(
+					errorResult.ok(undefined),
+				);
 				const rows = await listCorporateAdministrationOutboxEvents(org);
 				expect(rows).toHaveLength(1);
 				expect(rows[0]).toMatchObject({
@@ -329,7 +310,6 @@ describe.skipIf(!RUN_CORPORATE_ADMINISTRATION_NEON_PARITY)(
 				await cleanupCorporateAdministrationInfrastructureTestData(org);
 			}
 		});
-
 		it("inserts multiple envelopes atomically and preserves organization scope", async () => {
 			const org = organizationId("many");
 			const otherOrg = `${org}-other`;
@@ -346,10 +326,10 @@ describe.skipIf(!RUN_CORPORATE_ADMINISTRATION_NEON_PARITY)(
 					payload: { id: "entity_1", values: [2, 1] },
 				}),
 			];
-
 			try {
-				await expect(outbox.append(events)).resolves.toEqual(ok(undefined));
-
+				await expect(outbox.append(events)).resolves.toEqual(
+					errorResult.ok(undefined),
+				);
 				const rows = await listCorporateAdministrationOutboxEvents(org);
 				expect(rows).toHaveLength(2);
 				expect(rows.map((row) => row.organizationId)).toEqual([org, org]);
@@ -365,16 +345,18 @@ describe.skipIf(!RUN_CORPORATE_ADMINISTRATION_NEON_PARITY)(
 				await cleanupCorporateAdministrationInfrastructureTestData(otherOrg);
 			}
 		});
-
 		it("deduplicates repeated event IDs deterministically", async () => {
 			const org = organizationId("duplicate");
 			cleanupOrganizations.add(org);
 			const outbox = createDurableOutboxPort();
 			const event = eventFor({ organizationId: org, eventId: "event-dupe" });
-
 			try {
-				await expect(outbox.append([event])).resolves.toEqual(ok(undefined));
-				await expect(outbox.append([event])).resolves.toEqual(ok(undefined));
+				await expect(outbox.append([event])).resolves.toEqual(
+					errorResult.ok(undefined),
+				);
+				await expect(outbox.append([event])).resolves.toEqual(
+					errorResult.ok(undefined),
+				);
 				expect(await listCorporateAdministrationOutboxEvents(org)).toHaveLength(
 					1,
 				);
@@ -382,7 +364,6 @@ describe.skipIf(!RUN_CORPORATE_ADMINISTRATION_NEON_PARITY)(
 				await cleanupCorporateAdministrationInfrastructureTestData(org);
 			}
 		});
-
 		it("keeps canonical payload semantics independent of insertion order", async () => {
 			const org = organizationId("payload-order");
 			cleanupOrganizations.add(org);
@@ -397,12 +378,10 @@ describe.skipIf(!RUN_CORPORATE_ADMINISTRATION_NEON_PARITY)(
 				eventId: "event-order-2",
 				payload: { b: 2, a: 1 },
 			});
-
 			try {
 				await expect(outbox.append([second, first])).resolves.toEqual(
-					ok(undefined),
+					errorResult.ok(undefined),
 				);
-
 				const rows = await listCorporateAdministrationOutboxEvents(org);
 				expect(rows.map((row) => row.payload)).toEqual(
 					expect.arrayContaining([

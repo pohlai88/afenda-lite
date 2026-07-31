@@ -14,8 +14,12 @@ import {
 	salesInvoice,
 	salesInvoiceLine,
 } from "@afenda/db";
-import { normalizePostgresUnknown } from "@afenda/errors/adapters/postgres";
-import { fail, failFromAppError, ok, type Result } from "@afenda/errors/result";
+import {
+	errorIngress,
+	errorProject,
+	errorResult,
+	type Result,
+} from "@afenda/errors";
 
 import type { InvoiceCreateRecord, ReceivablesStore } from "./store";
 import type {
@@ -28,8 +32,10 @@ import type {
 	SalesInvoiceStatus,
 } from "./types";
 
-function failFromPersistence(error: unknown, fallbackMessage: string) {
-	return failFromAppError(normalizePostgresUnknown(error, fallbackMessage));
+function failFromPersistence(error: unknown, _fallbackMessage: string) {
+	return errorProject.result(
+		errorIngress.postgres(error, { operation: "persistence.postgres" }),
+	);
 }
 
 function asStatus(value: string): SalesInvoiceStatus {
@@ -167,15 +173,15 @@ async function reload(
 	store: DrizzleReceivablesStore,
 	organizationId: string,
 	id: string,
-	message: string,
+	_message: string,
 ): Promise<Result<SalesInvoice>> {
 	const result = await store.getById(organizationId, id);
 	if (!result.ok) {
 		return result;
 	}
 	return result.data === null
-		? fail("INTERNAL_ERROR", message)
-		: ok(result.data);
+		? errorResult.fail("INTERNAL_ERROR")
+		: errorResult.ok(result.data);
 }
 
 export class DrizzleReceivablesStore implements ReceivablesStore {
@@ -225,7 +231,9 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 				`,
 			]);
 			if (rows[0] === undefined) {
-				return fail("CONFLICT", "Sales invoice create conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Sales invoice create conflict",
+				});
 			}
 			return reload(this, record.organizationId, id, "Created invoice missing");
 		} catch (error) {
@@ -248,7 +256,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 				)
 				.limit(1);
 			if (existing !== undefined) {
-				return ok(mapLine(existing));
+				return errorResult.ok(mapLine(existing));
 			}
 
 			const id = randomUUID();
@@ -286,7 +294,9 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 				`,
 			]);
 			if (rows[0] === undefined) {
-				return fail("CONFLICT", "Sales invoice line conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Sales invoice line conflict",
+				});
 			}
 			const [line] = await db
 				.select()
@@ -299,8 +309,8 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 				)
 				.limit(1);
 			return line === undefined
-				? fail("INTERNAL_ERROR", "Created invoice line missing")
-				: ok(mapLine(line));
+				? errorResult.fail("INTERNAL_ERROR")
+				: errorResult.ok(mapLine(line));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to add sales invoice line");
 		}
@@ -311,10 +321,10 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 	): Promise<Result<SalesInvoice>> {
 		for (const check of record.sourceLineChecks ?? []) {
 			if (Number(check.quantity) > Number(check.remainingInvoiceableQuantity)) {
-				return fail(
-					"CONFLICT",
-					"Invoice quantity exceeds remaining invoiceable quantity",
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage:
+						"Invoice quantity exceeds remaining invoiceable quantity",
+				});
 			}
 		}
 		try {
@@ -386,7 +396,9 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 				`,
 			]);
 			if (rows[0] === undefined) {
-				return fail("CONFLICT", "Sales invoice post conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Sales invoice post conflict",
+				});
 			}
 			return reload(
 				this,
@@ -414,7 +426,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 				)
 				.limit(1);
 			if (existing !== undefined) {
-				return ok(mapCredit(existing));
+				return errorResult.ok(mapCredit(existing));
 			}
 
 			const id = randomUUID();
@@ -480,7 +492,9 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 				`,
 			]);
 			if (rows[0] === undefined) {
-				return fail("CONFLICT", "Credit note issue conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Credit note issue conflict",
+				});
 			}
 			const [credit] = await db
 				.select()
@@ -493,8 +507,8 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 				)
 				.limit(1);
 			return credit === undefined
-				? fail("INTERNAL_ERROR", "Issued credit note missing")
-				: ok(mapCredit(credit));
+				? errorResult.fail("INTERNAL_ERROR")
+				: errorResult.ok(mapCredit(credit));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to issue credit note");
 		}
@@ -515,7 +529,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 				)
 				.limit(1);
 			if (existing !== undefined) {
-				return ok(mapAllocation(existing));
+				return errorResult.ok(mapAllocation(existing));
 			}
 
 			const id = randomUUID();
@@ -576,7 +590,9 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 				`,
 			]);
 			if (rows[0] === undefined) {
-				return fail("CONFLICT", "Customer receipt application conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Customer receipt application conflict",
+				});
 			}
 			const [allocation] = await db
 				.select()
@@ -589,8 +605,8 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 				)
 				.limit(1);
 			return allocation === undefined
-				? fail("INTERNAL_ERROR", "Created receipt application missing")
-				: ok(mapAllocation(allocation));
+				? errorResult.fail("INTERNAL_ERROR")
+				: errorResult.ok(mapAllocation(allocation));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to apply customer receipt");
 		}
@@ -654,8 +670,10 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 					)
 					.limit(1);
 				return allocation?.status === "reversed"
-					? ok(mapAllocation(allocation))
-					: fail("CONFLICT", "Customer receipt application reversal conflict");
+					? errorResult.ok(mapAllocation(allocation))
+					: errorResult.fail("CONFLICT", {
+							publicMessage: "Customer receipt application reversal conflict",
+						});
 			}
 			const [allocation] = await db
 				.select()
@@ -668,8 +686,8 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 				)
 				.limit(1);
 			return allocation === undefined
-				? fail("INTERNAL_ERROR", "Reversed receipt application missing")
-				: ok(mapAllocation(allocation));
+				? errorResult.fail("INTERNAL_ERROR")
+				: errorResult.ok(mapAllocation(allocation));
 		} catch (error) {
 			return failFromPersistence(
 				error,
@@ -711,7 +729,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 				}
 				reversed.push(result.data);
 			}
-			return ok(reversed);
+			return errorResult.ok(reversed);
 		} catch (error) {
 			return failFromPersistence(
 				error,
@@ -764,7 +782,9 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 				`,
 			]);
 			if (rows[0] === undefined) {
-				return fail("CONFLICT", "Only draft sales invoices can be cancelled");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Only draft sales invoices can be cancelled",
+				});
 			}
 			return reload(
 				this,
@@ -831,7 +851,9 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 				`,
 			]);
 			if (rows[0] === undefined) {
-				return fail("CONFLICT", "Invoice open amount must be zero to close");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Invoice open amount must be zero to close",
+				});
 			}
 			return reload(
 				this,
@@ -860,7 +882,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 				)
 				.limit(1);
 			if (header === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const [lines, allocations, credits] = await Promise.all([
 				db
@@ -894,7 +916,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 						),
 					),
 			]);
-			return ok(
+			return errorResult.ok(
 				mapInvoice(
 					header,
 					lines.map(mapLine),
@@ -927,7 +949,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 				.limit(filter.pageSize)
 				.offset((filter.page - 1) * filter.pageSize);
 			if (headers.length === 0) {
-				return ok([]);
+				return errorResult.ok([]);
 			}
 			const ids = headers.map((header) => header.id);
 			const [lines, allocations, credits] = await Promise.all([
@@ -985,7 +1007,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 					);
 				}
 			}
-			return ok(
+			return errorResult.ok(
 				headers.map((header) =>
 					mapInvoice(
 						header,
@@ -1019,7 +1041,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 				.from(customerBalanceProjection)
 				.where(and(...conditions))
 				.orderBy(asc(customerBalanceProjection.currencyCode));
-			return ok(
+			return errorResult.ok(
 				rows.map((row) => ({
 					organizationId: row.organizationId,
 					customerId: row.customerPartyId,
@@ -1082,7 +1104,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 			days61to90: String(buckets.days61to90),
 			over90: String(buckets.over90),
 		};
-		return ok({
+		return errorResult.ok({
 			organizationId: input.organizationId,
 			customerId: input.customerId,
 			currencyCode: input.currencyCode,
@@ -1111,7 +1133,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 				.filter((header) => header.id !== input.excludeInvoiceId)
 				.map((header) => header.id);
 			if (ids.length === 0) {
-				return ok("0");
+				return errorResult.ok("0");
 			}
 			const conditions = [
 				eq(salesInvoiceLine.organizationId, input.organizationId),
@@ -1131,7 +1153,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 				.select({ quantity: salesInvoiceLine.quantity })
 				.from(salesInvoiceLine)
 				.where(and(...conditions));
-			return ok(
+			return errorResult.ok(
 				String(lines.reduce((sum, line) => sum + Number(line.quantity), 0)),
 			);
 		} catch (error) {
@@ -1206,7 +1228,7 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 				.select()
 				.from(customerBalanceProjection)
 				.where(eq(customerBalanceProjection.organizationId, organizationId));
-			return ok({
+			return errorResult.ok({
 				invoices: [...invoiceResult.data, ...closed.data].map((invoice) => ({
 					id: invoice.id,
 					customerId: invoice.customerId,

@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	requireMasterCommandPermission,
@@ -10,7 +10,6 @@ import {
 	resolveCommandDeps,
 	resolveStore,
 } from "../../command-options";
-import type { MasterFailureDetails } from "../../contracts/reasons";
 import {
 	MASTER_COMMAND_ITEM_ACTIVATE,
 	MASTER_COMMAND_ITEM_CREATE,
@@ -80,37 +79,26 @@ async function assertItemActivationReferences(
 		return group;
 	}
 	if (group.data === null) {
-		return fail("CONFLICT", "Item group must exist in the same organization", {
-			reason: "MASTER_CROSS_ORG_REFERENCE",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Item group must exist in the same organization",
+		});
 	}
 	if (group.data.status !== "active") {
-		return fail(
-			"CONFLICT",
-			"Item group must be active before activating item",
-			{
-				reason: "MASTER_INVALID_STATE",
-				from: item.status,
-				to: "active",
-			} satisfies MasterFailureDetails,
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Item group must be active before activating item",
+		});
 	}
 	const baseUom = await store.getRefUomById(item.baseUomId);
 	if (!baseUom.ok) {
 		return baseUom;
 	}
 	if (baseUom.data === null || !baseUom.data.active) {
-		return fail(
-			"CONFLICT",
-			"Item base UoM must be an active platform UoM before activating item",
-			{
-				reason: "MASTER_INVALID_STATE",
-				from: item.status,
-				to: "active",
-			} satisfies MasterFailureDetails,
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage:
+				"Item base UoM must be an active platform UoM before activating item",
+		});
 	}
-	return ok(true);
+	return errorResult.ok(true);
 }
 
 export async function createItem(
@@ -252,9 +240,7 @@ async function transitionItemStatus(
 		return current;
 	}
 	if (current.data === null) {
-		return fail("NOT_FOUND", "Item not found", {
-			reason: "MASTER_NOT_FOUND",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("NOT_FOUND", { publicMessage: "Item not found" });
 	}
 	const lifecycle =
 		transitionKind === "restore"
@@ -279,10 +265,9 @@ async function transitionItemStatus(
 			entityId: parsed.data.id,
 		});
 		if (blockers.length > 0) {
-			return fail("CONFLICT", "Item has dependency blockers", {
-				reason: "MASTER_DEPENDENCY_BLOCKED",
-				blockers,
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Item has dependency blockers",
+			});
 		}
 	}
 	const result = await store.transitionItem(
@@ -421,7 +406,7 @@ export async function existsItemByCode(
 	if (!result.ok) {
 		return result;
 	}
-	return ok(result.data !== null);
+	return errorResult.ok(result.data !== null);
 }
 
 export async function listItems(

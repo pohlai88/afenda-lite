@@ -2,18 +2,18 @@
  * Shared non-empty trim gate for domain inputs (I5.6).
  * Callers pass a stable `context` so throw messages stay function-specific.
  */
-import { AppError } from "@afenda/errors";
+import { errorIngress } from "@afenda/errors";
 
 export function requireTrimmed(
 	value: string,
-	field: string,
-	context: string,
+	_field: string,
+	_context: string,
 ): string {
 	const trimmed = value.trim();
 	if (trimmed.length === 0) {
-		throw new AppError({
-			code: "BAD_REQUEST",
-			message: `${context} requires non-empty ${field}`,
+		throw errorIngress.code("BAD_REQUEST", {
+			operation: "web.require-trimmed",
+			publicMessage: "A required value is empty",
 		});
 	}
 	return trimmed;

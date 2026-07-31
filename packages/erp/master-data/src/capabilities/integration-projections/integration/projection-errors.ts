@@ -1,4 +1,4 @@
-import { fail, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type { MasterFailureDetails } from "../../../contracts/reasons";
 import type { MasterMutationOperationId } from "./mutation-transaction";
@@ -33,48 +33,27 @@ type IntegrationContractFailureCode = Extract<
 >;
 
 export function integrationProjectionInvalid(
-	input: IntegrationFailureContext &
+	_input: IntegrationFailureContext &
 		Readonly<{
 			code: IntegrationContractFailureCode;
 		}>,
 ): Result<never> {
-	return fail(
-		"INTERNAL_ERROR",
-		"Master-data integration contract is invalid",
-		buildIntegrationFailureDetails({
-			...input,
-			integrationCode: input.code,
-		}),
-	);
+	return errorResult.fail("INTERNAL_ERROR");
 }
 
 export function integrationOutboxWriteFailed(
-	input: IntegrationFailureContext,
+	_input: IntegrationFailureContext,
 ): Result<never> {
-	return fail(
-		"INTERNAL_ERROR",
-		"Master-data outbox write failed",
-		buildIntegrationFailureDetails({
-			...input,
-			integrationCode: "MASTER_DATA_OUTBOX_WRITE_FAILED",
-		}),
-	);
+	return errorResult.fail("INTERNAL_ERROR");
 }
 
 export function integrationTransactionFailed(
-	input: IntegrationFailureContext,
+	_input: IntegrationFailureContext,
 ): Result<never> {
-	return fail(
-		"INTERNAL_ERROR",
-		"Master-data mutation transaction failed",
-		buildIntegrationFailureDetails({
-			...input,
-			integrationCode: "MASTER_DATA_TRANSACTION_FAILED",
-		}),
-	);
+	return errorResult.fail("INTERNAL_ERROR");
 }
 
-function buildIntegrationFailureDetails(
+function _buildIntegrationFailureDetails(
 	input: IntegrationFailureContext &
 		Readonly<{
 			integrationCode: IntegrationProjectionFailureCode;

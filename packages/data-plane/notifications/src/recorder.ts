@@ -1,4 +1,4 @@
-import { fail, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import { resolveNotificationStore } from "./resolve-store";
 import { recordNotificationCommandSchema } from "./schemas";
@@ -23,8 +23,8 @@ export function createNotificationRecorder(
 			const parsed = recordNotificationCommandSchema.safeParse(input);
 			if (!parsed.success) {
 				return Promise.resolve(
-					fail("BAD_REQUEST", "Invalid notification record input", {
-						fieldErrors: parsed.error.flatten().fieldErrors,
+					errorResult.fail("VALIDATION_ERROR", {
+						publicMessage: "Invalid notification record input",
 					}),
 				);
 			}

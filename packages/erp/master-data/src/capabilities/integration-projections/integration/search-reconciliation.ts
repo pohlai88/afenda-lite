@@ -1,4 +1,4 @@
-import type { Result } from "@afenda/errors/result";
+import type { Result } from "@afenda/errors";
 
 import type { OutboxStatus } from "./outbox-record";
 import type { MasterSearchDocumentEntityType } from "./search-document";

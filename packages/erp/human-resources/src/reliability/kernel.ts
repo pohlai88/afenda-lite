@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import { resolveReliabilityOperation } from "./operations";
 import type {
 	ReliabilityClockPort,
@@ -46,10 +46,9 @@ export async function registerReliabilityWork(
 ): Promise<Result<ReliabilityWorkItem>> {
 	const definition = resolveReliabilityOperation(input);
 	if (definition === null || input.targetId.trim().length === 0) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Unsupported reliability connector, operation, or target",
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+		});
 	}
 	const replay = await ports.store.findByIdempotencyKey(input);
 	if (!replay.ok) {
@@ -57,8 +56,10 @@ export async function registerReliabilityWork(
 	}
 	if (replay.data) {
 		return replay.data.requestFingerprint === input.requestFingerprint
-			? ok(replay.data)
-			: fail("CONFLICT", "Reliability idempotency conflict");
+			? errorResult.ok(replay.data)
+			: errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+				});
 	}
 	const now = ports.clock.now();
 	return ports.store.createWorkItem({
@@ -108,7 +109,9 @@ export function claimDueReliabilityWork(
 		input.perOrganizationLimit > input.limit
 	) {
 		return Promise.resolve(
-			fail("VALIDATION_ERROR", "Invalid reliability claim"),
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "The submitted data is invalid",
+			}),
 		);
 	}
 	return store.claimDueWork({
@@ -131,18 +134,22 @@ export async function executeReliabilityWork(
 ): Promise<Result<ReliabilityWorkItem>> {
 	const policy = input.policy ?? DEFAULT_EXPONENTIAL_RETRY_POLICY;
 	if (!validateRetryPolicy(policy)) {
-		return fail("VALIDATION_ERROR", "Invalid exponential retry policy");
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+		});
 	}
 	const found = await ports.store.getWorkItem(input);
 	if (!found.ok) {
 		return found;
 	}
 	if (!found.data) {
-		return fail("NOT_FOUND", "Reliability work item not found");
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "The requested resource was not found",
+		});
 	}
 	const current = found.data;
 	if (current.status !== "processing") {
-		return ok(current);
+		return errorResult.ok(current);
 	}
 	const now = ports.clock.now();
 	if (
@@ -150,7 +157,9 @@ export async function executeReliabilityWork(
 		current.leaseExpiresAt === null ||
 		current.leaseExpiresAt <= now
 	) {
-		return fail("CONFLICT", "Reliability work lease is invalid or expired");
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "The request conflicts with current state",
+		});
 	}
 	const attemptCount = current.attemptCount + 1;
 	const executed = await ports.executor.execute(current);
@@ -159,10 +168,7 @@ export async function executeReliabilityWork(
 		(executed.data.receiptId.trim().length === 0 ||
 			(executed.data.kind === "accepted" &&
 				executed.data.acknowledgementDeadlineAt <= now))
-			? fail(
-					"INTERNAL_ERROR",
-					"Connector returned invalid acknowledgement evidence",
-				)
+			? errorResult.fail("INTERNAL_ERROR")
 			: executed;
 	if (executionResult.ok) {
 		return ports.store.commitAttempt({
@@ -253,27 +259,37 @@ export async function acknowledgeReliabilityWork(
 		return found;
 	}
 	if (found.data === null) {
-		return fail("NOT_FOUND", "Reliability work item not found");
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "The requested resource was not found",
+		});
 	}
 	const current = found.data;
 	if (current.receiptId !== input.receiptId) {
-		return fail("CONFLICT", "Reliability acknowledgement receipt mismatch");
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "The request conflicts with current state",
+		});
 	}
 	if (current.status === "succeeded" && input.outcome === "acknowledged") {
-		return ok(current);
+		return errorResult.ok(current);
 	}
 	if (current.status !== "awaiting_acknowledgement") {
-		return fail("CONFLICT", "Reliability work is not awaiting acknowledgement");
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "The request conflicts with current state",
+		});
 	}
 	if (current.version !== input.expectedVersion) {
-		return fail("CONFLICT", "Reliability acknowledgement version is stale");
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "The request conflicts with current state",
+		});
 	}
 	const now = ports.clock.now();
 	if (
 		current.acknowledgementDeadlineAt !== null &&
 		current.acknowledgementDeadlineAt <= now
 	) {
-		return fail("CONFLICT", "Reliability acknowledgement deadline expired");
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "The request conflicts with current state",
+		});
 	}
 	const rejected = input.outcome === "rejected";
 	return ports.store.commitAttempt({
@@ -309,7 +325,9 @@ export async function replayDeadLetter(
 		return deadLetter;
 	}
 	if (!deadLetter.data) {
-		return fail("NOT_FOUND", "Reliability dead letter not found");
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "The requested resource was not found",
+		});
 	}
 	if (deadLetter.data.replayedByWorkItemId) {
 		const replay = await ports.store.getWorkItem({
@@ -317,8 +335,10 @@ export async function replayDeadLetter(
 			workItemId: deadLetter.data.replayedByWorkItemId,
 		});
 		return replay.ok && replay.data
-			? ok(replay.data)
-			: fail("CONFLICT", "Dead-letter replay linkage is invalid");
+			? errorResult.ok(replay.data)
+			: errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+				});
 	}
 	const replay = await ports.store.findByIdempotencyKey({
 		organizationId: input.organizationId,
@@ -330,8 +350,10 @@ export async function replayDeadLetter(
 	}
 	if (replay.data) {
 		return replay.data.requestFingerprint === input.requestFingerprint
-			? ok(replay.data)
-			: fail("CONFLICT", "Reliability idempotency conflict");
+			? errorResult.ok(replay.data)
+			: errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+				});
 	}
 	const now = ports.clock.now();
 	return ports.store.createDeadLetterReplay({

@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_NOT_FOUND,
@@ -186,13 +186,14 @@ export function getPosition(
 				return position;
 			}
 			if (position.data === null) {
-				return fail(
-					"NOT_FOUND",
-					"Position not found",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_NOT_FOUND,
+					),
+				});
 			}
-			return ok(position.data);
+			return errorResult.ok(position.data);
 		},
 	});
 }
@@ -215,13 +216,14 @@ export function getPositionAsOf(
 				return position;
 			}
 			if (position.data === null) {
-				return fail(
-					"NOT_FOUND",
-					"Position not found",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_NOT_FOUND,
+					),
+				});
 			}
-			return ok(position.data);
+			return errorResult.ok(position.data);
 		},
 	});
 }
@@ -244,13 +246,14 @@ export function getPositionOccupancyAsOf(
 				return occupancy;
 			}
 			if (occupancy.data === null) {
-				return fail(
-					"NOT_FOUND",
-					"Position not found",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_NOT_FOUND,
+					),
+				});
 			}
-			return ok(occupancy.data);
+			return errorResult.ok(occupancy.data);
 		},
 	});
 }

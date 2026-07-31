@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS,
@@ -9,7 +9,6 @@ import {
 	type DurableLegalCompanyCommandDependencies,
 	runDurableCompanyCommand,
 } from "../company/commands/durable-command";
-import { corporateAdministrationErrorDetails } from "../error-codes";
 import type { GovernanceStore } from "../governance/store";
 import type { GovernanceMembership } from "../governance/types";
 import type {
@@ -177,14 +176,10 @@ export async function issueMeetingNotice(
 	if (
 		!isNoticeTimely({ meeting: meeting.data, issuedAt: parsed.data.issuedAt })
 	) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Corporate Administration meeting notice is outside the required notice period.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_CHRONOLOGY_INVALID",
-				{ field: "issuedAt" },
-			),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage:
+				"Corporate Administration meeting notice is outside the required notice period.",
+		});
 	}
 	const source = await validateSource(
 		dependencies,
@@ -804,7 +799,7 @@ async function loadMeeting(
 	}
 	return meeting.data === null
 		? notFound("governanceMeeting")
-		: ok(meeting.data);
+		: errorResult.ok(meeting.data);
 }
 
 async function loadMembership(
@@ -823,7 +818,7 @@ async function loadMembership(
 	}
 	return membership.data === null
 		? notFound("governanceMembership")
-		: ok(membership.data);
+		: errorResult.ok(membership.data);
 }
 
 async function validateSource(
@@ -842,16 +837,11 @@ async function validateSource(
 		return invalidReference("sourceDocumentId");
 	}
 	if (!result.data.active) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Corporate Administration source document is inactive.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_REFERENCE_INACTIVE",
-				{ field: "sourceDocumentId" },
-			),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "Corporate Administration source document is inactive.",
+		});
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 function authorize(
@@ -865,36 +855,25 @@ function authorize(
 	});
 }
 
-function notFound(entityType: string): Result<never> {
-	return fail(
-		"NOT_FOUND",
-		"Corporate Administration record was not found.",
-		corporateAdministrationErrorDetails("CORPORATE_ADMINISTRATION_NOT_FOUND", {
-			entityType,
-		}),
-	);
+function notFound(_entityType: string): Result<never> {
+	return errorResult.fail("NOT_FOUND", {
+		publicMessage: "Corporate Administration record was not found.",
+	});
 }
 
-function invalidReference(field: string): Result<never> {
-	return fail(
-		"VALIDATION_ERROR",
-		"Corporate Administration reference is invalid.",
-		corporateAdministrationErrorDetails(
-			"CORPORATE_ADMINISTRATION_REFERENCE_INVALID",
-			{ field },
-		),
-	);
+function invalidReference(_field: string): Result<never> {
+	return errorResult.fail("VALIDATION_ERROR", {
+		publicMessage: "Corporate Administration reference is invalid.",
+	});
 }
 
-function stale(expectedVersion: number, actualVersion: number): Result<never> {
-	return fail(
-		"CONFLICT",
-		"Corporate Administration record version is stale.",
-		corporateAdministrationErrorDetails(
-			"CORPORATE_ADMINISTRATION_STALE_VERSION",
-			{ expectedVersion, actualVersion },
-		),
-	);
+function stale(
+	_expectedVersion: number,
+	_actualVersion: number,
+): Result<never> {
+	return errorResult.fail("CONFLICT", {
+		publicMessage: "Corporate Administration record version is stale.",
+	});
 }
 
 function meetingPayload(

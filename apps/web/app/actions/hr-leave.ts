@@ -1,5 +1,6 @@
 "use server";
 
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import {
 	type ApprovedLeaveHandoff,
 	amendLeaveRequest,
@@ -60,7 +61,6 @@ import {
 	updateLeavePolicyInputSchema,
 	withdrawLeaveRequestInputSchema,
 } from "@afenda/human-resources/schemas";
-
 import {
 	type HrActionInput,
 	hrActionSchema,
@@ -70,10 +70,6 @@ import {
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runHrLeaveOperatorPermissionAction as runOperatorPermissionAction } from "@/app/actions/run-hr-operator-permission-action";
 import { createHumanResourcesCommandOptions } from "@/lib/erp/human-resources-command-options";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 const createDraftLeaveRequestActionSchema = hrActionSchema(
@@ -140,11 +136,9 @@ export async function createDraftLeaveRequestAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(createDraftLeaveRequestActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid leave request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid leave request.",
+				});
 			}
 			const result = await createDraftLeaveRequest(
 				withSessionContext(session, correlationId, parsed.data),
@@ -169,11 +163,9 @@ export async function submitLeaveRequestAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(submitLeaveRequestActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid leave submission.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid leave submission.",
+				});
 			}
 			const result = await submitLeaveRequest(
 				withSessionContext(session, correlationId, parsed.data),
@@ -198,11 +190,9 @@ export async function amendLeaveRequestAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(amendLeaveRequestActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid leave amendment.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid leave amendment.",
+				});
 			}
 			const result = await amendLeaveRequest(
 				withSessionContext(session, correlationId, parsed.data),
@@ -227,11 +217,9 @@ export async function withdrawLeaveRequestAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(withdrawLeaveRequestActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid leave withdrawal.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid leave withdrawal.",
+				});
 			}
 			const result = await withdrawLeaveRequest(
 				withSessionContext(session, correlationId, parsed.data),
@@ -256,11 +244,9 @@ export async function cancelApprovedLeaveRequestAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(cancelApprovedLeaveRequestActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid leave cancellation.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid leave cancellation.",
+				});
 			}
 			const result = await cancelApprovedLeaveRequest(
 				withSessionContext(session, correlationId, parsed.data),
@@ -285,11 +271,9 @@ export async function getLeaveBalanceAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(getLeaveBalanceActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid leave balance request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid leave balance request.",
+				});
 			}
 			const result = await getLeaveBalance(
 				withSessionContext(session, correlationId, parsed.data),
@@ -316,11 +300,9 @@ export async function reconcileLeaveBalanceAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(getLeaveBalanceActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid leave balance reconciliation request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid leave balance reconciliation request.",
+				});
 			}
 			const result = await reconcileLeaveBalance(
 				withSessionContext(session, correlationId, parsed.data),
@@ -345,11 +327,9 @@ export async function getLeaveEntitlementAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(getLeaveEntitlementActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid leave entitlement request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid leave entitlement request.",
+				});
 			}
 			const result = await getLeaveEntitlement(
 				withSessionContext(session, correlationId, parsed.data),
@@ -374,11 +354,9 @@ export async function listLeaveEntitlementsAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(listLeaveEntitlementsActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter valid leave entitlement filters.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter valid leave entitlement filters.",
+				});
 			}
 			const result = await listLeaveEntitlements(
 				withSessionContext(session, correlationId, parsed.data),
@@ -403,11 +381,9 @@ export async function approveLeaveRequestAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(approveLeaveRequestActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid leave approval.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid leave approval.",
+				});
 			}
 			const result = await approveLeaveRequest(
 				withSessionContext(session, correlationId, parsed.data),
@@ -432,11 +408,9 @@ export async function rejectLeaveRequestAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(rejectLeaveRequestActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid leave rejection.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid leave rejection.",
+				});
 			}
 			const result = await rejectLeaveRequest(
 				withSessionContext(session, correlationId, parsed.data),
@@ -461,11 +435,9 @@ export async function returnLeaveRequestAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(returnLeaveRequestActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid leave return.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid leave return.",
+				});
 			}
 			const result = await returnLeaveRequest(
 				withSessionContext(session, correlationId, parsed.data),
@@ -493,11 +465,9 @@ export async function listPendingApprovalLeaveRequestsAction(
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter valid pending approval filters.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter valid pending approval filters.",
+				});
 			}
 			const result = await listPendingApprovalLeaveRequests(
 				withSessionContext(session, correlationId, parsed.data),
@@ -525,11 +495,9 @@ export async function listTeamCalendarLeaveRequestsAction(
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid team calendar range.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid team calendar range.",
+				});
 			}
 			const result = await listTeamCalendarLeaveRequests(
 				withSessionContext(session, correlationId, parsed.data),
@@ -559,11 +527,9 @@ export async function createLeavePolicyAction(
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid leave policy.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid leave policy.",
+				});
 			}
 			const result = await createLeavePolicy(
 				parsed.data,
@@ -593,11 +559,9 @@ export async function updateLeavePolicyAction(
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid leave policy update.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid leave policy update.",
+				});
 			}
 			const result = await updateLeavePolicy(
 				parsed.data,
@@ -622,11 +586,9 @@ export async function publishLeavePolicyAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(publishLeavePolicyActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid leave policy publish request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid leave policy publish request.",
+				});
 			}
 			const result = await publishLeavePolicy(
 				withSessionContext(session, correlationId, parsed.data),
@@ -656,11 +618,9 @@ export async function supersedeLeavePolicyAction(
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid leave policy supersession.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid leave policy supersession.",
+				});
 			}
 			const result = await supersedeLeavePolicy(
 				parsed.data,
@@ -685,11 +645,9 @@ export async function archiveLeavePolicyAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(archiveLeavePolicyActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid leave policy archive request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid leave policy archive request.",
+				});
 			}
 			const result = await archiveLeavePolicy(
 				withSessionContext(session, correlationId, parsed.data),
@@ -714,11 +672,9 @@ export async function getLeavePolicyAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(getLeavePolicyActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid leave policy request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid leave policy request.",
+				});
 			}
 			const result = await getLeavePolicy(
 				withSessionContext(session, correlationId, parsed.data),
@@ -743,11 +699,9 @@ export async function listLeavePoliciesAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(listLeavePoliciesActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter valid leave policy filters.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter valid leave policy filters.",
+				});
 			}
 			const result = await listLeavePolicies(
 				withSessionContext(session, correlationId, parsed.data),
@@ -775,11 +729,9 @@ export async function resolveApplicableLeavePolicyAction(
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid leave policy resolution request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid leave policy resolution request.",
+				});
 			}
 			const result = await resolveApplicableLeavePolicy(
 				withSessionContext(session, correlationId, parsed.data),
@@ -804,11 +756,9 @@ export async function getApprovedLeaveHandoffAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(getApprovedLeaveHandoffActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid leave handoff request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid leave handoff request.",
+				});
 			}
 			const result = await getApprovedLeaveHandoff(
 				withSessionContext(session, correlationId, parsed.data),

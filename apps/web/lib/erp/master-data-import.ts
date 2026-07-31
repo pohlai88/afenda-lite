@@ -1,5 +1,6 @@
 // biome-ignore-all lint/style/noNestedTernary: Exhaustive status and tri-state view mappings remain explicit at their use sites.
 import type { Session } from "@afenda/auth";
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { createCorrelationId } from "@afenda/http";
 import {
 	IMPORT_MODES,
@@ -16,8 +17,7 @@ import { z } from "zod";
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { forbidUnlessPermission } from "@/app/actions/permission-gate";
 import { createMasterDataAuthorizationPort } from "@/lib/erp/master-data-authorization-port";
-import type { ActionResult } from "@/modules/platform/schemas/action-result";
-import { actionFail } from "@/modules/platform/schemas/action-result";
+
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 const partyRowSchema = z.object({
@@ -90,11 +90,10 @@ export async function runApplyMasterDataImport(input: {
 }): Promise<ActionResult<ImportReconciliationReport>> {
 	const parsed = parseSchema(applyMasterDataImportSchema, input.raw);
 	if (!parsed.success) {
-		return actionFail(
-			"VALIDATION_ERROR",
-			"Provide a valid master-data import batch (max 100 rows) with idempotencyKey.",
-			parsed.details,
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage:
+				"Provide a valid master-data import batch (max 100 rows) with idempotencyKey.",
+		});
 	}
 
 	const permissionDenied = await forbidUnlessPermission(

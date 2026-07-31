@@ -1,5 +1,5 @@
 import type { NeonHttpSql } from "@afenda/db";
-import { ok } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 import { describe, expect, it, vi } from "vitest";
 import {
 	createPendingDomainEventAppender,
@@ -30,7 +30,9 @@ describe("pending domain event appender", () => {
 			executeTransaction,
 		});
 
-		await expect(appender.append([])).resolves.toEqual(ok(undefined));
+		await expect(appender.append([])).resolves.toEqual(
+			errorResult.ok(undefined),
+		);
 		expect(executeTransaction).not.toHaveBeenCalled();
 	});
 
@@ -64,7 +66,9 @@ describe("pending domain event appender", () => {
 			}),
 		];
 
-		await expect(appender.append(events)).resolves.toEqual(ok(undefined));
+		await expect(appender.append(events)).resolves.toEqual(
+			errorResult.ok(undefined),
+		);
 
 		expect(executeTransaction).toHaveBeenCalledTimes(1);
 		expect(builtQueries).toHaveLength(2);

@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
 	humanResourcesErrorDetails,
@@ -24,11 +24,12 @@ export function compareMoneyOrder(
 	const maxVal = parseExactDecimal(max);
 
 	if (minVal === null || midVal === null || maxVal === null) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Invalid money amounts.",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
 
 	if (
@@ -36,25 +37,27 @@ export function compareMoneyOrder(
 		compareExactDecimals(midVal, EXACT_DECIMAL_ZERO) < 0 ||
 		compareExactDecimals(maxVal, EXACT_DECIMAL_ZERO) < 0
 	) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Money amounts must be non-negative.",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
 
 	if (
 		compareExactDecimals(minVal, midVal) > 0 ||
 		compareExactDecimals(midVal, maxVal) > 0
 	) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Salary band amounts must satisfy min <= mid <= max.",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
 
-	return ok(true);
+	return errorResult.ok(true);
 }
 
 /**

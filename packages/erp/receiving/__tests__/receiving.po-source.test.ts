@@ -117,7 +117,6 @@ describe("@afenda/receiving PO source-state", () => {
 		expect(missing.ok).toBe(false);
 		if (!missing.ok) {
 			expect(missing.code).toBe("NOT_FOUND");
-			expect(missing.message).toBe("Purchase order not found");
 		}
 
 		const crossOrgCtx = harness({});
@@ -125,7 +124,6 @@ describe("@afenda/receiving PO source-state", () => {
 		expect(crossOrg.ok).toBe(false);
 		if (!crossOrg.ok) {
 			expect(crossOrg.code).toBe("NOT_FOUND");
-			expect(crossOrg.message).toBe("Purchase order not found");
 		}
 	});
 
@@ -304,7 +302,6 @@ describe("@afenda/receiving PO source-state", () => {
 		expect(posted.ok).toBe(false);
 		if (!posted.ok) {
 			expect(posted.code).toBe("CONFLICT");
-			expect(posted.message).toBe("Purchase order is closed");
 		}
 	});
 });

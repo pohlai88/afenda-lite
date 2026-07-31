@@ -15,8 +15,12 @@ import {
 	supplierInvoiceLine,
 	threeWayMatchResult,
 } from "@afenda/db";
-import { normalizePostgresUnknown } from "@afenda/errors/adapters/postgres";
-import { fail, failFromAppError, ok, type Result } from "@afenda/errors/result";
+import {
+	errorIngress,
+	errorProject,
+	errorResult,
+	type Result,
+} from "@afenda/errors";
 
 import type {
 	PayablesStore,
@@ -29,8 +33,10 @@ import type {
 	ThreeWayMatchResult,
 } from "./model";
 
-function failFromPersistence(error: unknown, fallbackMessage: string) {
-	return failFromAppError(normalizePostgresUnknown(error, fallbackMessage));
+function failFromPersistence(error: unknown, _fallbackMessage: string) {
+	return errorProject.result(
+		errorIngress.postgres(error, { operation: "persistence.postgres" }),
+	);
 }
 
 interface ReversedAllocationSqlRow {
@@ -191,15 +197,15 @@ async function reload(
 	store: DrizzlePayablesStore,
 	organizationId: string,
 	id: string,
-	message: string,
+	_message: string,
 ): Promise<Result<SupplierInvoice>> {
 	const result = await store.getById(organizationId, id);
 	if (!result.ok) {
 		return result;
 	}
 	return result.data === null
-		? fail("INTERNAL_ERROR", message)
-		: ok(result.data);
+		? errorResult.fail("INTERNAL_ERROR")
+		: errorResult.ok(result.data);
 }
 
 function eventPayload(record: {
@@ -312,7 +318,9 @@ export class DrizzlePayablesStore implements PayablesStore {
 				`,
 			]);
 			if (rows[0] === undefined) {
-				return fail("CONFLICT", "Supplier invoice line conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Supplier invoice line conflict",
+				});
 			}
 			const [line] = await db
 				.select()
@@ -325,8 +333,8 @@ export class DrizzlePayablesStore implements PayablesStore {
 				)
 				.limit(1);
 			return line === undefined
-				? fail("INTERNAL_ERROR", "Created supplier invoice line missing")
-				: ok(mapLine(line));
+				? errorResult.fail("INTERNAL_ERROR")
+				: errorResult.ok(mapLine(line));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to add supplier invoice line");
 		}
@@ -398,7 +406,9 @@ export class DrizzlePayablesStore implements PayablesStore {
 				`,
 			]);
 			if (rows[0] === undefined) {
-				return fail("CONFLICT", "Supplier invoice match conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Supplier invoice match conflict",
+				});
 			}
 			return reload(
 				this,
@@ -472,7 +482,9 @@ export class DrizzlePayablesStore implements PayablesStore {
 				`,
 			]);
 			if (rows[0] === undefined) {
-				return fail("CONFLICT", "Supplier invoice post conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Supplier invoice post conflict",
+				});
 			}
 			return reload(
 				this,
@@ -516,9 +528,9 @@ export class DrizzlePayablesStore implements PayablesStore {
 				)
 				.limit(1);
 			if (credit === undefined) {
-				return fail("INTERNAL_ERROR", "Created supplier credit note missing");
+				return errorResult.fail("INTERNAL_ERROR");
 			}
-			return ok({
+			return errorResult.ok({
 				cancelledAt: null,
 				cancelledBy: null,
 				code: credit.code,
@@ -585,8 +597,10 @@ export class DrizzlePayablesStore implements PayablesStore {
 			]);
 			const [row] = rows;
 			return row === undefined
-				? fail("CONFLICT", "Supplier credit note line conflict")
-				: ok({
+				? errorResult.fail("CONFLICT", {
+						publicMessage: "Supplier credit note line conflict",
+					})
+				: errorResult.ok({
 						createdAt: row.created_at,
 						createdBy: record.actorUserId,
 						description: record.description,
@@ -636,7 +650,9 @@ export class DrizzlePayablesStore implements PayablesStore {
 				`,
 			]);
 			if (rows[0] === undefined) {
-				return fail("CONFLICT", "Supplier credit note post conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Supplier credit note post conflict",
+				});
 			}
 			const [credit] = await db
 				.select()
@@ -649,7 +665,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 				)
 				.limit(1);
 			if (credit === undefined) {
-				return fail("INTERNAL_ERROR", "Posted supplier credit note missing");
+				return errorResult.fail("INTERNAL_ERROR");
 			}
 			const lines = await db
 				.select()
@@ -681,7 +697,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 			if (!emitted.ok) {
 				return emitted;
 			}
-			return ok({
+			return errorResult.ok({
 				cancelledAt: null,
 				cancelledBy: null,
 				code: credit.code,
@@ -785,7 +801,9 @@ export class DrizzlePayablesStore implements PayablesStore {
 				`,
 			]);
 			if (rows[0] === undefined) {
-				return fail("CONFLICT", "Supplier credit note issue conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Supplier credit note issue conflict",
+				});
 			}
 			const [credit] = await db
 				.select()
@@ -798,9 +816,9 @@ export class DrizzlePayablesStore implements PayablesStore {
 				)
 				.limit(1);
 			if (credit === undefined) {
-				return fail("INTERNAL_ERROR", "Issued supplier credit note missing");
+				return errorResult.fail("INTERNAL_ERROR");
 			}
-			return ok({
+			return errorResult.ok({
 				cancelledAt: null,
 				cancelledBy: null,
 				code: credit.code,
@@ -849,7 +867,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 				)
 				.limit(1);
 			if (replay !== undefined) {
-				return ok(mapAllocation(replay));
+				return errorResult.ok(mapAllocation(replay));
 			}
 			const [rows] = await runNeonHttpTransaction((sql) => [
 				sql`
@@ -922,9 +940,11 @@ export class DrizzlePayablesStore implements PayablesStore {
 			]);
 			const [row] = rows;
 			if (row === undefined) {
-				return fail("CONFLICT", "Supplier allocation conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Supplier allocation conflict",
+				});
 			}
-			return ok({
+			return errorResult.ok({
 				amount: row.amount,
 				applyIdempotencyKey: record.idempotencyKey,
 				createdAt: row.created_at,
@@ -961,7 +981,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 				)
 				.limit(1);
 			if (replay !== undefined) {
-				return ok(mapAllocation(replay));
+				return errorResult.ok(mapAllocation(replay));
 			}
 			const [rows] = await runNeonHttpTransaction((sql) => [
 				sql`
@@ -1005,7 +1025,9 @@ export class DrizzlePayablesStore implements PayablesStore {
 				`,
 			]);
 			if (rows[0] === undefined) {
-				return fail("CONFLICT", "Supplier credit application conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Supplier credit application conflict",
+				});
 			}
 			const [allocation] = await db
 				.select()
@@ -1018,8 +1040,8 @@ export class DrizzlePayablesStore implements PayablesStore {
 				)
 				.limit(1);
 			return allocation === undefined
-				? fail("INTERNAL_ERROR", "Created supplier credit allocation missing")
-				: ok(mapAllocation(allocation));
+				? errorResult.fail("INTERNAL_ERROR")
+				: errorResult.ok(mapAllocation(allocation));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to apply supplier credit");
 		}
@@ -1086,7 +1108,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 					FROM deleted
 				`,
 			]);
-			return ok(
+			return errorResult.ok(
 				rows.map((row: ReversedAllocationSqlRow) => ({
 					amount: row.amount,
 					applyIdempotencyKey: null,
@@ -1146,10 +1168,10 @@ export class DrizzlePayablesStore implements PayablesStore {
 				`,
 			]);
 			if (rows[0] === undefined) {
-				return fail(
-					"CONFLICT",
-					"Supplier invoice cancel conflict — only draft or matched invoices may be cancelled",
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage:
+						"Supplier invoice cancel conflict — only draft or matched invoices may be cancelled",
+				});
 			}
 			return reload(
 				this,
@@ -1178,7 +1200,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 				)
 				.limit(1);
 			if (header === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const [lines, matches, allocations] = await Promise.all([
 				db
@@ -1216,7 +1238,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 				(total, row) => total + Number(row.amount),
 				0,
 			);
-			return ok(
+			return errorResult.ok(
 				mapInvoice(
 					header,
 					lines.map(mapLine),
@@ -1247,7 +1269,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 				.limit(filter.pageSize)
 				.offset((filter.page - 1) * filter.pageSize);
 			if (headers.length === 0) {
-				return ok([]);
+				return errorResult.ok([]);
 			}
 			const ids = headers.map((row) => row.id);
 			const [lines, matches, allocations] = await Promise.all([
@@ -1298,7 +1320,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 						Number(row.amount),
 				);
 			}
-			return ok(
+			return errorResult.ok(
 				headers.map((row) =>
 					mapInvoice(
 						row,
@@ -1348,7 +1370,7 @@ export class DrizzlePayablesStore implements PayablesStore {
 					ORDER BY balance.currency_code ASC
 				`,
 			]);
-			return ok(
+			return errorResult.ok(
 				rows.map((row: SupplierBalanceSqlRow) => ({
 					asOf: new Date(),
 					creditedAmount: row.credited_amount,

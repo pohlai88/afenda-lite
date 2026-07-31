@@ -1,4 +1,4 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { z } from "zod";
 
 import {
@@ -134,7 +134,7 @@ export async function runAuthorizedTalentLoadedReadQuery<
 		return loaded;
 	}
 	if (loaded.data === null) {
-		return ok(null);
+		return errorResult.ok(null);
 	}
 
 	const loadedRow = loaded.data;

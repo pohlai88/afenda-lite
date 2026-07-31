@@ -1,7 +1,7 @@
 // biome-ignore-all lint/suspicious/useAwait: The deterministic memory adapter implements asynchronous payroll assignment and input ports.
 import { randomUUID } from "node:crypto";
 
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	parsePayrollEmployeeAssignmentId,
@@ -85,9 +85,9 @@ export function createMemoryAssignmentsMethods(
 				idempotencyMapKey(input.organizationId, input.idempotencyKey),
 			);
 			if (record === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
-			return ok({
+			return errorResult.ok({
 				assignment: cloneAssignment(record.entity),
 				createRequestFingerprint: record.createRequestFingerprint,
 			});
@@ -115,7 +115,7 @@ export function createMemoryAssignmentsMethods(
 				return resolved;
 			}
 			if (resolved.data !== "create") {
-				return ok(cloneAssignment(resolved.data));
+				return errorResult.ok(cloneAssignment(resolved.data));
 			}
 
 			const assignmentId = parsePayrollEmployeeAssignmentId(randomUUID());
@@ -160,7 +160,7 @@ export function createMemoryAssignmentsMethods(
 				return audit;
 			}
 
-			return ok(cloneAssignment(entity));
+			return errorResult.ok(cloneAssignment(entity));
 		},
 
 		async getEmployeeAssignment(input) {
@@ -169,9 +169,9 @@ export function createMemoryAssignmentsMethods(
 				entity === undefined ||
 				entity.organizationId !== input.organizationId
 			) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
-			return ok(cloneAssignment(entity));
+			return errorResult.ok(cloneAssignment(entity));
 		},
 
 		async findRecurringEarningByIdempotencyKey(input) {
@@ -179,9 +179,9 @@ export function createMemoryAssignmentsMethods(
 				idempotencyMapKey(input.organizationId, input.idempotencyKey),
 			);
 			if (record === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
-			return ok({
+			return errorResult.ok({
 				recurringEarning: cloneRecurringEarning(record.entity),
 				createRequestFingerprint: record.createRequestFingerprint,
 			});
@@ -220,7 +220,7 @@ export function createMemoryAssignmentsMethods(
 				return resolved;
 			}
 			if (resolved.data !== "create") {
-				return ok(cloneRecurringEarning(resolved.data));
+				return errorResult.ok(cloneRecurringEarning(resolved.data));
 			}
 
 			const recurringEarningId = parsePayrollRecurringEarningId(randomUUID());
@@ -268,7 +268,7 @@ export function createMemoryAssignmentsMethods(
 				return audit;
 			}
 
-			return ok(cloneRecurringEarning(entity));
+			return errorResult.ok(cloneRecurringEarning(entity));
 		},
 
 		async getRecurringEarning(input) {
@@ -277,9 +277,9 @@ export function createMemoryAssignmentsMethods(
 				entity === undefined ||
 				entity.organizationId !== input.organizationId
 			) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
-			return ok(cloneRecurringEarning(entity));
+			return errorResult.ok(cloneRecurringEarning(entity));
 		},
 
 		async findRecurringDeductionByIdempotencyKey(input) {
@@ -287,9 +287,9 @@ export function createMemoryAssignmentsMethods(
 				idempotencyMapKey(input.organizationId, input.idempotencyKey),
 			);
 			if (record === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
-			return ok({
+			return errorResult.ok({
 				recurringDeduction: cloneRecurringDeduction(record.entity),
 				createRequestFingerprint: record.createRequestFingerprint,
 			});
@@ -328,7 +328,7 @@ export function createMemoryAssignmentsMethods(
 				return resolved;
 			}
 			if (resolved.data !== "create") {
-				return ok(cloneRecurringDeduction(resolved.data));
+				return errorResult.ok(cloneRecurringDeduction(resolved.data));
 			}
 
 			const recurringDeductionId = parsePayrollRecurringDeductionId(
@@ -378,7 +378,7 @@ export function createMemoryAssignmentsMethods(
 				return audit;
 			}
 
-			return ok(cloneRecurringDeduction(entity));
+			return errorResult.ok(cloneRecurringDeduction(entity));
 		},
 
 		async getRecurringDeduction(input) {
@@ -387,9 +387,9 @@ export function createMemoryAssignmentsMethods(
 				entity === undefined ||
 				entity.organizationId !== input.organizationId
 			) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
-			return ok(cloneRecurringDeduction(entity));
+			return errorResult.ok(cloneRecurringDeduction(entity));
 		},
 
 		async listActiveAssignmentsForPayGroup(input) {
@@ -411,7 +411,7 @@ export function createMemoryAssignmentsMethods(
 					);
 				},
 			);
-			return ok(assignments.map(cloneAssignment));
+			return errorResult.ok(assignments.map(cloneAssignment));
 		},
 
 		async listRecurringEarningsForAssignment(input) {
@@ -433,7 +433,7 @@ export function createMemoryAssignmentsMethods(
 					input.effectiveDate,
 				);
 			});
-			return ok(recurringEarnings.map(cloneRecurringEarning));
+			return errorResult.ok(recurringEarnings.map(cloneRecurringEarning));
 		},
 
 		async listRecurringDeductionsForAssignment(input) {
@@ -455,7 +455,7 @@ export function createMemoryAssignmentsMethods(
 					input.effectiveDate,
 				);
 			});
-			return ok(recurringDeductions.map(cloneRecurringDeduction));
+			return errorResult.ok(recurringDeductions.map(cloneRecurringDeduction));
 		},
 	};
 }
@@ -468,9 +468,9 @@ export function createMemoryInputsMethods(
 			const key = `${input.organizationId}:${input.sourceType}:${input.sourceId}`;
 			const record = state.variableInputBySource.get(key);
 			if (record === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
-			return ok({
+			return errorResult.ok({
 				variableInput: cloneVariableInput(record.variableInput),
 				sourceRequestFingerprint: record.sourceRequestFingerprint,
 				createRequestFingerprint: record.createRequestFingerprint,
@@ -482,9 +482,9 @@ export function createMemoryInputsMethods(
 				idempotencyMapKey(input.organizationId, input.idempotencyKey),
 			);
 			if (record === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
-			return ok({
+			return errorResult.ok({
 				variableInput: cloneVariableInput(record.variableInput),
 				sourceRequestFingerprint: record.sourceRequestFingerprint,
 				createRequestFingerprint: record.createRequestFingerprint,
@@ -516,7 +516,7 @@ export function createMemoryInputsMethods(
 				return sourceReplay;
 			}
 			if (sourceReplay.data !== "create") {
-				return ok(cloneVariableInput(sourceReplay.data));
+				return errorResult.ok(cloneVariableInput(sourceReplay.data));
 			}
 
 			const byIdempotency = await this.findVariableInputByIdempotencyKey({
@@ -541,7 +541,7 @@ export function createMemoryInputsMethods(
 				return idempotencyReplay;
 			}
 			if (idempotencyReplay.data !== "create") {
-				return ok(cloneVariableInput(idempotencyReplay.data));
+				return errorResult.ok(cloneVariableInput(idempotencyReplay.data));
 			}
 
 			const variableInputId = parsePayrollVariableInputId(randomUUID());
@@ -603,7 +603,7 @@ export function createMemoryInputsMethods(
 				return audit;
 			}
 
-			return ok(cloneVariableInput(entity));
+			return errorResult.ok(cloneVariableInput(entity));
 		},
 
 		async getVariableInput(input) {
@@ -612,9 +612,9 @@ export function createMemoryInputsMethods(
 				entity === undefined ||
 				entity.organizationId !== input.organizationId
 			) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
-			return ok(cloneVariableInput(entity));
+			return errorResult.ok(cloneVariableInput(entity));
 		},
 
 		async listVariableInputsForPeriod(input) {
@@ -632,7 +632,7 @@ export function createMemoryInputsMethods(
 					return true;
 				},
 			);
-			return ok(variableInputs.map(cloneVariableInput));
+			return errorResult.ok(variableInputs.map(cloneVariableInput));
 		},
 	};
 }

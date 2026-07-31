@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	HUMAN_RESOURCES_HEADCOUNT_PLAN_APPROVED_EVENT,
 	HUMAN_RESOURCES_HEADCOUNT_RESERVATION_CONSUMED_EVENT,
@@ -266,7 +266,7 @@ async function transitionHeadcountReservationStatus(
 		return outbox;
 	}
 
-	return ok({ ...updated });
+	return errorResult.ok({ ...updated });
 }
 
 export function createMemoryWorkforcePlanningMethods(
@@ -282,7 +282,9 @@ export function createMemoryWorkforcePlanningMethods(
 				state.headcountPlanIdempotency.get(
 					idempotencyMapKey(input.organizationId, input.idempotencyKey),
 				) ?? null;
-			return await ok(record ? { ...record, plan: { ...record.plan } } : null);
+			return await errorResult.ok(
+				record ? { ...record, plan: { ...record.plan } } : null,
+			);
 		},
 
 		async getHeadcountPlanById(input: {
@@ -291,9 +293,9 @@ export function createMemoryWorkforcePlanningMethods(
 		}): Promise<Result<HeadcountPlan | null>> {
 			const plan = state.headcountPlans.get(input.planId);
 			if (!plan || plan.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...plan });
+			return await errorResult.ok({ ...plan });
 		},
 
 		async findApprovedHeadcountPlanForScope(input: {
@@ -311,7 +313,7 @@ export function createMemoryWorkforcePlanningMethods(
 						row.periodEnd === input.periodEnd &&
 						row.status === "approved",
 				) ?? null;
-			return await ok(plan ? { ...plan } : null);
+			return await errorResult.ok(plan ? { ...plan } : null);
 		},
 
 		async createHeadcountPlan(
@@ -390,7 +392,7 @@ export function createMemoryWorkforcePlanningMethods(
 				return audit;
 			}
 
-			return ok({ ...plan });
+			return errorResult.ok({ ...plan });
 		},
 
 		async updateHeadcountPlan(
@@ -459,7 +461,7 @@ export function createMemoryWorkforcePlanningMethods(
 				return audit;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
@@ -586,7 +588,7 @@ export function createMemoryWorkforcePlanningMethods(
 				}
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async supersedeHeadcountPlan(
@@ -702,7 +704,7 @@ export function createMemoryWorkforcePlanningMethods(
 				return audit;
 			}
 
-			return ok({ ...draft });
+			return errorResult.ok({ ...draft });
 		},
 
 		async listHeadcountPlans(input: {
@@ -726,7 +728,7 @@ export function createMemoryWorkforcePlanningMethods(
 			plans.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 			const totalCount = plans.length;
 			const start = (input.page - 1) * input.pageSize;
-			return await ok({
+			return await errorResult.ok({
 				plans: plans.slice(start, start + input.pageSize).map((row) => ({
 					...row,
 				})),
@@ -742,16 +744,16 @@ export function createMemoryWorkforcePlanningMethods(
 		}): Promise<Result<HeadcountPlanLine | null>> {
 			const line = state.headcountPlanLines.get(input.planLineId);
 			if (!line || line.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...line });
+			return await errorResult.ok({ ...line });
 		},
 
 		async listHeadcountPlanLinesByPlanId(input: {
 			organizationId: string;
 			planId: HumanResourcesHeadcountPlanId;
 		}): Promise<Result<HeadcountPlanLine[]>> {
-			return await ok(
+			return await errorResult.ok(
 				linesForPlan(state, input.organizationId, input.planId).map((row) => ({
 					...row,
 				})),
@@ -816,7 +818,7 @@ export function createMemoryWorkforcePlanningMethods(
 				return audit;
 			}
 
-			return ok({ ...line });
+			return errorResult.ok({ ...line });
 		},
 
 		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
@@ -909,7 +911,7 @@ export function createMemoryWorkforcePlanningMethods(
 				return audit;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async removeHeadcountPlanLine(
@@ -959,7 +961,7 @@ export function createMemoryWorkforcePlanningMethods(
 				return audit;
 			}
 
-			return ok(undefined);
+			return errorResult.ok(undefined);
 		},
 
 		async findHeadcountReservationByIdempotencyKey(input: {
@@ -970,7 +972,7 @@ export function createMemoryWorkforcePlanningMethods(
 				state.headcountReservationIdempotency.get(
 					idempotencyMapKey(input.organizationId, input.idempotencyKey),
 				) ?? null;
-			return await ok(
+			return await errorResult.ok(
 				record ? { ...record, reservation: { ...record.reservation } } : null,
 			);
 		},
@@ -981,9 +983,9 @@ export function createMemoryWorkforcePlanningMethods(
 		}): Promise<Result<HeadcountReservation | null>> {
 			const reservation = state.headcountReservations.get(input.reservationId);
 			if (!reservation || reservation.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...reservation });
+			return await errorResult.ok({ ...reservation });
 		},
 
 		async findActiveHeadcountReservationForRequisition(input: {
@@ -997,7 +999,7 @@ export function createMemoryWorkforcePlanningMethods(
 						row.requisitionId === input.requisitionId &&
 						row.status === "active",
 				) ?? null;
-			return await ok(reservation ? { ...reservation } : null);
+			return await errorResult.ok(reservation ? { ...reservation } : null);
 		},
 
 		async reserveHeadcount(
@@ -1102,7 +1104,7 @@ export function createMemoryWorkforcePlanningMethods(
 				return outbox;
 			}
 
-			return ok({ ...reservation });
+			return errorResult.ok({ ...reservation });
 		},
 
 		async releaseHeadcountReservation(
@@ -1180,7 +1182,7 @@ export function createMemoryWorkforcePlanningMethods(
 			if (sequentialOutcome1.kind === "return") {
 				return sequentialOutcome1.value;
 			}
-			return ok(undefined);
+			return errorResult.ok(undefined);
 		},
 
 		async consumeActiveHeadcountReservationForRequisition(
@@ -1199,7 +1201,7 @@ export function createMemoryWorkforcePlanningMethods(
 					row.status === "active",
 			);
 			if (!active) {
-				return ok(undefined);
+				return errorResult.ok(undefined);
 			}
 			const consumed = await transitionHeadcountReservationStatus(state, this, {
 				organizationId: input.organizationId,
@@ -1213,7 +1215,7 @@ export function createMemoryWorkforcePlanningMethods(
 			if (!consumed.ok) {
 				return consumed;
 			}
-			return ok(undefined);
+			return errorResult.ok(undefined);
 		},
 
 		async listHeadcountReservations(input: {
@@ -1241,7 +1243,7 @@ export function createMemoryWorkforcePlanningMethods(
 			);
 			const totalCount = reservations.length;
 			const start = (input.page - 1) * input.pageSize;
-			return await ok({
+			return await errorResult.ok({
 				reservations: reservations
 					.slice(start, start + input.pageSize)
 					.map((row) => ({ ...row })),
@@ -1255,7 +1257,7 @@ export function createMemoryWorkforcePlanningMethods(
 			organizationId: string;
 			planLineId: HumanResourcesHeadcountPlanLineId;
 		}): Promise<Result<HeadcountReservation[]>> {
-			return await ok(
+			return await errorResult.ok(
 				reservationsForLine(state, input.organizationId, input.planLineId).map(
 					(row) => ({ ...row }),
 				),
@@ -1268,7 +1270,7 @@ export function createMemoryWorkforcePlanningMethods(
 		}): Promise<Result<HeadcountAvailability | null>> {
 			const line = state.headcountPlanLines.get(input.planLineId);
 			if (!line || line.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
 			const reservations = reservationsForLine(
 				state,
@@ -1276,7 +1278,7 @@ export function createMemoryWorkforcePlanningMethods(
 				input.planLineId,
 			);
 			const lineAvailability = computeLineAvailability({ line, reservations });
-			return await ok({
+			return await errorResult.ok({
 				planId: line.planId,
 				planLineId: line.id,
 				lines: [lineAvailability],
@@ -1296,7 +1298,7 @@ export function createMemoryWorkforcePlanningMethods(
 				) ?? null;
 
 			if (!activeReservation) {
-				return await ok({
+				return await errorResult.ok({
 					organizationId: input.organizationId,
 					requisitionId: input.requisitionId,
 					approvedPlan: null,
@@ -1318,7 +1320,7 @@ export function createMemoryWorkforcePlanningMethods(
 					})
 				: null;
 
-			return await ok({
+			return await errorResult.ok({
 				organizationId: input.organizationId,
 				requisitionId: input.requisitionId,
 				approvedPlan: plan ? { ...plan } : null,
@@ -1361,7 +1363,11 @@ export function createMemoryWorkforcePlanningMethods(
 					actuals: actuals.data,
 				});
 			});
-			return ok({ planId: input.planId, asOf, lines: varianceLines });
+			return errorResult.ok({
+				planId: input.planId,
+				asOf,
+				lines: varianceLines,
+			});
 		},
 	};
 }

@@ -1,4 +1,4 @@
-import type { Result } from "@afenda/errors/result";
+import type { Result } from "@afenda/errors";
 import type { z } from "zod";
 import type { HumanResourcesCommandOptions } from "../command-options";
 import { createEmployeeCompensation } from "../compensation-benefits/employee-compensation";

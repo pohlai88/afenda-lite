@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import { z } from "zod";
 
 import {
@@ -57,24 +57,22 @@ export function assertEmploymentStatusTransition(
 	next: EmploymentStatus,
 ): Result<void> {
 	if (current === next) {
-		return fail(
-			"BAD_REQUEST",
-			`Employment is already in status '${next}'`,
-			humanResourcesErrorDetails(
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "The request is invalid",
+			internalContext: humanResourcesErrorDetails(
 				HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
 			),
-		);
+		});
 	}
 	if (!canTransitionEmploymentStatus(current, next)) {
-		return fail(
-			"BAD_REQUEST",
-			`Cannot transition employment from '${current}' to '${next}'`,
-			humanResourcesErrorDetails(
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "The request is invalid",
+			internalContext: humanResourcesErrorDetails(
 				HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
 			),
-		);
+		});
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 /**
@@ -85,13 +83,14 @@ export function assertValidDateRange(
 	endsOn: string | null | undefined,
 ): Result<void> {
 	if (endsOn !== null && endsOn !== undefined && endsOn < startsOn) {
-		return fail(
-			"BAD_REQUEST",
-			"End date must be on or after start date",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "The request is invalid",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertNoEmploymentOverlap(input: {
@@ -116,12 +115,13 @@ export function assertNoEmploymentOverlap(input: {
 				endsOnB: employment.endsOn,
 			})
 		) {
-			return fail(
-				"CONFLICT",
-				"Employment date range overlaps an existing employment for this employee",
-				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "The request conflicts with current state",
+				internalContext: humanResourcesErrorDetails(
+					HUMAN_RESOURCES_ERROR_CONFLICT,
+				),
+			});
 		}
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }

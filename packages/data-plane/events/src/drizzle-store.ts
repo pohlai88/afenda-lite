@@ -11,8 +11,12 @@ import {
 	platformDomainEvent,
 	sql,
 } from "@afenda/db";
-import { normalizePostgresUnknown } from "@afenda/errors/adapters/postgres";
-import { fail, failFromAppError, ok, type Result } from "@afenda/errors/result";
+import {
+	errorIngress,
+	errorProject,
+	errorResult,
+	type Result,
+} from "@afenda/errors";
 
 import { mapDomainEventRow } from "./map-row";
 import type { EventStore } from "./store";
@@ -34,18 +38,17 @@ function mapRows(
 	for (const row of rows) {
 		const mapped = mapDomainEventRow(row);
 		if (!mapped.ok) {
-			return fail(
-				"INTERNAL_ERROR",
-				`domain event row mapping failed: ${mapped.reason}`,
-			);
+			return errorResult.fail("INTERNAL_ERROR");
 		}
 		entries.push(mapped.data);
 	}
-	return ok(entries);
+	return errorResult.ok(entries);
 }
 
-function failFromPersistence(error: unknown, fallbackMessage: string) {
-	return failFromAppError(normalizePostgresUnknown(error, fallbackMessage));
+function failFromPersistence(error: unknown, _fallbackMessage: string) {
+	return errorProject.result(
+		errorIngress.postgres(error, { operation: "persistence.postgres" }),
+	);
 }
 
 function buildFilterWhere(options: DomainEventQueryOptions) {
@@ -129,18 +132,15 @@ export class DrizzleEventStore implements EventStore {
 			}
 
 			if (resolvedRow === undefined) {
-				return fail("INTERNAL_ERROR", "domain event append returned no row");
+				return errorResult.fail("INTERNAL_ERROR");
 			}
 
 			const mapped = mapDomainEventRow(resolvedRow);
 			if (!mapped.ok) {
-				return fail(
-					"INTERNAL_ERROR",
-					`domain event append returned unreadable row: ${mapped.reason}`,
-				);
+				return errorResult.fail("INTERNAL_ERROR");
 			}
 
-			return ok(mapped.data);
+			return errorResult.ok(mapped.data);
 		} catch (error) {
 			return failFromPersistence(error, "Failed to append domain event");
 		}
@@ -152,10 +152,7 @@ export class DrizzleEventStore implements EventStore {
 		try {
 			const where = buildFilterWhere(options);
 			if (where === undefined) {
-				return fail(
-					"INTERNAL_ERROR",
-					"domain event query where clause missing",
-				);
+				return errorResult.fail("INTERNAL_ERROR");
 			}
 
 			const offset = (options.page - 1) * options.pageSize;
@@ -177,10 +174,7 @@ export class DrizzleEventStore implements EventStore {
 		try {
 			const where = buildFilterWhere(options);
 			if (where === undefined) {
-				return fail(
-					"INTERNAL_ERROR",
-					"domain event count where clause missing",
-				);
+				return errorResult.fail("INTERNAL_ERROR");
 			}
 
 			const [row] = await db
@@ -188,7 +182,7 @@ export class DrizzleEventStore implements EventStore {
 				.from(platformDomainEvent)
 				.where(where);
 
-			return ok(Number(row?.value ?? 0));
+			return errorResult.ok(Number(row?.value ?? 0));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to count domain events");
 		}
@@ -204,10 +198,7 @@ export class DrizzleEventStore implements EventStore {
 			];
 			const where = and(...predicates);
 			if (where === undefined) {
-				return fail(
-					"INTERNAL_ERROR",
-					"domain event claim where clause missing",
-				);
+				return errorResult.fail("INTERNAL_ERROR");
 			}
 
 			const rows = await db
@@ -247,17 +238,14 @@ export class DrizzleEventStore implements EventStore {
 				.returning();
 
 			if (row === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 
 			const mapped = mapDomainEventRow(row);
 			if (!mapped.ok) {
-				return fail(
-					"INTERNAL_ERROR",
-					`domain event markProcessed returned unreadable row: ${mapped.reason}`,
-				);
+				return errorResult.fail("INTERNAL_ERROR");
 			}
-			return ok(mapped.data);
+			return errorResult.ok(mapped.data);
 		} catch (error) {
 			return failFromPersistence(
 				error,
@@ -286,17 +274,14 @@ export class DrizzleEventStore implements EventStore {
 				.returning();
 
 			if (row === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 
 			const mapped = mapDomainEventRow(row);
 			if (!mapped.ok) {
-				return fail(
-					"INTERNAL_ERROR",
-					`domain event markFailed returned unreadable row: ${mapped.reason}`,
-				);
+				return errorResult.fail("INTERNAL_ERROR");
 			}
-			return ok(mapped.data);
+			return errorResult.ok(mapped.data);
 		} catch (error) {
 			return failFromPersistence(error, "Failed to mark domain event failed");
 		}
@@ -323,17 +308,14 @@ export class DrizzleEventStore implements EventStore {
 				.returning();
 
 			if (row === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 
 			const mapped = mapDomainEventRow(row);
 			if (!mapped.ok) {
-				return fail(
-					"INTERNAL_ERROR",
-					`domain event requeue returned unreadable row: ${mapped.reason}`,
-				);
+				return errorResult.fail("INTERNAL_ERROR");
 			}
-			return ok(mapped.data);
+			return errorResult.ok(mapped.data);
 		} catch (error) {
 			return failFromPersistence(error, "Failed to requeue domain event");
 		}
@@ -349,10 +331,7 @@ export class DrizzleEventStore implements EventStore {
 				lt(platformDomainEvent.createdAt, options.olderThan),
 			);
 			if (where === undefined) {
-				return fail(
-					"INTERNAL_ERROR",
-					"domain event purge where clause missing",
-				);
+				return errorResult.fail("INTERNAL_ERROR");
 			}
 
 			const rows = await db
@@ -360,7 +339,7 @@ export class DrizzleEventStore implements EventStore {
 				.where(where)
 				.returning({ id: platformDomainEvent.id });
 
-			return ok(rows.length);
+			return errorResult.ok(rows.length);
 		} catch (error) {
 			return failFromPersistence(
 				error,

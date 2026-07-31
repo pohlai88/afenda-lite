@@ -1,5 +1,6 @@
 "use server";
 
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import {
 	createAssignment,
 	type EmployeeOrgContextAsOf,
@@ -19,7 +20,6 @@ import {
 	resolveEmployeeOrgContextAsOfInputSchema,
 	transferAssignmentInputSchema,
 } from "@afenda/human-resources/schemas";
-
 import {
 	hrActionSchema,
 	withHrSessionContext as withSessionContext,
@@ -27,10 +27,6 @@ import {
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runHrWorkforceOperatorPermissionAction as runOperatorPermissionAction } from "@/app/actions/run-hr-operator-permission-action";
 import { createHumanResourcesCommandOptions } from "@/lib/erp/human-resources-command-options";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 const createAssignmentActionSchema = hrActionSchema(
@@ -67,11 +63,9 @@ export async function createAssignmentAction(input: {
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(createAssignmentActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid assignment.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid assignment.",
+				});
 			}
 			const result = await createAssignment(
 				withSessionContext(session, correlationId, parsed.data),
@@ -99,11 +93,9 @@ export async function endAssignmentAction(input: {
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(endAssignmentActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid assignment end request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid assignment end request.",
+				});
 			}
 			const result = await endAssignment(
 				withSessionContext(session, correlationId, parsed.data),
@@ -138,11 +130,9 @@ export async function transferAssignmentAction(input: {
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(transferAssignmentActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid assignment transfer.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid assignment transfer.",
+				});
 			}
 			const result = await transferAssignment(
 				withSessionContext(session, correlationId, parsed.data),
@@ -168,11 +158,9 @@ export async function getAssignmentAction(input: {
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(getAssignmentActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid assignment request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid assignment request.",
+				});
 			}
 			const result = await getAssignment(
 				withSessionContext(session, correlationId, parsed.data),
@@ -199,11 +187,9 @@ export async function getAssignmentAsOfAction(input: {
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(getAssignmentAsOfActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid assignment as-of request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid assignment as-of request.",
+				});
 			}
 			const result = await getAssignmentAsOf(
 				withSessionContext(session, correlationId, parsed.data),
@@ -233,11 +219,9 @@ export async function resolveEmployeeOrgContextAsOfAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid employee org context request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid employee org context request.",
+				});
 			}
 			const result = await resolveEmployeeOrgContextAsOf(
 				withSessionContext(session, correlationId, parsed.data),

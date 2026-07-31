@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import { importAttendanceEventsInputSchema } from "../../schemas/time";
 import { namespacedImportSourceReference } from "./import-keys";
@@ -41,15 +41,17 @@ export function dryRunAttendanceImport(
 ): Result<AttendanceImportDryRunResult> {
 	const parsed = importAttendanceEventsInputSchema.safeParse(input);
 	if (!parsed.success) {
-		return fail("VALIDATION_ERROR", "Invalid attendance import dry-run input", {
-			fieldErrors: parsed.error.flatten().fieldErrors,
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+			internalContext: {
+				fieldErrors: parsed.error.flatten().fieldErrors,
+			},
 		});
 	}
 	if (parsed.data.events === undefined) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Attendance import dry-run requires explicit event rows",
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+		});
 	}
 
 	const seenReferences = new Set<string>();
@@ -105,7 +107,7 @@ export function dryRunAttendanceImport(
 		)
 		.digest("hex");
 
-	return ok({
+	return errorResult.ok({
 		mode: "dry_run",
 		organizationId: parsed.data.organizationId,
 		batchId: parsed.data.batchId,

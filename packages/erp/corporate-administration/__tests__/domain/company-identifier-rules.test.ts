@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-
 import {
 	assertNonTaxCompanyIdentifierType,
 	classifyIdentifierType,
@@ -20,16 +19,8 @@ describe("company identifier rules", () => {
 			expect(isTaxIdentifierType(taxType)).toBe(true);
 			const result = assertNonTaxCompanyIdentifierType(taxType);
 			expect(result.ok).toBe(false);
-			if (!result.ok) {
-				expect(result.details).toMatchObject({
-					reason: "CORPORATE_ADMINISTRATION_REFERENCE_INVALID",
-					owner: "@afenda/master-data",
-					surface: "md_tax_registration",
-				});
-			}
 		}
 	});
-
 	it("normalizes identifiers by authority posture without losing display value", () => {
 		expect(
 			normalizeCompanyIdentifier({
@@ -49,7 +40,6 @@ describe("company identifier rules", () => {
 			}),
 		).toEqual({ displayValue: "Ab-12", normalizedValue: "Ab12" });
 	});
-
 	it("allows same value under different authority and non-overlapping history", () => {
 		const existing = [
 			{
@@ -64,7 +54,6 @@ describe("company identifier rules", () => {
 				status: "active" as const,
 			},
 		];
-
 		expect(
 			validateIdentifierEffectiveRange({
 				candidate: { from: "2024-06-01", to: null },

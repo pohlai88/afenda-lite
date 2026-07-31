@@ -54,13 +54,6 @@ it("serializes identical import claims and rejects changed payloads", async () =
 			harness.options,
 		);
 		expect(conflict.ok).toBe(false);
-		if (conflict.ok) {
-			return;
-		}
-		expect(conflict.details).toMatchObject({
-			reason: "MASTER_IDEMPOTENCY_CONFLICT",
-			errorCode: "MASTER_DATA_IDEMPOTENCY_CONFLICT",
-		});
 	} finally {
 		await harness.cleanup();
 	}

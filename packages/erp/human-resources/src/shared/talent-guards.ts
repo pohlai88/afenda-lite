@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
@@ -32,24 +32,26 @@ import {
 	type TalentProfileStatus,
 } from "./talent-status";
 
-function alreadyInStatus(entity: string, status: string): Result<never> {
-	return fail(
-		"BAD_REQUEST",
-		`${entity} is already in status '${status}'`,
-		humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION),
-	);
+function alreadyInStatus(_entity: string, _status: string): Result<never> {
+	return errorResult.fail("BAD_REQUEST", {
+		publicMessage: "The request is invalid",
+		internalContext: humanResourcesErrorDetails(
+			HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+		),
+	});
 }
 
 function cannotTransition(
-	entity: string,
-	current: string,
-	next: string,
+	_entity: string,
+	_current: string,
+	_next: string,
 ): Result<never> {
-	return fail(
-		"BAD_REQUEST",
-		`Cannot transition ${entity} from '${current}' to '${next}'`,
-		humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION),
-	);
+	return errorResult.fail("BAD_REQUEST", {
+		publicMessage: "The request is invalid",
+		internalContext: humanResourcesErrorDetails(
+			HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+		),
+	});
 }
 
 // Competency guards
@@ -58,7 +60,7 @@ export function assertCompetencyActive(status: CompetencyStatus): Result<void> {
 	if (!isCompetencyActive(status)) {
 		return invalidState("Competency must be active");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function canTransitionCompetencyStatus(
@@ -81,7 +83,7 @@ export function assertCompetencyStatusTransition(
 	if (!canTransitionCompetencyStatus(current, next)) {
 		return cannotTransition("competency", current, next);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertJobCompetencyMappable(input: {
@@ -98,7 +100,7 @@ export function assertJobCompetencyMappable(input: {
 	) {
 		return conflict("Competency is already mapped to this job");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertJobCompetencyRemovable(
@@ -107,7 +109,7 @@ export function assertJobCompetencyRemovable(
 	if (!isJobCompetencyActive(status)) {
 		return invalidState("Job competency mapping is already removed");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertAssessmentInputValid(input: {
@@ -145,7 +147,7 @@ export function assertAssessmentInputValid(input: {
 	if (input.expiresOn !== null && input.expiresOn <= input.effectiveOn) {
 		return invalidInput("Assessment expiry date must be after effective date");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertAssessmentCanExpire(
@@ -154,7 +156,7 @@ export function assertAssessmentCanExpire(
 	if (status !== "current") {
 		return invalidState("Can only expire current competency assessments");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertAssessmentSupersedable(
@@ -163,7 +165,7 @@ export function assertAssessmentSupersedable(
 	if (status !== "current") {
 		return invalidState("Only the current assessment can be superseded");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 // Talent profile guards
@@ -174,7 +176,7 @@ export function assertTalentProfileActive(
 	if (!isTalentProfileActive(status)) {
 		return invalidState("Talent profile is archived");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertTalentProfileArchivable(
@@ -183,7 +185,7 @@ export function assertTalentProfileArchivable(
 	if (!isTalentProfileActive(status)) {
 		return alreadyInStatus("Talent profile", status);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertProfileAssessmentDraftable(input: {
@@ -193,7 +195,7 @@ export function assertProfileAssessmentDraftable(input: {
 	if (input.evidenceSummary.trim().length === 0) {
 		return invalidInput("Talent profile assessment requires evidence summary");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertProfileAssessmentConfirmable(
@@ -202,7 +204,7 @@ export function assertProfileAssessmentConfirmable(
 	if (status !== "draft") {
 		return invalidState("Only a draft assessment can be confirmed");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertTalentProfileMobilityRecordable(input: {
@@ -218,7 +220,7 @@ export function assertTalentProfileMobilityRecordable(input: {
 			"Mobility effectiveTo must be on or after effectiveFrom",
 		);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertCriticalRoleReadinessRecordable(input: {
@@ -237,7 +239,7 @@ export function assertCriticalRoleReadinessRecordable(input: {
 			"Critical role readiness effective date cannot be in the future",
 		);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 // Talent pool guards
@@ -246,7 +248,7 @@ export function assertTalentPoolOpen(status: TalentPoolStatus): Result<void> {
 	if (!isTalentPoolOpen(status)) {
 		return invalidState("Talent pool is closed");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertTalentPoolClosable(
@@ -255,7 +257,7 @@ export function assertTalentPoolClosable(
 	if (!isTalentPoolOpen(status)) {
 		return alreadyInStatus("Talent pool", status);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertTalentPoolMemberNominatable(input: {
@@ -276,7 +278,7 @@ export function assertTalentPoolMemberNominatable(input: {
 	) {
 		return conflict("Employee is already an active member of this pool");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertTalentPoolMemberApprovable(input: {
@@ -289,7 +291,7 @@ export function assertTalentPoolMemberApprovable(input: {
 	if (input.approverUserId.trim().length === 0) {
 		return invalidInput("Talent pool approval requires an approver");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertTalentPoolMemberRemovable(
@@ -298,7 +300,7 @@ export function assertTalentPoolMemberRemovable(
 	if (!isTalentPoolMemberActive(status)) {
 		return invalidState("Talent pool member is already removed");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 // Career plan guards
@@ -307,7 +309,7 @@ export function assertCareerPlanOpen(status: CareerPlanStatus): Result<void> {
 	if (!isCareerPlanOpen(status)) {
 		return invalidState("Career plan is closed");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function canTransitionCareerPlanStatus(
@@ -344,7 +346,7 @@ export function assertCareerPlanStatusTransition(
 	if (!canTransitionCareerPlanStatus(current, next)) {
 		return cannotTransition("career plan", current, next);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertCareerPlanAcknowledgeable(
@@ -353,7 +355,7 @@ export function assertCareerPlanAcknowledgeable(
 	if (status !== "draft") {
 		return invalidState("Only a draft career plan can be acknowledged");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertCareerPlanActionAddable(
@@ -363,7 +365,7 @@ export function assertCareerPlanActionAddable(
 	if (!planOpen.ok) {
 		return planOpen;
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertCareerPlanActionCompletable(
@@ -372,7 +374,7 @@ export function assertCareerPlanActionCompletable(
 	if (!isCareerPlanActionOpen(status)) {
 		return invalidState("Career plan action is not open");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 // Succession guards
@@ -383,7 +385,7 @@ export function assertSuccessionPlanActive(
 	if (!isSuccessionPlanActive(status)) {
 		return invalidState("Succession plan must be active");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function canTransitionSuccessionPlanStatus(
@@ -412,7 +414,7 @@ export function assertSuccessionPlanStatusTransition(
 	if (!canTransitionSuccessionPlanStatus(current, next)) {
 		return cannotTransition("succession plan", current, next);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertSuccessionCandidateNominatable(input: {
@@ -446,7 +448,7 @@ export function assertSuccessionCandidateNominatable(input: {
 			"Employee must have active employment to be nominated as a succession candidate",
 		);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertSuccessionCandidateActive(
@@ -455,7 +457,7 @@ export function assertSuccessionCandidateActive(
 	if (!isSuccessionCandidateActive(status)) {
 		return invalidState("Succession candidate is not active");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertSuccessionCandidateApprovable(
@@ -464,7 +466,7 @@ export function assertSuccessionCandidateApprovable(
 	if (status !== "nominated") {
 		return invalidState("Only a nominated candidate can be approved");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertSuccessionCandidateRemovable(
@@ -473,7 +475,7 @@ export function assertSuccessionCandidateRemovable(
 	if (!isSuccessionCandidateActive(status)) {
 		return invalidState("Succession candidate is already removed");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertReadinessAssessmentValid(input: {
@@ -487,7 +489,7 @@ export function assertReadinessAssessmentValid(input: {
 	if (input.effectiveOn > input.todayDate) {
 		return invalidInput("Readiness effective date cannot be in the future");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 /** Readiness is stale once older than the maximum age window (default 365 days). */
@@ -507,5 +509,5 @@ export function assertReadinessNotStale(input: {
 			`Succession readiness assessment is stale (older than ${maxAgeDays} days)`,
 		);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }

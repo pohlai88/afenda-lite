@@ -1,5 +1,6 @@
 "use server";
 
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import {
 	addSupplierInvoiceLine,
 	type SupplierInvoiceLine,
@@ -9,10 +10,6 @@ import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
 import { createPayablesCommandOptions } from "@/lib/erp/payables-command-options";
 import { revalidatePayablesPaths } from "@/lib/erp/revalidate-payables-paths";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export type AddSupplierInvoiceLineActionState = ActionResult<{
@@ -45,11 +42,10 @@ export async function addSupplierInvoiceLineAction(
 				unitPrice: formData.get("unitPrice"),
 			});
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid invoice, item, quantity, and unit price.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage:
+						"Enter a valid invoice, item, quantity, and unit price.",
+				});
 			}
 			const mapped = mapPackageResult(
 				await addSupplierInvoiceLine(

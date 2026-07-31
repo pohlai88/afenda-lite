@@ -13,7 +13,7 @@
  * enforceable, even when a consuming application presents them through a
  * broader role or permission group.
  */
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	governanceAuthorizationUnavailable,
@@ -48,5 +48,5 @@ export async function requireGovernancePermission(
 			requiredPermission: input.permission,
 		});
 	}
-	return ok(true);
+	return errorResult.ok(true);
 }

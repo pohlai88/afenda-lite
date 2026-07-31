@@ -1,5 +1,6 @@
 "use server";
 
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import {
 	enqueueHumanResourcesBulkExport,
 	type HumanResourcesBulkExportJob,
@@ -7,7 +8,6 @@ import {
 } from "@afenda/human-resources";
 import { createDrizzleHumanResourcesBulkJobStore } from "@afenda/human-resources/adapters/drizzle";
 import { z } from "zod";
-
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runHrBulkOperatorPermissionAction as runOperatorPermissionAction } from "@/app/actions/run-hr-operator-permission-action";
 import {
@@ -18,10 +18,6 @@ import {
 	classifyHrFailure,
 	createProductionHrObservabilityPorts,
 } from "@/modules/platform/observability/human-resources-observability";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 const isoDateSchema = z.string().date();
@@ -45,11 +41,9 @@ export async function runHumanResourcesBulkExportAction(
 			{ operation: "export", outcome: "failure", failureReason: "validation" },
 			createProductionHrObservabilityPorts(),
 		);
-		return actionFail(
-			"VALIDATION_ERROR",
-			"Enter a valid Human Resources export request.",
-			parsed.details,
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "Enter a valid Human Resources export request.",
+		});
 	}
 	const definition = getHumanResourcesBulkExportDefinition(
 		parsed.data.exportType,

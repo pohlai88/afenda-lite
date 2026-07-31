@@ -32,7 +32,10 @@ import {
 import { createMemoryHumanResourcesStore } from "../src/testing";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
-import { humanResourcesCodeFromResult } from "./helpers/result-details";
+import {
+	humanResourcesCodeFromResult,
+	humanResourcesContextFromResult,
+} from "./helpers/result-details";
 
 const SRC_ROOT = path.resolve(
 	path.dirname(fileURLToPath(import.meta.url)),
@@ -59,7 +62,7 @@ describe("@afenda/human-resources kernel", () => {
 			expect(humanResourcesCodeFromResult(parsed)).toBe(
 				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
 			);
-			const { details } = parsed;
+			const details = humanResourcesContextFromResult(parsed);
 			expect(
 				typeof details === "object" &&
 					details !== null &&
@@ -210,7 +213,7 @@ describe("@afenda/human-resources kernel", () => {
 			expect(humanResourcesCodeFromResult(unknown)).toBe(
 				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
 			);
-			expect(unknown.message).toBe("Failed to create employee");
+			expect(unknown.message).toBe("An unexpected error occurred");
 			expect(unknown.message).not.toMatch(/relation|does not exist/i);
 		}
 

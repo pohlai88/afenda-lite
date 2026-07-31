@@ -1,14 +1,9 @@
-import { normalizePostgresUnknown } from "@afenda/errors/adapters/postgres";
-import { fail, failFromAppError, type Result } from "@afenda/errors/result";
-
 import {
-	PAYROLL_ERROR_CONFLICT,
-	PAYROLL_ERROR_CROSS_ORGANIZATION_REFERENCE,
-	PAYROLL_ERROR_DUPLICATE,
-	PAYROLL_ERROR_INVALID_STATE,
-	PAYROLL_ERROR_NOT_FOUND,
-	payrollErrorDetails,
-} from "../error-codes";
+	errorIngress,
+	errorProject,
+	errorResult,
+	type Result,
+} from "@afenda/errors";
 
 const CREATE_IDEMPOTENCY_CONFLICT_PATTERN =
 	/_org_create_idempotency_uidx|create_idempotency_key/i;
@@ -70,49 +65,41 @@ export function isPayrollRunIdentityUniqueViolation(error: unknown): boolean {
 
 export function mapPersistenceFailure(
 	error: unknown,
-	fallbackMessage: string,
+	_fallbackMessage: string,
 ): Result<never> {
 	if (isCreateIdempotencyUniqueViolation(error)) {
-		return fail(
-			"CONFLICT",
-			"Idempotency key conflict",
-			payrollErrorDetails(PAYROLL_ERROR_CONFLICT),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Idempotency key conflict",
+		});
 	}
 	if (isPostgresForeignKeyViolation(error)) {
-		return fail(
-			"NOT_FOUND",
-			"Referenced record not found",
-			payrollErrorDetails(PAYROLL_ERROR_CROSS_ORGANIZATION_REFERENCE),
-		);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Referenced record not found",
+		});
 	}
 	if (isPostgresUniqueViolation(error)) {
-		return fail(
-			"CONFLICT",
-			"Duplicate record",
-			payrollErrorDetails(PAYROLL_ERROR_DUPLICATE),
-		);
+		return errorResult.fail("CONFLICT", { publicMessage: "Duplicate record" });
 	}
 
-	return failFromAppError(normalizePostgresUnknown(error, fallbackMessage));
-}
-
-export function mapNotFound(message: string): Result<never> {
-	return fail(
-		"NOT_FOUND",
-		message,
-		payrollErrorDetails(PAYROLL_ERROR_NOT_FOUND),
+	return errorProject.result(
+		errorIngress.postgres(error, { operation: "persistence.postgres" }),
 	);
 }
 
-export function mapConflict(message: string): Result<never> {
-	return fail("CONFLICT", message, payrollErrorDetails(PAYROLL_ERROR_CONFLICT));
+export function mapNotFound(_message: string): Result<never> {
+	return errorResult.fail("NOT_FOUND", {
+		publicMessage: "The requested resource was not found",
+	});
 }
 
-export function mapInvalidState(message: string): Result<never> {
-	return fail(
-		"CONFLICT",
-		message,
-		payrollErrorDetails(PAYROLL_ERROR_INVALID_STATE),
-	);
+export function mapConflict(_message: string): Result<never> {
+	return errorResult.fail("CONFLICT", {
+		publicMessage: "The request conflicts with current state",
+	});
+}
+
+export function mapInvalidState(_message: string): Result<never> {
+	return errorResult.fail("CONFLICT", {
+		publicMessage: "The request conflicts with current state",
+	});
 }

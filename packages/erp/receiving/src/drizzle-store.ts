@@ -18,18 +18,11 @@ import {
 	sql,
 } from "@afenda/db";
 import {
-	normalizePostgresUnknown,
-	postgresSqlState,
-} from "@afenda/errors/adapters/postgres";
-import { fail, failFromAppError, ok, type Result } from "@afenda/errors/result";
-
-import {
-	RECEIVING_ERROR_IDEMPOTENCY_CONFLICT,
-	RECEIVING_ERROR_POSTED_RECEIPT_CANNOT_CANCEL,
-	RECEIVING_ERROR_QUANTITY_EXCEEDS_TOLERANCE,
-	RECEIVING_ERROR_RECEIPT_ALREADY_REVERSED,
-	receivingErrorDetails,
-} from "./error-codes";
+	errorIngress,
+	errorProject,
+	errorResult,
+	type Result,
+} from "@afenda/errors";
 import type { MutationPorts } from "./ports";
 import type {
 	DiscrepancyCreateRecord,
@@ -62,8 +55,10 @@ import {
 
 const RECEIVING_AUDIT_SOURCE = "receiving.drizzle-store";
 
-function failFromPersistence(error: unknown, fallbackMessage: string) {
-	return failFromAppError(normalizePostgresUnknown(error, fallbackMessage));
+function failFromPersistence(error: unknown, _fallbackMessage: string) {
+	return errorProject.result(
+		errorIngress.postgres(error, { operation: "persistence.postgres" }),
+	);
 }
 
 interface PostGuardRow {
@@ -102,18 +97,24 @@ function decideDrizzleReceiptPost(
 	record: ReceiptPostRecord,
 ): Result<"proceed" | "replay"> {
 	if (receipt.postIdempotencyKey === record.postIdempotencyKey) {
-		return ok("replay");
+		return errorResult.ok("replay");
 	}
 	if (receipt.status !== "draft") {
-		return fail("CONFLICT", "Goods receipt is not in draft status");
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Goods receipt is not in draft status",
+		});
 	}
 	if (receipt.version !== record.expectedVersion) {
-		return fail("CONFLICT", "Goods receipt version conflict");
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Goods receipt version conflict",
+		});
 	}
 	if (receipt.lines.length === 0) {
-		return fail("CONFLICT", "Cannot post goods receipt without lines");
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Cannot post goods receipt without lines",
+		});
 	}
-	return ok("proceed");
+	return errorResult.ok("proceed");
 }
 
 function parseEnum<T extends string>(
@@ -245,9 +246,6 @@ function json(value: unknown): string {
 	return JSON.stringify(value);
 }
 
-const SQLSTATE_UNIQUE_VIOLATION = "23505";
-const SQLSTATE_FOREIGN_KEY_VIOLATION = "23503";
-
 function readErrorStringProperty(
 	error: unknown,
 	key: PropertyKey,
@@ -271,28 +269,16 @@ function readConstraintName(error: unknown): string {
 	);
 }
 
-function isConstraintViolation(error: unknown): boolean {
-	const sqlState = postgresSqlState(error);
-	return (
-		sqlState === SQLSTATE_UNIQUE_VIOLATION ||
-		sqlState === SQLSTATE_FOREIGN_KEY_VIOLATION
-	);
-}
-
 function writeError(
 	error: unknown,
-	conflictMessage: string,
+	_conflictMessage: string,
 	fallbackMessage: string,
 ): Result<never> {
-	return isConstraintViolation(error)
-		? fail("CONFLICT", conflictMessage)
-		: failFromPersistence(error, fallbackMessage);
+	return failFromPersistence(error, fallbackMessage);
 }
 
 function isIdempotencyConflict(error: unknown, key: string): boolean {
-	return postgresSqlState(error) === SQLSTATE_UNIQUE_VIOLATION
-		? readConstraintName(error).includes(key)
-		: false;
+	return readConstraintName(error).includes(key);
 }
 
 async function hydrateReceipts(
@@ -358,15 +344,15 @@ export class DrizzleReceivingStore implements ReceivingStore {
 	private async reload(
 		organizationId: string,
 		id: string,
-		message: string,
+		_message: string,
 	): Promise<Result<GoodsReceipt>> {
 		const result = await this.getReceiptById(organizationId, id);
 		if (!result.ok) {
 			return result;
 		}
 		return result.data === null
-			? fail("INTERNAL_ERROR", message)
-			: ok(result.data);
+			? errorResult.fail("INTERNAL_ERROR")
+			: errorResult.ok(result.data);
 	}
 
 	async createReceipt(
@@ -382,7 +368,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 			return replay;
 		}
 		if (replay.data !== null) {
-			return ok(replay.data);
+			return errorResult.ok(replay.data);
 		}
 
 		const id = randomUUID();
@@ -464,7 +450,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 				`,
 			]);
 			if (rows[0] === undefined) {
-				return fail("INTERNAL_ERROR", "Goods receipt create returned no row");
+				return errorResult.fail("INTERNAL_ERROR");
 			}
 			return this.reload(
 				record.organizationId,
@@ -481,7 +467,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 					return existing;
 				}
 				if (existing.data !== null) {
-					return ok(existing.data);
+					return errorResult.ok(existing.data);
 				}
 			}
 			return writeError(
@@ -505,16 +491,20 @@ export class DrizzleReceivingStore implements ReceivingStore {
 			return existing;
 		}
 		if (existing.data === null) {
-			return fail("NOT_FOUND", "Goods receipt not found");
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Goods receipt not found",
+			});
 		}
 		const replayLine = existing.data.lines.find(
 			(line) => line.lineIdempotencyKey === record.lineIdempotencyKey,
 		);
 		if (replayLine !== undefined) {
-			return ok({ ...replayLine });
+			return errorResult.ok({ ...replayLine });
 		}
 		if (existing.data.status !== "draft") {
-			return fail("CONFLICT", "Cannot add lines to a non-draft goods receipt");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Cannot add lines to a non-draft goods receipt",
+			});
 		}
 		const lineNo =
 			existing.data.lines.reduce((max, row) => Math.max(max, row.lineNo), 0) +
@@ -617,7 +607,9 @@ export class DrizzleReceivingStore implements ReceivingStore {
 				`,
 			]);
 			if (rows[0] === undefined) {
-				return fail("CONFLICT", "Goods receipt line add conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Goods receipt line add conflict",
+				});
 			}
 			const [line] = await db
 				.select()
@@ -630,8 +622,8 @@ export class DrizzleReceivingStore implements ReceivingStore {
 				)
 				.limit(1);
 			return line === undefined
-				? fail("INTERNAL_ERROR", "Created goods receipt line missing")
-				: ok(mapLine(line));
+				? errorResult.fail("INTERNAL_ERROR")
+				: errorResult.ok(mapLine(line));
 		} catch (error) {
 			if (isIdempotencyConflict(error, "line_idempotency")) {
 				const again = await this.getReceiptById(
@@ -645,7 +637,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 					(line) => line.lineIdempotencyKey === record.lineIdempotencyKey,
 				);
 				if (found !== undefined) {
-					return ok({ ...found });
+					return errorResult.ok({ ...found });
 				}
 			}
 			return writeError(
@@ -669,14 +661,16 @@ export class DrizzleReceivingStore implements ReceivingStore {
 			return existing;
 		}
 		if (existing.data === null) {
-			return fail("NOT_FOUND", "Goods receipt not found");
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Goods receipt not found",
+			});
 		}
 		const decision = decideDrizzleReceiptPost(existing.data, record);
 		if (!decision.ok) {
 			return decision;
 		}
 		if (decision.data === "replay") {
-			return ok(existing.data);
+			return errorResult.ok(existing.data);
 		}
 		const nextVersion = record.expectedVersion + 1;
 		const auditId = randomUUID();
@@ -831,17 +825,20 @@ export class DrizzleReceivingStore implements ReceivingStore {
 			) as PostGuardRow[];
 			const [outcome] = rows;
 			if (outcome === undefined) {
-				return fail("CONFLICT", "Goods receipt version conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Goods receipt version conflict",
+				});
 			}
 			if (Number(outcome.over_count) > 0) {
-				return fail(
-					"CONFLICT",
-					"Accepted quantity exceeds remaining quantity plus over-receipt tolerance",
-					receivingErrorDetails(RECEIVING_ERROR_QUANTITY_EXCEEDS_TOLERANCE),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage:
+						"Accepted quantity exceeds remaining quantity plus over-receipt tolerance",
+				});
 			}
 			if (outcome.receipt_id === null) {
-				return fail("CONFLICT", "Goods receipt version conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Goods receipt version conflict",
+				});
 			}
 			return this.reload(
 				record.organizationId,
@@ -861,7 +858,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 					again.data !== null &&
 					again.data.postIdempotencyKey === record.postIdempotencyKey
 				) {
-					return ok(again.data);
+					return errorResult.ok(again.data);
 				}
 			}
 			return writeError(
@@ -885,23 +882,27 @@ export class DrizzleReceivingStore implements ReceivingStore {
 			return existing;
 		}
 		if (existing.data === null) {
-			return fail("NOT_FOUND", "Goods receipt not found");
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Goods receipt not found",
+			});
 		}
 		if (existing.data.cancelIdempotencyKey === record.cancelIdempotencyKey) {
-			return ok(existing.data);
+			return errorResult.ok(existing.data);
 		}
 		if (existing.data.status === "posted") {
-			return fail(
-				"CONFLICT",
-				"Posted goods receipts cannot be cancelled; use reverse",
-				receivingErrorDetails(RECEIVING_ERROR_POSTED_RECEIPT_CANNOT_CANCEL),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Posted goods receipts cannot be cancelled; use reverse",
+			});
 		}
 		if (existing.data.status !== "draft") {
-			return fail("CONFLICT", "Goods receipt cannot be cancelled");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Goods receipt cannot be cancelled",
+			});
 		}
 		if (existing.data.version !== record.expectedVersion) {
-			return fail("CONFLICT", "Goods receipt version conflict");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Goods receipt version conflict",
+			});
 		}
 		const nextVersion = record.expectedVersion + 1;
 		const auditId = randomUUID();
@@ -981,7 +982,9 @@ export class DrizzleReceivingStore implements ReceivingStore {
 				`,
 			]);
 			if (rows[0] === undefined) {
-				return fail("CONFLICT", "Goods receipt version conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Goods receipt version conflict",
+				});
 			}
 			return this.reload(
 				record.organizationId,
@@ -1001,7 +1004,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 					again.data !== null &&
 					again.data.cancelIdempotencyKey === record.cancelIdempotencyKey
 				) {
-					return ok(again.data);
+					return errorResult.ok(again.data);
 				}
 			}
 			return writeError(
@@ -1043,21 +1046,25 @@ export class DrizzleReceivingStore implements ReceivingStore {
 			return originalResult;
 		}
 		if (originalResult.data === null) {
-			return fail("NOT_FOUND", "Goods receipt not found");
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Goods receipt not found",
+			});
 		}
 		const original = originalResult.data;
 		if (original.status !== "posted") {
-			return fail("CONFLICT", "Only posted goods receipts can be reversed");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Only posted goods receipts can be reversed",
+			});
 		}
 		if (original.reversedByReceiptId !== null) {
-			return fail(
-				"CONFLICT",
-				"Goods receipt already reversed",
-				receivingErrorDetails(RECEIVING_ERROR_RECEIPT_ALREADY_REVERSED),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Goods receipt already reversed",
+			});
 		}
 		if (original.version !== record.expectedVersion) {
-			return fail("CONFLICT", "Goods receipt version conflict");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Goods receipt version conflict",
+			});
 		}
 
 		const reverseId = randomUUID();
@@ -1209,7 +1216,9 @@ export class DrizzleReceivingStore implements ReceivingStore {
 				return statements;
 			});
 			if (rows[0] === undefined) {
-				return fail("CONFLICT", "Goods receipt version conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Goods receipt version conflict",
+				});
 			}
 			return this.reload(
 				record.organizationId,
@@ -1265,7 +1274,9 @@ export class DrizzleReceivingStore implements ReceivingStore {
 				`,
 			]);
 			if (rows[0] === undefined) {
-				return fail("NOT_FOUND", "Goods receipt not found");
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "Goods receipt not found",
+				});
 			}
 			return this.reload(
 				record.organizationId,
@@ -1294,16 +1305,20 @@ export class DrizzleReceivingStore implements ReceivingStore {
 			return existing;
 		}
 		if (existing.data === null) {
-			return fail("NOT_FOUND", "Goods receipt not found");
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Goods receipt not found",
+			});
 		}
 		const replay = existing.data.discrepancies.find(
 			(row) => row.recordIdempotencyKey === record.recordIdempotencyKey,
 		);
 		if (replay !== undefined) {
-			return ok({ ...replay });
+			return errorResult.ok({ ...replay });
 		}
 		if (existing.data.status !== "draft" && existing.data.status !== "posted") {
-			return fail("CONFLICT", "Discrepancy requires a draft or posted receipt");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Discrepancy requires a draft or posted receipt",
+			});
 		}
 		const id = randomUUID();
 		const auditId = randomUUID();
@@ -1399,7 +1414,9 @@ export class DrizzleReceivingStore implements ReceivingStore {
 				`,
 			]);
 			if (rows[0] === undefined) {
-				return fail("CONFLICT", "Receiving discrepancy create conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Receiving discrepancy create conflict",
+				});
 			}
 			const [row] = await db
 				.select()
@@ -1412,8 +1429,8 @@ export class DrizzleReceivingStore implements ReceivingStore {
 				)
 				.limit(1);
 			return row === undefined
-				? fail("INTERNAL_ERROR", "Created receiving discrepancy missing")
-				: ok(mapDiscrepancy(row));
+				? errorResult.fail("INTERNAL_ERROR")
+				: errorResult.ok(mapDiscrepancy(row));
 		} catch (error) {
 			if (isIdempotencyConflict(error, "record_idempotency")) {
 				const again = await this.getReceiptById(
@@ -1427,7 +1444,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 					(row) => row.recordIdempotencyKey === record.recordIdempotencyKey,
 				);
 				if (found !== undefined) {
-					return ok({ ...found });
+					return errorResult.ok({ ...found });
 				}
 			}
 			return writeError(
@@ -1451,26 +1468,30 @@ export class DrizzleReceivingStore implements ReceivingStore {
 			return existing;
 		}
 		if (existing.data === null) {
-			return fail("NOT_FOUND", "Goods receipt not found");
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Goods receipt not found",
+			});
 		}
 		const discrepancy = existing.data.discrepancies.find(
 			(row) => row.id === record.discrepancyId,
 		);
 		if (discrepancy === undefined) {
-			return fail("NOT_FOUND", "Receiving discrepancy not found");
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Receiving discrepancy not found",
+			});
 		}
 		if (discrepancy.resolveIdempotencyKey === record.resolveIdempotencyKey) {
-			return ok({ ...discrepancy });
+			return errorResult.ok({ ...discrepancy });
 		}
 		if (discrepancy.status === "resolved") {
-			return fail(
-				"CONFLICT",
-				"Discrepancy already resolved",
-				receivingErrorDetails(RECEIVING_ERROR_IDEMPOTENCY_CONFLICT),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Discrepancy already resolved",
+			});
 		}
 		if (discrepancy.version !== record.expectedVersion) {
-			return fail("CONFLICT", "Discrepancy version conflict");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Discrepancy version conflict",
+			});
 		}
 		const nextVersion = record.expectedVersion + 1;
 		const auditId = randomUUID();
@@ -1558,7 +1579,9 @@ export class DrizzleReceivingStore implements ReceivingStore {
 				`,
 			]);
 			if (rows[0] === undefined) {
-				return fail("CONFLICT", "Discrepancy version conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Discrepancy version conflict",
+				});
 			}
 			const [row] = await db
 				.select()
@@ -1571,8 +1594,8 @@ export class DrizzleReceivingStore implements ReceivingStore {
 				)
 				.limit(1);
 			return row === undefined
-				? fail("INTERNAL_ERROR", "Resolved receiving discrepancy missing")
-				: ok(mapDiscrepancy(row));
+				? errorResult.fail("INTERNAL_ERROR")
+				: errorResult.ok(mapDiscrepancy(row));
 		} catch (error) {
 			if (isIdempotencyConflict(error, "resolve_idempotency")) {
 				const [row] = await db
@@ -1589,7 +1612,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 					)
 					.limit(1);
 				if (row !== undefined) {
-					return ok(mapDiscrepancy(row));
+					return errorResult.ok(mapDiscrepancy(row));
 				}
 			}
 			return writeError(
@@ -1611,7 +1634,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 			totals.set(lineId, 0);
 		}
 		if (purchaseOrderLineIds.length === 0) {
-			return ok([]);
+			return errorResult.ok([]);
 		}
 		try {
 			const conditions = [
@@ -1655,7 +1678,7 @@ export class DrizzleReceivingStore implements ReceivingStore {
 				}
 				totals.set(row.purchaseOrderLineId, qty);
 			}
-			return ok(
+			return errorResult.ok(
 				[...totals.entries()].map(
 					([purchaseOrderLineId, acceptedQuantity]) => ({
 						purchaseOrderLineId,
@@ -1687,10 +1710,10 @@ export class DrizzleReceivingStore implements ReceivingStore {
 				)
 				.limit(1);
 			if (header === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const [hydrated] = await hydrateReceipts(organizationId, [header]);
-			return ok(hydrated ?? null);
+			return errorResult.ok(hydrated ?? null);
 		} catch (error) {
 			return failFromPersistence(error, "Failed to load goods receipt");
 		}
@@ -1712,10 +1735,10 @@ export class DrizzleReceivingStore implements ReceivingStore {
 				)
 				.limit(1);
 			if (header === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const [hydrated] = await hydrateReceipts(organizationId, [header]);
-			return ok(hydrated ?? null);
+			return errorResult.ok(hydrated ?? null);
 		} catch (error) {
 			return failFromPersistence(
 				error,
@@ -1744,7 +1767,9 @@ export class DrizzleReceivingStore implements ReceivingStore {
 				.orderBy(desc(goodsReceipt.updatedAt), desc(goodsReceipt.id))
 				.limit(filter.pageSize)
 				.offset((filter.page - 1) * filter.pageSize);
-			return ok(await hydrateReceipts(filter.organizationId, headers));
+			return errorResult.ok(
+				await hydrateReceipts(filter.organizationId, headers),
+			);
 		} catch (error) {
 			return failFromPersistence(error, "Failed to list goods receipts");
 		}
@@ -1770,7 +1795,9 @@ export class DrizzleReceivingStore implements ReceivingStore {
 				.orderBy(desc(goodsReceipt.updatedAt), desc(goodsReceipt.id))
 				.limit(filter.pageSize)
 				.offset((filter.page - 1) * filter.pageSize);
-			return ok(await hydrateReceipts(filter.organizationId, headers));
+			return errorResult.ok(
+				await hydrateReceipts(filter.organizationId, headers),
+			);
 		} catch (error) {
 			return failFromPersistence(
 				error,

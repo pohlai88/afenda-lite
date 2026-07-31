@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import { computeDiff, maskAuditChanges, maskSensitiveData } from "./differ";
 import {
@@ -24,8 +24,8 @@ export function prepareAuditWrite(
 ): Result<PreparedAuditWriteInput> {
 	const parsed = recordAuditCommandSchema.safeParse(input);
 	if (!parsed.success) {
-		return fail("BAD_REQUEST", "Invalid audit record input", {
-			fieldErrors: parsed.error.flatten().fieldErrors,
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "Invalid audit record input",
 		});
 	}
 
@@ -35,7 +35,9 @@ export function prepareAuditWrite(
 		command.metadata !== null &&
 		Object.hasOwn(command.metadata, AUDIT_EVENT_CONTEXT_METADATA_KEY)
 	) {
-		return fail("BAD_REQUEST", "Audit event metadata key is reserved");
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Audit event metadata key is reserved",
+		});
 	}
 	const rawOldValue = command.oldValue ?? null;
 	const rawNewValue = command.newValue ?? null;
@@ -78,10 +80,10 @@ export function prepareAuditWrite(
 		serializeAuditMetadata(prepared.metadata ?? null, prepared.eventContext),
 	);
 	if (!persistedMetadata.ok) {
-		return fail("BAD_REQUEST", "Invalid persisted audit metadata", {
-			fieldErrors: { metadata: [persistedMetadata.message] },
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "Invalid persisted audit metadata",
 		});
 	}
 
-	return ok(prepared);
+	return errorResult.ok(prepared);
 }

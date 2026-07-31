@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
@@ -28,11 +28,12 @@ export function computeCompensationIncreaseAmount(input: {
 		proposed === null ||
 		compareExactDecimals(proposed, EXACT_DECIMAL_ZERO) < 0
 	) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Invalid proposed compensation amount.",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
 	const current =
 		input.currentBaseAmount === null
@@ -42,14 +43,15 @@ export function computeCompensationIncreaseAmount(input: {
 		current === null ||
 		compareExactDecimals(current, EXACT_DECIMAL_ZERO) < 0
 	) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Invalid current compensation amount.",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
 	const increase = subtractExactDecimals(proposed, current);
-	return ok(
+	return errorResult.ok(
 		compareExactDecimals(increase, EXACT_DECIMAL_ZERO) > 0
 			? increase
 			: EXACT_DECIMAL_ZERO,
@@ -59,13 +61,14 @@ export function computeCompensationIncreaseAmount(input: {
 function parseBudgetAmount(amount: string): Result<ExactDecimal> {
 	const parsed = parseExactDecimal(amount);
 	if (parsed === null || compareExactDecimals(parsed, EXACT_DECIMAL_ZERO) < 0) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Invalid review cycle budget amount.",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
-	return ok(parsed);
+	return errorResult.ok(parsed);
 }
 
 function computeCommittedCycleIncrease(input: {
@@ -84,11 +87,12 @@ function computeCommittedCycleIncrease(input: {
 			continue;
 		}
 		if (other.proposedCurrencyCode !== input.budgetCurrencyCode) {
-			return fail(
-				"VALIDATION_ERROR",
-				"Another review in this cycle uses a different currency than the cycle budget.",
-				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-			);
+			return errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "The submitted data is invalid",
+				internalContext: humanResourcesErrorDetails(
+					HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+				),
+			});
 		}
 		const otherIncrease = computeCompensationIncreaseAmount({
 			currentBaseAmount:
@@ -100,7 +104,7 @@ function computeCommittedCycleIncrease(input: {
 		}
 		committedIncrease = addExactDecimals(committedIncrease, otherIncrease.data);
 	}
-	return ok(committedIncrease);
+	return errorResult.ok(committedIncrease);
 }
 
 export function assertCompensationReviewWithinBudget(input: {
@@ -121,18 +125,20 @@ export function assertCompensationReviewWithinBudget(input: {
 }): Result<true> {
 	const { cycle, review } = input;
 	if (!(review.proposedBaseAmount && review.proposedCurrencyCode)) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Review must include proposed amount and currency for budget check.",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
 	if (review.proposedCurrencyCode !== cycle.budgetCurrencyCode) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Proposed currency must match review cycle budget currency.",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
 
 	const budgetTotal = parseBudgetAmount(cycle.budgetTotalAmount);
@@ -165,12 +171,13 @@ export function assertCompensationReviewWithinBudget(input: {
 		proposedIncrease.data,
 	);
 	if (compareExactDecimals(totalIncrease, budgetTotal.data) > 0) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Compensation recommendation exceeds review cycle budget.",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
 
-	return ok(true);
+	return errorResult.ok(true);
 }

@@ -1,4 +1,4 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { HumanResourcesEmployeeId } from "../brands";
 import {
 	type HumanResourcesCommandOptions,
@@ -153,7 +153,7 @@ async function authorizePrivacyOperation(
 			config.operationId,
 		);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 async function observePrivacyOperationResult<T>(input: {
@@ -224,7 +224,7 @@ async function exportHumanResourcesSubjectDataCore(
 		return portExport;
 	}
 
-	return ok({
+	return errorResult.ok({
 		...collected.data,
 		exportReference: portExport.data.exportReference,
 		recordCount: collected.data.records.length,
@@ -297,7 +297,7 @@ async function evaluateHumanResourcesRetentionCore(
 		return authorized;
 	}
 
-	return ok({
+	return errorResult.ok({
 		policies: Object.values(HUMAN_RESOURCES_RETENTION_POLICIES),
 	});
 }

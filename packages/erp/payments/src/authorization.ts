@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type { PaymentsPermission } from "./permissions";
 
@@ -21,14 +21,10 @@ export async function requirePaymentsPermission(
 	},
 ): Promise<Result<void>> {
 	if (authorization === undefined) {
-		return fail("UNAUTHORIZED", "Payments authorization port is required", {
-			permission: input.permission,
-		});
+		return errorResult.fail("UNAUTHORIZED");
 	}
 	if (!(await authorization.can(input))) {
-		return fail("FORBIDDEN", "Missing required payments permission", {
-			permission: input.permission,
-		});
+		return errorResult.fail("FORBIDDEN");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }

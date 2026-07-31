@@ -74,7 +74,7 @@ describe("@afenda/search query", () => {
 		const hits = await searchDocuments({ query: "Ada" }, store);
 		expect(hits.ok).toBe(false);
 		if (!hits.ok) {
-			expect(hits.code).toBe("BAD_REQUEST");
+			expect(hits.code).toBe("VALIDATION_ERROR");
 		}
 	});
 });

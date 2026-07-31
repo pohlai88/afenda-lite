@@ -1,7 +1,7 @@
 /** Party role commands and queries. */
 
 /** Party-owned extension commands and queries. */
-import type { Result } from "@afenda/errors/result";
+import type { Result } from "@afenda/errors";
 
 import {
 	requireMasterCommandPermission,

@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { fail } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 import { describe, expect, it } from "vitest";
 
 import { createParty } from "../src";
@@ -140,7 +140,7 @@ describe("@afenda/master-data same-TX inventory", () => {
 			...ports,
 			outbox: {
 				append() {
-					return resolveAsync(() => fail("INTERNAL", "outbox unavailable"));
+					return resolveAsync(() => errorResult.fail("INTERNAL_ERROR"));
 				},
 			},
 		};

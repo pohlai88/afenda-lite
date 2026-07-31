@@ -1,4 +1,4 @@
-import { ok } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 import { describe, expect, it, vi } from "vitest";
 
 import {
@@ -100,7 +100,7 @@ describe("@afenda/audit query helpers", () => {
 		const result = await queryAuditLog({ organizationId: "  " }, store);
 		expect(result.ok).toBe(false);
 		if (!result.ok) {
-			expect(result.code).toBe("BAD_REQUEST");
+			expect(result.code).toBe("VALIDATION_ERROR");
 		}
 	});
 
@@ -113,7 +113,7 @@ describe("@afenda/audit query helpers", () => {
 			store,
 		);
 
-		expect(result).toMatchObject({ ok: false, code: "BAD_REQUEST" });
+		expect(result).toMatchObject({ ok: false, code: "VALIDATION_ERROR" });
 		expect(query).not.toHaveBeenCalled();
 		expect(count).not.toHaveBeenCalled();
 	});
@@ -126,7 +126,7 @@ describe("@afenda/audit query helpers", () => {
 			store,
 		);
 
-		expect(result).toMatchObject({ ok: false, code: "BAD_REQUEST" });
+		expect(result).toMatchObject({ ok: false, code: "VALIDATION_ERROR" });
 		expect(purge).not.toHaveBeenCalled();
 	});
 
@@ -234,8 +234,8 @@ describe("@afenda/audit query helpers", () => {
 		}));
 		const queryCursor = vi
 			.fn()
-			.mockResolvedValueOnce(ok(rows))
-			.mockResolvedValueOnce(ok([]));
+			.mockResolvedValueOnce(errorResult.ok(rows))
+			.mockResolvedValueOnce(errorResult.ok([]));
 		store.queryCursor = queryCursor;
 
 		const exported = assertOk(

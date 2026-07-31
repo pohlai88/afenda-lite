@@ -1,11 +1,10 @@
-import { fail, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	CORPORATE_ADMINISTRATION_QUERY_PERMISSIONS,
 	requireCorporateAdministrationPermission,
 } from "../../authorization";
 import type { CorporateAdministrationQueryOptions } from "../../command-options";
-import { corporateAdministrationErrorDetails } from "../../error-codes";
 import { toCanonicalInstant } from "../../kernel/dates";
 import { parseCorporateAdministrationInput } from "../../parse-input";
 import {
@@ -150,12 +149,8 @@ function authorize(
 	});
 }
 
-function notFound(entityType: string): Result<never> {
-	return fail(
-		"NOT_FOUND",
-		"Corporate Administration record was not found.",
-		corporateAdministrationErrorDetails("CORPORATE_ADMINISTRATION_NOT_FOUND", {
-			entityType,
-		}),
-	);
+function notFound(_entityType: string): Result<never> {
+	return errorResult.fail("NOT_FOUND", {
+		publicMessage: "Corporate Administration record was not found.",
+	});
 }

@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
@@ -59,10 +59,9 @@ export function issueCertification(
 				completion.employeeId !== data.employeeId ||
 				completion.courseId !== data.courseId
 			) {
-				return fail(
-					"BAD_REQUEST",
-					"Completion does not match the certification employee and course",
-				);
+				return errorResult.fail("BAD_REQUEST", {
+					publicMessage: "The request is invalid",
+				});
 			}
 
 			const requestFingerprint = fingerprintCertificationIssue({
@@ -85,13 +84,14 @@ export function issueCertification(
 				if (
 					existingByKey.data.createRequestFingerprint !== requestFingerprint
 				) {
-					return fail(
-						"CONFLICT",
-						"Idempotency key reused with different payload",
-						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-					);
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+						internalContext: humanResourcesErrorDetails(
+							HUMAN_RESOURCES_ERROR_CONFLICT,
+						),
+					});
 				}
-				return ok(existingByKey.data.certification);
+				return errorResult.ok(existingByKey.data.certification);
 			}
 
 			return store.issueCertification(
@@ -186,13 +186,12 @@ export function renewCertification(
 				return priorResult;
 			}
 			if (priorResult.data === null) {
-				return fail(
-					"NOT_FOUND",
-					"Certification not found",
-					humanResourcesErrorDetails(
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
 						HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 					),
-				);
+				});
 			}
 			const prior = priorResult.data;
 
@@ -204,13 +203,12 @@ export function renewCertification(
 				return completionResult;
 			}
 			if (completionResult.data === null) {
-				return fail(
-					"NOT_FOUND",
-					"Completion not found",
-					humanResourcesErrorDetails(
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
 						HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 					),
-				);
+				});
 			}
 			const completion = completionResult.data;
 
@@ -233,13 +231,14 @@ export function renewCertification(
 				if (
 					existingByKey.data.createRequestFingerprint !== requestFingerprint
 				) {
-					return fail(
-						"CONFLICT",
-						"Idempotency key reused with different payload",
-						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-					);
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+						internalContext: humanResourcesErrorDetails(
+							HUMAN_RESOURCES_ERROR_CONFLICT,
+						),
+					});
 				}
-				return ok(existingByKey.data.certification);
+				return errorResult.ok(existingByKey.data.certification);
 			}
 
 			return store.renewCertification(

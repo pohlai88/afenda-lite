@@ -1,4 +1,4 @@
-import type { Result } from "@afenda/errors/result";
+import type { Result } from "@afenda/errors";
 
 /** Posted payment snapshot for AP application — Payments owns the payment row. */
 export interface PostedPaymentBasis {

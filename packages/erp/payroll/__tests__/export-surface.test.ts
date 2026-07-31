@@ -17,8 +17,6 @@ describe("@afenda/payroll export surface contract", () => {
 		expect(root.PAYROLL_PERMISSION_RUN_CREATE).toBe("payroll.run.create");
 		expect(root.payrollTenantContextSchema).toBeDefined();
 		expect(root.payrollMutationContextSchema).toBeDefined();
-		expect(root.PAYROLL_ERROR_CODES).toBeDefined();
-
 		expect(
 			(root as Record<string, unknown>).createDrizzlePayrollStore,
 		).toBeUndefined();

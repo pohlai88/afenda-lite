@@ -1,4 +1,4 @@
-import { fail, ok } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 import {
 	claimDueReliabilityWork,
 	createMemoryReliabilityStore,
@@ -85,7 +85,7 @@ describe("HR reliability runtime composition", () => {
 				connector: "bulk",
 				idempotencyKey: "bulk-1",
 			}),
-		).toEqual(ok(null));
+		).toEqual(errorResult.ok(null));
 	});
 
 	it("persists retry state and emits only bounded failure vocabulary", async () => {
@@ -100,8 +100,7 @@ describe("HR reliability runtime composition", () => {
 			store,
 			clock: { now: () => now },
 			executor: {
-				execute: async () =>
-					fail("SERVICE_UNAVAILABLE", "sensitive@example.com"),
+				execute: async () => errorResult.fail("SERVICE_UNAVAILABLE"),
 			},
 			failureClassifier: { isRetryable: () => true },
 		};
@@ -156,9 +155,7 @@ describe("HR reliability runtime composition", () => {
 
 	it("derives unhealthy connector telemetry from persisted execution outcomes", async () => {
 		const store = createMemoryReliabilityStore();
-		const execute = vi.fn(async () =>
-			fail("SERVICE_UNAVAILABLE", "downstream unavailable"),
-		);
+		const execute = vi.fn(async () => errorResult.fail("SERVICE_UNAVAILABLE"));
 		const telemetry: Array<{ level: string; event: string; code: string }> = [];
 		const observability = createProductionHrObservabilityPorts(
 			createProductionHrObservabilityRecorder({
@@ -209,7 +206,10 @@ describe("HR reliability runtime composition", () => {
 	it("marks work succeeded only after a connector acknowledgement", async () => {
 		const store = createMemoryReliabilityStore();
 		const execute = vi.fn(async () =>
-			ok({ kind: "acknowledged" as const, receiptId: "receipt-acknowledged" }),
+			errorResult.ok({
+				kind: "acknowledged" as const,
+				receiptId: "receipt-acknowledged",
+			}),
 		);
 		const ports: ReliabilityKernelPorts = {
 			store,

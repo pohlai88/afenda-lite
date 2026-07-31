@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	parseHumanResourcesAssignmentId,
 	parseHumanResourcesEmployeeId,
@@ -73,9 +73,9 @@ export function createMemoryHireOrchestrationMethods(
 				idempotencyMapKey(input.organizationId, input.idempotencyKey),
 			);
 			if (record === undefined) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok(cloneRecord(record));
+			return await errorResult.ok(cloneRecord(record));
 		},
 
 		async findOpenHireAttemptByOfferId(input) {
@@ -87,14 +87,16 @@ export function createMemoryHireOrchestrationMethods(
 						attempt.offerId === input.offerId &&
 						(attempt.status === "in_progress" || attempt.status === "completed")
 					) {
-						return sequentialReturn(await ok(cloneAttempt(attempt)));
+						return sequentialReturn(
+							await errorResult.ok(cloneAttempt(attempt)),
+						);
 					}
 				},
 			);
 			if (sequentialOutcome1.kind === "return") {
 				return sequentialOutcome1.value;
 			}
-			return await ok(null);
+			return await errorResult.ok(null);
 		},
 
 		async createHireAttempt(record, _ports, _meta) {
@@ -154,7 +156,7 @@ export function createMemoryHireOrchestrationMethods(
 				},
 			);
 
-			return ok(cloneAttempt(attempt));
+			return errorResult.ok(cloneAttempt(attempt));
 		},
 
 		async updateHireAttemptProgress(input, _ports, _meta) {
@@ -207,7 +209,7 @@ export function createMemoryHireOrchestrationMethods(
 				);
 			}
 
-			return await ok(cloneAttempt(updated));
+			return await errorResult.ok(cloneAttempt(updated));
 		},
 	};
 }
@@ -216,7 +218,7 @@ function parseNullableHireId<T>(
 	value: string | null,
 	parse: (value: string) => Result<T>,
 ): Result<T | null> {
-	return value === null ? ok(null) : parse(value);
+	return value === null ? errorResult.ok(null) : parse(value);
 }
 
 export function mapHireAttemptRow(row: {
@@ -297,7 +299,7 @@ export function mapHireAttemptRow(row: {
 		? (row.compensationLog as HireCompensationLogEntry[])
 		: [];
 
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		offerId: offerId.data,

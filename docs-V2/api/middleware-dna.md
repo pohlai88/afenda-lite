@@ -20,7 +20,7 @@ Borrow/reject matrix for Fetch RH pipeline concerns. Living wire shapes stay in 
 | Compose · `x-correlation-id` · pagination · `Retry-After` · `X-RateLimit-*` · `Server-Timing` · `withHttpContext` / `stampHttpResponse` | [`@afenda/http`](../../packages/runtime/http/README.md) |
 | Security headers · CSP · CORS allow-list / preflight | [`@afenda/security`](../../packages/runtime/security/README.md) |
 | Abuse limit store · buckets · `checkRateLimit` (+ quota) | [`@afenda/rate-limit`](../../packages/runtime/rate-limit/README.md) |
-| `AppError` · ActionResult · RH `{ data }` / `{ error }` | [`@afenda/errors`](../../packages/foundation/errors/README.md) · web `jsonData` / `jsonError` |
+| Canonical `Result` · ActionResult · RH `{ data }` / `{ error }` | [`@afenda/errors`](../../packages/foundation/errors/README.md) · web `jsonData` / `jsonFailure` |
 | RH onion adapter (correlation + Server-Timing + optional CORS) | `apps/web/modules/platform/api/route-pipeline.ts` |
 | Auth BFF rate-limit headers + Server-Timing | [`@afenda/auth`](../../packages/control-plane/auth/README.md) `createAuthApiHandlers` |
 | Session gate | `apps/web/proxy.ts` + `@afenda/auth` |

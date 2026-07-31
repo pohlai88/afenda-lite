@@ -1,4 +1,4 @@
-import { ok } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 import {
 	buildHumanResourcesReportingSnapshot,
 	type HumanResourcesReadModelFact,
@@ -20,7 +20,7 @@ function createSource(
 					fact.organizationId === input.organizationId,
 			);
 			const offset = (input.page - 1) * input.pageSize;
-			return await ok({
+			return await errorResult.ok({
 				entries: matching.slice(offset, offset + input.pageSize),
 				total: matching.length,
 				page: input.page,
@@ -280,7 +280,7 @@ describe("Human Resources reporting reconciliation", () => {
 	it("fails closed when a reporting page crosses the tenant boundary", async () => {
 		const source: HumanResourcesReportingSourcePort = {
 			listFacts: async (input) =>
-				ok({
+				errorResult.ok({
 					entries:
 						input.kind === "employment"
 							? [
@@ -306,10 +306,9 @@ describe("Human Resources reporting reconciliation", () => {
 			source,
 		);
 
-		expect(result).toEqual({
+		expect(result).toMatchObject({
 			ok: false,
 			code: "INTERNAL_ERROR",
-			message: "Reporting source crossed a tenant or fact boundary",
 		});
 	});
 

@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type {
 	AccountingPeriod,
 	AccountingStore,
@@ -29,22 +29,25 @@ function validateJournalPosting(
 	expectedVersion: number,
 ): Result<void> {
 	if (journal.status !== "draft") {
-		return fail("CONFLICT", "Journal is not in draft status");
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Journal is not in draft status",
+		});
 	}
 	if (journal.version !== expectedVersion) {
-		return fail("CONFLICT", "Version mismatch");
+		return errorResult.fail("CONFLICT", { publicMessage: "Version mismatch" });
 	}
 	if (journal.lines.length === 0) {
-		return fail("VALIDATION_ERROR", "Journal has no lines");
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "Journal has no lines",
+		});
 	}
 	if (!period) {
-		return fail("NOT_FOUND", "Period not found");
+		return errorResult.fail("NOT_FOUND", { publicMessage: "Period not found" });
 	}
 	if (period.status !== "open") {
-		return fail(
-			"CONFLICT",
-			`Cannot post to period with status '${period.status}'`,
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "The request conflicts with current state",
+		});
 	}
 	const totals = journal.lines.reduce(
 		(accumulator, line) => ({
@@ -54,11 +57,10 @@ function validateJournalPosting(
 		{ debit: 0, credit: 0 },
 	);
 	return Math.abs(totals.debit - totals.credit) > 0.001
-		? fail(
-				"VALIDATION_ERROR",
-				"Journal does not balance: debits must equal credits",
-			)
-		: ok(undefined);
+		? errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Journal does not balance: debits must equal credits",
+			})
+		: errorResult.ok(undefined);
 }
 
 function buildLedgerPostings(
@@ -163,7 +165,9 @@ export function createMemoryStore(): AccountingStore {
 						j.normalizedCode === record.normalizedCode,
 				);
 				if (existing) {
-					return fail("CONFLICT", "Journal code already exists");
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "Journal code already exists",
+					});
 				}
 				const now = new Date();
 				const journal: Journal = {
@@ -191,7 +195,7 @@ export function createMemoryStore(): AccountingStore {
 					postings: [],
 				};
 				journals.push(journal);
-				return ok(journal);
+				return errorResult.ok(journal);
 			});
 		},
 
@@ -199,10 +203,14 @@ export function createMemoryStore(): AccountingStore {
 			return resolveOperation(() => {
 				const journal = findJournal(record.organizationId, record.journalId);
 				if (!journal) {
-					return fail("NOT_FOUND", "Journal not found");
+					return errorResult.fail("NOT_FOUND", {
+						publicMessage: "Journal not found",
+					});
 				}
 				if (journal.status !== "draft") {
-					return fail("CONFLICT", "Journal is not in draft status");
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "Journal is not in draft status",
+					});
 				}
 				const lineNumber = journal.lines.length + 1;
 				const line: JournalLine = {
@@ -219,14 +227,16 @@ export function createMemoryStore(): AccountingStore {
 					createdAt: new Date(),
 				};
 				journal.lines.push(line);
-				return ok(line);
+				return errorResult.ok(line);
 			});
 		},
 
 		async post(record): Promise<Result<Journal>> {
 			const journal = findJournal(record.organizationId, record.journalId);
 			if (!journal) {
-				return fail("NOT_FOUND", "Journal not found");
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "Journal not found",
+				});
 			}
 			const period = findPeriod(record.organizationId, journal.periodId);
 			const validation = validateJournalPosting(
@@ -263,33 +273,42 @@ export function createMemoryStore(): AccountingStore {
 				return emitResult;
 			}
 
-			return ok(journal);
+			return errorResult.ok(journal);
 		},
 
 		async reverse(record): Promise<Result<Journal>> {
 			const original = findJournal(record.organizationId, record.journalId);
 			if (!original) {
-				return fail("NOT_FOUND", "Journal not found");
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "Journal not found",
+				});
 			}
 			if (original.status !== "posted") {
-				return fail("CONFLICT", "Only posted journals can be reversed");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Only posted journals can be reversed",
+				});
 			}
 			if (original.version !== record.expectedVersion) {
-				return fail("CONFLICT", "Version mismatch");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Version mismatch",
+				});
 			}
 			if (original.reversedByJournalId) {
-				return fail("CONFLICT", "Journal has already been reversed");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Journal has already been reversed",
+				});
 			}
 
 			const period = findPeriod(record.organizationId, original.periodId);
 			if (!period) {
-				return fail("NOT_FOUND", "Period not found");
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "Period not found",
+				});
 			}
 			if (period.status !== "open") {
-				return fail(
-					"CONFLICT",
-					`Cannot reverse in period with status '${period.status}'`,
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+				});
 			}
 
 			const now = new Date();
@@ -387,7 +406,7 @@ export function createMemoryStore(): AccountingStore {
 				return emitResult;
 			}
 
-			return ok(reversalJournal);
+			return errorResult.ok(reversalJournal);
 		},
 
 		openPeriod(record): Promise<Result<AccountingPeriod>> {
@@ -398,7 +417,9 @@ export function createMemoryStore(): AccountingStore {
 						p.normalizedCode === record.normalizedCode,
 				);
 				if (existing) {
-					return fail("CONFLICT", "Period code already exists");
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "Period code already exists",
+					});
 				}
 
 				const now = new Date();
@@ -425,7 +446,7 @@ export function createMemoryStore(): AccountingStore {
 					updatedAt: now,
 				};
 				periods.push(period);
-				return ok(period);
+				return errorResult.ok(period);
 			});
 		},
 
@@ -433,13 +454,19 @@ export function createMemoryStore(): AccountingStore {
 			return resolveOperation(() => {
 				const period = findPeriod(record.organizationId, record.periodId);
 				if (!period) {
-					return fail("NOT_FOUND", "Period not found");
+					return errorResult.fail("NOT_FOUND", {
+						publicMessage: "Period not found",
+					});
 				}
 				if (period.status !== "open") {
-					return fail("CONFLICT", "Only open periods can be soft-closed");
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "Only open periods can be soft-closed",
+					});
 				}
 				if (period.version !== record.expectedVersion) {
-					return fail("CONFLICT", "Version mismatch");
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "Version mismatch",
+					});
 				}
 
 				const now = new Date();
@@ -449,7 +476,7 @@ export function createMemoryStore(): AccountingStore {
 				period.softClosedBy = record.actorUserId;
 				period.updatedAt = now;
 				period.version += 1;
-				return ok(period);
+				return errorResult.ok(period);
 			});
 		},
 
@@ -457,13 +484,19 @@ export function createMemoryStore(): AccountingStore {
 			return resolveOperation(() => {
 				const period = findPeriod(record.organizationId, record.periodId);
 				if (!period) {
-					return fail("NOT_FOUND", "Period not found");
+					return errorResult.fail("NOT_FOUND", {
+						publicMessage: "Period not found",
+					});
 				}
 				if (period.status !== "soft_closed") {
-					return fail("CONFLICT", "Only soft-closed periods can be closed");
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "Only soft-closed periods can be closed",
+					});
 				}
 				if (period.version !== record.expectedVersion) {
-					return fail("CONFLICT", "Version mismatch");
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "Version mismatch",
+					});
 				}
 
 				const now = new Date();
@@ -473,7 +506,7 @@ export function createMemoryStore(): AccountingStore {
 				period.closedAt = now;
 				period.updatedAt = now;
 				period.version += 1;
-				return ok(period);
+				return errorResult.ok(period);
 			});
 		},
 
@@ -481,16 +514,19 @@ export function createMemoryStore(): AccountingStore {
 			return resolveOperation(() => {
 				const period = findPeriod(record.organizationId, record.periodId);
 				if (!period) {
-					return fail("NOT_FOUND", "Period not found");
+					return errorResult.fail("NOT_FOUND", {
+						publicMessage: "Period not found",
+					});
 				}
 				if (period.status !== "soft_closed" && period.status !== "closed") {
-					return fail(
-						"CONFLICT",
-						"Only soft-closed or closed periods can be reopened",
-					);
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "Only soft-closed or closed periods can be reopened",
+					});
 				}
 				if (period.version !== record.expectedVersion) {
-					return fail("CONFLICT", "Version mismatch");
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "Version mismatch",
+					});
 				}
 
 				const now = new Date();
@@ -501,14 +537,14 @@ export function createMemoryStore(): AccountingStore {
 				period.reopenedBy = record.actorUserId;
 				period.updatedAt = now;
 				period.version += 1;
-				return ok(period);
+				return errorResult.ok(period);
 			});
 		},
 
 		getById(organizationId, id): Promise<Result<Journal | null>> {
 			return resolveOperation(() => {
 				const journal = findJournal(organizationId, id);
-				return ok(journal ?? null);
+				return errorResult.ok(journal ?? null);
 			});
 		},
 
@@ -524,7 +560,7 @@ export function createMemoryStore(): AccountingStore {
 					filtered = filtered.filter((j) => j.periodId === filter.periodId);
 				}
 				const start = (filter.page - 1) * filter.pageSize;
-				return ok(filtered.slice(start, start + filter.pageSize));
+				return errorResult.ok(filtered.slice(start, start + filter.pageSize));
 			});
 		},
 
@@ -563,7 +599,7 @@ export function createMemoryStore(): AccountingStore {
 						balance: (totals.debit - totals.credit).toFixed(2),
 					});
 				}
-				return ok(
+				return errorResult.ok(
 					rows.sort((a, b) => a.accountCode.localeCompare(b.accountCode)),
 				);
 			});
@@ -577,7 +613,9 @@ export function createMemoryStore(): AccountingStore {
 						c.code.toUpperCase() === record.code.toUpperCase(),
 				);
 				if (existing) {
-					return fail("CONFLICT", "Chart of accounts code already exists");
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "Chart of accounts code already exists",
+					});
 				}
 
 				const now = new Date();
@@ -594,7 +632,7 @@ export function createMemoryStore(): AccountingStore {
 					updatedAt: now,
 				};
 				chartOfAccounts.push(coa);
-				return ok(coa);
+				return errorResult.ok(coa);
 			});
 		},
 
@@ -606,7 +644,9 @@ export function createMemoryStore(): AccountingStore {
 						a.normalizedCode === record.normalizedCode,
 				);
 				if (existing) {
-					return fail("CONFLICT", "Ledger account code already exists");
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "Ledger account code already exists",
+					});
 				}
 
 				const now = new Date();
@@ -628,7 +668,7 @@ export function createMemoryStore(): AccountingStore {
 					updatedAt: now,
 				};
 				ledgerAccounts.push(account);
-				return ok(account);
+				return errorResult.ok(account);
 			});
 		},
 
@@ -639,10 +679,14 @@ export function createMemoryStore(): AccountingStore {
 						a.organizationId === record.organizationId && a.id === record.id,
 				);
 				if (!account) {
-					return fail("NOT_FOUND", "Ledger account not found");
+					return errorResult.fail("NOT_FOUND", {
+						publicMessage: "Ledger account not found",
+					});
 				}
 				if (account.version !== record.expectedVersion) {
-					return fail("CONFLICT", "Version mismatch");
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "Version mismatch",
+					});
 				}
 
 				account.name = record.name;
@@ -652,7 +696,7 @@ export function createMemoryStore(): AccountingStore {
 				account.updatedBy = record.actorUserId;
 				account.updatedAt = new Date();
 				account.version += 1;
-				return ok(account);
+				return errorResult.ok(account);
 			});
 		},
 
@@ -663,20 +707,26 @@ export function createMemoryStore(): AccountingStore {
 						a.organizationId === record.organizationId && a.id === record.id,
 				);
 				if (!account) {
-					return fail("NOT_FOUND", "Ledger account not found");
+					return errorResult.fail("NOT_FOUND", {
+						publicMessage: "Ledger account not found",
+					});
 				}
 				if (account.version !== record.expectedVersion) {
-					return fail("CONFLICT", "Version mismatch");
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "Version mismatch",
+					});
 				}
 				if (account.status === "inactive") {
-					return fail("CONFLICT", "Ledger account is already inactive");
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "Ledger account is already inactive",
+					});
 				}
 
 				account.status = "inactive";
 				account.updatedBy = record.actorUserId;
 				account.updatedAt = new Date();
 				account.version += 1;
-				return ok(account);
+				return errorResult.ok(account);
 			});
 		},
 
@@ -693,7 +743,7 @@ export function createMemoryStore(): AccountingStore {
 				if (filter.status) {
 					filtered = filtered.filter((a) => a.status === filter.status);
 				}
-				return ok(filtered);
+				return errorResult.ok(filtered);
 			});
 		},
 
@@ -707,7 +757,7 @@ export function createMemoryStore(): AccountingStore {
 						a.organizationId === organizationId &&
 						a.normalizedCode === normalizedCode,
 				);
-				return ok(account ?? null);
+				return errorResult.ok(account ?? null);
 			});
 		},
 
@@ -724,7 +774,7 @@ export function createMemoryStore(): AccountingStore {
 					existing.updatedBy = record.actorUserId;
 					existing.updatedAt = now;
 					existing.version += 1;
-					return ok(existing);
+					return errorResult.ok(existing);
 				}
 
 				const mapping: AccountRoleMapping = {
@@ -739,7 +789,7 @@ export function createMemoryStore(): AccountingStore {
 					updatedAt: now,
 				};
 				accountRoleMappings.push(mapping);
-				return ok(mapping);
+				return errorResult.ok(mapping);
 			});
 		},
 
@@ -753,7 +803,7 @@ export function createMemoryStore(): AccountingStore {
 						m.organizationId === organizationId &&
 						m.accountRole === accountRole,
 				);
-				return ok(mapping ?? null);
+				return errorResult.ok(mapping ?? null);
 			});
 		},
 
@@ -781,7 +831,7 @@ export function createMemoryStore(): AccountingStore {
 					existing.updatedBy = record.actorUserId;
 					existing.updatedAt = now;
 					existing.version += 1;
-					return ok(existing);
+					return errorResult.ok(existing);
 				}
 
 				const profile: PostingProfile = {
@@ -799,7 +849,7 @@ export function createMemoryStore(): AccountingStore {
 					updatedAt: now,
 				};
 				postingProfiles.push(profile);
-				return ok(profile);
+				return errorResult.ok(profile);
 			});
 		},
 
@@ -816,7 +866,7 @@ export function createMemoryStore(): AccountingStore {
 							p.status === "active",
 					)
 					.sort((a, b) => b.versionNumber - a.versionNumber);
-				return ok(active[0] ?? null);
+				return errorResult.ok(active[0] ?? null);
 			});
 		},
 
@@ -831,7 +881,7 @@ export function createMemoryStore(): AccountingStore {
 						l.sourceEventVersion === record.sourceEventVersion &&
 						l.postingRuleVersion === record.postingRuleVersion,
 				);
-				return ok(link ?? null);
+				return errorResult.ok(link ?? null);
 			});
 		},
 
@@ -853,7 +903,7 @@ export function createMemoryStore(): AccountingStore {
 					createdAt: now,
 				};
 				sourcePostingLinks.push(link);
-				return ok(link);
+				return errorResult.ok(link);
 			});
 		},
 
@@ -882,7 +932,7 @@ export function createMemoryStore(): AccountingStore {
 					updatedAt: now,
 				};
 				postingExceptions.push(exception);
-				return ok(exception);
+				return errorResult.ok(exception);
 			});
 		},
 
@@ -894,7 +944,7 @@ export function createMemoryStore(): AccountingStore {
 				if (filter.status) {
 					filtered = filtered.filter((e) => e.status === filter.status);
 				}
-				return ok(filtered);
+				return errorResult.ok(filtered);
 			});
 		},
 
@@ -905,13 +955,19 @@ export function createMemoryStore(): AccountingStore {
 						e.organizationId === record.organizationId && e.id === record.id,
 				);
 				if (!exception) {
-					return fail("NOT_FOUND", "Posting exception not found");
+					return errorResult.fail("NOT_FOUND", {
+						publicMessage: "Posting exception not found",
+					});
 				}
 				if (exception.version !== record.expectedVersion) {
-					return fail("CONFLICT", "Version mismatch");
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "Version mismatch",
+					});
 				}
 				if (exception.status === "resolved") {
-					return fail("CONFLICT", "Exception is already resolved");
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "Exception is already resolved",
+					});
 				}
 
 				exception.status = "resolved";
@@ -921,7 +977,7 @@ export function createMemoryStore(): AccountingStore {
 				exception.updatedBy = record.actorUserId;
 				exception.updatedAt = new Date();
 				exception.version += 1;
-				return ok(exception);
+				return errorResult.ok(exception);
 			});
 		},
 
@@ -952,7 +1008,7 @@ export function createMemoryStore(): AccountingStore {
 						traces.push({ link, journal });
 					}
 				}
-				return ok(traces);
+				return errorResult.ok(traces);
 			});
 		},
 
@@ -960,7 +1016,7 @@ export function createMemoryStore(): AccountingStore {
 			filter,
 		): Promise<Result<LedgerAccountActivityRow[]>> {
 			return resolveOperation(() =>
-				ok(buildLedgerAccountActivity(journals, filter)),
+				errorResult.ok(buildLedgerAccountActivity(journals, filter)),
 			);
 		},
 	};

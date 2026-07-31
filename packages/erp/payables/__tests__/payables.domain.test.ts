@@ -1,4 +1,4 @@
-import { fail, ok } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -31,14 +31,14 @@ const authorization = {
 };
 const effects = {
 	emit() {
-		return Promise.resolve(ok(undefined));
+		return Promise.resolve(errorResult.ok(undefined));
 	},
 };
 
 const purchaseOrderMatch: PurchaseOrderMatchQueryPort = {
 	getPurchaseOrderMatchBasis() {
 		return Promise.resolve(
-			ok({
+			errorResult.ok({
 				currencyCode: "USD",
 				lines: [{ itemId, quantity: "10", unitPrice: "50" }],
 				priceTolerancePct: "100",
@@ -54,7 +54,7 @@ const purchaseOrderMatch: PurchaseOrderMatchQueryPort = {
 const goodsReceiptMatch: GoodsReceiptMatchQueryPort = {
 	getGoodsReceiptMatchBasis() {
 		return Promise.resolve(
-			ok({
+			errorResult.ok({
 				goodsReceiptId,
 				lines: [{ itemId, quantityReceived: "10" }],
 				purchaseOrderId,
@@ -70,7 +70,7 @@ const goodsReceiptMatch: GoodsReceiptMatchQueryPort = {
 const postedPayment: PostedPaymentQueryPort = {
 	getPostedPayment() {
 		return Promise.resolve(
-			ok({
+			errorResult.ok({
 				currencyCode: "USD",
 				direction: "outbound",
 				paymentId,
@@ -317,7 +317,7 @@ describe("payables lifecycle", () => {
 		const fxPo: PurchaseOrderMatchQueryPort = {
 			getPurchaseOrderMatchBasis() {
 				return Promise.resolve(
-					ok({
+					errorResult.ok({
 						currencyCode: "EUR",
 						lines: [{ itemId, quantity: "10", unitPrice: "50" }],
 						purchaseOrderId,
@@ -470,9 +470,7 @@ describe("payables lifecycle", () => {
 				...options,
 				effects: {
 					emit() {
-						return Promise.resolve(
-							fail("INTERNAL_ERROR", "reversal event failed"),
-						);
+						return Promise.resolve(errorResult.fail("INTERNAL_ERROR"));
 					},
 				},
 			},
@@ -518,7 +516,7 @@ describe("payables lifecycle", () => {
 		const mismatchedPayment: PostedPaymentQueryPort = {
 			getPostedPayment() {
 				return Promise.resolve(
-					ok({
+					errorResult.ok({
 						currencyCode: "EUR",
 						direction: "outbound",
 						paymentId,

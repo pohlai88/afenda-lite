@@ -1,5 +1,5 @@
 // biome-ignore-all lint/style/useDestructuring: Explicit predecessor access keeps name supersession evidence visible.
-import { fail, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS,
 	type CorporateAdministrationApprovalVerificationDependencies,
@@ -11,7 +11,6 @@ import type {
 	CorporateAdministrationApprovalCommandOptions,
 	CorporateAdministrationCommandOptions,
 } from "../../command-options";
-import { corporateAdministrationErrorDetails } from "../../error-codes";
 import { parseCorporateAdministrationInput } from "../../parse-input";
 import {
 	normalizeCompanyName,
@@ -95,24 +94,14 @@ export async function supersedeCompanyName(
 		return sourceDocument;
 	}
 	if (sourceDocument.data === null) {
-		return fail(
-			"NOT_FOUND",
-			"Corporate Administration source document was not found.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_REFERENCE_INVALID",
-				{ field: "sourceDocumentId" },
-			),
-		);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Corporate Administration source document was not found.",
+		});
 	}
 	if (!sourceDocument.data.active) {
-		return fail(
-			"CONFLICT",
-			"Corporate Administration source document is inactive.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_REFERENCE_INACTIVE",
-				{ field: "sourceDocumentId" },
-			),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Corporate Administration source document is inactive.",
+		});
 	}
 	const sourceDocumentId = sourceDocument.data.sourceDocumentId;
 
@@ -152,14 +141,10 @@ export async function supersedeCompanyName(
 		return overlap;
 	}
 	if (overlap.data !== null) {
-		return fail(
-			"CONFLICT",
-			"Corporate Administration company name overlaps an existing name for the same type and language.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_EFFECTIVE_RANGE_OVERLAP",
-				{ field: "effectivePeriod" },
-			),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage:
+				"Corporate Administration company name overlaps an existing name for the same type and language.",
+		});
 	}
 
 	return runDurableCompanyCommand({

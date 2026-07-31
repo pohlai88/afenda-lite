@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_NOT_FOUND,
@@ -30,11 +30,12 @@ export function resolveEmployeeOrgContextAsOf(
 				return employment;
 			}
 			if (employment.data === null) {
-				return fail(
-					"NOT_FOUND",
-					"No employment effective on the requested date",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_NOT_FOUND,
+					),
+				});
 			}
 
 			const resolved = await resolveEmployeeOrgContextForEmployment({
@@ -49,13 +50,14 @@ export function resolveEmployeeOrgContextAsOf(
 				return resolved;
 			}
 			if (resolved.data === null) {
-				return fail(
-					"NOT_FOUND",
-					"No assignment effective on the requested date",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_NOT_FOUND,
+					),
+				});
 			}
-			return ok(resolved.data);
+			return errorResult.ok(resolved.data);
 		},
 	});
 }

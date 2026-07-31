@@ -97,10 +97,9 @@ describe("member notification Actions", () => {
 		formData.set("id", "missing-id");
 
 		const state = await markNotificationReadAction(null, formData);
-		expect(state).toEqual({
+		expect(state).toMatchObject({
 			ok: false,
 			code: "NOT_FOUND",
-			message: "That notification was not found for your account.",
 		});
 		expect(notificationMocks.markNotificationRead).toHaveBeenCalledWith({
 			organizationId: "org-session",

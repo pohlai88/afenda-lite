@@ -7,18 +7,18 @@ import {
 	signInWithEmail,
 	signOutSession,
 } from "@afenda/auth";
+import {
+	type Result as ActionResult,
+	errorIngress,
+	errorProject,
+	errorResult,
+} from "@afenda/errors";
 import { createCorrelationId } from "@afenda/http";
-import { checkRateLimit, toRateLimitAppError } from "@afenda/rate-limit";
+import { checkRateLimit, toRateLimitFailure } from "@afenda/rate-limit";
 import { redirect } from "next/navigation";
 import { signInSchema } from "@/modules/identity/schemas/auth";
 import { readRequestAttribution } from "@/modules/platform/domain/request-attribution";
 import { logProductEvent } from "@/modules/platform/observability/product-log";
-import {
-	type ActionResult,
-	actionFail,
-	actionFailFromAppError,
-	actionFailInternal,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 const AUTH_SIGN_IN_PATH = AUTH_LOGIN_PATH;
@@ -35,12 +35,9 @@ function mapCredentialFailure(
 	correlationId: string,
 ): ActionResult<never> {
 	if (result.code?.startsWith("NETWORK_")) {
-		return actionFailInternal(
-			"Authentication service is temporarily unavailable.",
-			correlationId,
-		);
+		return errorResult.fail("INTERNAL_ERROR", { correlationId });
 	}
-	return actionFail("UNAUTHORIZED", result.message);
+	return errorResult.fail("UNAUTHORIZED");
 }
 
 function resolvePostAuthRedirect(rawCallback: string | undefined): string {
@@ -82,7 +79,7 @@ export async function signInAction(
 		}),
 	});
 	if (!limit.ok) {
-		const error = toRateLimitAppError(limit);
+		const error = toRateLimitFailure(limit);
 		logProductEvent({
 			level: "warn",
 			event:
@@ -91,9 +88,11 @@ export async function signInAction(
 					: "auth_sign_in.rate_limited",
 			correlationId,
 			path: AUTH_SIGN_IN_PATH,
-			code: error.code,
+			code: errorProject.diagnostics(error).code,
 		});
-		return actionFailFromAppError(error);
+		return errorProject.result(
+			errorIngress.unknown(error, { operation: "web.action" }),
+		);
 	}
 
 	const parsed = parseSchema(signInSchema, {
@@ -102,11 +101,9 @@ export async function signInAction(
 		callback: formData.get(POST_LOGIN_CALLBACK_PARAM) || undefined,
 	});
 	if (!parsed.success) {
-		return actionFail(
-			"VALIDATION_ERROR",
-			"Enter a valid email and password.",
-			parsed.details,
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "Enter a valid email and password.",
+		});
 	}
 
 	const result = await signInWithEmail({

@@ -23,7 +23,7 @@ import {
 	runNeonHttpTransaction,
 	sql,
 } from "@afenda/db";
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	HUMAN_RESOURCES_DEPARTMENT_ACTIVATED_EVENT,
 	HUMAN_RESOURCES_DEPARTMENT_ARCHIVED_EVENT,
@@ -173,7 +173,7 @@ function mapNullableDepartmentId(
 	value: string | null,
 ): Result<HumanResourcesDepartmentId | null> {
 	if (value === null) {
-		return ok(null);
+		return errorResult.ok(null);
 	}
 	return parseHumanResourcesDepartmentId(value);
 }
@@ -182,7 +182,7 @@ function mapNullableJobId(
 	value: string | null,
 ): Result<HumanResourcesJobId | null> {
 	if (value === null) {
-		return ok(null);
+		return errorResult.ok(null);
 	}
 	return parseHumanResourcesJobId(value);
 }
@@ -200,13 +200,13 @@ function mapDepartment(
 	}
 	const status = departmentStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid department status in persistence",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		code: row.code,
@@ -228,13 +228,13 @@ function mapJob(row: typeof hrJob.$inferSelect): Result<Job> {
 	}
 	const status = jobStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid job status in persistence",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		code: row.code,
@@ -263,13 +263,13 @@ function mapPosition(row: typeof hrPosition.$inferSelect): Result<Position> {
 	}
 	const status = positionStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid position status in persistence",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		code: row.code,
@@ -304,14 +304,14 @@ function mapReportingLine(
 	}
 	const supersedesReportingLineId =
 		row.supersedesReportingLineId === null
-			? ok(null)
+			? errorResult.ok(null)
 			: parseHumanResourcesReportingLineId(row.supersedesReportingLineId);
 	if (isResultFailure(supersedesReportingLineId)) {
 		return supersedesReportingLineId;
 	}
 	const supersededByReportingLineId =
 		row.supersededByReportingLineId === null
-			? ok(null)
+			? errorResult.ok(null)
 			: parseHumanResourcesReportingLineId(row.supersededByReportingLineId);
 	if (isResultFailure(supersededByReportingLineId)) {
 		return supersededByReportingLineId;
@@ -320,13 +320,13 @@ function mapReportingLine(
 		row.relationshipKind,
 	);
 	if (!relationshipKind.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid reporting relationship kind in persistence",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		employeeId: employeeId.data,
@@ -486,7 +486,7 @@ function mapDepartmentStructureVersionRow(
 	if (!parentDepartmentId.ok) {
 		return parentDepartmentId;
 	}
-	return ok({
+	return errorResult.ok({
 		id: row.id,
 		organizationId: row.organizationId,
 		departmentId: departmentId.data,
@@ -515,7 +515,7 @@ function mapJobDefinitionVersionRow(
 	if (!jobId.ok) {
 		return jobId;
 	}
-	return ok({
+	return errorResult.ok({
 		id: row.id,
 		organizationId: row.organizationId,
 		jobId: jobId.data,
@@ -552,7 +552,7 @@ function mapPositionDefinitionVersionRow(
 	if (!jobId.ok) {
 		return jobId;
 	}
-	return ok({
+	return errorResult.ok({
 		id: row.id,
 		organizationId: row.organizationId,
 		positionId: positionId.data,
@@ -595,7 +595,7 @@ async function listDepartmentStructureVersions(input: {
 			}
 			versions.push(mapped.data);
 		}
-		return ok(versions);
+		return errorResult.ok(versions);
 	} catch (error) {
 		return mapPersistenceFailure(
 			error,
@@ -626,7 +626,7 @@ async function listJobDefinitionVersions(input: {
 			}
 			versions.push(mapped.data);
 		}
-		return ok(versions);
+		return errorResult.ok(versions);
 	} catch (error) {
 		return mapPersistenceFailure(
 			error,
@@ -657,7 +657,7 @@ async function listPositionDefinitionVersions(input: {
 			}
 			versions.push(mapped.data);
 		}
-		return ok(versions);
+		return errorResult.ok(versions);
 	} catch (error) {
 		return mapPersistenceFailure(
 			error,
@@ -734,13 +734,12 @@ async function assertReportingLineAssignable(
 		return employee;
 	}
 	if (employee.data === null) {
-		return fail(
-			"NOT_FOUND",
-			"Employee not found",
-			humanResourcesErrorDetails(
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "The requested resource was not found",
+			internalContext: humanResourcesErrorDetails(
 				HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 			),
-		);
+		});
 	}
 	const manager = await host.getEmployeeById({
 		organizationId: input.organizationId,
@@ -750,13 +749,12 @@ async function assertReportingLineAssignable(
 		return manager;
 	}
 	if (manager.data === null) {
-		return fail(
-			"NOT_FOUND",
-			"Manager employee not found",
-			humanResourcesErrorDetails(
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "The requested resource was not found",
+			internalContext: humanResourcesErrorDetails(
 				HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 			),
-		);
+		});
 	}
 
 	const managerCache = new Map<
@@ -767,7 +765,7 @@ async function assertReportingLineAssignable(
 		current: HumanResourcesEmployeeId | null,
 	): Promise<Result<void>> => {
 		if (current === null || managerCache.has(current)) {
-			return ok(undefined);
+			return errorResult.ok(undefined);
 		}
 		const openPrimary: Result<ReportingLine | null> =
 			await host.findOpenPrimaryReportingLine({
@@ -840,7 +838,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 				.limit(1);
 			const [department] = result;
 			if (!department) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapDepartment(department);
 		} catch (error) {
@@ -865,7 +863,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 				.limit(1);
 			const [department] = result;
 			if (!department) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapDepartment(department);
 		} catch (error) {
@@ -886,11 +884,12 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			return existing;
 		}
 		if (existing.data !== null) {
-			return fail(
-				"CONFLICT",
-				"Department with this code already exists",
-				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_DUPLICATE),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "The request conflicts with current state",
+				internalContext: humanResourcesErrorDetails(
+					HUMAN_RESOURCES_ERROR_DUPLICATE,
+				),
+			});
 		}
 
 		const entityId = randomUUID();
@@ -1026,29 +1025,29 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 						return parent;
 					}
 					if (parent.data === null) {
-						return fail(
-							"NOT_FOUND",
-							"Parent department not found",
-							humanResourcesErrorDetails(
+						return errorResult.fail("NOT_FOUND", {
+							publicMessage: "The requested resource was not found",
+							internalContext: humanResourcesErrorDetails(
 								HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 							),
-						);
+						});
 					}
 					const parentActive = assertActiveDepartment(parent.data.status);
 					if (!parentActive.ok) {
 						return parentActive;
 					}
 				}
-				return fail("INTERNAL_ERROR", "Department create returned no row");
+				return errorResult.fail("INTERNAL_ERROR");
 			}
 			return mapDepartmentSqlRow(row);
 		} catch (error) {
 			if (isPostgresUniqueViolation(error)) {
-				return fail(
-					"CONFLICT",
-					"Department with this code already exists",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_DUPLICATE),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_DUPLICATE,
+					),
+				});
 			}
 			return mapPersistenceFailure(error, "Failed to create department");
 		}
@@ -1099,11 +1098,12 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			nextName === existing.data.name &&
 			nextParent === existing.data.parentDepartmentId
 		) {
-			return fail(
-				"CONFLICT",
-				"Department structure correction must change name or parent",
-				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "The request conflicts with current state",
+				internalContext: humanResourcesErrorDetails(
+					HUMAN_RESOURCES_ERROR_CONFLICT,
+				),
+			});
 		}
 
 		const versionsResult = await listDepartmentStructureVersions({
@@ -1119,11 +1119,11 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			input.departmentId,
 		);
 		if (openSegment === null) {
-			return fail(
-				"INTERNAL_ERROR",
-				"Department structure lineage is missing an open segment",
-				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-			);
+			return errorResult.fail("INTERNAL_ERROR", {
+				internalContext: humanResourcesErrorDetails(
+					HUMAN_RESOURCES_ERROR_CONFLICT,
+				),
+			});
 		}
 		const mutableCheck = assertLineageSegmentMutable(openSegment);
 		if (!mutableCheck.ok) {
@@ -1146,13 +1146,12 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 				return parent;
 			}
 			if (parent.data === null) {
-				return fail(
-					"NOT_FOUND",
-					"Parent department not found",
-					humanResourcesErrorDetails(
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
 						HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 					),
-				);
+				});
 			}
 			const parentActive = assertActiveDepartment(parent.data.status);
 			if (!parentActive.ok) {
@@ -1169,7 +1168,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 				current: HumanResourcesDepartmentId | null,
 			): Promise<Result<void>> => {
 				if (current === null || parentCache.has(current)) {
-					return ok(undefined);
+					return errorResult.ok(undefined);
 				}
 				const loaded = await this.getDepartmentById({
 					organizationId: input.organizationId,
@@ -1180,7 +1179,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 				}
 				if (loaded.data === null) {
 					parentCache.set(current, undefined);
-					return ok(undefined);
+					return errorResult.ok(undefined);
 				}
 				parentCache.set(current, loaded.data.parentDepartmentId);
 				return loadParentChain(loaded.data.parentDepartmentId);
@@ -1535,7 +1534,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 				}
 				departments.push(mapped.data);
 			}
-			return ok({
+			return errorResult.ok({
 				departments,
 				totalCount: countRows[0]?.count ?? 0,
 			});
@@ -1561,7 +1560,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 				}
 				departments.push(mapped.data);
 			}
-			return ok(departments);
+			return errorResult.ok(departments);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to list all departments");
 		}
@@ -1584,7 +1583,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 				.limit(1);
 			const [job] = result;
 			if (!job) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapJob(job);
 		} catch (error) {
@@ -1609,7 +1608,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 				.limit(1);
 			const [job] = result;
 			if (!job) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapJob(job);
 		} catch (error) {
@@ -1630,11 +1629,12 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			return existing;
 		}
 		if (existing.data !== null) {
-			return fail(
-				"CONFLICT",
-				"Job with this code already exists",
-				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_DUPLICATE),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "The request conflicts with current state",
+				internalContext: humanResourcesErrorDetails(
+					HUMAN_RESOURCES_ERROR_DUPLICATE,
+				),
+			});
 		}
 
 		const entityId = randomUUID();
@@ -1708,16 +1708,17 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			]);
 			const [row] = rows;
 			if (!row) {
-				return fail("INTERNAL_ERROR", "Job create returned no row");
+				return errorResult.fail("INTERNAL_ERROR");
 			}
 			return mapJobSqlRow(row);
 		} catch (error) {
 			if (isPostgresUniqueViolation(error)) {
-				return fail(
-					"CONFLICT",
-					"Job with this code already exists",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_DUPLICATE),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_DUPLICATE,
+					),
+				});
 			}
 			return mapPersistenceFailure(error, "Failed to create job");
 		}
@@ -1757,11 +1758,12 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 		}
 
 		if (input.title === existing.data.title) {
-			return fail(
-				"CONFLICT",
-				"Job definition correction must change title",
-				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "The request conflicts with current state",
+				internalContext: humanResourcesErrorDetails(
+					HUMAN_RESOURCES_ERROR_CONFLICT,
+				),
+			});
 		}
 
 		const versionsResult = await listJobDefinitionVersions({
@@ -1777,11 +1779,11 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			input.jobId,
 		);
 		if (openSegment === null) {
-			return fail(
-				"INTERNAL_ERROR",
-				"Job definition lineage is missing an open segment",
-				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-			);
+			return errorResult.fail("INTERNAL_ERROR", {
+				internalContext: humanResourcesErrorDetails(
+					HUMAN_RESOURCES_ERROR_CONFLICT,
+				),
+			});
 		}
 		const mutableCheck = assertLineageSegmentMutable(openSegment);
 		if (!mutableCheck.ok) {
@@ -2097,7 +2099,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 				}
 				jobs.push(mapped.data);
 			}
-			return ok({
+			return errorResult.ok({
 				jobs,
 				totalCount: countRows[0]?.count ?? 0,
 			});
@@ -2123,7 +2125,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 				.limit(1);
 			const [position] = result;
 			if (!position) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapPosition(position);
 		} catch (error) {
@@ -2148,7 +2150,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 				.limit(1);
 			const [position] = result;
 			if (!position) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapPosition(position);
 		} catch (error) {
@@ -2258,13 +2260,12 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 					return department;
 				}
 				if (department.data === null) {
-					return fail(
-						"NOT_FOUND",
-						"Department not found",
-						humanResourcesErrorDetails(
+					return errorResult.fail("NOT_FOUND", {
+						publicMessage: "The requested resource was not found",
+						internalContext: humanResourcesErrorDetails(
 							HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 						),
-					);
+					});
 				}
 				const departmentActive = assertActiveDepartment(department.data.status);
 				if (!departmentActive.ok) {
@@ -2278,19 +2279,18 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 					return job;
 				}
 				if (job.data === null) {
-					return fail(
-						"NOT_FOUND",
-						"Job not found",
-						humanResourcesErrorDetails(
+					return errorResult.fail("NOT_FOUND", {
+						publicMessage: "The requested resource was not found",
+						internalContext: humanResourcesErrorDetails(
 							HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 						),
-					);
+					});
 				}
 				const jobActive = assertActiveJob(job.data.status);
 				if (!jobActive.ok) {
 					return jobActive;
 				}
-				return fail("INTERNAL_ERROR", "Position create returned no row");
+				return errorResult.fail("INTERNAL_ERROR");
 			}
 			return mapPositionSqlRow(row);
 		} catch (error) {
@@ -2352,11 +2352,12 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			nextDepartmentId === existing.data.departmentId &&
 			nextJobId === existing.data.jobId
 		) {
-			return fail(
-				"CONFLICT",
-				"Position definition correction must change title, department, or job",
-				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "The request conflicts with current state",
+				internalContext: humanResourcesErrorDetails(
+					HUMAN_RESOURCES_ERROR_CONFLICT,
+				),
+			});
 		}
 
 		const versionsResult = await listPositionDefinitionVersions({
@@ -2372,11 +2373,11 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			input.positionId,
 		);
 		if (openSegment === null) {
-			return fail(
-				"INTERNAL_ERROR",
-				"Position definition lineage is missing an open segment",
-				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-			);
+			return errorResult.fail("INTERNAL_ERROR", {
+				internalContext: humanResourcesErrorDetails(
+					HUMAN_RESOURCES_ERROR_CONFLICT,
+				),
+			});
 		}
 		const mutableCheck = assertLineageSegmentMutable(openSegment);
 		if (!mutableCheck.ok) {
@@ -2399,13 +2400,12 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 				return department;
 			}
 			if (department.data === null) {
-				return fail(
-					"NOT_FOUND",
-					"Department not found",
-					humanResourcesErrorDetails(
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
 						HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 					),
-				);
+				});
 			}
 			const departmentActive = assertActiveDepartment(department.data.status);
 			if (!departmentActive.ok) {
@@ -2421,13 +2421,12 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 				return job;
 			}
 			if (job.data === null) {
-				return fail(
-					"NOT_FOUND",
-					"Job not found",
-					humanResourcesErrorDetails(
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
 						HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 					),
-				);
+				});
 			}
 			const jobActive = assertActiveJob(job.data.status);
 			if (!jobActive.ok) {
@@ -2765,7 +2764,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 				positions.push(mapped.data);
 			}
 
-			return ok({
+			return errorResult.ok({
 				positions,
 				totalCount: countRows[0]?.count ?? 0,
 			});
@@ -2792,7 +2791,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 						),
 					),
 				);
-			return ok(rows[0]?.count ?? 0);
+			return errorResult.ok(rows[0]?.count ?? 0);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -2819,7 +2818,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 						),
 					),
 				);
-			return ok(rows[0]?.count ?? 0);
+			return errorResult.ok(rows[0]?.count ?? 0);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -2843,7 +2842,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 						eq(hrDepartment.status, "active"),
 					),
 				);
-			return ok(rows[0]?.count ?? 0);
+			return errorResult.ok(rows[0]?.count ?? 0);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -2869,7 +2868,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 				.limit(1);
 			const [reportingLine] = result;
 			if (!reportingLine) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapReportingLine(reportingLine);
 		} catch (error) {
@@ -2900,7 +2899,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 				}
 				lines.push(mapped.data);
 			}
-			return ok(lines);
+			return errorResult.ok(lines);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -2928,7 +2927,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 				.limit(1);
 			const [reportingLine] = result;
 			if (!reportingLine) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapReportingLine(reportingLine);
 		} catch (error) {
@@ -2963,14 +2962,15 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 				getEffectiveTo: (line) => line.endsOn,
 			});
 			if (!resolution.ok) {
-				return fail(
-					"CONFLICT",
-					"Multiple primary reporting lines are effective on the requested date",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_CONFLICT,
+					),
+				});
 			}
 			return resolution.record === null
-				? ok(null)
+				? errorResult.ok(null)
 				: mapReportingLine(resolution.record);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to resolve primary manager");
@@ -3017,7 +3017,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 				}
 				reportingLines.push(mapped.data);
 			}
-			return ok({
+			return errorResult.ok({
 				reportingLines,
 				totalCount: countRows[0]?.count ?? 0,
 			});
@@ -3517,7 +3517,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			maxDepth: input.maxDepth,
 			maxNodes: input.maxNodes,
 		});
-		return ok(tree);
+		return errorResult.ok(tree);
 	},
 
 	async findDepartmentAsOf(input: {
@@ -3533,7 +3533,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			return department;
 		}
 		if (department.data === null) {
-			return ok(null);
+			return errorResult.ok(null);
 		}
 
 		const versionsResult = await listDepartmentStructureVersions({
@@ -3550,17 +3550,18 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			asOf: input.asOf,
 		});
 		if (!resolved.ok) {
-			return fail(
-				"CONFLICT",
-				`Department structure is not deterministic for as-of date (${resolved.reason})`,
-				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "The request conflicts with current state",
+				internalContext: humanResourcesErrorDetails(
+					HUMAN_RESOURCES_ERROR_CONFLICT,
+				),
+			});
 		}
 		if (resolved.record === null) {
-			return ok(null);
+			return errorResult.ok(null);
 		}
 
-		return ok({
+		return errorResult.ok({
 			departmentId: input.departmentId,
 			organizationId: input.organizationId,
 			name: resolved.record.name,
@@ -3585,7 +3586,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			return job;
 		}
 		if (job.data === null) {
-			return ok(null);
+			return errorResult.ok(null);
 		}
 
 		const versionsResult = await listJobDefinitionVersions({
@@ -3602,17 +3603,18 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			asOf: input.asOf,
 		});
 		if (!resolved.ok) {
-			return fail(
-				"CONFLICT",
-				`Job definition is not deterministic for as-of date (${resolved.reason})`,
-				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "The request conflicts with current state",
+				internalContext: humanResourcesErrorDetails(
+					HUMAN_RESOURCES_ERROR_CONFLICT,
+				),
+			});
 		}
 		if (resolved.record === null) {
-			return ok(null);
+			return errorResult.ok(null);
 		}
 
-		return ok({
+		return errorResult.ok({
 			jobId: input.jobId,
 			organizationId: input.organizationId,
 			title: resolved.record.title,
@@ -3636,7 +3638,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			return position;
 		}
 		if (position.data === null) {
-			return ok(null);
+			return errorResult.ok(null);
 		}
 
 		const versionsResult = await listPositionDefinitionVersions({
@@ -3653,17 +3655,18 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			asOf: input.asOf,
 		});
 		if (!resolved.ok) {
-			return fail(
-				"CONFLICT",
-				`Position definition is not deterministic for as-of date (${resolved.reason})`,
-				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "The request conflicts with current state",
+				internalContext: humanResourcesErrorDetails(
+					HUMAN_RESOURCES_ERROR_CONFLICT,
+				),
+			});
 		}
 		if (resolved.record === null) {
-			return ok(null);
+			return errorResult.ok(null);
 		}
 
-		return ok({
+		return errorResult.ok({
 			positionId: input.positionId,
 			organizationId: input.organizationId,
 			title: resolved.record.title,
@@ -3731,7 +3734,7 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			maxDepth: input.maxDepth,
 			maxNodes: input.maxNodes,
 		});
-		return ok(tree);
+		return errorResult.ok(tree);
 	},
 };
 

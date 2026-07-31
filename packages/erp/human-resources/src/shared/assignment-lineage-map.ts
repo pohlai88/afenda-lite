@@ -1,4 +1,4 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type {
 	HumanResourcesAssignmentId,
@@ -114,7 +114,7 @@ export function mapAssignmentLineageFields(row: AssignmentLineageRow): Result<{
 		workCalendarIdSnapshot = parsed.data;
 	}
 
-	return ok({
+	return errorResult.ok({
 		predecessorAssignmentId,
 		successorAssignmentId,
 		transferMovementId,

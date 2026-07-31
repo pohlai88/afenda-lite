@@ -1,7 +1,7 @@
 // biome-ignore-all lint/suspicious/useAwait: The deterministic memory adapter implements asynchronous payroll run ports.
 import { randomUUID } from "node:crypto";
 import type { Change } from "@afenda/audit";
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	type PayrollRunId,
@@ -70,9 +70,9 @@ export function createMemoryRunsMethods(
 				idempotencyMapKey(input.organizationId, input.idempotencyKey),
 			);
 			if (record === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
-			return ok({
+			return errorResult.ok({
 				run: cloneRun(record.run),
 				createRequestFingerprint: record.createRequestFingerprint,
 			});
@@ -96,7 +96,7 @@ export function createMemoryRunsMethods(
 				) {
 					return mapConflict("Idempotency key conflict");
 				}
-				return ok(cloneRun(existing.data.run));
+				return errorResult.ok(cloneRun(existing.data.run));
 			}
 
 			for (const run of state.runs.values()) {
@@ -162,7 +162,7 @@ export function createMemoryRunsMethods(
 				return audit;
 			}
 
-			return ok(cloneRun(run));
+			return errorResult.ok(cloneRun(run));
 		},
 
 		async getRun(input: {
@@ -171,9 +171,9 @@ export function createMemoryRunsMethods(
 		}): Promise<Result<PayrollRun | null>> {
 			const run = state.runs.get(input.runId);
 			if (run === undefined || run.organizationId !== input.organizationId) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
-			return ok(cloneRun(run));
+			return errorResult.ok(cloneRun(run));
 		},
 
 		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors versioned transition validation and explicit rollback behavior.
@@ -271,7 +271,7 @@ export function createMemoryRunsMethods(
 				return audit;
 			}
 
-			return ok(cloneRun(updated));
+			return errorResult.ok(cloneRun(updated));
 		},
 
 		async createException(
@@ -315,7 +315,7 @@ export function createMemoryRunsMethods(
 				return audit;
 			}
 
-			return ok(cloneException(exception));
+			return errorResult.ok(cloneException(exception));
 		},
 
 		async listExceptionsForRun(input: {
@@ -324,7 +324,7 @@ export function createMemoryRunsMethods(
 		}): Promise<Result<PayrollException[]>> {
 			const run = state.runs.get(input.runId);
 			if (run === undefined || run.organizationId !== input.organizationId) {
-				return ok([]);
+				return errorResult.ok([]);
 			}
 
 			const exceptions = Array.from(state.exceptions.values()).filter(
@@ -332,7 +332,7 @@ export function createMemoryRunsMethods(
 					exception.organizationId === input.organizationId &&
 					exception.runId === input.runId,
 			);
-			return ok(exceptions.map(cloneException));
+			return errorResult.ok(exceptions.map(cloneException));
 		},
 
 		async deleteExceptionsForRun(
@@ -360,7 +360,7 @@ export function createMemoryRunsMethods(
 					exception.runId === input.runId,
 			);
 			if (toDelete.length === 0) {
-				return ok({ deletedCount: 0 });
+				return errorResult.ok({ deletedCount: 0 });
 			}
 
 			for (const [exceptionId] of toDelete) {
@@ -382,7 +382,7 @@ export function createMemoryRunsMethods(
 				return audit;
 			}
 
-			return ok({ deletedCount: toDelete.length });
+			return errorResult.ok({ deletedCount: toDelete.length });
 		},
 	};
 }

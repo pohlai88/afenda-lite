@@ -1,5 +1,6 @@
 "use server";
 
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import type {
 	OnboardingAccessHandoff,
 	OnboardingCase,
@@ -33,7 +34,6 @@ import {
 	recordOnboardingOrientationInputSchema,
 	startOnboardingInputSchema,
 } from "@afenda/human-resources/schemas";
-
 import {
 	hrActionSchema,
 	withHrSessionContext as withSessionContext,
@@ -41,10 +41,6 @@ import {
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runHrWorkforceOperatorPermissionAction as runOperatorPermissionAction } from "@/app/actions/run-hr-operator-permission-action";
 import { createHumanResourcesCommandOptions } from "@/lib/erp/human-resources-command-options";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 const startOnboardingActionSchema = hrActionSchema(startOnboardingInputSchema);
@@ -59,11 +55,9 @@ export async function startOnboardingAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(startOnboardingActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid onboarding start request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid onboarding start request.",
+				});
 			}
 			const result = await startOnboarding(
 				withSessionContext(session, correlationId, parsed.data),
@@ -92,11 +86,9 @@ export async function completeOnboardingTaskAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(completeOnboardingTaskActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid onboarding task completion.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid onboarding task completion.",
+				});
 			}
 			const result = await completeOnboardingTask(
 				withSessionContext(session, correlationId, parsed.data),
@@ -128,11 +120,9 @@ export async function recordOnboardingOrientationAction(
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid onboarding orientation record.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid onboarding orientation record.",
+				});
 			}
 			const result = await recordOnboardingOrientation(
 				withSessionContext(session, correlationId, parsed.data),
@@ -164,11 +154,9 @@ export async function recordOnboardingEquipmentHandoffAction(
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid onboarding equipment handoff.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid onboarding equipment handoff.",
+				});
 			}
 			const result = await recordOnboardingEquipmentHandoff(
 				withSessionContext(session, correlationId, parsed.data),
@@ -200,11 +188,9 @@ export async function recordOnboardingAccessHandoffAction(
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid onboarding access handoff.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid onboarding access handoff.",
+				});
 			}
 			const result = await recordOnboardingAccessHandoff(
 				withSessionContext(session, correlationId, parsed.data),
@@ -233,11 +219,9 @@ export async function completeOnboardingAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(completeOnboardingActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid onboarding completion.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid onboarding completion.",
+				});
 			}
 			const result = await completeOnboarding(
 				withSessionContext(session, correlationId, parsed.data),
@@ -266,11 +250,9 @@ export async function getOnboardingCaseAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(getOnboardingCaseActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid onboarding case lookup.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid onboarding case lookup.",
+				});
 			}
 			const result = await getOnboardingCase(
 				withSessionContext(session, correlationId, parsed.data),
@@ -299,11 +281,9 @@ export async function listOnboardingTasksAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(listOnboardingTasksActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid onboarding task list request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid onboarding task list request.",
+				});
 			}
 			const result = await listOnboardingTasks(
 				withSessionContext(session, correlationId, parsed.data),
@@ -335,11 +315,9 @@ export async function getOnboardingOrientationByCaseAction(
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid onboarding orientation lookup.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid onboarding orientation lookup.",
+				});
 			}
 			const result = await getOnboardingOrientationByCase(
 				withSessionContext(session, correlationId, parsed.data),
@@ -373,11 +351,9 @@ export async function getOnboardingEquipmentHandoffByCaseAction(
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid onboarding equipment handoff lookup.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid onboarding equipment handoff lookup.",
+				});
 			}
 			const result = await getOnboardingEquipmentHandoffByCase(
 				withSessionContext(session, correlationId, parsed.data),
@@ -409,11 +385,9 @@ export async function getOnboardingAccessHandoffByCaseAction(
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid onboarding access handoff lookup.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid onboarding access handoff lookup.",
+				});
 			}
 			const result = await getOnboardingAccessHandoffByCase(
 				withSessionContext(session, correlationId, parsed.data),

@@ -131,7 +131,7 @@ describe("@afenda/audit DrizzleAuditStore", () => {
 			},
 		]);
 
-		expect(result).toMatchObject({ ok: false, code: "BAD_REQUEST" });
+		expect(result).toMatchObject({ ok: false, code: "VALIDATION_ERROR" });
 		expect(values).not.toHaveBeenCalled();
 	});
 
@@ -245,7 +245,6 @@ describe("@afenda/audit DrizzleAuditStore", () => {
 		expect(result.ok).toBe(false);
 		if (!result.ok) {
 			expect(result.code).toBe("INTERNAL_ERROR");
-			expect(result.message).toMatch(/invalid_action/);
 		}
 	});
 });

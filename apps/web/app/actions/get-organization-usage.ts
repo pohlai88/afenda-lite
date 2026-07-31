@@ -6,15 +6,11 @@ import {
 	usagePeriodSchema,
 } from "@afenda/admin/usage";
 import { requireRole } from "@afenda/auth";
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { createCorrelationId } from "@afenda/http";
 import { z } from "zod";
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { logProductEvent } from "@/modules/platform/observability/product-log";
-import {
-	type ActionResult,
-	actionFail,
-	actionFailInternal,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export type GetOrganizationUsageActionData = OrganizationUsageMetrics;
@@ -43,11 +39,9 @@ export async function getOrganizationUsageAction(
 		period: formData.get("period"),
 	});
 	if (!parsed.success) {
-		return actionFail(
-			"VALIDATION_ERROR",
-			"Enter a valid usage period (YYYY-MM).",
-			parsed.details,
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "Enter a valid usage period (YYYY-MM).",
+		});
 	}
 
 	let result: Awaited<ReturnType<typeof getOrganizationUsageMetrics>>;
@@ -66,10 +60,7 @@ export async function getOrganizationUsageAction(
 			path: "getOrganizationUsageAction",
 			code: "INTERNAL_ERROR",
 		});
-		return actionFailInternal(
-			"Usage metrics could not be loaded. Try again or contact an admin.",
-			correlationId,
-		);
+		return errorResult.fail("INTERNAL_ERROR", { correlationId });
 	}
 
 	return mapPackageResult(result);

@@ -29,7 +29,7 @@ import {
 	runNeonHttpTransaction,
 	sql,
 } from "@afenda/db";
-import { ok } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 import { describe, expect, it, vi } from "vitest";
 import { createFixedCorporateAdministrationClock } from "./helpers/fixed-clock";
 import {
@@ -42,7 +42,7 @@ import { RUN_CORPORATE_ADMINISTRATION_NEON_PARITY } from "./helpers/neon-parity"
 function activeRulePort(): CompanyJurisdictionRulePort {
 	return {
 		listEntityTypeRules: async () =>
-			ok([
+			errorResult.ok([
 				{
 					jurisdictionCountryCode: "MY",
 					entityTypes: ["draft_legal_company", "private_limited_company"],
@@ -55,7 +55,7 @@ function activeRulePort(): CompanyJurisdictionRulePort {
 function activePartyPort(): CompanyPartyReferencePort {
 	return {
 		getOrganizationParty: async () =>
-			ok({
+			errorResult.ok({
 				partyId: "party-1",
 				kind: "organization",
 				active: true,

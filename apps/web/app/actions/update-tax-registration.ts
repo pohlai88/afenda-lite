@@ -1,6 +1,7 @@
 "use server";
 
 import { getSession } from "@afenda/auth";
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { createCorrelationId } from "@afenda/http";
 import {
 	type TaxRegistrationProjection,
@@ -12,11 +13,6 @@ import { mapPackageResult } from "@/app/actions/map-package-result";
 import { forbidUnlessPermission } from "@/app/actions/permission-gate";
 import { createMasterDataAuthorizationPort } from "@/lib/erp/master-data-authorization-port";
 import { logProductEvent } from "@/modules/platform/observability/product-log";
-import {
-	type ActionResult,
-	actionFail,
-	actionFailInternal,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export interface UpdateTaxRegistrationActionData {
@@ -64,11 +60,10 @@ export async function updateTaxRegistrationAction(
 				: undefined,
 	});
 	if (!parsed.success) {
-		return actionFail(
-			"VALIDATION_ERROR",
-			"Provide a valid tax registration id, expected version, and fields.",
-			parsed.details,
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage:
+				"Provide a valid tax registration id, expected version, and fields.",
+		});
 	}
 
 	const permissionDenied = await forbidUnlessPermission(
@@ -116,9 +111,6 @@ export async function updateTaxRegistrationAction(
 			path: "updateTaxRegistrationAction",
 			code: "INTERNAL_ERROR",
 		});
-		return actionFailInternal(
-			"Could not update tax registration. Try again or contact an admin.",
-			correlationId,
-		);
+		return errorResult.fail("INTERNAL_ERROR", { correlationId });
 	}
 }

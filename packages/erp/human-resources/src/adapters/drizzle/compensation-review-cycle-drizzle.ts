@@ -10,7 +10,7 @@ import {
 	hrCompensationReviewCycle,
 	runNeonHttpTransaction,
 } from "@afenda/db";
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	type HumanResourcesCompensationReviewCycleId,
@@ -80,9 +80,9 @@ export function mapCompensationReviewCycleFromDbRow(
 	}
 	const status = compensationReviewCycleStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail("INTERNAL_ERROR", "Invalid compensation review cycle status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		code: row.code,
@@ -258,7 +258,7 @@ export const drizzleCompensationReviewCycleMethods = {
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapCompensationReviewCycleFromDbRow(row);
 		} catch (error) {
@@ -289,13 +289,13 @@ export const drizzleCompensationReviewCycleMethods = {
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const mapped = mapCompensationReviewCycleFromDbRow(row);
 			if (!mapped.ok) {
 				return mapped;
 			}
-			return ok({
+			return errorResult.ok({
 				cycle: mapped.data,
 				createRequestFingerprint: row.createRequestFingerprint,
 			});
@@ -327,7 +327,7 @@ export const drizzleCompensationReviewCycleMethods = {
 				existing.data.createRequestFingerprint ===
 				record.createRequestFingerprint
 			) {
-				return ok(existing.data.cycle);
+				return errorResult.ok(existing.data.cycle);
 			}
 			return conflict("Idempotency key already used with different data");
 		}
@@ -442,7 +442,7 @@ export const drizzleCompensationReviewCycleMethods = {
 					replay.data.createRequestFingerprint ===
 						record.createRequestFingerprint
 				) {
-					return ok(replay.data.cycle);
+					return errorResult.ok(replay.data.cycle);
 				}
 				return conflict("Idempotency key already used with different data");
 			}
@@ -521,7 +521,7 @@ export const drizzleCompensationReviewCycleMethods = {
 			const totalCount = cycles.length;
 			const offset = (input.page - 1) * input.pageSize;
 			const paginated = cycles.slice(offset, offset + input.pageSize);
-			return ok({
+			return errorResult.ok({
 				cycles: paginated,
 				totalCount,
 				page: input.page,
@@ -557,7 +557,7 @@ export const drizzleCompensationReviewCycleMethods = {
 				}
 				reviews.push(mapped.data);
 			}
-			return ok(reviews);
+			return errorResult.ok(reviews);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,

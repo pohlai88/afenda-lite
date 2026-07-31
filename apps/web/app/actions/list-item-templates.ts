@@ -1,16 +1,13 @@
 "use server";
 
 import { getSession } from "@afenda/auth";
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { createCorrelationId } from "@afenda/http";
 import { type ItemTemplate, listItemTemplates } from "@afenda/master-data";
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { forbidUnlessPermission } from "@/app/actions/permission-gate";
 import { createMasterDataAuthorizationPort } from "@/lib/erp/master-data-authorization-port";
 import { logProductEvent } from "@/modules/platform/observability/product-log";
-import {
-	type ActionResult,
-	actionFailInternal,
-} from "@/modules/platform/schemas/action-result";
 
 export interface ListItemTemplatesActionData {
 	templates: ItemTemplate[];
@@ -55,9 +52,6 @@ export async function listItemTemplatesAction(): Promise<
 			path: "listItemTemplatesAction",
 			code: "INTERNAL_ERROR",
 		});
-		return actionFailInternal(
-			"Could not list item templates. Try again or contact an admin.",
-			correlationId,
-		);
+		return errorResult.fail("INTERNAL_ERROR", { correlationId });
 	}
 }

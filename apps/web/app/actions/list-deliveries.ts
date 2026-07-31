@@ -1,19 +1,15 @@
 "use server";
 
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import {
 	DELIVERY_STATUSES,
 	type Delivery,
 	listDeliveries,
 } from "@afenda/fulfillment";
 import { z } from "zod";
-
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
 import { createFulfillmentCommandOptions } from "@/lib/erp/fulfillment-command-options";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export interface ListDeliveriesActionData {
@@ -44,11 +40,9 @@ export async function listDeliveriesAction(input?: {
 		execute: async (session) => {
 			const parsed = parseSchema(listDeliveriesActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter valid delivery filters.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter valid delivery filters.",
+				});
 			}
 			const result = await listDeliveries(
 				{

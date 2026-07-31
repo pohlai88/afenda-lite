@@ -1,9 +1,7 @@
 // biome-ignore-all lint/suspicious/useAwait: The deterministic memory adapter implements asynchronous meeting ports.
 // biome-ignore-all lint/suspicious/noShadow: Domain-local callbacks intentionally mirror meeting records.
 import { randomUUID } from "node:crypto";
-import { fail, ok } from "@afenda/errors/result";
-
-import { corporateAdministrationErrorDetails } from "../../error-codes";
+import { errorResult } from "@afenda/errors";
 import {
 	governanceMeetingIdSchema,
 	meetingNoticeIdSchema,
@@ -26,14 +24,14 @@ export function createMemoryCorporateAdministrationMeetingStore(): MeetingStore 
 
 	return {
 		async getGovernanceMeeting(input) {
-			return ok(
+			return errorResult.ok(
 				cloneNullable(
 					meetings.get(key(input.organizationId, input.governanceMeetingId)),
 				),
 			);
 		},
 		async listGovernanceMeetings(input) {
-			return ok(
+			return errorResult.ok(
 				[...meetings.values()]
 					.filter(
 						(row) =>
@@ -80,7 +78,7 @@ export function createMemoryCorporateAdministrationMeetingStore(): MeetingStore 
 				updatedAt: now,
 			};
 			meetings.set(key(input.organizationId, id), row);
-			return ok(clone(row));
+			return errorResult.ok(clone(row));
 		},
 		async changeMeetingStatus(input) {
 			const current = meetings.get(
@@ -108,17 +106,17 @@ export function createMemoryCorporateAdministrationMeetingStore(): MeetingStore 
 				updatedAt: now,
 			};
 			meetings.set(key(input.organizationId, updated.id), updated);
-			return ok(clone(updated));
+			return errorResult.ok(clone(updated));
 		},
 		async getMeetingNotice(input) {
-			return ok(
+			return errorResult.ok(
 				cloneNullable(
 					notices.get(key(input.organizationId, input.meetingNoticeId)),
 				),
 			);
 		},
 		async listMeetingNotices(input) {
-			return ok(
+			return errorResult.ok(
 				[...notices.values()]
 					.filter(
 						(row) =>
@@ -155,7 +153,7 @@ export function createMemoryCorporateAdministrationMeetingStore(): MeetingStore 
 				updatedAt: now,
 			};
 			notices.set(key(input.organizationId, id), row);
-			return ok(clone(row));
+			return errorResult.ok(clone(row));
 		},
 		async recordNoticeDelivery(input) {
 			const current = notices.get(
@@ -181,7 +179,7 @@ export function createMemoryCorporateAdministrationMeetingStore(): MeetingStore 
 				updatedAt: now,
 			};
 			notices.set(key(input.organizationId, updated.id), updated);
-			return ok(clone(updated));
+			return errorResult.ok(clone(updated));
 		},
 		async waiveNotice(input) {
 			const current = notices.get(
@@ -207,10 +205,10 @@ export function createMemoryCorporateAdministrationMeetingStore(): MeetingStore 
 				updatedAt: now,
 			};
 			notices.set(key(input.organizationId, updated.id), updated);
-			return ok(clone(updated));
+			return errorResult.ok(clone(updated));
 		},
 		async listMeetingParticipants(input) {
-			return ok(
+			return errorResult.ok(
 				[...participants.values()]
 					.filter(
 						(row) =>
@@ -246,7 +244,7 @@ export function createMemoryCorporateAdministrationMeetingStore(): MeetingStore 
 					updatedAt: now,
 				};
 				participants.set(key(input.organizationId, updated.id), updated);
-				return ok(clone(updated));
+				return errorResult.ok(clone(updated));
 			}
 			const id = meetingParticipantIdSchema.parse(randomUUID());
 			const row: MeetingParticipant = {
@@ -267,7 +265,7 @@ export function createMemoryCorporateAdministrationMeetingStore(): MeetingStore 
 				updatedAt: now,
 			};
 			participants.set(key(input.organizationId, id), row);
-			return ok(clone(row));
+			return errorResult.ok(clone(row));
 		},
 		async getLatestQuorumResult(input) {
 			const rows = [...quorumResults.values()]
@@ -280,7 +278,7 @@ export function createMemoryCorporateAdministrationMeetingStore(): MeetingStore 
 					(left, right) =>
 						right.recordedAt.getTime() - left.recordedAt.getTime(),
 				);
-			return ok(cloneNullable(rows[0]));
+			return errorResult.ok(cloneNullable(rows[0]));
 		},
 		async recordQuorum(input) {
 			const id = meetingQuorumResultIdSchema.parse(randomUUID());
@@ -304,7 +302,7 @@ export function createMemoryCorporateAdministrationMeetingStore(): MeetingStore 
 				updatedAt: now,
 			};
 			quorumResults.set(key(input.organizationId, id), row);
-			return ok(clone(row));
+			return errorResult.ok(clone(row));
 		},
 	};
 }
@@ -322,20 +320,13 @@ function cloneNullable<T>(value: T | undefined): T | null {
 }
 
 function notFound() {
-	return fail(
-		"NOT_FOUND",
-		"Corporate Administration record was not found.",
-		corporateAdministrationErrorDetails("CORPORATE_ADMINISTRATION_NOT_FOUND"),
-	);
+	return errorResult.fail("NOT_FOUND", {
+		publicMessage: "Corporate Administration record was not found.",
+	});
 }
 
-function stale(expectedVersion: number, actualVersion: number) {
-	return fail(
-		"CONFLICT",
-		"Corporate Administration record version is stale.",
-		corporateAdministrationErrorDetails(
-			"CORPORATE_ADMINISTRATION_STALE_VERSION",
-			{ expectedVersion, actualVersion },
-		),
-	);
+function stale(_expectedVersion: number, _actualVersion: number) {
+	return errorResult.fail("CONFLICT", {
+		publicMessage: "Corporate Administration record version is stale.",
+	});
 }

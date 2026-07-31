@@ -1,5 +1,5 @@
 // biome-ignore-all lint/style/useDestructuring: Explicit company state access keeps financial-year evidence visible.
-import { fail, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS,
 	type CorporateAdministrationApprovalVerificationDependencies,
@@ -11,7 +11,6 @@ import type {
 	CorporateAdministrationApprovalCommandOptions,
 	CorporateAdministrationCommandOptions,
 } from "../../command-options";
-import { corporateAdministrationErrorDetails } from "../../error-codes";
 import { parseCorporateAdministrationInput } from "../../parse-input";
 import {
 	validateFinancialYearChronology,
@@ -223,38 +222,26 @@ function serializeFinancialYearForReplay(
 }
 
 function legalCompanyNotFound(): Result<never> {
-	return fail(
-		"NOT_FOUND",
-		"Corporate Administration legal company was not found.",
-		corporateAdministrationErrorDetails("CORPORATE_ADMINISTRATION_NOT_FOUND", {
-			entityType: "legalCompany",
-		}),
-	);
+	return errorResult.fail("NOT_FOUND", {
+		publicMessage: "Corporate Administration legal company was not found.",
+	});
 }
 
 function staleCompanyVersion(
-	expectedVersion: number,
-	actualVersion: number,
+	_expectedVersion: number,
+	_actualVersion: number,
 ): Result<never> {
-	return fail(
-		"CONFLICT",
-		"Corporate Administration legal company version is stale.",
-		corporateAdministrationErrorDetails(
-			"CORPORATE_ADMINISTRATION_STALE_VERSION",
-			{ expectedVersion, actualVersion },
-		),
-	);
+	return errorResult.fail("CONFLICT", {
+		publicMessage: "Corporate Administration legal company version is stale.",
+	});
 }
 
-function inactiveReference(field: string, missing: boolean): Result<never> {
-	return fail(
-		missing ? "VALIDATION_ERROR" : "CONFLICT",
-		"Corporate Administration reference is not active.",
-		corporateAdministrationErrorDetails(
-			missing
-				? "CORPORATE_ADMINISTRATION_REFERENCE_INVALID"
-				: "CORPORATE_ADMINISTRATION_REFERENCE_INACTIVE",
-			{ field },
-		),
-	);
+function inactiveReference(_field: string, missing: boolean): Result<never> {
+	return missing
+		? errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Corporate Administration reference is not active.",
+			})
+		: errorResult.fail("CONFLICT", {
+				publicMessage: "Corporate Administration reference is not active.",
+			});
 }

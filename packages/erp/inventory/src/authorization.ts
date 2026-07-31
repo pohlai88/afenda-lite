@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import { inventoryModuleManifest } from "./module.manifest";
 import type { InventoryCommandId, InventoryQueryId } from "./module-ids";
 import type { INVENTORY_PERMISSION_CODES } from "./permissions";
@@ -55,15 +55,11 @@ async function requireInventoryPermission(
 	},
 ): Promise<Result<void>> {
 	if (!authorization) {
-		return fail("UNAUTHORIZED", "Inventory authorization port is required", {
-			permission: input.permission,
-		});
+		return errorResult.fail("UNAUTHORIZED");
 	}
 	const allowed = await authorization.can(input);
 	if (!allowed) {
-		return fail("FORBIDDEN", "Missing required inventory permission", {
-			permission: input.permission,
-		});
+		return errorResult.fail("FORBIDDEN");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }

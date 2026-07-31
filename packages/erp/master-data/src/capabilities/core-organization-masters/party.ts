@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	requireMasterCommandPermission,
 	requireMasterQueryPermission,
@@ -9,7 +9,6 @@ import {
 	resolveCommandDeps,
 	resolveStore,
 } from "../../command-options";
-import type { MasterFailureDetails } from "../../contracts/reasons";
 import {
 	MASTER_COMMAND_PARTY_ACTIVATE,
 	MASTER_COMMAND_PARTY_BLOCK,
@@ -211,9 +210,7 @@ async function transitionPartyStatus(
 		return current;
 	}
 	if (current.data === null) {
-		return fail("NOT_FOUND", "Party not found", {
-			reason: "MASTER_NOT_FOUND",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("NOT_FOUND", { publicMessage: "Party not found" });
 	}
 	const lifecycle =
 		transitionKind === "restore"
@@ -229,10 +226,9 @@ async function transitionPartyStatus(
 			entityId: parsed.data.id,
 		});
 		if (blockers.length > 0) {
-			return fail("CONFLICT", "Party has dependency blockers", {
-				reason: "MASTER_DEPENDENCY_BLOCKED",
-				blockers,
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Party has dependency blockers",
+			});
 		}
 	}
 	const result = await store.transitionParty(
@@ -278,9 +274,7 @@ export async function activateParty(
 		return current;
 	}
 	if (current.data === null) {
-		return fail("NOT_FOUND", "Party not found", {
-			reason: "MASTER_NOT_FOUND",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("NOT_FOUND", { publicMessage: "Party not found" });
 	}
 	const version = assertExpectedVersion(
 		current.data,
@@ -290,10 +284,9 @@ export async function activateParty(
 		return version;
 	}
 	if (current.data.mergedIntoId !== null) {
-		return fail("CONFLICT", "Merged party cannot be activated", {
-			reason: "MASTER_INVALID_STATE",
-			mergedIntoId: current.data.mergedIntoId,
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Merged party cannot be activated",
+		});
 	}
 	const lifecycle = assertLifecycleTransition(current.data.status, "active");
 	if (!lifecycle.ok) {
@@ -307,13 +300,9 @@ export async function activateParty(
 		return roleCount;
 	}
 	if (roleCount.data < 1) {
-		return fail(
-			"CONFLICT",
-			"Party activation requires at least one active role",
-			{
-				reason: "MASTER_INVALID_STATE",
-			} satisfies MasterFailureDetails,
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Party activation requires at least one active role",
+		});
 	}
 	const approved = await assertApprovedChangeRequestForApply(
 		{
@@ -466,7 +455,7 @@ export async function existsPartyByCode(
 	if (!result.ok) {
 		return result;
 	}
-	return ok(result.data !== null);
+	return errorResult.ok(result.data !== null);
 }
 
 export async function listParties(

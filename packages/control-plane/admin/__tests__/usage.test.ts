@@ -62,7 +62,7 @@ describe("@afenda/admin usage metrics", () => {
 		});
 		expect(result.ok).toBe(false);
 		if (!result.ok) {
-			expect(result.code).toBe("BAD_REQUEST");
+			expect(result.code).toBe("VALIDATION_ERROR");
 		}
 		expect(listOrgMembers).not.toHaveBeenCalled();
 		expect(select).not.toHaveBeenCalled();
@@ -96,17 +96,18 @@ describe("@afenda/admin usage metrics", () => {
 	});
 
 	it("maps active-org mismatch to FORBIDDEN", async () => {
-		const { forbidden } = await import("@afenda/errors");
+		const { errorIngress } = await import("@afenda/errors");
 		listOrgMembers.mockRejectedValue(
-			forbidden("Organization is not in the active session"),
+			errorIngress.code("FORBIDDEN", {
+				operation: "admin.usage.test",
+			}),
 		);
 		const { getOrganizationUsageMetrics } = await import("../src/usage");
 		await expect(
 			getOrganizationUsageMetrics({ orgId: "org-other", period: "2026-07" }),
-		).resolves.toEqual({
+		).resolves.toMatchObject({
 			ok: false,
 			code: "FORBIDDEN",
-			message: "Usage metrics require the active session organization",
 		});
 	});
 });

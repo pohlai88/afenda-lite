@@ -1,6 +1,6 @@
 // biome-ignore-all lint/complexity/noExcessiveCognitiveComplexity: Identifier registration coordinates policy, idempotency, audit, and outbox atomically.
 // biome-ignore-all lint/style/useDestructuring: Explicit company state access keeps command evidence visible.
-import { fail, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS,
 	type CorporateAdministrationApprovalVerificationDependencies,
@@ -12,7 +12,6 @@ import type {
 	CorporateAdministrationApprovalCommandOptions,
 	CorporateAdministrationCommandOptions,
 } from "../../command-options";
-import { corporateAdministrationErrorDetails } from "../../error-codes";
 import { parseCorporateAdministrationInput } from "../../parse-input";
 import {
 	assertNonTaxCompanyIdentifierType,
@@ -128,27 +127,14 @@ export async function registerCompanyIdentifier(
 		return current;
 	}
 	if (current.data === null) {
-		return fail(
-			"NOT_FOUND",
-			"Corporate Administration legal company was not found.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_NOT_FOUND",
-				{ entityType: "legalCompany" },
-			),
-		);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Corporate Administration legal company was not found.",
+		});
 	}
 	if (current.data.version !== parsed.data.expectedCompanyVersion) {
-		return fail(
-			"CONFLICT",
-			"Corporate Administration legal company version is stale.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_STALE_VERSION",
-				{
-					expectedVersion: parsed.data.expectedCompanyVersion,
-					actualVersion: current.data.version,
-				},
-			),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Corporate Administration legal company version is stale.",
+		});
 	}
 	const country = await dependencies.referenceData.resolveCountry({
 		organizationId: options.organizationId,
@@ -159,16 +145,15 @@ export async function registerCompanyIdentifier(
 		return country;
 	}
 	if (country.data === null || !country.data.active) {
-		return fail(
-			country.data === null ? "VALIDATION_ERROR" : "CONFLICT",
-			"Corporate Administration identifier jurisdiction is not active.",
-			corporateAdministrationErrorDetails(
-				country.data === null
-					? "CORPORATE_ADMINISTRATION_REFERENCE_INVALID"
-					: "CORPORATE_ADMINISTRATION_REFERENCE_INACTIVE",
-				{ field: "jurisdictionCode" },
-			),
-		);
+		return country.data === null
+			? errorResult.fail("VALIDATION_ERROR", {
+					publicMessage:
+						"Corporate Administration identifier jurisdiction is not active.",
+				})
+			: errorResult.fail("CONFLICT", {
+					publicMessage:
+						"Corporate Administration identifier jurisdiction is not active.",
+				});
 	}
 	const resolvedAuthority =
 		await dependencies.referenceData.resolveIdentifierAuthority({
@@ -181,16 +166,15 @@ export async function registerCompanyIdentifier(
 		return resolvedAuthority;
 	}
 	if (resolvedAuthority.data === null || !resolvedAuthority.data.active) {
-		return fail(
-			resolvedAuthority.data === null ? "VALIDATION_ERROR" : "CONFLICT",
-			"Corporate Administration identifier authority is not active.",
-			corporateAdministrationErrorDetails(
-				resolvedAuthority.data === null
-					? "CORPORATE_ADMINISTRATION_REFERENCE_INVALID"
-					: "CORPORATE_ADMINISTRATION_REFERENCE_INACTIVE",
-				{ field: "authorityCode" },
-			),
-		);
+		return resolvedAuthority.data === null
+			? errorResult.fail("VALIDATION_ERROR", {
+					publicMessage:
+						"Corporate Administration identifier authority is not active.",
+				})
+			: errorResult.fail("CONFLICT", {
+					publicMessage:
+						"Corporate Administration identifier authority is not active.",
+				});
 	}
 	const source = await dependencies.referenceData.validateSourceDocument({
 		organizationId: options.organizationId,
@@ -200,16 +184,15 @@ export async function registerCompanyIdentifier(
 		return source;
 	}
 	if (source.data === null || !source.data.active) {
-		return fail(
-			source.data === null ? "VALIDATION_ERROR" : "CONFLICT",
-			"Corporate Administration source document is not active.",
-			corporateAdministrationErrorDetails(
-				source.data === null
-					? "CORPORATE_ADMINISTRATION_REFERENCE_INVALID"
-					: "CORPORATE_ADMINISTRATION_REFERENCE_INACTIVE",
-				{ field: "sourceDocumentId" },
-			),
-		);
+		return source.data === null
+			? errorResult.fail("VALIDATION_ERROR", {
+					publicMessage:
+						"Corporate Administration source document is not active.",
+				})
+			: errorResult.fail("CONFLICT", {
+					publicMessage:
+						"Corporate Administration source document is not active.",
+				});
 	}
 	const sourceDocumentId = source.data.sourceDocumentId;
 

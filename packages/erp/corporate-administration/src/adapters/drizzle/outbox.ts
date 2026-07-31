@@ -1,10 +1,9 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	type CorporateAdministrationPendingEvent,
 	createCorporateAdministrationDomainEventEnvelope,
 } from "../../domain-events";
-import { corporateAdministrationErrorDetails } from "../../error-codes";
 import type { CorporateAdministrationOutboxPort } from "../../ports";
 import { translateCorporateAdministrationInfrastructureError } from "./errors";
 
@@ -53,7 +52,7 @@ export class DrizzleCorporateAdministrationOutboxPort
 		options?: Parameters<CorporateAdministrationOutboxPort["append"]>[1],
 	): Promise<Result<void>> {
 		if (events.length === 0) {
-			return ok(undefined);
+			return errorResult.ok(undefined);
 		}
 		const validatedEvents = events.map((event) =>
 			createCorporateAdministrationDomainEventEnvelope(event),
@@ -64,19 +63,16 @@ export class DrizzleCorporateAdministrationOutboxPort
 			for (const event of pendingEvents) {
 				options.transaction.enqueue(this.#appender.createStatement(event));
 			}
-			return ok(undefined);
+			return errorResult.ok(undefined);
 		}
 
 		try {
 			const appended = await this.#appender.append(pendingEvents);
 			if (appended.ok) {
-				return ok(undefined);
+				return errorResult.ok(undefined);
 			}
 			if (appended.code !== "SERVICE_UNAVAILABLE") {
-				return fail(
-					"INTERNAL_ERROR",
-					"Unexpected Corporate Administration outbox persistence failure.",
-				);
+				return errorResult.fail("INTERNAL_ERROR");
 			}
 			return outboxUnavailable();
 		} catch (error) {
@@ -91,14 +87,7 @@ export class DrizzleCorporateAdministrationOutboxPort
 }
 
 function outboxUnavailable(): Result<never> {
-	return fail(
-		"SERVICE_UNAVAILABLE",
-		"Corporate Administration outbox is unavailable.",
-		corporateAdministrationErrorDetails(
-			"CORPORATE_ADMINISTRATION_EXTERNAL_DEPENDENCY_UNAVAILABLE",
-			{ field: "outbox" },
-		),
-	);
+	return errorResult.fail("SERVICE_UNAVAILABLE");
 }
 
 function toPendingOutboxEvent(

@@ -9,8 +9,12 @@ import {
 	platformRbacAudit,
 	platformRoleAssignment,
 } from "@afenda/db";
-import { normalizePostgresUnknown } from "@afenda/errors/adapters/postgres";
-import { fail, failFromAppError, ok, type Result } from "@afenda/errors/result";
+import {
+	errorIngress,
+	errorProject,
+	errorResult,
+	type Result,
+} from "@afenda/errors";
 
 import {
 	type GetOrganizationUsageInput,
@@ -43,18 +47,15 @@ export function usagePeriodUtcBounds(period: string): {
 }
 
 function mapUsageFailure(error: unknown): Result<never> {
-	const mapped = normalizePostgresUnknown(error, "Load organization usage");
-
-	if (mapped.code === "FORBIDDEN") {
-		return fail(
-			"FORBIDDEN",
-			"Usage metrics require the active session organization",
-		);
+	const normalized = errorIngress.unknown(error, {
+		operation: "admin.usage",
+	});
+	if (normalized === error) {
+		return errorProject.result(normalized);
 	}
-	if (mapped.code === "UNAUTHORIZED") {
-		return fail("UNAUTHORIZED", "Not authorized for organization usage");
-	}
-	return failFromAppError(mapped);
+	return errorProject.result(
+		errorIngress.postgres(error, { operation: "admin.usage.persistence" }),
+	);
 }
 
 /**
@@ -67,8 +68,8 @@ export async function getOrganizationUsageMetrics(
 ): Promise<Result<OrganizationUsageMetrics>> {
 	const parsed = getOrganizationUsageInputSchema.safeParse(input);
 	if (!parsed.success) {
-		return fail("BAD_REQUEST", "Invalid organization usage input", {
-			fieldErrors: parsed.error.flatten().fieldErrors,
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "Invalid organization usage input",
 		});
 	}
 
@@ -106,7 +107,7 @@ export async function getOrganizationUsageMetrics(
 				.where(assignmentWhere),
 		]);
 
-		return ok(
+		return errorResult.ok(
 			buildUsagePosition({
 				orgId: command.orgId,
 				period: command.period,

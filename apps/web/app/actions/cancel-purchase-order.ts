@@ -1,16 +1,12 @@
 "use server";
 
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { cancelPurchaseOrder, type PurchaseOrder } from "@afenda/purchasing";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
 import { createPurchasingCommandOptions } from "@/lib/erp/purchasing-command-options";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export interface CancelPurchaseOrderActionData {
@@ -43,11 +39,9 @@ export async function cancelPurchaseOrderAction(
 				expectedVersion: formData.get("expectedVersion"),
 			});
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid order and expected version.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid order and expected version.",
+				});
 			}
 
 			const result = await cancelPurchaseOrder(

@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
 
@@ -244,13 +244,15 @@ describe("HR observability vocabulary", () => {
 					invalidMessage: "Invalid person input",
 					resolveDeps: (_options, data) =>
 						data.mode === "dependency"
-							? fail("SERVICE_UNAVAILABLE", "Dependency unavailable")
-							: ok({ dependency: true }),
+							? errorResult.fail("SERVICE_UNAVAILABLE")
+							: errorResult.ok({ dependency: true }),
 					resolveResource: (data) =>
 						data.mode === "resource"
-							? fail("NOT_FOUND", "Resource unavailable")
+							? errorResult.fail("NOT_FOUND", {
+									publicMessage: "Resource unavailable",
+								})
 							: undefined,
-					execute: async () => ok({ created: true }),
+					execute: async () => errorResult.ok({ created: true }),
 				},
 			);
 

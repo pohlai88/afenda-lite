@@ -168,7 +168,6 @@ describe("N12 living authz audit evidence", () => {
 		expect(result).toMatchObject({
 			ok: false,
 			code: "INTERNAL_ERROR",
-			message: expect.stringContaining("was not sent"),
 			details: {
 				correlationId: expect.stringMatching(
 					/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
@@ -278,10 +277,9 @@ describe("N12 living authz audit evidence", () => {
 
 		const result = await assignOrgRoleAction(null, formData);
 
-		expect(result).toEqual({
+		expect(result).toMatchObject({
 			ok: false,
 			code: "NOT_FOUND",
-			message: "That user is not an active member of this organization.",
 		});
 		expect(identityMocks.assignOrgRoleWithAudit).not.toHaveBeenCalled();
 	});

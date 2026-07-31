@@ -1,4 +1,4 @@
-import { fail, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 export const MAX_ORDER_CODE_LENGTH = 64 as const;
 const NORMALIZED_CODE_RE = /^[A-Z0-9._-]+$/;
@@ -9,14 +9,16 @@ export function normalizeOrderCode(raw: string): Result<{
 }> {
 	const code = raw.normalize("NFC").trim();
 	if (code.length === 0 || code.length > MAX_ORDER_CODE_LENGTH) {
-		return fail("BAD_REQUEST", "Invalid purchase order code length");
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Invalid purchase order code length",
+		});
 	}
 	const normalizedCode = code.toUpperCase();
 	if (!NORMALIZED_CODE_RE.test(normalizedCode)) {
-		return fail(
-			"BAD_REQUEST",
-			"Order code must be A-Z, 0-9, '.', '_' or '-' after normalize",
-		);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage:
+				"Order code must be A-Z, 0-9, '.', '_' or '-' after normalize",
+		});
 	}
 	return { ok: true, data: { code, normalizedCode } };
 }

@@ -1,5 +1,6 @@
 "use server";
 
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import {
 	type ApprovedTimeHandoff,
 	type AttendanceBreakWaiverDecision,
@@ -66,7 +67,6 @@ import {
 	type WorkCalendar,
 } from "@afenda/human-resources";
 import { z } from "zod";
-
 import {
 	hrMutationContextSchema as mutationContextSchema,
 	withHrSessionContext as withSessionContext,
@@ -74,10 +74,6 @@ import {
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runHrTimeOperatorPermissionAction as runOperatorPermissionAction } from "@/app/actions/run-hr-operator-permission-action";
 import { createHumanResourcesCommandOptions } from "@/lib/erp/human-resources-command-options";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -213,11 +209,9 @@ export async function createWorkCalendarAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid work calendar.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid work calendar.",
+				});
 			}
 			const result = await createWorkCalendar(
 				withSessionContext(session, correlationId, parsed.data),
@@ -271,11 +265,9 @@ export async function updateWorkCalendarAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid work calendar update.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid work calendar update.",
+				});
 			}
 			const result = await updateWorkCalendar(
 				withSessionContext(session, correlationId, parsed.data),
@@ -308,11 +300,9 @@ export async function archiveWorkCalendarAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid work calendar archive request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid work calendar archive request.",
+				});
 			}
 			const result = await archiveWorkCalendar(
 				withSessionContext(session, correlationId, parsed.data),
@@ -372,11 +362,9 @@ export async function supersedeWorkCalendarAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid work calendar successor.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid work calendar successor.",
+				});
 			}
 			const result = await supersedeWorkCalendar(
 				withSessionContext(session, correlationId, parsed.data),
@@ -447,11 +435,9 @@ export async function createTimePolicyAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid Time policy.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid Time policy.",
+				});
 			}
 			const result = await createTimePolicy(
 				withSessionContext(session, correlationId, parsed.data),
@@ -484,11 +470,9 @@ export async function activateTimePolicyAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid Time policy activation.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid Time policy activation.",
+				});
 			}
 			const result = await activateTimePolicy(
 				withSessionContext(session, correlationId, parsed.data),
@@ -555,11 +539,9 @@ export async function supersedeTimePolicyAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid Time policy successor.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid Time policy successor.",
+				});
 			}
 			const result = await supersedeTimePolicy(
 				withSessionContext(session, correlationId, parsed.data),
@@ -602,11 +584,9 @@ export async function assignTimePolicyAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid Time policy assignment.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid Time policy assignment.",
+				});
 			}
 			const result = await assignTimePolicy(
 				withSessionContext(session, correlationId, parsed.data),
@@ -643,11 +623,9 @@ export async function assignTimeApprovalAuthorityAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid Time approval-authority assignment.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid Time approval-authority assignment.",
+				});
 			}
 			const result = await assignTimeApprovalAuthority(
 				withSessionContext(session, correlationId, parsed.data),
@@ -682,11 +660,9 @@ export async function endTimeApprovalAuthorityAssignmentAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid Time approval-authority end request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid Time approval-authority end request.",
+				});
 			}
 			const result = await endTimeApprovalAuthorityAssignment(
 				withSessionContext(session, correlationId, parsed.data),
@@ -741,11 +717,9 @@ export async function createShiftAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid shift.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid shift.",
+				});
 			}
 			const result = await createShift(
 				withSessionContext(session, correlationId, parsed.data),
@@ -818,11 +792,9 @@ export async function supersedeShiftAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid shift successor.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid shift successor.",
+				});
 			}
 			const result = await supersedeShift(
 				withSessionContext(session, correlationId, parsed.data),
@@ -875,11 +847,9 @@ export async function assignShiftAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid shift assignment.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid shift assignment.",
+				});
 			}
 			const result = await assignShift(
 				withSessionContext(session, correlationId, parsed.data),
@@ -912,11 +882,9 @@ export async function publishShiftAssignmentAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid schedule publish request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid schedule publish request.",
+				});
 			}
 			const result = await publishShiftAssignment(
 				withSessionContext(session, correlationId, parsed.data),
@@ -950,11 +918,9 @@ export async function recordClockInAction(input: {
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(clockEventInputSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid clock-in.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid clock-in.",
+				});
 			}
 			const result = await recordClockIn(
 				withSessionContext(session, correlationId, parsed.data),
@@ -988,11 +954,9 @@ export async function recordClockOutAction(input: {
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(clockEventInputSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid clock-out.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid clock-out.",
+				});
 			}
 			const result = await recordClockOut(
 				withSessionContext(session, correlationId, parsed.data),
@@ -1026,11 +990,9 @@ export async function recordBreakStartAction(input: {
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(clockEventInputSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid break start.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid break start.",
+				});
 			}
 			const result = await recordBreakStart(
 				withSessionContext(session, correlationId, parsed.data),
@@ -1064,11 +1026,9 @@ export async function recordBreakEndAction(input: {
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(clockEventInputSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid break end.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid break end.",
+				});
 			}
 			const result = await recordBreakEnd(
 				withSessionContext(session, correlationId, parsed.data),
@@ -1107,11 +1067,9 @@ export async function approveAttendanceBreakWaiverAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid attendance break-waiver approval.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid attendance break-waiver approval.",
+				});
 			}
 			const result = await approveAttendanceBreakWaiver(
 				withSessionContext(session, correlationId, parsed.data),
@@ -1144,11 +1102,9 @@ export async function reviewAttendanceExceptionAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid exception review.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid exception review.",
+				});
 			}
 			const result = await reviewAttendanceException(
 				withSessionContext(session, correlationId, parsed.data),
@@ -1183,11 +1139,9 @@ export async function excuseAttendanceExceptionAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid exception excuse.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid exception excuse.",
+				});
 			}
 			const result = await excuseAttendanceException(
 				withSessionContext(session, correlationId, parsed.data),
@@ -1222,11 +1176,9 @@ export async function rejectAttendanceExceptionAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid exception rejection.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid exception rejection.",
+				});
 			}
 			const result = await rejectAttendanceException(
 				withSessionContext(session, correlationId, parsed.data),
@@ -1261,11 +1213,9 @@ export async function resolveAttendanceExceptionAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid exception resolution.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid exception resolution.",
+				});
 			}
 			const result = await resolveAttendanceException(
 				withSessionContext(session, correlationId, parsed.data),
@@ -1304,11 +1254,9 @@ export async function createTimesheetAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid timesheet.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid timesheet.",
+				});
 			}
 			const result = await createTimesheet(
 				withSessionContext(session, correlationId, parsed.data),
@@ -1341,11 +1289,9 @@ export async function generateTimesheetEntriesAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid timesheet generate request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid timesheet generate request.",
+				});
 			}
 			const result = await generateTimesheetEntries(
 				withSessionContext(session, correlationId, parsed.data),
@@ -1384,11 +1330,9 @@ export async function submitTimesheetAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid timesheet submit request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid timesheet submit request.",
+				});
 			}
 			const result = await submitTimesheet(
 				withSessionContext(session, correlationId, parsed.data),
@@ -1425,11 +1369,9 @@ export async function approveTimesheetAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid timesheet approval.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid timesheet approval.",
+				});
 			}
 			const result = await approveTimesheet(
 				withSessionContext(session, correlationId, parsed.data),
@@ -1493,11 +1435,9 @@ export async function createOvertimeRequestAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid overtime request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid overtime request.",
+				});
 			}
 			const result = await createOvertimeRequest(
 				withSessionContext(session, correlationId, parsed.data),
@@ -1536,11 +1476,9 @@ export async function approveOvertimeRequestAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid overtime approval.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid overtime approval.",
+				});
 			}
 			const result = await approveOvertimeRequest(
 				withSessionContext(session, correlationId, parsed.data),
@@ -1575,11 +1513,9 @@ export async function rejectOvertimeRequestAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid overtime rejection.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid overtime rejection.",
+				});
 			}
 			const result = await rejectOvertimeRequest(
 				withSessionContext(session, correlationId, parsed.data),
@@ -1614,11 +1550,9 @@ export async function recordOvertimeActualAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter valid overtime actual minutes.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter valid overtime actual minutes.",
+				});
 			}
 			const result = await recordOvertimeActual(
 				withSessionContext(session, correlationId, parsed.data),
@@ -1653,11 +1587,9 @@ export async function verifyOvertimeRequestAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter valid overtime payroll verification.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter valid overtime payroll verification.",
+				});
 			}
 			const result = await verifyOvertimeRequest(
 				withSessionContext(session, correlationId, parsed.data),
@@ -1688,11 +1620,9 @@ export async function getOvertimeRequestAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid overtime request id.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid overtime request id.",
+				});
 			}
 			const result = await getOvertimeRequest(
 				withSessionContext(session, correlationId, parsed.data),
@@ -1746,11 +1676,9 @@ export async function listOvertimeRequestsAction(input?: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter valid overtime list filters.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter valid overtime list filters.",
+				});
 			}
 			const result = await listOvertimeRequests(
 				withSessionContext(session, correlationId, parsed.data ?? {}),
@@ -1787,11 +1715,9 @@ export async function listPendingOvertimeApprovalsAction(input?: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter valid pending overtime filters.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter valid pending overtime filters.",
+				});
 			}
 			const result = await listPendingOvertimeApprovals(
 				withSessionContext(session, correlationId, parsed.data ?? {}),
@@ -1822,11 +1748,9 @@ export async function getApprovedTimeHandoffAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid timesheet handoff request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid timesheet handoff request.",
+				});
 			}
 			const result = await getApprovedTimeHandoff(
 				withSessionContext(session, correlationId, parsed.data),
@@ -1861,11 +1785,9 @@ export async function returnTimesheetAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid timesheet return request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid timesheet return request.",
+				});
 			}
 			const result = await returnTimesheet(
 				withSessionContext(session, correlationId, parsed.data),
@@ -1900,11 +1822,9 @@ export async function rejectTimesheetAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid timesheet rejection request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid timesheet rejection request.",
+				});
 			}
 			const result = await rejectTimesheet(
 				withSessionContext(session, correlationId, parsed.data),
@@ -1937,11 +1857,9 @@ export async function reopenTimesheetAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid timesheet reopen request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid timesheet reopen request.",
+				});
 			}
 			const result = await reopenTimesheet(
 				withSessionContext(session, correlationId, parsed.data),
@@ -1974,11 +1892,9 @@ export async function lockTimesheetAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid timesheet lock request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid timesheet lock request.",
+				});
 			}
 			const result = await lockTimesheet(
 				withSessionContext(session, correlationId, parsed.data),
@@ -2013,11 +1929,9 @@ export async function supersedeTimesheetAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid timesheet supersede request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid timesheet supersede request.",
+				});
 			}
 			const result = await supersedeTimesheet(
 				withSessionContext(session, correlationId, parsed.data),
@@ -2048,19 +1962,16 @@ export async function validateAttendanceImportAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(attendanceImportPreviewActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid attendance import request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid attendance import request.",
+				});
 			}
 			if (parsed.data.mode === "connector") {
 				const { attendanceSource } = createHumanResourcesCommandOptions();
 				if (attendanceSource === undefined) {
-					return actionFail(
-						"CONFLICT",
-						"Attendance connector is not configured.",
-					);
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "Attendance connector is not configured.",
+					});
 				}
 				const result = await attendanceSource.previewEvents({
 					organizationId: session.orgId,
@@ -2097,11 +2008,9 @@ export async function importAttendanceEventsAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(attendanceImportActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid attendance import request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid attendance import request.",
+				});
 			}
 			const result = await importAttendanceEvents(
 				withSessionContext(session, correlationId, parsed.data),
@@ -2148,11 +2057,9 @@ export async function correctAttendanceEventAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid attendance correction request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid attendance correction request.",
+				});
 			}
 			const result = await correctAttendanceEvent(
 				withSessionContext(session, correlationId, parsed.data),
@@ -2187,11 +2094,9 @@ export async function voidAttendanceEventAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid attendance void request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid attendance void request.",
+				});
 			}
 			const result = await voidAttendanceEvent(
 				withSessionContext(session, correlationId, parsed.data),
@@ -2232,11 +2137,9 @@ export async function resolveAttendanceSessionAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid attendance session resolve request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid attendance session resolve request.",
+				});
 			}
 			const result = await resolveAttendanceSession(
 				withSessionContext(session, correlationId, parsed.data),

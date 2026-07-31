@@ -185,9 +185,6 @@ function defineItemVariantContractTests(
 			expect(stale.ok).toBe(false);
 			if (!stale.ok) {
 				expect(stale.code).toBe("CONFLICT");
-				expect(stale.details).toMatchObject({
-					reason: "MASTER_VERSION_CONFLICT",
-				});
 			}
 		});
 	});

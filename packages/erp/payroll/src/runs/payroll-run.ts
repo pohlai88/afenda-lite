@@ -1,12 +1,6 @@
-import { fail, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type { PayrollCommandOptions } from "../command-options";
-import {
-	PAYROLL_ERROR_CROSS_ORGANIZATION_REFERENCE,
-	PAYROLL_ERROR_INVALID_STATE,
-	PAYROLL_ERROR_NOT_FOUND,
-	payrollErrorDetails,
-} from "../error-codes";
 import {
 	PAYROLL_COMMAND_RUN_CREATE,
 	PAYROLL_QUERY_RUN_GET,
@@ -43,25 +37,19 @@ export function createPayrollRun(
 				return period;
 			}
 			if (period.data === null) {
-				return fail(
-					"NOT_FOUND",
-					"Payroll period not found",
-					payrollErrorDetails(PAYROLL_ERROR_NOT_FOUND),
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "Payroll period not found",
+				});
 			}
 			if (period.data.status !== "open") {
-				return fail(
-					"CONFLICT",
-					"Payroll period is not open",
-					payrollErrorDetails(PAYROLL_ERROR_INVALID_STATE),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Payroll period is not open",
+				});
 			}
 			if (period.data.payGroupId !== data.payGroupId) {
-				return fail(
-					"CONFLICT",
-					"Pay group does not match payroll period",
-					payrollErrorDetails(PAYROLL_ERROR_CROSS_ORGANIZATION_REFERENCE),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Pay group does not match payroll period",
+				});
 			}
 
 			const fingerprint = buildPayrollCreateFingerprint({

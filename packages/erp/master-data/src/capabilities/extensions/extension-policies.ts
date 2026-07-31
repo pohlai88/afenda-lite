@@ -1,6 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
-
-import type { MasterFailureDetails } from "../../contracts/reasons";
+import { errorResult, type Result } from "@afenda/errors";
 import type { Item, Party, Warehouse } from "../../types";
 import {
 	type ExtensionParentStatus,
@@ -84,19 +82,16 @@ function requireUsableParent<T extends ExtensionCapableParent>(
 	if (!parentSatisfiesRequirement(parent.status, requirement)) {
 		return extensionParentStateFailure(parentType, parent.status);
 	}
-	return ok(parent);
+	return errorResult.ok(parent);
 }
 
 function partyMergedFailure(
-	parentType: "party" | "related_party",
-	party: Party,
+	_parentType: "party" | "related_party",
+	_party: Party,
 ): Result<never> {
-	return fail("CONFLICT", "Party has been merged into another party", {
-		reason: "MASTER_INVALID_STATE",
-		parentType,
-		status: "merged",
-		mergedIntoId: party.mergedIntoId,
-	} satisfies MasterFailureDetails);
+	return errorResult.fail("CONFLICT", {
+		publicMessage: "Party has been merged into another party",
+	});
 }
 
 export function requirePartyExtensionParent(
@@ -174,14 +169,10 @@ export async function requirePartyRelationshipParents(
 	requirement: ExtensionParentStateRequirement = "parent_active",
 ): Promise<Result<RequiredPartyRelationshipParents>> {
 	if (partyId === relatedPartyId) {
-		return fail(
-			"BAD_REQUEST",
-			"A party relationship cannot reference the same party twice",
-			{
-				reason: "MASTER_VALIDATION_FAILED",
-				field: "relatedPartyId",
-			} satisfies MasterFailureDetails,
-		);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage:
+				"A party relationship cannot reference the same party twice",
+		});
 	}
 	const [partyResult, relatedPartyResult] = await Promise.all([
 		requirePartyParent(reader, organizationId, partyId, "party", requirement),
@@ -199,7 +190,7 @@ export async function requirePartyRelationshipParents(
 	if (!relatedPartyResult.ok) {
 		return relatedPartyResult;
 	}
-	return ok({
+	return errorResult.ok({
 		party: partyResult.data,
 		relatedParty: relatedPartyResult.data,
 	});

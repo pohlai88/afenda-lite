@@ -9,9 +9,7 @@ import {
 	desc,
 	eq,
 } from "@afenda/db";
-import { fail, ok, type Result } from "@afenda/errors/result";
-
-import { corporateAdministrationErrorDetails } from "../../error-codes";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	governanceBodyIdSchema,
 	governanceMeetingIdSchema,
@@ -136,7 +134,7 @@ class DrizzleCorporateAdministrationMeetingStore implements MeetingStore {
 				const sql = asSql(database);
 				return sql`INSERT INTO ca_governance_meeting (id, organization_id, legal_company_id, governance_body_id, procedure_type, status, title, scheduled_start_at, scheduled_end_at, notice_period_days, location_summary, remote_access_summary, source_document_id, opened_at, adjourned_at, adjourned_to, closed_at, no_quorum_reason, recorded_at, recorded_by, version, created_at, updated_at) VALUES (${id}, ${input.organizationId}, ${input.legalCompanyId}, ${input.governanceBodyId}, ${input.procedureType}, 'scheduled', ${input.title}, ${input.scheduledStartAt}, ${input.scheduledEndAt}, ${input.noticePeriodDays}, ${input.locationSummary}, ${input.remoteAccessSummary}, ${input.sourceDocumentId}, NULL, NULL, NULL, NULL, NULL, ${now}, ${input.recordedBy}, 1, ${now}, ${now})`;
 			});
-			return ok(row);
+			return errorResult.ok(row);
 		}
 		return this.#write(async () => {
 			await this.#database.insert(caGovernanceMeeting).values({
@@ -196,7 +194,7 @@ class DrizzleCorporateAdministrationMeetingStore implements MeetingStore {
 				const sql = asSql(database);
 				return sql`UPDATE ca_governance_meeting SET status = ${input.status}, opened_at = ${updated.openedAt}, adjourned_at = ${updated.adjournedAt}, adjourned_to = ${updated.adjournedTo}, closed_at = ${updated.closedAt}, no_quorum_reason = ${updated.noQuorumReason}, source_document_id = ${input.sourceDocumentId}, recorded_at = ${now}, recorded_by = ${input.recordedBy}, version = version + 1, updated_at = ${now} WHERE organization_id = ${input.organizationId} AND id = ${input.governanceMeetingId} AND version = ${input.expectedVersion}`;
 			});
-			return ok(updated);
+			return errorResult.ok(updated);
 		}
 		return this.#write(async () => {
 			await this.#database
@@ -291,7 +289,7 @@ class DrizzleCorporateAdministrationMeetingStore implements MeetingStore {
 				const sql = asSql(database);
 				return sql`INSERT INTO ca_meeting_notice (id, organization_id, legal_company_id, governance_meeting_id, recipient_membership_id, recipient_party_id, status, issued_at, delivered_at, waived_at, delivery_method, waiver_reason, source_document_id, recorded_at, recorded_by, version, created_at, updated_at) VALUES (${id}, ${input.organizationId}, ${input.legalCompanyId}, ${input.governanceMeetingId}, ${input.recipientMembershipId}, ${input.recipientPartyId}, 'issued', ${input.issuedAt}, NULL, NULL, ${input.deliveryMethod}, NULL, ${input.sourceDocumentId}, ${now}, ${input.recordedBy}, 1, ${now}, ${now})`;
 			});
-			return ok(row);
+			return errorResult.ok(row);
 		}
 		return this.#write(async () => {
 			await this.#database.insert(caMeetingNotice).values(row);
@@ -358,7 +356,7 @@ class DrizzleCorporateAdministrationMeetingStore implements MeetingStore {
 				const sql = asSql(database);
 				return sql`UPDATE ca_meeting_notice SET status = ${updated.status}, delivered_at = ${updated.deliveredAt}, waived_at = ${updated.waivedAt}, waiver_reason = ${updated.waiverReason}, source_document_id = ${updated.sourceDocumentId}, recorded_at = ${updated.recordedAt}, recorded_by = ${updated.recordedBy}, version = version + 1, updated_at = ${updated.updatedAt} WHERE organization_id = ${input.organizationId} AND id = ${input.meetingNoticeId} AND version = ${input.expectedVersion}`;
 			});
-			return ok(updated);
+			return errorResult.ok(updated);
 		}
 		return this.#write(async () => {
 			await this.#database
@@ -433,7 +431,7 @@ class DrizzleCorporateAdministrationMeetingStore implements MeetingStore {
 				const sql = asSql(database);
 				return sql`INSERT INTO ca_meeting_participant (id, organization_id, legal_company_id, governance_meeting_id, governance_membership_id, participant_party_id, attendance_status, represented_by_party_id, proxy_document_id, recusal_reason, recorded_at, recorded_by, version, created_at, updated_at) VALUES (${id}, ${input.organizationId}, ${input.legalCompanyId}, ${input.governanceMeetingId}, ${input.governanceMembershipId}, ${input.participantPartyId}, ${input.attendanceStatus}, ${input.representedByPartyId}, ${input.proxyDocumentId}, ${input.recusalReason}, ${now}, ${input.recordedBy}, 1, ${now}, ${now}) ON CONFLICT (organization_id, governance_meeting_id, governance_membership_id) DO UPDATE SET participant_party_id = EXCLUDED.participant_party_id, attendance_status = EXCLUDED.attendance_status, represented_by_party_id = EXCLUDED.represented_by_party_id, proxy_document_id = EXCLUDED.proxy_document_id, recusal_reason = EXCLUDED.recusal_reason, recorded_at = EXCLUDED.recorded_at, recorded_by = EXCLUDED.recorded_by, version = ca_meeting_participant.version + 1, updated_at = EXCLUDED.updated_at`;
 			});
-			return ok(row);
+			return errorResult.ok(row);
 		}
 		return this.#write(async () => {
 			await this.#database.insert(caMeetingParticipant).values(row);
@@ -489,7 +487,7 @@ class DrizzleCorporateAdministrationMeetingStore implements MeetingStore {
 				const sql = asSql(database);
 				return sql`INSERT INTO ca_meeting_quorum_result (id, organization_id, legal_company_id, governance_meeting_id, rule_snapshot, eligible_member_count, present_member_count, required_present_count, has_quorum, no_quorum_reason, source_document_id, recorded_at, recorded_by, version, created_at, updated_at) VALUES (${id}, ${input.organizationId}, ${input.legalCompanyId}, ${input.governanceMeetingId}, ${JSON.stringify(input.ruleSnapshot)}, ${input.eligibleMemberCount}, ${input.presentMemberCount}, ${input.requiredPresentCount}, ${input.hasQuorum}, ${input.noQuorumReason}, ${input.sourceDocumentId}, ${now}, ${input.recordedBy}, 1, ${now}, ${now})`;
 			});
-			return ok(row);
+			return errorResult.ok(row);
 		}
 		return this.#write(async () => {
 			await this.#database.insert(caMeetingQuorumResult).values({
@@ -502,7 +500,7 @@ class DrizzleCorporateAdministrationMeetingStore implements MeetingStore {
 
 	async #read<T>(work: () => Promise<T>): Promise<Result<T>> {
 		try {
-			return ok(await work());
+			return errorResult.ok(await work());
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
@@ -687,20 +685,16 @@ function asSql(
 }
 
 function notFound(): Result<never> {
-	return fail(
-		"NOT_FOUND",
-		"Corporate Administration record was not found.",
-		corporateAdministrationErrorDetails("CORPORATE_ADMINISTRATION_NOT_FOUND"),
-	);
+	return errorResult.fail("NOT_FOUND", {
+		publicMessage: "Corporate Administration record was not found.",
+	});
 }
 
-function stale(expectedVersion: number, actualVersion: number): Result<never> {
-	return fail(
-		"CONFLICT",
-		"Corporate Administration record version is stale.",
-		corporateAdministrationErrorDetails(
-			"CORPORATE_ADMINISTRATION_STALE_VERSION",
-			{ expectedVersion, actualVersion },
-		),
-	);
+function stale(
+	_expectedVersion: number,
+	_actualVersion: number,
+): Result<never> {
+	return errorResult.fail("CONFLICT", {
+		publicMessage: "Corporate Administration record version is stale.",
+	});
 }

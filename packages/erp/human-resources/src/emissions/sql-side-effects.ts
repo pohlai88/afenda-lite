@@ -1,4 +1,4 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { HumanResourcesEventType } from "@afenda/events";
 import type { HumanResourcesCommandId } from "../module-ids";
 import type { MutationPorts, OutboxFactInput } from "../ports";
@@ -150,13 +150,13 @@ export async function appendRegistryGatedOutbox(
 ): Promise<Result<void>> {
 	const outboxInput = buildRegistryOutboxInput(input);
 	if (!outboxInput) {
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	}
 	const outbox = await ports.outbox.append(outboxInput);
 	if (!outbox.ok) {
 		return outbox;
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 function planCommandMutationOutcome(input: {

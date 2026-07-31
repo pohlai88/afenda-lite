@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import { db, sql as drizzleSql, runNeonHttpTransaction } from "@afenda/db";
-import type { Result } from "@afenda/errors/result";
+import type { Result } from "@afenda/errors";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { createEmptyDependencyInspector } from "../../src/capabilities/core-organization-masters/dependency";

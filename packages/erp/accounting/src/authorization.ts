@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 export type AccountingPermission =
 	| "accounting.journal.read"
@@ -36,14 +36,10 @@ export async function requireAccountingPermission(
 	},
 ): Promise<Result<void>> {
 	if (authorization === undefined) {
-		return fail("UNAUTHORIZED", "Accounting authorization port is required", {
-			permission: input.permission,
-		});
+		return errorResult.fail("UNAUTHORIZED");
 	}
 	if (!(await authorization.can(input))) {
-		return fail("FORBIDDEN", "Missing required accounting permission", {
-			permission: input.permission,
-		});
+		return errorResult.fail("FORBIDDEN");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }

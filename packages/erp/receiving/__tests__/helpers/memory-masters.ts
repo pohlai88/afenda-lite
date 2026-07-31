@@ -1,4 +1,4 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { Item, RefUom, Warehouse } from "@afenda/master-data";
 import type { MasterLookupPort } from "../../src/ports";
 import { resolveAsync } from "../../src/resolve-async";
@@ -15,7 +15,7 @@ export function createMemoryMasterLookup(
 		getItemById(organizationId, id): Promise<Result<Item | null>> {
 			return resolveAsync(() => {
 				const row = items.get(id);
-				return ok(
+				return errorResult.ok(
 					row === undefined || row.organizationId !== organizationId
 						? null
 						: row,
@@ -27,12 +27,12 @@ export function createMemoryMasterLookup(
 			id,
 			_actorUserId,
 		): Promise<Result<RefUom | null>> {
-			return resolveAsync(() => ok(uoms.get(id) ?? null));
+			return resolveAsync(() => errorResult.ok(uoms.get(id) ?? null));
 		},
 		getWarehouseById(organizationId, id): Promise<Result<Warehouse | null>> {
 			return resolveAsync(() => {
 				const row = warehouses.get(id);
-				return ok(
+				return errorResult.ok(
 					row === undefined || row.organizationId !== organizationId
 						? null
 						: row,

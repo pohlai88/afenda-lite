@@ -1,16 +1,12 @@
 "use server";
 
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { type PurchaseOrder, postPurchaseOrder } from "@afenda/purchasing";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
 import { createPurchasingCommandOptions } from "@/lib/erp/purchasing-command-options";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export interface PostPurchaseOrderActionData {
@@ -50,11 +46,10 @@ export async function postPurchaseOrderAction(
 				taxTotal: formData.get("taxTotal") ?? undefined,
 			});
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid order, expected version, and optional tax total.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage:
+						"Enter a valid order, expected version, and optional tax total.",
+				});
 			}
 
 			const result = await postPurchaseOrder(

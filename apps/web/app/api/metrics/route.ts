@@ -1,12 +1,13 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 
 import { env } from "@afenda/env";
+import { errorResult } from "@afenda/errors";
 import {
 	PROMETHEUS_CONTENT_TYPE,
 	renderPrometheusText,
 } from "@afenda/metrics/node";
 
-import { jsonError } from "@/modules/platform/api/json-response";
+import { jsonFailure } from "@/modules/platform/api/json-response";
 import { createPlatformRouteHandler } from "@/modules/platform/api/route-pipeline";
 
 // Explicitly declare Node runtime for Prometheus metrics
@@ -37,22 +38,21 @@ export const GET = createPlatformRouteHandler(
 	async (request) => {
 		const configured = env.METRICS_SCRAPE_TOKEN;
 		if (configured === undefined) {
-			return jsonError("NOT_FOUND", "Metrics endpoint is not available.");
+			return jsonFailure(
+				errorResult.fail("NOT_FOUND", {
+					publicMessage: "Metrics endpoint is not available.",
+				}),
+			);
 		}
 
 		const provided = extractBearerToken(request.headers.get("Authorization"));
 		if (provided === null || !tokensEqual(configured, provided)) {
-			return jsonError(
-				"UNAUTHORIZED",
-				"Metrics authentication is required.",
-				undefined,
-				{
-					headers: {
-						"WWW-Authenticate": 'Bearer realm="metrics"',
-						"Cache-Control": "no-store",
-					},
+			return jsonFailure(errorResult.fail("UNAUTHORIZED"), {
+				headers: {
+					"WWW-Authenticate": 'Bearer realm="metrics"',
+					"Cache-Control": "no-store",
 				},
-			);
+			});
 		}
 
 		const body = await renderPrometheusText();

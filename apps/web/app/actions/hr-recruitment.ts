@@ -1,5 +1,6 @@
 "use server";
 
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import type {
 	ApplicationListPage,
 	ApplicationStatusHistory,
@@ -98,7 +99,6 @@ import {
 	updateCandidateProfileInputSchema,
 	withdrawCandidateConsentInputSchema,
 } from "@afenda/human-resources/schemas";
-
 import {
 	hrActionSchema,
 	withHrSessionContext as withSessionContext,
@@ -106,10 +106,6 @@ import {
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runHrTalentOperatorPermissionAction as runOperatorPermissionAction } from "@/app/actions/run-hr-operator-permission-action";
 import { createHumanResourcesCommandOptions } from "@/lib/erp/human-resources-command-options";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 const createDraftRequisitionActionSchema = hrActionSchema(
@@ -126,11 +122,9 @@ export async function createDraftRequisitionAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(createDraftRequisitionActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid requisition draft.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid requisition draft.",
+				});
 			}
 			const result = await createDraftRequisition(
 				withSessionContext(session, correlationId, parsed.data),
@@ -159,11 +153,9 @@ export async function amendRequisitionAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(amendRequisitionActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid requisition amendment.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid requisition amendment.",
+				});
 			}
 			const result = await amendRequisition(
 				withSessionContext(session, correlationId, parsed.data),
@@ -192,11 +184,9 @@ export async function assignHiringManagerAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(assignHiringManagerActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid hiring manager assignment.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid hiring manager assignment.",
+				});
 			}
 			const result = await assignHiringManager(
 				withSessionContext(session, correlationId, parsed.data),
@@ -225,11 +215,9 @@ export async function submitRequisitionAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(submitRequisitionActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid requisition submission.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid requisition submission.",
+				});
 			}
 			const result = await submitRequisition(
 				withSessionContext(session, correlationId, parsed.data),
@@ -258,11 +246,9 @@ export async function approveRequisitionAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(approveRequisitionActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid requisition approval.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid requisition approval.",
+				});
 			}
 			const result = await approveRequisition(
 				withSessionContext(session, correlationId, parsed.data),
@@ -291,11 +277,9 @@ export async function openRequisitionAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(openRequisitionActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid requisition open request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid requisition open request.",
+				});
 			}
 			const result = await openRequisition(
 				withSessionContext(session, correlationId, parsed.data),
@@ -324,11 +308,9 @@ export async function placeRequisitionOnHoldAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(placeRequisitionOnHoldActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid requisition hold request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid requisition hold request.",
+				});
 			}
 			const result = await placeRequisitionOnHold(
 				withSessionContext(session, correlationId, parsed.data),
@@ -357,11 +339,9 @@ export async function closeRequisitionAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(closeRequisitionActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid requisition close request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid requisition close request.",
+				});
 			}
 			const result = await closeRequisition(
 				withSessionContext(session, correlationId, parsed.data),
@@ -390,11 +370,9 @@ export async function cancelRequisitionAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(cancelRequisitionActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid requisition cancellation.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid requisition cancellation.",
+				});
 			}
 			const result = await cancelRequisition(
 				withSessionContext(session, correlationId, parsed.data),
@@ -421,11 +399,9 @@ export async function getRequisitionAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(getRequisitionActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid requisition lookup.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid requisition lookup.",
+				});
 			}
 			const result = await getRequisition(
 				withSessionContext(session, correlationId, parsed.data),
@@ -454,11 +430,9 @@ export async function listRequisitionsAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(listRequisitionsActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter valid requisition list filters.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter valid requisition list filters.",
+				});
 			}
 			const result = await listRequisitions(
 				withSessionContext(session, correlationId, parsed.data),
@@ -485,11 +459,9 @@ export async function createCandidateAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(createCandidateActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid candidate.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid candidate.",
+				});
 			}
 			const result = await createCandidate(
 				withSessionContext(session, correlationId, parsed.data),
@@ -518,11 +490,9 @@ export async function updateCandidateProfileAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(updateCandidateProfileActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid candidate profile update.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid candidate profile update.",
+				});
 			}
 			const result = await updateCandidateProfile(
 				withSessionContext(session, correlationId, parsed.data),
@@ -551,11 +521,9 @@ export async function withdrawCandidateConsentAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(withdrawCandidateConsentActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid candidate consent withdrawal.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid candidate consent withdrawal.",
+				});
 			}
 			const result = await withdrawCandidateConsent(
 				withSessionContext(session, correlationId, parsed.data),
@@ -584,11 +552,9 @@ export async function changeCandidateRetentionAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(changeCandidateRetentionActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid candidate retention change.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid candidate retention change.",
+				});
 			}
 			const result = await changeCandidateRetention(
 				withSessionContext(session, correlationId, parsed.data),
@@ -617,11 +583,9 @@ export async function anonymizeCandidateAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(anonymizeCandidateActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid candidate anonymization.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid candidate anonymization.",
+				});
 			}
 			const result = await anonymizeCandidate(
 				withSessionContext(session, correlationId, parsed.data),
@@ -648,11 +612,9 @@ export async function getCandidateAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(getCandidateActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid candidate lookup.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid candidate lookup.",
+				});
 			}
 			const result = await getCandidate(
 				withSessionContext(session, correlationId, parsed.data),
@@ -679,11 +641,9 @@ export async function listCandidatesAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(listCandidatesActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter valid candidate list filters.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter valid candidate list filters.",
+				});
 			}
 			const result = await listCandidates(
 				withSessionContext(session, correlationId, parsed.data),
@@ -712,11 +672,9 @@ export async function detectCandidateDuplicatesAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(detectCandidateDuplicatesActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter valid candidate duplicate detection filters.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter valid candidate duplicate detection filters.",
+				});
 			}
 			const result = await detectCandidateDuplicates(
 				withSessionContext(session, correlationId, parsed.data),
@@ -745,11 +703,9 @@ export async function createApplicationAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(createApplicationActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid application.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid application.",
+				});
 			}
 			const result = await createApplication(
 				withSessionContext(session, correlationId, parsed.data),
@@ -778,11 +734,9 @@ export async function moveApplicationToInReviewAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(moveApplicationToInReviewActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid application in-review transition.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid application in-review transition.",
+				});
 			}
 			const result = await moveApplicationToInReview(
 				withSessionContext(session, correlationId, parsed.data),
@@ -814,11 +768,9 @@ export async function moveApplicationToInterviewingAction(
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid application interviewing transition.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid application interviewing transition.",
+				});
 			}
 			const result = await moveApplicationToInterviewing(
 				withSessionContext(session, correlationId, parsed.data),
@@ -847,11 +799,9 @@ export async function rejectApplicationAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(rejectApplicationActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid application rejection.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid application rejection.",
+				});
 			}
 			const result = await rejectApplication(
 				withSessionContext(session, correlationId, parsed.data),
@@ -880,11 +830,9 @@ export async function withdrawApplicationAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(withdrawApplicationActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid application withdrawal.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid application withdrawal.",
+				});
 			}
 			const result = await withdrawApplication(
 				withSessionContext(session, correlationId, parsed.data),
@@ -913,11 +861,9 @@ export async function reopenApplicationAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(reopenApplicationActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid application reopen request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid application reopen request.",
+				});
 			}
 			const result = await reopenApplication(
 				withSessionContext(session, correlationId, parsed.data),
@@ -944,11 +890,9 @@ export async function getApplicationAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(getApplicationActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid application lookup.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid application lookup.",
+				});
 			}
 			const result = await getApplication(
 				withSessionContext(session, correlationId, parsed.data),
@@ -977,11 +921,9 @@ export async function listApplicationsAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(listApplicationsActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter valid application list filters.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter valid application list filters.",
+				});
 			}
 			const result = await listApplications(
 				withSessionContext(session, correlationId, parsed.data),
@@ -1013,11 +955,9 @@ export async function listApplicationStatusHistoryAction(
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid application status history request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid application status history request.",
+				});
 			}
 			const result = await listApplicationStatusHistory(
 				withSessionContext(session, correlationId, parsed.data),
@@ -1046,11 +986,9 @@ export async function scheduleInterviewAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(scheduleInterviewActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid interview schedule.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid interview schedule.",
+				});
 			}
 			const result = await scheduleInterview(
 				withSessionContext(session, correlationId, parsed.data),
@@ -1077,11 +1015,9 @@ export async function cancelInterviewAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(cancelInterviewActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid interview cancellation.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid interview cancellation.",
+				});
 			}
 			const result = await cancelInterview(
 				withSessionContext(session, correlationId, parsed.data),
@@ -1110,11 +1046,9 @@ export async function assignInterviewInterviewerAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(assignInterviewInterviewerActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid interviewer assignment.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid interviewer assignment.",
+				});
 			}
 			const result = await assignInterviewInterviewer(
 				withSessionContext(session, correlationId, parsed.data),
@@ -1143,11 +1077,9 @@ export async function recordInterviewEvaluationAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(recordInterviewEvaluationActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid interview evaluation.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid interview evaluation.",
+				});
 			}
 			const result = await recordInterviewEvaluation(
 				withSessionContext(session, correlationId, parsed.data),
@@ -1174,11 +1106,9 @@ export async function getInterviewAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(getInterviewActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid interview lookup.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid interview lookup.",
+				});
 			}
 			const result = await getInterview(
 				withSessionContext(session, correlationId, parsed.data),
@@ -1205,11 +1135,9 @@ export async function listInterviewsAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(listInterviewsActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter valid interview list filters.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter valid interview list filters.",
+				});
 			}
 			const result = await listInterviews(
 				withSessionContext(session, correlationId, parsed.data),
@@ -1238,11 +1166,9 @@ export async function getInterviewEvaluationAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(getInterviewEvaluationActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid interview evaluation lookup.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid interview evaluation lookup.",
+				});
 			}
 			const result = await getInterviewEvaluation(
 				withSessionContext(session, correlationId, parsed.data),
@@ -1269,11 +1195,9 @@ export async function createOfferAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(createOfferActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid offer.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid offer.",
+				});
 			}
 			const result = await createOffer(
 				withSessionContext(session, correlationId, parsed.data),
@@ -1300,11 +1224,9 @@ export async function amendOfferDraftAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(amendOfferDraftActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid offer draft amendment.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid offer draft amendment.",
+				});
 			}
 			const result = await amendOfferDraft(
 				withSessionContext(session, correlationId, parsed.data),
@@ -1333,11 +1255,9 @@ export async function approveOfferAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(approveOfferActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid offer approval.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid offer approval.",
+				});
 			}
 			const result = await approveOffer(
 				withSessionContext(session, correlationId, parsed.data),
@@ -1364,11 +1284,9 @@ export async function issueOfferAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(issueOfferActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid offer issue request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid offer issue request.",
+				});
 			}
 			const result = await issueOffer(
 				withSessionContext(session, correlationId, parsed.data),
@@ -1395,11 +1313,9 @@ export async function acceptOfferAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(acceptOfferActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid offer acceptance.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid offer acceptance.",
+				});
 			}
 			const result = await acceptOffer(
 				withSessionContext(session, correlationId, parsed.data),
@@ -1428,11 +1344,9 @@ export async function declineOfferAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(declineOfferActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid offer decline.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid offer decline.",
+				});
 			}
 			const result = await declineOffer(
 				withSessionContext(session, correlationId, parsed.data),
@@ -1461,11 +1375,9 @@ export async function expireOfferAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(expireOfferActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid offer expiration.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid offer expiration.",
+				});
 			}
 			const result = await expireOffer(
 				withSessionContext(session, correlationId, parsed.data),
@@ -1494,11 +1406,9 @@ export async function withdrawOfferAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(withdrawOfferActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid offer withdrawal.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid offer withdrawal.",
+				});
 			}
 			const result = await withdrawOffer(
 				withSessionContext(session, correlationId, parsed.data),
@@ -1525,11 +1435,9 @@ export async function getOfferAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(getOfferActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid offer lookup.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid offer lookup.",
+				});
 			}
 			const result = await getOffer(
 				withSessionContext(session, correlationId, parsed.data),
@@ -1556,11 +1464,9 @@ export async function listOffersAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(listOffersActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter valid offer list filters.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter valid offer list filters.",
+				});
 			}
 			const result = await listOffers(
 				withSessionContext(session, correlationId, parsed.data),

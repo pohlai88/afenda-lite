@@ -1,5 +1,5 @@
 // biome-ignore-all lint/performance/noAwaitInLoops: Export pages and dependent aggregates are read serially to preserve bounds and fail-fast ordering.
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type {
 	HumanResourcesBulkExportDefinition,
 	HumanResourcesBulkExportSource,
@@ -155,7 +155,7 @@ function employeeSource(
 				}
 				page += 1;
 			}
-			return ok(records);
+			return errorResult.ok(records);
 		},
 	};
 }
@@ -216,7 +216,7 @@ function assignmentSource(
 								},
 							});
 							if (records.length > MAXIMUM_EXPORT_ROWS) {
-								return ok(records);
+								return errorResult.ok(records);
 							}
 						}
 					}
@@ -226,7 +226,7 @@ function assignmentSource(
 				}
 				page += 1;
 			}
-			return ok(records);
+			return errorResult.ok(records);
 		},
 	};
 }
@@ -270,7 +270,7 @@ function leaveEntitlementSource(
 				}
 				page += 1;
 			}
-			return ok(records);
+			return errorResult.ok(records);
 		},
 	};
 }
@@ -280,7 +280,7 @@ function reportingRecord(
 ): Result<HumanResourcesExportSourceRecord> {
 	switch (fact.kind) {
 		case "attendance":
-			return ok({
+			return errorResult.ok({
 				organizationId: fact.organizationId,
 				recordId: fact.id,
 				effectiveFrom: fact.workDate,
@@ -295,7 +295,7 @@ function reportingRecord(
 				},
 			});
 		case "compensation":
-			return ok({
+			return errorResult.ok({
 				organizationId: fact.organizationId,
 				recordId: fact.id,
 				effectiveFrom: fact.effectiveFrom,
@@ -310,7 +310,7 @@ function reportingRecord(
 				},
 			});
 		case "learning":
-			return ok({
+			return errorResult.ok({
 				organizationId: fact.organizationId,
 				recordId: fact.id,
 				effectiveFrom: fact.assignedOn,
@@ -325,7 +325,7 @@ function reportingRecord(
 				},
 			});
 		default:
-			return fail("INTERNAL_ERROR", "Unsupported reporting export fact");
+			return errorResult.fail("INTERNAL_ERROR");
 	}
 }
 
@@ -362,7 +362,7 @@ function reportingSource(
 				}
 				page += 1;
 			}
-			return ok(records);
+			return errorResult.ok(records);
 		},
 	};
 }

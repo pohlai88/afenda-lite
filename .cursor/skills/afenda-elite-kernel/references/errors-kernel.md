@@ -1,126 +1,130 @@
 # `@afenda/errors` kernel
 
-Apply this contract when changing `packages/foundation/errors` or integrating its public vocabulary at a consumer boundary.
+Use this reference when changing `packages/foundation/errors` or applying its
+public contract at an approved consumer boundary.
 
-## Contents
-
-- [Identity and authority](#identity-and-authority)
-- [Public import paths](#public-import-paths)
-- [Kernel invariants](#kernel-invariants)
-- [Apply to a consumer](#apply-to-a-consumer)
-- [Implement or upgrade the kernel](#implement-or-upgrade-the-kernel)
-- [Verification order](#verification-order)
-- [Error-kernel seal](#error-kernel-seal)
-
-## Identity and authority
+## Authority and state
 
 | Field | Contract |
 |-------|----------|
 | Package | `@afenda/errors` |
 | Target | `packages/foundation/errors` |
-| Layer | Rank-1 Platform leaf; no `@afenda/*` runtime dependencies |
-| Contract marker | `afenda.errors/v1` in every TypeScript source and test header |
+| Layer | Rank-1 foundation leaf; no `@afenda/*` runtime dependencies |
+| Semantic authority | `packages/foundation/errors/CONTRACT.md` |
+| Living contract | Root barrel, registry, capability facades, tests, `package.json`, README |
 | Integrity record | `packages/foundation/errors/.protected.sha256` |
-| Primary authority | Package barrel, subpath barrels, tests, `package.json`, and README on disk |
-| Owning farms | `afenda-elite-api-contract` for shared error wire; `afenda-elite-monorepo-discipline` for exports and dependency edges |
+| Contract marker | `afenda.errors/v1` in every package TypeScript source and test |
+| Owning farms | `afenda-elite-api-contract` and `afenda-elite-monorepo-discipline` |
 
-Read `package.json`, `src/index.ts`, every exported subpath, affected tests, the package README, and direct consumers before accepting a contract change. Use repository adoption checks instead of maintaining a consumer list in this skill.
+Read `CONTRACT.md` first and obey its current migration lock. Package-local capability
+completion does not authorize consumer conversion, subpath deletion, or
+protection refresh.
 
-## Public import paths
+## Permanent consumer surface
 
-| Import path | Owned contract |
-|-------------|----------------|
-| `@afenda/errors` | `AppError`, closed codes, normalization, safe details, safe diagnostics, serialization, common factories |
-| `@afenda/errors/result` | `Result<T>`, `ok`, `fail`, `failFromAppError`, `failFromUnknown` |
-| `@afenda/errors/http` | Atomic HTTP status/body/Retry-After projection plus compatibility primitives |
-| `@afenda/errors/common` | Stable `AppError` factories |
-| `@afenda/errors/adapters/postgres` | Duck-typed SQLSTATE discovery and explicit PostgreSQL-to-`AppError` mapping |
+The final consumer API is the package root with five frozen named capability
+objects and registry-derived public types:
 
-Import only declared package paths. Preserve the root and compatibility exports unless a breaking mission updates every accepted consumer and public contract in the same cutover.
+| Capability | Owned operations |
+|------------|------------------|
+| `errorResult` | `ok`, `fail`, `retryAfterSeconds`, trusted in-process `context` / `withContext` |
+| `errorIngress` | `code`, `unknown`, `postgres` |
+| `errorProject` | `result`, `http`, `diagnostics`, `retry` |
+| `errorWire` | `serialize`, `deserialize` |
+| `errorOpenApi` | `responses` |
 
-## Kernel invariants
+Consumers must not import constructors, implementation modules, policy maps,
+sanitizers, alias ledgers, SQLSTATE tables, or versioned wire helpers. The final
+`package.json.exports` contains only `"."`. Existing compatibility exports and
+subpaths remain migration data until the single authorized cutover deletes
+them; never present them as an alternative capability style.
 
-1. Keep `ERROR_CODES` closed and transport-neutral. Map domain-specific reasons at adapters rather than adding domain vocabulary.
-2. Keep `Result<T>` discriminated by `ok: true | false`; never introduce another shared result envelope.
-3. Preserve `AppError.cause` for diagnostics but exclude cause, stack, raw driver data, SQL, and unsafe details from public serialization.
-4. Treat `AppError` identity as runtime-owned. Never accept structural lookalikes, native errors, or third-party objects as trusted kernel failures.
-5. Sanitize all public details through the bounded safe-detail policy. `INTERNAL_ERROR` always emits the fixed generic message and no public details. Treat hostile getters, proxies, cycles, oversized structures, blocked keys, and SQL-like strings as untrusted input.
-6. Keep `normalizeUnknown` infrastructure-agnostic. Its optional context is a bounded diagnostic operation, never a public fallback message.
-7. Keep PostgreSQL mapping explicit, total, typed for retryability, and driver-free; do not add `pg`, Drizzle, Prisma, or database imports.
-8. Keep HTTP projection transport-only and atomic. Do not add `NextResponse`, route handlers, or framework policy.
-9. Keep retry policy in consumers. This package owns typed retryability, bounded retry vocabulary, and extraction only.
-10. Keep the package a runtime-dependency leaf and preserve package protection headers and digest controls.
+## Invariants
 
-## Apply to a consumer
+1. Author shared meaning once in the modular `ERROR_REGISTRY`; derive codes,
+   messages, details, HTTP, retry, operations, OpenAPI, lifecycle, and types.
+2. Accept canonical codes for new construction. Normalize historical names only
+   through the internal alias ledger at wire ingress.
+3. Keep `Result<T, C>` discriminated by `ok` and preserve its exact code union.
+4. Keep `Failure<C>` opaque and trusted only through the package-private
+   `WeakMap`. Reject structural lookalikes.
+5. Build public Result, HTTP, wire, and OpenAPI payloads from the same
+   `PublicErrorData<C>` contract.
+6. Derive retryability exhaustively from the registry. Permit only the branded,
+   bounded occurrence timing authorized by a code's retry policy.
+7. Keep HTTP projection atomic and framework-neutral. Do not import Next.js.
+8. Keep PostgreSQL ingress explicit, total, driver-free, and restricted to its
+   closed result-code union.
+9. Exclude raw errors, causes, stacks, SQL, credentials, vendor payloads,
+   private context, and unrestricted diagnostics from public projections.
+10. Keep capability files as frozen composition redirects. Put behavior in its
+    owning registry, ingress, result, project, wire, or OpenAPI module.
+11. Keep all four capability bundle gates and their frozen byte ceilings. Move
+    maintainer-only validation out of consumer bundles instead of raising a
+    ceiling.
+12. Keep the package a runtime leaf and preserve protection headers.
 
-Use `mode: apply` and identify the exact boundary:
+## Mission routing
 
-| Boundary | Required shape |
-|----------|----------------|
-| Public package command/query | Return `Result<T>` or map an accepted domain outcome before it crosses the package |
-| Unknown catch | Use `normalizeUnknown` or `failFromUnknown`; pass only a safe diagnostic operation label when useful |
-| Existing `AppError` | Use `serializeAppError` or `failFromAppError` |
-| PostgreSQL catch | Call total `normalizePostgresUnknown`; do not add a second generic fallback branch |
-| HTTP/BFF projection | Use `projectHttpError` once, then construct the framework response from its status, body, and optional Retry-After |
-| Pure domain code | Keep domain-local outcomes and map them at the command, repository, worker, or transport edge |
+| Change | Mode | Required impact |
+|--------|------|-----------------|
+| Internal representation with identical public behavior | `upgrade` / `internal` | Package contract, security, bundle, and digest evidence |
+| Add a capability method within the accepted root style | `upgrade` / `additive` | Facade, types, runtime fixtures, README, bundles |
+| Add or change a canonical code or policy | `upgrade` / contract-impacting | Registry projections, exhaustive tests, OpenAPI, consumers |
+| Change Result, HTTP, wire, or OpenAPI shape | `upgrade` / `breaking` | Explicit repository cutover authority and all consumers |
+| Convert one consumer after migration unlock | `apply` | Boundary classification plus focused consumer evidence |
+| Delete compatibility exports or subpaths | `upgrade` / `breaking` | Same atomic cutover as every accepted consumer |
 
-Reject raw `Error.message` in public output, direct serialization of error instances, duplicate code/status registries, and automatic database guessing inside generic normalization.
+The contract is now cut over and sealed. Consumer work may use only the root
+capabilities; removed subpaths and implementation APIs must never be restored.
 
-## Implement or upgrade the kernel
+## Consumer boundary after unlock
 
-Before editing:
+| Boundary | Capability |
+|----------|------------|
+| Public operation outcome | `errorResult` |
+| Known contextual failure | `errorIngress.code` |
+| Unknown catch | `errorIngress.unknown` |
+| PostgreSQL catch | `errorIngress.postgres` |
+| Opaque failure to public Result | `errorProject.result` |
+| HTTP/BFF | `errorProject.http` |
+| Structured operational logging | `errorProject.diagnostics` |
+| Worker scheduling | `errorProject.retry` |
+| Process or persistence boundary | `errorWire` |
+| Endpoint error declaration | `errorOpenApi.responses` |
+
+Reject raw `Error.message`, direct failure serialization, manual wire objects,
+code-to-status/message/retry maps, post-normalization business interpretation,
+and automatic PostgreSQL guessing in generic unknown normalization.
+
+## Verification
+
+Snapshot before and after:
 
 ```bash
 node .cursor/skills/afenda-elite-kernel/scripts/inspect-target.mjs packages/foundation/errors
-pnpm --filter @afenda/errors protect:check
 ```
 
-Classify impact using this matrix:
-
-| Change | Minimum classification | Required impact review |
-|--------|------------------------|------------------------|
-| Internal implementation with identical observable behavior | `internal` | Target tests and protection digest |
-| New factory or additive export using existing codes/wire | `additive` | Barrel, README, direct consumers, adoption gates |
-| New error code | Contract-impacting; prove `additive` or classify `breaking` | Code guards, HTTP map, OpenAPI, exhaustive switches, factories, consumers |
-| Result or serialized wire change | `breaking` | All package, job, Action, HTTP, and OpenAPI consumers |
-| Rename/removal of an export or compatibility alias | `breaking` | Repository-wide import and contract cutover |
-| New infrastructure adapter | `additive` when isolated | New explicit subpath, safe mapping tests, dependency-leaf proof |
-| Safe-detail or normalization policy change | Contract-impacting | Security cases, serialization, Result, HTTP, and consumer expectations |
-
-Use the local protected-edit token only through `.env.local`; never print or commit it. Refresh the protection digest only after implementation and all required gates pass.
-
-## Verification order
-
-Run focused gates in this order:
+Run package gates once the bounded implementation is complete:
 
 ```bash
-pnpm --filter @afenda/errors protect:check
 pnpm --filter @afenda/errors lint
 pnpm --filter @afenda/errors typecheck
 pnpm --filter @afenda/errors test
-pnpm run check:errors-consumption
-pnpm run check:errors-adoption -- --strict
-pnpm run check:errors-normalization -- --strict
 ```
 
-For a package implementation change, then run:
+During the migration, run the living repository checks named by root
+`package.json` and `CONTRACT.md`; do not invent final command names early. At the
+authorized final cutover, require the two permanent boundary/semantic gates,
+all affected consumers, generated docs/OpenAPI, and the full repository suite.
 
-```bash
-pnpm --filter @afenda/errors protect:update
-pnpm --filter @afenda/errors protect:check
-```
+Run `protect:check` to report current integrity state. Run `protect:update` only
+as the final operation after every cutover, consumer, documentation, governance,
+and repository gate is green. Never refresh protection for package-local
+progress alone.
 
-Also run focused tests or typechecks for directly affected consumers. Do not run `protect:update` for a consumer-only application mission.
+## Completion
 
-## Error-kernel seal
-
-The protection digest proves package-file integrity; it does not replace the general kernel seal record. Seal only when:
-
-- all general gates in the kernel seal contract pass;
-- the final inspector digest and `.protected.sha256` are recorded;
-- package protection is green after any implementation change;
-- strict adoption and normalization are green;
-- affected consumer evidence is green;
-- the full seal record is persisted in an owner-approved evidence surface.
-
-Reopen the seal when codes, result/serialization wire, public details policy, HTTP mapping, retry bounds, PostgreSQL mapping, exports, protection controls, consumer mandates, or governing API contracts change.
+Report package capability work as `VERIFIED`, not `SEALED`, while consumer
+cutover, permanent governance, protection, or a durable seal record remains
+open. A green package suite proves the named package capability only.

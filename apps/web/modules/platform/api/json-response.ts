@@ -1,11 +1,8 @@
-import { AppError } from "@afenda/errors";
-import { projectHttpError } from "@afenda/errors/http";
-import { applyRetryAfterHeader } from "@afenda/http";
+import { errorProject, type Failure, type ResultFailure } from "@afenda/errors";
 import { NextResponse } from "next/server";
 
 import {
 	type APIErrorBody,
-	type ApiErrorCode,
 	apiData,
 } from "@/modules/platform/schemas/api-error";
 
@@ -23,23 +20,17 @@ export function jsonData<T>(
 	});
 }
 
-export function jsonError(
-	code: ApiErrorCode,
-	message: string,
-	details?: unknown,
+export function jsonFailure(
+	error: Failure | ResultFailure,
 	init?: { headers?: HeadersInit },
 ): NextResponse<APIErrorBody> {
-	return jsonAppError(new AppError({ code, message, details }), init);
-}
-
-export function jsonAppError(
-	error: AppError,
-	init?: { headers?: HeadersInit },
-): NextResponse<APIErrorBody> {
-	const projection = projectHttpError(error);
-	const headers = new Headers(init?.headers);
-	if (projection.retryAfter !== undefined) {
-		applyRetryAfterHeader(headers, projection.retryAfter);
+	const projection = errorProject.http(error);
+	const headers = new Headers(projection.headers);
+	if (init?.headers !== undefined) {
+		const additionalHeaders = new Headers(init.headers);
+		additionalHeaders.forEach((value, name) => {
+			headers.set(name, value);
+		});
 	}
 	return NextResponse.json(projection.body, {
 		status: projection.status,

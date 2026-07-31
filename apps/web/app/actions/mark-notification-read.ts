@@ -1,14 +1,10 @@
 "use server";
 
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { markNotificationRead, type Notification } from "@afenda/notifications";
-
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runMemberSessionAction } from "@/app/actions/run-member-session-action";
 import { markMyNotificationReadCommandSchema } from "@/modules/identity/schemas/my-notifications";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export interface MarkNotificationReadActionData {
@@ -35,11 +31,9 @@ export async function markNotificationReadAction(
 				id: formData.get("id"),
 			});
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Select a valid notification.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Select a valid notification.",
+				});
 			}
 
 			const result = await markNotificationRead({
@@ -51,10 +45,9 @@ export async function markNotificationReadAction(
 				return mapPackageResult(result);
 			}
 			if (result.data === null) {
-				return actionFail(
-					"NOT_FOUND",
-					"That notification was not found for your account.",
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "That notification was not found for your account.",
+				});
 			}
 			return mapPackageResult({
 				ok: true,

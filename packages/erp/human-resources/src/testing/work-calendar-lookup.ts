@@ -1,4 +1,4 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type {
 	ResolvedWorkCalendarContext,
@@ -104,7 +104,7 @@ export function createMemoryWorkCalendarLookup(
 
 	return {
 		resolveCalendarContext(): Promise<Result<ResolvedWorkCalendarContext>> {
-			return Promise.resolve(ok(context));
+			return Promise.resolve(errorResult.ok(context));
 		},
 	};
 }

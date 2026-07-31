@@ -4,52 +4,27 @@
  * Protected: changes require local pre-edit token and compatibility checks.
  */
 
-export {
-	badRequest,
-	conflict,
-	forbidden,
-	internalError,
-	notFound,
-	rateLimited,
-	serviceUnavailable,
-	unauthorized,
-	validationError,
-} from "./common/index";
-export {
-	AppError,
-	type AppErrorOptions,
-	isAppError,
-	isOperationalError,
-} from "./core/app-error";
-export {
-	API_ERROR_CODES,
-	type ApiErrorCode,
-	type ApiErrorCodeBrand,
-	asApiErrorCode,
-	asErrorCode,
-	ERROR_CODES,
-	type ErrorCode,
-	type ErrorCodeBrand,
-	isApiErrorCode,
-	isErrorCode,
-} from "./core/codes";
-export {
-	type ErrorDiagnosticFields,
-	errorDiagnosticFields,
-} from "./core/diagnostic";
-export { normalizeUnknown } from "./core/normalize";
-export {
-	DEFAULT_INTERNAL_MESSAGE,
-	MAX_PUBLIC_ERROR_MESSAGE_LENGTH,
-} from "./core/public-error-policy";
-export {
-	type SafeDetailScalar,
-	type SafeDetails,
-	type SafeDetailValue,
-	sanitizeErrorDetails,
-} from "./core/safe-details";
-export {
-	type SerializedAppError,
-	serializeAppError,
-	serializeUnknown,
-} from "./core/serialize";
+export { errorIngress } from "./capabilities/ingress";
+export { errorOpenApi } from "./capabilities/openapi";
+export { errorProject } from "./capabilities/project";
+export { errorResult } from "./capabilities/result";
+export { errorWire } from "./capabilities/wire";
+export type {
+	PublicFieldErrors,
+	RetryAfterSeconds,
+} from "./contract/details";
+export type { Failure } from "./failure/types";
+export type { OpenApiResponsesProjection } from "./openapi/types";
+export type {
+	CanonicalErrorCode,
+	FailureContext,
+	FailureInput,
+	MessageKeyFor,
+	PublicErrorData,
+	Result,
+	ResultFailure,
+	ResultFailureInput,
+	ResultSuccess,
+	RetryDisposition,
+} from "./public-types";
+export type { SerializedFailureEnvelope } from "./wire/types";

@@ -1,8 +1,5 @@
-import { fail } from "@afenda/errors/result";
-import type {
-	MasterFailureDetails,
-	MasterReason,
-} from "../../contracts/reasons";
+import { errorResult } from "@afenda/errors";
+import type { MasterReason } from "../../contracts/reasons";
 
 export const PLATFORM_REFERENCE_ERROR_REASONS = [
 	"MASTER_DATA_REFERENCE_NOT_FOUND",
@@ -15,16 +12,14 @@ export type PlatformReferenceErrorReason =
 	(typeof PLATFORM_REFERENCE_ERROR_REASONS)[number];
 
 function failReference(
-	reason: MasterReason,
-	platformReferenceReason: PlatformReferenceErrorReason,
-	message: string,
-	referenceFamily?: string,
+	_reason: MasterReason,
+	_platformReferenceReason: PlatformReferenceErrorReason,
+	_message: string,
+	_referenceFamily?: string,
 ) {
-	return fail("BAD_REQUEST", message, {
-		reason,
-		platformReferenceReason,
-		referenceFamily,
-	} satisfies MasterFailureDetails);
+	return errorResult.fail("BAD_REQUEST", {
+		publicMessage: "The request is invalid",
+	});
 }
 
 export function failReferenceNotFound(referenceFamily: string) {

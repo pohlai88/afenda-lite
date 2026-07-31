@@ -1,4 +1,4 @@
-import { fail, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type { HumanResourcesCommandOptions } from "../../command-options";
 import {
@@ -53,11 +53,11 @@ export async function approveAttendanceBreakWaiver(
 				return invalidState("Automatic break policy was not found");
 			}
 			if (!policy.data.approvalSteps.includes(data.authority)) {
-				return fail(
-					"FORBIDDEN",
-					"Authority is not permitted by the applied Time policy",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
-				);
+				return errorResult.fail("FORBIDDEN", {
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_FORBIDDEN,
+					),
+				});
 			}
 			const authority = await store.resolveTimeApprovalAuthority({
 				organizationId: data.organizationId,
@@ -69,11 +69,11 @@ export async function approveAttendanceBreakWaiver(
 				return authority;
 			}
 			if (authority.data === null) {
-				return fail(
-					"FORBIDDEN",
-					"Actor does not hold the required approval authority",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
-				);
+				return errorResult.fail("FORBIDDEN", {
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_FORBIDDEN,
+					),
+				});
 			}
 			return store.approveAttendanceBreakWaiver(
 				{

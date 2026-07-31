@@ -26,7 +26,7 @@ import {
 	createDrizzleCorporateAdministrationTransactionPort,
 } from "@afenda/corporate-administration/adapters/drizzle";
 import { db, type NeonHttpSql, runNeonHttpTransaction } from "@afenda/db";
-import { fail, ok } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createInlineCorporateAdministrationTransactionPort } from "./helpers/inline-transaction";
 import { createMemoryCorporateAdministrationIdempotencyPort } from "./helpers/memory-idempotency";
@@ -237,7 +237,7 @@ function runIdempotencyContract(
 					reservationToken,
 					result: replayResult,
 				}),
-			).toEqual(ok(undefined));
+			).toEqual(errorResult.ok(undefined));
 
 			await expectReplay(harness.port, harness.scope, replayResult);
 			expect(
@@ -288,7 +288,7 @@ function runIdempotencyContract(
 					fingerprint,
 					reservationToken: firstToken,
 				}),
-			).toEqual(ok(undefined));
+			).toEqual(errorResult.ok(undefined));
 			const reacquired = await beginOutcome(harness.port, harness.scope);
 			expect(reacquired.status).toBe("acquired");
 			expect(
@@ -312,7 +312,7 @@ function runIdempotencyContract(
 					reservationToken,
 					result: replayResult,
 				}),
-			).toEqual(ok(undefined));
+			).toEqual(errorResult.ok(undefined));
 			expect(
 				await harness.port.complete({
 					scope: harness.scope,
@@ -344,7 +344,7 @@ function runIdempotencyContract(
 					fingerprint,
 					reservationToken,
 				}),
-			).toEqual(ok(undefined));
+			).toEqual(errorResult.ok(undefined));
 			expect(
 				await beginOutcome(harness.port, harness.scope, otherFingerprint),
 			).toEqual({
@@ -372,7 +372,7 @@ function runIdempotencyContract(
 					fingerprint,
 					reservationToken,
 				}),
-			).toEqual(ok(undefined));
+			).toEqual(errorResult.ok(undefined));
 			expect((await beginOutcome(harness.port, harness.scope)).status).toBe(
 				"acquired",
 			);
@@ -447,12 +447,9 @@ describe("Corporate Administration idempotency unavailable store contract", () =
 
 	it("does not disguise infrastructure failure as an idempotency decision", async () => {
 		const unavailable: CorporateAdministrationIdempotencyPort = Object.freeze({
-			begin: async () =>
-				fail("SERVICE_UNAVAILABLE", "Idempotency store is unavailable"),
-			complete: async () =>
-				fail("SERVICE_UNAVAILABLE", "Idempotency store is unavailable"),
-			release: async () =>
-				fail("SERVICE_UNAVAILABLE", "Idempotency store is unavailable"),
+			begin: async () => errorResult.fail("SERVICE_UNAVAILABLE"),
+			complete: async () => errorResult.fail("SERVICE_UNAVAILABLE"),
+			release: async () => errorResult.fail("SERVICE_UNAVAILABLE"),
 		});
 
 		expect(await unavailable.begin({ scope, fingerprint })).toMatchObject({
@@ -468,14 +465,20 @@ describe("Corporate Administration transaction contract", () => {
 		const successWork = vi
 			.fn()
 			.mockResolvedValue(
-				commitCorporateAdministrationTransaction(ok({ id: "result_1" })),
+				commitCorporateAdministrationTransaction(
+					errorResult.ok({ id: "result_1" }),
+				),
 			);
-		const failure = fail("CONFLICT", "Version conflict");
+		const failure = errorResult.fail("CONFLICT", {
+			publicMessage: "Version conflict",
+		});
 		const failureWork = vi
 			.fn()
 			.mockResolvedValue(rollbackCorporateAdministrationTransaction(failure));
 
-		expect(await transaction.run(successWork)).toEqual(ok({ id: "result_1" }));
+		expect(await transaction.run(successWork)).toEqual(
+			errorResult.ok({ id: "result_1" }),
+		);
 		expect(successWork).toHaveBeenCalledTimes(1);
 		expect(await transaction.run(failureWork)).toBe(failure);
 		expect(failureWork).toHaveBeenCalledTimes(1);
@@ -483,7 +486,9 @@ describe("Corporate Administration transaction contract", () => {
 
 	it("enforces selected failed-Result policy and closes context after completion", async () => {
 		const transaction = createInlineCorporateAdministrationTransactionPort();
-		const failure = fail("CONFLICT", "Version conflict");
+		const failure = errorResult.fail("CONFLICT", {
+			publicMessage: "Version conflict",
+		});
 		let capturedContext: CorporateAdministrationTransactionContext | undefined;
 
 		expect(
@@ -516,7 +521,7 @@ describe("Corporate Administration transaction contract", () => {
 		await expect(
 			transaction.run(() =>
 				transaction.run(async () =>
-					commitCorporateAdministrationTransaction(ok(undefined)),
+					commitCorporateAdministrationTransaction(errorResult.ok(undefined)),
 				),
 			),
 		).rejects.toThrow(
@@ -545,7 +550,7 @@ describe("Corporate Administration transaction contract", () => {
 			}
 			await bothStarted.promise;
 			context.enqueue(() => Promise.resolve());
-			return commitCorporateAdministrationTransaction(ok(started));
+			return commitCorporateAdministrationTransaction(errorResult.ok(started));
 		}
 
 		const results = await Promise.all([
@@ -558,9 +563,11 @@ describe("Corporate Administration transaction contract", () => {
 		await expect(
 			transaction.run(async () => {
 				await transaction.run(async () =>
-					commitCorporateAdministrationTransaction(ok(undefined)),
+					commitCorporateAdministrationTransaction(errorResult.ok(undefined)),
 				);
-				return commitCorporateAdministrationTransaction(ok(undefined));
+				return commitCorporateAdministrationTransaction(
+					errorResult.ok(undefined),
+				);
 			}),
 		).rejects.toThrow(
 			"Nested Corporate Administration transactions are prohibited",
@@ -578,7 +585,7 @@ describe("Corporate Administration transaction contract", () => {
 				context.enqueue(() => Promise.resolve());
 				return {
 					effect: "unexpected",
-					result: ok(undefined),
+					result: errorResult.ok(undefined),
 				} as never;
 			}),
 		).rejects.toThrow(
@@ -627,10 +634,12 @@ describe.skipIf(!RUN_CORPORATE_ADMINISTRATION_NEON_PARITY)(
 					if (!outboxResult.ok) {
 						return rollbackCorporateAdministrationTransaction(outboxResult);
 					}
-					return commitCorporateAdministrationTransaction(ok("committed"));
+					return commitCorporateAdministrationTransaction(
+						errorResult.ok("committed"),
+					);
 				});
 
-				expect(result).toEqual(ok("committed"));
+				expect(result).toEqual(errorResult.ok("committed"));
 				await expect(
 					countCorporateAdministrationMutationReceipts(scope),
 				).resolves.toBe(1);
@@ -661,7 +670,9 @@ describe.skipIf(!RUN_CORPORATE_ADMINISTRATION_NEON_PARITY)(
 				correlationId: "corr_1",
 				payload: { id: "entity_1" },
 			});
-			const governedFailure = fail("CONFLICT", "Synthetic rollback");
+			const governedFailure = errorResult.fail("CONFLICT", {
+				publicMessage: "Synthetic rollback",
+			});
 
 			try {
 				const result = await transaction.run(async (context) => {
@@ -719,7 +730,9 @@ describe.skipIf(!RUN_CORPORATE_ADMINISTRATION_NEON_PARITY)(
 						const sql = database as NeonHttpSql;
 						return sql`INSERT INTO ca_transaction_missing_table (id) VALUES (${randomUUID()})`;
 					});
-					return commitCorporateAdministrationTransaction(ok("unreachable"));
+					return commitCorporateAdministrationTransaction(
+						errorResult.ok("unreachable"),
+					);
 				});
 
 				expect(result).toMatchObject({ ok: false });

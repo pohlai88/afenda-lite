@@ -1,5 +1,6 @@
 "use server";
 
+import type { Result as ActionResult } from "@afenda/errors";
 import type {
 	HeadcountAvailability,
 	HeadcountPlan,
@@ -51,13 +52,11 @@ import {
 	updateHeadcountPlanInputSchema,
 	updateHeadcountPlanLineInputSchema,
 } from "@afenda/human-resources/schemas";
-
 import {
 	invokeHrPackage,
 	runHrWorkforceHumanResourcesAction as runHrHumanResourcesAction,
 } from "@/app/actions/hr-action-runner";
 import { hrActionSchema } from "@/app/actions/hr-mutation-context";
-import type { ActionResult } from "@/modules/platform/schemas/action-result";
 
 const PLAN_READ = "human-resources.workforce-plan.read" as const;
 const PLAN_PREPARE = "human-resources.workforce-plan.prepare" as const;

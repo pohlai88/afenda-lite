@@ -2,14 +2,13 @@
  * Item templates + concrete variant items (DNA §7.3 / R1).
  * Sellable identity = md_item; attribute values are typed rows — never JSON bag.
  */
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	requireMasterCommandPermission,
 	requireMasterQueryPermission,
 } from "../../authorization";
 import type { MasterCommandOptions } from "../../command-options";
-import type { MasterFailureDetails } from "../../contracts/reasons";
 import {
 	MASTER_COMMAND_ITEM_TEMPLATE_ACTIVATE,
 	MASTER_COMMAND_ITEM_TEMPLATE_CREATE,
@@ -213,9 +212,9 @@ async function transitionItemTemplateStatus(
 		return current;
 	}
 	if (current.data === null) {
-		return fail("NOT_FOUND", "Item template not found", {
-			reason: "MASTER_NOT_FOUND",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Item template not found",
+		});
 	}
 	const transition = assertLifecycleTransition(current.data.status, toStatus);
 	if (!transition.ok) {
@@ -274,20 +273,15 @@ async function validateItemTemplateActivation(
 			attribute.status === "active" && attribute.archivedAt === null,
 	);
 	if (activeAttributes.length === 0) {
-		return fail(
-			"CONFLICT",
-			"Activate requires at least one template attribute",
-			{
-				reason: "MASTER_INVALID_STATE",
-			} satisfies MasterFailureDetails,
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Activate requires at least one template attribute",
+		});
 	}
 	if (!activeAttributes.some((attribute) => attribute.isVariantDefining)) {
-		return fail(
-			"CONFLICT",
-			"Activate requires at least one variant-defining attribute",
-			{ reason: "MASTER_INVALID_STATE" } satisfies MasterFailureDetails,
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage:
+				"Activate requires at least one variant-defining attribute",
+		});
 	}
 	const optionsResult = await store.listItemTemplateAttributeOptionsByTemplate(
 		organizationId,
@@ -309,13 +303,11 @@ async function validateItemTemplateActivation(
 			!optionAttributeIds.has(attribute.id),
 	);
 	if (missingOptionAttribute !== undefined) {
-		return fail(
-			"CONFLICT",
-			`Option attribute ${missingOptionAttribute.code} requires at least one option`,
-			{ reason: "MASTER_INVALID_STATE" } satisfies MasterFailureDetails,
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "The request conflicts with current state",
+		});
 	}
-	return ok(true);
+	return errorResult.ok(true);
 }
 
 async function validateItemTemplateRetirement(
@@ -329,12 +321,11 @@ async function validateItemTemplateRetirement(
 		entityId: templateId,
 	});
 	if (blockers.length > 0) {
-		return fail("CONFLICT", "Item template has dependency blockers", {
-			reason: "MASTER_DEPENDENCY_BLOCKED",
-			blockers,
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Item template has dependency blockers",
+		});
 	}
-	return ok(true);
+	return errorResult.ok(true);
 }
 
 export function activateItemTemplate(
@@ -509,14 +500,14 @@ export async function createItemVariant(
 		return template;
 	}
 	if (template.data === null) {
-		return fail("NOT_FOUND", "Item template not found", {
-			reason: "MASTER_NOT_FOUND",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Item template not found",
+		});
 	}
 	if (template.data.status !== "active") {
-		return fail("CONFLICT", "Variants require an active template", {
-			reason: "MASTER_INVALID_STATE",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Variants require an active template",
+		});
 	}
 	const attrs = await store.listItemTemplateAttributes(
 		parsed.data.organizationId,
@@ -578,10 +569,9 @@ function validateProvidedVariantAttributes(
 	const seenAttributeIds = new Set<string>();
 	for (const value of values) {
 		if (seenAttributeIds.has(value.attributeId)) {
-			return fail("BAD_REQUEST", "Duplicate template attribute value", {
-				reason: "MASTER_VALIDATION_FAILED",
-				attributeId: value.attributeId,
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage: "Duplicate template attribute value",
+			});
 		}
 		seenAttributeIds.add(value.attributeId);
 	}
@@ -592,13 +582,11 @@ function validateProvidedVariantAttributes(
 		(attribute) => attribute.isRequired && !providedIds.has(attribute.id),
 	);
 	if (missingRequired !== undefined) {
-		return fail(
-			"BAD_REQUEST",
-			`Missing required attribute ${missingRequired.code}`,
-			{ reason: "MASTER_VALIDATION_FAILED" } satisfies MasterFailureDetails,
-		);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "The request is invalid",
+		});
 	}
-	return ok(true);
+	return errorResult.ok(true);
 }
 
 function buildVariantAttributeRecords(
@@ -624,9 +612,9 @@ function buildVariantAttributeRecords(
 	for (const value of values) {
 		const attr = attrById.get(value.attributeId);
 		if (attr === undefined) {
-			return fail("BAD_REQUEST", "Unknown template attribute", {
-				reason: "MASTER_VALIDATION_FAILED",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage: "Unknown template attribute",
+			});
 		}
 		const normalized = normalizeVariantAttributeValue({
 			dataType: attr.dataType,
@@ -656,7 +644,7 @@ function buildVariantAttributeRecords(
 			normalizedValue: normalizedValue.data,
 		});
 	}
-	return ok({ combinationEntries, valueRecords });
+	return errorResult.ok({ combinationEntries, valueRecords });
 }
 
 function resolveVariantOptionValue(
@@ -669,7 +657,7 @@ function resolveVariantOptionValue(
 		if (option === undefined || option.attributeId !== attribute.id) {
 			return invalidVariantOption(attribute);
 		}
-		return ok(option.normalizedCode);
+		return errorResult.ok(option.normalizedCode);
 	}
 	if (attribute.dataType === "multiple_option") {
 		const selectedOptions = normalized.optionIds.map((optionId) =>
@@ -682,22 +670,22 @@ function resolveVariantOptionValue(
 		) {
 			return invalidVariantOption(attribute);
 		}
-		return ok(
+		return errorResult.ok(
 			selectedOptions
 				.map((option) => option?.normalizedCode ?? "")
 				.sort((left, right) => left.localeCompare(right))
 				.join(","),
 		);
 	}
-	return ok(normalized.normalizedValue);
+	return errorResult.ok(normalized.normalizedValue);
 }
 
-function invalidVariantOption(attribute: ItemTemplateAttribute): Result<never> {
-	return fail(
-		"BAD_REQUEST",
-		`Option does not belong to attribute ${attribute.code}`,
-		{ reason: "MASTER_VALIDATION_FAILED" } satisfies MasterFailureDetails,
-	);
+function invalidVariantOption(
+	_attribute: ItemTemplateAttribute,
+): Result<never> {
+	return errorResult.fail("BAD_REQUEST", {
+		publicMessage: "The request is invalid",
+	});
 }
 
 /**
@@ -737,14 +725,14 @@ export async function retireItemVariant(
 		return current;
 	}
 	if (current.data === null) {
-		return fail("NOT_FOUND", "Item variant not found", {
-			reason: "MASTER_NOT_FOUND",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Item variant not found",
+		});
 	}
 	if (current.data.retiredAt !== null) {
-		return fail("CONFLICT", "Item variant is already retired", {
-			reason: "MASTER_INVALID_STATE",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Item variant is already retired",
+		});
 	}
 	const version = assertExpectedVersion(
 		current.data,
@@ -766,10 +754,9 @@ export async function retireItemVariant(
 		entityId: current.data.itemId,
 	});
 	if (blockers.length > 0) {
-		return fail("CONFLICT", "Variant item has dependency blockers", {
-			reason: "MASTER_DEPENDENCY_BLOCKED",
-			blockers,
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Variant item has dependency blockers",
+		});
 	}
 	return store.retireItemVariant(
 		{

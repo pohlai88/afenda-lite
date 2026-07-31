@@ -1,6 +1,6 @@
 // biome-ignore-all lint/performance/noAwaitInLoops: Event side effects are persisted and published in source order with fail-fast semantics.
-import { AppError } from "@afenda/errors";
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, errorWire, type Result } from "@afenda/errors";
+
 import {
 	createEventPublisher,
 	type DomainEvent,
@@ -79,7 +79,7 @@ export function createProductionHumanResourcesWorkItemSink(): HumanResourcesWork
 			if (!result.ok) {
 				return result;
 			}
-			return ok({
+			return errorResult.ok({
 				id: result.data.id,
 				organizationId: result.data.organizationId,
 				deduplicationKey: result.data.deduplicationKey,
@@ -94,13 +94,10 @@ async function persistWorkItems(
 	sink: HumanResourcesWorkItemSinkPort | null,
 ): Promise<Result<HumanResourcesPersistedWorkItem[]>> {
 	if (facts.workItems.length === 0) {
-		return ok([]);
+		return errorResult.ok([]);
 	}
 	if (sink === null) {
-		return fail(
-			"SERVICE_UNAVAILABLE",
-			"Human Resources platform work-item sink is not composed",
-		);
+		return errorResult.fail("SERVICE_UNAVAILABLE");
 	}
 	const persisted: HumanResourcesPersistedWorkItem[] = [];
 	for (const workItem of facts.workItems) {
@@ -115,14 +112,11 @@ async function persistWorkItems(
 			result.data.organizationId !== workItem.organizationId ||
 			result.data.deduplicationKey !== workItem.deduplicationKey
 		) {
-			return fail(
-				"INTERNAL_ERROR",
-				"Platform work-item sink returned mismatched persistence evidence",
-			);
+			return errorResult.fail("INTERNAL_ERROR");
 		}
 		persisted.push(result.data);
 	}
-	return ok(persisted);
+	return errorResult.ok(persisted);
 }
 
 async function publishPlatformFacts(
@@ -193,14 +187,11 @@ async function publishPlatformFacts(
 			return result;
 		}
 		if (result.data.organizationId !== event.organizationId) {
-			return fail(
-				"INTERNAL_ERROR",
-				"Platform event publisher returned another tenant",
-			);
+			return errorResult.fail("INTERNAL_ERROR");
 		}
 		published.push(result.data);
 	}
-	return ok(published);
+	return errorResult.ok(published);
 }
 
 async function handleHumanResourcesPlatformEventCore(
@@ -235,7 +226,7 @@ async function handleHumanResourcesPlatformEventCore(
 
 	const intent = projected.data.notification;
 	if (intent === null) {
-		return ok({
+		return errorResult.ok({
 			facts: projected.data,
 			notification: null,
 			platformEvents: platformEvents.data,
@@ -262,7 +253,7 @@ async function handleHumanResourcesPlatformEventCore(
 		return notification;
 	}
 
-	return ok({
+	return errorResult.ok({
 		facts: projected.data,
 		notification: notification.data,
 		platformEvents: platformEvents.data,
@@ -317,11 +308,7 @@ export function createHumanResourcesPlatformEventHandlers(
 				workItemSink,
 			);
 			if (!result.ok) {
-				throw new AppError({
-					code: result.code,
-					message: result.message,
-					...(result.details === undefined ? {} : { details: result.details }),
-				});
+				throw errorWire.deserialize(errorWire.serialize(result));
 			}
 		};
 	}

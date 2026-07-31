@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type { HumanResourcesRetentionClassification } from "../privacy";
 
@@ -36,7 +36,9 @@ export function verifyHumanResourcesPrivacyProcessorBoundary(
 		primary.contractReference.trim().length === 0 ||
 		Number.isNaN(Date.parse(primary.verifiedAt))
 	) {
-		return fail("CONFLICT", "Privacy processor boundary is not verified");
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "The request conflicts with current state",
+		});
 	}
 	const processorIds = new Set([primary.processorId]);
 	for (const subprocessor of boundary.subprocessors) {
@@ -49,11 +51,13 @@ export function verifyHumanResourcesPrivacyProcessorBoundary(
 			Number.isNaN(Date.parse(subprocessor.verifiedAt)) ||
 			processorIds.has(subprocessor.processorId)
 		) {
-			return fail("CONFLICT", "Privacy subprocessor boundary is not verified");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "The request conflicts with current state",
+			});
 		}
 		processorIds.add(subprocessor.processorId);
 	}
-	return ok(boundary);
+	return errorResult.ok(boundary);
 }
 
 export function processorBoundarySupportsDisposition(input: {

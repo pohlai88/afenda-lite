@@ -1,4 +1,4 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type { PayrollSetupStore } from "../store/setup";
 import { mapInvalidState } from "./persistence-errors";
@@ -15,5 +15,5 @@ export async function assertRuleNotLockedByFinalizedRun(
 	if (locked.data) {
 		return mapInvalidState("Rule version is referenced by a finalized run");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }

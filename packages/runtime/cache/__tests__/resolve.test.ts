@@ -1,3 +1,4 @@
+import { errorIngress, errorProject } from "@afenda/errors";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
@@ -5,7 +6,7 @@ import {
 	resetResolvedCacheBackend,
 	resolveCacheBackend,
 } from "../src/resolve";
-import { toCacheAppError } from "../src/to-app-error";
+import { toCacheFailure } from "../src/to-failure";
 
 vi.mock("@afenda/env", () => ({
 	env: {
@@ -47,17 +48,23 @@ describe("resolveCacheBackend", () => {
 			service: "upstash_redis",
 		});
 
-		expect(() => createCacheManager()).toThrowError(
-			expect.objectContaining({ code: "SERVICE_UNAVAILABLE" }),
-		);
+		try {
+			createCacheManager();
+			throw new Error("expected cache composition to fail");
+		} catch (caught) {
+			expect(
+				errorProject.result(
+					errorIngress.unknown(caught, { operation: "cache.test" }),
+				).code,
+			).toBe("SERVICE_UNAVAILABLE");
+		}
 
-		const error = toCacheAppError({
+		const error = toCacheFailure({
 			ok: false,
 			reason: "unavailable",
 			service: "upstash_redis",
 		});
-		expect(error.code).toBe("SERVICE_UNAVAILABLE");
-		expect(error.details).toEqual({ service: "upstash_redis" });
+		expect(errorProject.result(error).code).toBe("SERVICE_UNAVAILABLE");
 	});
 
 	it("allows explicit L1 inject without process resolve", async () => {
@@ -76,9 +83,16 @@ describe("resolveCacheBackend", () => {
 		vi.mocked(isProductionDeploymentNow).mockReturnValue(true);
 		resetResolvedCacheBackend();
 
-		expect(() => createCacheManager({ defaultTTL: 60 })).toThrowError(
-			expect.objectContaining({ code: "SERVICE_UNAVAILABLE" }),
-		);
+		try {
+			createCacheManager({ defaultTTL: 60 });
+			throw new Error("expected cache composition to fail");
+		} catch (caught) {
+			expect(
+				errorProject.result(
+					errorIngress.unknown(caught, { operation: "cache.test" }),
+				).code,
+			).toBe("SERVICE_UNAVAILABLE");
+		}
 
 		vi.mocked(isProductionDeploymentNow).mockReturnValue(false);
 		resetResolvedCacheBackend();

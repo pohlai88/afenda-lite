@@ -7,9 +7,7 @@ import {
 	caResolutionAction,
 	eq,
 } from "@afenda/db";
-import { fail, ok, type Result } from "@afenda/errors/result";
-
-import { corporateAdministrationErrorDetails } from "../../error-codes";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	governanceMeetingIdSchema,
 	legalCompanyIdSchema,
@@ -109,7 +107,7 @@ class DrizzleCorporateAdministrationResolutionStore implements ResolutionStore {
 				const sql = asSql(database);
 				return sql`INSERT INTO ca_meeting_vote (id, organization_id, legal_company_id, governance_meeting_id, motion_code, eligible_votes, votes_for, votes_against, abstentions, threshold_type, required_for, outcome, outcome_basis, source_document_id, recorded_at, recorded_by, version, created_at, updated_at) VALUES (${id}, ${input.organizationId}, ${input.legalCompanyId}, ${input.governanceMeetingId}, ${input.motionCode}, ${input.eligibleVotes}, ${input.votesFor}, ${input.votesAgainst}, ${input.abstentions}, ${input.thresholdType}, ${input.requiredFor}, ${input.outcome}, ${input.outcomeBasis}, ${input.sourceDocumentId}, ${now}, ${input.recordedBy}, 1, ${now}, ${now})`;
 			});
-			return ok(row);
+			return errorResult.ok(row);
 		}
 		return this.#write(async () => {
 			await this.#database.insert(caMeetingVote).values(row);
@@ -192,7 +190,7 @@ class DrizzleCorporateAdministrationResolutionStore implements ResolutionStore {
 				const sql = asSql(database);
 				return sql`INSERT INTO ca_resolution (id, organization_id, legal_company_id, governance_meeting_id, meeting_vote_id, approval_basis, status, resolution_code, title, text_digest, document_id, minutes_document_id, effective_from, approved_at, rejected_at, superseded_at, superseded_by_resolution_id, source_document_id, recorded_at, recorded_by, version, created_at, updated_at) VALUES (${id}, ${input.organizationId}, ${input.legalCompanyId}, ${input.governanceMeetingId}, ${input.meetingVoteId}, ${input.approvalBasis}, ${input.status}, ${input.resolutionCode}, ${input.title}, ${input.textDigest}, ${input.documentId}, NULL, ${input.effectiveFrom}, ${input.approvedAt}, ${input.rejectedAt}, NULL, NULL, ${input.sourceDocumentId}, ${now}, ${input.recordedBy}, 1, ${now}, ${now})`;
 			});
-			return ok(row);
+			return errorResult.ok(row);
 		}
 		return this.#write(async () => {
 			await this.#database.insert(caResolution).values(row);
@@ -230,7 +228,7 @@ class DrizzleCorporateAdministrationResolutionStore implements ResolutionStore {
 				const sql = asSql(database);
 				return sql`UPDATE ca_resolution SET status = 'superseded', superseded_at = ${now}, superseded_by_resolution_id = ${input.supersededByResolutionId}, source_document_id = ${input.sourceDocumentId}, recorded_at = ${now}, recorded_by = ${input.recordedBy}, version = version + 1, updated_at = ${now} WHERE organization_id = ${input.organizationId} AND id = ${input.resolutionId} AND version = ${input.expectedVersion}`;
 			});
-			return ok(updated);
+			return errorResult.ok(updated);
 		}
 		return this.#write(async () => {
 			await this.#database
@@ -284,7 +282,7 @@ class DrizzleCorporateAdministrationResolutionStore implements ResolutionStore {
 				const sql = asSql(database);
 				return sql`UPDATE ca_resolution SET minutes_document_id = ${input.minutesDocumentId}, source_document_id = ${input.sourceDocumentId}, recorded_at = ${now}, recorded_by = ${input.recordedBy}, version = version + 1, updated_at = ${now} WHERE organization_id = ${input.organizationId} AND id = ${input.resolutionId} AND version = ${input.expectedVersion}`;
 			});
-			return ok(updated);
+			return errorResult.ok(updated);
 		}
 		return this.#write(async () => {
 			await this.#database
@@ -395,7 +393,7 @@ class DrizzleCorporateAdministrationResolutionStore implements ResolutionStore {
 				const sql = asSql(database);
 				return sql`INSERT INTO ca_resolution_action (id, organization_id, legal_company_id, resolution_id, action_type_code, assignee_party_id, status, due_on, completed_at, evidence_document_id, completion_notes, source_document_id, recorded_at, recorded_by, version, created_at, updated_at) VALUES (${id}, ${input.organizationId}, ${input.legalCompanyId}, ${input.resolutionId}, ${input.actionTypeCode}, ${input.assigneePartyId}, 'assigned', ${input.dueOn}, NULL, NULL, NULL, ${input.sourceDocumentId}, ${now}, ${input.recordedBy}, 1, ${now}, ${now})`;
 			});
-			return ok(row);
+			return errorResult.ok(row);
 		}
 		return this.#write(async () => {
 			await this.#database.insert(caResolutionAction).values(row);
@@ -434,7 +432,7 @@ class DrizzleCorporateAdministrationResolutionStore implements ResolutionStore {
 				const sql = asSql(database);
 				return sql`UPDATE ca_resolution_action SET status = 'completed', completed_at = ${input.completedAt}, evidence_document_id = ${input.evidenceDocumentId}, completion_notes = ${input.completionNotes}, source_document_id = ${input.sourceDocumentId}, recorded_at = ${now}, recorded_by = ${input.recordedBy}, version = version + 1, updated_at = ${now} WHERE organization_id = ${input.organizationId} AND id = ${input.resolutionActionId} AND version = ${input.expectedVersion}`;
 			});
-			return ok(updated);
+			return errorResult.ok(updated);
 		}
 		return this.#write(async () => {
 			await this.#database
@@ -463,18 +461,11 @@ class DrizzleCorporateAdministrationResolutionStore implements ResolutionStore {
 
 	async #read<T>(operation: () => Promise<T>): Promise<Result<T>> {
 		try {
-			return ok(await operation());
+			return errorResult.ok(await operation());
 		} catch (error) {
 			return (
 				translateCorporateAdministrationInfrastructureError(error) ??
-				fail(
-					"SERVICE_UNAVAILABLE",
-					"Corporate Administration database operation failed.",
-					corporateAdministrationErrorDetails(
-						"CORPORATE_ADMINISTRATION_EXTERNAL_DEPENDENCY_UNAVAILABLE",
-						{ field: "database" },
-					),
-				)
+				errorResult.fail("SERVICE_UNAVAILABLE")
 			);
 		}
 	}
@@ -605,20 +596,16 @@ function asSql(
 }
 
 function notFound(): Result<never> {
-	return fail(
-		"NOT_FOUND",
-		"Corporate Administration record was not found.",
-		corporateAdministrationErrorDetails("CORPORATE_ADMINISTRATION_NOT_FOUND"),
-	);
+	return errorResult.fail("NOT_FOUND", {
+		publicMessage: "Corporate Administration record was not found.",
+	});
 }
 
-function stale(expectedVersion: number, actualVersion: number): Result<never> {
-	return fail(
-		"CONFLICT",
-		"Corporate Administration record version is stale.",
-		corporateAdministrationErrorDetails(
-			"CORPORATE_ADMINISTRATION_STALE_VERSION",
-			{ expectedVersion, actualVersion },
-		),
-	);
+function stale(
+	_expectedVersion: number,
+	_actualVersion: number,
+): Result<never> {
+	return errorResult.fail("CONFLICT", {
+		publicMessage: "Corporate Administration record version is stale.",
+	});
 }

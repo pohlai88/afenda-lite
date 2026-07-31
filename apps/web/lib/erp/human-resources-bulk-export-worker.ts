@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import { type AuditRecorder, createAuditRecorder } from "@afenda/audit";
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	type HumanResourcesAuthorizationPort,
 	type HumanResourcesBulkExportPorts,
@@ -66,12 +66,9 @@ export function createHumanResourcesBulkExportPorts(
 				return recorded;
 			}
 			if (recorded.data.organizationId !== input.organizationId) {
-				return fail(
-					"INTERNAL_ERROR",
-					"Privacy evidence crossed the tenant boundary",
-				);
+				return errorResult.fail("INTERNAL_ERROR");
 			}
-			return ok({ evidenceId });
+			return errorResult.ok({ evidenceId });
 		},
 	};
 }

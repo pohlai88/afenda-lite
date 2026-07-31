@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type {
 	HumanResourcesDepartmentId,
@@ -26,21 +26,21 @@ export function assertActiveDepartment(status: DepartmentStatus): Result<void> {
 	if (status !== "active") {
 		return invalidState("Department is not active");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertActiveJob(status: JobStatus): Result<void> {
 	if (status !== "active") {
 		return invalidState("Job is not active");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertPositionAssignable(status: PositionStatus): Result<void> {
 	if (status !== "active") {
 		return invalidState("Position is not active");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function canTransitionDepartmentStatus(
@@ -96,15 +96,14 @@ export function assertDepartmentStatusTransition(
 	next: DepartmentStatus,
 ): Result<void> {
 	if (!canTransitionDepartmentStatus(current, next)) {
-		return fail(
-			"BAD_REQUEST",
-			`Cannot transition department from '${current}' to '${next}'`,
-			humanResourcesErrorDetails(
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "The request is invalid",
+			internalContext: humanResourcesErrorDetails(
 				HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
 			),
-		);
+		});
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertJobStatusTransition(
@@ -112,15 +111,14 @@ export function assertJobStatusTransition(
 	next: JobStatus,
 ): Result<void> {
 	if (!canTransitionJobStatus(current, next)) {
-		return fail(
-			"BAD_REQUEST",
-			`Cannot transition job from '${current}' to '${next}'`,
-			humanResourcesErrorDetails(
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "The request is invalid",
+			internalContext: humanResourcesErrorDetails(
 				HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
 			),
-		);
+		});
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertPositionStatusTransition(
@@ -128,15 +126,14 @@ export function assertPositionStatusTransition(
 	next: PositionStatus,
 ): Result<void> {
 	if (!canTransitionPositionStatus(current, next)) {
-		return fail(
-			"BAD_REQUEST",
-			`Cannot transition position from '${current}' to '${next}'`,
-			humanResourcesErrorDetails(
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "The request is invalid",
+			internalContext: humanResourcesErrorDetails(
 				HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
 			),
-		);
+		});
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 /**
@@ -151,7 +148,7 @@ export function assertDepartmentParentAcyclic(input: {
 	) => HumanResourcesDepartmentId | null | undefined;
 }): Result<void> {
 	if (input.proposedParentId === null) {
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	}
 	if (input.proposedParentId === input.departmentId) {
 		return invalidInput("Department cannot be its own parent");
@@ -170,7 +167,7 @@ export function assertDepartmentParentAcyclic(input: {
 		}
 		current = parent;
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 /**
@@ -201,7 +198,7 @@ export function assertReportingLineAcyclic(input: {
 		}
 		current = manager;
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 /** Half-open style date overlap: ranges overlap when both open or intervals intersect. */
@@ -233,14 +230,15 @@ export function assertNoPrimaryReportingOverlap(input: {
 				endsOnB: line.endsOn,
 			})
 		) {
-			return fail(
-				"CONFLICT",
-				"Primary reporting line date range overlaps an existing primary line",
-				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "The request conflicts with current state",
+				internalContext: humanResourcesErrorDetails(
+					HUMAN_RESOURCES_ERROR_CONFLICT,
+				),
+			});
 		}
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function buildBoundedDepartmentTree(input: {

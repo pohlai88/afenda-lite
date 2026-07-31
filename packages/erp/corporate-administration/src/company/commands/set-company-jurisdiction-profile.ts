@@ -1,11 +1,10 @@
-import { fail, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { z } from "zod";
 import {
 	CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS,
 	requireCorporateAdministrationPermission,
 } from "../../authorization";
 import type { CorporateAdministrationCommandOptions } from "../../command-options";
-import { corporateAdministrationErrorDetails } from "../../error-codes";
 import { parseCorporateAdministrationInput } from "../../parse-input";
 import {
 	assertEffectivePeriodChronology,
@@ -67,14 +66,9 @@ export async function setCompanyJurisdictionProfile(
 		return currentCompany;
 	}
 	if (currentCompany.data === null) {
-		return fail(
-			"NOT_FOUND",
-			"Corporate Administration legal company was not found.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_NOT_FOUND",
-				{ entityType: "legalCompany" },
-			),
-		);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Corporate Administration legal company was not found.",
+		});
 	}
 	if (currentCompany.data.version !== parsed.data.expectedCompanyVersion) {
 		const overlap = await dependencies.store.hasOverlappingJurisdictionProfile({
@@ -86,26 +80,14 @@ export async function setCompanyJurisdictionProfile(
 			return overlap;
 		}
 		if (overlap.data) {
-			return fail(
-				"CONFLICT",
-				"Corporate Administration jurisdiction profile overlaps an existing profile.",
-				corporateAdministrationErrorDetails(
-					"CORPORATE_ADMINISTRATION_EFFECTIVE_RANGE_OVERLAP",
-					{ field: "effectiveRange" },
-				),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage:
+					"Corporate Administration jurisdiction profile overlaps an existing profile.",
+			});
 		}
-		return fail(
-			"CONFLICT",
-			"Corporate Administration legal company version is stale.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_STALE_VERSION",
-				{
-					expectedVersion: parsed.data.expectedCompanyVersion,
-					actualVersion: currentCompany.data.version,
-				},
-			),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Corporate Administration legal company version is stale.",
+		});
 	}
 
 	const rules = await dependencies.jurisdictionRules.listEntityTypeRules({
@@ -133,14 +115,10 @@ export async function setCompanyJurisdictionProfile(
 		return overlap;
 	}
 	if (overlap.data) {
-		return fail(
-			"CONFLICT",
-			"Corporate Administration jurisdiction profile overlaps an existing profile.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_EFFECTIVE_RANGE_OVERLAP",
-				{ field: "effectiveRange" },
-			),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage:
+				"Corporate Administration jurisdiction profile overlaps an existing profile.",
+		});
 	}
 
 	return runDurableCompanyCommand({

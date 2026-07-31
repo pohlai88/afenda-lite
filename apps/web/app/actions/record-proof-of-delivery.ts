@@ -1,19 +1,15 @@
 "use server";
 
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import {
 	type ProofOfDelivery,
 	recordProofOfDelivery,
 } from "@afenda/fulfillment";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
 import { createFulfillmentCommandOptions } from "@/lib/erp/fulfillment-command-options";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export interface RecordProofOfDeliveryActionData {
@@ -69,11 +65,10 @@ export async function recordProofOfDeliveryAction(
 				recordedAt: formData.get("recordedAt") ?? undefined,
 			});
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid delivery, version, recipient, outcome, and recorded time.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage:
+						"Enter a valid delivery, version, recipient, outcome, and recorded time.",
+				});
 			}
 			const result = await recordProofOfDelivery(
 				{

@@ -145,7 +145,7 @@ Define ids once in `module-ids.ts`; reference them in manifest, authorization, a
 
 - Top of file: `import "server-only";` for Node ERP packages.
 - Export **commands**, **queries**, **types**, **schemas**, **permissions**, **error codes**, **command options type** — not internal store/drizzle files.
-- Every public function returns `Promise<Result<T>>` from `@afenda/errors/result`.
+- Every public function returns `Promise<Result<T>>` from root `@afenda/errors`.
 
 ### Command anatomy (pattern)
 

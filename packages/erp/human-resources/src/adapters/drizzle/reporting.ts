@@ -25,7 +25,7 @@ import {
 	inArray,
 	ne,
 } from "@afenda/db";
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type {
 	HumanResourcesReadModelFact,
@@ -66,9 +66,9 @@ function overtimeStatus(
 		status === "rejected" ||
 		status === "cancelled"
 	) {
-		return ok(status);
+		return errorResult.ok(status);
 	}
-	return fail("INTERNAL_ERROR", "Invalid overtime status");
+	return errorResult.fail("INTERNAL_ERROR");
 }
 
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
@@ -94,7 +94,7 @@ async function loadFacts(input: {
 					.from(hrEmployment)
 					.where(eq(hrEmployment.organizationId, input.organizationId)),
 			]);
-			return ok({
+			return errorResult.ok({
 				facts: rows.map((row) => ({
 					id: row.id,
 					kind: "employment" as const,
@@ -125,7 +125,7 @@ async function loadFacts(input: {
 						eq(hrCandidateApplication.organizationId, input.organizationId),
 					),
 			]);
-			return ok({
+			return errorResult.ok({
 				facts: rows.map((row) => ({
 					id: row.id,
 					kind: "recruitment" as const,
@@ -155,7 +155,7 @@ async function loadFacts(input: {
 					.from(hrLeaveRequest)
 					.where(eq(hrLeaveRequest.organizationId, input.organizationId)),
 			]);
-			return ok({
+			return errorResult.ok({
 				facts: rows.map((row) => ({
 					id: row.id,
 					kind: "leave" as const,
@@ -195,7 +195,7 @@ async function loadFacts(input: {
 					.from(hrAttendanceSession)
 					.where(eq(hrAttendanceSession.organizationId, input.organizationId)),
 			]);
-			return ok({
+			return errorResult.ok({
 				facts: rows.map((row) => ({
 					id: row.id,
 					kind: "attendance" as const,
@@ -242,7 +242,7 @@ async function loadFacts(input: {
 					payrollApprovedMinutes: row.payrollApprovedMinutes ?? 0,
 				});
 			}
-			return ok({ facts, total: totalOf(totals) });
+			return errorResult.ok({ facts, total: totalOf(totals) });
 		}
 		case "compensation": {
 			const [rows, totals] = await Promise.all([
@@ -279,7 +279,7 @@ async function loadFacts(input: {
 					annualizedAmount: amount.data,
 				});
 			}
-			return ok({ facts, total: totalOf(totals) });
+			return errorResult.ok({ facts, total: totalOf(totals) });
 		}
 		case "compliance": {
 			const [rows, totals] = await Promise.all([
@@ -299,7 +299,7 @@ async function loadFacts(input: {
 						eq(hrPolicyAcknowledgement.organizationId, input.organizationId),
 					),
 			]);
-			return ok({
+			return errorResult.ok({
 				facts: rows.map((row) => ({
 					id: row.id,
 					kind: "compliance" as const,
@@ -359,7 +359,7 @@ async function loadFacts(input: {
 									inArray(hrEmployeeCertification.completionId, completionIds),
 								),
 							);
-			return ok({
+			return errorResult.ok({
 				facts: rows.map((row) => {
 					const dates = deriveLearningDates({
 						assignmentId: row.id,
@@ -419,7 +419,7 @@ async function loadFacts(input: {
 									inArray(hrPerformanceGoal.employeeId, employeeIds),
 								),
 							);
-			return ok({
+			return errorResult.ok({
 				facts: rows.map(({ review, cycle }) => ({
 					id: review.id,
 					kind: "performance" as const,
@@ -470,7 +470,7 @@ async function loadFacts(input: {
 									ne(hrSuccessionCandidate.status, "removed"),
 								),
 							);
-			return ok({
+			return errorResult.ok({
 				facts: rows.map((row) => {
 					const candidate = selectLatestSuccessionReadiness(
 						candidates.filter(
@@ -547,7 +547,7 @@ async function loadFacts(input: {
 					),
 				)
 				.where(eq(hrWorkAssignment.organizationId, input.organizationId));
-			return ok({
+			return errorResult.ok({
 				facts: rows.map(({ line, plan }) => {
 					const actuals = deriveWorkforceActuals({
 						asOf: plan.periodEnd,
@@ -580,7 +580,7 @@ async function loadFacts(input: {
 			});
 		}
 		default:
-			return fail("INTERNAL_ERROR", "Unsupported reporting fact kind");
+			return errorResult.fail("INTERNAL_ERROR");
 	}
 }
 
@@ -597,12 +597,9 @@ export function createDrizzleHumanResourcesReportingSource(): HumanResourcesRepo
 						(fact) => fact.organizationId !== input.organizationId,
 					)
 				) {
-					return fail(
-						"INTERNAL_ERROR",
-						"Drizzle reporting source crossed the tenant boundary",
-					);
+					return errorResult.fail("INTERNAL_ERROR");
 				}
-				return ok({
+				return errorResult.ok({
 					entries: loaded.data.facts,
 					total: loaded.data.total,
 					page: input.page,

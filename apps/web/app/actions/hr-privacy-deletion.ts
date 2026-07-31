@@ -1,5 +1,6 @@
 "use server";
 
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import {
 	HUMAN_RESOURCES_RETENTION_CLASSIFICATIONS,
 	type HumanResourcesDeletionDecision,
@@ -7,7 +8,6 @@ import {
 	recordHrPrivacyOperation,
 } from "@afenda/human-resources";
 import { z } from "zod";
-
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runHrPrivacyOperatorPermissionAction as runOperatorPermissionAction } from "@/app/actions/run-hr-operator-permission-action";
 import {
@@ -18,10 +18,6 @@ import {
 	classifyHrFailure,
 	createProductionHrObservabilityPorts,
 } from "@/modules/platform/observability/human-resources-observability";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
 import {
 	type ParseSchemaFailure,
 	parseSchema,
@@ -50,12 +46,10 @@ export type HumanResourcesPrivacyDeletionActionInput = z.input<
 	typeof deletionRequestSchema
 >;
 
-function invalidDeletionRequest(details: ParseSchemaFailure["details"]) {
-	return actionFail(
-		"VALIDATION_ERROR",
-		"Enter a valid Human Resources privacy deletion request.",
-		details,
-	);
+function invalidDeletionRequest(_details: ParseSchemaFailure["details"]) {
+	return errorResult.fail("VALIDATION_ERROR", {
+		publicMessage: "Enter a valid Human Resources privacy deletion request.",
+	});
 }
 
 export async function evaluateHumanResourcesPrivacyDeletionAction(

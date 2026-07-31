@@ -11,10 +11,10 @@ import { HUMAN_RESOURCES_MUTATION_TABLES } from "../src/mutation-tables";
 
 const EXPECTED_CATEGORY_TOTALS = {
 	"effective-definition": 20,
-	"bounded-assignment": 15,
+	"bounded-assignment": 16,
 	"versioned-current-fact": 32,
-	"append-only-operational-fact": 22,
-	"transactional-state-machine": 44,
+	"append-only-operational-fact": 24,
+	"transactional-state-machine": 46,
 	"derived-projection": 2,
 	"explicit-exclusion": 1,
 } as const;
@@ -31,7 +31,7 @@ describe("HR effective-truth classification register", () => {
 		const totals = summarizeEffectiveTruthClassificationByCategory();
 		expect(totals).toEqual(EXPECTED_CATEGORY_TOTALS);
 		expect(Object.values(totals).reduce((sum, count) => sum + count, 0)).toBe(
-			136,
+			141,
 		);
 	});
 

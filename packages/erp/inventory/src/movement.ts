@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { z } from "zod";
 
 import {
@@ -9,24 +9,6 @@ import {
 	type InventoryCommandOptions,
 	resolveCommandDeps,
 } from "./command-options";
-import {
-	INVENTORY_ERROR_CODE_CONFLICT,
-	INVENTORY_ERROR_IDEMPOTENCY_CONFLICT,
-	INVENTORY_ERROR_INSUFFICIENT_AVAILABLE,
-	INVENTORY_ERROR_INVALID_TRANSFER,
-	INVENTORY_ERROR_MOVEMENT_ALREADY_CANCELLED,
-	INVENTORY_ERROR_MOVEMENT_ALREADY_POSTED,
-	INVENTORY_ERROR_MOVEMENT_EMPTY_LINES,
-	INVENTORY_ERROR_MOVEMENT_NOT_DRAFT,
-	INVENTORY_ERROR_MOVEMENT_NOT_FOUND,
-	INVENTORY_ERROR_MOVEMENT_VERSION_CONFLICT,
-	INVENTORY_ERROR_RESERVATION_ALREADY_RELEASED,
-	INVENTORY_ERROR_RESERVATION_NOT_FOUND,
-	INVENTORY_ERROR_RESERVATION_VERSION_CONFLICT,
-	INVENTORY_ERROR_SOURCE_REQUIRED,
-	type InventoryErrorCode,
-	inventoryErrorDetails,
-} from "./error-codes";
 import { requireMaster } from "./master-lookup";
 import {
 	INVENTORY_COMMAND_CANCEL,
@@ -77,7 +59,6 @@ import type {
 	StockReservation,
 } from "./types";
 
-type FailureCode = Parameters<typeof fail>[0];
 type ResolvedDeps = ReturnType<typeof resolveCommandDeps>;
 type CreateStockMovementInput = z.infer<typeof createStockMovementInputSchema>;
 
@@ -95,53 +76,13 @@ interface ItemSnapshot {
 	itemName: string;
 }
 
-function inventoryFail(
-	code: FailureCode,
-	message: string,
-	inventoryCode: InventoryErrorCode,
-	details?: Record<string, unknown>,
-): Result<never> {
-	return fail(code, message, {
-		...details,
-		...inventoryErrorDetails(inventoryCode),
-	});
-}
-
 function annotateCreateMovementFailure(
 	result: Result<StockMovement>,
 ): Result<StockMovement> {
-	if (result.ok) {
-		return result;
-	}
-	const message = result.message.toLowerCase();
-	if (message.includes("idempotency")) {
-		return inventoryFail(
-			result.code,
-			result.message,
-			INVENTORY_ERROR_IDEMPOTENCY_CONFLICT,
-		);
-	}
-	if (message.includes("code") && message.includes("exist")) {
-		return inventoryFail(
-			result.code,
-			result.message,
-			INVENTORY_ERROR_CODE_CONFLICT,
-		);
-	}
 	return result;
 }
 
 function annotateAvailabilityFailure<T>(result: Result<T>): Result<T> {
-	if (result.ok) {
-		return result;
-	}
-	if (result.message.toLowerCase().includes("available")) {
-		return inventoryFail(
-			result.code,
-			result.message,
-			INVENTORY_ERROR_INSUFFICIENT_AVAILABLE,
-		);
-	}
 	return result;
 }
 
@@ -155,12 +96,10 @@ function deriveIdempotencyKey(base: string, suffix: string): string {
 	return `${base.slice(0, maxLength - extraLength)}${separator}${suffix}`;
 }
 
-function idempotencyConflict(message: string): Result<never> {
-	return inventoryFail(
-		"CONFLICT",
-		message,
-		INVENTORY_ERROR_IDEMPOTENCY_CONFLICT,
-	);
+function idempotencyConflict(_message: string): Result<never> {
+	return errorResult.fail("CONFLICT", {
+		publicMessage: "The request conflicts with current state",
+	});
 }
 
 function sameQuantity(left: string, right: string): boolean {
@@ -256,7 +195,7 @@ function assertMatchingCreateReplay(
 			"Stock movement idempotency key was reused with different payload",
 		);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 function assertMatchingAddLineReplay(input: {
@@ -276,7 +215,7 @@ function assertMatchingAddLineReplay(input: {
 		input.existing.lineIdempotencyKey === input.idempotencyKey &&
 		sameQuantity(input.existing.quantity, input.quantity);
 	if (matches) {
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	}
 	return idempotencyConflict(
 		"Stock movement line idempotency key was reused with different payload",
@@ -302,7 +241,7 @@ function assertMatchingReserveReplay(input: {
 		input.existing.createIdempotencyKey === input.idempotencyKey &&
 		sameQuantity(input.existing.quantity, input.quantity);
 	if (matches) {
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	}
 	return idempotencyConflict(
 		"Stock reservation idempotency key was reused with different payload",
@@ -323,21 +262,18 @@ function parseLineQuantity(
 			: positiveQuantitySchema();
 	const parsed = schema.safeParse(raw);
 	if (!parsed.success) {
-		return inventoryFail(
-			"BAD_REQUEST",
-			"Invalid stock movement line quantity",
-			INVENTORY_ERROR_SOURCE_REQUIRED,
-			{ fieldErrors: parsed.error.flatten().fieldErrors },
-		);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Invalid stock movement line quantity",
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 function validateCreateSourcePolicy(
 	input: CreateStockMovementInput,
 ): Result<void> {
 	if (!sourceRequiresEventLinkage(input.source)) {
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	}
 
 	const missingFields: string[] = [];
@@ -351,14 +287,12 @@ function validateCreateSourcePolicy(
 		missingFields.push("sourceEventId");
 	}
 	if (missingFields.length > 0) {
-		return inventoryFail(
-			"BAD_REQUEST",
-			"Source movement linkage is required for receiving and fulfillment movements",
-			INVENTORY_ERROR_SOURCE_REQUIRED,
-			{ missingFields },
-		);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage:
+				"Source movement linkage is required for receiving and fulfillment movements",
+		});
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 async function resolveWarehouseSnapshot(
@@ -374,7 +308,7 @@ async function resolveWarehouseSnapshot(
 	if (!warehouseResult.ok) {
 		return warehouseResult;
 	}
-	return ok({
+	return errorResult.ok({
 		warehouseId: warehouseResult.data.id,
 		warehouseCode: warehouseResult.data.code,
 		warehouseName: warehouseResult.data.name,
@@ -407,7 +341,7 @@ async function resolveItemSnapshot(
 		return uomResult;
 	}
 
-	return ok({
+	return errorResult.ok({
 		itemId: itemResult.data.id,
 		itemCode: itemResult.data.code,
 		itemName: itemResult.data.name,
@@ -464,7 +398,7 @@ async function resolveCreateMovementRecord(
 			return toWarehouse;
 		}
 
-		return ok({
+		return errorResult.ok({
 			organizationId: input.organizationId,
 			code: code.code,
 			normalizedCode: code.normalizedCode,
@@ -504,7 +438,7 @@ async function resolveCreateMovementRecord(
 	}
 	const variantFields = warehouseMovementVariantFields(input);
 
-	return ok({
+	return errorResult.ok({
 		organizationId: input.organizationId,
 		code: code.code,
 		normalizedCode: code.normalizedCode,
@@ -538,31 +472,21 @@ function requireDraftMovement(
 	expectedVersion: number,
 ): Result<void> {
 	if (movement.status === "posted") {
-		return inventoryFail(
-			"CONFLICT",
-			"Stock movement has already been posted",
-			INVENTORY_ERROR_MOVEMENT_ALREADY_POSTED,
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Stock movement has already been posted",
+		});
 	}
 	if (movement.status === "cancelled") {
-		return inventoryFail(
-			"CONFLICT",
-			"Stock movement has already been cancelled",
-			INVENTORY_ERROR_MOVEMENT_ALREADY_CANCELLED,
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Stock movement has already been cancelled",
+		});
 	}
 	if (movement.version !== expectedVersion) {
-		return inventoryFail(
-			"CONFLICT",
-			"Stock movement version conflict",
-			INVENTORY_ERROR_MOVEMENT_VERSION_CONFLICT,
-			{
-				expectedVersion,
-				actualVersion: movement.version,
-			},
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Stock movement version conflict",
+		});
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 function requirePostedMovementForReversal(
@@ -570,38 +494,26 @@ function requirePostedMovementForReversal(
 	expectedVersion: number,
 ): Result<void> {
 	if (movement.status === "cancelled") {
-		return inventoryFail(
-			"CONFLICT",
-			"Cancelled stock movements cannot be reversed",
-			INVENTORY_ERROR_MOVEMENT_ALREADY_CANCELLED,
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Cancelled stock movements cannot be reversed",
+		});
 	}
 	if (movement.status !== "posted") {
-		return inventoryFail(
-			"CONFLICT",
-			"Only posted stock movements can be reversed",
-			INVENTORY_ERROR_MOVEMENT_NOT_DRAFT,
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Only posted stock movements can be reversed",
+		});
 	}
 	if (movement.version !== expectedVersion) {
-		return inventoryFail(
-			"CONFLICT",
-			"Stock movement version conflict",
-			INVENTORY_ERROR_MOVEMENT_VERSION_CONFLICT,
-			{
-				expectedVersion,
-				actualVersion: movement.version,
-			},
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Stock movement version conflict",
+		});
 	}
 	if (movement.lines.length === 0) {
-		return inventoryFail(
-			"CONFLICT",
-			"Cannot reverse a stock movement without lines",
-			INVENTORY_ERROR_MOVEMENT_EMPTY_LINES,
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Cannot reverse a stock movement without lines",
+		});
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 async function requireAdjustmentPermission(
@@ -610,9 +522,7 @@ async function requireAdjustmentPermission(
 	actorUserId: string,
 ): Promise<Result<void>> {
 	if (deps.authorization === undefined) {
-		return fail("UNAUTHORIZED", "Inventory authorization port is required", {
-			permission: INVENTORY_PERMISSION_ADJUSTMENT_POST,
-		});
+		return errorResult.fail("UNAUTHORIZED");
 	}
 	const allowed = await deps.authorization.can({
 		organizationId,
@@ -620,11 +530,9 @@ async function requireAdjustmentPermission(
 		permission: INVENTORY_PERMISSION_ADJUSTMENT_POST,
 	});
 	if (!allowed) {
-		return fail("FORBIDDEN", "Missing required inventory permission", {
-			permission: INVENTORY_PERMISSION_ADJUSTMENT_POST,
-		});
+		return errorResult.fail("FORBIDDEN");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 function getReversalQuantity(
@@ -653,13 +561,12 @@ function buildReversalCreateRecord(input: {
 				movement.warehouseCode === null ||
 				movement.warehouseName === null
 			) {
-				return inventoryFail(
-					"CONFLICT",
-					"Receipt movement is missing warehouse data required for reversal",
-					INVENTORY_ERROR_SOURCE_REQUIRED,
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage:
+						"Receipt movement is missing warehouse data required for reversal",
+				});
 			}
-			return ok({
+			return errorResult.ok({
 				organizationId: movement.organizationId,
 				code: input.code.code,
 				normalizedCode: input.code.normalizedCode,
@@ -695,13 +602,12 @@ function buildReversalCreateRecord(input: {
 				movement.warehouseCode === null ||
 				movement.warehouseName === null
 			) {
-				return inventoryFail(
-					"CONFLICT",
-					"Issue movement is missing warehouse data required for reversal",
-					INVENTORY_ERROR_SOURCE_REQUIRED,
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage:
+						"Issue movement is missing warehouse data required for reversal",
+				});
 			}
-			return ok({
+			return errorResult.ok({
 				organizationId: movement.organizationId,
 				code: input.code.code,
 				normalizedCode: input.code.normalizedCode,
@@ -740,13 +646,12 @@ function buildReversalCreateRecord(input: {
 				movement.toWarehouseCode === null ||
 				movement.toWarehouseName === null
 			) {
-				return inventoryFail(
-					"CONFLICT",
-					"Transfer movement is missing warehouse data required for reversal",
-					INVENTORY_ERROR_INVALID_TRANSFER,
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage:
+						"Transfer movement is missing warehouse data required for reversal",
+				});
 			}
-			return ok({
+			return errorResult.ok({
 				organizationId: movement.organizationId,
 				code: input.code.code,
 				normalizedCode: input.code.normalizedCode,
@@ -780,13 +685,12 @@ function buildReversalCreateRecord(input: {
 				movement.warehouseCode === null ||
 				movement.warehouseName === null
 			) {
-				return inventoryFail(
-					"CONFLICT",
-					"Adjustment movement is missing warehouse data required for reversal",
-					INVENTORY_ERROR_SOURCE_REQUIRED,
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage:
+						"Adjustment movement is missing warehouse data required for reversal",
+				});
 			}
-			return ok({
+			return errorResult.ok({
 				organizationId: movement.organizationId,
 				code: input.code.code,
 				normalizedCode: input.code.normalizedCode,
@@ -815,12 +719,10 @@ function buildReversalCreateRecord(input: {
 			});
 		}
 		default: {
-			const exhaustive: never = movement.movementType;
-			return inventoryFail(
-				"CONFLICT",
-				`Unsupported stock movement type for reversal: ${exhaustive}`,
-				INVENTORY_ERROR_SOURCE_REQUIRED,
-			);
+			const _exhaustive: never = movement.movementType;
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "The request conflicts with current state",
+			});
 		}
 	}
 }
@@ -870,15 +772,11 @@ async function addReversalLines(input: {
 			return reloaded;
 		}
 		if (reloaded.data === null) {
-			return inventoryFail(
-				"INTERNAL_ERROR",
-				"Reversal stock movement disappeared after line create",
-				INVENTORY_ERROR_MOVEMENT_NOT_FOUND,
-			);
+			return errorResult.fail("INTERNAL_ERROR");
 		}
 		currentMovement = reloaded.data;
 	});
-	return terminal ?? ok(currentMovement);
+	return terminal ?? errorResult.ok(currentMovement);
 }
 
 export async function createStockMovement(
@@ -935,7 +833,7 @@ export async function createStockMovement(
 		if (!replay.ok) {
 			return replay;
 		}
-		return ok(existing.data);
+		return errorResult.ok(existing.data);
 	}
 
 	const code = normalizeMovementCode(parsed.data.code);
@@ -992,11 +890,9 @@ export async function addStockMovementLine(
 		return movementResult;
 	}
 	if (movementResult.data === null) {
-		return inventoryFail(
-			"NOT_FOUND",
-			"Stock movement not found",
-			INVENTORY_ERROR_MOVEMENT_NOT_FOUND,
-		);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Stock movement not found",
+		});
 	}
 
 	const draftCheck = requireDraftMovement(
@@ -1031,7 +927,7 @@ export async function addStockMovementLine(
 		if (!replay.ok) {
 			return replay;
 		}
-		return ok(existingLine);
+		return errorResult.ok(existingLine);
 	}
 
 	const itemSnapshot = await resolveItemSnapshot(
@@ -1097,35 +993,29 @@ export async function postStockMovement(
 		return movementResult;
 	}
 	if (movementResult.data === null) {
-		return inventoryFail(
-			"NOT_FOUND",
-			"Stock movement not found",
-			INVENTORY_ERROR_MOVEMENT_NOT_FOUND,
-		);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Stock movement not found",
+		});
 	}
 
 	if (movementResult.data.status === "posted") {
 		if (movementResult.data.postIdempotencyKey === parsed.data.idempotencyKey) {
-			return ok(movementResult.data);
+			return errorResult.ok(movementResult.data);
 		}
-		return inventoryFail(
-			"CONFLICT",
-			"Stock movement has already been posted",
-			INVENTORY_ERROR_MOVEMENT_ALREADY_POSTED,
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Stock movement has already been posted",
+		});
 	}
 
 	if (movementResult.data.status === "cancelled") {
 		if (
 			movementResult.data.cancelIdempotencyKey === parsed.data.idempotencyKey
 		) {
-			return ok(movementResult.data);
+			return errorResult.ok(movementResult.data);
 		}
-		return inventoryFail(
-			"CONFLICT",
-			"Stock movement has already been cancelled",
-			INVENTORY_ERROR_MOVEMENT_ALREADY_CANCELLED,
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Stock movement has already been cancelled",
+		});
 	}
 
 	const draftCheck = requireDraftMovement(
@@ -1136,11 +1026,9 @@ export async function postStockMovement(
 		return draftCheck;
 	}
 	if (movementResult.data.lines.length === 0) {
-		return inventoryFail(
-			"CONFLICT",
-			"Cannot post stock movement without lines",
-			INVENTORY_ERROR_MOVEMENT_EMPTY_LINES,
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Cannot post stock movement without lines",
+		});
 	}
 
 	const posted = await deps.store.postMovement(
@@ -1191,24 +1079,20 @@ export async function cancelStockMovement(
 		return movementResult;
 	}
 	if (movementResult.data === null) {
-		return inventoryFail(
-			"NOT_FOUND",
-			"Stock movement not found",
-			INVENTORY_ERROR_MOVEMENT_NOT_FOUND,
-		);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Stock movement not found",
+		});
 	}
 
 	if (movementResult.data.status === "cancelled") {
 		if (
 			movementResult.data.cancelIdempotencyKey === parsed.data.idempotencyKey
 		) {
-			return ok(movementResult.data);
+			return errorResult.ok(movementResult.data);
 		}
-		return inventoryFail(
-			"CONFLICT",
-			"Stock movement has already been cancelled",
-			INVENTORY_ERROR_MOVEMENT_ALREADY_CANCELLED,
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Stock movement has already been cancelled",
+		});
 	}
 
 	const draftCheck = requireDraftMovement(
@@ -1266,11 +1150,9 @@ export async function createReversalMovement(
 		return originalResult;
 	}
 	if (originalResult.data === null) {
-		return inventoryFail(
-			"NOT_FOUND",
-			"Stock movement not found",
-			INVENTORY_ERROR_MOVEMENT_NOT_FOUND,
-		);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Stock movement not found",
+		});
 	}
 
 	const original = originalResult.data;
@@ -1361,7 +1243,7 @@ export async function createReversalMovement(
 		return posted;
 	}
 
-	return ok(posted.data);
+	return errorResult.ok(posted.data);
 }
 
 export async function reserveStock(
@@ -1411,7 +1293,7 @@ export async function reserveStock(
 		if (!replay.ok) {
 			return replay;
 		}
-		return ok(existing.data);
+		return errorResult.ok(existing.data);
 	}
 
 	const code = normalizeMovementCode(parsed.data.code);
@@ -1501,34 +1383,24 @@ async function terminateReservationCommand(
 		return reservationResult;
 	}
 	if (reservationResult.data === null) {
-		return inventoryFail(
-			"NOT_FOUND",
-			"Stock reservation not found",
-			INVENTORY_ERROR_RESERVATION_NOT_FOUND,
-		);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Stock reservation not found",
+		});
 	}
 
 	const reservation = reservationResult.data;
 	if (reservation.status === args.terminalStatus) {
 		if (reservation.releaseIdempotencyKey === parsed.data.idempotencyKey) {
-			return ok(reservation);
+			return errorResult.ok(reservation);
 		}
-		return inventoryFail(
-			"CONFLICT",
-			"Stock reservation has already been terminated",
-			INVENTORY_ERROR_RESERVATION_ALREADY_RELEASED,
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Stock reservation has already been terminated",
+		});
 	}
 	if (reservation.version !== parsed.data.expectedVersion) {
-		return inventoryFail(
-			"CONFLICT",
-			"Stock reservation version conflict",
-			INVENTORY_ERROR_RESERVATION_VERSION_CONFLICT,
-			{
-				expectedVersion: parsed.data.expectedVersion,
-				actualVersion: reservation.version,
-			},
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Stock reservation version conflict",
+		});
 	}
 	if (
 		reservation.status === "expired" ||
@@ -1536,11 +1408,9 @@ async function terminateReservationCommand(
 		reservation.status === "consumed" ||
 		reservation.status === "released"
 	) {
-		return inventoryFail(
-			"CONFLICT",
-			"Stock reservation has already been terminated",
-			INVENTORY_ERROR_RESERVATION_ALREADY_RELEASED,
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Stock reservation has already been terminated",
+		});
 	}
 
 	return deps.store.releaseReservation(

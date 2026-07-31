@@ -1,6 +1,6 @@
 import { Buffer } from "node:buffer";
 
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import { z } from "zod";
 
 import type { AuditCursorPosition } from "./types";
@@ -33,7 +33,9 @@ export function decodeAuditCursor(input: unknown): Result<AuditCursorPosition> {
 		.max(MAX_AUDIT_CURSOR_LENGTH)
 		.safeParse(input);
 	if (!encoded.success) {
-		return fail("BAD_REQUEST", "Invalid audit cursor");
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Invalid audit cursor",
+		});
 	}
 
 	try {
@@ -42,13 +44,17 @@ export function decodeAuditCursor(input: unknown): Result<AuditCursorPosition> {
 		);
 		const payload = auditCursorPayloadSchema.safeParse(decoded);
 		if (!payload.success) {
-			return fail("BAD_REQUEST", "Invalid audit cursor");
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage: "Invalid audit cursor",
+			});
 		}
-		return ok({
+		return errorResult.ok({
 			createdAt: new Date(payload.data.createdAt),
 			id: payload.data.id,
 		});
 	} catch {
-		return fail("BAD_REQUEST", "Invalid audit cursor");
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Invalid audit cursor",
+		});
 	}
 }

@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	HUMAN_RESOURCES_RETENTION_POLICIES,
@@ -95,25 +95,28 @@ function validateInput(
 		Number.isNaN(Date.parse(input.requestedAt)) ||
 		input.classifications.length === 0
 	) {
-		return fail("VALIDATION_ERROR", "Invalid privacy deletion decision input");
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+		});
 	}
 	const classifications = new Set<HumanResourcesRetentionClassification>();
 	for (const item of input.classifications) {
 		if (classifications.has(item.classification)) {
-			return fail(
-				"VALIDATION_ERROR",
-				"Deletion classifications must be unique",
-			);
+			return errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "The submitted data is invalid",
+			});
 		}
 		if (
 			item.retentionEndsAt !== null &&
 			Number.isNaN(Date.parse(item.retentionEndsAt))
 		) {
-			return fail("VALIDATION_ERROR", "Retention end date is invalid");
+			return errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "The submitted data is invalid",
+			});
 		}
 		classifications.add(item.classification);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 function dispositionForClassification(input: {
@@ -194,7 +197,7 @@ export async function decideHumanResourcesSubjectDeletion(
 		return boundaryResult;
 	}
 	if (boundaryResult.data.organizationId !== input.organizationId) {
-		return fail("FORBIDDEN", "Privacy processor boundary crossed the tenant");
+		return errorResult.fail("FORBIDDEN");
 	}
 	const verifiedBoundary = verifyHumanResourcesPrivacyProcessorBoundary(
 		boundaryResult.data,
@@ -245,7 +248,7 @@ export async function decideHumanResourcesSubjectDeletion(
 	if (!recorded.ok) {
 		return recorded;
 	}
-	return ok({
+	return errorResult.ok({
 		...evidenceSeed,
 		decisionId,
 		evidenceHash,
@@ -261,7 +264,9 @@ export function executeHumanResourcesDeletionDecision(
 > {
 	if (decision.status === "denied") {
 		return Promise.resolve(
-			fail("CONFLICT", "Denied deletion decision cannot be executed"),
+			errorResult.fail("CONFLICT", {
+				publicMessage: "The request conflicts with current state",
+			}),
 		);
 	}
 	return port.executeDeletionDecision({

@@ -4,7 +4,7 @@
  * `@afenda/audit` via `recordOrganizationDeletedAudit`).
  */
 
-import type { Result } from "@afenda/errors/result";
+import type { Result } from "@afenda/errors";
 import { createEventPublisher, type DomainEvent } from "@afenda/events";
 
 export interface RecordOrganizationDeletedEventInput {

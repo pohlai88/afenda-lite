@@ -1,4 +1,4 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type {
 	HumanResourcesApplicationId,
@@ -30,7 +30,7 @@ export async function validateOfferCompensationProposalAttachment(
 		input.compensationProposalId === null ||
 		input.compensationProposalId === undefined
 	) {
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	}
 
 	const proposalResult = await store.getCompensationProposal({
@@ -68,5 +68,5 @@ export async function validateOfferCompensationProposalAttachment(
 		return invalidState("Compensation proposal must be draft or approved");
 	}
 
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }

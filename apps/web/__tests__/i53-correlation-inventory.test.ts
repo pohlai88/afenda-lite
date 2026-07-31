@@ -4,6 +4,7 @@
  */
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { errorResult } from "@afenda/errors";
 import {
 	CORRELATION_HEADER,
 	createCorrelationId,
@@ -11,7 +12,6 @@ import {
 	resolveCorrelationId,
 } from "@afenda/http";
 import { describe, expect, it } from "vitest";
-import { actionFailInternal } from "../modules/platform/schemas/action-result";
 
 const webRoot = join(import.meta.dirname, "..");
 
@@ -30,11 +30,10 @@ describe("I5.3 correlation helpers (API-007)", () => {
 
 	it("surfaces correlationId only in ActionFailure details for INTERNAL_ERROR", () => {
 		const correlationId = createCorrelationId();
-		const failure = actionFailInternal("Safe message.", correlationId);
-		expect(failure).toEqual({
+		const failure = errorResult.fail("INTERNAL_ERROR", { correlationId });
+		expect(failure).toMatchObject({
 			ok: false,
 			code: "INTERNAL_ERROR",
-			message: "Safe message.",
 			details: { correlationId },
 		});
 	});
@@ -47,11 +46,11 @@ describe("I5.3 critical-path wiring inventory", () => {
 		"app/actions/revoke-org-role.ts",
 	] as const;
 
-	it("wires createCorrelationId + actionFailInternal on critical Actions", () => {
+	it("wires createCorrelationId + canonical failures on critical Actions", () => {
 		for (const rel of criticalActions) {
 			const source = readWeb(rel);
 			expect(source).toContain("createCorrelationId");
-			expect(source).toContain("actionFailInternal");
+			expect(source).toContain('errorResult.fail("INTERNAL_ERROR"');
 			expect(source).toContain("logProductEvent");
 		}
 	});

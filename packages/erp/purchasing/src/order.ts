@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	requirePurchasingCommandPermission,
@@ -8,19 +8,6 @@ import {
 	type PurchasingCommandOptions,
 	resolveCommandDeps,
 } from "./command-options";
-import {
-	PURCHASING_ERROR_COMMITMENT_PORT_REQUIRED,
-	PURCHASING_ERROR_ITEM_NOT_PURCHASABLE,
-	PURCHASING_ERROR_ORDER_ALREADY_CANCELLED,
-	PURCHASING_ERROR_ORDER_ALREADY_CLOSED,
-	PURCHASING_ERROR_ORDER_ALREADY_POSTED,
-	PURCHASING_ERROR_ORDER_EMPTY_LINES,
-	PURCHASING_ERROR_ORDER_NOT_DRAFT,
-	PURCHASING_ERROR_ORDER_NOT_FOUND,
-	PURCHASING_ERROR_ORDER_NOT_POSTED,
-	PURCHASING_ERROR_SUPPLIER_NOT_ELIGIBLE,
-	purchasingErrorDetails,
-} from "./error-codes";
 import { requireMaster } from "./master-lookup";
 import {
 	PURCHASING_COMMAND_CANCEL,
@@ -61,13 +48,11 @@ async function requireActiveSupplierRole(
 		return supplierResult;
 	}
 	if (!supplierResult.data) {
-		return fail(
-			"CONFLICT",
-			"Party must have an active supplier role",
-			purchasingErrorDetails(PURCHASING_ERROR_SUPPLIER_NOT_ELIGIBLE),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Party must have an active supplier role",
+		});
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 async function resolveWarehouseSnapshots(
@@ -83,7 +68,7 @@ async function resolveWarehouseSnapshots(
 	}>
 > {
 	if (warehouseId === undefined) {
-		return ok({
+		return errorResult.ok({
 			warehouseId: null,
 			warehouseCode: null,
 			warehouseName: null,
@@ -96,7 +81,7 @@ async function resolveWarehouseSnapshots(
 	if (!warehouseResult.ok) {
 		return warehouseResult;
 	}
-	return ok({
+	return errorResult.ok({
 		warehouseId: warehouseResult.data.id,
 		warehouseCode: warehouseResult.data.code,
 		warehouseName: warehouseResult.data.name,
@@ -133,7 +118,7 @@ export async function createDraftPurchaseOrder(
 		return existingByKey;
 	}
 	if (existingByKey.data !== null) {
-		return ok(existingByKey.data);
+		return errorResult.ok(existingByKey.data);
 	}
 
 	const codeResult = normalizeOrderCode(parsed.data.code);
@@ -251,24 +236,20 @@ export async function addPurchaseOrderLine(
 		return orderResult;
 	}
 	if (orderResult.data === null) {
-		return fail(
-			"NOT_FOUND",
-			"Purchase order not found",
-			purchasingErrorDetails(PURCHASING_ERROR_ORDER_NOT_FOUND),
-		);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Purchase order not found",
+		});
 	}
 	const existingLine = orderResult.data.lines.find(
 		(line) => line.lineIdempotencyKey === parsed.data.idempotencyKey,
 	);
 	if (existingLine !== undefined) {
-		return ok(existingLine);
+		return errorResult.ok(existingLine);
 	}
 	if (orderResult.data.status !== "draft") {
-		return fail(
-			"CONFLICT",
-			"Cannot add lines to a posted, cancelled, or closed order",
-			purchasingErrorDetails(PURCHASING_ERROR_ORDER_NOT_DRAFT),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Cannot add lines to a posted, cancelled, or closed order",
+		});
 	}
 
 	const itemResult = requireMaster(
@@ -284,11 +265,9 @@ export async function addPurchaseOrderLine(
 	}
 	const item = itemResult.data;
 	if (item.status !== "active") {
-		return fail(
-			"CONFLICT",
-			"Item must be active and purchasable",
-			purchasingErrorDetails(PURCHASING_ERROR_ITEM_NOT_PURCHASABLE),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Item must be active and purchasable",
+		});
 	}
 
 	const uomResult = requireMaster(
@@ -370,28 +349,22 @@ function requirePostableOrder(
 ): Result<PurchaseOrder> {
 	if (order.status === "posted") {
 		return order.postIdempotencyKey === idempotencyKey
-			? ok(order)
-			: fail(
-					"CONFLICT",
-					"Purchase order is already posted",
-					purchasingErrorDetails(PURCHASING_ERROR_ORDER_ALREADY_POSTED),
-				);
+			? errorResult.ok(order)
+			: errorResult.fail("CONFLICT", {
+					publicMessage: "Purchase order is already posted",
+				});
 	}
 	if (order.status !== "draft") {
-		return fail(
-			"CONFLICT",
-			"Purchase order cannot be posted",
-			purchasingErrorDetails(PURCHASING_ERROR_ORDER_NOT_DRAFT),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Purchase order cannot be posted",
+		});
 	}
 	if (order.lines.length === 0) {
-		return fail(
-			"CONFLICT",
-			"Cannot post purchase order without lines",
-			purchasingErrorDetails(PURCHASING_ERROR_ORDER_EMPTY_LINES),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Cannot post purchase order without lines",
+		});
 	}
-	return ok(order);
+	return errorResult.ok(order);
 }
 
 async function requirePostableSupplier(
@@ -408,11 +381,9 @@ async function requirePostableSupplier(
 		return partyResult;
 	}
 	if (partyResult.data.status !== "active") {
-		return fail(
-			"CONFLICT",
-			"Cannot post order unless party is active",
-			purchasingErrorDetails(PURCHASING_ERROR_SUPPLIER_NOT_ELIGIBLE),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Cannot post order unless party is active",
+		});
 	}
 	const supplierCheck = await requireActiveSupplierRole(
 		masters,
@@ -423,7 +394,10 @@ async function requirePostableSupplier(
 	if (!supplierCheck.ok) {
 		return supplierCheck;
 	}
-	return ok({ code: partyResult.data.code, name: partyResult.data.name });
+	return errorResult.ok({
+		code: partyResult.data.code,
+		name: partyResult.data.name,
+	});
 }
 
 async function resolvePostPaymentTerm(
@@ -433,7 +407,7 @@ async function resolvePostPaymentTerm(
 	actorUserId: string,
 ): Promise<Result<NullableTermSnapshot>> {
 	if (paymentTermId === null) {
-		return ok({
+		return errorResult.ok({
 			paymentTermId: null,
 			paymentTermCode: null,
 			paymentTermName: null,
@@ -452,9 +426,11 @@ async function resolvePostPaymentTerm(
 		return termResult;
 	}
 	if (termResult.data.status !== "active") {
-		return fail("CONFLICT", "Cannot post order unless payment term is active");
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Cannot post order unless payment term is active",
+		});
 	}
-	return ok({
+	return errorResult.ok({
 		paymentTermId: termResult.data.id,
 		paymentTermCode: termResult.data.code,
 		paymentTermName: termResult.data.name,
@@ -469,7 +445,7 @@ async function resolvePostWarehouse(
 	actorUserId: string,
 ): Promise<Result<NullableWarehouseSnapshot>> {
 	if (warehouseId === null) {
-		return ok({
+		return errorResult.ok({
 			warehouseId: null,
 			warehouseCode: null,
 			warehouseName: null,
@@ -483,9 +459,11 @@ async function resolvePostWarehouse(
 		return warehouseResult;
 	}
 	if (warehouseResult.data.status !== "active") {
-		return fail("CONFLICT", "Cannot post order unless warehouse is active");
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Cannot post order unless warehouse is active",
+		});
 	}
-	return ok({
+	return errorResult.ok({
 		warehouseId: warehouseResult.data.id,
 		warehouseCode: warehouseResult.data.code,
 		warehouseName: warehouseResult.data.name,
@@ -511,11 +489,9 @@ async function resolvePostLineSnapshots(
 			return itemResult;
 		}
 		if (itemResult.data.status !== "active") {
-			return fail(
-				"CONFLICT",
-				"Cannot post order unless every line item is active",
-				purchasingErrorDetails(PURCHASING_ERROR_ITEM_NOT_PURCHASABLE),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Cannot post order unless every line item is active",
+			});
 		}
 		const uomResult = requireMaster(
 			await masters.getRefUomById(
@@ -540,7 +516,7 @@ async function resolvePostLineSnapshots(
 			lineAmount: line.lineAmount,
 		});
 	});
-	return terminal ?? ok(snapshots);
+	return terminal ?? errorResult.ok(snapshots);
 }
 
 export async function postPurchaseOrder(
@@ -573,11 +549,9 @@ export async function postPurchaseOrder(
 		return orderResult;
 	}
 	if (orderResult.data === null) {
-		return fail(
-			"NOT_FOUND",
-			"Purchase order not found",
-			purchasingErrorDetails(PURCHASING_ERROR_ORDER_NOT_FOUND),
-		);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Purchase order not found",
+		});
 	}
 	const order = orderResult.data;
 	const postable = requirePostableOrder(order, parsed.data.idempotencyKey);
@@ -683,28 +657,23 @@ export async function cancelPurchaseOrder(
 		return orderResult;
 	}
 	if (orderResult.data === null) {
-		return fail(
-			"NOT_FOUND",
-			"Purchase order not found",
-			purchasingErrorDetails(PURCHASING_ERROR_ORDER_NOT_FOUND),
-		);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Purchase order not found",
+		});
 	}
 	if (orderResult.data.status === "cancelled") {
 		if (orderResult.data.cancelIdempotencyKey === parsed.data.idempotencyKey) {
-			return ok(orderResult.data);
+			return errorResult.ok(orderResult.data);
 		}
-		return fail(
-			"CONFLICT",
-			"Purchase order is already cancelled",
-			purchasingErrorDetails(PURCHASING_ERROR_ORDER_ALREADY_CANCELLED),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Purchase order is already cancelled",
+		});
 	}
 	if (orderResult.data.status !== "draft") {
-		return fail(
-			"CONFLICT",
-			"Only draft purchase orders can be cancelled; use close for posted orders",
-			purchasingErrorDetails(PURCHASING_ERROR_ORDER_NOT_DRAFT),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage:
+				"Only draft purchase orders can be cancelled; use close for posted orders",
+		});
 	}
 
 	return store.cancelOrder(
@@ -743,11 +712,7 @@ export async function closePurchaseOrder(
 		return authorized;
 	}
 	if (commitmentQuery === undefined) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Purchase order commitment query port is required to close",
-			purchasingErrorDetails(PURCHASING_ERROR_COMMITMENT_PORT_REQUIRED),
-		);
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 
 	const orderResult = await store.getOrderById(
@@ -758,29 +723,23 @@ export async function closePurchaseOrder(
 		return orderResult;
 	}
 	if (orderResult.data === null) {
-		return fail(
-			"NOT_FOUND",
-			"Purchase order not found",
-			purchasingErrorDetails(PURCHASING_ERROR_ORDER_NOT_FOUND),
-		);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Purchase order not found",
+		});
 	}
 	const order = orderResult.data;
 	if (order.status === "closed") {
 		if (order.closeIdempotencyKey === parsed.data.idempotencyKey) {
-			return ok(order);
+			return errorResult.ok(order);
 		}
-		return fail(
-			"CONFLICT",
-			"Purchase order is already closed",
-			purchasingErrorDetails(PURCHASING_ERROR_ORDER_ALREADY_CLOSED),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Purchase order is already closed",
+		});
 	}
 	if (order.status !== "posted") {
-		return fail(
-			"CONFLICT",
-			"Only posted purchase orders can be closed",
-			purchasingErrorDetails(PURCHASING_ERROR_ORDER_NOT_POSTED),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Only posted purchase orders can be closed",
+		});
 	}
 
 	const commitment = await commitmentQuery.getCommitmentStatus({

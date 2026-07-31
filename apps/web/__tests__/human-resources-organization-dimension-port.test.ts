@@ -134,8 +134,6 @@ describe("HR organization dimension composition port", () => {
 		expect(result).toMatchObject({
 			ok: false,
 			code: "INTERNAL_ERROR",
-			message: "Master Data did not return required HR organization dimension.",
-			details: { kind: "project" },
 		});
 	});
 });

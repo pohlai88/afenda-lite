@@ -1,6 +1,5 @@
-import type { ErrorCode } from "@afenda/errors";
-import { ERROR_HTTP_STATUS } from "@afenda/errors/http";
-import { fail, type ResultFailure } from "@afenda/errors/result";
+import { errorProject, errorResult, type ResultFailure } from "@afenda/errors";
+
 import { NextResponse } from "next/server";
 
 const NEON_ORG_CONFLICT_PATTERN = /slug taken|already exists|conflict/i;
@@ -37,48 +36,52 @@ export function neonErrorProbe(error: unknown): string {
  */
 export function failFromNeonOrgProbe(
 	error: unknown,
-	fallbackMessage: string,
+	_fallbackMessage: string,
 ): ResultFailure {
 	const probe = neonErrorProbe(error);
 	if (NEON_ORG_CONFLICT_PATTERN.test(probe)) {
-		return fail("CONFLICT", "Organization already exists");
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Organization already exists",
+		});
 	}
 	if (NEON_ORG_FORBIDDEN_PATTERN.test(probe)) {
-		return fail("FORBIDDEN", "Not authorized for this organization action");
+		return errorResult.fail("FORBIDDEN");
 	}
-	return fail("INTERNAL_ERROR", fallbackMessage);
+	return errorResult.fail("INTERNAL_ERROR");
 }
 
 /** Map Neon Auth invite HTTP status to a closed ErrorCode + safe message. */
 export function failFromInviteHttpStatus(status: number): ResultFailure {
 	if (status === 401) {
-		return fail("UNAUTHORIZED", "Invitation could not be authorized");
+		return errorResult.fail("UNAUTHORIZED");
 	}
 	if (status === 403) {
-		return fail("FORBIDDEN", "Invitation is not permitted for this session");
+		return errorResult.fail("FORBIDDEN");
 	}
 	if (status === 404) {
-		return fail("NOT_FOUND", "Invitation target was not found");
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Invitation target was not found",
+		});
 	}
 	if (status === 409) {
-		return fail("CONFLICT", "Invitation already exists for this member");
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Invitation already exists for this member",
+		});
 	}
 	if (status === 429) {
-		return fail("RATE_LIMITED", "Invitation rate limit exceeded");
+		return errorResult.fail("RATE_LIMITED");
 	}
 	if (status >= 500) {
-		return fail(
-			"SERVICE_UNAVAILABLE",
-			"Invitation service is temporarily unavailable",
-		);
+		return errorResult.fail("SERVICE_UNAVAILABLE");
 	}
-	return fail("INTERNAL_ERROR", "Invitation could not be sent");
+	return errorResult.fail("INTERNAL_ERROR");
 }
 
-/** Plain-text RH failure with status from the shared ErrorCode → HTTP map. */
-export function authPlainTextFailure(
-	code: ErrorCode,
-	message: string,
-): NextResponse {
-	return new NextResponse(message, { status: ERROR_HTTP_STATUS[code] });
+/** Plain-text bridge derived from the canonical HTTP projection. */
+export function authPlainTextFailure(failure: ResultFailure): NextResponse {
+	const projection = errorProject.http(failure);
+	return new NextResponse(projection.body.error.message, {
+		status: projection.status,
+		headers: projection.headers,
+	});
 }

@@ -313,9 +313,7 @@ describe("@afenda/receiving domain", () => {
 		);
 		expect(cancelled.ok).toBe(false);
 		if (!cancelled.ok) {
-			expect(cancelled.details).toMatchObject({
-				receivingCode: "receiving.receipt.posted_cannot_cancel",
-			});
+			expect(cancelled.code).toBe("CONFLICT");
 		}
 
 		const reversed = await reverseGoodsReceipt(
@@ -362,9 +360,7 @@ describe("@afenda/receiving domain", () => {
 		);
 		expect(doubleReverse.ok).toBe(false);
 		if (!doubleReverse.ok) {
-			expect(doubleReverse.details).toMatchObject({
-				receivingCode: "receiving.receipt.already_reversed",
-			});
+			expect(doubleReverse.code).toBe("CONFLICT");
 		}
 	});
 

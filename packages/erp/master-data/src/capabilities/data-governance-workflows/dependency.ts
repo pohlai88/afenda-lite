@@ -15,7 +15,7 @@
  * Production implementations must preserve the authoritative transaction contract.
  * Adapters must not recreate workflows through raw table mutations.
  */
-import type { Result } from "@afenda/errors/result";
+import type { Result } from "@afenda/errors";
 
 import type { ChangeRequestApplyGateInput } from "./change-request-apply";
 import type { ChangeRequestRecord } from "./change-request-types";

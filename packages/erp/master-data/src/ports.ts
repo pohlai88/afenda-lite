@@ -1,5 +1,5 @@
 import type { Change } from "@afenda/audit";
-import type { Result } from "@afenda/errors/result";
+import type { Result } from "@afenda/errors";
 import type { MasterDataEventType } from "@afenda/events";
 
 /** Same-TX audit fact — production adapter writes `platform_audit_log`. */

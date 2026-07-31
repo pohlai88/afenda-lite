@@ -1,5 +1,6 @@
 "use client";
 
+import type { Result as ActionResult } from "@afenda/errors";
 import {
 	Alert,
 	AlertDescription,
@@ -23,7 +24,6 @@ import {
 import type { ReactNode } from "react";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
-
 import {
 	activateLegalCompanyFormAction,
 	archiveLegalCompanyFormAction,
@@ -33,7 +33,6 @@ import {
 	restoreLegalCompanyFormAction,
 	suspendLegalCompanyFormAction,
 } from "@/app/actions/legal-company-lifecycle-actions";
-import type { ActionResult } from "@/modules/platform/schemas/action-result";
 
 export type LegalCompanyLifecycleStatus =
 	| "draft"

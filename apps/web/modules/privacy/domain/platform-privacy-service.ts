@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type {
 	PlatformPrivacyService,
 	PrivacyAuditPort,
@@ -28,13 +28,10 @@ function assertTenantRecords(
 ): Result<readonly PrivacySubjectRecord[]> {
 	for (const record of records) {
 		if (record.organizationId !== organizationId) {
-			return fail(
-				"FORBIDDEN",
-				"Subject inventory returned records outside the requested tenant.",
-			);
+			return errorResult.fail("FORBIDDEN");
 		}
 	}
-	return ok(records);
+	return errorResult.ok(records);
 }
 
 async function resolveSubjectRecords(
@@ -54,10 +51,9 @@ async function resolveSubjectRecords(
 		return tenantChecked;
 	}
 	if (tenantChecked.data.length === 0) {
-		return fail(
-			"NOT_FOUND",
-			"Privacy subject was not found for this organization.",
-		);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Privacy subject was not found for this organization.",
+		});
 	}
 	return tenantChecked;
 }
@@ -92,12 +88,9 @@ async function recordPrivacyAudit(
 		return recorded;
 	}
 	if (recorded.data.organizationId !== input.organizationId) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Privacy audit record organization does not match the requested tenant.",
-		);
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 function activeLegalHoldReason(
@@ -165,7 +158,7 @@ async function performAuditedSubjectOperation<T>(
 		return audited;
 	}
 
-	return ok(config.buildResult(affectedCount));
+	return errorResult.ok(config.buildResult(affectedCount));
 }
 
 export function createPlatformPrivacyService(
@@ -214,7 +207,7 @@ export function createPlatformPrivacyService(
 				return audited;
 			}
 
-			return ok({
+			return errorResult.ok({
 				exportReference: saved.exportReference,
 				recordCount: saved.recordCount,
 				records: records.data,
@@ -227,7 +220,7 @@ export function createPlatformPrivacyService(
 				return records;
 			}
 
-			return ok({
+			return errorResult.ok({
 				organizationId: input.organizationId,
 				subjectId: input.subjectId,
 				exports: store.listExportsForSubject(input).map((entry) => ({
@@ -261,10 +254,10 @@ export function createPlatformPrivacyService(
 
 			const holdReason = activeLegalHoldReason(store, input);
 			if (holdReason !== undefined) {
-				return ok({ allowed: false, reasonCode: holdReason });
+				return errorResult.ok({ allowed: false, reasonCode: holdReason });
 			}
 
-			return ok({ allowed: true });
+			return errorResult.ok({ allowed: true });
 		},
 
 		rectifySubject(input) {
@@ -290,11 +283,9 @@ export function createPlatformPrivacyService(
 
 			const holdReason = activeLegalHoldReason(store, input);
 			if (holdReason !== undefined) {
-				return fail(
-					"CONFLICT",
-					"Anonymization blocked while legal hold is active.",
-					{ reasonCode: holdReason },
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Anonymization blocked while legal hold is active.",
+				});
 			}
 
 			return performAuditedSubjectOperation(operationDeps, input, {
@@ -346,7 +337,7 @@ export function createPlatformPrivacyService(
 				return audited;
 			}
 
-			return ok({ legalHoldId });
+			return errorResult.ok({ legalHoldId });
 		},
 
 		async releaseLegalHold(input) {
@@ -357,10 +348,9 @@ export function createPlatformPrivacyService(
 				reason: input.reason,
 			});
 			if (released === null) {
-				return fail(
-					"NOT_FOUND",
-					"Legal hold was not found for this organization.",
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "Legal hold was not found for this organization.",
+				});
 			}
 
 			const audited = await recordPrivacyAudit(deps.audit, {
@@ -381,7 +371,7 @@ export function createPlatformPrivacyService(
 				return audited;
 			}
 
-			return ok(undefined);
+			return errorResult.ok(undefined);
 		},
 
 		redactDownstream(input) {

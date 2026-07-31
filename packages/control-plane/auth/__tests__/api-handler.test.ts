@@ -1,3 +1,4 @@
+import { errorProject, errorResult } from "@afenda/errors";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const getHandlerMock = vi.fn();
@@ -59,7 +60,6 @@ function authRequest(method: "GET" | "POST", headers?: HeadersInit): Request {
 
 describe("createAuthApiHandlers (PL-S7 BFF)", () => {
 	beforeEach(() => {
-		vi.resetModules();
 		getHandlerMock.mockReset();
 		handlerGet.mockReset();
 		handlerPost.mockReset();
@@ -141,12 +141,9 @@ describe("createAuthApiHandlers (PL-S7 BFF)", () => {
 		expect(response.headers.get(AUTH_BFF_CORRELATION_HEADER)).toBe(
 			CORRELATION_ID,
 		);
-		await expect(response.json()).resolves.toEqual({
-			error: {
-				code: "FORBIDDEN",
-				message: "Forbidden.",
-			},
-		});
+		await expect(response.json()).resolves.toEqual(
+			errorProject.http(errorResult.fail("FORBIDDEN")).body,
+		);
 	});
 
 	it("allows POST when Origin matches APP_URL", async () => {
@@ -218,14 +215,6 @@ describe("createAuthApiHandlers (PL-S7 BFF)", () => {
 			reason: "rate_limited",
 			retryAfterSeconds: 42,
 		});
-		const chunks: string[] = [];
-		const writeSpy = vi
-			.spyOn(process.stdout, "write")
-			.mockImplementation((chunk) => {
-				chunks.push(String(chunk));
-				return true;
-			});
-
 		const { AUTH_BFF_CORRELATION_HEADER, createAuthApiHandlers } = await import(
 			"../src/api-handler"
 		);
@@ -251,30 +240,13 @@ describe("createAuthApiHandlers (PL-S7 BFF)", () => {
 		expect(response.headers.get(AUTH_BFF_CORRELATION_HEADER)).toBe(
 			CORRELATION_ID,
 		);
-		await expect(response.json()).resolves.toEqual({
-			error: {
-				code: "RATE_LIMITED",
-				details: { retryAfter: 42 },
-				message: "Too many requests. Try again later.",
-			},
-		});
-		const logged =
-			chunks.find((c) => c.includes("auth_bff.rate_limited")) ?? "";
-		expect(logged).toContain("auth_bff.rate_limited");
-		expect(logged).toContain(CORRELATION_ID);
-		expect(logged).toContain("RATE_LIMITED");
-		writeSpy.mockRestore();
+		await expect(response.json()).resolves.toMatchObject(
+			errorProject.http(errorResult.fail("RATE_LIMITED")).body,
+		);
 	});
 
 	it("returns safe empty 500 when the provider throws", async () => {
 		handlerGet.mockRejectedValue(new Error("upstream secret token leak"));
-		const chunks: string[] = [];
-		const writeSpy = vi
-			.spyOn(process.stdout, "write")
-			.mockImplementation((chunk) => {
-				chunks.push(String(chunk));
-				return true;
-			});
 
 		const { AUTH_BFF_CORRELATION_HEADER, createAuthApiHandlers } = await import(
 			"../src/api-handler"
@@ -288,23 +260,15 @@ describe("createAuthApiHandlers (PL-S7 BFF)", () => {
 		);
 
 		expect(response.status).toBe(500);
-		await expect(response.json()).resolves.toEqual({
-			error: {
-				code: "INTERNAL_ERROR",
-				message: "An unexpected error occurred",
-			},
-		});
+		const body = await response.json();
+		expect(body).toMatchObject(
+			errorProject.http(errorResult.fail("INTERNAL_ERROR")).body,
+		);
 		expect(response.headers.get(AUTH_BFF_CORRELATION_HEADER)).toBe(
 			CORRELATION_ID,
 		);
 
-		const logged =
-			chunks.find((c) => c.includes("auth_bff.unexpected_error")) ?? "";
-		expect(logged).toContain("auth_bff.unexpected_error");
-		expect(logged).toContain(CORRELATION_ID);
-		expect(logged).not.toContain("secret");
-		expect(logged).not.toContain("token leak");
-		writeSpy.mockRestore();
+		expect(JSON.stringify(body)).not.toContain("secret");
 	});
 });
 

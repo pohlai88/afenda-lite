@@ -1,6 +1,10 @@
 import { and, db, desc, eq, platformSearchDocument, sql } from "@afenda/db";
-import { normalizePostgresUnknown } from "@afenda/errors/adapters/postgres";
-import { fail, failFromAppError, ok, type Result } from "@afenda/errors/result";
+import {
+	errorIngress,
+	errorProject,
+	errorResult,
+	type Result,
+} from "@afenda/errors";
 
 import { mapSearchDocumentRow, mapSearchHitRow } from "./map-row";
 import { sanitizeSearchMetadata } from "./sanitize";
@@ -42,16 +46,15 @@ function mapDocument(
 ): Result<SearchDocument> {
 	const mapped = mapSearchDocumentRow(row);
 	if (!mapped.ok) {
-		return fail(
-			"INTERNAL_ERROR",
-			`search row mapping failed: ${mapped.reason}`,
-		);
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok(mapped.data);
+	return errorResult.ok(mapped.data);
 }
 
-function failFromPersistence(error: unknown, fallbackMessage: string) {
-	return failFromAppError(normalizePostgresUnknown(error, fallbackMessage));
+function failFromPersistence(error: unknown, _fallbackMessage: string) {
+	return errorProject.result(
+		errorIngress.postgres(error, { operation: "persistence.postgres" }),
+	);
 }
 
 export class DrizzleSearchStore implements SearchStore {
@@ -94,7 +97,7 @@ export class DrizzleSearchStore implements SearchStore {
 				.returning(documentReturning);
 
 			if (row === undefined) {
-				return fail("INTERNAL_ERROR", "search upsert returned no row");
+				return errorResult.fail("INTERNAL_ERROR");
 			}
 			return mapDocument(row);
 		} catch (error) {
@@ -117,7 +120,7 @@ export class DrizzleSearchStore implements SearchStore {
 				accumulated.data.push(result.data);
 				return accumulated;
 			},
-			Promise.resolve(ok<SearchDocument[]>([])),
+			Promise.resolve(errorResult.ok([])),
 		);
 	}
 
@@ -136,7 +139,7 @@ export class DrizzleSearchStore implements SearchStore {
 				)
 				.returning({ id: platformSearchDocument.id });
 
-			return ok({ deleted: deleted.length > 0 });
+			return errorResult.ok({ deleted: deleted.length > 0 });
 		} catch (error) {
 			return failFromPersistence(error, "Failed to delete search document");
 		}
@@ -154,7 +157,7 @@ export class DrizzleSearchStore implements SearchStore {
 					),
 				);
 
-			return ok(rows.map((row) => row.documentId));
+			return errorResult.ok(rows.map((row) => row.documentId));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to list search document ids");
 		}
@@ -173,7 +176,7 @@ export class DrizzleSearchStore implements SearchStore {
 
 			const where = and(...predicates);
 			if (where === undefined) {
-				return fail("INTERNAL_ERROR", "search where clause is required");
+				return errorResult.fail("INTERNAL_ERROR");
 			}
 
 			const rank = sql<number>`ts_rank(${platformSearchDocument.searchVector}, ${tsQuery})`;
@@ -200,14 +203,11 @@ export class DrizzleSearchStore implements SearchStore {
 			for (const row of rows) {
 				const mapped = mapSearchHitRow(row);
 				if (!mapped.ok) {
-					return fail(
-						"INTERNAL_ERROR",
-						`search hit mapping failed: ${mapped.reason}`,
-					);
+					return errorResult.fail("INTERNAL_ERROR");
 				}
 				hits.push(mapped.data);
 			}
-			return ok(hits);
+			return errorResult.ok(hits);
 		} catch (error) {
 			return failFromPersistence(error, "Failed to search documents");
 		}

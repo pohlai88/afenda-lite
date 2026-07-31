@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	HUMAN_RESOURCES_ASSIGNMENT_CREATED_EVENT,
 	HUMAN_RESOURCES_ASSIGNMENT_ENDED_EVENT,
@@ -212,12 +212,12 @@ export function createMemoryCoreMethods(
 		}): Promise<Result<Employee | null>> {
 			const employee = state.employees.get(input.employeeId);
 			if (employee === undefined) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
 			if (employee.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok(cloneEmployee(employee));
+			return await errorResult.ok(cloneEmployee(employee));
 		},
 
 		async findEmployeeByIdempotencyKey(input: {
@@ -228,9 +228,9 @@ export function createMemoryCoreMethods(
 				idempotencyMapKey(input.organizationId, input.idempotencyKey),
 			);
 			if (record === undefined) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({
+			return await errorResult.ok({
 				employee: cloneEmployee(record.employee),
 				createRequestFingerprint: record.createRequestFingerprint,
 			});
@@ -249,7 +249,7 @@ export function createMemoryCoreMethods(
 				return existingByKey;
 			}
 			if (existingByKey.data !== null) {
-				return ok(cloneEmployee(existingByKey.data.employee));
+				return errorResult.ok(cloneEmployee(existingByKey.data.employee));
 			}
 
 			for (const employee of state.employees.values()) {
@@ -316,7 +316,7 @@ export function createMemoryCoreMethods(
 				return outbox;
 			}
 
-			return ok(cloneEmployee(employee));
+			return errorResult.ok(cloneEmployee(employee));
 		},
 
 		async updateEmployee(
@@ -332,11 +332,12 @@ export function createMemoryCoreMethods(
 		): Promise<Result<Employee>> {
 			const employee = state.employees.get(input.employeeId);
 			if (!employee || employee.organizationId !== input.organizationId) {
-				return fail(
-					"NOT_FOUND",
-					"Employee not found",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_NOT_FOUND,
+					),
+				});
 			}
 
 			const versionCheck = assertExpectedVersion(
@@ -372,7 +373,7 @@ export function createMemoryCoreMethods(
 				return audit;
 			}
 
-			return ok(cloneEmployee(updated));
+			return errorResult.ok(cloneEmployee(updated));
 		},
 
 		async listEmployees(input: {
@@ -420,7 +421,7 @@ export function createMemoryCoreMethods(
 				.slice(start, start + input.pageSize)
 				.map(cloneEmployee);
 
-			return await ok({
+			return await errorResult.ok({
 				employees,
 				totalCount,
 				page: input.page,
@@ -435,9 +436,9 @@ export function createMemoryCoreMethods(
 		}): Promise<Result<Employment | null>> {
 			const employment = state.employments.get(input.employmentId);
 			if (!employment || employment.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...employment });
+			return await errorResult.ok({ ...employment });
 		},
 
 		async findOpenEmploymentByEmployee(input: {
@@ -452,14 +453,14 @@ export function createMemoryCoreMethods(
 						employment.employeeId === input.employeeId &&
 						employment.endsOn === null
 					) {
-						return sequentialReturn(await ok({ ...employment }));
+						return sequentialReturn(await errorResult.ok({ ...employment }));
 					}
 				},
 			);
 			if (sequentialOutcome1.kind === "return") {
 				return sequentialOutcome1.value;
 			}
-			return await ok(null);
+			return await errorResult.ok(null);
 		},
 
 		async findEmploymentByEmployeeAsOf(input: {
@@ -479,13 +480,14 @@ export function createMemoryCoreMethods(
 				getEffectiveTo: (employment) => employment.endsOn,
 			});
 			if (!resolution.ok) {
-				return await fail(
-					"CONFLICT",
-					"Multiple employments are effective for the Time work date",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-				);
+				return await errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_CONFLICT,
+					),
+				});
 			}
-			return await ok(
+			return await errorResult.ok(
 				resolution.record === null ? null : { ...resolution.record },
 			);
 		},
@@ -494,7 +496,7 @@ export function createMemoryCoreMethods(
 			organizationId: string;
 			employeeId: HumanResourcesEmployeeId;
 		}) {
-			return await ok(
+			return await errorResult.ok(
 				listEmploymentsForEmployee(state, input).map((employment) => ({
 					id: employment.id,
 					startsOn: employment.startsOn,
@@ -521,13 +523,15 @@ export function createMemoryCoreMethods(
 					return left.createdAt.getTime() - right.createdAt.getTime();
 				})
 				.map((row) => ({ ...row }));
-			return await ok(rows);
+			return await errorResult.ok(rows);
 		},
 
 		async appendEmploymentStatusHistory(
 			record: EmploymentStatusHistoryAppendRecord,
 		): Promise<Result<EmploymentStatusHistory>> {
-			return await ok(appendEmploymentHistoryToState(state, record));
+			return await errorResult.ok(
+				appendEmploymentHistoryToState(state, record),
+			);
 		},
 
 		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
@@ -538,13 +542,12 @@ export function createMemoryCoreMethods(
 		): Promise<Result<Employment>> {
 			const employee = state.employees.get(record.employeeId);
 			if (!employee || employee.organizationId !== record.organizationId) {
-				return fail(
-					"NOT_FOUND",
-					"Employee not found",
-					humanResourcesErrorDetails(
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
 						HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 					),
-				);
+				});
 			}
 
 			const dateCheck = assertValidDateRange(record.startsOn, record.endsOn);
@@ -649,7 +652,7 @@ export function createMemoryCoreMethods(
 				return outbox;
 			}
 
-			return ok({ ...employment });
+			return errorResult.ok({ ...employment });
 		},
 
 		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
@@ -669,11 +672,12 @@ export function createMemoryCoreMethods(
 		): Promise<Result<Employment>> {
 			const employment = state.employments.get(input.employmentId);
 			if (!employment || employment.organizationId !== input.organizationId) {
-				return fail(
-					"NOT_FOUND",
-					"Employment not found",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_NOT_FOUND,
+					),
+				});
 			}
 
 			const versionCheck = assertExpectedVersion(
@@ -690,11 +694,12 @@ export function createMemoryCoreMethods(
 			const nextStatus = input.status ?? employment.status;
 			const parsedStatus = employmentStatusSchema.safeParse(nextStatus);
 			if (!parsedStatus.success) {
-				return fail(
-					"BAD_REQUEST",
-					"Invalid employment status",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-				);
+				return errorResult.fail("BAD_REQUEST", {
+					publicMessage: "The request is invalid",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+					),
+				});
 			}
 
 			const dateCheck = assertValidDateRange(newStartsOn, newEndsOn);
@@ -791,7 +796,7 @@ export function createMemoryCoreMethods(
 				}
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async correctEmployment(
@@ -812,11 +817,12 @@ export function createMemoryCoreMethods(
 		): Promise<Result<Employment>> {
 			const employment = state.employments.get(input.employmentId);
 			if (!employment || employment.organizationId !== input.organizationId) {
-				return fail(
-					"NOT_FOUND",
-					"Employment not found",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_NOT_FOUND,
+					),
+				});
 			}
 
 			const versionCheck = assertExpectedVersion(
@@ -833,11 +839,12 @@ export function createMemoryCoreMethods(
 			const nextStatus = input.status ?? employment.status;
 			const parsedStatus = employmentStatusSchema.safeParse(nextStatus);
 			if (!parsedStatus.success) {
-				return fail(
-					"BAD_REQUEST",
-					"Invalid employment status",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-				);
+				return errorResult.fail("BAD_REQUEST", {
+					publicMessage: "The request is invalid",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+					),
+				});
 			}
 
 			const dateCheck = assertValidDateRange(newStartsOn, newEndsOn);
@@ -905,7 +912,7 @@ export function createMemoryCoreMethods(
 				return outbox;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		// Employment Contract methods
@@ -915,9 +922,9 @@ export function createMemoryCoreMethods(
 		}): Promise<Result<EmploymentContract | null>> {
 			const contract = state.contracts.get(input.employmentContractId);
 			if (!contract || contract.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...contract });
+			return await errorResult.ok({ ...contract });
 		},
 
 		async findContractByEmploymentAndCode(input: {
@@ -934,21 +941,21 @@ export function createMemoryCoreMethods(
 						contract.referenceCode === input.referenceCode &&
 						contract.lineageStatus === "active"
 					) {
-						return sequentialReturn(await ok({ ...contract }));
+						return sequentialReturn(await errorResult.ok({ ...contract }));
 					}
 				},
 			);
 			if (sequentialOutcome2.kind === "return") {
 				return sequentialOutcome2.value;
 			}
-			return await ok(null);
+			return await errorResult.ok(null);
 		},
 
 		async listActiveContractsByEmployment(input: {
 			organizationId: string;
 			employmentId: HumanResourcesEmploymentId;
 		}) {
-			return await ok(
+			return await errorResult.ok(
 				[...state.contracts.values()]
 					.filter(
 						(contract) =>
@@ -976,7 +983,7 @@ export function createMemoryCoreMethods(
 				)
 				.sort(compareEmploymentContractsByLineage)
 				.map((contract) => ({ ...contract }));
-			return await ok(contracts);
+			return await errorResult.ok(contracts);
 		},
 
 		async findEmploymentContractByEmploymentAsOf(input: {
@@ -996,13 +1003,14 @@ export function createMemoryCoreMethods(
 				getEffectiveTo: (contract) => contract.endsOn,
 			});
 			if (!resolution.ok) {
-				return await fail(
-					"CONFLICT",
-					"Multiple employment contracts are effective for the as-of date",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-				);
+				return await errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_CONFLICT,
+					),
+				});
 			}
-			return await ok(
+			return await errorResult.ok(
 				resolution.record === null ? null : { ...resolution.record },
 			);
 		},
@@ -1014,21 +1022,21 @@ export function createMemoryCoreMethods(
 		): Promise<Result<EmploymentContract>> {
 			const employment = state.employments.get(record.employmentId);
 			if (!employment || employment.organizationId !== record.organizationId) {
-				return fail(
-					"NOT_FOUND",
-					"Employment not found",
-					humanResourcesErrorDetails(
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
 						HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 					),
-				);
+				});
 			}
 
 			if (employment.employeeId !== record.employeeId) {
-				return fail(
-					"BAD_REQUEST",
-					"Employee does not match employment",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-				);
+				return errorResult.fail("BAD_REQUEST", {
+					publicMessage: "The request is invalid",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+					),
+				});
 			}
 
 			const dateCheck = assertValidDateRange(record.startsOn, record.endsOn);
@@ -1045,11 +1053,12 @@ export function createMemoryCoreMethods(
 				return existing;
 			}
 			if (existing.data !== null) {
-				return fail(
-					"CONFLICT",
-					"Contract with this reference code already exists",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_DUPLICATE),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_DUPLICATE,
+					),
+				});
 			}
 
 			const idResult = parseHumanResourcesEmploymentContractId(randomUUID());
@@ -1112,7 +1121,7 @@ export function createMemoryCoreMethods(
 				return outbox;
 			}
 
-			return ok({ ...contract });
+			return errorResult.ok({ ...contract });
 		},
 
 		async correctEmploymentContract(
@@ -1132,11 +1141,12 @@ export function createMemoryCoreMethods(
 		): Promise<Result<EmploymentContract>> {
 			const contract = state.contracts.get(input.employmentContractId);
 			if (!contract || contract.organizationId !== input.organizationId) {
-				return fail(
-					"NOT_FOUND",
-					"Employment contract not found",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_NOT_FOUND,
+					),
+				});
 			}
 			const versionCheck = assertExpectedVersion(
 				contract.version,
@@ -1146,11 +1156,12 @@ export function createMemoryCoreMethods(
 				return versionCheck;
 			}
 			if (contract.lineageStatus !== "active") {
-				return fail(
-					"CONFLICT",
-					"Superseded contracts cannot be modified",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_CONFLICT,
+					),
+				});
 			}
 
 			const referenceCode = input.referenceCode ?? contract.referenceCode;
@@ -1205,7 +1216,7 @@ export function createMemoryCoreMethods(
 				return outbox;
 			}
 
-			return ok({ ...contract });
+			return errorResult.ok({ ...contract });
 		},
 
 		async supersedeEmploymentContract(
@@ -1228,11 +1239,12 @@ export function createMemoryCoreMethods(
 		> {
 			const predecessor = state.contracts.get(input.employmentContractId);
 			if (!predecessor || predecessor.organizationId !== input.organizationId) {
-				return fail(
-					"NOT_FOUND",
-					"Employment contract not found",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_NOT_FOUND,
+					),
+				});
 			}
 			const versionCheck = assertExpectedVersion(
 				predecessor.version,
@@ -1242,11 +1254,12 @@ export function createMemoryCoreMethods(
 				return versionCheck;
 			}
 			if (predecessor.lineageStatus !== "active") {
-				return fail(
-					"CONFLICT",
-					"Only active contracts can be superseded",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_CONFLICT,
+					),
+				});
 			}
 
 			const dateCheck = assertValidDateRange(input.startsOn, input.endsOn);
@@ -1357,7 +1370,7 @@ export function createMemoryCoreMethods(
 				return createdEvent;
 			}
 
-			return ok({
+			return errorResult.ok({
 				superseded: { ...predecessor },
 				successor: { ...successor },
 			});
@@ -1379,7 +1392,7 @@ export function createMemoryCoreMethods(
 					count += 1;
 				}
 			}
-			return await ok(count);
+			return await errorResult.ok(count);
 		},
 
 		async resolvePositionOccupancyAsOf(input: {
@@ -1389,7 +1402,7 @@ export function createMemoryCoreMethods(
 		}): Promise<Result<PositionOccupancyAsOf | null>> {
 			const position = org.positions.get(input.positionId);
 			if (!position || position.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
 
 			const assignments = [...state.assignments.values()].filter(
@@ -1401,15 +1414,16 @@ export function createMemoryCoreMethods(
 						assignmentValue.endsOn >= input.asOf),
 			);
 			if (assignments.length > 1) {
-				return await fail(
-					"CONFLICT",
-					"Multiple assignments occupy the position on the requested date",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-				);
+				return await errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_CONFLICT,
+					),
+				});
 			}
 
 			const assignment = assignments[0] ?? null;
-			return await ok({
+			return await errorResult.ok({
 				position: { ...position },
 				asOf: input.asOf,
 				assignment: assignment ? { ...assignment } : null,
@@ -1424,9 +1438,9 @@ export function createMemoryCoreMethods(
 		}): Promise<Result<WorkAssignment | null>> {
 			const assignment = state.assignments.get(input.assignmentId);
 			if (!assignment || assignment.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...assignment });
+			return await errorResult.ok({ ...assignment });
 		},
 
 		async findOpenAssignmentByEmployment(input: {
@@ -1441,14 +1455,14 @@ export function createMemoryCoreMethods(
 						assignment.employmentId === input.employmentId &&
 						assignment.endsOn === null
 					) {
-						return sequentialReturn(await ok({ ...assignment }));
+						return sequentialReturn(await errorResult.ok({ ...assignment }));
 					}
 				},
 			);
 			if (sequentialOutcome3.kind === "return") {
 				return sequentialOutcome3.value;
 			}
-			return await ok(null);
+			return await errorResult.ok(null);
 		},
 
 		async findAssignmentByEmploymentAsOf(input: {
@@ -1470,7 +1484,7 @@ export function createMemoryCoreMethods(
 			if (!resolution.ok) {
 				return await multiplePrimaryAssignmentsAtAsOf();
 			}
-			return await ok(
+			return await errorResult.ok(
 				resolution.record === null ? null : { ...resolution.record },
 			);
 		},
@@ -1486,7 +1500,7 @@ export function createMemoryCoreMethods(
 						assignment.employmentId === input.employmentId,
 				)
 				.map((assignment) => ({ ...assignment }));
-			return await ok(rows);
+			return await errorResult.ok(rows);
 		},
 
 		async listWorkforcePlanActualAssignments(input: {
@@ -1535,7 +1549,7 @@ export function createMemoryCoreMethods(
 			}
 
 			actuals.sort((a, b) => a.employeeId.localeCompare(b.employeeId));
-			return await ok(actuals);
+			return await errorResult.ok(actuals);
 		},
 
 		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
@@ -1546,32 +1560,31 @@ export function createMemoryCoreMethods(
 		): Promise<Result<WorkAssignment>> {
 			const employment = state.employments.get(record.employmentId);
 			if (!employment || employment.organizationId !== record.organizationId) {
-				return fail(
-					"NOT_FOUND",
-					"Employment not found",
-					humanResourcesErrorDetails(
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
 						HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 					),
-				);
+				});
 			}
 
 			if (employment.employeeId !== record.employeeId) {
-				return fail(
-					"BAD_REQUEST",
-					"Employee does not match employment",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-				);
+				return errorResult.fail("BAD_REQUEST", {
+					publicMessage: "The request is invalid",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+					),
+				});
 			}
 
 			const position = org.positions.get(record.positionId);
 			if (!position || position.organizationId !== record.organizationId) {
-				return fail(
-					"NOT_FOUND",
-					"Position not found",
-					humanResourcesErrorDetails(
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
 						HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 					),
-				);
+				});
 			}
 
 			const activeCheck = assertActivePosition(position.status);
@@ -1671,7 +1684,7 @@ export function createMemoryCoreMethods(
 				return outbox;
 			}
 
-			return ok({ ...assignment });
+			return errorResult.ok({ ...assignment });
 		},
 
 		async endAssignment(
@@ -1687,11 +1700,12 @@ export function createMemoryCoreMethods(
 		): Promise<Result<WorkAssignment>> {
 			const assignment = state.assignments.get(input.assignmentId);
 			if (!assignment || assignment.organizationId !== input.organizationId) {
-				return fail(
-					"NOT_FOUND",
-					"Assignment not found",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_NOT_FOUND,
+					),
+				});
 			}
 
 			const versionCheck = assertExpectedVersion(
@@ -1750,7 +1764,7 @@ export function createMemoryCoreMethods(
 				return outbox;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		// Reporting line methods

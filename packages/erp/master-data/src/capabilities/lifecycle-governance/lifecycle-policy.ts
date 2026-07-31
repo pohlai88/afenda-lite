@@ -1,4 +1,4 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	lifecycleControlledFieldMutationForbidden,
@@ -40,7 +40,7 @@ export function resolveAuthoritativeLifecycleState<
 	if (state === null || state === undefined) {
 		return lifecycleExplicitStateRequired(context);
 	}
-	return ok({ state, source: LIFECYCLE_STATE_SOURCE });
+	return errorResult.ok({ state, source: LIFECYCLE_STATE_SOURCE });
 }
 
 export function decideLifecycleTransition<State extends string>(
@@ -59,7 +59,7 @@ export function decideLifecycleTransition<State extends string>(
 			allowedStates: definition?.from ?? [],
 		});
 	}
-	return ok({
+	return errorResult.ok({
 		from: current,
 		to: definition.to,
 		operation: definition.operation,
@@ -90,7 +90,7 @@ export function assertLifecycleReason(
 			attemptedOperation: definition.operation,
 		});
 	}
-	return ok(true);
+	return errorResult.ok(true);
 }
 
 export function assertNoLifecycleControlledFieldMutation(
@@ -98,7 +98,7 @@ export function assertNoLifecycleControlledFieldMutation(
 	context: LifecycleTransitionContext,
 ): Result<true> {
 	if (input === null || typeof input !== "object" || Array.isArray(input)) {
-		return ok(true);
+		return errorResult.ok(true);
 	}
 	const fields = LIFECYCLE_CONTROLLED_FIELDS.filter((field) =>
 		Object.hasOwn(input, field),
@@ -106,5 +106,5 @@ export function assertNoLifecycleControlledFieldMutation(
 	if (fields.length > 0) {
 		return lifecycleControlledFieldMutationForbidden({ ...context, fields });
 	}
-	return ok(true);
+	return errorResult.ok(true);
 }

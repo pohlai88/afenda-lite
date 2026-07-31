@@ -1,4 +1,4 @@
-import type { Result } from "@afenda/errors/result";
+import type { Result } from "@afenda/errors";
 import type { HumanResourcesPermission } from "../permissions";
 
 export type HumanResourcesExportFieldValue = string | number | boolean | null;

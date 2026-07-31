@@ -1,4 +1,4 @@
-import { ok } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 import type {
 	HumanResourcesPrivacyCase,
 	HumanResourcesPrivacyPort,
@@ -47,7 +47,7 @@ export function createHumanResourcesPrivacyPort(): HumanResourcesPrivacyPort {
 			if (!result.ok) {
 				return result;
 			}
-			return ok({
+			return errorResult.ok({
 				...mapPrivacyCase(result.data),
 				subjectEmployeeId: input.subjectEmployeeId,
 			});

@@ -1,4 +1,4 @@
-import type { Result } from "@afenda/errors/result";
+import type { Result } from "@afenda/errors";
 import type { z } from "zod";
 import {
 	CORPORATE_ADMINISTRATION_QUERY_PERMISSIONS,

@@ -2,8 +2,13 @@
  * Identity adapter — org role assign → `@afenda/events` outbox → IN_APP inbox handler.
  */
 
-import { AppError } from "@afenda/errors";
-import { fail, ok, type Result } from "@afenda/errors/result";
+import {
+	errorIngress,
+	errorResult,
+	errorWire,
+	type Result,
+} from "@afenda/errors";
+
 import {
 	createEventDispatcher,
 	createEventPublisher,
@@ -13,11 +18,6 @@ import {
 } from "@afenda/events";
 
 import { recordOrgRoleAssignedNotification } from "./record-org-role-assigned-notification";
-
-const ORG_ROLE_NOTIFICATION_FAILED_MESSAGE =
-	"Organization role assignment notification failed";
-const ORG_ROLE_EVENT_HANDLER_FAILED_MESSAGE =
-	"Organization role assignment event handler failed";
 
 export interface RecordOrgRoleAssignedEventInput {
 	actorUserId: string;
@@ -70,11 +70,8 @@ export async function recordOrgRoleAssignedEvent(
 					event.payload,
 				);
 				if (!parsed.success) {
-					throw new AppError({
-						code: "INTERNAL_ERROR",
-						message:
-							"identity.org_role.assigned payload missing required fields",
-						isOperational: false,
+					throw errorIngress.code("INTERNAL_ERROR", {
+						operation: "identity.role-assigned.payload",
 					});
 				}
 
@@ -89,13 +86,7 @@ export async function recordOrgRoleAssignedEvent(
 				});
 
 				if (!notification.ok) {
-					throw new AppError({
-						code: notification.code,
-						message: ORG_ROLE_NOTIFICATION_FAILED_MESSAGE,
-						...(notification.details === undefined
-							? {}
-							: { details: notification.details }),
-					});
+					throw errorWire.deserialize(errorWire.serialize(notification));
 				}
 				notificationId = notification.data.id;
 			},
@@ -109,14 +100,14 @@ export async function recordOrgRoleAssignedEvent(
 	}
 
 	if (dispatch.data.failed > 0) {
-		return fail("INTERNAL_ERROR", ORG_ROLE_EVENT_HANDLER_FAILED_MESSAGE);
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 
 	const processed = dispatch.data.events.find(
 		(row) => row.id === published.data.id && row.status === "processed",
 	);
 
-	return ok({
+	return errorResult.ok({
 		event: processed ?? published.data,
 		dispatch: dispatch.data,
 		notificationId,

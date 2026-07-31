@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { HumanResourcesEventType } from "@afenda/events";
 import {
 	HUMAN_RESOURCES_DEPARTMENT_ACTIVATED_EVENT,
@@ -198,7 +198,7 @@ async function appendOrganizationDomainEvent(
 	if (!outbox.ok) {
 		return outbox;
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 async function assertJobHasNoActivePositionsWhenArchiving(
@@ -210,7 +210,7 @@ async function assertJobHasNoActivePositionsWhenArchiving(
 	},
 ): Promise<Result<void>> {
 	if (input.status !== "archived") {
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	}
 	const positionCount = await host.countActiveOrFrozenPositionsForJob(input);
 	if (!positionCount.ok) {
@@ -218,7 +218,7 @@ async function assertJobHasNoActivePositionsWhenArchiving(
 	}
 	return positionCount.data > 0
 		? conflict("Cannot archive job with active or frozen positions")
-		: ok(undefined);
+		: errorResult.ok(undefined);
 }
 
 const JOB_STATUS_EVENTS: Partial<Record<JobStatus, HumanResourcesEventType>> = {
@@ -238,7 +238,7 @@ function appendJobStatusEvent(
 ): Promise<Result<void>> {
 	const eventType = JOB_STATUS_EVENTS[input.status];
 	return eventType === undefined
-		? Promise.resolve(ok(undefined))
+		? Promise.resolve(errorResult.ok(undefined))
 		: appendOrganizationDomainEvent(ports, meta, {
 				organizationId: input.organizationId,
 				actorUserId: input.actorUserId,
@@ -260,9 +260,9 @@ export function createMemoryOrganizationMethods(
 		}): Promise<Result<Department | null>> {
 			const department = state.departments.get(input.departmentId);
 			if (!department || department.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...department });
+			return await errorResult.ok({ ...department });
 		},
 
 		async findDepartmentByCode(input: {
@@ -276,14 +276,14 @@ export function createMemoryOrganizationMethods(
 						department.organizationId === input.organizationId &&
 						department.code === input.code
 					) {
-						return sequentialReturn(await ok({ ...department }));
+						return sequentialReturn(await errorResult.ok({ ...department }));
 					}
 				},
 			);
 			if (sequentialOutcome1.kind === "return") {
 				return sequentialOutcome1.value;
 			}
-			return await ok(null);
+			return await errorResult.ok(null);
 		},
 
 		async createDepartment(
@@ -299,11 +299,12 @@ export function createMemoryOrganizationMethods(
 				return existing;
 			}
 			if (existing.data !== null) {
-				return fail(
-					"CONFLICT",
-					"Department with this code already exists",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_DUPLICATE),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_DUPLICATE,
+					),
+				});
 			}
 
 			if (record.parentDepartmentId !== null) {
@@ -381,7 +382,7 @@ export function createMemoryOrganizationMethods(
 				return audit;
 			}
 
-			return ok({ ...department });
+			return errorResult.ok({ ...department });
 		},
 
 		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
@@ -423,11 +424,12 @@ export function createMemoryOrganizationMethods(
 				nextName === department.name &&
 				nextParent === department.parentDepartmentId
 			) {
-				return fail(
-					"CONFLICT",
-					"Department structure correction must change name or parent",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_CONFLICT,
+					),
+				});
 			}
 
 			const openSegment = findOpenDepartmentStructureVersion(
@@ -436,11 +438,11 @@ export function createMemoryOrganizationMethods(
 				input.departmentId,
 			);
 			if (openSegment === null) {
-				return fail(
-					"INTERNAL_ERROR",
-					"Department structure lineage is missing an open segment",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-				);
+				return errorResult.fail("INTERNAL_ERROR", {
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_CONFLICT,
+					),
+				});
 			}
 
 			const mutableCheck = assertLineageSegmentMutable(openSegment);
@@ -545,7 +547,7 @@ export function createMemoryOrganizationMethods(
 				return audit;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
@@ -658,7 +660,7 @@ export function createMemoryOrganizationMethods(
 				}
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async listDepartments(input: {
@@ -689,7 +691,7 @@ export function createMemoryOrganizationMethods(
 				.slice(start, start + input.pageSize)
 				.map((d) => ({ ...d }));
 
-			return await ok({ departments, totalCount });
+			return await errorResult.ok({ departments, totalCount });
 		},
 
 		async listAllDepartments(input: {
@@ -699,7 +701,7 @@ export function createMemoryOrganizationMethods(
 				.filter((d) => d.organizationId === input.organizationId)
 				.map((d) => ({ ...d }));
 			departments.sort((a, b) => a.code.localeCompare(b.code));
-			return await ok(departments);
+			return await errorResult.ok(departments);
 		},
 
 		// Job methods
@@ -709,9 +711,9 @@ export function createMemoryOrganizationMethods(
 		}): Promise<Result<Job | null>> {
 			const job = state.jobs.get(input.jobId);
 			if (!job || job.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...job });
+			return await errorResult.ok({ ...job });
 		},
 
 		async findJobByCode(input: {
@@ -725,14 +727,14 @@ export function createMemoryOrganizationMethods(
 						job.organizationId === input.organizationId &&
 						job.code === input.code
 					) {
-						return sequentialReturn(await ok({ ...job }));
+						return sequentialReturn(await errorResult.ok({ ...job }));
 					}
 				},
 			);
 			if (sequentialOutcome2.kind === "return") {
 				return sequentialOutcome2.value;
 			}
-			return await ok(null);
+			return await errorResult.ok(null);
 		},
 
 		async createJob(
@@ -748,11 +750,12 @@ export function createMemoryOrganizationMethods(
 				return existing;
 			}
 			if (existing.data !== null) {
-				return fail(
-					"CONFLICT",
-					"Job with this code already exists",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_DUPLICATE),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_DUPLICATE,
+					),
+				});
 			}
 
 			const idResult = parseHumanResourcesJobId(randomUUID());
@@ -810,7 +813,7 @@ export function createMemoryOrganizationMethods(
 				return audit;
 			}
 
-			return ok({ ...job });
+			return errorResult.ok({ ...job });
 		},
 
 		async updateJob(
@@ -841,11 +844,12 @@ export function createMemoryOrganizationMethods(
 			}
 
 			if (input.title === job.title) {
-				return fail(
-					"CONFLICT",
-					"Job definition correction must change title",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_CONFLICT,
+					),
+				});
 			}
 
 			const openSegment = findOpenJobDefinitionVersion(
@@ -854,11 +858,11 @@ export function createMemoryOrganizationMethods(
 				input.jobId,
 			);
 			if (openSegment === null) {
-				return fail(
-					"INTERNAL_ERROR",
-					"Job definition lineage is missing an open segment",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-				);
+				return errorResult.fail("INTERNAL_ERROR", {
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_CONFLICT,
+					),
+				});
 			}
 
 			const mutableCheck = assertLineageSegmentMutable(openSegment);
@@ -929,7 +933,7 @@ export function createMemoryOrganizationMethods(
 				return audit;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async setJobStatus(
@@ -1005,7 +1009,7 @@ export function createMemoryOrganizationMethods(
 				return outbox;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async listJobs(input: {
@@ -1030,7 +1034,7 @@ export function createMemoryOrganizationMethods(
 				.slice(start, start + input.pageSize)
 				.map((j) => ({ ...j }));
 
-			return await ok({ jobs, totalCount });
+			return await errorResult.ok({ jobs, totalCount });
 		},
 
 		// Position methods
@@ -1040,9 +1044,9 @@ export function createMemoryOrganizationMethods(
 		}): Promise<Result<Position | null>> {
 			const position = state.positions.get(input.positionId);
 			if (!position || position.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...position });
+			return await errorResult.ok({ ...position });
 		},
 
 		async findPositionByCode(input: {
@@ -1056,14 +1060,14 @@ export function createMemoryOrganizationMethods(
 						position.organizationId === input.organizationId &&
 						position.code === input.code
 					) {
-						return sequentialReturn(await ok({ ...position }));
+						return sequentialReturn(await errorResult.ok({ ...position }));
 					}
 				},
 			);
 			if (sequentialOutcome3.kind === "return") {
 				return sequentialOutcome3.value;
 			}
-			return await ok(null);
+			return await errorResult.ok(null);
 		},
 
 		async createPosition(
@@ -1073,11 +1077,12 @@ export function createMemoryOrganizationMethods(
 		): Promise<Result<Position>> {
 			const parsedStatus = positionStatusSchema.safeParse(record.status);
 			if (!parsedStatus.success) {
-				return fail(
-					"BAD_REQUEST",
-					"Invalid position status",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-				);
+				return errorResult.fail("BAD_REQUEST", {
+					publicMessage: "The request is invalid",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+					),
+				});
 			}
 
 			const department = state.departments.get(record.departmentId);
@@ -1112,11 +1117,12 @@ export function createMemoryOrganizationMethods(
 				return existing;
 			}
 			if (existing.data !== null) {
-				return fail(
-					"CONFLICT",
-					"Position with this code already exists",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_DUPLICATE),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_DUPLICATE,
+					),
+				});
 			}
 
 			const idResult = parseHumanResourcesPositionId(randomUUID());
@@ -1182,7 +1188,7 @@ export function createMemoryOrganizationMethods(
 				return audit;
 			}
 
-			return ok({ ...position });
+			return errorResult.ok({ ...position });
 		},
 
 		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
@@ -1233,11 +1239,12 @@ export function createMemoryOrganizationMethods(
 				nextDepartmentId === position.departmentId &&
 				nextJobId === position.jobId
 			) {
-				return fail(
-					"CONFLICT",
-					"Position definition correction must change title, department, or job",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_CONFLICT,
+					),
+				});
 			}
 
 			const openSegment = findOpenPositionDefinitionVersion(
@@ -1246,11 +1253,11 @@ export function createMemoryOrganizationMethods(
 				input.positionId,
 			);
 			if (openSegment === null) {
-				return fail(
-					"INTERNAL_ERROR",
-					"Position definition lineage is missing an open segment",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-				);
+				return errorResult.fail("INTERNAL_ERROR", {
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_CONFLICT,
+					),
+				});
 			}
 
 			const mutableCheck = assertLineageSegmentMutable(openSegment);
@@ -1356,7 +1363,7 @@ export function createMemoryOrganizationMethods(
 				return audit;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
@@ -1458,7 +1465,7 @@ export function createMemoryOrganizationMethods(
 				}
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async listPositions(input: {
@@ -1493,7 +1500,7 @@ export function createMemoryOrganizationMethods(
 				.slice(start, start + input.pageSize)
 				.map((p) => ({ ...p }));
 
-			return await ok({ positions, totalCount });
+			return await errorResult.ok({ positions, totalCount });
 		},
 
 		async countActiveOrFrozenPositionsForDepartment(input: {
@@ -1510,7 +1517,7 @@ export function createMemoryOrganizationMethods(
 					count += 1;
 				}
 			}
-			return await ok(count);
+			return await errorResult.ok(count);
 		},
 
 		async countActiveOrFrozenPositionsForJob(input: {
@@ -1527,7 +1534,7 @@ export function createMemoryOrganizationMethods(
 					count += 1;
 				}
 			}
-			return await ok(count);
+			return await errorResult.ok(count);
 		},
 
 		async countActiveChildDepartments(input: {
@@ -1544,7 +1551,7 @@ export function createMemoryOrganizationMethods(
 					count += 1;
 				}
 			}
-			return await ok(count);
+			return await errorResult.ok(count);
 		},
 
 		// Reporting line methods
@@ -1554,9 +1561,9 @@ export function createMemoryOrganizationMethods(
 		}): Promise<Result<ReportingLine | null>> {
 			const line = state.reportingLines.get(input.reportingLineId);
 			if (!line || line.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...line });
+			return await errorResult.ok({ ...line });
 		},
 
 		async listReportingLinesForEmployee(input: {
@@ -1571,7 +1578,7 @@ export function createMemoryOrganizationMethods(
 				)
 				.map((line) => ({ ...line }));
 			lines.sort((a, b) => a.startsOn.localeCompare(b.startsOn));
-			return await ok(lines);
+			return await errorResult.ok(lines);
 		},
 
 		async findOpenPrimaryReportingLine(input: {
@@ -1587,14 +1594,14 @@ export function createMemoryOrganizationMethods(
 						line.relationshipKind === "primary" &&
 						line.endsOn === null
 					) {
-						return sequentialReturn(await ok({ ...line }));
+						return sequentialReturn(await errorResult.ok({ ...line }));
 					}
 				},
 			);
 			if (sequentialOutcome4.kind === "return") {
 				return sequentialOutcome4.value;
 			}
-			return await ok(null);
+			return await errorResult.ok(null);
 		},
 
 		async resolvePrimaryManager(input: {
@@ -1615,13 +1622,14 @@ export function createMemoryOrganizationMethods(
 				getEffectiveTo: (line) => line.endsOn,
 			});
 			if (!resolution.ok) {
-				return await fail(
-					"CONFLICT",
-					"Multiple primary reporting lines are effective on the requested date",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-				);
+				return await errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_CONFLICT,
+					),
+				});
 			}
-			return await ok(
+			return await errorResult.ok(
 				resolution.record === null ? null : { ...resolution.record },
 			);
 		},
@@ -1652,7 +1660,7 @@ export function createMemoryOrganizationMethods(
 				.slice(start, start + input.pageSize)
 				.map((line) => ({ ...line }));
 
-			return await ok({ reportingLines, totalCount });
+			return await errorResult.ok({ reportingLines, totalCount });
 		},
 
 		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
@@ -1786,7 +1794,7 @@ export function createMemoryOrganizationMethods(
 				return assignOutbox;
 			}
 
-			return ok({ ...reportingLine });
+			return errorResult.ok({ ...reportingLine });
 		},
 
 		async closeReportingLine(
@@ -1859,7 +1867,7 @@ export function createMemoryOrganizationMethods(
 				return closeOutbox;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
@@ -2059,7 +2067,7 @@ export function createMemoryOrganizationMethods(
 				return replaceOutbox;
 			}
 
-			return ok({ ...reportingLine });
+			return errorResult.ok({ ...reportingLine });
 		},
 
 		async getOrganizationTree(input: {
@@ -2082,7 +2090,7 @@ export function createMemoryOrganizationMethods(
 				maxNodes: input.maxNodes,
 			});
 
-			return ok({
+			return errorResult.ok({
 				nodes: tree.nodes,
 				truncated: tree.truncated,
 			});
@@ -2095,7 +2103,7 @@ export function createMemoryOrganizationMethods(
 		}) {
 			const department = state.departments.get(input.departmentId);
 			if (!department || department.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
 
 			const resolved = resolveDepartmentStructureAsOf({
@@ -2104,17 +2112,18 @@ export function createMemoryOrganizationMethods(
 				asOf: input.asOf,
 			});
 			if (!resolved.ok) {
-				return await fail(
-					"CONFLICT",
-					`Department structure is not deterministic for as-of date (${resolved.reason})`,
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-				);
+				return await errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_CONFLICT,
+					),
+				});
 			}
 			if (resolved.record === null) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
 
-			return await ok({
+			return await errorResult.ok({
 				departmentId: input.departmentId,
 				organizationId: input.organizationId,
 				name: resolved.record.name,
@@ -2133,7 +2142,7 @@ export function createMemoryOrganizationMethods(
 		}) {
 			const job = state.jobs.get(input.jobId);
 			if (!job || job.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
 
 			const resolved = resolveJobDefinitionAsOf({
@@ -2142,17 +2151,18 @@ export function createMemoryOrganizationMethods(
 				asOf: input.asOf,
 			});
 			if (!resolved.ok) {
-				return await fail(
-					"CONFLICT",
-					`Job definition is not deterministic for as-of date (${resolved.reason})`,
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-				);
+				return await errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_CONFLICT,
+					),
+				});
 			}
 			if (resolved.record === null) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
 
-			return await ok({
+			return await errorResult.ok({
 				jobId: input.jobId,
 				organizationId: input.organizationId,
 				title: resolved.record.title,
@@ -2170,7 +2180,7 @@ export function createMemoryOrganizationMethods(
 		}): Promise<Result<PositionDefinitionAtAsOf | null>> {
 			const position = state.positions.get(input.positionId);
 			if (!position || position.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
 
 			const resolved = resolvePositionDefinitionAsOf({
@@ -2179,17 +2189,18 @@ export function createMemoryOrganizationMethods(
 				asOf: input.asOf,
 			});
 			if (!resolved.ok) {
-				return await fail(
-					"CONFLICT",
-					`Position definition is not deterministic for as-of date (${resolved.reason})`,
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-				);
+				return await errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_CONFLICT,
+					),
+				});
 			}
 			if (resolved.record === null) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
 
-			return await ok({
+			return await errorResult.ok({
 				positionId: input.positionId,
 				organizationId: input.organizationId,
 				title: resolved.record.title,
@@ -2249,7 +2260,7 @@ export function createMemoryOrganizationMethods(
 				maxNodes: input.maxNodes,
 			});
 
-			return ok({
+			return errorResult.ok({
 				nodes: tree.nodes,
 				truncated: tree.truncated,
 			});

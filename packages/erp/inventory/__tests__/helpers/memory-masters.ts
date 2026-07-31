@@ -1,4 +1,4 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { Item, RefUom, Warehouse } from "@afenda/master-data";
 
 import type { MasterLookupPort } from "../../src/ports";
@@ -26,16 +26,16 @@ export function createMemoryMasterLookup(
 		): Promise<Result<Item | null>> {
 			const row = items.get(id);
 			if (row === undefined || row.organizationId !== organizationId) {
-				return Promise.resolve(ok(null));
+				return Promise.resolve(errorResult.ok(null));
 			}
-			return Promise.resolve(ok(row));
+			return Promise.resolve(errorResult.ok(row));
 		},
 		getRefUomById(
 			_organizationId: string,
 			id: string,
 			_actorUserId: string,
 		): Promise<Result<RefUom | null>> {
-			return Promise.resolve(ok(uoms.get(id) ?? null));
+			return Promise.resolve(errorResult.ok(uoms.get(id) ?? null));
 		},
 		getWarehouseById(
 			organizationId: string,
@@ -44,9 +44,9 @@ export function createMemoryMasterLookup(
 		): Promise<Result<Warehouse | null>> {
 			const row = warehouses.get(id);
 			if (row === undefined || row.organizationId !== organizationId) {
-				return Promise.resolve(ok(null));
+				return Promise.resolve(errorResult.ok(null));
 			}
-			return Promise.resolve(ok(row));
+			return Promise.resolve(errorResult.ok(row));
 		},
 	};
 }

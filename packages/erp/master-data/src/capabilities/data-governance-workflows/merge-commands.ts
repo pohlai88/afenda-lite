@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import { z } from "zod";
 import {
 	requireMasterCommandPermission,
@@ -13,7 +13,6 @@ import {
 	orgActorContextSchema,
 	orgQueryActorSchema,
 } from "../../contracts/context";
-import type { MasterFailureDetails } from "../../contracts/reasons";
 import {
 	MASTER_COMMAND_PARTY_MERGE,
 	MASTER_QUERY_PARTY_FIND_DUPLICATES,
@@ -144,7 +143,7 @@ export async function findPartyDuplicateWarnings(
 		}
 	}
 
-	return ok(warnings);
+	return errorResult.ok(warnings);
 }
 
 /**
@@ -191,26 +190,26 @@ export async function resolveCanonicalPartyId(
 				return party;
 			}
 			if (party.data === null) {
-				return fail("NOT_FOUND", "Party not found", {
-					reason: "MASTER_NOT_FOUND",
-				} satisfies MasterFailureDetails);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "Party not found",
+				});
 			}
 			if (party.data.mergedIntoId !== null) {
 				const nextId = partyIdSchema.safeParse(party.data.mergedIntoId);
 				if (!nextId.success) {
-					return fail("CONFLICT", "Invalid merged_into_id on party", {
-						reason: "MASTER_INVALID_STATE",
-					} satisfies MasterFailureDetails);
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "Invalid merged_into_id on party",
+					});
 				}
 			}
-			return ok({
+			return errorResult.ok({
 				id: party.data.id,
 				mergedIntoId: party.data.mergedIntoId,
 			});
 		},
 	).then((result) =>
 		result.ok
-			? ok({
+			? errorResult.ok({
 					partyId: result.data.canonicalId,
 					hops: result.data.hops,
 					requestedPartyId: result.data.requestedId,

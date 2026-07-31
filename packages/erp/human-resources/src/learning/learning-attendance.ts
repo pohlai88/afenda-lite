@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
@@ -45,13 +45,12 @@ export function recordLearningAttendance(
 				return assignment;
 			}
 			if (assignment.data === null) {
-				return fail(
-					"NOT_FOUND",
-					"Assignment not found",
-					humanResourcesErrorDetails(
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
 						HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 					),
-				);
+				});
 			}
 
 			const employeeId = data.employeeId ?? assignment.data.employeeId;
@@ -75,13 +74,14 @@ export function recordLearningAttendance(
 				if (
 					existingByKey.data.createRequestFingerprint !== requestFingerprint
 				) {
-					return fail(
-						"CONFLICT",
-						"Idempotency key reused with different payload",
-						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-					);
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+						internalContext: humanResourcesErrorDetails(
+							HUMAN_RESOURCES_ERROR_CONFLICT,
+						),
+					});
 				}
-				return ok(existingByKey.data.attendance);
+				return errorResult.ok(existingByKey.data.attendance);
 			}
 
 			return store.recordLearningAttendance(

@@ -1,5 +1,5 @@
 import type { Change } from "@afenda/audit";
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { HumanResourcesEventType } from "@afenda/events";
 
 import type { HumanResourcesCommandId } from "../module-ids";
@@ -227,7 +227,7 @@ export async function emitHumanResourcesMutationOutcome(
 	}
 
 	if (!planned.outboxInput) {
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	}
 
 	const outbox = await ports.outbox.append(planned.outboxInput);
@@ -235,5 +235,5 @@ export async function emitHumanResourcesMutationOutcome(
 		return outbox;
 	}
 
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }

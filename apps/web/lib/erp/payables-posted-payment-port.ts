@@ -1,4 +1,4 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type {
 	PostedPaymentBasis,
 	PostedPaymentQueryPort,
@@ -30,13 +30,13 @@ export function createPostedPaymentQueryPort(
 				return result;
 			}
 			if (result.data === null) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const payment = result.data;
 			if (payment.status !== "posted") {
-				return ok(null);
+				return errorResult.ok(null);
 			}
-			return ok({
+			return errorResult.ok({
 				paymentId: payment.id,
 				status: "posted",
 				currencyCode: payment.currencyCode,

@@ -19,7 +19,7 @@ import {
 	ne,
 	sql,
 } from "@afenda/db";
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import { isVisibleAtKnownTime, matchesAsOf } from "../../company/rules";
 import { legalCompanyStatusSchema } from "../../company/schemas";
@@ -55,7 +55,6 @@ import type {
 	LegalCompanyListPage,
 	LegalCompanyTimelineEntry,
 } from "../../company/types";
-import { corporateAdministrationErrorDetails } from "../../error-codes";
 import {
 	companyActivityIdSchema,
 	companyFinancialYearIdSchema,
@@ -122,7 +121,7 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 				.limit(1);
 			const row = rows[0];
 			if (row === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const company = mapLegalCompanyRow(row);
 			if (!company.ok) {
@@ -139,7 +138,7 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 			if (!currentJurisdictionProfile.ok) {
 				return currentJurisdictionProfile;
 			}
-			return ok({
+			return errorResult.ok({
 				...company.data,
 				currentJurisdictionProfile: currentJurisdictionProfile.data,
 			});
@@ -183,7 +182,7 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 					entityType: "draft_legal_company",
 				});
 			}
-			return ok({ items, nextCursor: null });
+			return errorResult.ok({ items, nextCursor: null });
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
@@ -259,7 +258,7 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 					)
 				`;
 			});
-			return ok(company);
+			return errorResult.ok(company);
 		}
 
 		try {
@@ -283,14 +282,7 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 				.returning();
 			const row = rows[0];
 			if (row === undefined) {
-				return fail(
-					"SERVICE_UNAVAILABLE",
-					"Corporate Administration legal company persistence returned no row.",
-					corporateAdministrationErrorDetails(
-						"CORPORATE_ADMINISTRATION_EXTERNAL_DEPENDENCY_UNAVAILABLE",
-						{ field: "database" },
-					),
-				);
+				return errorResult.fail("SERVICE_UNAVAILABLE");
 			}
 			return mapLegalCompanyRow(row);
 		} catch (error) {
@@ -312,14 +304,10 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 				return current;
 			}
 			if (current.data === null) {
-				return fail(
-					"NOT_FOUND",
-					"Corporate Administration legal company was not found.",
-					corporateAdministrationErrorDetails(
-						"CORPORATE_ADMINISTRATION_NOT_FOUND",
-						{ entityType: "legalCompany" },
-					),
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage:
+						"Corporate Administration legal company was not found.",
+				});
 			}
 			const updated: LegalCompany = {
 				...current.data,
@@ -346,7 +334,7 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 						AND version = ${input.expectedVersion}
 				`;
 			});
-			return ok(updated);
+			return errorResult.ok(updated);
 		}
 
 		try {
@@ -368,14 +356,10 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 				.returning();
 			const row = rows[0];
 			if (row === undefined) {
-				return fail(
-					"CONFLICT",
-					"Corporate Administration legal company version is stale.",
-					corporateAdministrationErrorDetails(
-						"CORPORATE_ADMINISTRATION_STALE_VERSION",
-						{ expectedVersion: input.expectedVersion },
-					),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage:
+						"Corporate Administration legal company version is stale.",
+				});
 			}
 			return mapLegalCompanyRow(row);
 		} catch (error) {
@@ -460,7 +444,7 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 						AND version = ${input.expectedCompanyVersion}
 				`;
 			});
-			return ok(profile);
+			return errorResult.ok(profile);
 		}
 
 		try {
@@ -497,14 +481,7 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 				);
 			const row = rows[0];
 			if (row === undefined) {
-				return fail(
-					"SERVICE_UNAVAILABLE",
-					"Corporate Administration jurisdiction profile persistence returned no row.",
-					corporateAdministrationErrorDetails(
-						"CORPORATE_ADMINISTRATION_EXTERNAL_DEPENDENCY_UNAVAILABLE",
-						{ field: "database" },
-					),
-				);
+				return errorResult.fail("SERVICE_UNAVAILABLE");
 			}
 			return mapJurisdictionProfileRow(row);
 		} catch (error) {
@@ -593,7 +570,7 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 						AND version = ${input.expectedProfileVersion}
 				`;
 			});
-			return ok(replacement);
+			return errorResult.ok(replacement);
 		}
 
 		try {
@@ -639,14 +616,7 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 				);
 			const row = replacementRows[0];
 			if (row === undefined) {
-				return fail(
-					"SERVICE_UNAVAILABLE",
-					"Corporate Administration jurisdiction profile persistence returned no row.",
-					corporateAdministrationErrorDetails(
-						"CORPORATE_ADMINISTRATION_EXTERNAL_DEPENDENCY_UNAVAILABLE",
-						{ field: "database" },
-					),
-				);
+				return errorResult.fail("SERVICE_UNAVAILABLE");
 			}
 			return mapJurisdictionProfileRow(row);
 		} catch (error) {
@@ -751,7 +721,7 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 					)
 				`;
 			});
-			return ok(record);
+			return errorResult.ok(record);
 		}
 
 		try {
@@ -778,14 +748,7 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 				.returning();
 			const row = rows[0];
 			if (row === undefined) {
-				return fail(
-					"SERVICE_UNAVAILABLE",
-					"Corporate Administration company-name persistence returned no row.",
-					corporateAdministrationErrorDetails(
-						"CORPORATE_ADMINISTRATION_EXTERNAL_DEPENDENCY_UNAVAILABLE",
-						{ field: "database" },
-					),
-				);
+				return errorResult.fail("SERVICE_UNAVAILABLE");
 			}
 			return mapCompanyNameRow(row);
 		} catch (error) {
@@ -818,7 +781,7 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 				)
 				.limit(1);
 			const row = rows[0];
-			return row === undefined ? ok(null) : mapCompanyNameRow(row);
+			return row === undefined ? errorResult.ok(null) : mapCompanyNameRow(row);
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
@@ -845,7 +808,7 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 				)
 				.limit(1);
 			const row = rows[0];
-			return row === undefined ? ok(null) : mapCompanyNameRow(row);
+			return row === undefined ? errorResult.ok(null) : mapCompanyNameRow(row);
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
@@ -913,7 +876,7 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 					status: mapped.data.status,
 				});
 			}
-			return ok({ items, nextCursor: null });
+			return errorResult.ok({ items, nextCursor: null });
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
@@ -948,7 +911,7 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 				.orderBy(desc(caCompanyName.recordedAt), asc(caCompanyName.id))
 				.limit(1);
 			const row = rows[0];
-			return row === undefined ? ok(null) : mapCompanyNameRow(row);
+			return row === undefined ? errorResult.ok(null) : mapCompanyNameRow(row);
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
@@ -971,7 +934,7 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 				.orderBy(desc(caCompanyName.recordedAt), asc(caCompanyName.id))
 				.limit(1);
 			const row = rows[0];
-			return row === undefined ? ok(null) : mapCompanyNameRow(row);
+			return row === undefined ? errorResult.ok(null) : mapCompanyNameRow(row);
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
@@ -989,7 +952,7 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 		if (!overlap.ok) {
 			return overlap;
 		}
-		return ok(overlap.data !== null);
+		return errorResult.ok(overlap.data !== null);
 	}
 
 	async supersedeCompanyName(
@@ -1088,7 +1051,7 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 						AND version = ${input.expectedNameVersion}
 				`;
 			});
-			return ok(replacement);
+			return errorResult.ok(replacement);
 		}
 		try {
 			const rows = await this.#database
@@ -1133,14 +1096,7 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 				);
 			const row = rows[0];
 			if (row === undefined) {
-				return fail(
-					"SERVICE_UNAVAILABLE",
-					"Corporate Administration company-name persistence returned no row.",
-					corporateAdministrationErrorDetails(
-						"CORPORATE_ADMINISTRATION_EXTERNAL_DEPENDENCY_UNAVAILABLE",
-						{ field: "database" },
-					),
-				);
+				return errorResult.fail("SERVICE_UNAVAILABLE");
 			}
 			return mapCompanyNameRow(row);
 		} catch (error) {
@@ -1177,14 +1133,10 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 				.returning();
 			const row = rows[0];
 			if (row === undefined) {
-				return fail(
-					"CONFLICT",
-					"Corporate Administration company-name version is stale.",
-					corporateAdministrationErrorDetails(
-						"CORPORATE_ADMINISTRATION_STALE_VERSION",
-						{ expectedVersion: input.expectedNameVersion },
-					),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage:
+						"Corporate Administration company-name version is stale.",
+				});
 			}
 			return mapCompanyNameRow(row);
 		} catch (error) {
@@ -1274,7 +1226,7 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 					)
 				`;
 			});
-			return ok(record);
+			return errorResult.ok(record);
 		}
 		try {
 			const rows = await this.#database
@@ -1299,14 +1251,7 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 				.returning();
 			const row = rows[0];
 			if (row === undefined) {
-				return fail(
-					"SERVICE_UNAVAILABLE",
-					"Corporate Administration legal-form persistence returned no row.",
-					corporateAdministrationErrorDetails(
-						"CORPORATE_ADMINISTRATION_EXTERNAL_DEPENDENCY_UNAVAILABLE",
-						{ field: "database" },
-					),
-				);
+				return errorResult.fail("SERVICE_UNAVAILABLE");
 			}
 			return mapCompanyLegalFormRow(row);
 		} catch (error) {
@@ -1335,7 +1280,9 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 				)
 				.limit(1);
 			const row = rows[0];
-			return row === undefined ? ok(null) : mapCompanyLegalFormRow(row);
+			return row === undefined
+				? errorResult.ok(null)
+				: mapCompanyLegalFormRow(row);
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
@@ -1369,7 +1316,9 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 			if (failure !== undefined) {
 				return failure;
 			}
-			return ok(mapped.flatMap((result) => (result.ok ? [result.data] : [])));
+			return errorResult.ok(
+				mapped.flatMap((result) => (result.ok ? [result.data] : [])),
+			);
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
@@ -1415,7 +1364,9 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 				)
 				.limit(1);
 			const row = rows[0];
-			return row === undefined ? ok(null) : mapCompanyLegalFormRow(row);
+			return row === undefined
+				? errorResult.ok(null)
+				: mapCompanyLegalFormRow(row);
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
@@ -1438,7 +1389,9 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 				.orderBy(desc(caCompanyLegalFormHistory.recordedAt))
 				.limit(1);
 			const row = rows[0];
-			return row === undefined ? ok(null) : mapCompanyLegalFormRow(row);
+			return row === undefined
+				? errorResult.ok(null)
+				: mapCompanyLegalFormRow(row);
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
@@ -1456,7 +1409,7 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 		if (!overlap.ok) {
 			return overlap;
 		}
-		return ok(overlap.data !== null);
+		return errorResult.ok(overlap.data !== null);
 	}
 
 	async supersedeCompanyLegalForm(
@@ -1589,7 +1542,7 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 				`;
 			});
 		}
-		return ok({
+		return errorResult.ok({
 			id: replacementId,
 			organizationId: input.organizationId,
 			legalCompanyId: input.legalCompanyId,
@@ -1626,7 +1579,7 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 		await this.#database.execute(
 			sql`SELECT pg_advisory_xact_lock(hashtextextended(${`${organizationId}:${legalCompanyId}:${nameType}:${languageCode}`}, 0))`,
 		);
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	}
 
 	async lockCompanyLegalFormScope(
@@ -1640,7 +1593,7 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 		await this.#database.execute(
 			sql`SELECT pg_advisory_xact_lock(hashtextextended(${`${organizationId}:${legalCompanyId}`}, 0))`,
 		);
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	}
 
 	async registerCompanyIdentifier(
@@ -1686,7 +1639,7 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 					)
 				`;
 			});
-			return ok(record);
+			return errorResult.ok(record);
 		}
 		try {
 			await this.lockCompanyIdentifierScope(
@@ -1793,7 +1746,7 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 					)
 				`;
 			});
-			return ok(replacement);
+			return errorResult.ok(replacement);
 		}
 		try {
 			await this.lockCompanyIdentifierScope(
@@ -1887,7 +1840,7 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 			if (existing.data === null) {
 				return notFound("companyIdentifier");
 			}
-			return ok({
+			return errorResult.ok({
 				...existing.data,
 				status: "retired",
 				retiredAt: new Date(input.retiredAt),
@@ -1946,7 +1899,9 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 				.where(and(...conditions))
 				.limit(1);
 			const row = rows[0];
-			return row === undefined ? ok(null) : mapCompanyIdentifierRow(row);
+			return row === undefined
+				? errorResult.ok(null)
+				: mapCompanyIdentifierRow(row);
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
@@ -1983,7 +1938,7 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 				}
 				items.push(toCompanyIdentifierListItem(mapped.data));
 			}
-			return ok({ items, nextCursor: null });
+			return errorResult.ok({ items, nextCursor: null });
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
@@ -2009,7 +1964,9 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 				)
 				.limit(1);
 			const row = rows[0];
-			return row === undefined ? ok(null) : mapCompanyIdentifierRow(row);
+			return row === undefined
+				? errorResult.ok(null)
+				: mapCompanyIdentifierRow(row);
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
@@ -2034,7 +1991,9 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 				)
 				.limit(1);
 			const row = rows[0];
-			return row === undefined ? ok(null) : mapCompanyIdentifierRow(row);
+			return row === undefined
+				? errorResult.ok(null)
+				: mapCompanyIdentifierRow(row);
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
@@ -2068,7 +2027,7 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 		await this.#database.execute(
 			sql`SELECT pg_advisory_xact_lock(hashtextextended(${identifierLockKey({ organizationId, identifierType, jurisdictionCode, issuingAuthorityCode, normalizedIdentifierValue })}, 0))`,
 		);
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	}
 
 	async setCompanyFinancialYear(
@@ -2106,7 +2065,7 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 					)
 				`;
 			});
-			return ok(record);
+			return errorResult.ok(record);
 		}
 		try {
 			await this.lockCompanyFinancialYearScope(
@@ -2173,7 +2132,9 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 				)
 				.limit(1);
 			const row = rows[0];
-			return row === undefined ? ok(null) : mapCompanyFinancialYearRow(row);
+			return row === undefined
+				? errorResult.ok(null)
+				: mapCompanyFinancialYearRow(row);
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
@@ -2198,7 +2159,9 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 				)
 				.limit(1);
 			const row = rows[0];
-			return row === undefined ? ok(null) : mapCompanyFinancialYearRow(row);
+			return row === undefined
+				? errorResult.ok(null)
+				: mapCompanyFinancialYearRow(row);
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
@@ -2220,7 +2183,7 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 		await this.#database.execute(
 			sql`SELECT pg_advisory_xact_lock(hashtextextended(${financialYearLockKey({ organizationId, legalCompanyId })}, 0))`,
 		);
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	}
 
 	async registerCompanyActivity(
@@ -2258,7 +2221,7 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 					)
 				`;
 			});
-			return ok(record);
+			return errorResult.ok(record);
 		}
 		try {
 			await this.lockCompanyActivityScope(
@@ -2329,7 +2292,7 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 			if (existing.data === null) {
 				return notFound("companyActivity");
 			}
-			return ok({
+			return errorResult.ok({
 				...existing.data,
 				status: "ended",
 				effectiveTo: input.endedAt,
@@ -2387,7 +2350,9 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 				.where(and(...conditions))
 				.limit(1);
 			const row = rows[0];
-			return row === undefined ? ok(null) : mapCompanyActivityRow(row);
+			return row === undefined
+				? errorResult.ok(null)
+				: mapCompanyActivityRow(row);
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
@@ -2420,7 +2385,7 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 				}
 				activities.push(mapped.data);
 			}
-			return ok(activities);
+			return errorResult.ok(activities);
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
@@ -2441,7 +2406,7 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 		await this.#database.execute(
 			sql`SELECT pg_advisory_xact_lock(hashtextextended(${activityLockKey({ organizationId, legalCompanyId, activityType, activityCode, jurisdictionCode })}, 0))`,
 		);
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	}
 
 	async findJurisdictionProfileAsOf(
@@ -2464,7 +2429,7 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 				.sort((left, right) =>
 					right.recordedAt.localeCompare(left.recordedAt),
 				)[0] ?? null;
-		return ok(profile);
+		return errorResult.ok(profile);
 	}
 
 	async listJurisdictionProfiles(
@@ -2495,7 +2460,7 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 				}
 				profiles.push(mapped.data);
 			}
-			return ok(profiles);
+			return errorResult.ok(profiles);
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
@@ -2516,7 +2481,7 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 			return profiles;
 		}
 		const candidateTo = input.effectiveRange.to ?? "9999-12-31";
-		return ok(
+		return errorResult.ok(
 			profiles.data.some((profile) => {
 				const profileTo = profile.effectiveRange.to ?? "9999-12-31";
 				return (
@@ -2595,7 +2560,7 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 					FROM assert_updated, (SELECT count(*) FROM closed_status) closed
 				`;
 			});
-			return ok(record);
+			return errorResult.ok(record);
 		}
 
 		try {
@@ -2638,7 +2603,7 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 					${record.sourceDocumentId}, ${record.version}
 				FROM assert_updated, (SELECT count(*) FROM closed_status) closed
 			`);
-			return ok(record);
+			return errorResult.ok(record);
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
@@ -2671,7 +2636,9 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 				.orderBy(desc(caCompanyStatusHistory.recordedAt))
 				.limit(1)
 				.then((rows) => rows[0]);
-			return ok(row === undefined ? null : mapCompanyStatusHistoryRow(row));
+			return errorResult.ok(
+				row === undefined ? null : mapCompanyStatusHistoryRow(row),
+			);
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
@@ -2736,7 +2703,7 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 					break;
 				}
 			}
-			return ok({ items, nextCursor: null });
+			return errorResult.ok({ items, nextCursor: null });
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
@@ -2794,7 +2761,7 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 				});
 			}
 		}
-		return ok(
+		return errorResult.ok(
 			entries.sort(
 				(left, right) =>
 					new Date(left.recordedAt).getTime() -
@@ -2807,7 +2774,7 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 function mapLegalCompanyRow(
 	row: typeof caLegalCompany.$inferSelect,
 ): Result<LegalCompany> {
-	return ok({
+	return errorResult.ok({
 		organizationId: organizationIdSchema.parse(row.organizationId),
 		legalCompanyId: legalCompanyIdSchema.parse(row.id),
 		companyCode: row.companyCode,
@@ -2852,7 +2819,7 @@ function mapCompanyStatusHistoryRow(
 function mapJurisdictionProfileRow(
 	row: typeof caCompanyJurisdictionProfile.$inferSelect,
 ): Result<CompanyJurisdictionProfile> {
-	return ok({
+	return errorResult.ok({
 		jurisdictionProfileId: row.id,
 		organizationId: organizationIdSchema.parse(row.organizationId),
 		legalCompanyId: legalCompanyIdSchema.parse(row.legalCompanyId),
@@ -2878,7 +2845,7 @@ function mapJurisdictionProfileRow(
 function mapCompanyNameRow(
 	row: typeof caCompanyName.$inferSelect,
 ): Result<CompanyName> {
-	return ok({
+	return errorResult.ok({
 		id: companyNameIdSchema.parse(row.id),
 		organizationId: organizationIdSchema.parse(row.organizationId),
 		legalCompanyId: legalCompanyIdSchema.parse(row.legalCompanyId),
@@ -2920,7 +2887,7 @@ function mapCompanyNameRow(
 function mapCompanyLegalFormRow(
 	row: typeof caCompanyLegalFormHistory.$inferSelect,
 ): Result<CompanyLegalFormHistory> {
-	return ok({
+	return errorResult.ok({
 		id: companyLegalFormHistoryIdSchema.parse(row.id),
 		organizationId: organizationIdSchema.parse(row.organizationId),
 		legalCompanyId: legalCompanyIdSchema.parse(row.legalCompanyId),
@@ -2949,7 +2916,7 @@ function mapCompanyLegalFormRow(
 function mapCompanyIdentifierRow(
 	row: typeof caCompanyIdentifier.$inferSelect,
 ): Result<CompanyIdentifier> {
-	return ok({
+	return errorResult.ok({
 		id: companyIdentifierIdSchema.parse(row.id),
 		organizationId: organizationIdSchema.parse(row.organizationId),
 		legalCompanyId: legalCompanyIdSchema.parse(row.legalCompanyId),
@@ -2994,7 +2961,7 @@ function mapCompanyIdentifierRow(
 function mapCompanyFinancialYearRow(
 	row: typeof caCompanyFinancialYear.$inferSelect,
 ): Result<CompanyFinancialYear> {
-	return ok({
+	return errorResult.ok({
 		id: companyFinancialYearIdSchema.parse(row.id),
 		organizationId: organizationIdSchema.parse(row.organizationId),
 		legalCompanyId: legalCompanyIdSchema.parse(row.legalCompanyId),
@@ -3018,7 +2985,7 @@ function mapCompanyFinancialYearRow(
 function mapCompanyActivityRow(
 	row: typeof caCompanyActivity.$inferSelect,
 ): Result<CompanyActivity> {
-	return ok({
+	return errorResult.ok({
 		id: companyActivityIdSchema.parse(row.id),
 		organizationId: organizationIdSchema.parse(row.organizationId),
 		legalCompanyId: legalCompanyIdSchema.parse(row.legalCompanyId),
@@ -3470,34 +3437,18 @@ function activityLockKey(
 	].join(":");
 }
 
-function persistenceReturnedNoRow(entity: string): Result<never> {
-	return fail(
-		"SERVICE_UNAVAILABLE",
-		`Corporate Administration ${entity} persistence returned no row.`,
-		corporateAdministrationErrorDetails(
-			"CORPORATE_ADMINISTRATION_EXTERNAL_DEPENDENCY_UNAVAILABLE",
-			{ field: "database" },
-		),
-	);
+function persistenceReturnedNoRow(_entity: string): Result<never> {
+	return errorResult.fail("SERVICE_UNAVAILABLE");
 }
 
-function staleVersion(expectedVersion: number): Result<never> {
-	return fail(
-		"CONFLICT",
-		"Corporate Administration record version is stale.",
-		corporateAdministrationErrorDetails(
-			"CORPORATE_ADMINISTRATION_STALE_VERSION",
-			{ expectedVersion },
-		),
-	);
+function staleVersion(_expectedVersion: number): Result<never> {
+	return errorResult.fail("CONFLICT", {
+		publicMessage: "Corporate Administration record version is stale.",
+	});
 }
 
-function notFound(entityType: string): Result<never> {
-	return fail(
-		"NOT_FOUND",
-		"Corporate Administration record was not found.",
-		corporateAdministrationErrorDetails("CORPORATE_ADMINISTRATION_NOT_FOUND", {
-			entityType,
-		}),
-	);
+function notFound(_entityType: string): Result<never> {
+	return errorResult.fail("NOT_FOUND", {
+		publicMessage: "Corporate Administration record was not found.",
+	});
 }

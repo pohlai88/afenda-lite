@@ -1,6 +1,6 @@
 // biome-ignore-all lint/complexity/noExcessiveCognitiveComplexity: Status changes coordinate policy, CAS, idempotency, audit, and outbox atomically.
 // biome-ignore-all lint/style/useDestructuring: Explicit company state access keeps lifecycle evidence visible.
-import { fail, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { z } from "zod";
 
 import {
@@ -14,7 +14,6 @@ import type {
 	CorporateAdministrationApprovalCommandOptions,
 	CorporateAdministrationCommandOptions,
 } from "../../command-options";
-import { corporateAdministrationErrorDetails } from "../../error-codes";
 import type { OrganizationId } from "../../kernel/brands";
 import { parseCorporateAdministrationInput } from "../../parse-input";
 import {
@@ -302,14 +301,10 @@ async function changeLegalCompanyStatus(
 			return completeness;
 		}
 		if (!completeness.data.complete) {
-			return fail(
-				"VALIDATION_ERROR",
-				"Corporate Administration legal company activation is incomplete.",
-				corporateAdministrationErrorDetails(
-					"CORPORATE_ADMINISTRATION_VALIDATION_FAILED",
-					{ field: completeness.data.missing.join(",") },
-				),
-			);
+			return errorResult.fail("VALIDATION_ERROR", {
+				publicMessage:
+					"Corporate Administration legal company activation is incomplete.",
+			});
 		}
 	}
 
@@ -323,16 +318,15 @@ async function changeLegalCompanyStatus(
 		return source;
 	}
 	if (source.data === null || !source.data.active) {
-		return fail(
-			source.data === null ? "VALIDATION_ERROR" : "CONFLICT",
-			"Corporate Administration source document is not active.",
-			corporateAdministrationErrorDetails(
-				source.data === null
-					? "CORPORATE_ADMINISTRATION_REFERENCE_INVALID"
-					: "CORPORATE_ADMINISTRATION_REFERENCE_INACTIVE",
-				{ field: "sourceDocumentId" },
-			),
-		);
+		return source.data === null
+			? errorResult.fail("VALIDATION_ERROR", {
+					publicMessage:
+						"Corporate Administration source document is not active.",
+				})
+			: errorResult.fail("CONFLICT", {
+					publicMessage:
+						"Corporate Administration source document is not active.",
+				});
 	}
 	const sourceDocumentId = source.data.sourceDocumentId;
 
@@ -495,25 +489,16 @@ function serializeStatusForReplay(result: CompanyStatusHistory): unknown {
 }
 
 function legalCompanyNotFound(): Result<never> {
-	return fail(
-		"NOT_FOUND",
-		"Corporate Administration legal company was not found.",
-		corporateAdministrationErrorDetails("CORPORATE_ADMINISTRATION_NOT_FOUND", {
-			entityType: "legalCompany",
-		}),
-	);
+	return errorResult.fail("NOT_FOUND", {
+		publicMessage: "Corporate Administration legal company was not found.",
+	});
 }
 
 function staleCompanyVersion(
-	expectedVersion: number,
-	actualVersion: number,
+	_expectedVersion: number,
+	_actualVersion: number,
 ): Result<never> {
-	return fail(
-		"CONFLICT",
-		"Corporate Administration legal company version is stale.",
-		corporateAdministrationErrorDetails(
-			"CORPORATE_ADMINISTRATION_STALE_VERSION",
-			{ expectedVersion, actualVersion },
-		),
-	);
+	return errorResult.fail("CONFLICT", {
+		publicMessage: "Corporate Administration legal company version is stale.",
+	});
 }

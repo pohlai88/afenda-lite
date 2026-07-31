@@ -1,16 +1,13 @@
 "use server";
 
 import { getSession } from "@afenda/auth";
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { createCorrelationId } from "@afenda/http";
 import { listWarehouses, type Warehouse } from "@afenda/master-data";
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { forbidUnlessPermission } from "@/app/actions/permission-gate";
 import { createMasterDataAuthorizationPort } from "@/lib/erp/master-data-authorization-port";
 import { logProductEvent } from "@/modules/platform/observability/product-log";
-import {
-	type ActionResult,
-	actionFailInternal,
-} from "@/modules/platform/schemas/action-result";
 
 export interface ListWarehousesActionData {
 	warehouses: Warehouse[];
@@ -61,9 +58,6 @@ export async function listWarehousesAction(input?: {
 			path: "listWarehousesAction",
 			code: "INTERNAL_ERROR",
 		});
-		return actionFailInternal(
-			"Could not list warehouses. Try again or contact an admin.",
-			correlationId,
-		);
+		return errorResult.fail("INTERNAL_ERROR", { correlationId });
 	}
 }

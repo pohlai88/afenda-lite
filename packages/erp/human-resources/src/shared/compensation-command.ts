@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { z } from "zod";
 import {
 	type HumanResourcesEmployeeId,
@@ -102,7 +102,7 @@ async function resolveCompensationSubject(
 			return compensation;
 		}
 		if (compensation.data !== null) {
-			return ok({
+			return errorResult.ok({
 				organizationId: compensation.data.organizationId,
 				subjectEmployeeId: compensation.data.employeeId,
 			});
@@ -123,7 +123,7 @@ async function resolveCompensationSubject(
 			return review;
 		}
 		if (review.data !== null) {
-			return ok({
+			return errorResult.ok({
 				organizationId: review.data.organizationId,
 				subjectEmployeeId: review.data.employeeId,
 			});
@@ -144,7 +144,7 @@ async function resolveCompensationSubject(
 			return enrollment;
 		}
 		if (enrollment.data !== null) {
-			return ok({
+			return errorResult.ok({
 				organizationId: enrollment.data.organizationId,
 				subjectEmployeeId: enrollment.data.employeeId,
 			});
@@ -173,7 +173,7 @@ async function resolveCompensationSubject(
 				return enrollment;
 			}
 			if (enrollment.data !== null) {
-				return ok({
+				return errorResult.ok({
 					organizationId: enrollment.data.organizationId,
 					subjectEmployeeId: enrollment.data.employeeId,
 				});
@@ -186,7 +186,7 @@ async function resolveCompensationSubject(
 		"employeeId",
 		humanResourcesEmployeeIdSchema,
 	);
-	return ok({
+	return errorResult.ok({
 		organizationId: input.organizationId,
 		...(subjectEmployeeId === undefined ? {} : { subjectEmployeeId }),
 	});
@@ -219,7 +219,7 @@ async function resolveManagerEmployeeId(input: {
 				return identity;
 			}
 			if (identity.data !== null) {
-				return ok(identity.data.employeeId);
+				return errorResult.ok(identity.data.employeeId);
 			}
 		}
 	}
@@ -232,7 +232,7 @@ async function resolveManagerEmployeeId(input: {
 	if (!primaryManager.ok) {
 		return primaryManager;
 	}
-	return ok(primaryManager.data ?? undefined);
+	return errorResult.ok(primaryManager.data ?? undefined);
 }
 
 async function resolveCompensationResource(
@@ -260,7 +260,7 @@ async function resolveCompensationResource(
 		}
 		managerEmployeeId = manager.data;
 	}
-	return ok({
+	return errorResult.ok({
 		organizationId: subject.data.organizationId,
 		kind: "compensation",
 		...(resourceId === undefined ? {} : { resourceId }),
@@ -337,11 +337,12 @@ export async function assertCurrencyExists(
 		return exists;
 	}
 	if (!exists.data) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Currency code is not recognized.",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
 	return { ok: true, data: undefined };
 }
@@ -370,7 +371,7 @@ export async function runCompensationCommand<
 			resolveCompensationResource(data, opts, store),
 		resolveDeps: (opts) => {
 			const { store, ports, currency } = resolveCommandDeps(opts);
-			return ok({ store, ports, currency });
+			return errorResult.ok({ store, ports, currency });
 		},
 		execute: config.execute,
 	});
@@ -409,7 +410,7 @@ export async function runCompensationQuery<
 		project: config.project,
 		resolveDeps: (opts) => {
 			const { store } = resolveCommandDeps(opts);
-			return ok({ store });
+			return errorResult.ok({ store });
 		},
 		execute: config.execute,
 	});

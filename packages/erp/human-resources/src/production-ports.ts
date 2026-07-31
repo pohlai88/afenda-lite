@@ -1,5 +1,5 @@
 import { createDrizzleAuditStore } from "@afenda/audit";
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import { createEventPublisher } from "@afenda/events";
 
 import type {
@@ -31,7 +31,7 @@ export function createSqlAuditFactPort(): AuditFactPort {
 			if (!result.ok) {
 				return result;
 			}
-			return ok({ id: result.data.id });
+			return errorResult.ok({ id: result.data.id });
 		},
 	};
 }
@@ -66,7 +66,7 @@ export function createSqlOutboxPort(): OutboxPort {
 			if (!result.ok) {
 				return result;
 			}
-			return ok({ id: result.data.id });
+			return errorResult.ok({ id: result.data.id });
 		},
 	};
 }

@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import { HUMAN_RESOURCES_COMPENSATION_CHANGED_EVENT } from "@afenda/events/schemas";
 import type {
 	HumanResourcesCompensationGradeId,
@@ -102,7 +102,7 @@ async function recordCompensationMutation(
 	if (!outbox.ok) {
 		return outbox;
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 async function endActivePredecessor(
@@ -123,7 +123,7 @@ async function endActivePredecessor(
 		"active",
 	);
 	if (active === null) {
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	}
 
 	const now = new Date();
@@ -148,7 +148,7 @@ async function endActivePredecessor(
 		state.employeeCompensations.set(ended.id, previous);
 		return sideEffect;
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 function resolveEmploymentEmployee(
@@ -170,7 +170,7 @@ function resolveEmploymentEmployee(
 			HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 		);
 	}
-	return ok({ employeeId: employment.employeeId });
+	return errorResult.ok({ employeeId: employment.employeeId });
 }
 
 export async function memoryCreateEmployeeCompensation(
@@ -204,7 +204,7 @@ export async function memoryCreateEmployeeCompensation(
 	);
 	const existing = state.compensationIdempotencyByKey.get(idempKey);
 	if (existing) {
-		return ok({ ...existing });
+		return errorResult.ok({ ...existing });
 	}
 
 	const employmentCheck = resolveEmploymentEmployee(
@@ -275,7 +275,7 @@ export async function memoryCreateEmployeeCompensation(
 		runRollbacks(rollback);
 		return sideEffect;
 	}
-	return ok({ ...compensation });
+	return errorResult.ok({ ...compensation });
 }
 
 export async function memoryAmendEmployeeCompensation(
@@ -350,7 +350,7 @@ export async function memoryAmendEmployeeCompensation(
 		state.employeeCompensations.set(updated.id, previous);
 		return sideEffect;
 	}
-	return ok({ ...updated });
+	return errorResult.ok({ ...updated });
 }
 
 export async function memoryApproveEmployeeCompensation(
@@ -439,7 +439,7 @@ export async function memoryApproveEmployeeCompensation(
 		state.employeeCompensations.set(updated.id, previous);
 		return sideEffect;
 	}
-	return ok({ ...updated });
+	return errorResult.ok({ ...updated });
 }
 
 export async function memoryScheduleEmployeeCompensationChange(
@@ -593,7 +593,7 @@ export async function memoryActivateEmployeeCompensation(
 		state.employeeCompensations.set(updated.id, previous);
 		return sideEffect;
 	}
-	return ok({ ...updated });
+	return errorResult.ok({ ...updated });
 }
 
 export async function memoryCorrectEmployeeCompensation(
@@ -737,7 +737,7 @@ export async function memoryCorrectEmployeeCompensation(
 		return successorSideEffect;
 	}
 
-	return ok({ ...successor });
+	return errorResult.ok({ ...successor });
 }
 
 export async function memoryEndEmployeeCompensation(
@@ -792,7 +792,7 @@ export async function memoryEndEmployeeCompensation(
 		state.employeeCompensations.set(updated.id, previous);
 		return sideEffect;
 	}
-	return ok({ ...updated });
+	return errorResult.ok({ ...updated });
 }
 
 export function memoryFindEmployeeCompensationByEmploymentAsOf(

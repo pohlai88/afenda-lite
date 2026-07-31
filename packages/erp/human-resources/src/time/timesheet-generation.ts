@@ -1,5 +1,4 @@
-import type { Result } from "@afenda/errors/result";
-import { ok } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type {
 	HumanResourcesEmployeeId,
@@ -460,7 +459,7 @@ export async function resolveExpectedWorkMinutes(input: {
 			return shift;
 		}
 		if (shift.data !== null && shift.data.expectedMinutes > 0) {
-			return ok({
+			return errorResult.ok({
 				expectedWorkMinutes: shift.data.expectedMinutes,
 				shiftAssignmentId: scheduled.data.id,
 			});
@@ -468,7 +467,7 @@ export async function resolveExpectedWorkMinutes(input: {
 	}
 
 	if (input.employmentId === null) {
-		return ok({ expectedWorkMinutes: 0, shiftAssignmentId: null });
+		return errorResult.ok({ expectedWorkMinutes: 0, shiftAssignmentId: null });
 	}
 
 	const assignment = await input.host.resolveEmploymentCalendar({
@@ -481,7 +480,7 @@ export async function resolveExpectedWorkMinutes(input: {
 		return assignment;
 	}
 	if (assignment.data === null) {
-		return ok({ expectedWorkMinutes: 0, shiftAssignmentId: null });
+		return errorResult.ok({ expectedWorkMinutes: 0, shiftAssignmentId: null });
 	}
 
 	const calendar = await input.host.getWorkCalendar({
@@ -492,7 +491,7 @@ export async function resolveExpectedWorkMinutes(input: {
 		return calendar;
 	}
 	if (calendar.data === null) {
-		return ok({ expectedWorkMinutes: 0, shiftAssignmentId: null });
+		return errorResult.ok({ expectedWorkMinutes: 0, shiftAssignmentId: null });
 	}
 
 	const holidays = await input.host.listWorkCalendarHolidays({
@@ -530,7 +529,7 @@ export async function resolveExpectedWorkMinutes(input: {
 	};
 
 	const resolution = resolveWorkCalendarCivilDay(context, input.workDate);
-	return ok({
+	return errorResult.ok({
 		expectedWorkMinutes:
 			resolution.isWorkingDay && resolution.expectedMinutes !== null
 				? resolution.expectedMinutes

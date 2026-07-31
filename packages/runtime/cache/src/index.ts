@@ -15,7 +15,7 @@ export {
 	resetResolvedCacheBackend,
 	resolveCacheBackend,
 } from "./resolve";
-export { toCacheAppError } from "./to-app-error";
+export { toCacheFailure } from "./to-failure";
 export type {
 	CacheConfig,
 	CacheEntry,

@@ -1,17 +1,13 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { createDraftPayment, type Payment } from "@afenda/payments";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
 import { createPaymentsCommandOptions } from "@/lib/erp/payments-command-options";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export type CreateDraftPaymentActionState = ActionResult<{
@@ -62,11 +58,9 @@ export async function createDraftPaymentAction(
 				reference: formData.get("reference"),
 			});
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter valid payment details.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter valid payment details.",
+				});
 			}
 			const mapped = mapPackageResult(
 				await createDraftPayment(

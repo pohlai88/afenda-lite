@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	requireMasterCommandPermission,
@@ -10,7 +10,6 @@ import {
 	resolveCommandDeps,
 	resolveStore,
 } from "../../command-options";
-import type { MasterFailureDetails } from "../../contracts/reasons";
 import {
 	MASTER_COMMAND_WAREHOUSE_ACTIVATE,
 	MASTER_COMMAND_WAREHOUSE_CREATE,
@@ -235,9 +234,9 @@ async function transitionWarehouseStatus(
 		return current;
 	}
 	if (current.data === null) {
-		return fail("NOT_FOUND", "Warehouse not found", {
-			reason: "MASTER_NOT_FOUND",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Warehouse not found",
+		});
 	}
 	const lifecycle = assertLifecycleTransition(current.data.status, toStatus);
 	if (!lifecycle.ok) {
@@ -256,15 +255,10 @@ async function transitionWarehouseStatus(
 			parent.data.status !== "active" ||
 			parent.data.retiredAt !== null
 		) {
-			return fail(
-				"CONFLICT",
-				"Warehouse parent must be active before activating warehouse",
-				{
-					reason: "MASTER_INVALID_STATE",
-					from: current.data.status,
-					to: toStatus,
-				} satisfies MasterFailureDetails,
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage:
+					"Warehouse parent must be active before activating warehouse",
+			});
 		}
 	}
 	if (toStatus === "retired") {
@@ -274,10 +268,9 @@ async function transitionWarehouseStatus(
 			entityId: parsed.data.id,
 		});
 		if (blockers.length > 0) {
-			return fail("CONFLICT", "Warehouse has dependency blockers", {
-				reason: "MASTER_DEPENDENCY_BLOCKED",
-				blockers,
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Warehouse has dependency blockers",
+			});
 		}
 	}
 	const result = await store.transitionWarehouse(
@@ -402,7 +395,7 @@ export async function existsWarehouseByCode(
 	if (!result.ok) {
 		return result;
 	}
-	return ok(result.data !== null);
+	return errorResult.ok(result.data !== null);
 }
 
 export async function listWarehouses(

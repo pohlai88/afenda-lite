@@ -1,3 +1,4 @@
+import { errorResult } from "@afenda/errors";
 import { NextResponse } from "next/server";
 
 import { authPlainTextFailure } from "./auth-failure";
@@ -66,18 +67,12 @@ export async function handleEnsureActiveOrganizationRequest(
 	if (typeof orgId !== "string" || orgId.length === 0) {
 		const organizationId = await resolveMemberOrganizationId(auth);
 		if (!organizationId) {
-			return authPlainTextFailure(
-				"FORBIDDEN",
-				"@afenda/auth: no resolvable member organization for active session",
-			);
+			return authPlainTextFailure(errorResult.fail("FORBIDDEN"));
 		}
 
 		const persisted = await persistActiveOrganization(auth, organizationId);
 		if (!persisted) {
-			return authPlainTextFailure(
-				"INTERNAL_ERROR",
-				"@afenda/auth: failed to persist active organization on session",
-			);
+			return authPlainTextFailure(errorResult.fail("INTERNAL_ERROR"));
 		}
 
 		// Trust persist — do not re-read via cookie-cache getSession (stale
@@ -87,10 +82,7 @@ export async function handleEnsureActiveOrganizationRequest(
 
 	const email = normalizeSessionEmail(data.user.email);
 	if (!email) {
-		return authPlainTextFailure(
-			"INTERNAL_ERROR",
-			"@afenda/auth: authenticated user email missing from session",
-		);
+		return authPlainTextFailure(errorResult.fail("INTERNAL_ERROR"));
 	}
 
 	const { data: memberRole, error: roleError } =
@@ -99,20 +91,14 @@ export async function handleEnsureActiveOrganizationRequest(
 		});
 	const neonRole = memberRole?.role;
 	if (roleError || typeof neonRole !== "string" || neonRole.length === 0) {
-		return authPlainTextFailure(
-			"INTERNAL_ERROR",
-			"@afenda/auth: active organization membership role unresolved",
-		);
+		return authPlainTextFailure(errorResult.fail("INTERNAL_ERROR"));
 	}
 
 	let role: ReturnType<typeof toSessionRole>;
 	try {
 		role = toSessionRole(neonRole);
 	} catch {
-		return authPlainTextFailure(
-			"INTERNAL_ERROR",
-			"@afenda/auth: active organization membership role unresolved",
-		);
+		return authPlainTextFailure(errorResult.fail("INTERNAL_ERROR"));
 	}
 
 	// Mint / refresh session_data on this response so the next RSC navigation

@@ -1,4 +1,4 @@
-import { fail, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { ApprovedPayrollHandoff } from "@afenda/events/schemas";
 import { z } from "zod";
 
@@ -76,11 +76,12 @@ export function assembleApprovedPayrollHandoff(
 				return assignment;
 			}
 			if (assignment.data === null) {
-				return fail(
-					"NOT_FOUND",
-					"No assignment found for payroll handoff effective date",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_NOT_FOUND,
+					),
+				});
 			}
 
 			const leaveHandoffs: import("../types").ApprovedLeaveHandoff[] = [];

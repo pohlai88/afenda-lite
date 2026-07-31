@@ -1,5 +1,6 @@
 "use server";
 
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import {
 	amendEmployment,
 	amendEmploymentContract,
@@ -25,7 +26,6 @@ import {
 	terminateEmployment,
 } from "@afenda/human-resources";
 import { z } from "zod";
-
 import {
 	hrMutationContextSchema as mutationContextSchema,
 	withHrSessionContext as withSessionContext,
@@ -33,10 +33,6 @@ import {
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runHrWorkforceOperatorPermissionAction as runOperatorPermissionAction } from "@/app/actions/run-hr-operator-permission-action";
 import { createHumanResourcesCommandOptions } from "@/lib/erp/human-resources-command-options";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 const isoDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
@@ -127,11 +123,9 @@ export async function hireEmploymentAction(input: {
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(createEmploymentActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid employment hire.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid employment hire.",
+				});
 			}
 			const result = await hireEmployment(
 				withSessionContext(session, correlationId, parsed.data),
@@ -159,11 +153,9 @@ export async function rehireEmploymentAction(input: {
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(createEmploymentActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid employment rehire.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid employment rehire.",
+				});
 			}
 			const result = await rehireEmployment(
 				withSessionContext(session, correlationId, parsed.data),
@@ -194,11 +186,9 @@ export async function amendEmploymentAction(input: {
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(amendEmploymentActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid employment amend.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid employment amend.",
+				});
 			}
 			const result = await amendEmployment(
 				withSessionContext(session, correlationId, parsed.data),
@@ -228,11 +218,9 @@ export async function suspendEmploymentAction(input: {
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(amendEmploymentLifecycleActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid employment suspend request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid employment suspend request.",
+				});
 			}
 			const result = await suspendEmployment(
 				withSessionContext(session, correlationId, parsed.data),
@@ -262,11 +250,9 @@ export async function reactivateEmploymentAction(input: {
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(amendEmploymentLifecycleActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid employment reactivation.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid employment reactivation.",
+				});
 			}
 			const result = await reactivateEmployment(
 				withSessionContext(session, correlationId, parsed.data),
@@ -296,11 +282,9 @@ export async function terminateEmploymentAction(input: {
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(amendEmploymentLifecycleActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid employment termination.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid employment termination.",
+				});
 			}
 			const result = await terminateEmployment(
 				withSessionContext(session, correlationId, parsed.data),
@@ -333,11 +317,9 @@ export async function correctEmploymentAction(input: {
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(correctEmploymentActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid employment correction.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid employment correction.",
+				});
 			}
 			const result = await correctEmployment(
 				withSessionContext(session, correlationId, parsed.data),
@@ -368,11 +350,9 @@ export async function createEmploymentContractAction(input: {
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(createEmploymentContractActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid employment contract.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid employment contract.",
+				});
 			}
 			const result = await createEmploymentContract(
 				withSessionContext(session, correlationId, parsed.data),
@@ -404,11 +384,9 @@ export async function amendEmploymentContractAction(input: {
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(correctEmploymentContractActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid employment contract amend.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid employment contract amend.",
+				});
 			}
 			const result = await amendEmploymentContract(
 				withSessionContext(session, correlationId, parsed.data),
@@ -448,11 +426,9 @@ export async function renewEmploymentContractAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid employment contract renewal.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid employment contract renewal.",
+				});
 			}
 			const result = await renewEmploymentContract(
 				withSessionContext(session, correlationId, parsed.data),
@@ -498,11 +474,9 @@ export async function supersedeEmploymentContractAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid employment contract supersede.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid employment contract supersede.",
+				});
 			}
 			const result = await supersedeEmploymentContract(
 				withSessionContext(session, correlationId, parsed.data),
@@ -538,11 +512,9 @@ export async function endEmploymentContractAction(input: {
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(endEmploymentContractActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid employment contract end request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid employment contract end request.",
+				});
 			}
 			const result = await endEmploymentContract(
 				withSessionContext(session, correlationId, parsed.data),
@@ -573,11 +545,9 @@ export async function getEmploymentAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid employment lookup.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid employment lookup.",
+				});
 			}
 			const result = await getEmployment(
 				withSessionContext(session, correlationId, parsed.data),
@@ -610,11 +580,9 @@ export async function getEmploymentAsOfAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid employment as-of lookup.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid employment as-of lookup.",
+				});
 			}
 			const result = await getEmploymentAsOf(
 				withSessionContext(session, correlationId, parsed.data),
@@ -657,11 +625,9 @@ export async function listEmploymentStatusHistoryAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid employment status history request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid employment status history request.",
+				});
 			}
 			const result = await listEmploymentStatusHistory(
 				withSessionContext(session, correlationId, parsed.data),
@@ -698,11 +664,9 @@ export async function getEmploymentContractAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid employment contract lookup.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid employment contract lookup.",
+				});
 			}
 			const result = await getEmploymentContract(
 				withSessionContext(session, correlationId, parsed.data),
@@ -735,11 +699,9 @@ export async function getEmploymentContractAsOfAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid employment contract as-of lookup.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid employment contract as-of lookup.",
+				});
 			}
 			const result = await getEmploymentContractAsOf(
 				withSessionContext(session, correlationId, parsed.data),
@@ -772,11 +734,9 @@ export async function getCurrentEmploymentContractAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid current employment contract lookup.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid current employment contract lookup.",
+				});
 			}
 			const result = await getCurrentEmploymentContract(
 				withSessionContext(session, correlationId, parsed.data),
@@ -807,11 +767,9 @@ export async function listEmploymentContractsAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid employment contract list request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid employment contract list request.",
+				});
 			}
 			const result = await listEmploymentContracts(
 				withSessionContext(session, correlationId, parsed.data),

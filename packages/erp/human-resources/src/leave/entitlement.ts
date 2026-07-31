@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
@@ -84,13 +84,14 @@ export async function grantLeaveEntitlement(
 			}
 			if (existing.data !== null) {
 				if (existing.data.createRequestFingerprint !== fingerprint) {
-					return fail(
-						"CONFLICT",
-						"Idempotency key reused with different payload",
-						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-					);
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+						internalContext: humanResourcesErrorDetails(
+							HUMAN_RESOURCES_ERROR_CONFLICT,
+						),
+					});
 				}
-				return ok(existing.data.entitlement);
+				return errorResult.ok(existing.data.entitlement);
 			}
 
 			const policy = await store.getLeavePolicyById({
@@ -101,7 +102,9 @@ export async function grantLeaveEntitlement(
 				return policy;
 			}
 			if (policy.data === null) {
-				return fail("NOT_FOUND", "Leave policy not found");
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+				});
 			}
 			const published = assertLeavePolicyPublished(policy.data.status);
 			if (!published.ok) {
@@ -234,7 +237,9 @@ export async function carryForwardLeaveEntitlement(
 				return sourceBalance;
 			}
 			if (sourceBalance.data === null) {
-				return fail("NOT_FOUND", "Leave entitlement not found");
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+				});
 			}
 
 			const carryAllowed = assertLeaveCarryForwardAllowed({
@@ -429,7 +434,7 @@ export async function reconcileLeaveBalance(
 				return entitlement;
 			}
 			if (entitlement.data === null) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const posted = await store.listPostedLeaveAdjustments({
 				organizationId: data.organizationId,
@@ -448,7 +453,7 @@ export async function reconcileLeaveBalance(
 					createdAt,
 				})),
 			);
-			return ok({
+			return errorResult.ok({
 				entitlementId: entitlement.data.id,
 				openingQuantity: entitlement.data.openingQuantity,
 				adjustments,

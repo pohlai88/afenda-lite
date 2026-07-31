@@ -24,7 +24,7 @@ import {
 	runNeonHttpTransaction,
 	sql,
 } from "@afenda/db";
-import { failFromUnknown, ok } from "@afenda/errors/result";
+import { errorIngress, errorProject, errorResult } from "@afenda/errors";
 import type {
 	CorporateAdministrationPendingEventAppender,
 	CorporateAdministrationPendingOutboxEvent,
@@ -107,7 +107,7 @@ export function createNeonCorporateAdministrationPendingEventAppender(): Corpora
 	return {
 		async append(events) {
 			if (events.length === 0) {
-				return ok(undefined);
+				return errorResult.ok(undefined);
 			}
 			try {
 				await runNeonHttpTransaction(
@@ -116,9 +116,11 @@ export function createNeonCorporateAdministrationPendingEventAppender(): Corpora
 							createStatement(event)(neonSql),
 						) as ReturnType<NeonHttpSql>[],
 				);
-				return ok(undefined);
+				return errorResult.ok(undefined);
 			} catch (error) {
-				return failFromUnknown(error, "Test pending-event append failed");
+				return errorProject.result(
+					errorIngress.unknown(error, { operation: "errors.consumer.unknown" }),
+				);
 			}
 		},
 		createStatement,

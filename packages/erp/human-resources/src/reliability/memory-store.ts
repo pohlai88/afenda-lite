@@ -1,4 +1,4 @@
-import { fail, ok } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 
 import type { ReliabilityStorePort } from "./ports";
 import type {
@@ -38,13 +38,13 @@ export function createMemoryReliabilityStore(): ReliabilityStorePort {
 			return runSynchronousMemoryOperation(() => {
 				const id = idempotency.get(idempotencyKey(input));
 				const item = id ? workItems.get(id) : undefined;
-				return ok(item ? clone(item) : null);
+				return errorResult.ok(item ? clone(item) : null);
 			});
 		},
 		getWorkItem(input) {
 			return runSynchronousMemoryOperation(() => {
 				const item = workItems.get(input.workItemId);
-				return ok(
+				return errorResult.ok(
 					item?.organizationId === input.organizationId ? clone(item) : null,
 				);
 			});
@@ -53,11 +53,13 @@ export function createMemoryReliabilityStore(): ReliabilityStorePort {
 			return runSynchronousMemoryOperation(() => {
 				const key = idempotencyKey(item);
 				if (workItems.has(item.id) || idempotency.has(key)) {
-					return fail("CONFLICT", "Reliability work item already exists");
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+					});
 				}
 				workItems.set(item.id, clone(item));
 				idempotency.set(key, item.id);
-				return ok(clone(item));
+				return errorResult.ok(clone(item));
 			});
 		},
 		claimDueWork(input) {
@@ -117,7 +119,7 @@ export function createMemoryReliabilityStore(): ReliabilityStorePort {
 					claimed.push(clone(leased));
 					perOrganization.set(item.organizationId, organizationCount + 1);
 				}
-				return ok(claimed);
+				return errorResult.ok(claimed);
 			});
 		},
 		commitAttempt(input) {
@@ -129,22 +131,26 @@ export function createMemoryReliabilityStore(): ReliabilityStorePort {
 					input.workItem.version !== current.version + 1 ||
 					current.organizationId !== input.workItem.organizationId
 				) {
-					return fail("CONFLICT", "Reliability work item version conflict");
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+					});
 				}
 				if (input.deadLetter && deadLetters.has(input.deadLetter.id)) {
-					return fail("CONFLICT", "Reliability dead letter already exists");
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+					});
 				}
 				workItems.set(current.id, clone(input.workItem));
 				if (input.deadLetter) {
 					deadLetters.set(input.deadLetter.id, clone(input.deadLetter));
 				}
-				return ok(clone(input.workItem));
+				return errorResult.ok(clone(input.workItem));
 			});
 		},
 		getDeadLetter(input) {
 			return runSynchronousMemoryOperation(() => {
 				const record = deadLetters.get(input.deadLetterId);
-				return ok(
+				return errorResult.ok(
 					record?.organizationId === input.organizationId
 						? clone(record)
 						: null,
@@ -158,7 +164,7 @@ export function createMemoryReliabilityStore(): ReliabilityStorePort {
 						candidate.organizationId === input.organizationId &&
 						candidate.workItemId === input.workItemId,
 				);
-				return ok(record ? clone(record) : null);
+				return errorResult.ok(record ? clone(record) : null);
 			});
 		},
 		createDeadLetterReplay(input) {
@@ -169,13 +175,19 @@ export function createMemoryReliabilityStore(): ReliabilityStorePort {
 					!deadLetter ||
 					deadLetter.organizationId !== input.workItem.organizationId
 				) {
-					return fail("NOT_FOUND", "Reliability dead letter not found");
+					return errorResult.fail("NOT_FOUND", {
+						publicMessage: "The requested resource was not found",
+					});
 				}
 				if (deadLetter.replayedByWorkItemId) {
-					return fail("CONFLICT", "Reliability dead letter already replayed");
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+					});
 				}
 				if (workItems.has(input.workItem.id) || idempotency.has(key)) {
-					return fail("CONFLICT", "Reliability work item already exists");
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+					});
 				}
 				workItems.set(input.workItem.id, clone(input.workItem));
 				idempotency.set(key, input.workItem.id);
@@ -183,13 +195,13 @@ export function createMemoryReliabilityStore(): ReliabilityStorePort {
 					...clone(deadLetter),
 					replayedByWorkItemId: input.workItem.id,
 				});
-				return ok(clone(input.workItem));
+				return errorResult.ok(clone(input.workItem));
 			});
 		},
 		getCursor(input) {
 			return runSynchronousMemoryOperation(() => {
 				const cursor = cursors.get(cursorKey(input));
-				return ok(cursor ? clone(cursor) : null);
+				return errorResult.ok(cursor ? clone(cursor) : null);
 			});
 		},
 		commitCursor(input) {
@@ -202,10 +214,12 @@ export function createMemoryReliabilityStore(): ReliabilityStorePort {
 						current.version !== input.expectedVersion) ||
 					input.cursor.version !== (current?.version ?? 0) + 1
 				) {
-					return fail("CONFLICT", "Connector cursor version conflict");
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+					});
 				}
 				cursors.set(key, clone(input.cursor));
-				return ok(clone(input.cursor));
+				return errorResult.ok(clone(input.cursor));
 			});
 		},
 	};

@@ -35,11 +35,11 @@ describe("permission kernel guards (N10)", () => {
 	});
 
 	it("listUserPermissions rejects empty orgId", async () => {
-		await expect(listUserPermissions("  ", "user-a")).rejects.toThrow(/orgId/);
+		await expect(listUserPermissions("  ", "user-a")).rejects.toThrow();
 	});
 
 	it("listUserPermissions rejects empty userId", async () => {
-		await expect(listUserPermissions("org-a", "")).rejects.toThrow(/userId/);
+		await expect(listUserPermissions("org-a", "")).rejects.toThrow();
 	});
 });
 

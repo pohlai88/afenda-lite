@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { z } from "zod";
 
 import {
@@ -78,11 +78,12 @@ export async function runAuthorizedEmployeeCaseReadQuery<
 		return loaded;
 	}
 	if (loaded.data === null) {
-		return fail(
-			"NOT_FOUND",
-			"Employee case not found",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-		);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "The requested resource was not found",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			),
+		});
 	}
 
 	const employeeCase = loaded.data;
@@ -127,11 +128,15 @@ export async function runAuthorizedEmployeeCaseListQuery(
 		"query",
 	);
 	if (requiredPermission === undefined) {
-		return fail("FORBIDDEN", "Human Resources authorization denied", {
-			...humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_AUTHORIZATION_DENIED),
-			operationId: data.queryId,
-			denyCode: "permission_denied",
-			policyId: "hr.manifest-permission",
+		return errorResult.fail("FORBIDDEN", {
+			internalContext: {
+				...humanResourcesErrorDetails(
+					HUMAN_RESOURCES_ERROR_AUTHORIZATION_DENIED,
+				),
+				operationId: data.queryId,
+				denyCode: "permission_denied",
+				policyId: "hr.manifest-permission",
+			},
 		});
 	}
 
@@ -143,11 +148,11 @@ export async function runAuthorizedEmployeeCaseListQuery(
 		return actorIdentity;
 	}
 	if (!actorIdentity.data) {
-		return fail(
-			"FORBIDDEN",
-			"Actor is not an employee",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
-		);
+		return errorResult.fail("FORBIDDEN", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_FORBIDDEN,
+			),
+		});
 	}
 	const actorEmployeeId = actorIdentity.data.employeeId;
 	const permission = requiredPermission;
@@ -200,7 +205,7 @@ export async function runAuthorizedEmployeeCaseListQuery(
 	const pageSize = data.pageSize ?? 20;
 	const offset = (page - 1) * pageSize;
 
-	return ok({
+	return errorResult.ok({
 		cases: authorizedProjected.slice(offset, offset + pageSize),
 		totalCount: authorizedProjected.length,
 		page,

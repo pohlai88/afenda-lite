@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
 	humanResourcesErrorDetails,
@@ -39,25 +39,27 @@ export function assertEffectiveRange(input: {
 	effectiveTo: string | null;
 }): Result<void> {
 	if (input.effectiveTo !== null && input.effectiveTo < input.effectiveFrom) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Effective end date must be on or after effective start date.",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 function parseNonNegativeAmount(amount: string): Result<number> {
 	const value = Number.parseFloat(amount);
 	if (Number.isNaN(value) || value < 0) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Contribution amounts must be non-negative decimal values.",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
-	return ok(value);
+	return errorResult.ok(value);
 }
 
 export function assertBenefitContributionFacts(input: {
@@ -75,28 +77,31 @@ export function assertBenefitContributionFacts(input: {
 			input.contributionCurrencyCode !== null ||
 			input.contributionFrequency !== null
 		) {
-			return fail(
-				"VALIDATION_ERROR",
-				"Contribution currency and frequency require contribution amounts.",
-				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-			);
+			return errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "The submitted data is invalid",
+				internalContext: humanResourcesErrorDetails(
+					HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+				),
+			});
 		}
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	}
 
 	if (input.contributionCurrencyCode === null) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Contribution currency is required when contribution amounts are set.",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
 	if (input.contributionFrequency === null) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Contribution frequency is required when contribution amounts are set.",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
 
 	if (hasEmployeeAmount && input.employeeContributionAmount !== null) {
@@ -112,5 +117,5 @@ export function assertBenefitContributionFacts(input: {
 		}
 	}
 
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }

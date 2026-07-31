@@ -45,10 +45,7 @@ vi.mock("@/modules/identity/domain/has-permission", () => ({
 import { forbidUnlessPermission } from "../app/actions/permission-gate";
 import { requirePermission } from "../features/auth/require-permission";
 import { hasPermission } from "../modules/identity/domain/has-permission";
-import {
-	PERMISSION_DENIED_MESSAGE,
-	sessionHasPermission,
-} from "../modules/identity/domain/session-permission";
+import { sessionHasPermission } from "../modules/identity/domain/session-permission";
 
 const webRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const hasPermissionMock = vi.mocked(hasPermission);
@@ -84,10 +81,9 @@ describe("N11 product authorization wiring", () => {
 
 		await expect(
 			forbidUnlessPermission(session, "org.roles.manage"),
-		).resolves.toEqual({
+		).resolves.toMatchObject({
 			ok: false,
 			code: "FORBIDDEN",
-			message: PERMISSION_DENIED_MESSAGE["org.roles.manage"],
 		});
 	});
 

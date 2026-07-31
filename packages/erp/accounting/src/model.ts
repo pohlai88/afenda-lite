@@ -1,4 +1,4 @@
-import type { Result } from "@afenda/errors/result";
+import type { Result } from "@afenda/errors";
 
 export type AccountingPeriodStatus = "open" | "soft_closed" | "closed";
 export type JournalStatus = "draft" | "posted" | "reversed";

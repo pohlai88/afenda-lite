@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import { z } from "zod";
 import { requireMasterCommandPermission } from "../../authorization";
 import { itemGroupIdSchema } from "../../brands";
@@ -195,28 +195,19 @@ function requireApprovedForApply(ctx: {
 	requireSegregatedApproval?: boolean | undefined;
 }): Result<void> {
 	if (!(ctx.dryRun || ctx.approved)) {
-		return fail("CONFLICT", "Import batch is not approved", {
-			reason: "MASTER_IMPORT_NOT_APPROVED",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Import batch is not approved",
+		});
 	}
 	if (!ctx.dryRun && ctx.requireSegregatedApproval === true) {
 		if (ctx.approvedByActorUserId === undefined) {
-			return fail(
-				"BAD_REQUEST",
-				"Import approval actor is required when segregation is enforced",
-				{
-					reason: "MASTER_VALIDATION_FAILED",
-				} satisfies MasterFailureDetails,
-			);
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage:
+					"Import approval actor is required when segregation is enforced",
+			});
 		}
 		if (ctx.approvedByActorUserId === ctx.actorUserId) {
-			return fail(
-				"FORBIDDEN",
-				"Import approve and apply actors must be different",
-				{
-					reason: "MASTER_MAKER_CHECKER_VIOLATION",
-				} satisfies MasterFailureDetails,
-			);
+			return errorResult.fail("FORBIDDEN");
 		}
 	}
 	if (!ctx.dryRun) {
@@ -228,7 +219,7 @@ function requireApprovedForApply(ctx: {
 			return gate;
 		}
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 function requireIdempotencyKeyForApply(ctx: {
@@ -236,14 +227,14 @@ function requireIdempotencyKeyForApply(ctx: {
 	idempotencyKey?: string | undefined;
 }): Result<string | undefined> {
 	if (ctx.dryRun) {
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	}
 	if (ctx.idempotencyKey === undefined || ctx.idempotencyKey.length === 0) {
-		return fail("BAD_REQUEST", "Import apply requires idempotencyKey", {
-			reason: "MASTER_VALIDATION_FAILED",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Import apply requires idempotencyKey",
+		});
 	}
-	return ok(ctx.idempotencyKey);
+	return errorResult.ok(ctx.idempotencyKey);
 }
 
 async function runImportWithIdempotency(input: {
@@ -299,12 +290,9 @@ async function runImportWithIdempotency(input: {
 		batch.entityType !== input.entityType ||
 		batch.payloadHash !== payloadHash
 	) {
-		return fail("CONFLICT", "Idempotency key was used for another import", {
-			reason: "MASTER_IDEMPOTENCY_CONFLICT",
-			errorCode: "MASTER_DATA_IDEMPOTENCY_CONFLICT",
-			batchId: batch.id,
-			batchStatus: batch.status,
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Idempotency key was used for another import",
+		});
 	}
 	if (batch.status === "applied") {
 		return parseStoredImportReport(batch.report);
@@ -468,23 +456,19 @@ function parseStoredImportReport(
 ): Result<ImportReconciliationReport> {
 	const parsed = importReconciliationReportSchema.safeParse(report);
 	if (!parsed.success) {
-		return fail("INTERNAL_ERROR", "Stored import report is invalid");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
-function importBatchInProgress(batch: {
+function importBatchInProgress(_batch: {
 	id: string;
 	status: ImportBatchStatus;
 	leaseExpiresAt: Date | null;
 }): Result<never> {
-	return fail("CONFLICT", "Import batch is currently being processed", {
-		reason: "MASTER_INVALID_STATE",
-		errorCode: "MASTER_DATA_INVALID_STATE",
-		batchId: batch.id,
-		batchStatus: batch.status,
-		leaseExpiresAt: batch.leaseExpiresAt?.toISOString() ?? null,
-	} satisfies MasterFailureDetails);
+	return errorResult.fail("CONFLICT", {
+		publicMessage: "Import batch is currently being processed",
+	});
 }
 
 function importBatchCompletionStatus(
@@ -1144,7 +1128,7 @@ async function upsertPartiesByCodeBody(
 		}
 	});
 	results.sort((a, b) => a.rowIndex - b.rowIndex);
-	return ok({
+	return errorResult.ok({
 		sourceSystem: ctx.sourceSystem,
 		dryRun: ctx.dryRun,
 		mode: ctx.mode,
@@ -1539,7 +1523,7 @@ async function upsertByCodeGenericBody<
 	});
 
 	results.sort((a, b) => a.rowIndex - b.rowIndex);
-	return ok({
+	return errorResult.ok({
 		sourceSystem: input.sourceSystem,
 		dryRun: input.dryRun,
 		mode: input.mode,
@@ -1584,9 +1568,9 @@ export async function upsertItemGroupsByCode(
 					return result;
 				}
 				if (result.data === null) {
-					return ok(null);
+					return errorResult.ok(null);
 				}
-				return ok({
+				return errorResult.ok({
 					id: result.data.id,
 					name: result.data.name,
 					version: result.data.version,
@@ -1663,14 +1647,14 @@ export async function upsertItemsByCode(
 					return result;
 				}
 				if (result.data === null) {
-					return ok(null);
+					return errorResult.ok(null);
 				}
 				itemSnapshot.set(result.data.id, {
 					itemType: result.data.itemType,
 					baseUomId: result.data.baseUomId,
 					itemGroupId: result.data.itemGroupId,
 				});
-				return ok({
+				return errorResult.ok({
 					id: result.data.id,
 					name: result.data.name,
 					version: result.data.version,
@@ -1767,12 +1751,12 @@ export async function upsertWarehousesByCode(
 					return result;
 				}
 				if (result.data === null) {
-					return ok(null);
+					return errorResult.ok(null);
 				}
 				warehouseSnapshot.set(result.data.id, {
 					locationType: result.data.locationType,
 				});
-				return ok({
+				return errorResult.ok({
 					id: result.data.id,
 					name: result.data.name,
 					version: result.data.version,

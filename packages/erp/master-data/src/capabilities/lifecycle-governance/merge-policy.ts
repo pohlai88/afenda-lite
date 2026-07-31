@@ -1,6 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
-
-import type { MasterFailureDetails } from "../../contracts/reasons";
+import { errorResult, type Result } from "@afenda/errors";
 import { lifecycleAlreadyMerged } from "./lifecycle-errors";
 
 export type MergeParticipant = Readonly<{
@@ -14,11 +12,11 @@ export function assertDistinctMergeParticipants(
 	targetId: string,
 ): Result<true> {
 	if (sourceId === targetId) {
-		return fail("BAD_REQUEST", "Source and target records must differ", {
-			reason: "MASTER_VALIDATION_FAILED",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Source and target records must differ",
+		});
 	}
-	return ok(true);
+	return errorResult.ok(true);
 }
 
 export function assertMergeParticipants(
@@ -27,16 +25,9 @@ export function assertMergeParticipants(
 	entityType: string,
 ): Result<true> {
 	if (source.organizationId !== target.organizationId) {
-		return fail(
-			"BAD_REQUEST",
-			"Merge participants must be in one organization",
-			{
-				reason: "MASTER_CROSS_ORG_REFERENCE",
-				entityType,
-				sourceId: source.id,
-				targetId: target.id,
-			} satisfies MasterFailureDetails,
-		);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Merge participants must be in one organization",
+		});
 	}
 	if (source.mergedIntoId !== null) {
 		return lifecycleAlreadyMerged({ entityType, entityId: source.id });
@@ -44,5 +35,5 @@ export function assertMergeParticipants(
 	if (target.mergedIntoId !== null) {
 		return lifecycleAlreadyMerged({ entityType, entityId: target.id });
 	}
-	return ok(true);
+	return errorResult.ok(true);
 }

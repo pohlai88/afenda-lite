@@ -346,6 +346,7 @@ const fns = actions
 
 const rawOutput = `"use server";
 
+import type { Result as ActionResult } from "@afenda/errors";
 import type {
 	ApprovedCompensationHandoff,
 	CompensationGrade,
@@ -370,7 +371,6 @@ import {
 	runHrCompensationHumanResourcesAction as runHrHumanResourcesAction,
 } from "@/app/actions/hr-action-runner";
 import { hrActionSchema } from "@/app/actions/hr-mutation-context";
-import type { ActionResult } from "@/modules/platform/schemas/action-result";
 
 ${schemaConsts}
 

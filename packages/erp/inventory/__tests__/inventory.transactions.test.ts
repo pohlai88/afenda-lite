@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import { describe, expect, it } from "vitest";
 
 import { createMemoryInventoryStore } from "../src/memory-store";
@@ -141,14 +141,12 @@ describe("@afenda/inventory transactions", () => {
 		const failingAudit: MutationPorts = {
 			audit: {
 				record() {
-					return Promise.resolve(
-						fail("INTERNAL_ERROR", "forced audit failure"),
-					);
+					return Promise.resolve(errorResult.fail("INTERNAL_ERROR"));
 				},
 			},
 			outbox: {
 				append(_input: OutboxFactInput): Promise<Result<{ id: string }>> {
-					return Promise.resolve(ok({ id: "outbox-1" }));
+					return Promise.resolve(errorResult.ok({ id: "outbox-1" }));
 				},
 			},
 		};
@@ -187,14 +185,12 @@ describe("@afenda/inventory transactions", () => {
 		const failingOutbox: MutationPorts = {
 			audit: {
 				record() {
-					return Promise.resolve(ok({ id: "audit-1" }));
+					return Promise.resolve(errorResult.ok({ id: "audit-1" }));
 				},
 			},
 			outbox: {
 				append(_input: OutboxFactInput): Promise<Result<{ id: string }>> {
-					return Promise.resolve(
-						fail("INTERNAL_ERROR", "forced outbox failure"),
-					);
+					return Promise.resolve(errorResult.fail("INTERNAL_ERROR"));
 				},
 			},
 		};
@@ -262,14 +258,12 @@ describe("@afenda/inventory transactions", () => {
 		const failingOutbox: MutationPorts = {
 			audit: {
 				record() {
-					return Promise.resolve(ok({ id: "audit-1" }));
+					return Promise.resolve(errorResult.ok({ id: "audit-1" }));
 				},
 			},
 			outbox: {
 				append(_input: OutboxFactInput): Promise<Result<{ id: string }>> {
-					return Promise.resolve(
-						fail("INTERNAL_ERROR", "forced outbox failure"),
-					);
+					return Promise.resolve(errorResult.fail("INTERNAL_ERROR"));
 				},
 			},
 		};

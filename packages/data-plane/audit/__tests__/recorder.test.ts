@@ -24,7 +24,7 @@ describe("@afenda/audit recorder", () => {
 			payload: { password: "must-not-be-silently-discarded" },
 		});
 
-		expect(result).toMatchObject({ ok: false, code: "BAD_REQUEST" });
+		expect(result).toMatchObject({ ok: false, code: "VALIDATION_ERROR" });
 		expect(store.all()).toHaveLength(0);
 	});
 
@@ -49,7 +49,7 @@ describe("@afenda/audit recorder", () => {
 			],
 		});
 
-		expect(result).toMatchObject({ ok: false, code: "BAD_REQUEST" });
+		expect(result).toMatchObject({ ok: false, code: "VALIDATION_ERROR" });
 		expect(store.all()).toHaveLength(0);
 	});
 
@@ -69,7 +69,7 @@ describe("@afenda/audit recorder", () => {
 			metadata,
 		});
 
-		expect(result).toMatchObject({ ok: false, code: "BAD_REQUEST" });
+		expect(result).toMatchObject({ ok: false, code: "VALIDATION_ERROR" });
 		expect(store.all()).toHaveLength(0);
 		expect(Object.hasOwn(Object.prototype, "polluted")).toBe(false);
 	});
@@ -87,7 +87,7 @@ describe("@afenda/audit recorder", () => {
 		});
 		expect(missingOrg.ok).toBe(false);
 		if (!missingOrg.ok) {
-			expect(missingOrg.code).toBe("BAD_REQUEST");
+			expect(missingOrg.code).toBe("VALIDATION_ERROR");
 		}
 
 		const missingCorr = await recorder.record({
@@ -100,7 +100,7 @@ describe("@afenda/audit recorder", () => {
 		});
 		expect(missingCorr.ok).toBe(false);
 		if (!missingCorr.ok) {
-			expect(missingCorr.code).toBe("BAD_REQUEST");
+			expect(missingCorr.code).toBe("VALIDATION_ERROR");
 		}
 		expect(store.all()).toHaveLength(0);
 	});
@@ -226,7 +226,10 @@ describe("@afenda/audit recorder", () => {
 			metadata: { _afenda_event_context: { version: 1 } },
 		});
 
-		expect(incompatible).toMatchObject({ ok: false, code: "BAD_REQUEST" });
+		expect(incompatible).toMatchObject({
+			ok: false,
+			code: "VALIDATION_ERROR",
+		});
 		expect(collision).toMatchObject({ ok: false, code: "BAD_REQUEST" });
 		expect(store.all()).toHaveLength(0);
 	});
@@ -390,7 +393,7 @@ describe("@afenda/audit recorder", () => {
 		});
 
 		expect(accepted.ok).toBe(true);
-		expect(rejected).toMatchObject({ ok: false, code: "BAD_REQUEST" });
+		expect(rejected).toMatchObject({ ok: false, code: "VALIDATION_ERROR" });
 		expect(store.all()).toHaveLength(1);
 	});
 });

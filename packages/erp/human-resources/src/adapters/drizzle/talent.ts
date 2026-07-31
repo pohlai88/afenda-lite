@@ -27,7 +27,7 @@ import {
 	inArray,
 	runNeonHttpTransaction,
 } from "@afenda/db";
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	HUMAN_RESOURCES_CAREER_PLAN_ACKNOWLEDGED_EVENT,
 	HUMAN_RESOURCES_COMPETENCY_ASSESSED_EVENT,
@@ -569,13 +569,13 @@ function mapCompetency(
 	}
 	const scaleCode = competencyScaleCodeSchema.safeParse(row.scaleCode);
 	if (!scaleCode.success) {
-		return fail("INTERNAL_ERROR", "Invalid competency scale code");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 	const status = competencyStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail("INTERNAL_ERROR", "Invalid competency status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		code: row.code,
@@ -629,9 +629,9 @@ function mapJobCompetency(
 	}
 	const status = jobCompetencyStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail("INTERNAL_ERROR", "Invalid job competency status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		jobId: jobId.data,
@@ -679,11 +679,11 @@ function mapCompetencyAssessment(
 	}
 	const scaleCode = competencyScaleCodeSchema.safeParse(row.scaleCode);
 	if (!scaleCode.success) {
-		return fail("INTERNAL_ERROR", "Invalid competency assessment scale code");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 	const status = competencyAssessmentStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail("INTERNAL_ERROR", "Invalid competency assessment status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 	let supersedesAssessmentId =
 		null as CompetencyAssessment["supersedesAssessmentId"];
@@ -707,7 +707,7 @@ function mapCompetencyAssessment(
 		}
 		supersededByAssessmentId = parsed.data;
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		employeeId: employeeId.data,
@@ -769,9 +769,9 @@ function mapTalentProfile(
 	}
 	const status = talentProfileStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail("INTERNAL_ERROR", "Invalid talent profile status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		employeeId: employeeId.data,
@@ -821,13 +821,13 @@ function mapTalentProfileAssessment(
 		row.methodCode,
 	);
 	if (!methodCode.success) {
-		return fail("INTERNAL_ERROR", "Invalid talent profile assessment method");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 	const status = talentProfileAssessmentStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail("INTERNAL_ERROR", "Invalid talent profile assessment status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		talentProfileId: talentProfileId.data,
@@ -881,19 +881,19 @@ function mapTalentProfileMobility(
 	}
 	const dimension = talentMobilityDimensionSchema.safeParse(row.dimension);
 	if (!dimension.success) {
-		return fail("INTERNAL_ERROR", "Invalid talent profile mobility dimension");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 	const preferenceCode = talentMobilityPreferenceSchema.safeParse(
 		row.preferenceCode,
 	);
 	if (!preferenceCode.success) {
-		return fail("INTERNAL_ERROR", "Invalid talent profile mobility preference");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 	const status = talentProfileMobilityStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail("INTERNAL_ERROR", "Invalid talent profile mobility status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		talentProfileId: talentProfileId.data,
@@ -955,13 +955,13 @@ function mapCriticalRoleReadiness(
 	}
 	const readiness = successionReadinessCodeSchema.safeParse(row.readiness);
 	if (!readiness.success) {
-		return fail("INTERNAL_ERROR", "Invalid critical role readiness code");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 	const status = talentCriticalRoleReadinessStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail("INTERNAL_ERROR", "Invalid critical role readiness status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		talentProfileId: talentProfileId.data,
@@ -1011,9 +1011,9 @@ function mapTalentPool(
 	}
 	const status = talentPoolStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail("INTERNAL_ERROR", "Invalid talent pool status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		code: row.code,
@@ -1063,9 +1063,9 @@ function mapTalentPoolMember(
 	}
 	const status = talentPoolMemberStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail("INTERNAL_ERROR", "Invalid talent pool member status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		poolId: poolId.data,
@@ -1121,9 +1121,9 @@ function mapCareerPlan(
 	}
 	const status = careerPlanStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail("INTERNAL_ERROR", "Invalid career plan status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		employeeId: employeeId.data,
@@ -1183,9 +1183,9 @@ function mapCareerPlanAction(
 	}
 	const status = careerPlanActionStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail("INTERNAL_ERROR", "Invalid career plan action status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		careerPlanId: careerPlanId.data,
@@ -1233,9 +1233,9 @@ function mapSuccessionPlan(
 	}
 	const status = successionPlanStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail("INTERNAL_ERROR", "Invalid succession plan status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		code: row.code,
@@ -1295,13 +1295,13 @@ function mapSuccessionCandidate(
 	}
 	const readiness = successionReadinessCodeSchema.safeParse(row.readiness);
 	if (!readiness.success) {
-		return fail("INTERNAL_ERROR", "Invalid succession readiness code");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 	const status = successionCandidateStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail("INTERNAL_ERROR", "Invalid succession candidate status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		successionPlanId: successionPlanId.data,
@@ -1360,7 +1360,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapCompetency(row);
 		} catch (error) {
@@ -1382,7 +1382,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const competency = mapCompetency(row);
 			if (!competency.ok) {
@@ -1392,12 +1392,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				row.createIdempotencyKey === null ||
 				row.createRequestFingerprint === null
 			) {
-				return fail(
-					"INTERNAL_ERROR",
-					"Competency idempotency metadata is missing",
-				);
+				return errorResult.fail("INTERNAL_ERROR");
 			}
-			return ok({
+			return errorResult.ok({
 				competency: competency.data,
 				createRequestFingerprint: row.createRequestFingerprint,
 			});
@@ -1423,7 +1420,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				existing.data.createRequestFingerprint ===
 				record.createRequestFingerprint
 			) {
-				return ok(existing.data.competency);
+				return errorResult.ok(existing.data.competency);
 			}
 			return conflict("Idempotency key already used with different data");
 		}
@@ -1504,7 +1501,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 						replay.data.createRequestFingerprint ===
 						record.createRequestFingerprint
 					) {
-						return ok(replay.data.competency);
+						return errorResult.ok(replay.data.competency);
 					}
 					return conflict("Idempotency key already used with different data");
 				}
@@ -1719,7 +1716,12 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				competencies.push(mapped.data);
 			}
 			const { items, totalCount } = paginate(competencies, page, pageSize);
-			return ok({ competencies: items, totalCount, page, pageSize });
+			return errorResult.ok({
+				competencies: items,
+				totalCount,
+				page,
+				pageSize,
+			});
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to list competencies");
 		}
@@ -1977,7 +1979,12 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				jobCompetencies.push(mapped.data);
 			}
 			const { items, totalCount } = paginate(jobCompetencies, page, pageSize);
-			return ok({ jobCompetencies: items, totalCount, page, pageSize });
+			return errorResult.ok({
+				jobCompetencies: items,
+				totalCount,
+				page,
+				pageSize,
+			});
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to list job competencies");
 		}
@@ -1997,7 +2004,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapCompetencyAssessment(row);
 		} catch (error) {
@@ -2024,7 +2031,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapCompetencyAssessment(row);
 		} catch (error) {
@@ -2052,7 +2059,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const assessment = mapCompetencyAssessment(row);
 			if (!assessment.ok) {
@@ -2062,12 +2069,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				row.createIdempotencyKey === null ||
 				row.createRequestFingerprint === null
 			) {
-				return fail(
-					"INTERNAL_ERROR",
-					"Competency assessment idempotency metadata is missing",
-				);
+				return errorResult.fail("INTERNAL_ERROR");
 			}
-			return ok({
+			return errorResult.ok({
 				assessment: assessment.data,
 				createRequestFingerprint: row.createRequestFingerprint,
 			});
@@ -2093,7 +2097,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				existing.data.createRequestFingerprint ===
 				record.createRequestFingerprint
 			) {
-				return ok(existing.data.assessment);
+				return errorResult.ok(existing.data.assessment);
 			}
 			return conflict("Idempotency key already used with different data");
 		}
@@ -2249,7 +2253,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 						replay.data.createRequestFingerprint ===
 						record.createRequestFingerprint
 					) {
-						return ok(replay.data.assessment);
+						return errorResult.ok(replay.data.assessment);
 					}
 					return conflict("Idempotency key already used with different data");
 				}
@@ -2275,7 +2279,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				existing.data.createRequestFingerprint ===
 				record.createRequestFingerprint
 			) {
-				return ok(existing.data.assessment);
+				return errorResult.ok(existing.data.assessment);
 			}
 			return conflict("Idempotency key already used with different data");
 		}
@@ -2486,7 +2490,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 						replay.data.createRequestFingerprint ===
 						record.createRequestFingerprint
 					) {
-						return ok(replay.data.assessment);
+						return errorResult.ok(replay.data.assessment);
 					}
 					return conflict("Idempotency key already used with different data");
 				}
@@ -2637,7 +2641,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				}
 				assessments.push(mapped.data);
 			}
-			return ok({
+			return errorResult.ok({
 				organizationId: input.organizationId,
 				employeeId: input.employeeId,
 				assessments,
@@ -2664,7 +2668,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapTalentProfile(row);
 		} catch (error) {
@@ -2690,7 +2694,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const profile = mapTalentProfile(row);
 			if (!profile.ok) {
@@ -2700,12 +2704,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				row.createIdempotencyKey === null ||
 				row.createRequestFingerprint === null
 			) {
-				return fail(
-					"INTERNAL_ERROR",
-					"Talent profile idempotency metadata is missing",
-				);
+				return errorResult.fail("INTERNAL_ERROR");
 			}
-			return ok({
+			return errorResult.ok({
 				profile: profile.data,
 				createRequestFingerprint: row.createRequestFingerprint,
 			});
@@ -2731,7 +2732,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				existing.data.createRequestFingerprint ===
 				record.createRequestFingerprint
 			) {
-				return ok(existing.data.profile);
+				return errorResult.ok(existing.data.profile);
 			}
 			return conflict("Idempotency key already used with different data");
 		}
@@ -2843,7 +2844,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 						replay.data.createRequestFingerprint ===
 						record.createRequestFingerprint
 					) {
-						return ok(replay.data.profile);
+						return errorResult.ok(replay.data.profile);
 					}
 					return conflict("Idempotency key already used with different data");
 				}
@@ -3064,7 +3065,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapTalentProfile(row);
 		} catch (error) {
@@ -3390,7 +3391,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				}
 				assessments.push(mapped.data);
 			}
-			return ok({ assessments } satisfies TalentProfileAssessmentListPage);
+			return errorResult.ok({
+				assessments,
+			} satisfies TalentProfileAssessmentListPage);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -3416,7 +3419,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const mobility = mapTalentProfileMobility(row);
 			if (!mobility.ok) {
@@ -3426,12 +3429,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				row.createIdempotencyKey === null ||
 				row.createRequestFingerprint === null
 			) {
-				return fail(
-					"INTERNAL_ERROR",
-					"Talent profile mobility idempotency metadata is missing",
-				);
+				return errorResult.fail("INTERNAL_ERROR");
 			}
-			return ok({
+			return errorResult.ok({
 				mobility: mobility.data,
 				createRequestFingerprint: row.createRequestFingerprint,
 			});
@@ -3457,7 +3457,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				existing.data.createRequestFingerprint ===
 				record.createRequestFingerprint
 			) {
-				return ok(existing.data.mobility);
+				return errorResult.ok(existing.data.mobility);
 			}
 			return conflict("Idempotency key already used with different data");
 		}
@@ -3622,7 +3622,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					replay.data.createRequestFingerprint ===
 					record.createRequestFingerprint
 				) {
-					return ok(replay.data.mobility);
+					return errorResult.ok(replay.data.mobility);
 				}
 				return conflict("Idempotency key already used with different data");
 			}
@@ -3653,7 +3653,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				}
 				mobilities.push(mapped.data);
 			}
-			return ok({ mobilities } satisfies TalentProfileMobilityListPage);
+			return errorResult.ok({
+				mobilities,
+			} satisfies TalentProfileMobilityListPage);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -3682,7 +3684,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const readiness = mapCriticalRoleReadiness(row);
 			if (!readiness.ok) {
@@ -3692,12 +3694,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				row.createIdempotencyKey === null ||
 				row.createRequestFingerprint === null
 			) {
-				return fail(
-					"INTERNAL_ERROR",
-					"Critical role readiness idempotency metadata is missing",
-				);
+				return errorResult.fail("INTERNAL_ERROR");
 			}
-			return ok({
+			return errorResult.ok({
 				readiness: readiness.data,
 				createRequestFingerprint: row.createRequestFingerprint,
 			});
@@ -3723,7 +3722,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				existing.data.createRequestFingerprint ===
 				record.createRequestFingerprint
 			) {
-				return ok(existing.data.readiness);
+				return errorResult.ok(existing.data.readiness);
 			}
 			return conflict("Idempotency key already used with different data");
 		}
@@ -3904,7 +3903,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 					replay.data.createRequestFingerprint ===
 					record.createRequestFingerprint
 				) {
-					return ok(replay.data.readiness);
+					return errorResult.ok(replay.data.readiness);
 				}
 				return conflict("Idempotency key already used with different data");
 			}
@@ -3941,7 +3940,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				}
 				readinessRecords.push(mapped.data);
 			}
-			return ok({
+			return errorResult.ok({
 				readinessRecords,
 			} satisfies TalentCriticalRoleReadinessListPage);
 		} catch (error) {
@@ -3966,7 +3965,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapTalentPool(row);
 		} catch (error) {
@@ -3988,7 +3987,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const pool = mapTalentPool(row);
 			if (!pool.ok) {
@@ -3998,12 +3997,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				row.createIdempotencyKey === null ||
 				row.createRequestFingerprint === null
 			) {
-				return fail(
-					"INTERNAL_ERROR",
-					"Talent pool idempotency metadata is missing",
-				);
+				return errorResult.fail("INTERNAL_ERROR");
 			}
-			return ok({
+			return errorResult.ok({
 				pool: pool.data,
 				createRequestFingerprint: row.createRequestFingerprint,
 			});
@@ -4029,7 +4025,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				existing.data.createRequestFingerprint ===
 				record.createRequestFingerprint
 			) {
-				return ok(existing.data.pool);
+				return errorResult.ok(existing.data.pool);
 			}
 			return conflict("Idempotency key already used with different data");
 		}
@@ -4109,7 +4105,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 						replay.data.createRequestFingerprint ===
 						record.createRequestFingerprint
 					) {
-						return ok(replay.data.pool);
+						return errorResult.ok(replay.data.pool);
 					}
 					return conflict("Idempotency key already used with different data");
 				}
@@ -4313,7 +4309,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const member = mapTalentPoolMember(row);
 			if (!member.ok) {
@@ -4323,12 +4319,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				row.createIdempotencyKey === null ||
 				row.createRequestFingerprint === null
 			) {
-				return fail(
-					"INTERNAL_ERROR",
-					"Talent pool member idempotency metadata is missing",
-				);
+				return errorResult.fail("INTERNAL_ERROR");
 			}
-			return ok({
+			return errorResult.ok({
 				member: member.data,
 				createRequestFingerprint: row.createRequestFingerprint,
 			});
@@ -4354,7 +4347,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				existing.data.createRequestFingerprint ===
 				record.createRequestFingerprint
 			) {
-				return ok(existing.data.member);
+				return errorResult.ok(existing.data.member);
 			}
 			return conflict("Idempotency key already used with different data");
 		}
@@ -4501,7 +4494,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 						replay.data.createRequestFingerprint ===
 						record.createRequestFingerprint
 					) {
-						return ok(replay.data.member);
+						return errorResult.ok(replay.data.member);
 					}
 					return conflict("Idempotency key already used with different data");
 				}
@@ -4783,7 +4776,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				members.push(mapped.data);
 			}
 			const { items, totalCount } = paginate(members, page, pageSize);
-			return ok({ members: items, totalCount, page, pageSize });
+			return errorResult.ok({ members: items, totalCount, page, pageSize });
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to list talent pool members");
 		}
@@ -4803,7 +4796,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const careerPlan = mapCareerPlan(row);
 			if (!careerPlan.ok) {
@@ -4813,12 +4806,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				row.createIdempotencyKey === null ||
 				row.createRequestFingerprint === null
 			) {
-				return fail(
-					"INTERNAL_ERROR",
-					"Career plan idempotency metadata is missing",
-				);
+				return errorResult.fail("INTERNAL_ERROR");
 			}
-			return ok({
+			return errorResult.ok({
 				careerPlan: careerPlan.data,
 				createRequestFingerprint: row.createRequestFingerprint,
 			});
@@ -4844,7 +4834,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				existing.data.createRequestFingerprint ===
 				record.createRequestFingerprint
 			) {
-				return ok(existing.data.careerPlan);
+				return errorResult.ok(existing.data.careerPlan);
 			}
 			return conflict("Idempotency key already used with different data");
 		}
@@ -4935,7 +4925,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 						replay.data.createRequestFingerprint ===
 						record.createRequestFingerprint
 					) {
-						return ok(replay.data.careerPlan);
+						return errorResult.ok(replay.data.careerPlan);
 					}
 					return conflict("Idempotency key already used with different data");
 				}
@@ -5247,7 +5237,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const plan = mapCareerPlan(row);
 			if (!plan.ok) {
@@ -5276,7 +5266,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				...plan.data,
 				actions,
 			};
-			return ok(withActions);
+			return errorResult.ok(withActions);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to load career plan");
 		}
@@ -5307,7 +5297,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				careerPlans.push(mapped.data);
 			}
 			const { items, totalCount } = paginate(careerPlans, page, pageSize);
-			return ok({ careerPlans: items, totalCount, page, pageSize });
+			return errorResult.ok({ careerPlans: items, totalCount, page, pageSize });
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -5532,7 +5522,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapCareerPlanAction(row);
 		} catch (error) {
@@ -5554,7 +5544,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const successionPlan = mapSuccessionPlan(row);
 			if (!successionPlan.ok) {
@@ -5564,12 +5554,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				row.createIdempotencyKey === null ||
 				row.createRequestFingerprint === null
 			) {
-				return fail(
-					"INTERNAL_ERROR",
-					"Succession plan idempotency metadata is missing",
-				);
+				return errorResult.fail("INTERNAL_ERROR");
 			}
-			return ok({
+			return errorResult.ok({
 				successionPlan: successionPlan.data,
 				createRequestFingerprint: row.createRequestFingerprint,
 			});
@@ -5595,7 +5582,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				existing.data.createRequestFingerprint ===
 				record.createRequestFingerprint
 			) {
-				return ok(existing.data.successionPlan);
+				return errorResult.ok(existing.data.successionPlan);
 			}
 			return conflict("Idempotency key already used with different data");
 		}
@@ -5687,7 +5674,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 						replay.data.createRequestFingerprint ===
 						record.createRequestFingerprint
 					) {
-						return ok(replay.data.successionPlan);
+						return errorResult.ok(replay.data.successionPlan);
 					}
 					return conflict("Idempotency key already used with different data");
 				}
@@ -5891,7 +5878,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapSuccessionPlan(row);
 		} catch (error) {
@@ -5926,7 +5913,12 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				successionPlans.push(mapped.data);
 			}
 			const { items, totalCount } = paginate(successionPlans, page, pageSize);
-			return ok({ successionPlans: items, totalCount, page, pageSize });
+			return errorResult.ok({
+				successionPlans: items,
+				totalCount,
+				page,
+				pageSize,
+			});
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to list succession plans");
 		}
@@ -5949,7 +5941,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const candidate = mapSuccessionCandidate(row);
 			if (!candidate.ok) {
@@ -5959,12 +5951,9 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				row.createIdempotencyKey === null ||
 				row.createRequestFingerprint === null
 			) {
-				return fail(
-					"INTERNAL_ERROR",
-					"Succession candidate idempotency metadata is missing",
-				);
+				return errorResult.fail("INTERNAL_ERROR");
 			}
-			return ok({
+			return errorResult.ok({
 				candidate: candidate.data,
 				createRequestFingerprint: row.createRequestFingerprint,
 			});
@@ -5990,7 +5979,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				existing.data.createRequestFingerprint ===
 				record.createRequestFingerprint
 			) {
-				return ok(existing.data.candidate);
+				return errorResult.ok(existing.data.candidate);
 			}
 			return conflict("Idempotency key already used with different data");
 		}
@@ -6144,7 +6133,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 						replay.data.createRequestFingerprint ===
 						record.createRequestFingerprint
 					) {
-						return ok(replay.data.candidate);
+						return errorResult.ok(replay.data.candidate);
 					}
 					return conflict("Idempotency key already used with different data");
 				}
@@ -6528,7 +6517,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				candidates.push(mapped.data);
 			}
 			const { items, totalCount } = paginate(candidates, page, pageSize);
-			return ok({ candidates: items, totalCount, page, pageSize });
+			return errorResult.ok({ candidates: items, totalCount, page, pageSize });
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -6558,7 +6547,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			}
 			const planIds = successionPlans.map((plan) => plan.id);
 			if (planIds.length === 0) {
-				return ok({
+				return errorResult.ok({
 					organizationId: input.organizationId,
 					positionId: input.positionId,
 					successionPlans: [],
@@ -6609,7 +6598,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 				}
 			}
 
-			return ok({
+			return errorResult.ok({
 				organizationId: input.organizationId,
 				positionId: input.positionId,
 				successionPlans,

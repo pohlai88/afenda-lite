@@ -1,5 +1,6 @@
 "use server";
 
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import {
 	createWarehouse,
 	WAREHOUSE_LOCATION_TYPES,
@@ -10,10 +11,6 @@ import { z } from "zod";
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runMemberPermissionAction } from "@/app/actions/run-member-permission-action";
 import { createMasterDataAuthorizationPort } from "@/lib/erp/master-data-authorization-port";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export interface CreateWarehouseActionData {
@@ -38,11 +35,9 @@ export async function createWarehouseAction(
 		locationType: formData.get("locationType"),
 	});
 	if (!parsed.success) {
-		return actionFail(
-			"VALIDATION_ERROR",
-			"Enter a valid warehouse code, name, and location type.",
-			parsed.details,
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "Enter a valid warehouse code, name, and location type.",
+		});
 	}
 	return await runMemberPermissionAction({
 		path: "createWarehouseAction",

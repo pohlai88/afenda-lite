@@ -1,4 +1,4 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type {
 	ActorSegregationRule,
@@ -20,5 +20,5 @@ export function assertActorSegregation(input: {
 			});
 		}
 	}
-	return ok(true);
+	return errorResult.ok(true);
 }

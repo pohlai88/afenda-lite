@@ -1,7 +1,7 @@
 import { channel } from "node:diagnostics_channel";
 import { performance } from "node:perf_hooks";
 
-import type { Result } from "@afenda/errors/result";
+import type { Result } from "@afenda/errors";
 import { z } from "zod";
 
 export const AUDIT_TELEMETRY_CHANNEL = "afenda.audit.operation.v1" as const;

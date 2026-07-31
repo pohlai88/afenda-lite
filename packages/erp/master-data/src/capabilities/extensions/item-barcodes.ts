@@ -1,5 +1,5 @@
 /** Item-barcode commands and queries. */
-import type { Result } from "@afenda/errors/result";
+import type { Result } from "@afenda/errors";
 
 import {
 	requireMasterCommandPermission,

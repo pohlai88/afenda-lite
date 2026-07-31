@@ -1,6 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
-
-import type { MasterFailureDetails } from "../../contracts/reasons";
+import { errorResult, type Result } from "@afenda/errors";
 import type {
 	PartyRelationshipDirection,
 	PartyRelationshipType,
@@ -126,10 +124,9 @@ export function canonicalizePartyRelationship(input: {
 		input.sourcePartyId === input.targetPartyId &&
 		!definition.permitsSelfReference
 	) {
-		return fail("BAD_REQUEST", "Party relationship cannot reference itself", {
-			reason: "MASTER_VALIDATION_FAILED",
-			field: "targetPartyId",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Party relationship cannot reference itself",
+		});
 	}
 
 	let { sourcePartyId, targetPartyId } = input;
@@ -142,7 +139,7 @@ export function canonicalizePartyRelationship(input: {
 		[sourcePartyId, targetPartyId] = [targetPartyId, sourcePartyId];
 	}
 
-	return ok({
+	return errorResult.ok({
 		sourcePartyId,
 		targetPartyId,
 		relationshipType: definition.canonicalType,

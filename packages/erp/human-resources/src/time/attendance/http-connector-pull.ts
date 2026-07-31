@@ -1,4 +1,4 @@
-import { fail, ok } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 import { z } from "zod";
 
 import {
@@ -79,53 +79,53 @@ export function createHttpAttendanceConnectorPull(deps: {
 					headers: { Accept: "application/json" },
 				});
 			} catch {
-				return fail(
-					"SERVICE_UNAVAILABLE",
-					"Attendance connector request failed.",
-					humanResourcesErrorDetails(
+				return errorResult.fail("SERVICE_UNAVAILABLE", {
+					internalContext: humanResourcesErrorDetails(
 						HUMAN_RESOURCES_ERROR_DEPENDENCY_UNAVAILABLE,
 					),
-				);
+				});
 			}
 
 			if (!response.ok) {
 				const retryable = response.status >= 500 || response.status === 429;
-				return fail(
-					retryable ? "SERVICE_UNAVAILABLE" : "CONFLICT",
-					"Attendance connector request was rejected.",
-					humanResourcesErrorDetails(
-						HUMAN_RESOURCES_ERROR_DEPENDENCY_UNAVAILABLE,
-					),
+				const internalContext = humanResourcesErrorDetails(
+					HUMAN_RESOURCES_ERROR_DEPENDENCY_UNAVAILABLE,
 				);
+				return retryable
+					? errorResult.fail("SERVICE_UNAVAILABLE", { internalContext })
+					: errorResult.fail("CONFLICT", {
+							publicMessage: "The request conflicts with current state",
+							internalContext,
+						});
 			}
 
 			let body: unknown;
 			try {
 				body = await response.json();
 			} catch {
-				return fail(
-					"VALIDATION_ERROR",
-					"Attendance connector returned invalid JSON.",
-					humanResourcesErrorDetails(
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "The submitted data is invalid",
+					internalContext: humanResourcesErrorDetails(
 						HUMAN_RESOURCES_ERROR_DEPENDENCY_UNAVAILABLE,
 					),
-				);
+				});
 			}
 
 			const parsed = attendanceConnectorHttpResponseSchema.safeParse(body);
 			if (!parsed.success) {
-				return fail(
-					"VALIDATION_ERROR",
-					"Attendance connector returned an invalid payload.",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "The submitted data is invalid",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+					),
+				});
 			}
 
 			const events: AttendanceSourceEvent[] = (parsed.data.events ?? []).map(
 				toAttendanceSourceEvent,
 			);
 
-			return ok({
+			return errorResult.ok({
 				events,
 				...(parsed.data.nextCursor === undefined
 					? {}

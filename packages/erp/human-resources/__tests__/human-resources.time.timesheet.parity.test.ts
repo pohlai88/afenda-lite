@@ -2,7 +2,7 @@
  * Memory vs Drizzle parity — HR Time / timesheet.
  */
 
-import { fail } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 import { afterAll, describe, expect, it } from "vitest";
 
 import { createEmployee } from "../src/core/employee";
@@ -1451,7 +1451,7 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			deferredFailurePorts.outbox.calls.push(input);
 			signalDeferredPublication();
 			await deferredPublicationRelease;
-			return fail("INTERNAL_ERROR", "deferred outbox failure");
+			return errorResult.fail("INTERNAL_ERROR");
 		};
 
 		const deferredFailedCorrection = correctAttendanceEvent(

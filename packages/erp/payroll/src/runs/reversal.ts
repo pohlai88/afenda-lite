@@ -1,4 +1,4 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type { PayrollCommandOptions } from "../command-options";
 import { PAYROLL_COMMAND_RUN_REVERSE } from "../module-ids";
@@ -30,7 +30,7 @@ export function reversePayrollRun(
 			const run = loaded.data;
 
 			if (run.status === "reversed") {
-				return ok(run);
+				return errorResult.ok(run);
 			}
 
 			if (run.status !== "finalized") {

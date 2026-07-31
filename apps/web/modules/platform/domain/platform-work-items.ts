@@ -7,8 +7,12 @@ import {
 	platformWorkItem,
 	platformWorkItemActivity,
 } from "@afenda/db";
-import { normalizePostgresUnknown } from "@afenda/errors/adapters/postgres";
-import { fail, failFromAppError, ok, type Result } from "@afenda/errors/result";
+import {
+	errorIngress,
+	errorProject,
+	errorResult,
+	type Result,
+} from "@afenda/errors";
 
 export type PlatformWorkItemKind =
 	| "approval"
@@ -186,9 +190,11 @@ function validateRecord(input: RecordPlatformWorkItemInput): Result<void> {
 		!Number.isSafeInteger(input.factVersion) ||
 		input.factVersion < 1
 	) {
-		return fail("VALIDATION_ERROR", "Invalid platform work-item input");
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "Invalid platform work-item input",
+		});
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 function recordMatches(
@@ -222,12 +228,12 @@ function mapRow(
 	row: typeof platformWorkItem.$inferSelect,
 ): Result<PlatformWorkItem> {
 	if (!(isKind(row.kind) && isStatus(row.status))) {
-		return fail("INTERNAL_ERROR", "Platform work-item row is invalid");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 	if (row.priority !== "MEDIUM" && row.priority !== "HIGH") {
-		return fail("INTERNAL_ERROR", "Platform work-item priority is invalid");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		...row,
 		kind: row.kind,
 		status: row.status,
@@ -243,9 +249,9 @@ function mapActivityRow(
 		(row.fromStatus !== null && !isStatus(row.fromStatus)) ||
 		(row.action !== "recorded" && row.action !== "transitioned")
 	) {
-		return fail("INTERNAL_ERROR", "Platform work-item activity row is invalid");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		...row,
 		toStatus: row.toStatus,
 		fromStatus: row.fromStatus,
@@ -255,9 +261,11 @@ function mapActivityRow(
 
 function mapPlatformWorkItemPersistenceFailure(
 	error: unknown,
-	fallbackMessage: string,
+	_fallbackMessage: string,
 ): Result<never> {
-	return failFromAppError(normalizePostgresUnknown(error, fallbackMessage));
+	return errorProject.result(
+		errorIngress.postgres(error, { operation: "persistence.postgres" }),
+	);
 }
 
 export function createMemoryPlatformWorkItemStore(): PlatformWorkItemStore {
@@ -275,14 +283,13 @@ export function createMemoryPlatformWorkItemStore(): PlatformWorkItemStore {
 			if (existingId !== undefined) {
 				const existing = items.get(existingId);
 				if (existing === undefined) {
-					return await fail(
-						"INTERNAL_ERROR",
-						"Platform work-item index is inconsistent",
-					);
+					return await errorResult.fail("INTERNAL_ERROR");
 				}
 				return (await recordMatches(existing, input))
-					? ok(existing)
-					: fail("CONFLICT", "Platform work-item deduplication key was reused");
+					? errorResult.ok(existing)
+					: errorResult.fail("CONFLICT", {
+							publicMessage: "Platform work-item deduplication key was reused",
+						});
 			}
 			const now = new Date();
 			const item: PlatformWorkItem = {
@@ -311,11 +318,11 @@ export function createMemoryPlatformWorkItemStore(): PlatformWorkItemStore {
 				reason: null,
 				createdAt: now,
 			});
-			return await ok(item);
+			return await errorResult.ok(item);
 		},
 		async find(input) {
 			const item = items.get(input.workItemId);
-			return await ok(
+			return await errorResult.ok(
 				item?.organizationId === input.organizationId ? item : null,
 			);
 		},
@@ -325,16 +332,19 @@ export function createMemoryPlatformWorkItemStore(): PlatformWorkItemStore {
 				current === undefined ||
 				current.organizationId !== input.organizationId
 			) {
-				return await fail("NOT_FOUND", "Platform work item not found");
+				return await errorResult.fail("NOT_FOUND", {
+					publicMessage: "Platform work item not found",
+				});
 			}
 			if (current.version !== input.expectedVersion) {
-				return await fail("CONFLICT", "Platform work-item version changed");
+				return await errorResult.fail("CONFLICT", {
+					publicMessage: "Platform work-item version changed",
+				});
 			}
 			if (!canTransition(current, input.toStatus)) {
-				return await fail(
-					"CONFLICT",
-					"Platform work-item transition is not allowed",
-				);
+				return await errorResult.fail("CONFLICT", {
+					publicMessage: "Platform work-item transition is not allowed",
+				});
 			}
 			const now = new Date();
 			const updated: PlatformWorkItem = {
@@ -366,10 +376,10 @@ export function createMemoryPlatformWorkItemStore(): PlatformWorkItemStore {
 				reason: input.reason ?? null,
 				createdAt: now,
 			});
-			return await ok(updated);
+			return await errorResult.ok(updated);
 		},
 		async listActivity(input) {
-			return await ok(
+			return await errorResult.ok(
 				activities.filter(
 					(row) =>
 						row.organizationId === input.organizationId &&
@@ -432,16 +442,15 @@ export function createDrizzlePlatformWorkItemStore(): PlatformWorkItemStore {
 								.limit(1);
 				const mapped = rows[0] === undefined ? null : mapRow(rows[0]);
 				if (mapped === null) {
-					return fail("INTERNAL_ERROR", "Platform work item was not persisted");
+					return errorResult.fail("INTERNAL_ERROR");
 				}
 				if (!mapped.ok) {
 					return mapped;
 				}
 				if (!recordMatches(mapped.data, input)) {
-					return fail(
-						"CONFLICT",
-						"Platform work-item deduplication key was reused",
-					);
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "Platform work-item deduplication key was reused",
+					});
 				}
 				await db
 					.insert(platformWorkItemActivity)
@@ -482,7 +491,7 @@ export function createDrizzlePlatformWorkItemStore(): PlatformWorkItemStore {
 						),
 					)
 					.limit(1);
-				return rows[0] === undefined ? ok(null) : mapRow(rows[0]);
+				return rows[0] === undefined ? errorResult.ok(null) : mapRow(rows[0]);
 			} catch (error) {
 				return mapPlatformWorkItemPersistenceFailure(
 					error,
@@ -499,13 +508,19 @@ export function createDrizzlePlatformWorkItemStore(): PlatformWorkItemStore {
 				return found;
 			}
 			if (found.data === null) {
-				return fail("NOT_FOUND", "Platform work item not found");
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "Platform work item not found",
+				});
 			}
 			if (found.data.version !== input.expectedVersion) {
-				return fail("CONFLICT", "Platform work-item version changed");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Platform work-item version changed",
+				});
 			}
 			if (!canTransition(found.data, input.toStatus)) {
-				return fail("CONFLICT", "Platform work-item transition is not allowed");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Platform work-item transition is not allowed",
+				});
 			}
 			try {
 				const now = new Date();
@@ -529,7 +544,9 @@ export function createDrizzlePlatformWorkItemStore(): PlatformWorkItemStore {
 					)
 					.returning();
 				if (rows[0] === undefined) {
-					return fail("CONFLICT", "Platform work-item version changed");
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "Platform work-item version changed",
+					});
 				}
 				const mapped = mapRow(rows[0]);
 				if (!mapped.ok) {
@@ -574,7 +591,7 @@ export function createDrizzlePlatformWorkItemStore(): PlatformWorkItemStore {
 					}
 					mapped.push(item.data);
 				}
-				return ok(mapped);
+				return errorResult.ok(mapped);
 			} catch (error) {
 				return mapPlatformWorkItemPersistenceFailure(
 					error,

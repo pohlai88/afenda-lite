@@ -11,7 +11,11 @@ import {
 	restoreLegalCompany,
 	suspendLegalCompany,
 } from "@afenda/corporate-administration";
-import type { Result } from "@afenda/errors/result";
+import {
+	type Result as ActionResult,
+	errorResult,
+	type Result,
+} from "@afenda/errors";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -21,10 +25,7 @@ import {
 	createCorporateAdministrationCommandOptions,
 	createCorporateAdministrationCompanyDependencies,
 } from "@/lib/erp/corporate-administration-command-options";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
+
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 const uuidSchema = z.string().trim().uuid();
@@ -243,7 +244,9 @@ async function runLifecycleAction<TPayload extends LifecyclePayload>(input: {
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(input.schema, formDataObject(input.formData));
 			if (!parsed.success) {
-				return actionFail("VALIDATION_ERROR", parsed.error, parsed.details);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "The submitted data is invalid",
+				});
 			}
 
 			const result = await input.execute(

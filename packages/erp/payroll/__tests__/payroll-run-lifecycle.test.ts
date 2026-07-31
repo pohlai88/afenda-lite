@@ -226,7 +226,7 @@ describe("payroll run lifecycle commands", () => {
 		if (blockedFinalize.ok) {
 			return;
 		}
-		expect(blockedFinalize.details?.payrollCode).toBe("payroll.invalid_state");
+		expect(blockedFinalize.code).toBe("CONFLICT");
 	});
 
 	it("replays create idempotency and rejects fingerprint conflicts", async () => {
@@ -263,7 +263,7 @@ describe("payroll run lifecycle commands", () => {
 		if (conflict.ok) {
 			return;
 		}
-		expect(conflict.details?.payrollCode).toBe("payroll.conflict");
+		expect(conflict.code).toBe("CONFLICT");
 	});
 
 	it("rejects stale expectedVersion on calculate and finalize", async () => {
@@ -303,7 +303,7 @@ describe("payroll run lifecycle commands", () => {
 		if (staleCalculate.ok) {
 			return;
 		}
-		expect(staleCalculate.details?.payrollCode).toBe("payroll.stale_version");
+		expect(staleCalculate.code).toBe("CONFLICT");
 
 		const calculated = await calculatePayrollRun(
 			{
@@ -330,7 +330,7 @@ describe("payroll run lifecycle commands", () => {
 		if (staleFinalize.ok) {
 			return;
 		}
-		expect(staleFinalize.details?.payrollCode).toBe("payroll.stale_version");
+		expect(staleFinalize.code).toBe("CONFLICT");
 	});
 
 	it("handles concurrent calculate attempts with one winner", async () => {
@@ -378,7 +378,7 @@ describe("payroll run lifecycle commands", () => {
 		expect(successes).toHaveLength(1);
 		expect(failures).toHaveLength(1);
 		if (!failures[0]?.ok) {
-			expect(failures[0].details?.payrollCode).toBe("payroll.stale_version");
+			expect(failures[0].code).toBe("CONFLICT");
 		}
 	});
 
@@ -440,7 +440,7 @@ describe("payroll run lifecycle commands", () => {
 		expect(successes).toHaveLength(1);
 		expect(failures).toHaveLength(1);
 		if (!failures[0]?.ok) {
-			expect(failures[0].details?.payrollCode).toBe("payroll.stale_version");
+			expect(failures[0].code).toBe("CONFLICT");
 		}
 	});
 
@@ -507,7 +507,7 @@ describe("payroll run lifecycle commands", () => {
 		if (blocked.ok) {
 			return;
 		}
-		expect(blocked.details?.payrollCode).toBe("payroll.invalid_state");
+		expect(blocked.code).toBe("CONFLICT");
 	});
 
 	it("allows finalize with warning-only exceptions", async () => {
@@ -616,7 +616,7 @@ describe("payroll run lifecycle commands", () => {
 		if (blocked.ok) {
 			return;
 		}
-		expect(blocked.details?.payrollCode).toBe("payroll.validation");
+		expect(blocked.code).toBe("VALIDATION_ERROR");
 	});
 
 	it("transitions calculating to failed when calculator returns blocking exceptions", async () => {

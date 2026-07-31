@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
@@ -12,86 +12,96 @@ import {
 	humanResourcesErrorDetails,
 } from "../error-codes";
 
-export function alreadyInStatus(entity: string, status: string): Result<never> {
-	return fail(
-		"BAD_REQUEST",
-		`${entity} is already in status '${status}'`,
-		humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION),
-	);
+export function alreadyInStatus(
+	_entity: string,
+	_status: string,
+): Result<never> {
+	return errorResult.fail("BAD_REQUEST", {
+		publicMessage: "The request is invalid",
+		internalContext: humanResourcesErrorDetails(
+			HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+		),
+	});
 }
 
 export function cannotTransition(
-	entity: string,
-	current: string,
-	next: string,
+	_entity: string,
+	_current: string,
+	_next: string,
 ): Result<never> {
-	return fail(
-		"BAD_REQUEST",
-		`Cannot transition ${entity} from '${current}' to '${next}'`,
-		humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION),
-	);
+	return errorResult.fail("BAD_REQUEST", {
+		publicMessage: "The request is invalid",
+		internalContext: humanResourcesErrorDetails(
+			HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+		),
+	});
 }
 
 import type { EmploymentStatus, PositionStatus } from "./employment-status";
 import { assertValidDateRange } from "./employment-status";
 
 export function notFound(
-	message: string,
+	_message: string,
 	code:
 		| typeof HUMAN_RESOURCES_ERROR_NOT_FOUND
 		| typeof HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE = HUMAN_RESOURCES_ERROR_NOT_FOUND,
 ): Result<never> {
-	return fail("NOT_FOUND", message, humanResourcesErrorDetails(code));
+	return errorResult.fail("NOT_FOUND", {
+		publicMessage: "The requested resource was not found",
+		internalContext: humanResourcesErrorDetails(code),
+	});
 }
 
-export function conflict(message: string): Result<never> {
-	return fail(
-		"CONFLICT",
-		message,
-		humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-	);
+export function conflict(_message: string): Result<never> {
+	return errorResult.fail("CONFLICT", {
+		publicMessage: "The request conflicts with current state",
+		internalContext: humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
+	});
 }
 
-export function staleVersion(message: string): Result<never> {
-	return fail(
-		"CONFLICT",
-		message,
-		humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_STALE_VERSION),
-	);
+export function staleVersion(_message: string): Result<never> {
+	return errorResult.fail("CONFLICT", {
+		publicMessage: "The request conflicts with current state",
+		internalContext: humanResourcesErrorDetails(
+			HUMAN_RESOURCES_ERROR_STALE_VERSION,
+		),
+	});
 }
 
-export function invalidInput(message: string): Result<never> {
-	return fail(
-		"BAD_REQUEST",
-		message,
-		humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-	);
+export function invalidInput(_message: string): Result<never> {
+	return errorResult.fail("BAD_REQUEST", {
+		publicMessage: "The request is invalid",
+		internalContext: humanResourcesErrorDetails(
+			HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+		),
+	});
 }
 
-export function effectiveRangeOverlap(message: string): Result<never> {
-	return fail(
-		"BAD_REQUEST",
-		message,
-		humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_EFFECTIVE_RANGE_OVERLAP),
-	);
+export function effectiveRangeOverlap(_message: string): Result<never> {
+	return errorResult.fail("BAD_REQUEST", {
+		publicMessage: "The request is invalid",
+		internalContext: humanResourcesErrorDetails(
+			HUMAN_RESOURCES_ERROR_EFFECTIVE_RANGE_OVERLAP,
+		),
+	});
 }
 
-export function invalidState(message: string): Result<never> {
-	return fail(
-		"BAD_REQUEST",
-		message,
-		humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION),
-	);
+export function invalidState(_message: string): Result<never> {
+	return errorResult.fail("BAD_REQUEST", {
+		publicMessage: "The request is invalid",
+		internalContext: humanResourcesErrorDetails(
+			HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+		),
+	});
 }
 
 export function rehireRequiresEndedEmployment(): Result<never> {
-	return fail(
-		"CONFLICT",
-		"Employee already has an open employment",
-		humanResourcesErrorDetails(
+	return errorResult.fail("CONFLICT", {
+		publicMessage: "The request conflicts with current state",
+		internalContext: humanResourcesErrorDetails(
 			HUMAN_RESOURCES_ERROR_REHIRE_REQUIRES_ENDED_EMPLOYMENT,
 		),
-	);
+	});
 }
 
 /** After optimistic UPDATE returns zero rows, distinguish missing vs stale. */
@@ -109,7 +119,7 @@ export function assertActivePosition(status: PositionStatus): Result<void> {
 	if (status !== "active") {
 		return invalidState("Position is not active");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 /**
@@ -132,12 +142,12 @@ export function resolveAmendEndsOn(input: {
 		if (!dateCheck.ok) {
 			return dateCheck;
 		}
-		return ok(closedOn);
+		return errorResult.ok(closedOn);
 	}
 
 	const dateCheck = assertValidDateRange(input.startsOn, nextEndsOn);
 	if (!dateCheck.ok) {
 		return dateCheck;
 	}
-	return ok(nextEndsOn ?? null);
+	return errorResult.ok(nextEndsOn ?? null);
 }

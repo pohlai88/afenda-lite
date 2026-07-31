@@ -15,10 +15,12 @@ import {
 	runNeonHttpTransaction,
 } from "@afenda/db";
 import {
-	normalizePostgresUnknown,
-	postgresSqlState,
-} from "@afenda/errors/adapters/postgres";
-import { fail, failFromAppError, ok, type Result } from "@afenda/errors/result";
+	errorIngress,
+	errorProject,
+	errorResult,
+	type Result,
+} from "@afenda/errors";
+
 import {
 	FULFILLMENT_DELIVERY_CANCELLED_EVENT,
 	FULFILLMENT_DELIVERY_CLOSED_EVENT,
@@ -53,8 +55,10 @@ import {
 	type ProofOfDelivery,
 } from "./types";
 
-function failFromPersistence(error: unknown, fallbackMessage: string) {
-	return failFromAppError(normalizePostgresUnknown(error, fallbackMessage));
+function failFromPersistence(error: unknown, _fallbackMessage: string) {
+	return errorProject.result(
+		errorIngress.postgres(error, { operation: "persistence.postgres" }),
+	);
 }
 
 function parseStatus(value: string): DeliveryStatus {
@@ -199,25 +203,12 @@ function json(value: unknown): string {
 
 const FULFILLMENT_AUDIT_SOURCE = "fulfillment.drizzle-store" as const;
 
-const SQLSTATE_UNIQUE_VIOLATION = "23505";
-const SQLSTATE_FOREIGN_KEY_VIOLATION = "23503";
-
-function isConstraintViolation(error: unknown): boolean {
-	const sqlState = postgresSqlState(error);
-	return (
-		sqlState === SQLSTATE_UNIQUE_VIOLATION ||
-		sqlState === SQLSTATE_FOREIGN_KEY_VIOLATION
-	);
-}
-
 function writeError(
 	error: unknown,
-	conflictMessage: string,
+	_conflictMessage: string,
 	fallbackMessage: string,
 ): Result<never> {
-	return isConstraintViolation(error)
-		? fail("CONFLICT", conflictMessage)
-		: failFromPersistence(error, fallbackMessage);
+	return failFromPersistence(error, fallbackMessage);
 }
 
 function payload(
@@ -251,15 +242,15 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 	private async reload(
 		organizationId: string,
 		id: string,
-		message: string,
+		_message: string,
 	): Promise<Result<Delivery>> {
 		const result = await this.getDeliveryById(organizationId, id);
 		if (!result.ok) {
 			return result;
 		}
 		return result.data === null
-			? fail("INTERNAL_ERROR", message)
-			: ok(result.data);
+			? errorResult.fail("INTERNAL_ERROR")
+			: errorResult.ok(result.data);
 	}
 
 	async createDelivery(
@@ -350,7 +341,7 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 				`,
 			]);
 			if (rows[0] === undefined) {
-				return fail("INTERNAL_ERROR", "Delivery create returned no row");
+				return errorResult.fail("INTERNAL_ERROR");
 			}
 			return this.reload(record.organizationId, id, "Created delivery missing");
 		} catch (error) {
@@ -440,7 +431,9 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 				`,
 			]);
 			if (rows[0] === undefined) {
-				return fail("CONFLICT", "Delivery line add conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Delivery line add conflict",
+				});
 			}
 			const [row] = await db
 				.select()
@@ -453,8 +446,8 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 				)
 				.limit(1);
 			return row === undefined
-				? fail("INTERNAL_ERROR", "Created delivery line missing")
-				: ok(mapLine(row));
+				? errorResult.fail("INTERNAL_ERROR")
+				: errorResult.ok(mapLine(row));
 		} catch (error) {
 			return writeError(
 				error,
@@ -485,13 +478,17 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 			return existing;
 		}
 		if (existing.data === null) {
-			return fail("NOT_FOUND", "Delivery not found");
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Delivery not found",
+			});
 		}
 		const line = existing.data.lines.find(
 			(row) => row.id === record.deliveryLineId,
 		);
 		if (line === undefined) {
-			return fail("NOT_FOUND", "Delivery line not found");
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Delivery line not found",
+			});
 		}
 		const total = existing.data.picks
 			.filter((row) => row.deliveryLineId === line.id)
@@ -500,7 +497,9 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 			total + Number(record.quantityPicked) >
 			Number(line.quantityToDeliver)
 		) {
-			return fail("CONFLICT", "Picked quantity exceeds quantity to deliver");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Picked quantity exceeds quantity to deliver",
+			});
 		}
 		const id = randomUUID();
 		const auditId = randomUUID();
@@ -604,7 +603,9 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 				`,
 			]);
 			if (rows[0] === undefined) {
-				return fail("CONFLICT", "Delivery pick confirmation conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Delivery pick confirmation conflict",
+				});
 			}
 			const [row] = await db
 				.select()
@@ -617,8 +618,8 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 				)
 				.limit(1);
 			return row === undefined
-				? fail("INTERNAL_ERROR", "Created delivery pick missing")
-				: ok(mapPick(row));
+				? errorResult.fail("INTERNAL_ERROR")
+				: errorResult.ok(mapPick(row));
 		} catch (error) {
 			return writeError(
 				error,
@@ -641,7 +642,9 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 			return existing;
 		}
 		if (existing.data === null) {
-			return fail("NOT_FOUND", "Delivery not found");
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Delivery not found",
+			});
 		}
 		if (
 			existing.data.packIdempotencyKey !== null &&
@@ -649,24 +652,27 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 		) {
 			const last = existing.data.packs.at(-1);
 			return last === undefined
-				? fail("INTERNAL_ERROR", "Packed delivery missing pack row")
-				: ok(last);
+				? errorResult.fail("INTERNAL_ERROR")
+				: errorResult.ok(last);
 		}
 		if (existing.data.status !== "picking") {
-			return fail("CONFLICT", "Packing requires picking status");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Packing requires picking status",
+			});
 		}
 		if (existing.data.version !== record.expectedVersion) {
-			return fail("CONFLICT", "Delivery version conflict");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Delivery version conflict",
+			});
 		}
 		for (const line of existing.data.lines) {
 			const picked = existing.data.picks
 				.filter((row) => row.deliveryLineId === line.id)
 				.reduce((sum, row) => sum + Number(row.quantityPicked), 0);
 			if (picked < Number(line.quantityToDeliver)) {
-				return fail(
-					"CONFLICT",
-					"Packing requires every line to be fully picked",
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Packing requires every line to be fully picked",
+				});
 			}
 		}
 		const id = randomUUID();
@@ -750,7 +756,9 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 				`,
 			]);
 			if (rows[0] === undefined) {
-				return fail("CONFLICT", "Delivery pack confirmation conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Delivery pack confirmation conflict",
+				});
 			}
 			const [row] = await db
 				.select()
@@ -763,8 +771,8 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 				)
 				.limit(1);
 			return row === undefined
-				? fail("INTERNAL_ERROR", "Created delivery pack missing")
-				: ok(mapPack(row));
+				? errorResult.fail("INTERNAL_ERROR")
+				: errorResult.ok(mapPack(row));
 		} catch (error) {
 			return writeError(
 				error,
@@ -802,23 +810,31 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 			return existing;
 		}
 		if (existing.data === null) {
-			return fail("NOT_FOUND", "Delivery not found");
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Delivery not found",
+			});
 		}
 		if (
 			existing.data.podIdempotencyKey !== null &&
 			existing.data.podIdempotencyKey === record.idempotencyKey &&
 			existing.data.proofOfDelivery !== null
 		) {
-			return ok(existing.data.proofOfDelivery);
+			return errorResult.ok(existing.data.proofOfDelivery);
 		}
 		if (existing.data.proofOfDelivery !== null) {
-			return fail("CONFLICT", "Proof of delivery already exists");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Proof of delivery already exists",
+			});
 		}
 		if (existing.data.status !== "posted") {
-			return fail("CONFLICT", "Proof of delivery requires posted status");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Proof of delivery requires posted status",
+			});
 		}
 		if (existing.data.version !== record.expectedVersion) {
-			return fail("CONFLICT", "Delivery version conflict");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Delivery version conflict",
+			});
 		}
 		const advances = record.outcome === "delivered";
 		const nextStatus = advances ? "delivered" : "posted";
@@ -921,7 +937,9 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 				`,
 			]);
 			if (rows[0] === undefined) {
-				return fail("CONFLICT", "Proof of delivery record conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Proof of delivery record conflict",
+				});
 			}
 			const [row] = await db
 				.select()
@@ -934,8 +952,8 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 				)
 				.limit(1);
 			return row === undefined
-				? fail("INTERNAL_ERROR", "Created proof of delivery missing")
-				: ok(mapProof(row));
+				? errorResult.fail("INTERNAL_ERROR")
+				: errorResult.ok(mapProof(row));
 		} catch (error) {
 			return writeError(
 				error,
@@ -958,16 +976,20 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 			return existing;
 		}
 		if (existing.data === null) {
-			return fail("NOT_FOUND", "Delivery not found");
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Delivery not found",
+			});
 		}
 		if (
 			existing.data.cancelIdempotencyKey !== null &&
 			existing.data.cancelIdempotencyKey === record.idempotencyKey
 		) {
-			return ok(existing.data);
+			return errorResult.ok(existing.data);
 		}
 		if (!["draft", "picking", "packed"].includes(existing.data.status)) {
-			return fail("CONFLICT", "Delivery cannot be cancelled after posting");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Delivery cannot be cancelled after posting",
+			});
 		}
 		return this.transition(
 			record,
@@ -992,13 +1014,15 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 			return existing;
 		}
 		if (existing.data === null) {
-			return fail("NOT_FOUND", "Delivery not found");
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Delivery not found",
+			});
 		}
 		if (
 			existing.data.closeIdempotencyKey !== null &&
 			existing.data.closeIdempotencyKey === record.idempotencyKey
 		) {
-			return ok(existing.data);
+			return errorResult.ok(existing.data);
 		}
 		return this.transition(
 			record,
@@ -1023,7 +1047,7 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 				)
 				.limit(1);
 			if (header === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const [lines, picks, packs, proofs] = await Promise.all([
 				db
@@ -1067,7 +1091,7 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 					)
 					.limit(1),
 			]);
-			return ok(
+			return errorResult.ok(
 				mapDelivery(
 					header,
 					lines.map(mapLine),
@@ -1110,7 +1134,7 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 				.limit(filter.pageSize)
 				.offset((filter.page - 1) * filter.pageSize);
 			if (headers.length === 0) {
-				return ok([]);
+				return errorResult.ok([]);
 			}
 			const ids = headers.map((row) => row.id);
 			const [lines, picks, packs, proofs] = await Promise.all([
@@ -1170,7 +1194,7 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 			const proofsById = new Map(
 				proofs.map((row) => [row.deliveryId, mapProof(row)]),
 			);
-			return ok(
+			return errorResult.ok(
 				headers.map((header) =>
 					mapDelivery(
 						header,
@@ -1202,16 +1226,24 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 			return existing;
 		}
 		if (existing.data === null) {
-			return fail("NOT_FOUND", "Delivery not found");
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Delivery not found",
+			});
 		}
 		if (existing.data.status !== from) {
-			return fail("CONFLICT", `Delivery must be ${from}`);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "The request conflicts with current state",
+			});
 		}
 		if (requireLines && existing.data.lines.length === 0) {
-			return fail("CONFLICT", "Picking requires at least one delivery line");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Picking requires at least one delivery line",
+			});
 		}
 		if (existing.data.version !== record.expectedVersion) {
-			return fail("CONFLICT", "Delivery version conflict");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Delivery version conflict",
+			});
 		}
 		const nextVersion = record.expectedVersion + 1;
 		const auditId = randomUUID();
@@ -1301,7 +1333,9 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 				`,
 			]);
 			if (rows[0] === undefined) {
-				return fail("CONFLICT", "Delivery transition conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Delivery transition conflict",
+				});
 			}
 			return this.reload(
 				record.organizationId,
@@ -1331,7 +1365,7 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 					AND d.status IN ('posted', 'delivered', 'closed')
 			`);
 			const [row] = result.rows;
-			return ok(String(row?.total ?? "0"));
+			return errorResult.ok(String(row?.total ?? "0"));
 		} catch (error) {
 			return failFromPersistence(
 				error,

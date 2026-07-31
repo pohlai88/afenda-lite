@@ -1,15 +1,11 @@
 "use server";
 
 import { getJournalById, type Journal } from "@afenda/accounting";
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { z } from "zod";
-
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
 import { createAccountingCommandOptions } from "@/lib/erp/accounting-command-options";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export async function getJournalAction(
@@ -22,11 +18,9 @@ export async function getJournalAction(
 		execute: async (session) => {
 			const parsed = parseSchema(z.string().uuid(), journalId);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid journal id.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid journal id.",
+				});
 			}
 			const mapped = mapPackageResult(
 				await getJournalById(
@@ -42,7 +36,9 @@ export async function getJournalAction(
 				return mapped;
 			}
 			if (mapped.data === null) {
-				return actionFail("NOT_FOUND", "Journal not found");
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "Journal not found",
+				});
 			}
 			return { ok: true, data: { journal: mapped.data } };
 		},

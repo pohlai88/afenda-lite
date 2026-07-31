@@ -1,5 +1,5 @@
 import type { Change } from "@afenda/audit";
-import type { Result } from "@afenda/errors/result";
+import type { Result } from "@afenda/errors";
 import type { PayrollEventType } from "@afenda/events";
 
 import type {

@@ -10,18 +10,13 @@ import {
 	inviteOrgMember,
 	requireRole,
 } from "@afenda/auth";
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { createCorrelationId } from "@afenda/http";
 import { revalidatePath } from "next/cache";
 import { forbidUnlessPermission } from "@/app/actions/permission-gate";
 import { inviteOrgMemberCommandSchema } from "@/modules/identity/schemas/invite-org-member";
 import { readRequestAttribution } from "@/modules/platform/domain/request-attribution";
 import { logProductEvent } from "@/modules/platform/observability/product-log";
-import {
-	type ActionResult,
-	actionFail,
-	actionFailInternal,
-	actionOk,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export interface InviteOrgMemberActionData {
@@ -56,15 +51,13 @@ export async function inviteOrgMemberAction(
 		role: formData.get("role"),
 	});
 	if (!parsed.success) {
-		return actionFail(
-			"VALIDATION_ERROR",
-			"Enter a valid email and membership role.",
-			parsed.details,
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "Enter a valid email and membership role.",
+		});
 	}
 
 	if (!canInviteMember(session.role, parsed.data.role)) {
-		return actionFail("FORBIDDEN", "You cannot invite that membership role.");
+		return errorResult.fail("FORBIDDEN");
 	}
 
 	const permissionDenied = await forbidUnlessPermission(
@@ -103,10 +96,7 @@ export async function inviteOrgMemberAction(
 				path: "inviteOrgMemberAction.audit",
 				code: audit.code,
 			});
-			return actionFailInternal(
-				"Invitation could not be audited. It was not sent. Try again or contact an admin.",
-				correlationId,
-			);
+			return errorResult.fail("INTERNAL_ERROR", { correlationId });
 		}
 		auditId = audit.data.id;
 	} catch {
@@ -119,10 +109,7 @@ export async function inviteOrgMemberAction(
 			path: "inviteOrgMemberAction.audit",
 			code: "INTERNAL_ERROR",
 		});
-		return actionFailInternal(
-			"Invitation could not be audited. It was not sent. Try again or contact an admin.",
-			correlationId,
-		);
+		return errorResult.fail("INTERNAL_ERROR", { correlationId });
 	}
 
 	const invited = await inviteOrgMember({
@@ -140,16 +127,7 @@ export async function inviteOrgMemberAction(
 			path: "inviteOrgMemberAction",
 			code: invited.code,
 		});
-		if (
-			invited.code === "INTERNAL_ERROR" ||
-			invited.code === "SERVICE_UNAVAILABLE"
-		) {
-			return actionFailInternal(
-				"Invitation could not be sent. Try again or contact an admin.",
-				correlationId,
-			);
-		}
-		return actionFail(invited.code, invited.message, invited.details);
+		return errorResult.fail("INTERNAL_ERROR", { correlationId });
 	}
 	const { invitationId } = invited.data;
 
@@ -164,7 +142,7 @@ export async function inviteOrgMemberAction(
 
 	revalidatePath("/admin");
 
-	return actionOk({
+	return errorResult.ok({
 		email: parsed.data.email,
 		auditId,
 		joinUrl: invitationId ? buildJoinUrl({ invitationId }) : null,

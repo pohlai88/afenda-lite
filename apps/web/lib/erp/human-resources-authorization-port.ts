@@ -1,4 +1,4 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type {
 	HumanResourcesAuthorizationDecisionInput,
 	HumanResourcesAuthorizationPort,
@@ -36,7 +36,7 @@ export function createHumanResourcesResourceAwareAuthorizationPort(): HumanResou
 			});
 
 			if (!basicPermission) {
-				return ok({
+				return errorResult.ok({
 					allowed: false,
 					reason: `Missing required permission: ${input.permission}`,
 				});
@@ -63,7 +63,7 @@ export function createHumanResourcesResourceAwareAuthorizationPort(): HumanResou
 							input.resourceType,
 							input.sensitivity,
 						);
-						return ok({
+						return errorResult.ok({
 							allowed: true,
 							projectedFields,
 							reason:
@@ -75,7 +75,7 @@ export function createHumanResourcesResourceAwareAuthorizationPort(): HumanResou
 				}
 			}
 
-			return ok({
+			return errorResult.ok({
 				allowed: true,
 				reason: "Full access granted",
 				...(projectedFields === undefined ? {} : { projectedFields }),

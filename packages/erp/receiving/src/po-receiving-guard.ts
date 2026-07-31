@@ -1,10 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
-
-import {
-	RECEIVING_ERROR_PURCHASE_ORDER_NOT_RECEIVABLE,
-	RECEIVING_ERROR_QUANTITY_EXCEEDS_TOLERANCE,
-	receivingErrorDetails,
-} from "./error-codes";
+import { errorResult, type Result } from "@afenda/errors";
 import type {
 	PurchaseOrderReceivingQueryPort,
 	PurchaseOrderReceivingSnapshot,
@@ -13,9 +7,9 @@ import type {
 import type { PoConsumptionGuard } from "./store";
 import type { GoodsReceiptLine } from "./types";
 
-const PO_NOT_FOUND_MESSAGE = "Purchase order not found";
+const _PO_NOT_FOUND_MESSAGE = "Purchase order not found";
 
-function statusConflictMessage(status: PurchaseOrderReceivingStatus): string {
+function _statusConflictMessage(status: PurchaseOrderReceivingStatus): string {
 	switch (status) {
 		case "draft":
 			return "Purchase order must be posted before receiving";
@@ -37,19 +31,18 @@ export async function loadPurchaseOrderReceivingSnapshot(
 	input: { organizationId: string; purchaseOrderId: string },
 ): Promise<Result<PurchaseOrderReceivingSnapshot>> {
 	if (port === undefined) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Purchase order receiving query port is required",
-		);
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 	const snapshot = await port.getReceivingSnapshot(input);
 	if (!snapshot.ok) {
 		return snapshot;
 	}
 	if (snapshot.data === null) {
-		return fail("NOT_FOUND", PO_NOT_FOUND_MESSAGE);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "The requested resource was not found",
+		});
 	}
-	return ok(snapshot.data);
+	return errorResult.ok(snapshot.data);
 }
 
 /** Create path — existence/org + posted status only. */
@@ -57,13 +50,11 @@ export function assertPurchaseOrderPostedForCreate(
 	snapshot: PurchaseOrderReceivingSnapshot,
 ): Result<true> {
 	if (snapshot.status !== "posted") {
-		return fail(
-			"CONFLICT",
-			statusConflictMessage(snapshot.status),
-			receivingErrorDetails(RECEIVING_ERROR_PURCHASE_ORDER_NOT_RECEIVABLE),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "The request conflicts with current state",
+		});
 	}
-	return ok(true);
+	return errorResult.ok(true);
 }
 
 function receiptCeiling(ordered: string, tolerancePercent: string): number {
@@ -88,11 +79,9 @@ export function buildPoConsumptionGuard(
 	>[],
 ): Result<PoConsumptionGuard> {
 	if (snapshot.status !== "posted") {
-		return fail(
-			"CONFLICT",
-			statusConflictMessage(snapshot.status),
-			receivingErrorDetails(RECEIVING_ERROR_PURCHASE_ORDER_NOT_RECEIVABLE),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "The request conflicts with current state",
+		});
 	}
 
 	const byLineId = new Map(
@@ -102,18 +91,22 @@ export function buildPoConsumptionGuard(
 
 	for (const line of lines) {
 		if (line.purchaseOrderLineId === null) {
-			return fail(
-				"VALIDATION_ERROR",
-				"Purchase order line id is required on purchase_order receipt lines",
-			);
+			return errorResult.fail("VALIDATION_ERROR", {
+				publicMessage:
+					"Purchase order line id is required on purchase_order receipt lines",
+			});
 		}
 		const poLine = byLineId.get(line.purchaseOrderLineId);
 		if (poLine === undefined) {
-			return fail("NOT_FOUND", "Purchase order line not found");
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Purchase order line not found",
+			});
 		}
 		const qty = Number(line.quantityAccepted);
 		if (!Number.isFinite(qty)) {
-			return fail("CONFLICT", "Invalid accepted quantity");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Invalid accepted quantity",
+			});
 		}
 		acceptedThisReceipt.set(
 			line.purchaseOrderLineId,
@@ -125,14 +118,18 @@ export function buildPoConsumptionGuard(
 	for (const [lineId, thisAccepted] of acceptedThisReceipt) {
 		const poLine = byLineId.get(lineId);
 		if (poLine === undefined) {
-			return fail("NOT_FOUND", "Purchase order line not found");
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Purchase order line not found",
+			});
 		}
 		const ceiling = receiptCeiling(
 			poLine.ordered,
 			poLine.overReceiptTolerancePercent,
 		);
 		if (!Number.isFinite(ceiling)) {
-			return fail("CONFLICT", "Invalid purchase order quantity snapshot");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Invalid purchase order quantity snapshot",
+			});
 		}
 		guardLines.push({
 			purchaseOrderLineId: lineId,
@@ -141,7 +138,7 @@ export function buildPoConsumptionGuard(
 		});
 	}
 
-	return ok({
+	return errorResult.ok({
 		purchaseOrderId,
 		lines: guardLines,
 	});
@@ -155,17 +152,18 @@ export function assertAcceptedWithinPoCeilings(
 		const alreadyAccepted =
 			alreadyAcceptedByLine.get(line.purchaseOrderLineId) ?? 0;
 		if (!Number.isFinite(alreadyAccepted)) {
-			return fail("CONFLICT", "Invalid purchase order quantity snapshot");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Invalid purchase order quantity snapshot",
+			});
 		}
 		if (alreadyAccepted + line.thisAccepted > line.ceiling) {
-			return fail(
-				"CONFLICT",
-				"Accepted quantity exceeds remaining quantity plus over-receipt tolerance",
-				receivingErrorDetails(RECEIVING_ERROR_QUANTITY_EXCEEDS_TOLERANCE),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage:
+					"Accepted quantity exceeds remaining quantity plus over-receipt tolerance",
+			});
 		}
 	}
-	return ok(true);
+	return errorResult.ok(true);
 }
 
 /**

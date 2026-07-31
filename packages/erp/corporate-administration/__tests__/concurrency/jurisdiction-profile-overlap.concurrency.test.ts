@@ -35,7 +35,6 @@ describe.skipIf(!RUN_CORPORATE_ADMINISTRATION_NEON_PARITY)(
 					createDrizzleCompanyDependencies(),
 				);
 				expectOk(registered);
-
 				const [first, second] = await Promise.all([
 					setCompanyJurisdictionProfile(
 						caJurisdictionProfileInput({
@@ -58,7 +57,6 @@ describe.skipIf(!RUN_CORPORATE_ADMINISTRATION_NEON_PARITY)(
 						createDrizzleCompanyDependencies(),
 					),
 				]);
-
 				const outcomes = [first, second];
 				expect(outcomes.filter((result) => result.ok)).toHaveLength(1);
 				expect(

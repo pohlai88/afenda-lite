@@ -1,6 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
-
-import { corporateAdministrationErrorDetails } from "../error-codes";
+import { errorResult, type Result } from "@afenda/errors";
 import type { CanonicalDate } from "../kernel/dates";
 import type {
 	MeetingVote,
@@ -18,15 +16,15 @@ export function requiredVotesForThreshold(input: {
 	if (input.thresholdType === "custom") {
 		return input.requiredFor === undefined
 			? validation("requiredFor")
-			: ok(input.requiredFor);
+			: errorResult.ok(input.requiredFor);
 	}
 	if (input.thresholdType === "unanimous") {
-		return ok(input.eligibleVotes);
+		return errorResult.ok(input.eligibleVotes);
 	}
 	if (input.thresholdType === "supermajority") {
-		return ok(Math.ceil((input.eligibleVotes * 2) / 3));
+		return errorResult.ok(Math.ceil((input.eligibleVotes * 2) / 3));
 	}
-	return ok(Math.floor(input.eligibleVotes / 2) + 1);
+	return errorResult.ok(Math.floor(input.eligibleVotes / 2) + 1);
 }
 
 export function calculateVoteOutcome(input: {
@@ -50,7 +48,7 @@ export function calculateVoteOutcome(input: {
 	if (required.data > input.eligibleVotes) {
 		return validation("requiredFor");
 	}
-	return ok({
+	return errorResult.ok({
 		requiredFor: required.data,
 		outcome: input.votesFor >= required.data ? "adopted" : "rejected",
 	});
@@ -103,34 +101,22 @@ export function assertResolutionCanFollowVote(input: {
 	effectiveFrom: CanonicalDate;
 }): Result<void> {
 	if (input.vote.outcome !== input.status) {
-		return fail(
-			"CONFLICT",
-			"Corporate Administration resolution outcome does not match vote.",
-			corporateAdministrationErrorDetails("CORPORATE_ADMINISTRATION_CONFLICT", {
-				field: "meetingVoteId",
-			}),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage:
+				"Corporate Administration resolution outcome does not match vote.",
+		});
 	}
 	if (input.effectiveFrom < input.decidedAt.toISOString().slice(0, 10)) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Corporate Administration resolution cannot predate approval.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_CHRONOLOGY_INVALID",
-				{ field: "effectiveFrom" },
-			),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage:
+				"Corporate Administration resolution cannot predate approval.",
+		});
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
-function validation(field: string): Result<never> {
-	return fail(
-		"VALIDATION_ERROR",
-		"Corporate Administration resolution input is invalid.",
-		corporateAdministrationErrorDetails(
-			"CORPORATE_ADMINISTRATION_VALIDATION_FAILED",
-			{ field },
-		),
-	);
+function validation(_field: string): Result<never> {
+	return errorResult.fail("VALIDATION_ERROR", {
+		publicMessage: "Corporate Administration resolution input is invalid.",
+	});
 }

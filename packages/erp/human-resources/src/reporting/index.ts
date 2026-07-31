@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import { z } from "zod";
 
 import {
@@ -52,7 +52,7 @@ function sumDecimals(values: readonly string[]): Result<string> {
 		}
 		total = next.data;
 	}
-	return ok(total);
+	return errorResult.ok(total);
 }
 
 function factsOfKind<Kind extends HumanResourcesReadModelFact["kind"]>(
@@ -72,20 +72,18 @@ export async function buildHumanResourcesReportingSnapshot(
 ): Promise<Result<HumanResourcesReportingSnapshot>> {
 	const parsed = reportingSnapshotInputSchema.safeParse(rawInput);
 	if (!parsed.success) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Invalid Human Resources reporting window",
-			{
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+			internalContext: {
 				fieldErrors: parsed.error.flatten().fieldErrors,
 			},
-		);
+		});
 	}
 	const input = parsed.data;
 	if (input.periodStart > input.periodEnd || input.periodEnd > input.asOf) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Human Resources reporting dates are inconsistent",
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+		});
 	}
 
 	const loaded = await Promise.all(
@@ -240,7 +238,7 @@ export async function buildHumanResourcesReportingSnapshot(
 		workforcePlan.map((fact) => fact.actualHeadcount),
 	);
 
-	return ok({
+	return errorResult.ok({
 		meta: {
 			organizationId: input.organizationId,
 			asOf: input.asOf,

@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import { renderBulkErrorFile } from "./error-file";
 import {
 	type BulkAuditEvent,
@@ -61,17 +61,18 @@ function validateRequest<Row>(input: BulkImportRequest<Row>): Result<number> {
 		input.rows.length === 0 ||
 		input.rows.length > MAX_HUMAN_RESOURCES_BULK_ROWS
 	) {
-		return fail("VALIDATION_ERROR", "Invalid Human Resources bulk request");
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+		});
 	}
 	const rowsPerRun =
 		input.maxRowsPerRun ?? DEFAULT_HUMAN_RESOURCES_BULK_ROWS_PER_RUN;
 	if (rowsPerRun < 1 || rowsPerRun > MAX_HUMAN_RESOURCES_BULK_ROWS) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Bulk rows per run is outside the safe range",
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+		});
 	}
-	return ok(rowsPerRun);
+	return errorResult.ok(rowsPerRun);
 }
 
 function sourceReferenceIssue(
@@ -152,7 +153,7 @@ async function validateDryRunRows<Row, Validated, Output>(
 ): Promise<Result<readonly BulkRowOutcome<Output>[]>> {
 	const row = input.rows[rowIndex];
 	if (row === undefined) {
-		return ok(outcomes);
+		return errorResult.ok(outcomes);
 	}
 	const referenceIssue = sourceReferenceIssue(
 		row.sourceReference,
@@ -215,7 +216,7 @@ async function resolveCommitRow<Row, Validated, Output>(
 ): Promise<Result<CommitRowResolution<Output>>> {
 	const row = input.rows[rowIndex];
 	if (row === undefined) {
-		return fail("INTERNAL_ERROR", "Bulk checkpoint exceeded the row boundary");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 	const referenceIssue = sourceReferenceIssue(
 		row.sourceReference,
@@ -230,7 +231,7 @@ async function resolveCommitRow<Row, Validated, Output>(
 		row,
 	});
 	if (referenceIssue !== null) {
-		return ok({
+		return errorResult.ok({
 			kind: "outcome",
 			outcome: {
 				rowIndex,
@@ -241,7 +242,7 @@ async function resolveCommitRow<Row, Validated, Output>(
 		});
 	}
 	if (!validation.valid) {
-		return ok({
+		return errorResult.ok({
 			kind: "outcome",
 			outcome: {
 				rowIndex,
@@ -274,7 +275,7 @@ async function resolveCommitRow<Row, Validated, Output>(
 		};
 	}
 	if (execution.status === "retryable_failure") {
-		return ok({
+		return errorResult.ok({
 			kind: "retryable_failure",
 			failure: {
 				...execution.issue,
@@ -285,7 +286,7 @@ async function resolveCommitRow<Row, Validated, Output>(
 		});
 	}
 	if (execution.status === "applied") {
-		return ok({
+		return errorResult.ok({
 			kind: "outcome",
 			outcome: {
 				rowIndex,
@@ -295,7 +296,7 @@ async function resolveCommitRow<Row, Validated, Output>(
 			},
 		});
 	}
-	return ok({
+	return errorResult.ok({
 		kind: "outcome",
 		outcome: {
 			rowIndex,
@@ -336,9 +337,9 @@ async function processCommitRows<Row, Validated, Output>(
 ): Promise<Result<BulkImportResult<Output>>> {
 	if (state.nextRowIndex >= state.runEnd) {
 		if (state.checkpoint === null) {
-			return fail("INTERNAL_ERROR", "Bulk checkpoint was not persisted");
+			return errorResult.fail("INTERNAL_ERROR");
 		}
-		return ok(
+		return errorResult.ok(
 			presentResult({
 				request: input,
 				fingerprint,
@@ -384,7 +385,7 @@ async function processCommitRows<Row, Validated, Output>(
 		if (!saved.ok) {
 			return saved;
 		}
-		return ok(
+		return errorResult.ok(
 			presentResult({
 				request: input,
 				fingerprint,
@@ -457,23 +458,24 @@ async function runCommitImport<Row, Validated, Output>(
 	}
 	const checkpoint = loaded.data;
 	if (checkpoint !== null && checkpoint.requestFingerprint !== fingerprint) {
-		return fail(
-			"CONFLICT",
-			"Bulk idempotency key was reused with different rows",
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "The request conflicts with current state",
+		});
 	}
 	if (
 		input.expectedCheckpointVersion !== undefined &&
 		checkpoint?.version !== input.expectedCheckpointVersion
 	) {
-		return fail("CONFLICT", "Bulk resume checkpoint version is stale");
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "The request conflicts with current state",
+		});
 	}
 	if (
 		checkpoint !== null &&
 		(checkpoint.status === "completed" ||
 			checkpoint.status === "completed_with_rejections")
 	) {
-		return ok(
+		return errorResult.ok(
 			presentResult({
 				request: input,
 				fingerprint,
@@ -525,7 +527,7 @@ export async function runHumanResourcesBulkImport<Row, Validated, Output>(
 	if (!outcomes.ok) {
 		return outcomes;
 	}
-	return ok(
+	return errorResult.ok(
 		presentResult({
 			request: input,
 			fingerprint,

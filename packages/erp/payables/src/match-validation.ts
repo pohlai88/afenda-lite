@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type {
 	SupplierInvoice,
@@ -50,56 +50,36 @@ function validateThreeWayMatchInput(
 ): Result<ThreeWayMatchInput> {
 	const { goodsReceipt, invoice, purchaseOrder } = input;
 	if (purchaseOrder.status !== "posted") {
-		return fail("CONFLICT", "Purchase order must be posted for matching", {
-			purchaseOrderId: purchaseOrder.purchaseOrderId,
-			status: purchaseOrder.status,
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Purchase order must be posted for matching",
 		});
 	}
 	if (purchaseOrder.supplierPartyId !== invoice.supplierId) {
-		return fail(
-			"CONFLICT",
-			"Purchase order supplier does not match invoice supplier",
-			{
-				invoiceSupplierId: invoice.supplierId,
-				purchaseOrderId: purchaseOrder.purchaseOrderId,
-			},
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Purchase order supplier does not match invoice supplier",
+		});
 	}
 	if (purchaseOrder.currencyCode !== invoice.currencyCode) {
-		return fail(
-			"CONFLICT",
-			"Purchase order and invoice currencies must match for matching",
-			{
-				invoiceCurrency: invoice.currencyCode,
-				purchaseOrderCurrency: purchaseOrder.currencyCode,
-			},
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage:
+				"Purchase order and invoice currencies must match for matching",
+		});
 	}
 	if (goodsReceipt.status !== "posted" && goodsReceipt.status !== "closed") {
-		return fail(
-			"CONFLICT",
-			"Goods receipt must be posted or closed for matching",
-			{
-				goodsReceiptId: goodsReceipt.goodsReceiptId,
-				status: goodsReceipt.status,
-			},
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Goods receipt must be posted or closed for matching",
+		});
 	}
 	if (
 		goodsReceipt.sourceType !== "purchase_order" ||
 		goodsReceipt.sourceId !== purchaseOrder.purchaseOrderId ||
 		goodsReceipt.purchaseOrderId !== purchaseOrder.purchaseOrderId
 	) {
-		return fail(
-			"CONFLICT",
-			"Goods receipt must reference the matched purchase order",
-			{
-				goodsReceiptId: goodsReceipt.goodsReceiptId,
-				purchaseOrderId: purchaseOrder.purchaseOrderId,
-			},
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Goods receipt must reference the matched purchase order",
+		});
 	}
-	return ok(input);
+	return errorResult.ok(input);
 }
 
 function aggregateThreeWayMatchFacts(
@@ -251,7 +231,7 @@ export function evaluateThreeWayMatch(
 	}
 	const aggregates = aggregateThreeWayMatchFacts(validated.data);
 	const variances = calculateThreeWayMatchVariances(aggregates);
-	return ok(classifyThreeWayMatch({ aggregates, variances }));
+	return errorResult.ok(classifyThreeWayMatch({ aggregates, variances }));
 }
 
 function format(value: bigint): string {

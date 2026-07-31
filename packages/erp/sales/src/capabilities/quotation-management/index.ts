@@ -1,4 +1,4 @@
-import { fail, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	itemIdSchema,
 	partyIdSchema,
@@ -67,10 +67,8 @@ export const getSalesQuotationInputSchema = salesQueryContextSchema.extend({
 });
 export const listSalesQuotationsInputSchema = salesPageRequestSchema;
 
-function required<T>(value: T | undefined, name: string): Result<T> {
-	return value
-		? { ok: true, data: value }
-		: fail("INTERNAL_ERROR", `${name} port is required`);
+function required<T>(value: T | undefined, _name: string): Result<T> {
+	return value ? { ok: true, data: value } : errorResult.fail("INTERNAL_ERROR");
 }
 export async function createDraftSalesQuotation(
 	input: z.input<typeof createSalesQuotationInputSchema>,
@@ -78,11 +76,9 @@ export async function createDraftSalesQuotation(
 ) {
 	const parsed = createSalesQuotationInputSchema.safeParse(input);
 	if (!parsed.success) {
-		return fail(
-			"BAD_REQUEST",
-			"Enter a valid sales quotation",
-			parsed.error.flatten(),
-		);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Enter a valid sales quotation",
+		});
 	}
 	const deps = resolveSalesDeps(options);
 	const auth = await requireSalesCommandPermission(deps.authorization, {
@@ -138,11 +134,9 @@ export async function addSalesQuotationLine(
 ) {
 	const parsed = addSalesQuotationLineInputSchema.safeParse(input);
 	if (!parsed.success) {
-		return fail(
-			"BAD_REQUEST",
-			"Enter a valid quotation line",
-			parsed.error.flatten(),
-		);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Enter a valid quotation line",
+		});
 	}
 	const deps = resolveSalesDeps(options);
 	const auth = await requireSalesCommandPermission(deps.authorization, {
@@ -205,11 +199,9 @@ export async function getSalesQuotation(
 ) {
 	const parsed = getSalesQuotationInputSchema.safeParse(input);
 	if (!parsed.success) {
-		return fail(
-			"BAD_REQUEST",
-			"Enter a valid quotation ID",
-			parsed.error.flatten(),
-		);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Enter a valid quotation ID",
+		});
 	}
 	const deps = resolveSalesDeps(options);
 	const auth = await requireSalesQueryPermission(deps.authorization, {
@@ -232,11 +224,9 @@ export async function listSalesQuotations(
 ) {
 	const parsed = listSalesQuotationsInputSchema.safeParse(input);
 	if (!parsed.success) {
-		return fail(
-			"BAD_REQUEST",
-			"Enter valid quotation filters",
-			parsed.error.flatten(),
-		);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Enter valid quotation filters",
+		});
 	}
 	const deps = resolveSalesDeps(options);
 	const auth = await requireSalesQueryPermission(deps.authorization, {
@@ -264,11 +254,9 @@ async function transition(
 ) {
 	const parsed = quotationTransitionInputSchema.safeParse(input);
 	if (!parsed.success) {
-		return fail(
-			"BAD_REQUEST",
-			"Enter a valid quotation transition",
-			parsed.error.flatten(),
-		);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Enter a valid quotation transition",
+		});
 	}
 	const deps = resolveSalesDeps(options);
 	const auth = await requireSalesCommandPermission(deps.authorization, {
@@ -333,11 +321,9 @@ export async function convertSalesQuotationToOrder(
 		.extend({ orderCode: z.string().trim().min(1).max(64) })
 		.safeParse(input);
 	if (!parsed.success) {
-		return fail(
-			"BAD_REQUEST",
-			"Enter a valid quotation conversion",
-			parsed.error.flatten(),
-		);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Enter a valid quotation conversion",
+		});
 	}
 	const deps = resolveSalesDeps(options);
 	const auth = await requireSalesCommandPermission(deps.authorization, {
@@ -356,11 +342,13 @@ export async function convertSalesQuotationToOrder(
 		return quotation;
 	}
 	if (!quotation.data) {
-		return fail("NOT_FOUND", "Sales quotation not found");
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Sales quotation not found",
+		});
 	}
 	if (quotation.data.status !== "accepted") {
-		return fail("CONFLICT", "Only accepted quotations can be converted", {
-			reason: "SALES_INVALID_STATE",
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Only accepted quotations can be converted",
 		});
 	}
 	const order = await deps.store.createOrder(

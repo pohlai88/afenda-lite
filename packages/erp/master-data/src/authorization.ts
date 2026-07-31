@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import { masterDataModuleManifest } from "./module.manifest";
 import type { MasterCommandId, MasterQueryId } from "./module-ids";
 import {
@@ -63,13 +63,11 @@ async function requireMasterPermission(
 	},
 ): Promise<Result<void>> {
 	if (!authorization) {
-		return fail("UNAUTHORIZED", "Master-data authorization port is required", {
-			permission: input.permission,
-		});
+		return errorResult.fail("UNAUTHORIZED");
 	}
 	const allowed = await authorization.can(input);
 	if (allowed) {
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	}
 
 	const strongerPermissions = strongerReadPermissionsFor(input.permission);
@@ -79,12 +77,10 @@ async function requireMasterPermission(
 			(await authorization.can({ ...input, permission })) ? true : undefined,
 	);
 	if (allowedByStrongerGrant === true) {
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	}
 
-	return fail("FORBIDDEN", "Missing required master-data permission", {
-		permission: input.permission,
-	});
+	return errorResult.fail("FORBIDDEN");
 }
 
 function strongerReadPermissionsFor(

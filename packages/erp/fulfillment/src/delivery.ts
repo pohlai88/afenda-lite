@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	addStockMovementLine,
 	createStockMovement,
@@ -56,7 +56,7 @@ import type {
 	ProofOfDelivery,
 } from "./types";
 
-const DELIVERY_INVENTORY_POST_FAILED_MESSAGE =
+const _DELIVERY_INVENTORY_POST_FAILED_MESSAGE =
 	"Delivery posted but inventory stock movement failed";
 
 type AddDeliveryLineInput = z.infer<typeof addDeliveryLineInputSchema>;
@@ -79,13 +79,10 @@ async function resolveShipToSnapshot(
 		shipToPartyName: data.shipToPartyName ?? null,
 	};
 	if (!data.salesOrderId) {
-		return ok(provided);
+		return errorResult.ok(provided);
 	}
 	if (!sales) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Sales query port is required when fulfilling a sales order",
-		);
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 	const salesOrder = await sales.getFulfillableSalesOrder({
 		organizationId: data.organizationId,
@@ -96,10 +93,14 @@ async function resolveShipToSnapshot(
 		return salesOrder;
 	}
 	if (salesOrder.data === null) {
-		return fail("NOT_FOUND", "Sales order not found");
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Sales order not found",
+		});
 	}
 	if (salesOrder.data.status !== "posted") {
-		return fail("CONFLICT", "Sales order is not fulfillable");
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Sales order is not fulfillable",
+		});
 	}
 	if (
 		provided.shipToPartyId !== null ||
@@ -107,9 +108,9 @@ async function resolveShipToSnapshot(
 		provided.shipToPartyName !== null ||
 		!salesOrder.data.shipToSnapshot
 	) {
-		return ok(provided);
+		return errorResult.ok(provided);
 	}
-	return ok({
+	return errorResult.ok({
 		shipToPartyId: salesOrder.data.customerPartyId,
 		shipToPartyCode: salesOrder.data.customerPartyCode,
 		shipToPartyName: salesOrder.data.shipToSnapshot.name,
@@ -124,23 +125,20 @@ async function validateSalesOrderLine(
 ): Promise<Result<void>> {
 	if (!delivery.salesOrderId) {
 		return data.salesOrderLineId
-			? fail(
-					"CONFLICT",
-					"Sales order line ID cannot be set when delivery is not linked to a sales order",
-				)
-			: ok(undefined);
+			? errorResult.fail("CONFLICT", {
+					publicMessage:
+						"Sales order line ID cannot be set when delivery is not linked to a sales order",
+				})
+			: errorResult.ok(undefined);
 	}
 	if (!sales) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Sales query port is required when fulfilling a sales order",
-		);
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 	if (!data.salesOrderLineId) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Sales order line ID is required when delivery is linked to a sales order",
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage:
+				"Sales order line ID is required when delivery is linked to a sales order",
+		});
 	}
 	const salesOrder = await sales.getFulfillableSalesOrder({
 		organizationId: data.organizationId,
@@ -151,16 +149,22 @@ async function validateSalesOrderLine(
 		return salesOrder;
 	}
 	if (!salesOrder.data) {
-		return fail("NOT_FOUND", "Sales order not found");
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Sales order not found",
+		});
 	}
 	const salesLine = salesOrder.data.lines.find(
 		(line) => line.salesOrderLineId === data.salesOrderLineId,
 	);
 	if (!salesLine) {
-		return fail("NOT_FOUND", "Sales order line not found");
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Sales order line not found",
+		});
 	}
 	if (salesLine.itemId !== data.itemId) {
-		return fail("CONFLICT", "Item must match sales order line item");
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Item must match sales order line item",
+		});
 	}
 	const sumResult = await store.sumPostedQuantityForSalesOrderLine(
 		data.organizationId,
@@ -172,11 +176,10 @@ async function validateSalesOrderLine(
 	const remaining = Number(salesLine.orderedQuantity) - Number(sumResult.data);
 	const toDeliver = Number(data.quantityToDeliver);
 	return toDeliver > remaining
-		? fail(
-				"CONFLICT",
-				`Delivery quantity ${toDeliver} exceeds remaining ${remaining} for sales order line`,
-			)
-		: ok(undefined);
+		? errorResult.fail("CONFLICT", {
+				publicMessage: "The request conflicts with current state",
+			})
+		: errorResult.ok(undefined);
 }
 
 async function reservePickStock(
@@ -186,10 +189,7 @@ async function reservePickStock(
 	inventory: InventoryCommandOptions | undefined,
 ): Promise<Result<string>> {
 	if (!inventory) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Inventory command options are required to reserve stock for pick",
-		);
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 	const reserved = await reserveStock(
 		{
@@ -204,7 +204,7 @@ async function reservePickStock(
 		},
 		inventory,
 	);
-	return reserved.ok ? ok(reserved.data.id) : reserved;
+	return reserved.ok ? errorResult.ok(reserved.data.id) : reserved;
 }
 
 async function validatePickReservation(
@@ -215,7 +215,7 @@ async function validatePickReservation(
 	inventory: InventoryCommandOptions,
 ): Promise<Result<string>> {
 	if (!inventory.store) {
-		return ok(reservationId);
+		return errorResult.ok(reservationId);
 	}
 	const reservation = await inventory.store.getReservationById(
 		data.organizationId,
@@ -225,36 +225,42 @@ async function validatePickReservation(
 		return reservation;
 	}
 	if (!reservation.data) {
-		return fail("NOT_FOUND", "Reservation not found in organization");
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Reservation not found in organization",
+		});
 	}
 	if (
 		reservation.data.status !== "active" &&
 		reservation.data.status !== "partially_consumed"
 	) {
-		return fail("CONFLICT", "Reservation must be active or partially consumed");
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Reservation must be active or partially consumed",
+		});
 	}
 	if (reservation.data.organizationId !== data.organizationId) {
-		return fail("CONFLICT", "Reservation must belong to the same organization");
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Reservation must belong to the same organization",
+		});
 	}
 	if (reservation.data.itemId !== line.itemId) {
-		return fail("CONFLICT", "Reservation item must match delivery line item");
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Reservation item must match delivery line item",
+		});
 	}
 	if (reservation.data.warehouseId !== delivery.warehouseId) {
-		return fail(
-			"CONFLICT",
-			"Reservation warehouse must match delivery warehouse",
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Reservation warehouse must match delivery warehouse",
+		});
 	}
 	const remaining =
 		Number(reservation.data.quantity) -
 		Number(reservation.data.consumedQuantity);
 	const pickQuantity = Number(data.quantityPicked);
 	return remaining < pickQuantity
-		? fail(
-				"CONFLICT",
-				`Insufficient reservation quantity: ${remaining} available, ${pickQuantity} requested`,
-			)
-		: ok(reservationId);
+		? errorResult.fail("CONFLICT", {
+				publicMessage: "The request conflicts with current state",
+			})
+		: errorResult.ok(reservationId);
 }
 
 async function postDeliveryInventoryMovement(
@@ -264,10 +270,7 @@ async function postDeliveryInventoryMovement(
 	inventory: InventoryCommandOptions | undefined,
 ): Promise<Result<void>> {
 	if (!inventory) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Inventory command options are required to post delivery stock",
-		);
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 
 	// Check if all picks share the same reservationId
@@ -341,7 +344,7 @@ async function postDeliveryInventoryMovement(
 		return posted;
 	}
 
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export async function createDraftDelivery(
@@ -382,7 +385,9 @@ export async function createDraftDelivery(
 		return warehouse;
 	}
 	if (warehouse.data.status !== "active") {
-		return fail("CONFLICT", "Warehouse must be active");
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Warehouse must be active",
+		});
 	}
 
 	const shipTo = await resolveShipToSnapshot(parsed.data, sales);
@@ -442,7 +447,9 @@ export async function addDeliveryLine(
 		return delivery;
 	}
 	if (!delivery.data) {
-		return fail("NOT_FOUND", "Delivery not found");
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Delivery not found",
+		});
 	}
 
 	const salesLine = await validateSalesOrderLine(
@@ -467,7 +474,9 @@ export async function addDeliveryLine(
 		return item;
 	}
 	if (item.data.status !== "active") {
-		return fail("CONFLICT", "Item must be active");
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Item must be active",
+		});
 	}
 	const uom = requireMaster(
 		await masters.getRefUomById(
@@ -609,13 +618,17 @@ export async function confirmPick(
 		return delivery;
 	}
 	if (!delivery.data) {
-		return fail("NOT_FOUND", "Delivery not found");
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Delivery not found",
+		});
 	}
 	const line = delivery.data.lines.find(
 		(l) => l.id === parsed.data.deliveryLineId,
 	);
 	if (!line) {
-		return fail("NOT_FOUND", "Delivery line not found");
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Delivery line not found",
+		});
 	}
 
 	const { reservationId: requestedReservationId } = parsed.data;
@@ -705,10 +718,7 @@ export async function postDelivery(
 	}
 	const { data, deps } = context.data;
 	if (!deps.inventory) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Inventory command options are required to post delivery stock",
-		);
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 
 	// Load delivery to check if it has salesOrderId
@@ -720,16 +730,15 @@ export async function postDelivery(
 		return delivery;
 	}
 	if (!delivery.data) {
-		return fail("NOT_FOUND", "Delivery not found");
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Delivery not found",
+		});
 	}
 
 	// If salesOrderId, re-validate sales still posted
 	if (delivery.data.salesOrderId) {
 		if (!deps.sales) {
-			return fail(
-				"INTERNAL_ERROR",
-				"Sales query port is required when posting a delivery linked to a sales order",
-			);
+			return errorResult.fail("INTERNAL_ERROR");
 		}
 		const salesOrder = await deps.sales.getFulfillableSalesOrder({
 			organizationId: data.organizationId,
@@ -740,10 +749,14 @@ export async function postDelivery(
 			return salesOrder;
 		}
 		if (!salesOrder.data) {
-			return fail("NOT_FOUND", "Sales order not found");
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Sales order not found",
+			});
 		}
 		if (salesOrder.data.status !== "posted") {
-			return fail("CONFLICT", "Sales order is no longer posted");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Sales order is no longer posted",
+			});
 		}
 	}
 
@@ -771,11 +784,11 @@ export async function postDelivery(
 		deps.inventory,
 	);
 	if (!inventoryPosted.ok) {
-		return fail(
-			inventoryPosted.code === "CONFLICT" ? "CONFLICT" : "INTERNAL_ERROR",
-			DELIVERY_INVENTORY_POST_FAILED_MESSAGE,
-			inventoryPosted.details,
-		);
+		return inventoryPosted.code === "CONFLICT"
+			? errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+				})
+			: errorResult.fail("INTERNAL_ERROR");
 	}
 
 	return posted;
@@ -983,17 +996,19 @@ export async function getInvoiceableDelivery(
 		return delivery;
 	}
 	if (delivery.data === null) {
-		return ok(null);
+		return errorResult.ok(null);
 	}
 	if (
 		delivery.data.status !== "posted" &&
 		delivery.data.status !== "delivered" &&
 		delivery.data.status !== "closed"
 	) {
-		return fail("CONFLICT", "Delivery is not invoiceable");
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Delivery is not invoiceable",
+		});
 	}
 
-	return ok({
+	return errorResult.ok({
 		deliveryId: delivery.data.id,
 		status: delivery.data.status,
 		salesOrderId: delivery.data.salesOrderId,

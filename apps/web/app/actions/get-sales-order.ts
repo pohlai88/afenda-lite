@@ -1,14 +1,10 @@
 "use server";
 
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { getSalesOrderById, type SalesOrder } from "@afenda/sales";
-
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
 import { createSalesCommandOptions } from "@/lib/erp/sales-command-options";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
 
 export interface GetSalesOrderActionData {
 	order: SalesOrder;
@@ -39,7 +35,9 @@ export async function getSalesOrderAction(
 				return mapped;
 			}
 			if (mapped.data === null) {
-				return actionFail("NOT_FOUND", "Sales order not found");
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "Sales order not found",
+				});
 			}
 			return { ok: true, data: { order: mapped.data } };
 		},

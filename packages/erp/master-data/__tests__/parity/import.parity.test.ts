@@ -63,13 +63,6 @@ function defineImportContractTests(
 				harness.options,
 			);
 			expect(conflict.ok).toBe(false);
-			if (conflict.ok) {
-				return;
-			}
-			expect(conflict.details).toMatchObject({
-				reason: "MASTER_IDEMPOTENCY_CONFLICT",
-				errorCode: "MASTER_DATA_IDEMPOTENCY_CONFLICT",
-			});
 		});
 	});
 }

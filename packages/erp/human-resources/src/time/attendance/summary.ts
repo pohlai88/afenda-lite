@@ -1,4 +1,4 @@
-import type { Result } from "@afenda/errors/result";
+import type { Result } from "@afenda/errors";
 
 import type { HumanResourcesCommandOptions } from "../../command-options";
 import { HUMAN_RESOURCES_QUERY_ATTENDANCE_DAILY_SUMMARY_GET } from "../../module-ids";

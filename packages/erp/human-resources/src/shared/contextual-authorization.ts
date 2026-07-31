@@ -1,5 +1,4 @@
-import { normalizeUnknown } from "@afenda/errors";
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import { requireHumanResourcesPermission } from "../authorization";
 import type { HumanResourcesEmployeeId } from "../brands";
@@ -37,7 +36,7 @@ export {
 	type HumanResourcesSensitiveResourceType,
 } from "./sensitive-field-types";
 
-const AUTHORIZATION_DENIED_MESSAGE =
+const _AUTHORIZATION_DENIED_MESSAGE =
 	"Human Resources authorization denied" as const;
 
 export type HumanResourcesAuthorizeOperationOptions =
@@ -268,20 +267,20 @@ export async function authorizeHumanResourcesSensitiveResource(
 	input: HumanResourcesContextualAuthorizationInput,
 ): Promise<Result<HumanResourcesContextualAuthorizationDecision>> {
 	if (input.organizationId !== input.resourceOrganizationId) {
-		return fail("FORBIDDEN", "Cross-tenant human resources access denied", {
-			...humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
-			resourceType: input.resourceType,
+		return errorResult.fail("FORBIDDEN", {
+			internalContext: {
+				...humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
+				resourceType: input.resourceType,
+			},
 		});
 	}
 	if (input.actorEmploymentStatus === "terminated") {
-		return fail(
-			"UNAUTHORIZED",
-			"Terminated actors cannot access human resources data",
-			{
+		return errorResult.fail("UNAUTHORIZED", {
+			internalContext: {
 				...humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_UNAUTHORIZED),
 				resourceType: input.resourceType,
 			},
-		);
+		});
 	}
 	if (
 		input.action === "approve" &&
@@ -289,17 +288,21 @@ export async function authorizeHumanResourcesSensitiveResource(
 			(input.actorEmployeeId !== undefined &&
 				input.actorEmployeeId === input.subjectEmployeeId))
 	) {
-		return fail("FORBIDDEN", "Self-approval is not permitted", {
-			...humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
-			resourceType: input.resourceType,
+		return errorResult.fail("FORBIDDEN", {
+			internalContext: {
+				...humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
+				resourceType: input.resourceType,
+			},
 		});
 	}
 	if (
 		violatesSeparationOfDuties(input.actorDuties ?? [], input.requestedDuty)
 	) {
-		return fail("FORBIDDEN", "Separation of duties policy denied access", {
-			...humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
-			resourceType: input.resourceType,
+		return errorResult.fail("FORBIDDEN", {
+			internalContext: {
+				...humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
+				resourceType: input.resourceType,
+			},
 		});
 	}
 
@@ -321,14 +324,15 @@ export async function authorizeHumanResourcesSensitiveResource(
 				: policy.allowManagerAccess),
 	);
 	if (allowedScope) {
-		return ok({ allowedScope, fieldClasses: policy.fieldClasses });
+		return errorResult.ok({ allowedScope, fieldClasses: policy.fieldClasses });
 	}
 
 	if (input.breakGlass && policy.allowBreakGlass) {
 		const reason = input.breakGlass.reason.trim();
 		if (reason.length < 12) {
-			return fail("VALIDATION_ERROR", "Break-glass reason must be specific", {
-				resourceType: input.resourceType,
+			return errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Break-glass reason must be specific",
+				internalContext: { resourceType: input.resourceType },
 			});
 		}
 		const audit = await input.breakGlass.audit.record({
@@ -343,16 +347,18 @@ export async function authorizeHumanResourcesSensitiveResource(
 		if (!audit.ok) {
 			return audit;
 		}
-		return ok({
+		return errorResult.ok({
 			allowedScope: "break_glass",
 			fieldClasses: policy.fieldClasses,
 			breakGlassAuditId: audit.data.id,
 		});
 	}
 
-	return fail("FORBIDDEN", "No applicable contextual human resources scope", {
-		...humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
-		resourceType: input.resourceType,
+	return errorResult.fail("FORBIDDEN", {
+		internalContext: {
+			...humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
+			resourceType: input.resourceType,
+		},
 	});
 }
 
@@ -362,14 +368,13 @@ function resolveDenyCodeFromError(
 	if (error instanceof HumanResourcesAuthorizationPolicyResolveError) {
 		return error.code;
 	}
-	normalizeUnknown(error, AUTHORIZATION_DENIED_MESSAGE);
 	return "policy_not_registered";
 }
 
 export function authorizationAllowed(
 	decision: Extract<HumanResourcesAuthorizationDecision, { allowed: true }>,
 ): Result<HumanResourcesAuthorizationDecision> {
-	return ok(decision);
+	return errorResult.ok(decision);
 }
 
 export function authorizationDenied(input: {
@@ -389,7 +394,9 @@ export function authorizationDenied(input: {
 			: { resourceKind: input.resourceKind }),
 		...(input.resourceId === undefined ? {} : { resourceId: input.resourceId }),
 	};
-	return fail("FORBIDDEN", AUTHORIZATION_DENIED_MESSAGE, details);
+	return errorResult.fail("FORBIDDEN", {
+		internalContext: details,
+	});
 }
 
 /**

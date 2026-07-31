@@ -1,10 +1,9 @@
 "use server";
 
+import type { Result as ActionResult } from "@afenda/errors";
 import { markAllNotificationsRead } from "@afenda/notifications";
-
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runMemberSessionAction } from "@/app/actions/run-member-session-action";
-import type { ActionResult } from "@/modules/platform/schemas/action-result";
 
 export interface MarkAllNotificationsReadActionData {
 	marked: number;

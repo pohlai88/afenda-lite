@@ -1,5 +1,6 @@
 "use server";
 
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import type {
 	Clearance,
 	OffboardingAccessRevocation,
@@ -35,7 +36,6 @@ import {
 	recordOffboardingPayrollHandoffInputSchema,
 	startOffboardingInputSchema,
 } from "@afenda/human-resources/schemas";
-
 import {
 	hrActionSchema,
 	withHrSessionContext as withSessionContext,
@@ -43,10 +43,6 @@ import {
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runHrWorkforceOperatorPermissionAction as runOperatorPermissionAction } from "@/app/actions/run-hr-operator-permission-action";
 import { createHumanResourcesCommandOptions } from "@/lib/erp/human-resources-command-options";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 const startOffboardingActionSchema = hrActionSchema(
@@ -63,11 +59,9 @@ export async function startOffboardingAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(startOffboardingActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid offboarding start request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid offboarding start request.",
+				});
 			}
 			const result = await startOffboarding(
 				withSessionContext(session, correlationId, parsed.data),
@@ -96,11 +90,9 @@ export async function completeOffboardingTaskAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(completeOffboardingTaskActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid offboarding task completion.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid offboarding task completion.",
+				});
 			}
 			const result = await completeOffboardingTask(
 				withSessionContext(session, correlationId, parsed.data),
@@ -129,11 +121,9 @@ export async function recordExitInterviewAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(recordExitInterviewActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid exit interview record.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid exit interview record.",
+				});
 			}
 			const result = await recordExitInterview(
 				withSessionContext(session, correlationId, parsed.data),
@@ -160,11 +150,9 @@ export async function recordClearanceAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(recordClearanceActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid clearance record.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid clearance record.",
+				});
 			}
 			const result = await recordClearance(
 				withSessionContext(session, correlationId, parsed.data),
@@ -196,11 +184,9 @@ export async function recordOffboardingAccessRevocationAction(
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid offboarding access revocation.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid offboarding access revocation.",
+				});
 			}
 			const result = await recordOffboardingAccessRevocation(
 				withSessionContext(session, correlationId, parsed.data),
@@ -232,11 +218,9 @@ export async function recordOffboardingPayrollHandoffAction(
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid offboarding payroll handoff.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid offboarding payroll handoff.",
+				});
 			}
 			const result = await recordOffboardingPayrollHandoff(
 				withSessionContext(session, correlationId, parsed.data),
@@ -265,11 +249,9 @@ export async function completeOffboardingAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(completeOffboardingActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid offboarding completion.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid offboarding completion.",
+				});
 			}
 			const result = await completeOffboarding(
 				withSessionContext(session, correlationId, parsed.data),
@@ -298,11 +280,9 @@ export async function getOffboardingCaseAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(getOffboardingCaseActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid offboarding case lookup.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid offboarding case lookup.",
+				});
 			}
 			const result = await getOffboardingCase(
 				withSessionContext(session, correlationId, parsed.data),
@@ -331,11 +311,9 @@ export async function listOffboardingTasksAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(listOffboardingTasksActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid offboarding task list request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid offboarding task list request.",
+				});
 			}
 			const result = await listOffboardingTasks(
 				withSessionContext(session, correlationId, parsed.data),
@@ -367,11 +345,9 @@ export async function getClearanceByOffboardingCaseAction(
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid clearance lookup.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid clearance lookup.",
+				});
 			}
 			const result = await getClearanceByOffboardingCase(
 				withSessionContext(session, correlationId, parsed.data),
@@ -405,11 +381,9 @@ export async function getOffboardingAccessRevocationByCaseAction(
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid offboarding access revocation lookup.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid offboarding access revocation lookup.",
+				});
 			}
 			const result = await getOffboardingAccessRevocationByCase(
 				withSessionContext(session, correlationId, parsed.data),
@@ -441,11 +415,9 @@ export async function getOffboardingPayrollHandoffByCaseAction(
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid offboarding payroll handoff lookup.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid offboarding payroll handoff lookup.",
+				});
 			}
 			const result = await getOffboardingPayrollHandoffByCase(
 				withSessionContext(session, correlationId, parsed.data),

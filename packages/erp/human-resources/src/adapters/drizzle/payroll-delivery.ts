@@ -6,7 +6,7 @@ import {
 	hrPayrollHandoffDelivery,
 	runNeonHttpTransaction,
 } from "@afenda/db";
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import { approvedPayrollHandoffSchema } from "@afenda/events/schemas";
 
 import type { PayrollDeliveryStorePort } from "../../integrations/payroll-delivery/ports";
@@ -30,26 +30,26 @@ const PAYROLL_DELIVERY_STATUSES = new Set<string>([
 	"failed",
 ]);
 
-function parseDate(value: unknown, field: string): Result<Date> {
+function parseDate(value: unknown, _field: string): Result<Date> {
 	const parsed = value instanceof Date ? value : new Date(String(value));
 	return Number.isNaN(parsed.getTime())
-		? fail("INTERNAL_ERROR", `Payroll delivery ${field} is invalid`)
-		: ok(parsed);
+		? errorResult.fail("INTERNAL_ERROR")
+		: errorResult.ok(parsed);
 }
 
 function parseNullableDate(value: unknown, field: string): Result<Date | null> {
 	return value === null || value === undefined
-		? ok(null)
+		? errorResult.ok(null)
 		: parseDate(value, field);
 }
 
 function mapRow(row: PayrollDeliveryRow): Result<PayrollDeliveryRecord> {
 	const payload = approvedPayrollHandoffSchema.safeParse(row.payload);
 	if (!payload.success) {
-		return fail("INTERNAL_ERROR", "Payroll delivery payload is invalid");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 	if (!PAYROLL_DELIVERY_STATUSES.has(row.status)) {
-		return fail("INTERNAL_ERROR", "Payroll delivery status is invalid");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 	const createdAt = parseDate(row.createdAt, "createdAt");
 	if (!createdAt.ok) {
@@ -71,7 +71,7 @@ function mapRow(row: PayrollDeliveryRow): Result<PayrollDeliveryRecord> {
 	if (!feedbackAt.ok) {
 		return feedbackAt;
 	}
-	return ok({
+	return errorResult.ok({
 		id: row.id,
 		organizationId: row.organizationId,
 		correlationId: row.correlationId,
@@ -151,7 +151,7 @@ async function mapOptional(
 	row: PayrollDeliveryRow | undefined,
 ): Promise<Result<PayrollDeliveryRecord | null>> {
 	if (row === undefined) {
-		return await ok(null);
+		return await errorResult.ok(null);
 	}
 	return await mapRow(row);
 }
@@ -198,7 +198,9 @@ export function createDrizzlePayrollDeliveryStore(): PayrollDeliveryStorePort {
 				input.limit < 1 ||
 				input.limit > 500
 			) {
-				return fail("VALIDATION_ERROR", "Pending delivery limit is invalid");
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "The submitted data is invalid",
+				});
 			}
 			try {
 				const rows = await db
@@ -223,7 +225,7 @@ export function createDrizzlePayrollDeliveryStore(): PayrollDeliveryStorePort {
 					}
 					mapped.push(record.data);
 				}
-				return ok(mapped);
+				return errorResult.ok(mapped);
 			} catch (error) {
 				return mapPersistenceFailure(
 					error,
@@ -238,12 +240,12 @@ export function createDrizzlePayrollDeliveryStore(): PayrollDeliveryStorePort {
 					.values(values(record))
 					.returning();
 				const [row] = rows;
-				return row
-					? mapRow(row)
-					: fail("INTERNAL_ERROR", "Payroll delivery insert returned no row");
+				return row ? mapRow(row) : errorResult.fail("INTERNAL_ERROR");
 			} catch (error) {
 				return isPostgresUniqueViolation(error)
-					? fail("CONFLICT", "Payroll delivery already exists")
+					? errorResult.fail("CONFLICT", {
+							publicMessage: "The request conflicts with current state",
+						})
 					: mapPersistenceFailure(error, "Failed to create payroll delivery");
 			}
 		},
@@ -290,7 +292,9 @@ export function createDrizzlePayrollDeliveryStore(): PayrollDeliveryStorePort {
 						`,
 				]);
 				if (!rows[0]) {
-					return fail("CONFLICT", "Payroll delivery correction conflict");
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+					});
 				}
 				const inserted = await db
 					.select()
@@ -306,12 +310,12 @@ export function createDrizzlePayrollDeliveryStore(): PayrollDeliveryStorePort {
 					)
 					.limit(1);
 				const [row] = inserted;
-				return row
-					? mapRow(row)
-					: fail("INTERNAL_ERROR", "Payroll correction readback failed");
+				return row ? mapRow(row) : errorResult.fail("INTERNAL_ERROR");
 			} catch (error) {
 				return isPostgresUniqueViolation(error)
-					? fail("CONFLICT", "Payroll delivery correction conflict")
+					? errorResult.fail("CONFLICT", {
+							publicMessage: "The request conflicts with current state",
+						})
 					: mapPersistenceFailure(error, "Failed to create payroll correction");
 			}
 		},
@@ -322,7 +326,9 @@ export function createDrizzlePayrollDeliveryStore(): PayrollDeliveryStorePort {
 				input.next.idempotencyKey.trim().length === 0 ||
 				input.next.version !== input.expectedVersion + 1
 			) {
-				return fail("VALIDATION_ERROR", "Invalid payroll delivery update");
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "The submitted data is invalid",
+				});
 			}
 			try {
 				const rows = await db
@@ -339,7 +345,9 @@ export function createDrizzlePayrollDeliveryStore(): PayrollDeliveryStorePort {
 				const [row] = rows;
 				return row
 					? mapRow(row)
-					: fail("CONFLICT", "Payroll delivery version conflict");
+					: errorResult.fail("CONFLICT", {
+							publicMessage: "The request conflicts with current state",
+						});
 			} catch (error) {
 				return mapPersistenceFailure(
 					error,

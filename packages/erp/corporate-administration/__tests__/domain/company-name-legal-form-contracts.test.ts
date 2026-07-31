@@ -1,6 +1,6 @@
 // biome-ignore-all lint/style/useDestructuring: Explicit schema result access keeps branded identifiers visible.
 // biome-ignore-all lint/suspicious/useAwait: Contract fixtures implement asynchronous store ports.
-import { ok } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 import { describe, expect, it } from "vitest";
 
 import type { CorporateAdministrationQueryOptions } from "../../src/command-options";
@@ -136,12 +136,12 @@ describe("company name and legal-form contracts", () => {
 		};
 		const dependencies = {
 			store: {
-				getLegalCompany: async () => ok(legalCompany),
+				getLegalCompany: async () => errorResult.ok(legalCompany),
 			},
 			nameStore: {
 				listCompanyNames: async (input: unknown) => {
 					observedInput = input;
-					return ok([]);
+					return errorResult.ok([]);
 				},
 			},
 		} as unknown as CompanyNameQueryDependencies;

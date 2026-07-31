@@ -6,17 +6,13 @@ import {
 	deleteOrganizationInputSchema,
 } from "@afenda/admin";
 import { requireRole } from "@afenda/auth";
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { createCorrelationId } from "@afenda/http";
 import { revalidatePath } from "next/cache";
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { recordOrganizationDeletedAudit } from "@/modules/platform/domain/record-organization-deleted-audit";
 import { recordOrganizationDeletedEvent } from "@/modules/platform/domain/record-organization-deleted-event";
 import { logProductEvent } from "@/modules/platform/observability/product-log";
-import {
-	type ActionResult,
-	actionFail,
-	actionFailInternal,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export type DeleteOrganizationActionData = DeletedOrganization;
@@ -47,11 +43,9 @@ export async function deleteOrganizationAction(
 		orgId: formData.get("orgId"),
 	});
 	if (!parsed.success) {
-		return actionFail(
-			"VALIDATION_ERROR",
-			"Select a valid organization to delete.",
-			parsed.details,
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "Select a valid organization to delete.",
+		});
 	}
 
 	let result: Awaited<ReturnType<typeof deleteOrganization>>;
@@ -67,10 +61,7 @@ export async function deleteOrganizationAction(
 			path: "deleteOrganizationAction",
 			code: "INTERNAL_ERROR",
 		});
-		return actionFailInternal(
-			"Organization delete failed. Try again or contact an admin.",
-			correlationId,
-		);
+		return errorResult.fail("INTERNAL_ERROR", { correlationId });
 	}
 
 	if (!result.ok) {
@@ -144,10 +135,7 @@ async function writeOrganizationDeleteAudit(input: {
 		});
 	}
 
-	return actionFailInternal(
-		"Organization was deleted, but the activity audit could not be written. Contact an admin with this correlation id.",
-		correlationId,
-	);
+	return errorResult.fail("INTERNAL_ERROR", { correlationId });
 }
 
 /** Soft-fail: org already deleted; outbox miss must not undo Neon delete. */

@@ -2,7 +2,7 @@
  * Memory vs Drizzle parity — HR Time / attendance.
  */
 
-import { fail } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 import {
 	HUMAN_RESOURCES_TIME_TIMESHEET_APPROVAL_STEP_RECORDED_EVENT,
 	HUMAN_RESOURCES_TIMESHEET_APPROVED_EVENT,
@@ -439,8 +439,7 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 		expect(outOfOrderApproval.ok).toBe(false);
 		const auditCountBeforeOutboxFailure = ready.ports.audit.calls.length;
 		const appendOutbox = ready.ports.outbox.append;
-		ready.ports.outbox.append = async () =>
-			fail("INTERNAL_ERROR", "Injected approval-step outbox failure");
+		ready.ports.outbox.append = async () => errorResult.fail("INTERNAL_ERROR");
 		const failedApproval = await approveTimesheet(
 			{
 				organizationId: ORG,

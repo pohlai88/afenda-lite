@@ -11,8 +11,13 @@ import {
 	ledgerPosting,
 	runNeonHttpTransaction,
 } from "@afenda/db";
-import { normalizePostgresUnknown } from "@afenda/errors/adapters/postgres";
-import { fail, failFromAppError, ok, type Result } from "@afenda/errors/result";
+import {
+	errorIngress,
+	errorProject,
+	errorResult,
+	type Result,
+} from "@afenda/errors";
+
 import { z } from "zod";
 
 import type {
@@ -38,8 +43,10 @@ import type {
 	TrialBalanceRow,
 } from "./model";
 
-function failFromPersistence(error: unknown, fallbackMessage: string) {
-	return failFromAppError(normalizePostgresUnknown(error, fallbackMessage));
+function failFromPersistence(error: unknown, _fallbackMessage: string) {
+	return errorProject.result(
+		errorIngress.postgres(error, { operation: "persistence.postgres" }),
+	);
 }
 
 const postingProfileLineSqlSchema = z.object({
@@ -352,21 +359,21 @@ async function reloadJournal(
 	store: DrizzleAccountingStore,
 	organizationId: string,
 	id: string,
-	message: string,
+	_message: string,
 ): Promise<Result<Journal>> {
 	const loaded = await store.getById(organizationId, id);
 	if (!loaded.ok) {
 		return loaded;
 	}
 	return loaded.data === null
-		? fail("INTERNAL_ERROR", message)
-		: ok(loaded.data);
+		? errorResult.fail("INTERNAL_ERROR")
+		: errorResult.ok(loaded.data);
 }
 
 async function reloadPeriod(
 	organizationId: string,
 	id: string,
-	message: string,
+	_message: string,
 ): Promise<Result<AccountingPeriod>> {
 	const [row] = await db
 		.select()
@@ -379,8 +386,8 @@ async function reloadPeriod(
 		)
 		.limit(1);
 	return row === undefined
-		? fail("INTERNAL_ERROR", message)
-		: ok(mapPeriod(row));
+		? errorResult.fail("INTERNAL_ERROR")
+		: errorResult.ok(mapPeriod(row));
 }
 
 export class DrizzleAccountingStore implements AccountingStore {
@@ -412,7 +419,9 @@ export class DrizzleAccountingStore implements AccountingStore {
 				{ isolationLevel: "Serializable" },
 			);
 			if (rows[0] === undefined) {
-				return fail("CONFLICT", "Accounting periods cannot overlap");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Accounting periods cannot overlap",
+				});
 			}
 			return reloadPeriod(
 				record.organizationId,
@@ -441,7 +450,9 @@ export class DrizzleAccountingStore implements AccountingStore {
 				`,
 			]);
 			if (rows[0] === undefined) {
-				return fail("CONFLICT", "Accounting period soft-close conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Accounting period soft-close conflict",
+				});
 			}
 			return reloadPeriod(
 				record.organizationId,
@@ -473,7 +484,9 @@ export class DrizzleAccountingStore implements AccountingStore {
 				`,
 			]);
 			if (rows[0] === undefined) {
-				return fail("CONFLICT", "Accounting period close conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Accounting period close conflict",
+				});
 			}
 			return reloadPeriod(
 				record.organizationId,
@@ -504,7 +517,9 @@ export class DrizzleAccountingStore implements AccountingStore {
 				`,
 			]);
 			if (rows[0] === undefined) {
-				return fail("CONFLICT", "Accounting period reopen conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Accounting period reopen conflict",
+				});
 			}
 			return reloadPeriod(
 				record.organizationId,
@@ -537,7 +552,9 @@ export class DrizzleAccountingStore implements AccountingStore {
 				`,
 			]);
 			if (rows[0] === undefined) {
-				return fail("NOT_FOUND", "Accounting period not found");
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "Accounting period not found",
+				});
 			}
 			return reloadJournal(
 				this,
@@ -584,9 +601,11 @@ export class DrizzleAccountingStore implements AccountingStore {
 			]);
 			const [row] = rows;
 			if (row === undefined) {
-				return fail("CONFLICT", "Journal line add conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Journal line add conflict",
+				});
 			}
-			return ok({
+			return errorResult.ok({
 				id: row.id,
 				organizationId: row.organization_id,
 				journalId: row.journal_id,
@@ -670,7 +689,9 @@ export class DrizzleAccountingStore implements AccountingStore {
 				`,
 			]);
 			if (rows[0] === undefined) {
-				return fail("CONFLICT", "Journal post conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Journal post conflict",
+				});
 			}
 			return reloadJournal(
 				this,
@@ -779,7 +800,9 @@ export class DrizzleAccountingStore implements AccountingStore {
 				`,
 			]);
 			if (rows[0] === undefined) {
-				return fail("CONFLICT", "Journal reversal conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Journal reversal conflict",
+				});
 			}
 			return reloadJournal(
 				this,
@@ -805,7 +828,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 				)
 				.limit(1);
 			if (header === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const [lines, postings] = await Promise.all([
 				db
@@ -827,7 +850,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 						),
 					),
 			]);
-			return ok(
+			return errorResult.ok(
 				mapJournal(header, lines.map(mapLine), postings.map(mapPosting)),
 			);
 		} catch (error) {
@@ -862,11 +885,11 @@ export class DrizzleAccountingStore implements AccountingStore {
 					return result;
 				}
 				if (result.data === null) {
-					return fail("INTERNAL_ERROR", "Listed journal missing");
+					return errorResult.fail("INTERNAL_ERROR");
 				}
 				journals.push(result.data);
 			}
-			return ok(journals);
+			return errorResult.ok(journals);
 		} catch (error) {
 			return failFromPersistence(error, "Failed to list journals");
 		}
@@ -893,7 +916,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 				],
 				{ readOnly: true },
 			);
-			return ok(
+			return errorResult.ok(
 				rows.map((row: TrialBalanceSqlRow) => ({
 					accountCode: row.account_code,
 					totalDebit: row.total_debit,
@@ -920,9 +943,11 @@ export class DrizzleAccountingStore implements AccountingStore {
 				`,
 			]);
 			if (rows[0] === undefined) {
-				return fail("CONFLICT", "Chart of accounts code already exists");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Chart of accounts code already exists",
+				});
 			}
-			return ok({
+			return errorResult.ok({
 				id,
 				organizationId: record.organizationId,
 				code: record.code,
@@ -959,10 +984,12 @@ export class DrizzleAccountingStore implements AccountingStore {
 				`,
 			]);
 			if (rows[0] === undefined) {
-				return fail("CONFLICT", "Ledger account code already exists");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Ledger account code already exists",
+				});
 			}
 			const now = new Date();
-			return ok({
+			return errorResult.ok({
 				id,
 				organizationId: record.organizationId,
 				chartOfAccountId: record.chartOfAccountId,
@@ -1001,9 +1028,11 @@ export class DrizzleAccountingStore implements AccountingStore {
 			]);
 			const [row] = rows;
 			if (row === undefined) {
-				return fail("CONFLICT", "Version mismatch");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Version mismatch",
+				});
 			}
-			return ok(mapLedgerAccountSql(row));
+			return errorResult.ok(mapLedgerAccountSql(row));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to update ledger account");
 		}
@@ -1025,9 +1054,11 @@ export class DrizzleAccountingStore implements AccountingStore {
 			]);
 			const [row] = rows;
 			if (row === undefined) {
-				return fail("CONFLICT", "Deactivation conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Deactivation conflict",
+				});
 			}
-			return ok(mapLedgerAccountSql(row));
+			return errorResult.ok(mapLedgerAccountSql(row));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to deactivate ledger account");
 		}
@@ -1051,7 +1082,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 				],
 				{ readOnly: true },
 			);
-			return ok(rows.map(mapLedgerAccountSql));
+			return errorResult.ok(rows.map(mapLedgerAccountSql));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to list ledger accounts");
 		}
@@ -1074,7 +1105,9 @@ export class DrizzleAccountingStore implements AccountingStore {
 				{ readOnly: true },
 			);
 			const [row] = rows;
-			return ok(row === undefined ? null : mapLedgerAccountSql(row));
+			return errorResult.ok(
+				row === undefined ? null : mapLedgerAccountSql(row),
+			);
 		} catch (error) {
 			return failFromPersistence(error, "Failed to resolve ledger account");
 		}
@@ -1097,9 +1130,9 @@ export class DrizzleAccountingStore implements AccountingStore {
 			]);
 			const [row] = rows;
 			if (row === undefined) {
-				return fail("INTERNAL_ERROR", "Upsert returned nothing");
+				return errorResult.fail("INTERNAL_ERROR");
 			}
-			return ok(mapAccountRoleSql(row));
+			return errorResult.ok(mapAccountRoleSql(row));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to map account role");
 		}
@@ -1121,7 +1154,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 				{ readOnly: true },
 			);
 			const [row] = rows;
-			return ok(row === undefined ? null : mapAccountRoleSql(row));
+			return errorResult.ok(row === undefined ? null : mapAccountRoleSql(row));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to resolve account role");
 		}
@@ -1186,13 +1219,10 @@ export class DrizzleAccountingStore implements AccountingStore {
 			});
 			const [profile] = profileRows;
 			if (profile === undefined) {
-				return fail(
-					"INTERNAL_ERROR",
-					"Posting profile upsert returned nothing",
-				);
+				return errorResult.fail("INTERNAL_ERROR");
 			}
 			const now = new Date();
-			return ok({
+			return errorResult.ok({
 				id: profile.id,
 				organizationId: record.organizationId,
 				code: record.code,
@@ -1236,15 +1266,15 @@ export class DrizzleAccountingStore implements AccountingStore {
 			);
 			const [r] = rows;
 			if (r === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const parsedLines = z
 				.array(postingProfileLineSqlSchema)
 				.safeParse(r.lines ?? []);
 			if (!parsedLines.success) {
-				return fail("INTERNAL_ERROR", "Invalid posting profile lines payload");
+				return errorResult.fail("INTERNAL_ERROR");
 			}
-			return ok({
+			return errorResult.ok({
 				id: r.id,
 				organizationId: r.organization_id,
 				code: r.code,
@@ -1283,7 +1313,9 @@ export class DrizzleAccountingStore implements AccountingStore {
 				{ readOnly: true },
 			);
 			const [row] = rows;
-			return ok(row === undefined ? null : mapSourcePostingLinkSql(row));
+			return errorResult.ok(
+				row === undefined ? null : mapSourcePostingLinkSql(row),
+			);
 		} catch (error) {
 			return failFromPersistence(error, "Failed to find source posting link");
 		}
@@ -1309,7 +1341,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 					) RETURNING id
 				`,
 			]);
-			return ok({
+			return errorResult.ok({
 				id,
 				organizationId: record.organizationId,
 				sourceModule: record.sourceModule,
@@ -1350,7 +1382,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 				`,
 			]);
 			const now = new Date();
-			return ok({
+			return errorResult.ok({
 				id,
 				organizationId: record.organizationId,
 				sourceModule: record.sourceModule,
@@ -1392,7 +1424,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 				],
 				{ readOnly: true },
 			);
-			return ok(
+			return errorResult.ok(
 				rows.map((r: PostingExceptionSqlRow) => ({
 					id: r.id,
 					organizationId: r.organization_id,
@@ -1437,9 +1469,11 @@ export class DrizzleAccountingStore implements AccountingStore {
 			]);
 			const [r] = rows;
 			if (r === undefined) {
-				return fail("CONFLICT", "Exception resolve conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Exception resolve conflict",
+				});
 			}
-			return ok({
+			return errorResult.ok({
 				id: r.id,
 				organizationId: r.organization_id,
 				sourceModule: r.source_module,
@@ -1519,7 +1553,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 			const traces = loadedTraces.filter(
 				(trace): trace is SourcePostingTrace => trace !== null,
 			);
-			return ok(traces);
+			return errorResult.ok(traces);
 		} catch (error) {
 			return failFromPersistence(error, "Failed to get source posting trace");
 		}
@@ -1547,7 +1581,7 @@ export class DrizzleAccountingStore implements AccountingStore {
 				],
 				{ readOnly: true },
 			);
-			return ok(
+			return errorResult.ok(
 				rows.map((r: LedgerAccountActivitySqlRow) => ({
 					journalId: r.journal_id,
 					journalCode: r.journal_code,

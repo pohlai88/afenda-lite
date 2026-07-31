@@ -51,11 +51,10 @@ Do not restart the same broad command with a larger timeout unless the user expl
 For errors-normalization or errors-governance work, use these gates before broader validation:
 
 ```powershell
-pnpm run test:errors-normalization
-pnpm run check:errors-normalization
-pnpm run check:errors-normalization -- --strict
-pnpm run check:errors-consumption
-pnpm run check:errors-adoption -- --strict
+pnpm run test:errors-boundary
+pnpm run check:errors-boundary
+pnpm run test:errors-semantics
+pnpm run check:errors-semantics
 ```
 
 Then run only the checks tied to directly touched packages:

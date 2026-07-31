@@ -1,4 +1,4 @@
-import type { Result } from "@afenda/errors/result";
+import type { Result } from "@afenda/errors";
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_COMMAND_COMPENSATION_GRADE_PROGRESSION_RULE_ARCHIVE,
@@ -90,7 +90,10 @@ export function getCompensationGradeProgressionRule(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompensationGradeProgressionRule>> {
-	return runCompensationQuery(input, options, {
+	return runCompensationQuery<
+		typeof getCompensationGradeProgressionRuleInputSchema,
+		CompensationGradeProgressionRule
+	>(input, options, {
 		schema: getCompensationGradeProgressionRuleInputSchema,
 		invalidMessage: "Invalid compensation grade progression rule get input",
 		query: HUMAN_RESOURCES_QUERY_COMPENSATION_GRADE_PROGRESSION_RULE_GET,

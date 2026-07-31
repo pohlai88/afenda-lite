@@ -1,15 +1,12 @@
 "use server";
 
 import { getSession } from "@afenda/auth";
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { createCorrelationId } from "@afenda/http";
 import type { ImportReconciliationReport } from "@afenda/master-data";
 import { revalidatePath } from "next/cache";
 import { runApplyMasterDataImport } from "@/lib/erp/master-data-import";
 import { logProductEvent } from "@/modules/platform/observability/product-log";
-import {
-	type ActionResult,
-	actionFailInternal,
-} from "@/modules/platform/schemas/action-result";
 
 export type ApplyMasterDataImportActionData = ImportReconciliationReport;
 
@@ -44,9 +41,6 @@ export async function applyMasterDataImportAction(
 			path: "applyMasterDataImportAction",
 			code: "INTERNAL_ERROR",
 		});
-		return actionFailInternal(
-			"Could not apply master-data import. Try again or contact an admin.",
-			correlationId,
-		);
+		return errorResult.fail("INTERNAL_ERROR", { correlationId });
 	}
 }

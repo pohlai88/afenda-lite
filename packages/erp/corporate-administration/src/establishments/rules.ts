@@ -1,6 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
-
-import { corporateAdministrationErrorDetails } from "../error-codes";
+import { errorResult, type Result } from "@afenda/errors";
 import type { CanonicalDate, CanonicalInstant } from "../kernel/dates";
 import { effectiveRangesOverlap } from "../kernel/effective-range";
 import type {
@@ -33,15 +31,11 @@ export function validateEstablishmentStatusTransition(input: {
 	to: LegalEstablishmentStatus;
 }): Result<void> {
 	return allowedTransitions[input.from].includes(input.to)
-		? ok(undefined)
-		: fail(
-				"CONFLICT",
-				"Corporate Administration establishment status transition is invalid.",
-				corporateAdministrationErrorDetails(
-					"CORPORATE_ADMINISTRATION_INVALID_TRANSITION",
-					{ field: `${input.from}_to_${input.to}` },
-				),
-			);
+		? errorResult.ok(undefined)
+		: errorResult.fail("CONFLICT", {
+				publicMessage:
+					"Corporate Administration establishment status transition is invalid.",
+			});
 }
 
 export function validateEstablishmentChronology(input: {
@@ -54,16 +48,12 @@ export function validateEstablishmentChronology(input: {
 		input.registeredFrom < companyStart ||
 		input.transitionDate < input.registeredFrom
 	) {
-		return fail(
-			"CONFLICT",
-			"Corporate Administration establishment chronology is invalid.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_CHRONOLOGY_INVALID",
-				{ field: "effectiveFrom" },
-			),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage:
+				"Corporate Administration establishment chronology is invalid.",
+		});
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertNoRegisteredAddressOverlap(input: {
@@ -77,15 +67,11 @@ export function assertNoRegisteredAddressOverlap(input: {
 		),
 	);
 	return overlaps
-		? fail(
-				"CONFLICT",
-				"Corporate Administration registered address effective range overlaps.",
-				corporateAdministrationErrorDetails(
-					"CORPORATE_ADMINISTRATION_EFFECTIVE_RANGE_OVERLAP",
-					{ field: "effectiveFrom" },
-				),
-			)
-		: ok(undefined);
+		? errorResult.fail("CONFLICT", {
+				publicMessage:
+					"Corporate Administration registered address effective range overlaps.",
+			})
+		: errorResult.ok(undefined);
 }
 
 export function matchesEstablishmentAsOf(

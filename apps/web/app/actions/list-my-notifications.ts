@@ -1,14 +1,10 @@
 "use server";
 
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { listNotifications, type Notification } from "@afenda/notifications";
-
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runMemberSessionAction } from "@/app/actions/run-member-session-action";
 import { listMyNotificationsCommandSchema } from "@/modules/identity/schemas/my-notifications";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export interface ListMyNotificationsActionData {
@@ -36,11 +32,9 @@ export async function listMyNotificationsAction(
 				unreadOnly: formData.get("unreadOnly") ?? undefined,
 			});
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid notifications page request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid notifications page request.",
+				});
 			}
 
 			const result = await listNotifications({

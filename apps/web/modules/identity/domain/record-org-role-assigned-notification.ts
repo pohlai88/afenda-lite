@@ -2,7 +2,7 @@
  * Identity adapter — org role assign → `@afenda/notifications` IN_APP inbox.
  */
 
-import type { Result } from "@afenda/errors/result";
+import type { Result } from "@afenda/errors";
 import {
 	createNotificationRecorder,
 	type Notification,

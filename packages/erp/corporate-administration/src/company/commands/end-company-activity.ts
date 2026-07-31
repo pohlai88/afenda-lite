@@ -1,4 +1,4 @@
-import { fail, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS,
 	type CorporateAdministrationApprovalVerificationDependencies,
@@ -10,7 +10,6 @@ import type {
 	CorporateAdministrationApprovalCommandOptions,
 	CorporateAdministrationCommandOptions,
 } from "../../command-options";
-import { corporateAdministrationErrorDetails } from "../../error-codes";
 import { toCanonicalInstant } from "../../kernel/dates";
 import { parseCorporateAdministrationInput } from "../../parse-input";
 import {
@@ -92,47 +91,27 @@ export async function endCompanyActivity(
 		return existing;
 	}
 	if (existing.data === null) {
-		return fail(
-			"NOT_FOUND",
-			"Corporate Administration company activity was not found.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_NOT_FOUND",
-				{ entityType: "companyActivity" },
-			),
-		);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Corporate Administration company activity was not found.",
+		});
 	}
 	if (existing.data.status !== "active") {
-		return fail(
-			"CONFLICT",
-			"Corporate Administration company activity is already ended.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_INVALID_TRANSITION",
-				{ field: "companyActivityId" },
-			),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage:
+				"Corporate Administration company activity is already ended.",
+		});
 	}
 	if (existing.data.version !== parsed.data.expectedActivityVersion) {
-		return fail(
-			"CONFLICT",
-			"Corporate Administration company activity version is stale.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_STALE_VERSION",
-				{
-					expectedVersion: parsed.data.expectedActivityVersion,
-					actualVersion: existing.data.version,
-				},
-			),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage:
+				"Corporate Administration company activity version is stale.",
+		});
 	}
 	if (parsed.data.endedAt < existing.data.effectiveFrom) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Corporate Administration activity end date cannot be before the activity effective start.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_VALIDATION_FAILED",
-				{ field: "endedAt" },
-			),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage:
+				"Corporate Administration activity end date cannot be before the activity effective start.",
+		});
 	}
 
 	const occurredAt = toCanonicalInstant(dependencies.runtime.clock.now());
@@ -182,5 +161,5 @@ function asActivityFailure(result: Result<unknown>): Result<CompanyActivity> {
 	if (result.ok) {
 		throw new TypeError("Expected Corporate Administration failure Result");
 	}
-	return fail(result.code, result.message, result.details);
+	return result;
 }

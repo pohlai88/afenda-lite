@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import { z } from "zod";
 import {
 	requireMasterCommandPermission,
@@ -14,7 +14,6 @@ import {
 	orgActorContextSchema,
 	orgQueryActorSchema,
 } from "../../contracts/context";
-import type { MasterFailureDetails } from "../../contracts/reasons";
 import {
 	MASTER_COMMAND_CHANGE_REQUEST_APPROVE,
 	MASTER_COMMAND_CHANGE_REQUEST_REJECT,
@@ -141,9 +140,9 @@ export async function submitChangeRequest(
 		parsed.data.commandKind === "merge_parties" &&
 		parsed.data.payload.sourcePartyId === parsed.data.payload.targetPartyId
 	) {
-		return fail("BAD_REQUEST", "Source and target parties must differ", {
-			reason: "MASTER_VALIDATION_FAILED",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Source and target parties must differ",
+		});
 	}
 
 	const rawCode = parsed.data.code ?? generateChangeRequestCode();
@@ -213,19 +212,17 @@ export async function approveChangeRequest(
 		return current;
 	}
 	if (current.data === null) {
-		return fail("NOT_FOUND", "Change request not found", {
-			reason: "MASTER_NOT_FOUND",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Change request not found",
+		});
 	}
 	if (current.data.submittedBy === parsed.data.actorUserId) {
-		return fail("FORBIDDEN", "Maker cannot approve own change request", {
-			reason: "MASTER_MAKER_CHECKER_VIOLATION",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("FORBIDDEN");
 	}
 	if (current.data.status !== "submitted") {
-		return fail("CONFLICT", "Change request is not submitted", {
-			reason: "MASTER_CHANGE_REQUEST_INVALID",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Change request is not submitted",
+		});
 	}
 	return store.transitionChangeRequest(
 		{
@@ -273,19 +270,17 @@ export async function rejectChangeRequest(
 		return current;
 	}
 	if (current.data === null) {
-		return fail("NOT_FOUND", "Change request not found", {
-			reason: "MASTER_NOT_FOUND",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Change request not found",
+		});
 	}
 	if (current.data.submittedBy === parsed.data.actorUserId) {
-		return fail("FORBIDDEN", "Maker cannot reject own change request", {
-			reason: "MASTER_MAKER_CHECKER_VIOLATION",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("FORBIDDEN");
 	}
 	if (current.data.status !== "submitted") {
-		return fail("CONFLICT", "Change request is not submitted", {
-			reason: "MASTER_CHANGE_REQUEST_INVALID",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Change request is not submitted",
+		});
 	}
 	return store.transitionChangeRequest(
 		{
@@ -362,11 +357,11 @@ export function requireChangeRequestId(
 	changeRequestId: string | undefined,
 ): Result<string> {
 	if (changeRequestId === undefined || changeRequestId.length === 0) {
-		return fail("BAD_REQUEST", "Approved change request is required", {
-			reason: "MASTER_CHANGE_REQUEST_REQUIRED",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Approved change request is required",
+		});
 	}
-	return ok(changeRequestId);
+	return errorResult.ok(changeRequestId);
 }
 
 /**
@@ -394,25 +389,25 @@ export async function assertApprovedChangeRequestForApply(
 		return current;
 	}
 	if (current.data === null) {
-		return fail("NOT_FOUND", "Change request not found", {
-			reason: "MASTER_CHANGE_REQUEST_INVALID",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Change request not found",
+		});
 	}
 	const cr = current.data;
 	if (cr.status !== "approved") {
-		return fail("CONFLICT", "Change request is not approved", {
-			reason: "MASTER_CHANGE_REQUEST_INVALID",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Change request is not approved",
+		});
 	}
 	if (cr.commandKind !== input.commandKind) {
-		return fail("CONFLICT", "Change request command kind mismatch", {
-			reason: "MASTER_CHANGE_REQUEST_INVALID",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Change request command kind mismatch",
+		});
 	}
 	if (!input.match(cr.payload)) {
-		return fail("CONFLICT", "Change request payload does not match apply", {
-			reason: "MASTER_CHANGE_REQUEST_INVALID",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Change request payload does not match apply",
+		});
 	}
 	const gate = approvedApplyAttemptGate(
 		"change_request",
@@ -421,5 +416,5 @@ export async function assertApprovedChangeRequestForApply(
 	if (!gate.ok) {
 		return gate;
 	}
-	return ok(cr);
+	return errorResult.ok(cr);
 }

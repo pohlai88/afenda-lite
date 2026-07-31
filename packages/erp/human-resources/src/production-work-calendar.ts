@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	HUMAN_RESOURCES_ERROR_DEPENDENCY_UNAVAILABLE,
@@ -124,11 +124,12 @@ async function resolveContext(
 		return resolved;
 	}
 	if (resolved.data.timezone.trim().length === 0) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Work calendar timezone is missing.",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_DEPENDENCY_UNAVAILABLE),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_DEPENDENCY_UNAVAILABLE,
+			),
+		});
 	}
 	return resolved;
 }
@@ -150,7 +151,7 @@ export function createProductionWorkCalendar(deps: {
 			if (!context.ok) {
 				return context;
 			}
-			return ok(isWorkingCivilDate(context.data, input.date));
+			return errorResult.ok(isWorkingCivilDate(context.data, input.date));
 		},
 
 		async expandLeaveSegments(
@@ -159,11 +160,12 @@ export function createProductionWorkCalendar(deps: {
 			const startParts = parseIsoDateParts(input.startDate);
 			const endParts = parseIsoDateParts(input.endDate);
 			if (startParts === null || endParts === null) {
-				return fail(
-					"VALIDATION_ERROR",
-					"Leave dates must be valid ISO calendar dates.",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "The submitted data is invalid",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+					),
+				});
 			}
 
 			const context = await resolveContext(lookup, {
@@ -211,7 +213,7 @@ export function createProductionWorkCalendar(deps: {
 				}
 			}
 
-			return ok(segments);
+			return errorResult.ok(segments);
 		},
 	};
 }

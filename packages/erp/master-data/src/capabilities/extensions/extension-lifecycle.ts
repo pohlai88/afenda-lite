@@ -1,7 +1,6 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type { MasterPermission } from "../../authorization";
-import type { MasterFailureDetails } from "../../contracts/reasons";
 import {
 	MASTER_DATA_PERMISSION_ITEM_EXTENSION_MANAGE,
 	MASTER_DATA_PERMISSION_PARTY_ADDRESS_MANAGE,
@@ -370,14 +369,11 @@ export function resolveExtensionLifecycleTransition<
 		(candidate) => candidate.from === from && candidate.to === to,
 	);
 	if (found === undefined) {
-		return fail("CONFLICT", `Invalid ${family} lifecycle transition`, {
-			reason: "MASTER_INVALID_STATE",
-			extensionKind: kind,
-			fromStatus: from,
-			toStatus: to,
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "The request conflicts with current state",
+		});
 	}
-	return ok({
+	return errorResult.ok({
 		...found,
 		requiredPermission: EXTENSION_LIFECYCLE_PERMISSION_BY_KIND[kind],
 	});
@@ -391,22 +387,16 @@ export function assertExtensionTransitionReason(
 ): Result<string | null> {
 	const normalized = reason?.normalize("NFC").trim() ?? "";
 	if (transitionPolicy.reasonRequired && normalized.length === 0) {
-		return fail("BAD_REQUEST", "A lifecycle transition reason is required", {
-			reason: "MASTER_VALIDATION_FAILED",
-			field: "reason",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "A lifecycle transition reason is required",
+		});
 	}
 	if (normalized.length > MAX_EXTENSION_TRANSITION_REASON_LENGTH) {
-		return fail(
-			"BAD_REQUEST",
-			`Lifecycle transition reason must not exceed ${MAX_EXTENSION_TRANSITION_REASON_LENGTH} characters`,
-			{
-				reason: "MASTER_VALIDATION_FAILED",
-				field: "reason",
-			} satisfies MasterFailureDetails,
-		);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "The request is invalid",
+		});
 	}
-	return ok(normalized.length === 0 ? null : normalized);
+	return errorResult.ok(normalized.length === 0 ? null : normalized);
 }
 
 const STANDARD_CHILD_LIFECYCLE_STATUS_SET: ReadonlySet<string> = new Set(
@@ -423,12 +413,11 @@ export function parseStandardChildLifecycleStatus(
 	value: string,
 ): Result<StandardChildLifecycleStatus> {
 	if (!isStandardChildLifecycleStatus(value)) {
-		return fail("BAD_REQUEST", "Standard child lifecycle status is invalid", {
-			reason: "MASTER_VALIDATION_FAILED",
-			field: "status",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Standard child lifecycle status is invalid",
+		});
 	}
-	return ok(value);
+	return errorResult.ok(value);
 }
 
 export function assertStandardChildLifecycleStatus(

@@ -1,4 +1,4 @@
-import type { Result } from "@afenda/errors/result";
+import type { Result } from "@afenda/errors";
 import { requireMasterQueryPermission } from "../../authorization";
 import {
 	type MasterCommandOptions,

@@ -19,28 +19,11 @@ import {
 	stockReservation,
 } from "@afenda/db";
 import {
-	normalizePostgresUnknown,
-	postgresSqlState,
-} from "@afenda/errors/adapters/postgres";
-import { fail, failFromAppError, ok, type Result } from "@afenda/errors/result";
-
-import {
-	INVENTORY_ERROR_CODE_CONFLICT,
-	INVENTORY_ERROR_DUPLICATE_SOURCE_EVENT,
-	INVENTORY_ERROR_INSUFFICIENT_AVAILABLE,
-	INVENTORY_ERROR_INSUFFICIENT_ON_HAND,
-	INVENTORY_ERROR_INVALID_TRANSFER,
-	INVENTORY_ERROR_MOVEMENT_ALREADY_CANCELLED,
-	INVENTORY_ERROR_MOVEMENT_ALREADY_POSTED,
-	INVENTORY_ERROR_MOVEMENT_EMPTY_LINES,
-	INVENTORY_ERROR_MOVEMENT_NOT_DRAFT,
-	INVENTORY_ERROR_MOVEMENT_NOT_FOUND,
-	INVENTORY_ERROR_MOVEMENT_VERSION_CONFLICT,
-	INVENTORY_ERROR_RESERVATION_ALREADY_RELEASED,
-	INVENTORY_ERROR_RESERVATION_NOT_FOUND,
-	INVENTORY_ERROR_RESERVATION_VERSION_CONFLICT,
-	inventoryErrorDetails,
-} from "./error-codes";
+	errorIngress,
+	errorProject,
+	errorResult,
+	type Result,
+} from "@afenda/errors";
 import type { MutationPorts } from "./ports";
 import { runSequentiallyUntil } from "./resolve-async";
 import {
@@ -78,8 +61,10 @@ import {
 
 const INVENTORY_AUDIT_SOURCE = "inventory.drizzle-store";
 
-function failFromPersistence(error: unknown, fallbackMessage: string) {
-	return failFromAppError(normalizePostgresUnknown(error, fallbackMessage));
+function failFromPersistence(error: unknown, _fallbackMessage: string) {
+	return errorProject.result(
+		errorIngress.postgres(error, { operation: "persistence.postgres" }),
+	);
 }
 
 interface MovementSqlRow {
@@ -362,8 +347,6 @@ function json(value: unknown): string {
 	return JSON.stringify(value);
 }
 
-const SQLSTATE_UNIQUE_VIOLATION = "23505";
-const SQLSTATE_DIVISION_BY_ZERO = "22012";
 const CREATE_MOVEMENT_CONFLICT_PATTERN =
 	/stock_movement_org_create_idempotency_uidx|create_idempotency_key/i;
 const LINE_CONFLICT_PATTERN =
@@ -396,10 +379,6 @@ function readConstraintName(error: unknown): string {
 	);
 }
 
-function isUniqueViolation(error: unknown): boolean {
-	return postgresSqlState(error) === SQLSTATE_UNIQUE_VIOLATION;
-}
-
 function isCreateMovementIdempotencyConflict(error: unknown): boolean {
 	return CREATE_MOVEMENT_CONFLICT_PATTERN.test(readConstraintName(error));
 }
@@ -416,24 +395,16 @@ function isReservationCreateIdempotencyConflict(error: unknown): boolean {
 	return RESERVATION_CREATE_CONFLICT_PATTERN.test(readConstraintName(error));
 }
 
-function isDivisionByZero(error: unknown): boolean {
-	return postgresSqlState(error) === SQLSTATE_DIVISION_BY_ZERO;
-}
-
 function movementNotFound(): Result<never> {
-	return fail(
-		"NOT_FOUND",
-		"Stock movement not found",
-		inventoryErrorDetails(INVENTORY_ERROR_MOVEMENT_NOT_FOUND),
-	);
+	return errorResult.fail("NOT_FOUND", {
+		publicMessage: "Stock movement not found",
+	});
 }
 
 function reservationNotFound(): Result<never> {
-	return fail(
-		"NOT_FOUND",
-		"Stock reservation not found",
-		inventoryErrorDetails(INVENTORY_ERROR_RESERVATION_NOT_FOUND),
-	);
+	return errorResult.fail("NOT_FOUND", {
+		publicMessage: "Stock reservation not found",
+	});
 }
 
 function validateMovementLineQuantity(
@@ -441,12 +412,16 @@ function validateMovementLineQuantity(
 	quantity: number,
 ): Result<void> {
 	if (movementType === "adjustment" && quantity === 0) {
-		return fail("BAD_REQUEST", "Adjustment quantity must be non-zero");
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Adjustment quantity must be non-zero",
+		});
 	}
 	if (movementType !== "adjustment" && quantity <= 0) {
-		return fail("BAD_REQUEST", "Quantity must be a positive number");
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Quantity must be a positive number",
+		});
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 interface ReservationReleaseProceed {
@@ -515,7 +490,7 @@ function prepareReservationPostAudit(
 	reservation: StockReservation;
 } | null> {
 	if (reservation === null || mutation === null) {
-		return ok(null);
+		return errorResult.ok(null);
 	}
 	const prepared = prepareTransactionalAuditInsertValues({
 		organizationId: record.organizationId,
@@ -557,7 +532,7 @@ function prepareReservationPostAudit(
 	if (!prepared.ok) {
 		return prepared;
 	}
-	return ok({ audit: prepared.data, mutation, reservation });
+	return errorResult.ok({ audit: prepared.data, mutation, reservation });
 }
 
 function decideDrizzleMovementPost(
@@ -566,56 +541,45 @@ function decideDrizzleMovementPost(
 ): Result<DrizzlePostDecision> {
 	if (movement.status === "posted") {
 		return movement.postIdempotencyKey === record.postIdempotencyKey
-			? ok({ kind: "replay" })
-			: fail(
-					"CONFLICT",
-					"Stock movement is already posted",
-					inventoryErrorDetails(INVENTORY_ERROR_MOVEMENT_ALREADY_POSTED),
-				);
+			? errorResult.ok({ kind: "replay" })
+			: errorResult.fail("CONFLICT", {
+					publicMessage: "Stock movement is already posted",
+				});
 	}
 	if (movement.status === "cancelled") {
-		return fail(
-			"CONFLICT",
-			"Cancelled stock movements cannot be posted",
-			inventoryErrorDetails(INVENTORY_ERROR_MOVEMENT_ALREADY_CANCELLED),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Cancelled stock movements cannot be posted",
+		});
 	}
 	if (movement.status !== "draft") {
-		return fail(
-			"CONFLICT",
-			"Stock movement is not in draft status",
-			inventoryErrorDetails(INVENTORY_ERROR_MOVEMENT_NOT_DRAFT),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Stock movement is not in draft status",
+		});
 	}
 	if (movement.version !== record.expectedVersion) {
-		return fail(
-			"CONFLICT",
-			"Stock movement version conflict",
-			inventoryErrorDetails(INVENTORY_ERROR_MOVEMENT_VERSION_CONFLICT),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Stock movement version conflict",
+		});
 	}
 	if (movement.lines.length === 0) {
-		return fail(
-			"CONFLICT",
-			"Cannot post stock movement without lines",
-			inventoryErrorDetails(INVENTORY_ERROR_MOVEMENT_EMPTY_LINES),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Cannot post stock movement without lines",
+		});
 	}
 	if (movement.reservationId !== null && movement.movementType !== "issue") {
-		return fail(
-			"CONFLICT",
-			"Only issue movements may consume reservations",
-			inventoryErrorDetails(INVENTORY_ERROR_MOVEMENT_NOT_DRAFT),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Only issue movements may consume reservations",
+		});
 	}
 	try {
-		return ok({ effects: computeBalanceEffects(movement), kind: "proceed" });
+		return errorResult.ok({
+			effects: computeBalanceEffects(movement),
+			kind: "proceed",
+		});
 	} catch {
-		return fail(
-			"CONFLICT",
-			"Stock movement warehouses are invalid",
-			inventoryErrorDetails(INVENTORY_ERROR_INVALID_TRANSFER),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Stock movement warehouses are invalid",
+		});
 	}
 }
 
@@ -625,36 +589,28 @@ function decideReservationRelease(
 ): Result<ReservationReleaseDecision> {
 	if (reservation.status === record.terminalStatus) {
 		return reservation.releaseIdempotencyKey === record.releaseIdempotencyKey
-			? ok({ kind: "replay" })
-			: fail(
-					"CONFLICT",
-					"Stock reservation is already terminated",
-					inventoryErrorDetails(INVENTORY_ERROR_RESERVATION_ALREADY_RELEASED),
-				);
+			? errorResult.ok({ kind: "replay" })
+			: errorResult.fail("CONFLICT", {
+					publicMessage: "Stock reservation is already terminated",
+				});
 	}
 	if (!isReleasableReservationStatus(reservation.status)) {
-		return fail(
-			"CONFLICT",
-			"Stock reservation cannot be terminated",
-			inventoryErrorDetails(INVENTORY_ERROR_RESERVATION_ALREADY_RELEASED),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Stock reservation cannot be terminated",
+		});
 	}
 	if (reservation.version !== record.expectedVersion) {
-		return fail(
-			"CONFLICT",
-			"Stock reservation version conflict",
-			inventoryErrorDetails(INVENTORY_ERROR_RESERVATION_VERSION_CONFLICT),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Stock reservation version conflict",
+		});
 	}
 	const remainingQuantity = getReservationRemainingQuantity(reservation);
 	if (remainingQuantity < 0) {
-		return fail(
-			"CONFLICT",
-			"Stock reservation remaining quantity is invalid",
-			inventoryErrorDetails(INVENTORY_ERROR_INSUFFICIENT_AVAILABLE),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Stock reservation remaining quantity is invalid",
+		});
 	}
-	return ok({ kind: "proceed", remainingQuantity });
+	return errorResult.ok({ kind: "proceed", remainingQuantity });
 }
 
 function reservationReleaseEffects(
@@ -706,18 +662,12 @@ function applyReservationConsumption(
 	reservation: StockReservation,
 ): Result<ConsumptionResult> {
 	if (movement.warehouseId === null || movement.warehouseCode === null) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Issue movement missing warehouse for reservation consumption",
-			inventoryErrorDetails(INVENTORY_ERROR_INVALID_TRANSFER),
-		);
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 	if (movement.warehouseId !== reservation.warehouseId) {
-		return fail(
-			"CONFLICT",
-			"Linked reservation belongs to a different warehouse",
-			inventoryErrorDetails(INVENTORY_ERROR_INSUFFICIENT_AVAILABLE),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Linked reservation belongs to a different warehouse",
+		});
 	}
 
 	const quantitiesByLineId = new Map<string, number>();
@@ -732,23 +682,20 @@ function applyReservationConsumption(
 	}
 
 	if (consumedQuantity <= 0) {
-		return fail(
-			"CONFLICT",
-			"Linked reservation does not match any issue line",
-			inventoryErrorDetails(INVENTORY_ERROR_INSUFFICIENT_AVAILABLE),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Linked reservation does not match any issue line",
+		});
 	}
 
 	const remainingQuantity = getReservationRemainingQuantity(reservation);
 	if (remainingQuantity < consumedQuantity) {
-		return fail(
-			"CONFLICT",
-			"Reservation remaining quantity is insufficient for issue post",
-			inventoryErrorDetails(INVENTORY_ERROR_INSUFFICIENT_AVAILABLE),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage:
+				"Reservation remaining quantity is insufficient for issue post",
+		});
 	}
 
-	return ok({
+	return errorResult.ok({
 		consumedQuantity,
 		effects: effects.map((effect) => {
 			const lineQuantity =
@@ -782,7 +729,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 					),
 				)
 				.orderBy(asc(stockMovementLine.lineNo), asc(stockMovementLine.id));
-			return ok(
+			return errorResult.ok(
 				mapMovement(
 					mapHeaderRow(header),
 					lines.map((line) => mapLineFromSelect(line)),
@@ -796,31 +743,31 @@ export class DrizzleInventoryStore implements InventoryStore {
 	private async reloadMovement(
 		organizationId: string,
 		id: string,
-		missingMessage: string,
+		_missingMessage: string,
 	): Promise<Result<StockMovement>> {
 		const reloaded = await this.getMovementById(organizationId, id);
 		if (!reloaded.ok) {
 			return reloaded;
 		}
 		if (reloaded.data === null) {
-			return fail("INTERNAL_ERROR", missingMessage);
+			return errorResult.fail("INTERNAL_ERROR");
 		}
-		return ok(reloaded.data);
+		return errorResult.ok(reloaded.data);
 	}
 
 	private async reloadReservation(
 		organizationId: string,
 		id: string,
-		missingMessage: string,
+		_missingMessage: string,
 	): Promise<Result<StockReservation>> {
 		const reloaded = await this.getReservationById(organizationId, id);
 		if (!reloaded.ok) {
 			return reloaded;
 		}
 		if (reloaded.data === null) {
-			return fail("INTERNAL_ERROR", missingMessage);
+			return errorResult.fail("INTERNAL_ERROR");
 		}
-		return ok(reloaded.data);
+		return errorResult.ok(reloaded.data);
 	}
 
 	private async getLatestLedgerSequence(
@@ -833,7 +780,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 				.where(eq(stockLedgerEntry.organizationId, organizationId))
 				.orderBy(desc(stockLedgerEntry.ledgerSequence))
 				.limit(1);
-			return ok(row?.ledgerSequence ?? 0);
+			return errorResult.ok(row?.ledgerSequence ?? 0);
 		} catch (error) {
 			return failFromPersistence(
 				error,
@@ -853,7 +800,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 				return result.ok ? undefined : result;
 			},
 		);
-		return terminal ?? ok(undefined);
+		return terminal ?? errorResult.ok(undefined);
 	}
 
 	private async validateBalanceEffect(
@@ -880,27 +827,21 @@ export class DrizzleInventoryStore implements InventoryStore {
 			(row === undefined ? 0 : parseQuantity(row.available)) +
 			effect.availableDelta;
 		if (available < 0) {
-			return fail(
-				"CONFLICT",
-				"Insufficient available stock",
-				inventoryErrorDetails(INVENTORY_ERROR_INSUFFICIENT_AVAILABLE),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Insufficient available stock",
+			});
 		}
 		if (reserved < 0) {
-			return fail(
-				"CONFLICT",
-				"Insufficient reserved stock",
-				inventoryErrorDetails(INVENTORY_ERROR_INSUFFICIENT_AVAILABLE),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Insufficient reserved stock",
+			});
 		}
 		if (onHand < 0) {
-			return fail(
-				"CONFLICT",
-				"Stock on-hand would become negative",
-				inventoryErrorDetails(INVENTORY_ERROR_INSUFFICIENT_ON_HAND),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Stock on-hand would become negative",
+			});
 		}
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	}
 
 	private async resolveDrizzlePostReservation(
@@ -909,7 +850,11 @@ export class DrizzleInventoryStore implements InventoryStore {
 		effects: BalanceEffect[],
 	): Promise<Result<DrizzlePostReservation>> {
 		if (movement.reservationId === null) {
-			return ok({ consumedQuantity: 0, effects, reservation: null });
+			return errorResult.ok({
+				consumedQuantity: 0,
+				effects,
+				reservation: null,
+			});
 		}
 		const reservationResult = await this.getReservationById(
 			organizationId,
@@ -927,11 +872,9 @@ export class DrizzleInventoryStore implements InventoryStore {
 			reservation.status === "expired" ||
 			reservation.status === "cancelled"
 		) {
-			return fail(
-				"CONFLICT",
-				"Stock reservation cannot be consumed",
-				inventoryErrorDetails(INVENTORY_ERROR_RESERVATION_ALREADY_RELEASED),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Stock reservation cannot be consumed",
+			});
 		}
 		const adjustedEffects = applyReservationConsumption(
 			effects,
@@ -939,7 +882,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 			reservation,
 		);
 		return adjustedEffects.ok
-			? ok({ ...adjustedEffects.data, reservation })
+			? errorResult.ok({ ...adjustedEffects.data, reservation })
 			: adjustedEffects;
 	}
 
@@ -1047,9 +990,9 @@ export class DrizzleInventoryStore implements InventoryStore {
 			]);
 			const [row] = rows;
 			if (row === undefined) {
-				return fail("INTERNAL_ERROR", "Stock movement create returned no row");
+				return errorResult.fail("INTERNAL_ERROR");
 			}
-			return ok(mapMovement(row, []));
+			return errorResult.ok(mapMovement(row, []));
 		} catch (error) {
 			if (isCreateMovementIdempotencyConflict(error)) {
 				const existing = await this.getMovementByCreateIdempotencyKey(
@@ -1060,22 +1003,13 @@ export class DrizzleInventoryStore implements InventoryStore {
 					return existing;
 				}
 				if (existing.data !== null) {
-					return ok(existing.data);
+					return errorResult.ok(existing.data);
 				}
 			}
 			if (isSourceEventConflict(error)) {
-				return fail(
-					"CONFLICT",
-					"Stock movement source event already exists",
-					inventoryErrorDetails(INVENTORY_ERROR_DUPLICATE_SOURCE_EVENT),
-				);
-			}
-			if (isUniqueViolation(error)) {
-				return fail(
-					"CONFLICT",
-					"Stock movement code already exists",
-					inventoryErrorDetails(INVENTORY_ERROR_CODE_CONFLICT),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Stock movement source event already exists",
+				});
 			}
 			return failFromPersistence(error, "Failed to create stock movement");
 		}
@@ -1102,21 +1036,17 @@ export class DrizzleInventoryStore implements InventoryStore {
 			(line) => line.lineIdempotencyKey === record.lineIdempotencyKey,
 		);
 		if (replay !== undefined) {
-			return ok(replay);
+			return errorResult.ok(replay);
 		}
 		if (movement.status !== "draft") {
-			return fail(
-				"CONFLICT",
-				"Cannot add lines to a non-draft stock movement",
-				inventoryErrorDetails(INVENTORY_ERROR_MOVEMENT_NOT_DRAFT),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Cannot add lines to a non-draft stock movement",
+			});
 		}
 		if (movement.version !== record.expectedVersion) {
-			return fail(
-				"CONFLICT",
-				"Stock movement version conflict",
-				inventoryErrorDetails(INVENTORY_ERROR_MOVEMENT_VERSION_CONFLICT),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Stock movement version conflict",
+			});
 		}
 
 		const quantity = parseQuantity(record.quantity);
@@ -1210,13 +1140,11 @@ export class DrizzleInventoryStore implements InventoryStore {
 			]);
 			const [row] = rows;
 			if (row === undefined) {
-				return fail(
-					"CONFLICT",
-					"Stock movement version conflict",
-					inventoryErrorDetails(INVENTORY_ERROR_MOVEMENT_VERSION_CONFLICT),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Stock movement version conflict",
+				});
 			}
-			return ok(mapLine(row));
+			return errorResult.ok(mapLine(row));
 		} catch (error) {
 			if (isLineIdempotencyConflict(error)) {
 				const reloaded = await this.getMovementById(
@@ -1230,11 +1158,8 @@ export class DrizzleInventoryStore implements InventoryStore {
 					(row) => row.lineIdempotencyKey === record.lineIdempotencyKey,
 				);
 				if (line !== undefined) {
-					return ok(line);
+					return errorResult.ok(line);
 				}
-			}
-			if (isUniqueViolation(error)) {
-				return fail("CONFLICT", "Stock movement line conflict");
 			}
 			return failFromPersistence(error, "Failed to add stock movement line");
 		}
@@ -1262,7 +1187,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 			return decision;
 		}
 		if (decision.data.kind === "replay") {
-			return ok(movement);
+			return errorResult.ok(movement);
 		}
 		const reservationResult = await this.resolveDrizzlePostReservation(
 			record.organizationId,
@@ -1517,13 +1442,11 @@ export class DrizzleInventoryStore implements InventoryStore {
 					reloaded.data.status === "posted" &&
 					reloaded.data.postIdempotencyKey === record.postIdempotencyKey
 				) {
-					return ok(reloaded.data);
+					return errorResult.ok(reloaded.data);
 				}
-				return fail(
-					"CONFLICT",
-					"Stock movement version conflict",
-					inventoryErrorDetails(INVENTORY_ERROR_MOVEMENT_VERSION_CONFLICT),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Stock movement version conflict",
+				});
 			}
 
 			return this.reloadMovement(
@@ -1532,16 +1455,6 @@ export class DrizzleInventoryStore implements InventoryStore {
 				"Posted stock movement missing after write",
 			);
 		} catch (error) {
-			if (isDivisionByZero(error)) {
-				return fail(
-					"CONFLICT",
-					"Insufficient available stock for movement post",
-					inventoryErrorDetails(INVENTORY_ERROR_INSUFFICIENT_AVAILABLE),
-				);
-			}
-			if (isUniqueViolation(error)) {
-				return fail("CONFLICT", "Stock movement post conflict");
-			}
 			return failFromPersistence(error, "Failed to post stock movement");
 		}
 	}
@@ -1565,34 +1478,26 @@ export class DrizzleInventoryStore implements InventoryStore {
 		const movement = movementResult.data;
 		if (movement.status === "cancelled") {
 			if (movement.cancelIdempotencyKey === record.cancelIdempotencyKey) {
-				return ok(movement);
+				return errorResult.ok(movement);
 			}
-			return fail(
-				"CONFLICT",
-				"Stock movement is already cancelled",
-				inventoryErrorDetails(INVENTORY_ERROR_MOVEMENT_ALREADY_CANCELLED),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Stock movement is already cancelled",
+			});
 		}
 		if (movement.status === "posted") {
-			return fail(
-				"CONFLICT",
-				"Posted stock movements cannot be cancelled",
-				inventoryErrorDetails(INVENTORY_ERROR_MOVEMENT_ALREADY_POSTED),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Posted stock movements cannot be cancelled",
+			});
 		}
 		if (movement.status !== "draft") {
-			return fail(
-				"CONFLICT",
-				"Only draft stock movements can be cancelled",
-				inventoryErrorDetails(INVENTORY_ERROR_MOVEMENT_NOT_DRAFT),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Only draft stock movements can be cancelled",
+			});
 		}
 		if (movement.version !== record.expectedVersion) {
-			return fail(
-				"CONFLICT",
-				"Stock movement version conflict",
-				inventoryErrorDetails(INVENTORY_ERROR_MOVEMENT_VERSION_CONFLICT),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Stock movement version conflict",
+			});
 		}
 
 		const nextVersion = movement.version + 1;
@@ -1693,13 +1598,11 @@ export class DrizzleInventoryStore implements InventoryStore {
 					reloaded.data.status === "cancelled" &&
 					reloaded.data.cancelIdempotencyKey === record.cancelIdempotencyKey
 				) {
-					return ok(reloaded.data);
+					return errorResult.ok(reloaded.data);
 				}
-				return fail(
-					"CONFLICT",
-					"Stock movement version conflict",
-					inventoryErrorDetails(INVENTORY_ERROR_MOVEMENT_VERSION_CONFLICT),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Stock movement version conflict",
+				});
 			}
 			return this.reloadMovement(
 				record.organizationId,
@@ -1707,9 +1610,6 @@ export class DrizzleInventoryStore implements InventoryStore {
 				"Cancelled stock movement missing after write",
 			);
 		} catch (error) {
-			if (isUniqueViolation(error)) {
-				return fail("CONFLICT", "Stock movement cancel conflict");
-			}
 			return failFromPersistence(error, "Failed to cancel stock movement");
 		}
 	}
@@ -1727,12 +1627,14 @@ export class DrizzleInventoryStore implements InventoryStore {
 			return existing;
 		}
 		if (existing.data !== null) {
-			return ok(existing.data);
+			return errorResult.ok(existing.data);
 		}
 
 		const quantity = parseQuantity(record.quantity);
 		if (quantity <= 0) {
-			return fail("BAD_REQUEST", "Reservation quantity must be positive");
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage: "Reservation quantity must be positive",
+			});
 		}
 
 		const effects: BalanceEffect[] = [
@@ -1893,10 +1795,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 			]);
 			const [, createdRows] = resultSets;
 			if (!Array.isArray(createdRows) || createdRows[0] === undefined) {
-				return fail(
-					"INTERNAL_ERROR",
-					"Stock reservation create returned no row",
-				);
+				return errorResult.fail("INTERNAL_ERROR");
 			}
 			return this.reloadReservation(
 				record.organizationId,
@@ -1913,22 +1812,8 @@ export class DrizzleInventoryStore implements InventoryStore {
 					return replay;
 				}
 				if (replay.data !== null) {
-					return ok(replay.data);
+					return errorResult.ok(replay.data);
 				}
-			}
-			if (isDivisionByZero(error)) {
-				return fail(
-					"CONFLICT",
-					"Insufficient available stock",
-					inventoryErrorDetails(INVENTORY_ERROR_INSUFFICIENT_AVAILABLE),
-				);
-			}
-			if (isUniqueViolation(error)) {
-				return fail(
-					"CONFLICT",
-					"Stock reservation code already exists",
-					inventoryErrorDetails(INVENTORY_ERROR_CODE_CONFLICT),
-				);
 			}
 			return failFromPersistence(error, "Failed to reserve stock");
 		}
@@ -1956,7 +1841,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 			return decision;
 		}
 		if (decision.data.kind === "replay") {
-			return ok(reservation);
+			return errorResult.ok(reservation);
 		}
 		const { remainingQuantity } = decision.data;
 		const effects = reservationReleaseEffects(reservation, remainingQuantity);
@@ -2120,13 +2005,11 @@ export class DrizzleInventoryStore implements InventoryStore {
 					reloaded.data.status === record.terminalStatus &&
 					reloaded.data.releaseIdempotencyKey === record.releaseIdempotencyKey
 				) {
-					return ok(reloaded.data);
+					return errorResult.ok(reloaded.data);
 				}
-				return fail(
-					"CONFLICT",
-					"Stock reservation version conflict",
-					inventoryErrorDetails(INVENTORY_ERROR_RESERVATION_VERSION_CONFLICT),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Stock reservation version conflict",
+				});
 			}
 
 			return this.reloadReservation(
@@ -2135,16 +2018,6 @@ export class DrizzleInventoryStore implements InventoryStore {
 				"Terminated stock reservation missing after write",
 			);
 		} catch (error) {
-			if (isDivisionByZero(error)) {
-				return fail(
-					"CONFLICT",
-					"Insufficient reserved stock",
-					inventoryErrorDetails(INVENTORY_ERROR_INSUFFICIENT_AVAILABLE),
-				);
-			}
-			if (isUniqueViolation(error)) {
-				return fail("CONFLICT", "Stock reservation release conflict");
-			}
 			return failFromPersistence(error, "Failed to release stock reservation");
 		}
 	}
@@ -2165,7 +2038,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 				)
 				.limit(1);
 			if (header === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return this.loadMovementByHeader(header);
 		} catch (error) {
@@ -2189,7 +2062,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 				)
 				.limit(1);
 			if (header === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return this.loadMovementByHeader(header);
 		} catch (error) {
@@ -2221,7 +2094,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 				.limit(filter.pageSize)
 				.offset((filter.page - 1) * filter.pageSize);
 			if (headers.length === 0) {
-				return ok([]);
+				return errorResult.ok([]);
 			}
 
 			const movementIds = headers.map((header) => header.id);
@@ -2247,7 +2120,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 				}
 			}
 
-			return ok(
+			return errorResult.ok(
 				headers.map((header) =>
 					mapMovement(
 						mapHeaderRow(header),
@@ -2283,7 +2156,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 				.orderBy(desc(stockReservation.updatedAt), desc(stockReservation.id))
 				.limit(filter.pageSize)
 				.offset((filter.page - 1) * filter.pageSize);
-			return ok(rows.map((row) => mapReservation(row)));
+			return errorResult.ok(rows.map((row) => mapReservation(row)));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to list stock reservations");
 		}
@@ -2313,7 +2186,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 				.from(stockBalance)
 				.where(and(...conditions))
 				.orderBy(asc(stockBalance.warehouseCode), asc(stockBalance.itemCode));
-			return ok(
+			return errorResult.ok(
 				rows.map((row) => ({
 					organizationId: row.organizationId,
 					warehouseId: row.warehouseId,
@@ -2349,7 +2222,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 					),
 				)
 				.limit(1);
-			return ok(row === undefined ? null : mapReservation(row));
+			return errorResult.ok(row === undefined ? null : mapReservation(row));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to load stock reservation");
 		}
@@ -2370,7 +2243,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 					),
 				)
 				.limit(1);
-			return ok(row === undefined ? null : mapReservation(row));
+			return errorResult.ok(row === undefined ? null : mapReservation(row));
 		} catch (error) {
 			return failFromPersistence(
 				error,
@@ -2401,7 +2274,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 					asc(stockLedgerEntry.ledgerSequence),
 					asc(stockLedgerEntry.id),
 				);
-			return ok(
+			return errorResult.ok(
 				rows.map((row) => ({
 					warehouseId: row.warehouseId,
 					itemId: row.itemId,
@@ -2420,7 +2293,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 				.from(stockBalance)
 				.where(eq(stockBalance.organizationId, organizationId))
 				.orderBy(asc(stockBalance.warehouseCode), asc(stockBalance.itemCode));
-			return ok(rows.map((row) => mapBalance(row)));
+			return errorResult.ok(rows.map((row) => mapBalance(row)));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to list stock balances");
 		}
@@ -2446,7 +2319,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 					asc(stockReservation.itemCode),
 					asc(stockReservation.id),
 				);
-			return ok(
+			return errorResult.ok(
 				rows
 					.map((row) => mapReservation(row))
 					.filter((reservation) =>

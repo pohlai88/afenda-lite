@@ -15,19 +15,15 @@ import {
 	supersedeCompanyLegalForm,
 	supersedeCompanyName,
 } from "@afenda/corporate-administration";
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runMemberPermissionAction } from "@/app/actions/run-member-permission-action";
 import {
 	createCorporateAdministrationCommandOptions,
 	createCorporateAdministrationCompanyDependencies,
 } from "@/lib/erp/corporate-administration-command-options";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 const legalCompanyIdSchema = z.string().trim().uuid();
@@ -309,7 +305,9 @@ export async function addCompanyNameAction(
 				formDataToStrictObject(formData),
 			);
 			if (!parsed.success) {
-				return actionFail("VALIDATION_ERROR", parsed.error, parsed.details);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "The submitted data is invalid",
+				});
 			}
 
 			const result = await addCompanyName(
@@ -360,7 +358,9 @@ export async function supersedeCompanyNameAction(
 				formDataToStrictObject(formData),
 			);
 			if (!parsed.success) {
-				return actionFail("VALIDATION_ERROR", parsed.error, parsed.details);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "The submitted data is invalid",
+				});
 			}
 
 			const result = await supersedeCompanyName(
@@ -411,7 +411,9 @@ export async function retireCompanyNameAction(
 				formDataToStrictObject(formData),
 			);
 			if (!parsed.success) {
-				return actionFail("VALIDATION_ERROR", parsed.error, parsed.details);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "The submitted data is invalid",
+				});
 			}
 
 			const result = await retireCompanyName(
@@ -456,7 +458,9 @@ export async function setCompanyLegalFormAction(
 				formDataToStrictObject(formData),
 			);
 			if (!parsed.success) {
-				return actionFail("VALIDATION_ERROR", parsed.error, parsed.details);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "The submitted data is invalid",
+				});
 			}
 
 			const result = await setCompanyLegalForm(
@@ -510,7 +514,9 @@ export async function supersedeCompanyLegalFormAction(
 				formDataToStrictObject(formData),
 			);
 			if (!parsed.success) {
-				return actionFail("VALIDATION_ERROR", parsed.error, parsed.details);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "The submitted data is invalid",
+				});
 			}
 
 			const result = await supersedeCompanyLegalForm(
@@ -564,7 +570,9 @@ export async function registerCompanyIdentifierAction(
 				formDataToStrictObject(formData),
 			);
 			if (!parsed.success) {
-				return actionFail("VALIDATION_ERROR", parsed.error, parsed.details);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "The submitted data is invalid",
+				});
 			}
 
 			const result = await registerCompanyIdentifier(
@@ -619,7 +627,9 @@ export async function supersedeCompanyIdentifierAction(
 				formDataToStrictObject(formData),
 			);
 			if (!parsed.success) {
-				return actionFail("VALIDATION_ERROR", parsed.error, parsed.details);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "The submitted data is invalid",
+				});
 			}
 
 			const result = await supersedeCompanyIdentifier(
@@ -674,7 +684,9 @@ export async function retireCompanyIdentifierAction(
 				formDataToStrictObject(formData),
 			);
 			if (!parsed.success) {
-				return actionFail("VALIDATION_ERROR", parsed.error, parsed.details);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "The submitted data is invalid",
+				});
 			}
 
 			const result = await retireCompanyIdentifier(
@@ -721,7 +733,9 @@ export async function setCompanyFinancialYearAction(
 				formDataToStrictObject(formData),
 			);
 			if (!parsed.success) {
-				return actionFail("VALIDATION_ERROR", parsed.error, parsed.details);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "The submitted data is invalid",
+				});
 			}
 
 			const result = await setCompanyFinancialYear(
@@ -775,7 +789,9 @@ export async function registerCompanyActivityAction(
 				formDataToStrictObject(formData),
 			);
 			if (!parsed.success) {
-				return actionFail("VALIDATION_ERROR", parsed.error, parsed.details);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "The submitted data is invalid",
+				});
 			}
 
 			const result = await registerCompanyActivity(
@@ -827,7 +843,9 @@ export async function endCompanyActivityAction(
 				formDataToStrictObject(formData),
 			);
 			if (!parsed.success) {
-				return actionFail("VALIDATION_ERROR", parsed.error, parsed.details);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "The submitted data is invalid",
+				});
 			}
 
 			const result = await endCompanyActivity(

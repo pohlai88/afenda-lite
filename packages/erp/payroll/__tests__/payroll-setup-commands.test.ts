@@ -269,6 +269,6 @@ describe("payroll setup commands", () => {
 		if (blocked.ok) {
 			return;
 		}
-		expect(blocked.details?.payrollCode).toBe("payroll.invalid_state");
+		expect(blocked.code).toBe("CONFLICT");
 	});
 });

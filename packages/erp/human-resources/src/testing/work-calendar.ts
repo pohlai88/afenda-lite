@@ -1,4 +1,4 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type { DayPortion } from "../shared/leave-status";
 import type {
@@ -55,9 +55,9 @@ export function createMemoryWorkCalendar(): WorkCalendarPort {
 		isWorkingDay(input) {
 			try {
 				const date = parseIsoDate(input.date);
-				return Promise.resolve(ok(!isWeekend(date)));
+				return Promise.resolve(errorResult.ok(!isWeekend(date)));
 			} catch {
-				return Promise.resolve(ok(false));
+				return Promise.resolve(errorResult.ok(false));
 			}
 		},
 		expandLeaveSegments(
@@ -82,7 +82,7 @@ export function createMemoryWorkCalendar(): WorkCalendarPort {
 				cursor = addUtcDays(cursor, 1);
 			}
 
-			return Promise.resolve(ok(segments));
+			return Promise.resolve(errorResult.ok(segments));
 		},
 	};
 }

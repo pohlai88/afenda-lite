@@ -1,10 +1,9 @@
-import { fail, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	CORPORATE_ADMINISTRATION_QUERY_PERMISSIONS,
 	requireCorporateAdministrationPermission,
 } from "../../authorization";
 import type { CorporateAdministrationQueryOptions } from "../../command-options";
-import { corporateAdministrationErrorDetails } from "../../error-codes";
 import { toCanonicalInstant } from "../../kernel/dates";
 import { parseCorporateAdministrationInput } from "../../parse-input";
 import { findCompanyNameAsOfInputSchema } from "../schemas";
@@ -45,14 +44,9 @@ export async function findCompanyNameAsOf(
 		return current;
 	}
 	if (current.data === null) {
-		return fail(
-			"NOT_FOUND",
-			"Corporate Administration legal company was not found.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_NOT_FOUND",
-				{ entityType: "legalCompany" },
-			),
-		);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Corporate Administration legal company was not found.",
+		});
 	}
 
 	return dependencies.nameStore.findCompanyNameAsOf({

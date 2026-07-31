@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import { collectSequentially, resolveResult } from "./resolve-async";
 import { add, decimal, format, multiply, subtract } from "./shared/money";
@@ -93,11 +93,9 @@ export class MemoryReceivablesStore implements ReceivablesStore {
 		if (existingId !== undefined) {
 			const existing = this.invoices.get(existingId);
 			if (existing === undefined) {
-				return resolveResult(
-					fail("INTERNAL_ERROR", "Create idempotency target missing"),
-				);
+				return resolveResult(errorResult.fail("INTERNAL_ERROR"));
 			}
-			return resolveResult(ok(cloneInvoice(existing)));
+			return resolveResult(errorResult.ok(cloneInvoice(existing)));
 		}
 		for (const invoice of this.invoices.values()) {
 			if (
@@ -105,7 +103,9 @@ export class MemoryReceivablesStore implements ReceivablesStore {
 				invoice.normalizedCode === record.normalizedCode
 			) {
 				return resolveResult(
-					fail("CONFLICT", "Sales invoice code already exists"),
+					errorResult.fail("CONFLICT", {
+						publicMessage: "Sales invoice code already exists",
+					}),
 				);
 			}
 		}
@@ -146,7 +146,7 @@ export class MemoryReceivablesStore implements ReceivablesStore {
 		};
 		this.invoices.set(invoice.id, invoice);
 		this.createKeys.set(key, invoice.id);
-		return resolveResult(ok(cloneInvoice(invoice)));
+		return resolveResult(errorResult.ok(cloneInvoice(invoice)));
 	}
 
 	addLine(
@@ -158,23 +158,27 @@ export class MemoryReceivablesStore implements ReceivablesStore {
 			for (const invoice of this.invoices.values()) {
 				const line = invoice.lines.find((row) => row.id === existingLineId);
 				if (line !== undefined) {
-					return resolveResult(ok({ ...line }));
+					return resolveResult(errorResult.ok({ ...line }));
 				}
 			}
-			return resolveResult(
-				fail("INTERNAL_ERROR", "Line idempotency target missing"),
-			);
+			return resolveResult(errorResult.fail("INTERNAL_ERROR"));
 		}
 		const invoice = this.invoices.get(record.invoiceId);
 		if (
 			invoice === undefined ||
 			invoice.organizationId !== record.organizationId
 		) {
-			return resolveResult(fail("NOT_FOUND", "Sales invoice not found"));
+			return resolveResult(
+				errorResult.fail("NOT_FOUND", {
+					publicMessage: "Sales invoice not found",
+				}),
+			);
 		}
 		if (invoice.status !== "draft") {
 			return resolveResult(
-				fail("CONFLICT", "Lines can only be added to draft invoices"),
+				errorResult.fail("CONFLICT", {
+					publicMessage: "Lines can only be added to draft invoices",
+				}),
 			);
 		}
 		const now = new Date();
@@ -203,7 +207,7 @@ export class MemoryReceivablesStore implements ReceivablesStore {
 		invoice.updatedBy = record.actorUserId;
 		invoice.updatedAt = now;
 		this.lineKeys.set(key, line.id);
-		return resolveResult(ok({ ...line }));
+		return resolveResult(errorResult.ok({ ...line }));
 	}
 
 	async postInvoice(
@@ -214,38 +218,43 @@ export class MemoryReceivablesStore implements ReceivablesStore {
 		if (existingId !== undefined) {
 			const existing = this.invoices.get(existingId);
 			if (existing === undefined) {
-				return fail("INTERNAL_ERROR", "Post idempotency target missing");
+				return errorResult.fail("INTERNAL_ERROR");
 			}
-			return ok(cloneInvoice(existing));
+			return errorResult.ok(cloneInvoice(existing));
 		}
 		const invoice = this.invoices.get(record.invoiceId);
 		if (
 			invoice === undefined ||
 			invoice.organizationId !== record.organizationId
 		) {
-			return fail("NOT_FOUND", "Sales invoice not found");
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Sales invoice not found",
+			});
 		}
 		if (invoice.status !== "draft") {
-			return fail("CONFLICT", "Sales invoice is not a draft invoice");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Sales invoice is not a draft invoice",
+			});
 		}
 		if (invoice.version !== record.expectedVersion) {
-			return fail("CONFLICT", "Sales invoice version conflict");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Sales invoice version conflict",
+			});
 		}
 		if (invoice.lines.length === 0 || decimal(invoice.totalAmount) <= 0n) {
-			return fail(
-				"CONFLICT",
-				"Cannot post an invoice without a positive total",
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Cannot post an invoice without a positive total",
+			});
 		}
 		if (record.sourceLineChecks !== undefined) {
 			for (const check of record.sourceLineChecks) {
 				if (
 					decimal(check.quantity) > decimal(check.remainingInvoiceableQuantity)
 				) {
-					return fail(
-						"CONFLICT",
-						"Invoice quantity exceeds remaining invoiceable quantity",
-					);
+					return errorResult.fail("CONFLICT", {
+						publicMessage:
+							"Invoice quantity exceeds remaining invoiceable quantity",
+					});
 				}
 			}
 		}
@@ -295,7 +304,7 @@ export class MemoryReceivablesStore implements ReceivablesStore {
 			return emitted;
 		}
 		this.postKeys.set(key, invoice.id);
-		return ok(cloneInvoice(invoice));
+		return errorResult.ok(cloneInvoice(invoice));
 	}
 
 	async issueCredit(
@@ -306,35 +315,45 @@ export class MemoryReceivablesStore implements ReceivablesStore {
 		if (existingId !== undefined) {
 			const existing = this.credits.get(existingId);
 			if (existing === undefined) {
-				return fail("INTERNAL_ERROR", "Credit idempotency target missing");
+				return errorResult.fail("INTERNAL_ERROR");
 			}
-			return ok(cloneCredit(existing));
+			return errorResult.ok(cloneCredit(existing));
 		}
 		const invoice = this.invoices.get(record.salesInvoiceId);
 		if (
 			invoice === undefined ||
 			invoice.organizationId !== record.organizationId
 		) {
-			return fail("NOT_FOUND", "Sales invoice not found");
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Sales invoice not found",
+			});
 		}
 		if (invoice.status !== "posted" && invoice.status !== "closed") {
-			return fail("CONFLICT", "Credit note requires a posted invoice");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Credit note requires a posted invoice",
+			});
 		}
 		if (invoice.currencyCode !== record.currencyCode) {
-			return fail("CONFLICT", "Credit note currency must match invoice");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Credit note currency must match invoice",
+			});
 		}
 		if (
 			decimal(record.amount) > decimal(invoice.openAmount) &&
 			invoice.status === "posted"
 		) {
-			return fail("CONFLICT", "Credit amount exceeds invoice open amount");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Credit amount exceeds invoice open amount",
+			});
 		}
 		for (const credit of this.credits.values()) {
 			if (
 				credit.organizationId === record.organizationId &&
 				credit.normalizedCode === record.normalizedCode
 			) {
-				return fail("CONFLICT", "Credit note code already exists");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Credit note code already exists",
+				});
 			}
 		}
 		const previousInvoice = cloneInvoice(invoice);
@@ -398,7 +417,7 @@ export class MemoryReceivablesStore implements ReceivablesStore {
 			return emitted;
 		}
 		this.creditKeys.set(key, credit.id);
-		return ok(cloneCredit(credit));
+		return errorResult.ok(cloneCredit(credit));
 	}
 
 	async applyReceipt(
@@ -409,9 +428,9 @@ export class MemoryReceivablesStore implements ReceivablesStore {
 		if (existingId !== undefined) {
 			const existing = this.allocations.get(existingId);
 			if (existing === undefined) {
-				return fail("INTERNAL_ERROR", "Apply idempotency target missing");
+				return errorResult.fail("INTERNAL_ERROR");
 			}
-			return ok(cloneAllocation(existing));
+			return errorResult.ok(cloneAllocation(existing));
 		}
 		for (const allocation of this.allocations.values()) {
 			if (
@@ -420,10 +439,9 @@ export class MemoryReceivablesStore implements ReceivablesStore {
 					record.paymentApplicationInstructionId &&
 				allocation.status === "active"
 			) {
-				return fail(
-					"CONFLICT",
-					"Payment application instruction already applied",
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Payment application instruction already applied",
+				});
 			}
 		}
 		const invoice = this.invoices.get(record.invoiceId);
@@ -431,17 +449,25 @@ export class MemoryReceivablesStore implements ReceivablesStore {
 			invoice === undefined ||
 			invoice.organizationId !== record.organizationId
 		) {
-			return fail("NOT_FOUND", "Sales invoice not found");
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Sales invoice not found",
+			});
 		}
 		if (invoice.status !== "posted") {
-			return fail("CONFLICT", "Allocation requires a posted invoice");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Allocation requires a posted invoice",
+			});
 		}
 		if (invoice.version !== record.expectedInvoiceVersion) {
-			return fail("CONFLICT", "Sales invoice version conflict");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Sales invoice version conflict",
+			});
 		}
 		const amount = decimal(record.amount);
 		if (amount <= 0n || amount > decimal(invoice.openAmount)) {
-			return fail("CONFLICT", "Allocation exceeds invoice open amount");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Allocation exceeds invoice open amount",
+			});
 		}
 		const previous = cloneInvoice(invoice);
 		const previousBalances = new Map(this.balances);
@@ -497,7 +523,7 @@ export class MemoryReceivablesStore implements ReceivablesStore {
 			return emitted;
 		}
 		this.applyKeys.set(key, allocation.id);
-		return ok(cloneAllocation(allocation));
+		return errorResult.ok(cloneAllocation(allocation));
 	}
 
 	async reverseReceiptApplication(
@@ -508,23 +534,27 @@ export class MemoryReceivablesStore implements ReceivablesStore {
 		if (existingId !== undefined) {
 			const existing = this.allocations.get(existingId);
 			if (existing === undefined) {
-				return fail("INTERNAL_ERROR", "Reverse idempotency target missing");
+				return errorResult.fail("INTERNAL_ERROR");
 			}
-			return ok(cloneAllocation(existing));
+			return errorResult.ok(cloneAllocation(existing));
 		}
 		const allocation = this.allocations.get(record.allocationId);
 		if (
 			allocation === undefined ||
 			allocation.organizationId !== record.organizationId
 		) {
-			return fail("NOT_FOUND", "Customer allocation not found");
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Customer allocation not found",
+			});
 		}
 		if (allocation.status !== "active") {
-			return fail("CONFLICT", "Allocation is not active");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Allocation is not active",
+			});
 		}
 		const invoice = this.invoices.get(allocation.invoiceId);
 		if (invoice === undefined) {
-			return fail("INTERNAL_ERROR", "Customer allocation invoice is missing");
+			return errorResult.fail("INTERNAL_ERROR");
 		}
 		const previous = cloneInvoice(invoice);
 		const previousAllocation = cloneAllocation(allocation);
@@ -574,7 +604,7 @@ export class MemoryReceivablesStore implements ReceivablesStore {
 			return emitted;
 		}
 		this.reverseKeys.set(key, allocation.id);
-		return ok(cloneAllocation(allocation));
+		return errorResult.ok(cloneAllocation(allocation));
 	}
 
 	reverseAllocationsByPayment(
@@ -606,22 +636,28 @@ export class MemoryReceivablesStore implements ReceivablesStore {
 		if (existingId !== undefined) {
 			const existing = this.invoices.get(existingId);
 			if (existing === undefined) {
-				return fail("INTERNAL_ERROR", "Cancel idempotency target missing");
+				return errorResult.fail("INTERNAL_ERROR");
 			}
-			return ok(cloneInvoice(existing));
+			return errorResult.ok(cloneInvoice(existing));
 		}
 		const invoice = this.invoices.get(record.invoiceId);
 		if (
 			invoice === undefined ||
 			invoice.organizationId !== record.organizationId
 		) {
-			return fail("NOT_FOUND", "Sales invoice not found");
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Sales invoice not found",
+			});
 		}
 		if (invoice.status !== "draft") {
-			return fail("CONFLICT", "Only draft sales invoices can be cancelled");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Only draft sales invoices can be cancelled",
+			});
 		}
 		if (invoice.version !== record.expectedVersion) {
-			return fail("CONFLICT", "Sales invoice version conflict");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Sales invoice version conflict",
+			});
 		}
 		const previous = cloneInvoice(invoice);
 		const now = new Date();
@@ -652,7 +688,7 @@ export class MemoryReceivablesStore implements ReceivablesStore {
 			return emitted;
 		}
 		this.cancelKeys.set(key, invoice.id);
-		return ok(cloneInvoice(invoice));
+		return errorResult.ok(cloneInvoice(invoice));
 	}
 
 	async closeInvoice(
@@ -663,25 +699,33 @@ export class MemoryReceivablesStore implements ReceivablesStore {
 		if (existingId !== undefined) {
 			const existing = this.invoices.get(existingId);
 			if (existing === undefined) {
-				return fail("INTERNAL_ERROR", "Close idempotency target missing");
+				return errorResult.fail("INTERNAL_ERROR");
 			}
-			return ok(cloneInvoice(existing));
+			return errorResult.ok(cloneInvoice(existing));
 		}
 		const invoice = this.invoices.get(record.invoiceId);
 		if (
 			invoice === undefined ||
 			invoice.organizationId !== record.organizationId
 		) {
-			return fail("NOT_FOUND", "Sales invoice not found");
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Sales invoice not found",
+			});
 		}
 		if (invoice.status !== "posted") {
-			return fail("CONFLICT", "Only posted invoices can be closed");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Only posted invoices can be closed",
+			});
 		}
 		if (invoice.version !== record.expectedVersion) {
-			return fail("CONFLICT", "Sales invoice version conflict");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Sales invoice version conflict",
+			});
 		}
 		if (decimal(invoice.openAmount) !== 0n) {
-			return fail("CONFLICT", "Invoice open amount must be zero to close");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Invoice open amount must be zero to close",
+			});
 		}
 		const previous = cloneInvoice(invoice);
 		const now = new Date();
@@ -711,7 +755,7 @@ export class MemoryReceivablesStore implements ReceivablesStore {
 			return emitted;
 		}
 		this.closeKeys.set(key, invoice.id);
-		return ok(cloneInvoice(invoice));
+		return errorResult.ok(cloneInvoice(invoice));
 	}
 
 	getById(
@@ -720,7 +764,7 @@ export class MemoryReceivablesStore implements ReceivablesStore {
 	): Promise<Result<SalesInvoice | null>> {
 		const invoice = this.invoices.get(id);
 		return resolveResult(
-			ok(
+			errorResult.ok(
 				invoice !== undefined && invoice.organizationId === organizationId
 					? cloneInvoice(invoice)
 					: null,
@@ -733,7 +777,7 @@ export class MemoryReceivablesStore implements ReceivablesStore {
 	): Promise<Result<SalesInvoice[]>> {
 		const start = (filter.page - 1) * filter.pageSize;
 		return resolveResult(
-			ok(
+			errorResult.ok(
 				[...this.invoices.values()]
 					.filter((row) => row.organizationId === filter.organizationId)
 					.filter(
@@ -753,7 +797,7 @@ export class MemoryReceivablesStore implements ReceivablesStore {
 		currencyCode?: string,
 	): Promise<Result<CustomerBalance[]>> {
 		return resolveResult(
-			ok(
+			errorResult.ok(
 				[...this.balances.values()]
 					.filter((row) => row.organizationId === organizationId)
 					.filter((row) => row.customerId === customerId)
@@ -800,7 +844,7 @@ export class MemoryReceivablesStore implements ReceivablesStore {
 			}
 		}
 		return resolveResult(
-			ok({
+			errorResult.ok({
 				organizationId: input.organizationId,
 				customerId: input.customerId,
 				currencyCode: input.currencyCode,
@@ -839,7 +883,7 @@ export class MemoryReceivablesStore implements ReceivablesStore {
 			}
 		}
 		// Credit notes do not reopen quantity in this memory model unless tied to lines.
-		return resolveResult(ok(format(total)));
+		return resolveResult(errorResult.ok(format(total)));
 	}
 
 	listPostedFactsForReconcile(organizationId: string): Promise<
@@ -869,7 +913,7 @@ export class MemoryReceivablesStore implements ReceivablesStore {
 		}>
 	> {
 		return resolveResult(
-			ok({
+			errorResult.ok({
 				invoices: [...this.invoices.values()]
 					.filter((row) => row.organizationId === organizationId)
 					.filter((row) => row.status === "posted" || row.status === "closed")

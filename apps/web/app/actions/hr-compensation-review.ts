@@ -1,5 +1,6 @@
 "use server";
 
+import type { Result as ActionResult } from "@afenda/errors";
 import type {
 	CompensationReview,
 	CompensationReviewCycle,
@@ -33,13 +34,11 @@ import {
 	listCompensationReviewsByEmployeeInputSchema,
 	recordCompensationRecommendationInputSchema,
 } from "@afenda/human-resources/schemas";
-
 import {
 	invokeHrPackage,
 	runHrCompensationHumanResourcesAction as runHrHumanResourcesAction,
 } from "@/app/actions/hr-action-runner";
 import { hrActionSchema } from "@/app/actions/hr-mutation-context";
-import type { ActionResult } from "@/modules/platform/schemas/action-result";
 
 const createCompensationReviewCycleActionSchema = hrActionSchema(
 	createCompensationReviewCycleInputSchema,

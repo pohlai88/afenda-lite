@@ -9,8 +9,6 @@ import {
 	sql,
 } from "@afenda/db";
 
-export { postgresSqlState } from "@afenda/errors/adapters/postgres";
-
 export async function isPayrollFoundationMigrationApplied(): Promise<boolean> {
 	const rows = await db.execute(sql`
 		SELECT 1

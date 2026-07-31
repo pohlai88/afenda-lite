@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	type ApprovedPayrollHandoff,
 	HANDOFF_PAYROLL_CONTRACT_VERSION,
@@ -64,7 +64,7 @@ function handoff(baseAmount = "85000.00"): ApprovedPayrollHandoff {
 
 function createHarness(
 	outcomes: Result<{ receiptId: string | null }>[] = [
-		ok({ receiptId: "receipt-1" }),
+		errorResult.ok({ receiptId: "receipt-1" }),
 	],
 ) {
 	const published: Parameters<PayrollDeliveryProducerPort["publish"]>[0][] = [];
@@ -76,7 +76,10 @@ function createHarness(
 		producer: {
 			async publish(input) {
 				published.push(structuredClone(input));
-				return (await outcomes.shift()) ?? ok({ receiptId: "receipt-replay" });
+				return (
+					(await outcomes.shift()) ??
+					errorResult.ok({ receiptId: "receipt-replay" })
+				);
 			},
 		},
 	};
@@ -148,8 +151,8 @@ describe("recoverable payroll handoff delivery", () => {
 
 	it("retries recoverably and becomes terminal after the bounded attempt limit", async () => {
 		const harness = createHarness([
-			fail("INTERNAL_ERROR", "transport unavailable"),
-			fail("INTERNAL_ERROR", "transport unavailable"),
+			errorResult.fail("INTERNAL_ERROR"),
+			errorResult.fail("INTERNAL_ERROR"),
 		]);
 		const created = await queue(harness.ports, { maxAttempts: 2 });
 		expect(created.ok).toBe(true);

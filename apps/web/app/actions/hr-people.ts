@@ -1,5 +1,6 @@
 "use server";
 
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import {
 	addPersonContact,
 	addPersonIdentifier,
@@ -29,7 +30,6 @@ import {
 	type WorkerClassificationAtAsOf,
 } from "@afenda/human-resources";
 import { z } from "zod";
-
 import {
 	hrMutationContextSchema as mutationContextSchema,
 	withHrSessionContext as withSessionContext,
@@ -37,10 +37,6 @@ import {
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runHrWorkforceOperatorPermissionAction as runOperatorPermissionAction } from "@/app/actions/run-hr-operator-permission-action";
 import { createHumanResourcesCommandOptions } from "@/lib/erp/human-resources-command-options";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 const isoDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
@@ -170,11 +166,9 @@ export async function createPersonAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid person.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid person.",
+				});
 			}
 			const result = await createPerson(
 				withSessionContext(session, correlationId, parsed.data),
@@ -215,11 +209,9 @@ export async function updatePersonNameAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid person name update.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid person name update.",
+				});
 			}
 			const result = await updatePersonName(
 				withSessionContext(session, correlationId, parsed.data),
@@ -254,11 +246,9 @@ export async function updatePersonPreferredNameAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid preferred name update.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid preferred name update.",
+				});
 			}
 			const result = await updatePersonPreferredName(
 				withSessionContext(session, correlationId, parsed.data),
@@ -299,11 +289,9 @@ export async function setPersonPrivacyClassificationAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid privacy classification update.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid privacy classification update.",
+				});
 			}
 			const result = await setPersonPrivacyClassification(
 				withSessionContext(session, correlationId, parsed.data),
@@ -342,11 +330,9 @@ export async function addPersonContactAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid person contact.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid person contact.",
+				});
 			}
 			const result = await addPersonContact(
 				withSessionContext(session, correlationId, parsed.data),
@@ -385,11 +371,9 @@ export async function updatePersonContactAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid person contact update.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid person contact update.",
+				});
 			}
 			const result = await updatePersonContact(
 				withSessionContext(session, correlationId, parsed.data),
@@ -424,11 +408,9 @@ export async function retirePersonContactAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid person contact retire request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid person contact retire request.",
+				});
 			}
 			const result = await retirePersonContact(
 				withSessionContext(session, correlationId, parsed.data),
@@ -459,11 +441,9 @@ export async function listPersonContactsAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid person contacts list request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid person contacts list request.",
+				});
 			}
 			const result = await listPersonContacts(
 				withSessionContext(session, correlationId, parsed.data),
@@ -504,11 +484,9 @@ export async function addPersonIdentifierAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid person identifier.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid person identifier.",
+				});
 			}
 			const result = await addPersonIdentifier(
 				withSessionContext(session, correlationId, parsed.data),
@@ -545,11 +523,9 @@ export async function retirePersonIdentifierAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid person identifier retire request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid person identifier retire request.",
+				});
 			}
 			const result = await retirePersonIdentifier(
 				withSessionContext(session, correlationId, parsed.data),
@@ -580,11 +556,9 @@ export async function listPersonIdentifiersAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid person identifiers list request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid person identifiers list request.",
+				});
 			}
 			const result = await listPersonIdentifiers(
 				withSessionContext(session, correlationId, parsed.data),
@@ -615,11 +589,9 @@ export async function detectPersonDuplicatesAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid duplicate detection request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid duplicate detection request.",
+				});
 			}
 			const result = await detectPersonDuplicates(
 				withSessionContext(session, correlationId, parsed.data),
@@ -650,11 +622,9 @@ export async function getPersonAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid person get request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid person get request.",
+				});
 			}
 			const result = await getPersonById(
 				withSessionContext(session, correlationId, parsed.data),
@@ -687,11 +657,9 @@ export async function getPersonAsOfAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid person as-of request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid person as-of request.",
+				});
 			}
 			const result = await getPersonAsOf(
 				withSessionContext(session, correlationId, parsed.data),
@@ -738,11 +706,9 @@ export async function createWorkerAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(createWorkerActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid worker.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid worker.",
+				});
 			}
 			const result = await createWorker(
 				withSessionContext(session, correlationId, parsed.data),
@@ -789,11 +755,9 @@ export async function changeWorkerTypeAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(changeWorkerTypeActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid worker type change.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid worker type change.",
+				});
 			}
 			const result = await changeWorkerType(
 				withSessionContext(session, correlationId, parsed.data),
@@ -834,11 +798,9 @@ export async function changeWorkerStatusAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid worker status change.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid worker status change.",
+				});
 			}
 			const result = await changeWorkerStatus(
 				withSessionContext(session, correlationId, parsed.data),
@@ -869,11 +831,9 @@ export async function getWorkerAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid worker get request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid worker get request.",
+				});
 			}
 			const result = await getWorkerById(
 				withSessionContext(session, correlationId, parsed.data),
@@ -906,11 +866,9 @@ export async function getWorkerAsOfAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid worker as-of request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid worker as-of request.",
+				});
 			}
 			const result = await getWorkerAsOf(
 				withSessionContext(session, correlationId, parsed.data),

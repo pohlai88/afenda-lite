@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { HumanResourcesWorkCalendarId } from "../brands";
 import type { HumanResourcesCommandOptions } from "../command-options";
 import { resolveAssignmentContext } from "../command-options";
@@ -83,13 +83,14 @@ export async function createWorkCalendar(
 			}
 			if (existing.data !== null) {
 				if (existing.data.createRequestFingerprint !== fingerprint) {
-					return fail(
-						"CONFLICT",
-						"Idempotency key reused with different payload",
-						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-					);
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+						internalContext: humanResourcesErrorDetails(
+							HUMAN_RESOURCES_ERROR_CONFLICT,
+						),
+					});
 				}
-				return ok(existing.data.calendar);
+				return errorResult.ok(existing.data.calendar);
 			}
 			return store.createWorkCalendar(
 				{
@@ -186,11 +187,12 @@ export async function supersedeWorkCalendar(
 			}
 			if (replay.data !== null) {
 				if (replay.data.createRequestFingerprint !== fingerprint) {
-					return fail(
-						"CONFLICT",
-						"Idempotency key reused with different payload",
-						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-					);
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+						internalContext: humanResourcesErrorDetails(
+							HUMAN_RESOURCES_ERROR_CONFLICT,
+						),
+					});
 				}
 				if (replay.data.calendar.supersedesCalendarId !== data.calendarId) {
 					return invalidInput("Stored successor has no matching predecessor");
@@ -205,7 +207,7 @@ export async function supersedeWorkCalendar(
 				if (superseded.data === null) {
 					return invalidInput("Stored predecessor was not found");
 				}
-				return ok({
+				return errorResult.ok({
 					superseded: superseded.data,
 					successor: replay.data.calendar,
 				});

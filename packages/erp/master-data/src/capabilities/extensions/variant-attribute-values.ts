@@ -4,11 +4,10 @@
  * Item templates + concrete variant items (DNA §7.3 / R1).
  * Sellable identity = md_item; attribute values are typed rows — never JSON bag.
  */
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import { requireMasterQueryPermission } from "../../authorization";
 import type { MasterQueryOptions } from "../../command-options";
-import type { MasterFailureDetails } from "../../contracts/reasons";
 import {
 	MASTER_QUERY_ITEM_VARIANT_ATTRIBUTE_VALUE_LIST,
 	MASTER_QUERY_ITEM_VARIANT_CONFIGURATION_GET,
@@ -49,12 +48,11 @@ export async function listVariantAttributeValues(
 		return variant;
 	}
 	if (variant.data === null) {
-		return fail("NOT_FOUND", "Item variant not found", {
-			reason: "MASTER_NOT_FOUND",
-			field: "id",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Item variant not found",
+		});
 	}
-	return ok(variant.data.values);
+	return errorResult.ok(variant.data.values);
 }
 
 export async function getVariantConfiguration(
@@ -88,10 +86,9 @@ export async function getVariantConfiguration(
 		return variant;
 	}
 	if (variant.data === null) {
-		return fail("NOT_FOUND", "Item variant not found", {
-			reason: "MASTER_NOT_FOUND",
-			field: "id",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Item variant not found",
+		});
 	}
-	return ok(variant.data);
+	return errorResult.ok(variant.data);
 }

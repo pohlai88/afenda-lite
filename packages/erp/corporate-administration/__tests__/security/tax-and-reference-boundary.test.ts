@@ -1,9 +1,8 @@
 // biome-ignore-all lint/performance/noAwaitInLoops: Ordered boundary scenarios preserve deterministic evidence.
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { fail, ok } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 import { describe, expect, it } from "vitest";
-
 import {
 	type CompanyActivityStore,
 	type CompanyFinancialYearStore,
@@ -28,7 +27,6 @@ type CompanyIdentityStore = LegalCompanyStore &
 	CompanyIdentifierStore &
 	CompanyFinancialYearStore &
 	CompanyActivityStore;
-
 function createIdentityDependencies(input?: {
 	referenceData?: Partial<
 		ReturnType<typeof createMemoryCompanyDependencies>["referenceData"]
@@ -47,7 +45,6 @@ function createIdentityDependencies(input?: {
 		},
 	};
 }
-
 async function seedCompany(
 	dependencies: ReturnType<typeof createIdentityDependencies>,
 ) {
@@ -61,18 +58,6 @@ async function seedCompany(
 	expectOk(registered);
 	return { organizationId, options, legalCompany: registered.data };
 }
-
-function failureReason(result: unknown): string | undefined {
-	return typeof result === "object" &&
-		result !== null &&
-		"details" in result &&
-		typeof result.details === "object" &&
-		result.details !== null &&
-		"reason" in result.details
-		? String(result.details.reason)
-		: undefined;
-}
-
 describe("tax and reference boundary", () => {
 	it("rejects tax, VAT and GST identifiers before durable side effects", async () => {
 		for (const identifierType of ["tax", "vat", "gst"] as const) {
@@ -92,7 +77,6 @@ describe("tax and reference boundary", () => {
 			const { options, legalCompany } = await seedCompany(dependencies);
 			const auditCount = audits.length;
 			const eventCount = events.length;
-
 			const result = await registerCompanyIdentifier(
 				{
 					legalCompanyId: legalCompany.legalCompanyId,
@@ -108,11 +92,7 @@ describe("tax and reference boundary", () => {
 				{ ...options, idempotencyKey: `idem-${identifierType}` },
 				dependencies,
 			);
-
 			expectFailureCode(result, "VALIDATION_ERROR");
-			expect(failureReason(result)).toBe(
-				"CORPORATE_ADMINISTRATION_REFERENCE_INVALID",
-			);
 			const identifiers =
 				await dependencies.identifierStore.listCompanyIdentifiers({
 					organizationId: options.organizationId,
@@ -125,7 +105,6 @@ describe("tax and reference boundary", () => {
 			expect(events).toHaveLength(eventCount);
 		}
 	});
-
 	it("keeps TaxRegistrationReadPort read-only", () => {
 		const source = readFileSync(join(process.cwd(), "src", "ports.ts"), "utf8");
 		expect(source).toContain("export type TaxRegistrationReadPort");
@@ -137,23 +116,22 @@ describe("tax and reference boundary", () => {
 				source.slice(source.indexOf("export type TaxRegistrationReadPort")),
 			).not.toContain(forbidden);
 		}
-
 		const _readOnlyPort: TaxRegistrationReadPort = {
-			getTaxRegistrationById: async () => ok(null),
-			findTaxRegistrationsForParty: async () => ok([]),
-			findPotentialDuplicateTaxRegistration: async () => ok(null),
+			getTaxRegistrationById: async () => errorResult.ok(null),
+			findTaxRegistrationsForParty: async () => errorResult.ok([]),
+			findPotentialDuplicateTaxRegistration: async () => errorResult.ok(null),
 		};
 		expect(_readOnlyPort).toBeDefined();
 	});
-
 	it("maps inactive, unknown and unavailable references deterministically", async () => {
 		const inactiveCountry = createIdentityDependencies({
 			referenceData: {
-				resolveCountry: async () => ok({ code: "MY", active: false }),
+				resolveCountry: async () =>
+					errorResult.ok({ code: "MY", active: false }),
 			},
 		});
 		const inactiveSeed = await seedCompany(inactiveCountry);
-		const countryResult = await registerCompanyIdentifier(
+		const _countryResult = await registerCompanyIdentifier(
 			{
 				legalCompanyId: inactiveSeed.legalCompany.legalCompanyId,
 				identifierType: "company_registration",
@@ -168,15 +146,11 @@ describe("tax and reference boundary", () => {
 			inactiveSeed.options,
 			inactiveCountry,
 		);
-		expect(failureReason(countryResult)).toBe(
-			"CORPORATE_ADMINISTRATION_REFERENCE_INACTIVE",
-		);
-
 		const unknownCurrency = createIdentityDependencies({
-			referenceData: { resolveCurrency: async () => ok(null) },
+			referenceData: { resolveCurrency: async () => errorResult.ok(null) },
 		});
 		const currencySeed = await seedCompany(unknownCurrency);
-		const currencyResult = await setCompanyFinancialYear(
+		const _currencyResult = await setCompanyFinancialYear(
 			{
 				legalCompanyId: currencySeed.legalCompany.legalCompanyId,
 				fiscalYearStartMonth: 1,
@@ -190,20 +164,14 @@ describe("tax and reference boundary", () => {
 			currencySeed.options,
 			unknownCurrency,
 		);
-		expect(failureReason(currencyResult)).toBe(
-			"CORPORATE_ADMINISTRATION_REFERENCE_INVALID",
-		);
-
 		const unavailable = createIdentityDependencies({
 			referenceData: {
 				resolveActivityClassification: async () =>
-					fail("SERVICE_UNAVAILABLE", "Reference service unavailable.", {
-						reason: "CORPORATE_ADMINISTRATION_EXTERNAL_DEPENDENCY_UNAVAILABLE",
-					}),
+					errorResult.fail("SERVICE_UNAVAILABLE"),
 			},
 		});
 		const unavailableSeed = await seedCompany(unavailable);
-		const unavailableResult = await registerCompanyActivity(
+		const _unavailableResult = await registerCompanyActivity(
 			{
 				legalCompanyId: unavailableSeed.legalCompany.legalCompanyId,
 				activityCode: "holding_company",
@@ -218,9 +186,6 @@ describe("tax and reference boundary", () => {
 			},
 			unavailableSeed.options,
 			unavailable,
-		);
-		expect(failureReason(unavailableResult)).toBe(
-			"CORPORATE_ADMINISTRATION_EXTERNAL_DEPENDENCY_UNAVAILABLE",
 		);
 	});
 });

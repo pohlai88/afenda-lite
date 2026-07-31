@@ -131,7 +131,7 @@ Per discovery checklist — cite these paths when implementing Phase 1+.
 
 | Topic | Convention | Authority |
 |-------|------------|-----------|
-| Outcomes | `Promise<Result<T>>` from `@afenda/errors/result` at package boundary; `ActionResult` at app Actions | [`implementation.md`](../../../.cursor/skills/afenda-elite-payroll/implementation.md) |
+| Outcomes | `Promise<Result<T>>` from root `@afenda/errors` at package boundary; `ActionResult` at app Actions | [`implementation.md`](../../../.cursor/skills/afenda-elite-payroll/implementation.md) |
 | Input validation | Zod strict schemas in `schemas/<domain>.ts`; `parsePayrollInput` at command entry | [`parse-input.ts`](../../../packages/erp/payroll/src/parse-input.ts) |
 | Tenant stamping | `organizationId`, `actorUserId`, `correlationId` from session at composition root — never from client | [`schemas/common.ts`](../../../packages/erp/payroll/src/schemas/common.ts) |
 | Mutations | Same-TX audit + outbox via `MutationPorts` | [`production-ports.ts`](../../../packages/erp/payroll/src/production-ports.ts) |

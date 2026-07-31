@@ -1,5 +1,6 @@
 "use server";
 
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import {
 	endAssignment,
 	getAssignment,
@@ -24,14 +25,9 @@ import {
 } from "@afenda/human-resources/brands";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runHrWorkforceOperatorPermissionAction as runOperatorPermissionAction } from "@/app/actions/run-hr-operator-permission-action";
 import { createHumanResourcesCommandOptions } from "@/lib/erp/human-resources-command-options";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 const isoDateSchema = z.string().date();
@@ -135,7 +131,9 @@ async function loadOwnedEmployment(input: {
 		return mapped;
 	}
 	if (mapped.data.employeeId !== input.employeeId) {
-		return actionFail("NOT_FOUND", "Employment record not found.");
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Employment record not found.",
+		});
 	}
 	return mapped;
 }
@@ -174,11 +172,9 @@ export async function runEmploymentJourneyAction(
 				expectedVersion: formData.get("expectedVersion") || undefined,
 			});
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid employment transition.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid employment transition.",
+				});
 			}
 
 			const options = createHumanResourcesCommandOptions();
@@ -270,11 +266,9 @@ export async function runAssignmentJourneyAction(
 				expectedVersion: formData.get("expectedVersion") || undefined,
 			});
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid assignment transition.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid assignment transition.",
+				});
 			}
 
 			const owned = await loadOwnedEmployment({
@@ -307,7 +301,9 @@ export async function runAssignmentJourneyAction(
 					assignment.data.employeeId !== parsed.data.employeeId ||
 					assignment.data.employmentId !== parsed.data.employmentId
 				) {
-					return actionFail("NOT_FOUND", "Assignment record not found.");
+					return errorResult.fail("NOT_FOUND", {
+						publicMessage: "Assignment record not found.",
+					});
 				}
 				const result = await endAssignment(
 					{
@@ -400,11 +396,9 @@ export async function runEmploymentLifecycleJourneyAction(
 				rehireEligible: formData.get("rehireEligible") === "on",
 			});
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter valid lifecycle details.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter valid lifecycle details.",
+				});
 			}
 			const owned = await loadOwnedEmployment({
 				organizationId: session.orgId,
@@ -503,11 +497,9 @@ export async function startOnboardingJourneyAction(
 				employmentId: formData.get("employmentId"),
 			});
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Select a valid employment.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Select a valid employment.",
+				});
 			}
 			const owned = await loadOwnedEmployment({
 				organizationId: session.orgId,
@@ -559,11 +551,9 @@ export async function startOffboardingJourneyAction(
 				employmentId: formData.get("employmentId"),
 			});
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Select a valid employment.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Select a valid employment.",
+				});
 			}
 			const owned = await loadOwnedEmployment({
 				organizationId: session.orgId,

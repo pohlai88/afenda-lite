@@ -1,4 +1,4 @@
-import { fail, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
@@ -68,13 +68,12 @@ async function validateApplicabilityEmployeeAtIndex(
 		return employee;
 	}
 	if (employee.data === null) {
-		return fail(
-			"NOT_FOUND",
-			"Applicability employee not found",
-			humanResourcesErrorDetails(
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "The requested resource was not found",
+			internalContext: humanResourcesErrorDetails(
 				HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 			),
-		);
+		});
 	}
 	return validateApplicabilityEmployeeAtIndex(store, {
 		...input,
@@ -107,11 +106,12 @@ export function createDocumentRequirement(
 				return existing;
 			}
 			if (existing.data !== null) {
-				return fail(
-					"CONFLICT",
-					"Document requirement code already exists",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_CONFLICT,
+					),
+				});
 			}
 
 			return store.createDocumentRequirement(

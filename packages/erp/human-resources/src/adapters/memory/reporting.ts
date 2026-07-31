@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type {
 	HumanResourcesReadModelFact,
 	HumanResourcesReportingFactKind,
@@ -23,7 +23,9 @@ export function annualizeCompensation(
 ): Result<string> {
 	const parsed = parseExactDecimal(amount);
 	if (parsed === null) {
-		return fail("VALIDATION_ERROR", "Compensation amount is invalid");
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+		});
 	}
 	const factor = (() => {
 		if (frequency === "weekly") {
@@ -44,12 +46,12 @@ export function annualizeCompensation(
 	const negative = coefficient < 0n;
 	const magnitude = negative ? -coefficient : coefficient;
 	if (parsed.scale === 0) {
-		return ok(`${negative ? "-" : ""}${magnitude}`);
+		return errorResult.ok(`${negative ? "-" : ""}${magnitude}`);
 	}
 	const digits = magnitude.toString().padStart(parsed.scale + 1, "0");
 	const integer = digits.slice(0, -parsed.scale);
 	const fraction = digits.slice(-parsed.scale).replace(HR_REGEX_1, "");
-	return ok(
+	return errorResult.ok(
 		`${negative ? "-" : ""}${integer}${fraction.length > 0 ? `.${fraction}` : ""}`,
 	);
 }
@@ -78,7 +80,7 @@ function factsForKind(
 	const { state } = store;
 	switch (kind) {
 		case "employment":
-			return ok(
+			return errorResult.ok(
 				[...state.core.employments.values()]
 					.filter((row) => row.organizationId === organizationId)
 					.map((row) => ({
@@ -158,7 +160,7 @@ function factsForKind(
 					occurredOn: isoDate(row.respondedAt ?? row.updatedAt),
 				});
 			}
-			return ok(facts);
+			return errorResult.ok(facts);
 		}
 		case "leave": {
 			const facts: HumanResourcesReadModelFact[] = [];
@@ -168,7 +170,9 @@ function factsForKind(
 				}
 				const parsed = parseExactDecimal(row.requestedQuantity);
 				if (parsed === null) {
-					return fail("VALIDATION_ERROR", "Leave quantity is invalid");
+					return errorResult.fail("VALIDATION_ERROR", {
+						publicMessage: "The submitted data is invalid",
+					});
 				}
 				const scaleFactor = 10n ** BigInt(parsed.scale);
 				const minuteFactor = BigInt(
@@ -187,7 +191,7 @@ function factsForKind(
 					occurredOn: isoDate(row.updatedAt),
 				});
 			}
-			return ok(facts);
+			return errorResult.ok(facts);
 		}
 		case "attendance": {
 			const exceptionCountBySession = new Map<string, number>();
@@ -203,7 +207,7 @@ function factsForKind(
 					(exceptionCountBySession.get(exception.sessionId) ?? 0) + 1,
 				);
 			}
-			return ok(
+			return errorResult.ok(
 				[...state.time.attendanceSessions.values()]
 					.filter((row) => row.organizationId === organizationId)
 					.map((row) => ({
@@ -219,7 +223,7 @@ function factsForKind(
 			);
 		}
 		case "overtime":
-			return ok(
+			return errorResult.ok(
 				[...state.time.overtimeRequests.values()]
 					.filter((row) => row.organizationId === organizationId)
 					.map((row) => ({
@@ -259,7 +263,7 @@ function factsForKind(
 					annualizedAmount: annualized.data,
 				});
 			}
-			return ok(facts);
+			return errorResult.ok(facts);
 		}
 		case "compliance": {
 			const employeeIds = new Set<string>();
@@ -278,7 +282,7 @@ function factsForKind(
 					employeeIds.add(row.employeeId);
 				}
 			}
-			return ok(
+			return errorResult.ok(
 				[...employeeIds].map((employeeId) => {
 					const documents = [
 						...state.compliance.employeeDocuments.values(),
@@ -358,7 +362,7 @@ function factsForKind(
 					row,
 				]),
 			);
-			return ok(
+			return errorResult.ok(
 				[...state.learning.learningAssignments.values()]
 					.filter((row) => row.organizationId === organizationId)
 					.map((row) => {
@@ -397,7 +401,7 @@ function factsForKind(
 					(goalsByEmployee.get(goal.employeeId) ?? 0) + 1,
 				);
 			}
-			return ok(
+			return errorResult.ok(
 				[...state.performance.reviews.values()]
 					.filter((row) => row.organizationId === organizationId)
 					.flatMap((row) => {
@@ -439,7 +443,7 @@ function factsForKind(
 				entries.push(candidate);
 				candidatesByPlan.set(candidate.successionPlanId, entries);
 			}
-			return ok(
+			return errorResult.ok(
 				[...state.talent.successionPlans.values()]
 					.filter((row) => row.organizationId === organizationId)
 					.map((row) => {
@@ -498,10 +502,10 @@ function factsForKind(
 					actualFullTimeEquivalent: `${actuals.length}.0000`,
 				});
 			}
-			return ok(facts);
+			return errorResult.ok(facts);
 		}
 		default:
-			return fail("INTERNAL_ERROR", "Unsupported reporting fact kind");
+			return errorResult.fail("INTERNAL_ERROR");
 	}
 }
 
@@ -518,7 +522,7 @@ export function createMemoryHumanResourcesReportingSource(
 				left.id.localeCompare(right.id),
 			);
 			const offset = (input.page - 1) * input.pageSize;
-			return await ok({
+			return await errorResult.ok({
 				entries: ordered.slice(offset, offset + input.pageSize),
 				total: ordered.length,
 				page: input.page,

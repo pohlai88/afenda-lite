@@ -15,7 +15,7 @@ import {
 	runNeonHttpTransaction,
 	sql,
 } from "@afenda/db";
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	HUMAN_RESOURCES_PERSON_CHANGED_EVENT,
 	HUMAN_RESOURCES_PERSON_CONTACT_ADDED_EVENT,
@@ -179,7 +179,7 @@ function mapPersonIdentityVersionRow(
 	if (!personId.ok) {
 		return personId;
 	}
-	return ok({
+	return errorResult.ok({
 		id: row.id,
 		organizationId: row.organizationId,
 		personId: personId.data,
@@ -218,19 +218,13 @@ function mapWorkerClassificationVersionRow(
 		row.workerType !== "contingent_worker" &&
 		row.workerType !== "intern"
 	) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid worker type in classification storage",
-		);
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 	const workerStatus = workerStatusSchema.safeParse(row.workerStatus);
 	if (!workerStatus.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid worker status in classification storage",
-		);
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: row.id,
 		organizationId: row.organizationId,
 		workerId: workerId.data,
@@ -257,12 +251,9 @@ function mapPersonRow(row: PersonSqlRow): Result<Person> {
 		return id;
 	}
 	if (!isHumanResourcesRetentionClassification(row.privacy_classification)) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid person privacy classification in storage",
-		);
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organization_id,
 		legalName: row.legal_name,
@@ -303,9 +294,9 @@ function mapPersonContactRow(row: PersonContactSqlRow): Result<PersonContact> {
 		row.contact_type !== "phone" &&
 		row.contact_type !== "postal_address"
 	) {
-		return fail("INTERNAL_ERROR", "Invalid person contact type in storage");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: row.id,
 		organizationId: row.organization_id,
 		personId: personId.data,
@@ -351,7 +342,7 @@ function mapPersonIdentifierRow(
 	if (!personId.ok) {
 		return personId;
 	}
-	return ok({
+	return errorResult.ok({
 		id: row.id,
 		organizationId: row.organization_id,
 		personId: personId.data,
@@ -405,7 +396,7 @@ function mapWorkerRow(row: WorkerSqlRow): Result<Worker> {
 	}
 	const status = workerStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail("INTERNAL_ERROR", "Invalid worker status in storage");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 
 	const base = {
@@ -430,7 +421,7 @@ function mapWorkerRow(row: WorkerSqlRow): Result<Worker> {
 		if (employeeId !== null && !employeeId.ok) {
 			return employeeId;
 		}
-		return ok({
+		return errorResult.ok({
 			...base,
 			workerType: "employee",
 			employeeId: employeeId === null ? null : employeeId.data,
@@ -442,10 +433,10 @@ function mapWorkerRow(row: WorkerSqlRow): Result<Worker> {
 		row.worker_type !== "contingent_worker" &&
 		row.worker_type !== "intern"
 	) {
-		return fail("INTERNAL_ERROR", "Invalid worker type in storage");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 
-	return ok({
+	return errorResult.ok({
 		...base,
 		workerType: row.worker_type,
 		employeeId: null,
@@ -496,11 +487,12 @@ async function updatePersonScalarFieldDrizzle(input: {
 			return existing;
 		}
 		if (existing.data === null) {
-			return fail(
-				"NOT_FOUND",
-				"Person not found",
-				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-			);
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "The requested resource was not found",
+				internalContext: humanResourcesErrorDetails(
+					HUMAN_RESOURCES_ERROR_NOT_FOUND,
+				),
+			});
 		}
 		const versionCheck = assertExpectedVersion(
 			existing.data.version,
@@ -514,7 +506,7 @@ async function updatePersonScalarFieldDrizzle(input: {
 				? existing.data.preferredName
 				: existing.data.privacyClassification;
 		if (currentValue === input.value) {
-			return ok(existing.data);
+			return errorResult.ok(existing.data);
 		}
 		const auditId = randomUUID();
 		const eventId = randomUUID();
@@ -643,7 +635,9 @@ async function updatePersonScalarFieldDrizzle(input: {
 		]);
 		const [row] = rows;
 		if (row === undefined) {
-			return fail("CONFLICT", "Person update conflict");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "The request conflicts with current state",
+			});
 		}
 		return mapPersonRow(row);
 	} catch (error) {
@@ -673,11 +667,12 @@ async function validateEmployeeLinkForWorkerDrizzle(
 		)
 		.limit(1);
 	if (employeeRows.length === 0) {
-		return fail(
-			"NOT_FOUND",
-			"Employee not found",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-		);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "The requested resource was not found",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			),
+		});
 	}
 
 	const employeeWorker = await findWorkerByEmployeeId({
@@ -692,14 +687,15 @@ async function validateEmployeeLinkForWorkerDrizzle(
 		(input.excludingWorkerId === undefined ||
 			employeeWorker.data.id !== input.excludingWorkerId)
 	) {
-		return fail(
-			"CONFLICT",
-			"Employee is already linked to a worker",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "The request conflicts with current state",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_CONFLICT,
+			),
+		});
 	}
 
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 async function validateCreateWorkerPreconditions(input: {
@@ -716,11 +712,12 @@ async function validateCreateWorkerPreconditions(input: {
 		return person;
 	}
 	if (person.data === null) {
-		return fail(
-			"NOT_FOUND",
-			"Person not found",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-		);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "The requested resource was not found",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			),
+		});
 	}
 
 	const personWorker = await input.findWorkerByPersonId({
@@ -731,18 +728,19 @@ async function validateCreateWorkerPreconditions(input: {
 		return personWorker;
 	}
 	if (personWorker.data !== null) {
-		return fail(
-			"CONFLICT",
-			"Person is already linked to a worker",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "The request conflicts with current state",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_CONFLICT,
+			),
+		});
 	}
 
 	if (
 		input.record.workerType !== "employee" ||
 		input.record.employeeId === null
 	) {
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	}
 
 	return validateEmployeeLinkForWorkerDrizzle(
@@ -770,7 +768,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 					.limit(1);
 				const [row] = rows;
 				if (row === undefined) {
-					return ok(null);
+					return errorResult.ok(null);
 				}
 				return mapPersonSelectRow(row);
 			} catch (error) {
@@ -791,7 +789,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 					return personResult;
 				}
 				if (personResult.data === null) {
-					return ok(null);
+					return errorResult.ok(null);
 				}
 
 				const rows = await db
@@ -818,17 +816,18 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 					asOf: input.asOf,
 				});
 				if (!resolution.ok) {
-					return fail(
-						"CONFLICT",
-						`Person identity lineage is invalid: ${resolution.reason}`,
-						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-					);
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+						internalContext: humanResourcesErrorDetails(
+							HUMAN_RESOURCES_ERROR_CONFLICT,
+						),
+					});
 				}
 				if (resolution.record === null) {
-					return ok(null);
+					return errorResult.ok(null);
 				}
 
-				return ok({
+				return errorResult.ok({
 					personId: input.personId,
 					organizationId: input.organizationId,
 					legalName: resolution.record.legalName,
@@ -864,7 +863,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 					}
 					versions.push(mapped.data);
 				}
-				return ok(versions);
+				return errorResult.ok(versions);
 			} catch (error) {
 				return mapPersistenceFailure(
 					error,
@@ -889,13 +888,13 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 					.limit(1);
 				const [row] = rows;
 				if (row === undefined) {
-					return ok(null);
+					return errorResult.ok(null);
 				}
 				const mapped = mapPersonSelectRow(row);
 				if (!mapped.ok) {
 					return mapped;
 				}
-				return ok({
+				return errorResult.ok({
 					person: mapped.data,
 					createRequestFingerprint: row.createRequestFingerprint,
 				});
@@ -1014,7 +1013,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 				]);
 				const [row] = rows;
 				if (row === undefined) {
-					return fail("INTERNAL_ERROR", "Person create returned no row");
+					return errorResult.fail("INTERNAL_ERROR");
 				}
 				return mapPersonRow(row);
 			} catch (error) {
@@ -1027,7 +1026,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 						return existing;
 					}
 					if (existing.data !== null) {
-						return ok(existing.data.person);
+						return errorResult.ok(existing.data.person);
 					}
 				}
 				return mapPersistenceFailure(
@@ -1047,11 +1046,12 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 					return existing;
 				}
 				if (existing.data === null) {
-					return fail(
-						"NOT_FOUND",
-						"Person not found",
-						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-					);
+					return errorResult.fail("NOT_FOUND", {
+						publicMessage: "The requested resource was not found",
+						internalContext: humanResourcesErrorDetails(
+							HUMAN_RESOURCES_ERROR_NOT_FOUND,
+						),
+					});
 				}
 				const versionCheck = assertExpectedVersion(
 					existing.data.version,
@@ -1073,11 +1073,11 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 						version.lineageStatus === "active" && version.effectiveTo === null,
 				);
 				if (openSegment === undefined) {
-					return fail(
-						"INTERNAL_ERROR",
-						"Person identity lineage is missing an open segment",
-						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-					);
+					return errorResult.fail("INTERNAL_ERROR", {
+						internalContext: humanResourcesErrorDetails(
+							HUMAN_RESOURCES_ERROR_CONFLICT,
+						),
+					});
 				}
 				const mutableCheck = assertLineageSegmentMutable(openSegment);
 				if (!mutableCheck.ok) {
@@ -1091,11 +1091,12 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 					return effectiveOnCheck;
 				}
 				if (openSegment.legalName === input.legalName) {
-					return fail(
-						"CONFLICT",
-						"Person identity correction must change legal name",
-						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-					);
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+						internalContext: humanResourcesErrorDetails(
+							HUMAN_RESOURCES_ERROR_CONFLICT,
+						),
+					});
 				}
 
 				const auditId = randomUUID();
@@ -1213,7 +1214,9 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 				]);
 				const [row] = rows;
 				if (row === undefined) {
-					return fail("CONFLICT", "Person update conflict");
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+					});
 				}
 				return mapPersonRow(row);
 			} catch (error) {
@@ -1274,13 +1277,13 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 					.limit(1);
 				const [row] = rows;
 				if (row === undefined) {
-					return ok(null);
+					return errorResult.ok(null);
 				}
 				const mapped = mapPersonContactSelectRow(row);
 				if (!mapped.ok) {
 					return mapped;
 				}
-				return ok({
+				return errorResult.ok({
 					contact: mapped.data,
 					createRequestFingerprint: row.createRequestFingerprint,
 				});
@@ -1390,10 +1393,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 				]);
 				const [row] = rows;
 				if (row === undefined) {
-					return fail(
-						"INTERNAL_ERROR",
-						"Person contact create returned no row",
-					);
+					return errorResult.fail("INTERNAL_ERROR");
 				}
 				return mapPersonContactRow(row);
 			} catch (error) {
@@ -1406,7 +1406,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 						return existing;
 					}
 					if (existing.data !== null) {
-						return ok(existing.data.contact);
+						return errorResult.ok(existing.data.contact);
 					}
 				}
 				return mapPersistenceFailure(
@@ -1516,7 +1516,9 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 				]);
 				const [row] = rows;
 				if (row === undefined) {
-					return fail("NOT_FOUND", "Person contact not found");
+					return errorResult.fail("NOT_FOUND", {
+						publicMessage: "The requested resource was not found",
+					});
 				}
 				return mapPersonContactRow(row);
 			} catch (error) {
@@ -1613,7 +1615,9 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 				]);
 				const [row] = rows;
 				if (row === undefined) {
-					return fail("NOT_FOUND", "Person contact not found");
+					return errorResult.fail("NOT_FOUND", {
+						publicMessage: "The requested resource was not found",
+					});
 				}
 				return mapPersonContactRow(row);
 			} catch (error) {
@@ -1631,11 +1635,12 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 					return person;
 				}
 				if (person.data === null) {
-					return fail(
-						"NOT_FOUND",
-						"Person not found",
-						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-					);
+					return errorResult.fail("NOT_FOUND", {
+						publicMessage: "The requested resource was not found",
+						internalContext: humanResourcesErrorDetails(
+							HUMAN_RESOURCES_ERROR_NOT_FOUND,
+						),
+					});
 				}
 				const rows = await db
 					.select()
@@ -1654,7 +1659,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 					}
 					contacts.push(mapped.data);
 				}
-				return ok(contacts);
+				return errorResult.ok(contacts);
 			} catch (error) {
 				return mapPersistenceFailure(
 					error,
@@ -1677,13 +1682,13 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 					.limit(1);
 				const [row] = rows;
 				if (row === undefined) {
-					return ok(null);
+					return errorResult.ok(null);
 				}
 				const mapped = mapPersonIdentifierSelectRow(row);
 				if (!mapped.ok) {
 					return mapped;
 				}
-				return ok({
+				return errorResult.ok({
 					identifier: mapped.data,
 					createRequestFingerprint: row.createRequestFingerprint,
 				});
@@ -1796,10 +1801,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 				]);
 				const [row] = rows;
 				if (row === undefined) {
-					return fail(
-						"INTERNAL_ERROR",
-						"Person identifier create returned no row",
-					);
+					return errorResult.fail("INTERNAL_ERROR");
 				}
 				return mapPersonIdentifierRow(row);
 			} catch (error) {
@@ -1812,7 +1814,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 						return existing;
 					}
 					if (existing.data !== null) {
-						return ok(existing.data.identifier);
+						return errorResult.ok(existing.data.identifier);
 					}
 				}
 				return mapPersistenceFailure(
@@ -1919,7 +1921,9 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 				]);
 				const [row] = rows;
 				if (row === undefined) {
-					return fail("NOT_FOUND", "Person identifier not found");
+					return errorResult.fail("NOT_FOUND", {
+						publicMessage: "The requested resource was not found",
+					});
 				}
 				return mapPersonIdentifierRow(row);
 			} catch (error) {
@@ -1937,11 +1941,12 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 					return person;
 				}
 				if (person.data === null) {
-					return fail(
-						"NOT_FOUND",
-						"Person not found",
-						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-					);
+					return errorResult.fail("NOT_FOUND", {
+						publicMessage: "The requested resource was not found",
+						internalContext: humanResourcesErrorDetails(
+							HUMAN_RESOURCES_ERROR_NOT_FOUND,
+						),
+					});
 				}
 				const rows = await db
 					.select()
@@ -1960,7 +1965,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 					}
 					identifiers.push(mapped.data);
 				}
-				return ok(identifiers);
+				return errorResult.ok(identifiers);
 			} catch (error) {
 				return mapPersistenceFailure(
 					error,
@@ -1976,11 +1981,12 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 					return person;
 				}
 				if (person.data === null) {
-					return fail(
-						"NOT_FOUND",
-						"Person not found",
-						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-					);
+					return errorResult.fail("NOT_FOUND", {
+						publicMessage: "The requested resource was not found",
+						internalContext: humanResourcesErrorDetails(
+							HUMAN_RESOURCES_ERROR_NOT_FOUND,
+						),
+					});
 				}
 				const matches = new Map<string, Set<PersonDuplicateMatchReason>>();
 				const addMatch = (
@@ -2096,7 +2102,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 				if (sequentialOutcome1.kind === "return") {
 					return sequentialOutcome1.value;
 				}
-				return ok(candidates);
+				return errorResult.ok(candidates);
 			} catch (error) {
 				return mapPersistenceFailure(
 					error,
@@ -2119,7 +2125,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 					.limit(1);
 				const [row] = rows;
 				if (row === undefined) {
-					return ok(null);
+					return errorResult.ok(null);
 				}
 				return mapWorkerSelectRow(row);
 			} catch (error) {
@@ -2142,7 +2148,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 					return workerResult;
 				}
 				if (workerResult.data === null) {
-					return ok(null);
+					return errorResult.ok(null);
 				}
 
 				const rows = await db
@@ -2172,17 +2178,18 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 					asOf: input.asOf,
 				});
 				if (!resolution.ok) {
-					return fail(
-						"CONFLICT",
-						`Worker classification lineage is invalid: ${resolution.reason}`,
-						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-					);
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+						internalContext: humanResourcesErrorDetails(
+							HUMAN_RESOURCES_ERROR_CONFLICT,
+						),
+					});
 				}
 				if (resolution.record === null) {
-					return ok(null);
+					return errorResult.ok(null);
 				}
 
-				return ok({
+				return errorResult.ok({
 					workerId: input.workerId,
 					organizationId: input.organizationId,
 					personId: workerResult.data.personId,
@@ -2224,7 +2231,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 					}
 					versions.push(mapped.data);
 				}
-				return ok(versions);
+				return errorResult.ok(versions);
 			} catch (error) {
 				return mapPersistenceFailure(
 					error,
@@ -2247,7 +2254,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 					.limit(1);
 				const [row] = rows;
 				if (row === undefined) {
-					return ok(null);
+					return errorResult.ok(null);
 				}
 				return mapWorkerSelectRow(row);
 			} catch (error) {
@@ -2275,16 +2282,16 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 					.limit(1);
 				const [row] = rows;
 				if (row === undefined) {
-					return ok(null);
+					return errorResult.ok(null);
 				}
 				const mapped = mapWorkerSelectRow(row);
 				if (!mapped.ok) {
 					return mapped;
 				}
 				if (mapped.data.workerType !== "employee") {
-					return ok(null);
+					return errorResult.ok(null);
 				}
-				return ok(mapped.data);
+				return errorResult.ok(mapped.data);
 			} catch (error) {
 				return mapPersistenceFailure(
 					error,
@@ -2309,13 +2316,13 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 					.limit(1);
 				const [row] = rows;
 				if (row === undefined) {
-					return ok(null);
+					return errorResult.ok(null);
 				}
 				const mapped = mapWorkerSelectRow(row);
 				if (!mapped.ok) {
 					return mapped;
 				}
-				return ok({
+				return errorResult.ok({
 					worker: mapped.data,
 					createRequestFingerprint: row.createRequestFingerprint,
 				});
@@ -2446,7 +2453,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 				]);
 				const [row] = rows;
 				if (row === undefined) {
-					return fail("INTERNAL_ERROR", "Worker create returned no row");
+					return errorResult.fail("INTERNAL_ERROR");
 				}
 				return mapWorkerRow(row);
 			} catch (error) {
@@ -2459,7 +2466,7 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 						return existing;
 					}
 					if (existing.data !== null) {
-						return ok(existing.data.worker);
+						return errorResult.ok(existing.data.worker);
 					}
 				}
 				return mapPersistenceFailure(
@@ -2482,11 +2489,12 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 				return existing;
 			}
 			if (existing.data === null) {
-				return fail(
-					"NOT_FOUND",
-					"Worker not found",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_NOT_FOUND,
+					),
+				});
 			}
 			const versionCheck = assertExpectedVersion(
 				existing.data.version,
@@ -2508,11 +2516,11 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 					version.lineageStatus === "active" && version.effectiveTo === null,
 			);
 			if (openSegment === undefined) {
-				return fail(
-					"INTERNAL_ERROR",
-					"Worker classification lineage is missing an open segment",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-				);
+				return errorResult.fail("INTERNAL_ERROR", {
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_CONFLICT,
+					),
+				});
 			}
 			const mutableCheck = assertLineageSegmentMutable(openSegment);
 			if (!mutableCheck.ok) {
@@ -2545,11 +2553,12 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 				openSegment.workerType === input.workerType &&
 				openSegment.employeeId === employeeId
 			) {
-				return fail(
-					"CONFLICT",
-					"Worker type change must alter classification",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_CONFLICT,
+					),
+				});
 			}
 
 			const auditId = randomUUID();
@@ -2675,13 +2684,15 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 				]);
 				const [row] = rows;
 				if (row === undefined) {
-					return fail("CONFLICT", "Worker type change conflict");
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+					});
 				}
 				const mapped = mapWorkerRow(row);
 				if (!mapped.ok) {
 					return mapped;
 				}
-				return ok(mapped.data);
+				return errorResult.ok(mapped.data);
 			} catch (error) {
 				return mapPersistenceFailure(
 					error,
@@ -2699,11 +2710,12 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 				return existing;
 			}
 			if (existing.data === null) {
-				return fail(
-					"NOT_FOUND",
-					"Worker not found",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_NOT_FOUND,
+					),
+				});
 			}
 			const versionCheck = assertExpectedVersion(
 				existing.data.version,
@@ -2725,11 +2737,11 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 					version.lineageStatus === "active" && version.effectiveTo === null,
 			);
 			if (openSegment === undefined) {
-				return fail(
-					"INTERNAL_ERROR",
-					"Worker classification lineage is missing an open segment",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-				);
+				return errorResult.fail("INTERNAL_ERROR", {
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_CONFLICT,
+					),
+				});
 			}
 			const mutableCheck = assertLineageSegmentMutable(openSegment);
 			if (!mutableCheck.ok) {
@@ -2744,11 +2756,12 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 			}
 
 			if (openSegment.workerStatus === input.status) {
-				return fail(
-					"CONFLICT",
-					"Worker status change must alter classification",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_CONFLICT,
+					),
+				});
 			}
 
 			const auditId = randomUUID();
@@ -2874,7 +2887,9 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 				]);
 				const [row] = rows;
 				if (row === undefined) {
-					return fail("CONFLICT", "Worker status change conflict");
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+					});
 				}
 				return mapWorkerRow(row);
 			} catch (error) {

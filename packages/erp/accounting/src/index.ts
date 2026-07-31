@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import { z } from "zod";
 import { requireAccountingPermission } from "./authorization";
 import type {
@@ -69,9 +69,9 @@ function journalTypeForSourceModule(sourceModule: string): JournalType {
 	}
 }
 
-function failInvalidAccountingInput(error: z.ZodError): Result<never> {
-	return fail("VALIDATION_ERROR", "Invalid accounting input", {
-		fieldErrors: error.flatten().fieldErrors,
+function failInvalidAccountingInput(_error: z.ZodError): Result<never> {
+	return errorResult.fail("VALIDATION_ERROR", {
+		publicMessage: "Invalid accounting input",
 	});
 }
 
@@ -84,15 +84,21 @@ function resolveOpts(options: AccountingCommandOptions | undefined): Result<{
 	effects: NonNullable<AccountingCommandOptions["effects"]>;
 }> {
 	if (!options?.store) {
-		return fail("BAD_REQUEST", "AccountingStore is required");
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "AccountingStore is required",
+		});
 	}
 	if (!options?.authorization) {
-		return fail("BAD_REQUEST", "Authorization port is required");
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Authorization port is required",
+		});
 	}
 	if (!options?.effects) {
-		return fail("BAD_REQUEST", "Effects port is required");
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Effects port is required",
+		});
 	}
-	return ok({
+	return errorResult.ok({
 		store: options.store,
 		authorization: options.authorization,
 		effects: options.effects,
@@ -530,10 +536,9 @@ export async function addJournalLine(
 	let ledgerAccountId: string | null = null;
 	if (accountResult.data) {
 		if (accountResult.data.status !== "active") {
-			return fail(
-				"VALIDATION_ERROR",
-				`Ledger account '${parsed.data.accountCode}' is inactive`,
-			);
+			return errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "The submitted data is invalid",
+			});
 		}
 		ledgerAccountId = accountResult.data.id;
 	}
@@ -873,7 +878,9 @@ async function resolvePostingProfileLine(
 			"MISSING_AMOUNT_FOR_ROLE",
 			message,
 		);
-		return fail("VALIDATION_ERROR", message);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+		});
 	}
 
 	const roleMapping = await store.resolveAccountRole(
@@ -891,7 +898,9 @@ async function resolvePostingProfileLine(
 			"ACCOUNT_ROLE_NOT_MAPPED",
 			message,
 		);
-		return fail("VALIDATION_ERROR", message);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+		});
 	}
 
 	const ledgerAccounts = await store.listLedgerAccounts({
@@ -911,10 +920,12 @@ async function resolvePostingProfileLine(
 			"LEDGER_ACCOUNT_INACTIVE",
 			message,
 		);
-		return fail("VALIDATION_ERROR", message);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+		});
 	}
 
-	return ok({
+	return errorResult.ok({
 		accountCode: targetAccount.code,
 		ledgerAccountId: targetAccount.id,
 		side: profileLine.side,
@@ -959,10 +970,9 @@ export async function postFinancialSourceEvent(
 			payload: d,
 			actorUserId: d.actorUserId,
 		});
-		return fail(
-			"NOT_FOUND",
-			`Active posting profile '${d.postingRuleCode}' not found`,
-		);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "The requested resource was not found",
+		});
 	}
 
 	const profile = profileResult.data;
@@ -988,12 +998,12 @@ export async function postFinancialSourceEvent(
 			return existingJournal;
 		}
 		if (existingJournal.data) {
-			return ok(existingJournal.data);
+			return errorResult.ok(existingJournal.data);
 		}
-		return fail(
-			"NOT_FOUND",
-			"Linked journal not found for existing source posting link",
-		);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage:
+				"Linked journal not found for existing source posting link",
+		});
 	}
 
 	const resolvedLines = await collectSequentially(
@@ -1076,7 +1086,7 @@ export async function postFinancialSourceEvent(
 		actorUserId: d.actorUserId,
 	});
 
-	return ok(postResult.data);
+	return errorResult.ok(postResult.data);
 }
 
 const GetJournalByIdInput = z.object({

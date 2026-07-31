@@ -1,4 +1,8 @@
-import type { Result } from "@afenda/errors/result";
+import {
+	type Result as ActionResult,
+	errorResult,
+	type Result,
+} from "@afenda/errors";
 import type { HrObservabilityArea } from "@afenda/human-resources";
 import type { z } from "zod";
 
@@ -7,10 +11,7 @@ import { mapPackageResult } from "@/app/actions/map-package-result";
 import { createHrOperatorPermissionActionRunner } from "@/app/actions/run-hr-operator-permission-action";
 import { createHumanResourcesCommandOptions } from "@/lib/erp/human-resources-command-options";
 import type { ProductPermissionCode } from "@/modules/identity/domain/session-permission";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
+
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 interface HrHumanResourcesActionConfig<
@@ -57,11 +58,9 @@ export async function runHrHumanResourcesAction<
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(config.actionSchema, config.input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					config.validationMessage,
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "The submitted data is invalid",
+				});
 			}
 			const stamped = withHrSessionContext(
 				session,

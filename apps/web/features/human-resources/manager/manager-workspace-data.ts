@@ -1,5 +1,5 @@
 import type { Session } from "@afenda/auth";
-import { AppError } from "@afenda/errors";
+import { errorWire } from "@afenda/errors";
 import {
 	getEmployeeProfile,
 	getHeadcountAvailability,
@@ -59,13 +59,7 @@ export async function loadManagerWorkspace(
 	const errors: string[] = [];
 	const scopeResult = await resolveManagerScope(session, asOf);
 	if (!scopeResult.ok) {
-		throw new AppError({
-			code: scopeResult.code,
-			message: scopeResult.message,
-			...(scopeResult.details === undefined
-				? {}
-				: { details: scopeResult.details }),
-		});
+		throw errorWire.deserialize(errorWire.serialize(scopeResult));
 	}
 	const scope = scopeResult.data;
 

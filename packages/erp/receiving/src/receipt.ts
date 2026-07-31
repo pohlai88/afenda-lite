@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	addStockMovementLine,
 	createReversalMovement,
@@ -16,10 +16,6 @@ import {
 	type ReceivingCommandOptions,
 	resolveCommandDeps,
 } from "./command-options";
-import {
-	RECEIVING_ERROR_POSTED_RECEIPT_CANNOT_CANCEL,
-	receivingErrorDetails,
-} from "./error-codes";
 import { requireMaster } from "./master-lookup";
 import {
 	RECEIVING_COMMAND_CANCEL,
@@ -80,15 +76,19 @@ function decideReceiptPost(
 	idempotencyKey: string,
 ): Result<"proceed" | "replay"> {
 	if (receipt.postIdempotencyKey === idempotencyKey) {
-		return ok("replay");
+		return errorResult.ok("replay");
 	}
 	if (receipt.status !== "draft") {
-		return fail("CONFLICT", "Goods receipt is not in draft status");
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Goods receipt is not in draft status",
+		});
 	}
 	if (receipt.lines.length === 0) {
-		return fail("CONFLICT", "Cannot post goods receipt without lines");
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Cannot post goods receipt without lines",
+		});
 	}
-	return ok("proceed");
+	return errorResult.ok("proceed");
 }
 
 async function resolvePoConsumptionGuard(
@@ -97,13 +97,13 @@ async function resolvePoConsumptionGuard(
 	deps: Pick<ResolvedDeps, "purchaseOrderReceivingQuery" | "store">,
 ): Promise<Result<PoConsumptionGuard | undefined>> {
 	if (receipt.sourceType !== "purchase_order") {
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	}
 	if (receipt.sourceId === null) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Purchase order source id is required to post purchase_order receipts",
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage:
+				"Purchase order source id is required to post purchase_order receipts",
+		});
 	}
 	const snapshot = await loadPurchaseOrderReceivingSnapshot(
 		deps.purchaseOrderReceivingQuery,
@@ -146,7 +146,7 @@ async function resolvePoConsumptionGuard(
 		guard.data,
 		alreadyAcceptedByLine,
 	);
-	return receivable.ok ? ok(guard.data) : receivable;
+	return receivable.ok ? errorResult.ok(guard.data) : receivable;
 }
 
 async function resolveReceiptLineSnapshots(
@@ -168,7 +168,9 @@ async function resolveReceiptLineSnapshots(
 			return item;
 		}
 		if (item.data.status !== "active") {
-			return fail("CONFLICT", "Cannot post unless every line item is active");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Cannot post unless every line item is active",
+			});
 		}
 		const uom = requireMaster(
 			await masters.getRefUomById(
@@ -189,7 +191,7 @@ async function resolveReceiptLineSnapshots(
 			lineId: line.id,
 		});
 	});
-	return terminal ?? ok(snapshots);
+	return terminal ?? errorResult.ok(snapshots);
 }
 
 async function addReceiptInventoryLines(input: {
@@ -223,7 +225,7 @@ async function addReceiptInventoryLines(input: {
 			expectedVersion += 1;
 		},
 	);
-	return terminal ?? ok(expectedVersion);
+	return terminal ?? errorResult.ok(expectedVersion);
 }
 
 async function postReceiptInventoryMovement(
@@ -280,7 +282,7 @@ async function postReceiptInventoryMovement(
 		return posted;
 	}
 
-	return ok({ movementId: created.data.id });
+	return errorResult.ok({ movementId: created.data.id });
 }
 
 export async function createDraftGoodsReceipt(
@@ -313,7 +315,7 @@ export async function createDraftGoodsReceipt(
 		return existing;
 	}
 	if (existing.data !== null) {
-		return ok(existing.data);
+		return errorResult.ok(existing.data);
 	}
 	const code = normalizeReceiptCode(parsed.data.code);
 	if (!code.ok) {
@@ -331,7 +333,9 @@ export async function createDraftGoodsReceipt(
 		return warehouse;
 	}
 	if (warehouse.data.status !== "active") {
-		return fail("CONFLICT", "Warehouse must be active");
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Warehouse must be active",
+		});
 	}
 	const { purchaseOrderId } = parsed.data.source;
 	const snapshot = await loadPurchaseOrderReceivingSnapshot(
@@ -396,10 +400,14 @@ export async function addGoodsReceiptLine(
 		return receipt;
 	}
 	if (receipt.data === null) {
-		return fail("NOT_FOUND", "Goods receipt not found");
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Goods receipt not found",
+		});
 	}
 	if (receipt.data.status !== "draft") {
-		return fail("CONFLICT", "Cannot add lines to a non-draft goods receipt");
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Cannot add lines to a non-draft goods receipt",
+		});
 	}
 	const item = requireMaster(
 		await masters.getItemById(
@@ -413,7 +421,9 @@ export async function addGoodsReceiptLine(
 		return item;
 	}
 	if (item.data.status !== "active") {
-		return fail("CONFLICT", "Item must be active");
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Item must be active",
+		});
 	}
 	const uom = requireMaster(
 		await masters.getRefUomById(
@@ -491,20 +501,19 @@ export async function postGoodsReceipt(
 		return receipt;
 	}
 	if (receipt.data === null) {
-		return fail("NOT_FOUND", "Goods receipt not found");
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Goods receipt not found",
+		});
 	}
 	const decision = decideReceiptPost(receipt.data, parsed.data.idempotencyKey);
 	if (!decision.ok) {
 		return decision;
 	}
 	if (decision.data === "replay") {
-		return ok(receipt.data);
+		return errorResult.ok(receipt.data);
 	}
 	if (!inventory) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Inventory command options are required to post goods receipt stock",
-		);
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 	const poConsumptionGuard = await resolvePoConsumptionGuard(
 		receipt.data,
@@ -526,7 +535,9 @@ export async function postGoodsReceipt(
 		return warehouse;
 	}
 	if (warehouse.data.status !== "active") {
-		return fail("CONFLICT", "Cannot post unless warehouse is active");
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Cannot post unless warehouse is active",
+		});
 	}
 	const lineSnapshots = await resolveReceiptLineSnapshots(
 		masters,
@@ -571,11 +582,11 @@ export async function postGoodsReceipt(
 			errorMessage: RECEIPT_INVENTORY_POST_FAILED_MESSAGE,
 			actorUserId: parsed.data.actorUserId,
 		});
-		return fail(
-			inventoryPosted.code === "CONFLICT" ? "CONFLICT" : "INTERNAL_ERROR",
-			RECEIPT_INVENTORY_POST_FAILED_MESSAGE,
-			inventoryPosted.details,
-		);
+		return inventoryPosted.code === "CONFLICT"
+			? errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+				})
+			: errorResult.fail("INTERNAL_ERROR");
 	}
 
 	return store.setInventoryApplication({
@@ -617,20 +628,22 @@ export async function cancelGoodsReceipt(
 		return receipt;
 	}
 	if (receipt.data === null) {
-		return fail("NOT_FOUND", "Goods receipt not found");
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Goods receipt not found",
+		});
 	}
 	if (receipt.data.cancelIdempotencyKey === parsed.data.idempotencyKey) {
-		return ok(receipt.data);
+		return errorResult.ok(receipt.data);
 	}
 	if (receipt.data.status === "posted") {
-		return fail(
-			"CONFLICT",
-			"Posted goods receipts cannot be cancelled; use reverse",
-			receivingErrorDetails(RECEIVING_ERROR_POSTED_RECEIPT_CANNOT_CANCEL),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Posted goods receipts cannot be cancelled; use reverse",
+		});
 	}
 	if (receipt.data.status !== "draft") {
-		return fail("CONFLICT", "Goods receipt cannot be cancelled");
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Goods receipt cannot be cancelled",
+		});
 	}
 	return store.cancelReceipt(
 		{
@@ -675,13 +688,12 @@ export async function reverseGoodsReceipt(
 		return original;
 	}
 	if (original.data === null) {
-		return fail("NOT_FOUND", "Goods receipt not found");
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Goods receipt not found",
+		});
 	}
 	if (!inventory) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Inventory command options are required to reverse goods receipt stock",
-		);
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 	const reverseCode = normalizeReceiptCode(`${original.data.code}-REV`);
 	if (!reverseCode.ok) {
@@ -735,10 +747,7 @@ export async function reverseGoodsReceipt(
 			errorMessage: "Original inventory movement not found for reverse",
 			actorUserId: parsed.data.actorUserId,
 		});
-		return fail(
-			"INTERNAL_ERROR",
-			"Goods receipt reversed but inventory movement is missing",
-		);
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 
 	const inventoryReversed = await createReversalMovement(
@@ -762,11 +771,11 @@ export async function reverseGoodsReceipt(
 			errorMessage: RECEIPT_INVENTORY_REVERSE_FAILED_MESSAGE,
 			actorUserId: parsed.data.actorUserId,
 		});
-		return fail(
-			inventoryReversed.code === "CONFLICT" ? "CONFLICT" : "INTERNAL_ERROR",
-			RECEIPT_INVENTORY_REVERSE_FAILED_MESSAGE,
-			inventoryReversed.details,
-		);
+		return inventoryReversed.code === "CONFLICT"
+			? errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+				})
+			: errorResult.fail("INTERNAL_ERROR");
 	}
 
 	return store.setInventoryApplication({
@@ -808,16 +817,22 @@ export async function recordReceivingDiscrepancy(
 		return receipt;
 	}
 	if (receipt.data === null) {
-		return fail("NOT_FOUND", "Goods receipt not found");
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Goods receipt not found",
+		});
 	}
 	if (receipt.data.status !== "draft" && receipt.data.status !== "posted") {
-		return fail("CONFLICT", "Discrepancy requires a draft or posted receipt");
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Discrepancy requires a draft or posted receipt",
+		});
 	}
 	if (
 		parsed.data.receiptLineId !== undefined &&
 		!receipt.data.lines.some((line) => line.id === parsed.data.receiptLineId)
 	) {
-		return fail("NOT_FOUND", "Goods receipt line not found");
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Goods receipt line not found",
+		});
 	}
 	return store.recordDiscrepancy(
 		{

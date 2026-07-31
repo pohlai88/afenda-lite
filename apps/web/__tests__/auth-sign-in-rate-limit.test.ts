@@ -84,11 +84,10 @@ describe("signInAction rate limit", () => {
 			key: "203.0.113.50:client@example.com",
 		});
 		expect(authMocks.signInWithEmail).not.toHaveBeenCalled();
-		expect(result).toEqual({
+		expect(result).toMatchObject({
 			ok: false,
 			code: "RATE_LIMITED",
-			message: "Too many requests. Try again later.",
-			details: { retryAfter: 17 },
+			details: { retryAfterSeconds: 17 },
 		});
 		expect(logMocks.logProductEvent).toHaveBeenCalledWith(
 			expect.objectContaining({
@@ -121,11 +120,10 @@ describe("signInAction rate limit", () => {
 			bucket: "auth_sign_in",
 			key: "203.0.113.50:not-an-email",
 		});
-		expect(result).toEqual({
+		expect(result).toMatchObject({
 			ok: false,
 			code: "RATE_LIMITED",
-			message: "Too many requests. Try again later.",
-			details: { retryAfter: 12 },
+			details: { retryAfterSeconds: 12 },
 		});
 	});
 

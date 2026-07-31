@@ -47,7 +47,7 @@ apps/web
   ├── @afenda/auth  ──→  @afenda/env · @afenda/http · @afenda/logger · @afenda/rate-limit · @afenda/errors
   ├── @afenda/admin ──→  @afenda/auth · @afenda/db · @afenda/env · @afenda/errors
   ├── @afenda/env
-  ├── @afenda/errors   (leaf — AppError / codes / Result / http / postgres adapter)
+  ├── @afenda/errors   (leaf — root capabilities / canonical Result / projections)
   ├── @afenda/logger   (leaf — Pino Node + edge emit; no @afenda/* runtime deps)
   ├── @afenda/http     (leaf — Fetch compose · correlation · pagination · Retry-After)
   ├── @afenda/security (leaf — headers · CSP · CORS builders; next.config adapts)

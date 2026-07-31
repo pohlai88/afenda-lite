@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import { itemIdSchema } from "@afenda/master-data";
 import { z } from "zod";
 import {
@@ -88,11 +88,9 @@ export async function getPriceBook(
 ) {
 	const parsed = getPriceBookInputSchema.safeParse(input);
 	if (!parsed.success) {
-		return fail(
-			"BAD_REQUEST",
-			"Enter a valid price-book ID",
-			parsed.error.flatten(),
-		);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Enter a valid price-book ID",
+		});
 	}
 	const deps = resolveSalesDeps(options);
 	const auth = await requireSalesQueryPermission(deps.authorization, {
@@ -115,11 +113,9 @@ export async function listPriceBooks(
 ) {
 	const parsed = listPriceBooksInputSchema.safeParse(input);
 	if (!parsed.success) {
-		return fail(
-			"BAD_REQUEST",
-			"Enter valid price-book filters",
-			parsed.error.flatten(),
-		);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Enter valid price-book filters",
+		});
 	}
 	const deps = resolveSalesDeps(options);
 	const auth = await requireSalesQueryPermission(deps.authorization, {
@@ -139,11 +135,9 @@ export async function createPriceBook(
 ): Promise<Result<PriceBook>> {
 	const parsed = createPriceBookInputSchema.safeParse(input);
 	if (!parsed.success) {
-		return fail(
-			"BAD_REQUEST",
-			"Enter a valid price book",
-			parsed.error.flatten(),
-		);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Enter a valid price book",
+		});
 	}
 	const deps = resolveSalesDeps(options);
 	const auth = await requireSalesCommandPermission(deps.authorization, {
@@ -183,11 +177,9 @@ export async function addPriceBookEntry(
 ): Promise<Result<PriceBookEntry>> {
 	const parsed = addPriceBookEntryInputSchema.safeParse(input);
 	if (!parsed.success) {
-		return fail(
-			"BAD_REQUEST",
-			"Enter a valid price-book entry",
-			parsed.error.flatten(),
-		);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Enter a valid price-book entry",
+		});
 	}
 	const deps = resolveSalesDeps(options);
 	const auth = await requireSalesCommandPermission(deps.authorization, {
@@ -215,11 +207,9 @@ export async function activatePriceBook(
 ): Promise<Result<PriceBook>> {
 	const parsed = activatePriceBookInputSchema.safeParse(input);
 	if (!parsed.success) {
-		return fail(
-			"BAD_REQUEST",
-			"Enter a valid price-book activation",
-			parsed.error.flatten(),
-		);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Enter a valid price-book activation",
+		});
 	}
 	const deps = resolveSalesDeps(options);
 	const auth = await requireSalesCommandPermission(deps.authorization, {
@@ -253,11 +243,9 @@ export async function calculateSalesPrice(
 ): Promise<Result<PriceCalculationTrace>> {
 	const parsed = calculateSalesPriceInputSchema.safeParse(input);
 	if (!parsed.success) {
-		return fail(
-			"BAD_REQUEST",
-			"Enter valid pricing inputs",
-			parsed.error.flatten(),
-		);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Enter valid pricing inputs",
+		});
 	}
 	const deps = resolveSalesDeps(options);
 	const auth = await requireSalesQueryPermission(deps.authorization, {
@@ -281,8 +269,8 @@ export async function calculateSalesPrice(
 			b.entry.minimumQuantity.localeCompare(a.entry.minimumQuantity),
 	);
 	if (!match) {
-		return fail("NOT_FOUND", "No applicable sales price was found", {
-			reason: "SALES_PRICE_NOT_FOUND",
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "No applicable sales price was found",
 		});
 	}
 	const base = parsed.data.override?.unitPrice ?? match.entry.unitPrice;
@@ -301,7 +289,7 @@ export async function calculateSalesPrice(
 	if (!amount.ok) {
 		return amount;
 	}
-	return ok({
+	return errorResult.ok({
 		priceBookId: match.book.id,
 		priceBookEntryId: match.entry.id,
 		baseUnitPrice: match.entry.unitPrice,

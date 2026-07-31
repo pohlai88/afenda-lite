@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -85,7 +85,7 @@ function partyReader(
 ): PartyExtensionRootReader {
 	return {
 		getPartyById(_organizationId, id): Promise<Result<Party | null>> {
-			return resolveAsync(() => ok(rows[id] ?? null));
+			return resolveAsync(() => errorResult.ok(rows[id] ?? null));
 		},
 	};
 }
@@ -130,7 +130,7 @@ describe("extension aggregate-root policies", () => {
 	it("propagates root reader failures", async () => {
 		const reader: ItemExtensionRootReader = {
 			getItemById(): Promise<Result<Item | null>> {
-				return resolveAsync(() => fail("INTERNAL", "Reader failed"));
+				return resolveAsync(() => errorResult.fail("INTERNAL_ERROR"));
 			},
 		};
 
@@ -138,45 +138,40 @@ describe("extension aggregate-root policies", () => {
 			requireItemExtensionParent(reader, "org-a", "item-1"),
 		).resolves.toMatchObject({
 			ok: false,
-			code: "INTERNAL",
-			message: "Reader failed",
+			code: "INTERNAL_ERROR",
 		});
 	});
 
 	it("returns typed missing-parent and invalid-state failures", async () => {
 		const missingReader: WarehouseExtensionRootReader = {
 			getWarehouseById(): Promise<Result<Warehouse | null>> {
-				return resolveAsync(() => ok(null));
+				return resolveAsync(() => errorResult.ok(null));
 			},
 		};
 		await expect(
 			requireWarehouseExtensionParent(missingReader, "org-a", "warehouse-1"),
 		).resolves.toMatchObject({
 			ok: false,
-			details: { reason: "MASTER_NOT_FOUND", parentType: "warehouse" },
+			code: "NOT_FOUND",
 		});
 
 		const retiredReader: ItemExtensionRootReader = {
 			getItemById(): Promise<Result<Item | null>> {
-				return resolveAsync(() => ok(item("retired")));
+				return resolveAsync(() => errorResult.ok(item("retired")));
 			},
 		};
 		await expect(
 			requireItemExtensionParent(retiredReader, "org-a", "item-1"),
 		).resolves.toMatchObject({
 			ok: false,
-			details: {
-				reason: "MASTER_INVALID_STATE",
-				parentType: "item",
-				status: "retired",
-			},
+			code: "CONFLICT",
 		});
 	});
 
 	it("enforces operation-specific parent requirements", async () => {
 		const reader: ItemExtensionRootReader = {
 			getItemById(): Promise<Result<Item | null>> {
-				return resolveAsync(() => ok(item("draft")));
+				return resolveAsync(() => errorResult.ok(item("draft")));
 			},
 		};
 
@@ -184,7 +179,7 @@ describe("extension aggregate-root policies", () => {
 			requireItemExtensionParent(reader, "org-a", "item-1", "parent_active"),
 		).resolves.toMatchObject({
 			ok: false,
-			details: { reason: "MASTER_INVALID_STATE", status: "draft" },
+			code: "CONFLICT",
 		});
 
 		await expect(
@@ -205,13 +200,6 @@ describe("extension aggregate-root policies", () => {
 		).resolves.toMatchObject({
 			ok: false,
 			code: "CONFLICT",
-			message: "Party has been merged into another party",
-			details: {
-				reason: "MASTER_INVALID_STATE",
-				parentType: "party",
-				status: "merged",
-				mergedIntoId: "party-2",
-			},
 		});
 	});
 
@@ -226,20 +214,13 @@ describe("extension aggregate-root policies", () => {
 		).resolves.toMatchObject({
 			ok: false,
 			code: "BAD_REQUEST",
-			details: {
-				reason: "MASTER_VALIDATION_FAILED",
-				field: "relatedPartyId",
-			},
 		});
 
 		await expect(
 			requirePartyRelationshipParents(reader, "org-a", "party-1", "party-2"),
 		).resolves.toMatchObject({
 			ok: false,
-			details: {
-				reason: "MASTER_NOT_FOUND",
-				parentType: "related_party",
-			},
+			code: "NOT_FOUND",
 		});
 	});
 

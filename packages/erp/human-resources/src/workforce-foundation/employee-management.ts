@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { HumanResourcesEmployeeId } from "../brands";
 import type { HumanResourcesCommandOptions } from "../command-options";
 import { resolveCommandDeps } from "../command-options";
@@ -51,7 +51,7 @@ async function resolveOrganizationEntry(input: {
 	if (!orgContext.ok) {
 		return orgContext;
 	}
-	return ok({
+	return errorResult.ok({
 		enteredOn: input.employment.startsOn,
 		employmentId: input.employment.id,
 		orgContext: orgContext.data,
@@ -114,7 +114,7 @@ async function loadPersonProfileDetails(input: {
 	if (!identifiers.ok) {
 		return identifiers;
 	}
-	return ok({
+	return errorResult.ok({
 		contacts: contacts.data,
 		homeAddress: contactValue(contacts.data, "postal_address"),
 		identifiers: identifiers.data,
@@ -158,11 +158,12 @@ async function assembleEmployeeProfile(input: {
 		return employee;
 	}
 	if (employee.data === null) {
-		return fail(
-			"NOT_FOUND",
-			"Employee not found",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-		);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "The requested resource was not found",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			),
+		});
 	}
 
 	const employmentResult = await resolveProfileEmployment({
@@ -224,7 +225,7 @@ async function assembleEmployeeProfile(input: {
 		(identifier) => identifier.status === "active",
 	);
 
-	return ok({
+	return errorResult.ok({
 		employeeId: employee.data.id,
 		employeeNumber: employee.data.employeeNumber,
 		legalName: employee.data.legalName,
@@ -269,11 +270,11 @@ export async function getEmployeeProfile(
 		"query",
 	);
 	if (requiredPermission === undefined) {
-		return fail(
-			"FORBIDDEN",
-			"Human Resources authorization denied",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_AUTHORIZATION_DENIED),
-		);
+		return errorResult.fail("FORBIDDEN", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_AUTHORIZATION_DENIED,
+			),
+		});
 	}
 
 	const resource = await resolveEmployeeProfileResourceFromInput(
@@ -346,5 +347,5 @@ export async function getEmployeeProfile(
 			subjectEmployeeId: parsed.data.employeeId,
 		},
 	);
-	return ok(projected);
+	return errorResult.ok(projected);
 }

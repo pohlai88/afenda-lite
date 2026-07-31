@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type { HumanResourcesEmployeeId } from "../brands";
 import type { HumanResourcesCommandOptions } from "../command-options";
@@ -92,7 +92,7 @@ function requireBackdatePermissionWhenNeeded(
 	},
 ): Promise<Result<void>> {
 	if (!input.isBackdated) {
-		return Promise.resolve(ok(undefined));
+		return Promise.resolve(errorResult.ok(undefined));
 	}
 	return requireLeaveRequestBackdatePermission(options, input);
 }
@@ -118,24 +118,24 @@ async function assertActorIsPrimaryManager(
 		return primary;
 	}
 	if (primary.data === null) {
-		return fail(
-			"FORBIDDEN",
-			"Employee has no primary manager for the approval date",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
-		);
+		return errorResult.fail("FORBIDDEN", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_FORBIDDEN,
+			),
+		});
 	}
 	const managerCheck = assertApproverIsPrimaryManager({
 		approverEmployeeId: input.managerEmployeeId,
 		primaryManagerEmployeeId: primary.data,
 	});
 	if (!managerCheck.ok) {
-		return fail(
-			"FORBIDDEN",
-			managerCheck.message,
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
-		);
+		return errorResult.fail("FORBIDDEN", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_FORBIDDEN,
+			),
+		});
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export async function createDraftLeaveRequest(
@@ -176,13 +176,14 @@ export async function createDraftLeaveRequest(
 			}
 			if (existing.data !== null) {
 				if (existing.data.createRequestFingerprint !== fingerprint) {
-					return fail(
-						"CONFLICT",
-						"Idempotency key reused with different payload",
-						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-					);
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+						internalContext: humanResourcesErrorDetails(
+							HUMAN_RESOURCES_ERROR_CONFLICT,
+						),
+					});
 				}
-				return ok(existing.data.request);
+				return errorResult.ok(existing.data.request);
 			}
 
 			const entitlement = await store.getLeaveEntitlementById({
@@ -193,7 +194,9 @@ export async function createDraftLeaveRequest(
 				return entitlement;
 			}
 			if (entitlement.data === null) {
-				return fail("NOT_FOUND", "Leave entitlement not found");
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+				});
 			}
 			const activeEntitlement = assertLeaveEntitlementActive(
 				entitlement.data.status,
@@ -210,7 +213,9 @@ export async function createDraftLeaveRequest(
 				return policy;
 			}
 			if (policy.data === null) {
-				return fail("NOT_FOUND", "Leave policy not found");
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+				});
 			}
 			const published = assertLeavePolicyPublished(policy.data.status);
 			if (!published.ok) {
@@ -225,7 +230,9 @@ export async function createDraftLeaveRequest(
 				return employment;
 			}
 			if (employment.data === null) {
-				return fail("NOT_FOUND", "Employment not found");
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+				});
 			}
 			const employmentActive = assertEmploymentActiveForLeave({
 				employmentStatus: employment.data.status,
@@ -311,7 +318,9 @@ export async function amendLeaveRequest(
 				return request;
 			}
 			if (request.data === null) {
-				return fail("NOT_FOUND", "Leave request not found");
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+				});
 			}
 
 			const amendable = assertLeaveRequestAmendable(request.data.status);
@@ -327,7 +336,9 @@ export async function amendLeaveRequest(
 				return policy;
 			}
 			if (policy.data === null) {
-				return fail("NOT_FOUND", "Leave policy not found");
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+				});
 			}
 
 			const expanded = await workCalendar.expandLeaveSegments({
@@ -392,7 +403,9 @@ export async function submitLeaveRequest(
 				return request;
 			}
 			if (request.data === null) {
-				return fail("NOT_FOUND", "Leave request not found");
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+				});
 			}
 
 			const policy = await store.getLeavePolicyById({
@@ -403,7 +416,9 @@ export async function submitLeaveRequest(
 				return policy;
 			}
 			if (policy.data === null) {
-				return fail("NOT_FOUND", "Leave policy not found");
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+				});
 			}
 
 			const balance = await store.getLeaveBalance({
@@ -414,7 +429,9 @@ export async function submitLeaveRequest(
 				return balance;
 			}
 			if (balance.data === null) {
-				return fail("NOT_FOUND", "Leave entitlement not found");
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+				});
 			}
 
 			const sufficient = assertSufficientLeaveBalance({
@@ -480,10 +497,7 @@ export async function approveLeaveRequest(
 		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The domain workflow keeps ordered invariant validation and Result mapping explicit.
 		execute: async (data, { store, ports, identityResolver }) => {
 			if (!identityResolver) {
-				return fail(
-					"UNAUTHORIZED",
-					"Human Resources identity resolver port is required",
-				);
+				return errorResult.fail("UNAUTHORIZED");
 			}
 			const request = await store.getLeaveRequestById({
 				organizationId: data.organizationId,
@@ -493,7 +507,9 @@ export async function approveLeaveRequest(
 				return request;
 			}
 			if (request.data === null) {
-				return fail("NOT_FOUND", "Leave request not found");
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+				});
 			}
 
 			// Resolve the manager identity from the actor user ID
@@ -506,11 +522,11 @@ export async function approveLeaveRequest(
 				return managerIdentity;
 			}
 			if (!managerIdentity.data) {
-				return fail(
-					"FORBIDDEN",
-					"Actor is not an employee",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
-				);
+				return errorResult.fail("FORBIDDEN", {
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_FORBIDDEN,
+					),
+				});
 			}
 
 			const policy = await store.getLeavePolicyById({
@@ -521,7 +537,9 @@ export async function approveLeaveRequest(
 				return policy;
 			}
 			if (policy.data === null) {
-				return fail("NOT_FOUND", "Leave policy not found");
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+				});
 			}
 
 			const isAllowedSelfApproval =
@@ -547,11 +565,11 @@ export async function approveLeaveRequest(
 				allowSelfApproval: policy.data.allowSelfApproval,
 			});
 			if (!selfApproval.ok) {
-				return fail(
-					"FORBIDDEN",
-					selfApproval.message,
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
-				);
+				return errorResult.fail("FORBIDDEN", {
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_FORBIDDEN,
+					),
+				});
 			}
 
 			const decision = assertApprovalDecisionMatchesRequestTransition({
@@ -570,7 +588,9 @@ export async function approveLeaveRequest(
 				return balance;
 			}
 			if (balance.data === null) {
-				return fail("NOT_FOUND", "Leave entitlement not found");
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+				});
 			}
 
 			const sufficient = assertSufficientLeaveBalance({
@@ -635,10 +655,7 @@ export async function rejectLeaveRequest(
 		command: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_REJECT,
 		execute: async (data, { store, ports, identityResolver }) => {
 			if (!identityResolver) {
-				return fail(
-					"UNAUTHORIZED",
-					"Human Resources identity resolver port is required",
-				);
+				return errorResult.fail("UNAUTHORIZED");
 			}
 			const request = await store.getLeaveRequestById({
 				organizationId: data.organizationId,
@@ -648,7 +665,9 @@ export async function rejectLeaveRequest(
 				return request;
 			}
 			if (request.data === null) {
-				return fail("NOT_FOUND", "Leave request not found");
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+				});
 			}
 
 			// Resolve the manager identity from the actor user ID
@@ -661,11 +680,11 @@ export async function rejectLeaveRequest(
 				return managerIdentity;
 			}
 			if (!managerIdentity.data) {
-				return fail(
-					"FORBIDDEN",
-					"Actor is not an employee",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
-				);
+				return errorResult.fail("FORBIDDEN", {
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_FORBIDDEN,
+					),
+				});
 			}
 
 			const managerCheck = await assertActorIsPrimaryManager(store, {
@@ -706,10 +725,7 @@ export async function returnLeaveRequest(
 		command: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_RETURN,
 		execute: async (data, { store, ports, identityResolver }) => {
 			if (!identityResolver) {
-				return fail(
-					"UNAUTHORIZED",
-					"Human Resources identity resolver port is required",
-				);
+				return errorResult.fail("UNAUTHORIZED");
 			}
 			const request = await store.getLeaveRequestById({
 				organizationId: data.organizationId,
@@ -719,7 +735,9 @@ export async function returnLeaveRequest(
 				return request;
 			}
 			if (request.data === null) {
-				return fail("NOT_FOUND", "Leave request not found");
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+				});
 			}
 
 			// Resolve the manager identity from the actor user ID
@@ -732,11 +750,11 @@ export async function returnLeaveRequest(
 				return managerIdentity;
 			}
 			if (!managerIdentity.data) {
-				return fail(
-					"FORBIDDEN",
-					"Actor is not an employee",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
-				);
+				return errorResult.fail("FORBIDDEN", {
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_FORBIDDEN,
+					),
+				});
 			}
 
 			const managerCheck = await assertActorIsPrimaryManager(store, {
@@ -843,7 +861,7 @@ export async function getLeaveRequest(
 				return request;
 			}
 			if (request.data === null) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 
 			const actorIdentity = await resolveActorEmployeeIdentity(
@@ -866,11 +884,11 @@ export async function getLeaveRequest(
 					operationKind: "query",
 				});
 				if (!sensitiveAdmin.ok) {
-					return fail(
-						"FORBIDDEN",
-						"Cannot access other employee's leave request",
-						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
-					);
+					return errorResult.fail("FORBIDDEN", {
+						internalContext: humanResourcesErrorDetails(
+							HUMAN_RESOURCES_ERROR_FORBIDDEN,
+						),
+					});
 				}
 			}
 
@@ -882,7 +900,9 @@ export async function getLeaveRequest(
 				return policy;
 			}
 			if (policy.data === null) {
-				return fail("NOT_FOUND", "Leave policy not found");
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+				});
 			}
 
 			const sensitive = await assertLeaveRequestSensitiveReadAllowed(options, {
@@ -926,7 +946,7 @@ export async function getLeaveRequest(
 				}
 			}
 
-			return ok(request.data);
+			return errorResult.ok(request.data);
 		},
 	});
 }
@@ -956,11 +976,11 @@ export async function listLeaveRequests(
 				data.employeeId !== undefined &&
 				data.employeeId !== actorIdentity.data.employeeId
 			) {
-				return fail(
-					"FORBIDDEN",
-					"Cannot access other employee's leave requests",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
-				);
+				return errorResult.fail("FORBIDDEN", {
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_FORBIDDEN,
+					),
+				});
 			}
 			const { employeeId } = actorIdentity.data;
 
@@ -988,7 +1008,9 @@ export async function listLeaveRequests(
 					}
 					if (policy.data === null) {
 						return sequentialReturn(
-							fail("NOT_FOUND", "Leave policy not found"),
+							errorResult.fail("NOT_FOUND", {
+								publicMessage: "The requested resource was not found",
+							}),
 						);
 					}
 					const sensitive = await assertLeaveRequestSensitiveReadAllowed(
@@ -1013,7 +1035,7 @@ export async function listLeaveRequests(
 				return sequentialOutcome1.value;
 			}
 
-			return ok({
+			return errorResult.ok({
 				...page.data,
 				requests: filtered,
 				totalCount: filtered.length,
@@ -1032,10 +1054,7 @@ export async function listPendingApprovalLeaveRequests(
 		query: HUMAN_RESOURCES_QUERY_LEAVE_REQUEST_LIST_PENDING_APPROVAL,
 		execute: async (data, { store, identityResolver }) => {
 			if (!identityResolver) {
-				return fail(
-					"UNAUTHORIZED",
-					"Human Resources identity resolver port is required",
-				);
+				return errorResult.fail("UNAUTHORIZED");
 			}
 
 			// Resolve the manager identity from the actor user ID
@@ -1047,11 +1066,11 @@ export async function listPendingApprovalLeaveRequests(
 				return managerIdentity;
 			}
 			if (!managerIdentity.data) {
-				return fail(
-					"FORBIDDEN",
-					"Actor is not an employee",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
-				);
+				return errorResult.fail("FORBIDDEN", {
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_FORBIDDEN,
+					),
+				});
 			}
 
 			return store.listPendingApprovalLeaveRequests({
@@ -1074,10 +1093,7 @@ export async function listTeamCalendarLeaveRequests(
 		query: HUMAN_RESOURCES_QUERY_LEAVE_REQUEST_TEAM_CALENDAR,
 		execute: async (data, { store, identityResolver }) => {
 			if (!identityResolver) {
-				return fail(
-					"UNAUTHORIZED",
-					"Human Resources identity resolver port is required",
-				);
+				return errorResult.fail("UNAUTHORIZED");
 			}
 
 			// Resolve the manager identity from the actor user ID
@@ -1089,11 +1105,11 @@ export async function listTeamCalendarLeaveRequests(
 				return managerIdentity;
 			}
 			if (!managerIdentity.data) {
-				return fail(
-					"FORBIDDEN",
-					"Actor is not an employee",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
-				);
+				return errorResult.fail("FORBIDDEN", {
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_FORBIDDEN,
+					),
+				});
 			}
 
 			return store.listTeamCalendarLeaveRequests({

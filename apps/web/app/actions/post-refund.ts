@@ -1,18 +1,14 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { type Payment, postRefund } from "@afenda/payments";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { forbidUnlessPermission } from "@/app/actions/permission-gate";
 import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
 import { createPaymentsCommandOptions } from "@/lib/erp/payments-command-options";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export type PostRefundActionState = ActionResult<{ payment: Payment }> | null;
@@ -55,11 +51,10 @@ export async function postRefundAction(
 				reference: formData.get("reference"),
 			});
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid refund code, original payment, and amount.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage:
+						"Enter a valid refund code, original payment, and amount.",
+				});
 			}
 			const mapped = mapPackageResult(
 				await postRefund(

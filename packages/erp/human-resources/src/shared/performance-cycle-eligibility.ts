@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
 	humanResourcesErrorDetails,
@@ -49,11 +49,12 @@ export function assertEmploymentEligibleForPerformanceCycle(input: {
 			tenureDays,
 		})
 	) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Employment does not meet performance cycle eligibility criteria",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }

@@ -1,4 +1,4 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type {
 	ChangeRequestStatus,
@@ -144,5 +144,5 @@ export function decideChangeRequestTransition(input: {
 			requiredReason: "decision_reason",
 		});
 	}
-	return ok(definition);
+	return errorResult.ok(definition);
 }

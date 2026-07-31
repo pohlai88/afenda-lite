@@ -1,4 +1,4 @@
-import { ok } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 import type { HumanResourcesEmployeeId } from "../../src/brands";
 import type { HumanResourcesCommandOptions } from "../../src/command-options";
 import { createEmployee } from "../../src/core/employee";
@@ -149,7 +149,7 @@ export function createHumanResourcesTestPrivacyPort(
 			const tenantRecords = records.filter(
 				(record) => record.organizationId === context.organizationId,
 			);
-			return await ok({
+			return await errorResult.ok({
 				exportReference: `test://organizations/${context.organizationId}/exports/subject`,
 				recordCount: tenantRecords.length,
 				records: tenantRecords,
@@ -157,36 +157,38 @@ export function createHumanResourcesTestPrivacyPort(
 		},
 		async evaluateAnonymization(_context) {
 			if (legalHold?.active === true) {
-				return await ok({
+				return await errorResult.ok({
 					allowed: false,
 					reasonCode: legalHold.reasonCode,
 				});
 			}
-			return await ok({ allowed: true });
+			return await errorResult.ok({ allowed: true });
 		},
 		async rectifySubject() {
-			return await ok({ rectifiedRecordCount: 0 });
+			return await errorResult.ok({ rectifiedRecordCount: 0 });
 		},
 		async anonymizeSubject(context) {
 			if (legalHold?.active === true) {
-				return await ok({ anonymizedRecordCount: 0 });
+				return await errorResult.ok({ anonymizedRecordCount: 0 });
 			}
 			const tenantRecords = records.filter(
 				(record) => record.organizationId === context.organizationId,
 			);
-			return await ok({ anonymizedRecordCount: tenantRecords.length });
+			return await errorResult.ok({
+				anonymizedRecordCount: tenantRecords.length,
+			});
 		},
 		async placeLegalHold() {
-			return await ok({ legalHoldId: "test-hold" });
+			return await errorResult.ok({ legalHoldId: "test-hold" });
 		},
 		async releaseLegalHold() {
-			return await ok(undefined);
+			return await errorResult.ok(undefined);
 		},
 		async redactDownstream() {
-			return await ok({ redactedSystemCount: 0 });
+			return await errorResult.ok({ redactedSystemCount: 0 });
 		},
 		async getSubjectPrivacyCase(context) {
-			return await ok({
+			return await errorResult.ok({
 				organizationId: context.organizationId,
 				subjectEmployeeId: context.subjectEmployeeId,
 				exports: [],

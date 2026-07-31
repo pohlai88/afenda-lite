@@ -1,4 +1,4 @@
-import { fail, ok } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 import { describe, expect, it, vi } from "vitest";
 import {
 	createMemoryBulkCheckpointPort,
@@ -46,7 +46,7 @@ function dependencies(
 
 describe("Human Resources source-specific bulk pipelines", () => {
 	it("validates employee rows in dry-run mode without calling the command", async () => {
-		const create = vi.fn(async () => ok({ id: employeeId }));
+		const create = vi.fn(async () => errorResult.ok({ id: employeeId }));
 		const result = await runEmployeeBulkImport(
 			request(
 				"employee",
@@ -82,7 +82,7 @@ describe("Human Resources source-specific bulk pipelines", () => {
 	});
 
 	it("partially rejects assignments and stamps command context", async () => {
-		const create = vi.fn(async () => ok({ id: positionId }));
+		const create = vi.fn(async () => errorResult.ok({ id: positionId }));
 		const result = await runAssignmentBulkImport(
 			request("assignment", [
 				{
@@ -136,7 +136,7 @@ describe("Human Resources source-specific bulk pipelines", () => {
 	});
 
 	it("replays a completed leave-entitlement batch without a second command", async () => {
-		const grant = vi.fn(async () => ok({ id: policyId }));
+		const grant = vi.fn(async () => errorResult.ok({ id: policyId }));
 		const input = request("leave_entitlement", [
 			{
 				sourceReference: "leave-1",
@@ -167,7 +167,7 @@ describe("Human Resources source-specific bulk pipelines", () => {
 	});
 
 	it("stamps attendance source reference and row idempotency", async () => {
-		const record = vi.fn(async () => ok({ id: employeeId }));
+		const record = vi.fn(async () => errorResult.ok({ id: employeeId }));
 		const result = await runAttendanceBulkImport(
 			request("attendance", [
 				{
@@ -201,8 +201,10 @@ describe("Human Resources source-specific bulk pipelines", () => {
 	it("maps compensation command conflicts to a row rejection and continues", async () => {
 		const create = vi.fn(async (input: { reason: string }) =>
 			input.reason === "duplicate"
-				? fail("CONFLICT", "Compensation already exists")
-				: ok({ id: employeeId }),
+				? errorResult.fail("CONFLICT", {
+						publicMessage: "Compensation already exists",
+					})
+				: errorResult.ok({ id: employeeId }),
 		);
 		const base = {
 			employeeId,
@@ -241,7 +243,7 @@ describe("Human Resources source-specific bulk pipelines", () => {
 	});
 
 	it("validates learning assignments and preserves deterministic replay", async () => {
-		const assign = vi.fn(async () => ok({ id: courseId }));
+		const assign = vi.fn(async () => errorResult.ok({ id: courseId }));
 		const input = request("learning_assignment", [
 			{
 				sourceReference: "learning-1",

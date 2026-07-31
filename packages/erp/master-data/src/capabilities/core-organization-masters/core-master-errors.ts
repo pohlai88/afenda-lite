@@ -1,28 +1,21 @@
-import { fail, type Result } from "@afenda/errors/result";
-
-import type { MasterFailureDetails } from "../../contracts/reasons";
+import { errorResult, type Result } from "@afenda/errors";
 import type { MasterDependency } from "../../types";
 
 export function coreMasterNotFound(
-	entityType: string,
-	entityId: string,
+	_entityType: string,
+	_entityId: string,
 ): Result<never> {
-	return fail("NOT_FOUND", `${entityType} not found`, {
-		reason: "MASTER_NOT_FOUND",
-		entityType,
-		entityId,
-	} satisfies MasterFailureDetails);
+	return errorResult.fail("NOT_FOUND", {
+		publicMessage: "The requested resource was not found",
+	});
 }
 
 export function coreMasterDependencyBlocked(
-	entityType: string,
-	entityId: string,
-	dependencies: readonly MasterDependency[],
+	_entityType: string,
+	_entityId: string,
+	_dependencies: readonly MasterDependency[],
 ): Result<never> {
-	return fail("CONFLICT", `${entityType} has active dependencies`, {
-		reason: "MASTER_DEPENDENCY_BLOCKED",
-		entityType,
-		entityId,
-		dependencies,
-	} satisfies MasterFailureDetails);
+	return errorResult.fail("CONFLICT", {
+		publicMessage: "The request conflicts with current state",
+	});
 }

@@ -1,4 +1,4 @@
-import { fail } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 import { z } from "zod";
 import { requireSalesCommandPermission } from "../../authorization";
 import { salesHoldIdSchema, salesOrderIdSchema } from "../../brands";
@@ -25,11 +25,9 @@ export async function placeSalesOrderHold(
 ) {
 	const parsed = placeSalesOrderHoldInputSchema.safeParse(input);
 	if (!parsed.success) {
-		return fail(
-			"BAD_REQUEST",
-			"Enter a valid sales-order hold",
-			parsed.error.flatten(),
-		);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Enter a valid sales-order hold",
+		});
 	}
 	const deps = resolveSalesDeps(options);
 	const auth = await requireSalesCommandPermission(deps.authorization, {
@@ -57,11 +55,9 @@ export async function resolveSalesOrderHold(
 ) {
 	const parsed = resolveSalesOrderHoldInputSchema.safeParse(input);
 	if (!parsed.success) {
-		return fail(
-			"BAD_REQUEST",
-			"Enter a valid sales-order hold resolution",
-			parsed.error.flatten(),
-		);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Enter a valid sales-order hold resolution",
+		});
 	}
 	const deps = resolveSalesDeps(options);
 	const auth = await requireSalesCommandPermission(deps.authorization, {

@@ -44,7 +44,7 @@ If code needs sharing across packages, place it according to its nature:
 
 | Code Type | Correct Location | Example |
 |-----------|------------------|---------|
-| Universal primitives | Foundation (`@afenda/errors`) | `AppError`, `Result<T>` |
+| Universal primitives | Foundation (`@afenda/errors`) | canonical `Result<T>` and opaque failure capabilities |
 | Infrastructure contracts | Runtime Infrastructure (`@afenda/http`) | Fetch compose, correlation |
 | Data plane contracts | Data Plane (`@afenda/db`) | Schema definitions (not mutations) |
 | Business orchestration | Application (`apps/web/modules/*`) | Cross-module workflows |

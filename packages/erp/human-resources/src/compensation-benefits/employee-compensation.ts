@@ -1,5 +1,4 @@
-import type { Result } from "@afenda/errors/result";
-import { fail, ok } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { HumanResourcesCommandOptions } from "../command-options";
 import { getEmployment } from "../core/employment";
 import {
@@ -77,13 +76,12 @@ async function assertEmploymentAssignmentScope(
 		return employment;
 	}
 	if (employment.data.employeeId !== input.employeeId) {
-		return fail(
-			"BAD_REQUEST",
-			"Employee does not match employment assignment scope",
-			humanResourcesErrorDetails(
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "The request is invalid",
+			internalContext: humanResourcesErrorDetails(
 				HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 			),
-		);
+		});
 	}
 	return { ok: true, data: undefined };
 }
@@ -413,7 +411,7 @@ export function getEmployeeCompensation(
 			if (compensation.data === null) {
 				return notFound("Employee compensation not found");
 			}
-			return ok(compensation.data);
+			return errorResult.ok(compensation.data);
 		},
 	});
 }

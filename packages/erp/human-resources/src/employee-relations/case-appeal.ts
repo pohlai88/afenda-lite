@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
@@ -43,7 +43,9 @@ export function recordEmployeeCaseAppeal(
 				loaded.data.findingCode === null ||
 				loaded.data.findingRecordedAt === null
 			) {
-				return fail("BAD_REQUEST", "Finding must be recorded before an appeal");
+				return errorResult.fail("BAD_REQUEST", {
+					publicMessage: "The request is invalid",
+				});
 			}
 			const fingerprint = fingerprintEmployeeCaseAppeal({
 				caseId: data.caseId,
@@ -59,13 +61,14 @@ export function recordEmployeeCaseAppeal(
 			}
 			if (existing.data !== null) {
 				if (existing.data.createRequestFingerprint !== fingerprint) {
-					return fail(
-						"CONFLICT",
-						"Idempotency key reused with different payload",
-						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-					);
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+						internalContext: humanResourcesErrorDetails(
+							HUMAN_RESOURCES_ERROR_CONFLICT,
+						),
+					});
 				}
-				return ok(existing.data.appeal);
+				return errorResult.ok(existing.data.appeal);
 			}
 			return store.recordEmployeeCaseAppeal(
 				{

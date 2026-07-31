@@ -1,15 +1,11 @@
 "use server";
 
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { type Delivery, getDeliveryById } from "@afenda/fulfillment";
 import { z } from "zod";
-
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
 import { createFulfillmentCommandOptions } from "@/lib/erp/fulfillment-command-options";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export interface GetDeliveryActionData {
@@ -28,11 +24,9 @@ export async function getDeliveryAction(
 		execute: async (session) => {
 			const parsed = parseSchema(getDeliverySchema, deliveryId);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid delivery id.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid delivery id.",
+				});
 			}
 			const result = await getDeliveryById(
 				{
@@ -47,7 +41,9 @@ export async function getDeliveryAction(
 				return mapped;
 			}
 			if (mapped.data === null) {
-				return actionFail("NOT_FOUND", "Delivery not found");
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "Delivery not found",
+				});
 			}
 			return { ok: true, data: { delivery: mapped.data } };
 		},

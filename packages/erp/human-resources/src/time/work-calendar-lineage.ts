@@ -1,4 +1,4 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type { HumanResourcesWorkCalendarId } from "../brands";
 import { selectEffectiveLineageRecord } from "../shared/effective-lineage";
@@ -30,7 +30,7 @@ export async function resolveWorkCalendarLineageAtAsOf(
 		return calendar;
 	}
 	if (calendar.data === null) {
-		return ok(null);
+		return errorResult.ok(null);
 	}
 
 	const selectedCalendar = calendar.data;
@@ -41,7 +41,7 @@ export async function resolveWorkCalendarLineageAtAsOf(
 		return calendarFamily;
 	}
 
-	return ok(
+	return errorResult.ok(
 		selectEffectiveLineageRecord({
 			assignedId: selectedCalendar.id,
 			records: calendarFamily.data.filter(

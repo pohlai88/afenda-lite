@@ -1,4 +1,4 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	failInactiveReference,
 	failReferenceDimensionMismatch,
@@ -34,7 +34,7 @@ function requireActiveReference<TReference extends { active: boolean }>(
 	if (!reference.active) {
 		return failInactiveReference(referenceFamily);
 	}
-	return ok(reference);
+	return errorResult.ok(reference);
 }
 
 export async function resolveActiveCountry(
@@ -72,7 +72,7 @@ export async function resolveUomDimension(
 	const reference = await store.getUomDimensionById(id);
 	return reference === null
 		? failReferenceNotFound("uom_dimension")
-		: ok(reference);
+		: errorResult.ok(reference);
 }
 
 export async function resolveActiveUom(
@@ -86,13 +86,13 @@ export function validateItemUomCompatibility(
 	input: UomDimensionCompatibilityInput,
 ): Result<{ direction: typeof uomConversionDirection }> {
 	if (input.baseUom.dimensionId === input.alternateUom.dimensionId) {
-		return ok({ direction: uomConversionDirection });
+		return errorResult.ok({ direction: uomConversionDirection });
 	}
 	if (
 		input.policy === "item_governed_packaging" &&
 		input.isApprovedPackagingOrCountConversion === true
 	) {
-		return ok({ direction: uomConversionDirection });
+		return errorResult.ok({ direction: uomConversionDirection });
 	}
 	return failReferenceDimensionMismatch();
 }

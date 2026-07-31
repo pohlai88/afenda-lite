@@ -39,6 +39,7 @@ import {
 	TALENT_SUCCESSION_SENSITIVE_FIELD_NAMES,
 	WORKFORCE_PLANNING_EMPLOYEE_ACTUAL_FIELDS,
 } from "../src/shared/field-projection";
+import { humanResourcesContextFromResult } from "./helpers/result-details";
 
 function grantingAuthorization(
 	permissions: ReadonlySet<string>,
@@ -177,7 +178,10 @@ describe("sensitive-domain policies", () => {
 		);
 		expect(deniedScope).toMatchObject({
 			ok: false,
-			details: { denyCode: "subject_scope_denied" },
+			code: "FORBIDDEN",
+		});
+		expect(humanResourcesContextFromResult(deniedScope)).toMatchObject({
+			denyCode: "subject_scope_denied",
 		});
 	});
 
@@ -268,7 +272,10 @@ describe("sensitive-domain policies", () => {
 		);
 		expect(deniedScope).toMatchObject({
 			ok: false,
-			details: { denyCode: "subject_scope_denied" },
+			code: "FORBIDDEN",
+		});
+		expect(humanResourcesContextFromResult(deniedScope)).toMatchObject({
+			denyCode: "subject_scope_denied",
 		});
 	});
 
@@ -339,7 +346,10 @@ describe("sensitive-domain policies", () => {
 		);
 		expect(deniedScope).toMatchObject({
 			ok: false,
-			details: { denyCode: "subject_scope_denied" },
+			code: "FORBIDDEN",
+		});
+		expect(humanResourcesContextFromResult(deniedScope)).toMatchObject({
+			denyCode: "subject_scope_denied",
 		});
 	});
 
@@ -533,7 +543,10 @@ describe("sensitive-domain policies", () => {
 		);
 		expect(managerHandoff).toMatchObject({
 			ok: false,
-			details: { denyCode: "subject_scope_denied" },
+			code: "FORBIDDEN",
+		});
+		expect(humanResourcesContextFromResult(managerHandoff)).toMatchObject({
+			denyCode: "subject_scope_denied",
 		});
 
 		const managerGrade = await authorizeHumanResourcesOperation(
@@ -658,7 +671,12 @@ describe("sensitive-domain policies", () => {
 		);
 		expect(ownRegisterDeniedForOther).toMatchObject({
 			ok: false,
-			details: { denyCode: "subject_scope_denied" },
+			code: "FORBIDDEN",
+		});
+		expect(
+			humanResourcesContextFromResult(ownRegisterDeniedForOther),
+		).toMatchObject({
+			denyCode: "subject_scope_denied",
 		});
 
 		const hrOk = await authorizeHumanResourcesOperation(

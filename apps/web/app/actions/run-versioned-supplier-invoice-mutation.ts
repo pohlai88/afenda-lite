@@ -1,6 +1,10 @@
 "use server";
 
-import type { Result } from "@afenda/errors/result";
+import {
+	type Result as ActionResult,
+	errorResult,
+	type Result,
+} from "@afenda/errors";
 import type { SupplierInvoice } from "@afenda/payables";
 import { z } from "zod";
 
@@ -8,10 +12,7 @@ import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
 import { createPayablesCommandOptions } from "@/lib/erp/payables-command-options";
 import { revalidatePayablesPaths } from "@/lib/erp/revalidate-payables-paths";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
+
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export type VersionedSupplierInvoiceActionState = ActionResult<{
@@ -55,11 +56,9 @@ export async function runVersionedSupplierInvoiceMutation(args: {
 				expectedVersion: args.formData.get("expectedVersion"),
 			});
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid invoice and expected version.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid invoice and expected version.",
+				});
 			}
 			const mapped = mapPackageResult(
 				await args.mutate(

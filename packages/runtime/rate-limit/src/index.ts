@@ -7,7 +7,7 @@ export {
 	resetResolvedRateLimitBackend,
 	resolveRateLimitBackend,
 } from "./resolve-store";
-export { toRateLimitAppError } from "./to-app-error";
+export { toRateLimitFailure } from "./to-failure";
 export type {
 	BucketPolicy,
 	RateLimitBucket,

@@ -1,4 +1,4 @@
-import type { Result } from "@afenda/errors/result";
+import type { Result } from "@afenda/errors";
 
 export const HUMAN_RESOURCES_BULK_ENTITY_TYPES = [
 	"employee",

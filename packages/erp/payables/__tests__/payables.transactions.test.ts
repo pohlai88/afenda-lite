@@ -1,4 +1,4 @@
-import { fail, ok } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -21,7 +21,7 @@ const goodsReceiptId = "00000000-0000-4000-8000-000000000004";
 const purchaseOrderMatch: PurchaseOrderMatchQueryPort = {
 	getPurchaseOrderMatchBasis() {
 		return Promise.resolve(
-			ok({
+			errorResult.ok({
 				currencyCode: "USD",
 				lines: [{ itemId, quantity: "10", unitPrice: "40" }],
 				purchaseOrderId,
@@ -36,7 +36,7 @@ const purchaseOrderMatch: PurchaseOrderMatchQueryPort = {
 const goodsReceiptMatch: GoodsReceiptMatchQueryPort = {
 	getGoodsReceiptMatchBasis() {
 		return Promise.resolve(
-			ok({
+			errorResult.ok({
 				goodsReceiptId,
 				lines: [{ itemId, quantityReceived: "10" }],
 				purchaseOrderId,
@@ -59,7 +59,7 @@ describe("payables transaction rollback", () => {
 		};
 		const effects = {
 			emit() {
-				return Promise.resolve(ok(undefined));
+				return Promise.resolve(errorResult.ok(undefined));
 			},
 		};
 		const common = {
@@ -112,7 +112,7 @@ describe("payables transaction rollback", () => {
 				...common,
 				effects: {
 					emit() {
-						return Promise.resolve(fail("INTERNAL_ERROR", "outbox failed"));
+						return Promise.resolve(errorResult.fail("INTERNAL_ERROR"));
 					},
 				},
 			},

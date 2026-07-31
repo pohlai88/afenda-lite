@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	type HumanResourcesCompensationReviewCycleId,
 	type HumanResourcesCompensationReviewId,
@@ -67,7 +67,7 @@ function getReviewCycle(
 			HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 		);
 	}
-	return ok(cycle);
+	return errorResult.ok(cycle);
 }
 
 function listReviewsByCycle(
@@ -152,15 +152,15 @@ export function createMemoryCompensationReviewCycleMethods(
 		async getCompensationReviewCycle(input) {
 			const cycle = state.compensationReviewCycles.get(input.cycleId) ?? null;
 			if (cycle && cycle.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok(cycle === null ? null : cloneCycle(cycle));
+			return await errorResult.ok(cycle === null ? null : cloneCycle(cycle));
 		},
 
 		async findCompensationReviewCycleByIdempotencyKey(input) {
 			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
 			const record = state.cycleIdempotencyByKey.get(key) ?? null;
-			return await ok(
+			return await errorResult.ok(
 				record === null
 					? null
 					: {
@@ -180,7 +180,7 @@ export function createMemoryCompensationReviewCycleMethods(
 				existing &&
 				existing.createRequestFingerprint === record.createRequestFingerprint
 			) {
-				return ok(cloneCycle(existing.cycle));
+				return errorResult.ok(cloneCycle(existing.cycle));
 			}
 			if (existing) {
 				return conflict("Idempotency key already used with different data");
@@ -194,11 +194,12 @@ export function createMemoryCompensationReviewCycleMethods(
 					cycleValue.code === record.code,
 			);
 			if (duplicate) {
-				return fail(
-					"CONFLICT",
-					"Compensation review cycle with this code already exists",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_CONFLICT,
+					),
+				});
 			}
 
 			const periodCheck = assertValidReviewCyclePeriod({
@@ -260,7 +261,7 @@ export function createMemoryCompensationReviewCycleMethods(
 				return audit;
 			}
 
-			return ok(cloneCycle(cycle));
+			return errorResult.ok(cloneCycle(cycle));
 		},
 
 		async openCompensationReviewCycle(input, ports, meta) {
@@ -306,7 +307,7 @@ export function createMemoryCompensationReviewCycleMethods(
 			const pageItems = cycles
 				.slice(start, start + input.pageSize)
 				.map((cycle) => cloneCycle(cycle));
-			return await ok({
+			return await errorResult.ok({
 				cycles: pageItems,
 				totalCount,
 				page: input.page,
@@ -320,7 +321,7 @@ export function createMemoryCompensationReviewCycleMethods(
 				input.organizationId,
 				input.cycleId,
 			).map((review) => ({ ...review }));
-			return await ok(reviews);
+			return await errorResult.ok(reviews);
 		},
 	};
 }
@@ -390,7 +391,7 @@ async function transitionReviewCycleStatus(
 		return audit;
 	}
 
-	return ok(cloneCycle(updated));
+	return errorResult.ok(cloneCycle(updated));
 }
 
 export interface MemoryCompensationReviewLifecycleDeps {
@@ -415,12 +416,12 @@ export function createMemoryReviewLifecycleDeps(
 		getReviewCycle: async (organizationId, cycleId) => {
 			const cycle = state.compensationReviewCycles.get(cycleId) ?? null;
 			if (cycle && cycle.organizationId !== organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok(cycle === null ? null : cloneCycle(cycle));
+			return await errorResult.ok(cycle === null ? null : cloneCycle(cycle));
 		},
 		listCycleReviews: async (organizationId, cycleId) =>
-			ok(listReviewsByCycle(state, organizationId, cycleId)),
+			errorResult.ok(listReviewsByCycle(state, organizationId, cycleId)),
 		getActiveBaseAmount: async (organizationId, employmentId) => {
 			const active =
 				Array.from(state.employeeCompensations.values()).find(
@@ -429,7 +430,7 @@ export function createMemoryReviewLifecycleDeps(
 						compensation.employmentId === employmentId &&
 						isEmployeeCompensationActive(compensation.status),
 				) ?? null;
-			return await ok(active?.baseAmount ?? null);
+			return await errorResult.ok(active?.baseAmount ?? null);
 		},
 	};
 }
@@ -511,7 +512,7 @@ export async function memoryRecordCompensationRecommendation(
 
 	const budgetCheck = await assertCompensationReviewBudgetForMutation(
 		{
-			getCycle: async () => ok(cycleResult.data),
+			getCycle: async () => errorResult.ok(cycleResult.data),
 			listCycleReviews: () =>
 				deps.listCycleReviews(input.organizationId, review.cycleId),
 			getActiveBaseAmount: (employmentId) =>
@@ -557,7 +558,7 @@ export async function memoryRecordCompensationRecommendation(
 		return audit;
 	}
 
-	return ok({ ...updated });
+	return errorResult.ok({ ...updated });
 }
 
 export async function memoryFinalizeCompensationReview(
@@ -615,7 +616,7 @@ export async function memoryFinalizeCompensationReview(
 
 	const budgetCheck = await assertCompensationReviewBudgetForMutation(
 		{
-			getCycle: async () => ok(cycleResult.data),
+			getCycle: async () => errorResult.ok(cycleResult.data),
 			listCycleReviews: () =>
 				deps.listCycleReviews(input.organizationId, review.cycleId),
 			getActiveBaseAmount: (employmentId) =>
@@ -673,7 +674,7 @@ export async function memoryFinalizeCompensationReview(
 		return audit;
 	}
 
-	return ok({ ...updated });
+	return errorResult.ok({ ...updated });
 }
 
 export function memoryApplyReviewCompensationLink(
@@ -707,5 +708,5 @@ export function memoryApplyReviewCompensationLink(
 		updated.createIdempotencyKey,
 	);
 	state.reviewIdempotencyByKey.set(key, updated);
-	return ok({ ...updated });
+	return errorResult.ok({ ...updated });
 }

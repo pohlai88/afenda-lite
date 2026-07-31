@@ -1,5 +1,6 @@
 "use server";
 
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import {
 	type ApprovedPayrollHandoff,
 	approvedPayrollHandoffSchema,
@@ -9,7 +10,6 @@ import {
 	queuePayrollDelivery,
 } from "@afenda/human-resources";
 import { z } from "zod";
-
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runHrPayrollDeliveryOperatorPermissionAction as runOperatorPermissionAction } from "@/app/actions/run-hr-operator-permission-action";
 import {
@@ -18,10 +18,6 @@ import {
 	recordPayrollDeliveryFeedback,
 	recoverPendingPayrollDeliveries,
 } from "@/modules/platform/domain/human-resources-payroll-delivery";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 const queueSchema = z.object({
@@ -57,11 +53,9 @@ export async function queuePayrollDeliveryAction(input: {
 		execute: async (session) => {
 			const parsed = parseSchema(queueSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid payroll delivery.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid payroll delivery.",
+				});
 			}
 			const result = await queuePayrollDelivery(
 				{
@@ -94,11 +88,9 @@ export async function publishPayrollDeliveryAction(input: {
 		execute: async (session) => {
 			const parsed = parseSchema(deliverySchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid payroll delivery.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid payroll delivery.",
+				});
 			}
 			return mapPackageResult(
 				await publishPayrollDelivery(
@@ -127,11 +119,9 @@ export async function queuePayrollDeliveryCorrectionAction(input: {
 		execute: async (session) => {
 			const parsed = parseSchema(correctionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid corrected payroll delivery.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid corrected payroll delivery.",
+				});
 			}
 			return mapPackageResult(
 				await queuePayrollDelivery(
@@ -165,11 +155,9 @@ export async function recordPayrollDeliveryFeedbackAction(input: {
 		execute: async (session) => {
 			const parsed = parseSchema(feedbackSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter valid payroll feedback.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter valid payroll feedback.",
+				});
 			}
 			return mapPackageResult(
 				await recordPayrollDeliveryFeedback(
@@ -199,11 +187,9 @@ export async function recoverPayrollDeliveriesAction(input?: {
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(recoverySchema, input ?? {});
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid recovery limit.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid recovery limit.",
+				});
 			}
 			const result = await recoverPendingPayrollDeliveries({
 				organizationId: session.orgId,

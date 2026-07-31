@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { HumanResourcesEmployeeId } from "@afenda/human-resources/brands";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -33,7 +33,7 @@ function createOrgScopedInventory(
 ): PrivacySubjectInventoryPort {
 	return {
 		async listSubjectRecords(input) {
-			return await ok(recordsByOrg.get(input.organizationId) ?? []);
+			return await errorResult.ok(recordsByOrg.get(input.organizationId) ?? []);
 		},
 	};
 }
@@ -64,7 +64,7 @@ describe("Human Resources privacy composition port", () => {
 			): Promise<Result<{ id: string; organizationId: string }>> {
 				auditCalls.push(input);
 				const command = input as { organizationId: string };
-				return await ok({
+				return await errorResult.ok({
 					id: randomUUID(),
 					organizationId: command.organizationId,
 				});

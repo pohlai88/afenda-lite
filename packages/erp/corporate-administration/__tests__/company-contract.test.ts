@@ -28,7 +28,7 @@ import {
 	userIdSchema,
 } from "@afenda/corporate-administration";
 import { createMemoryCorporateAdministrationLegalCompanyStore } from "@afenda/corporate-administration/testing";
-import { ok } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 import { describe, expect, it } from "vitest";
 import { createFixedCorporateAdministrationClock } from "./helpers/fixed-clock";
 import { createInlineCorporateAdministrationTransactionPort } from "./helpers/inline-transaction";
@@ -42,7 +42,6 @@ const correlationId = correlationIdSchema.parse("corr-company-contract");
 const idempotencyKey = idempotencyKeySchema.parse("idem-company-contract");
 const legalCompanyId = "018f4ace-5986-73a2-9c4d-111111111111";
 const jurisdictionProfileId = "018f4ace-5986-73a2-9c4d-222222222222";
-
 function commandOptions(): CorporateAdministrationCommandOptions {
 	return {
 		organizationId,
@@ -54,7 +53,6 @@ function commandOptions(): CorporateAdministrationCommandOptions {
 		},
 	};
 }
-
 function queryOptions(): CorporateAdministrationQueryOptions {
 	return {
 		organizationId,
@@ -65,7 +63,6 @@ function queryOptions(): CorporateAdministrationQueryOptions {
 		},
 	};
 }
-
 function deniedQueryOptions(): CorporateAdministrationQueryOptions {
 	return {
 		organizationId,
@@ -76,7 +73,6 @@ function deniedQueryOptions(): CorporateAdministrationQueryOptions {
 		},
 	};
 }
-
 function company(version = 3): LegalCompany {
 	return legalCompanySchema.parse({
 		organizationId,
@@ -100,7 +96,6 @@ function company(version = 3): LegalCompany {
 		version,
 	});
 }
-
 function profile(input?: {
 	from?: string;
 	to?: string | null;
@@ -130,11 +125,10 @@ function profile(input?: {
 		version: input?.version ?? 1,
 	};
 }
-
 function activeRulePort(): CompanyJurisdictionRulePort {
 	return {
 		listEntityTypeRules: async () =>
-			ok([
+			errorResult.ok([
 				{
 					jurisdictionCountryCode: "MY",
 					entityTypes: ["draft_legal_company", "private_limited_company"],
@@ -143,18 +137,16 @@ function activeRulePort(): CompanyJurisdictionRulePort {
 			]),
 	};
 }
-
 function activePartyPort(): CompanyPartyReferencePort {
 	return {
 		getOrganizationParty: async () =>
-			ok({
+			errorResult.ok({
 				partyId: "party-1",
 				kind: "organization",
 				active: true,
 			}),
 	};
 }
-
 function durableCommandDependencies(store: LegalCompanyStore) {
 	return {
 		store,
@@ -172,7 +164,6 @@ function durableCommandDependencies(store: LegalCompanyStore) {
 		},
 	};
 }
-
 function createStore(input?: {
 	currentCompany?: LegalCompany | null;
 	existingProfiles?: readonly CompanyJurisdictionProfile[];
@@ -182,28 +173,31 @@ function createStore(input?: {
 	lastListPageOrganizationId?: typeof organizationId;
 } {
 	const store = {
-		getLegalCompany: async () => ok(input?.currentCompany ?? company()),
+		getLegalCompany: async () =>
+			errorResult.ok(input?.currentCompany ?? company()),
 		listLegalCompanies: async (listInput) => {
 			store.lastListPageOrganizationId = listInput.organizationId;
-			return ok({
+			return errorResult.ok({
 				items: [],
 				nextCursor: null,
 			} satisfies LegalCompanyListPage);
 		},
-		registerLegalCompanyDraft: async () => ok(company(1)),
+		registerLegalCompanyDraft: async () => errorResult.ok(company(1)),
 		updateLegalCompanyProfile: async (updateInput) => {
 			store.lastUpdate = updateInput;
-			return ok(company(updateInput.expectedVersion + 1));
+			return errorResult.ok(company(updateInput.expectedVersion + 1));
 		},
 		insertJurisdictionProfile: async (setInput) => {
 			store.lastSet = setInput;
-			return ok(profile());
+			return errorResult.ok(profile());
 		},
-		supersedeJurisdictionProfile: async () => ok(profile({ version: 2 })),
-		findJurisdictionProfileAsOf: async () => ok(profile()),
-		listJurisdictionProfiles: async () => ok(input?.existingProfiles ?? []),
+		supersedeJurisdictionProfile: async () =>
+			errorResult.ok(profile({ version: 2 })),
+		findJurisdictionProfileAsOf: async () => errorResult.ok(profile()),
+		listJurisdictionProfiles: async () =>
+			errorResult.ok(input?.existingProfiles ?? []),
 		hasOverlappingJurisdictionProfile: async (overlapInput) =>
-			ok(
+			errorResult.ok(
 				(input?.existingProfiles ?? []).some(
 					(existing) =>
 						existing.jurisdictionProfileId !==
@@ -211,8 +205,9 @@ function createStore(input?: {
 						existing.supersededAt === null,
 				),
 			),
-		lockLegalCompany: async () => ok(input?.currentCompany ?? company()),
-		getLegalCompanyTimeline: async () => ok([]),
+		lockLegalCompany: async () =>
+			errorResult.ok(input?.currentCompany ?? company()),
+		getLegalCompanyTimeline: async () => errorResult.ok([]),
 	} satisfies LegalCompanyStore & {
 		lastSet?: InsertJurisdictionProfileStoreInput;
 		lastUpdate?: UpdateLegalCompanyProfileStoreInput;
@@ -220,7 +215,6 @@ function createStore(input?: {
 	};
 	return store;
 }
-
 describe("Corporate Administration company contracts", () => {
 	it("registers a draft company with receipt, audit, and event in one command path", async () => {
 		const store = createMemoryCorporateAdministrationLegalCompanyStore();
@@ -255,7 +249,6 @@ describe("Corporate Administration company contracts", () => {
 				},
 			},
 		);
-
 		expect(result.ok).toBe(true);
 		if (!result.ok) {
 			return;
@@ -271,7 +264,6 @@ describe("Corporate Administration company contracts", () => {
 		expect(audits).toHaveLength(1);
 		expect(events).toHaveLength(1);
 		expect(JSON.stringify(events[0])).not.toContain("registeredName");
-
 		const duplicate = await registerLegalCompanyDraft(
 			{
 				companyCode: "AF-MY",
@@ -302,10 +294,8 @@ describe("Corporate Administration company contracts", () => {
 		);
 		expect(duplicate).toMatchObject({ ok: false, code: "CONFLICT" });
 	});
-
 	it("fails closed before package-level legal company reads", async () => {
 		const store = createStore();
-
 		const getResult = await getLegalCompany(
 			{ legalCompanyId: company().legalCompanyId },
 			deniedQueryOptions(),
@@ -318,12 +308,10 @@ describe("Corporate Administration company contracts", () => {
 				store,
 			},
 		);
-
 		expect(getResult).toMatchObject({ ok: false, code: "FORBIDDEN" });
 		expect(listResult).toMatchObject({ ok: false, code: "FORBIDDEN" });
 		expect(store.lastListPageOrganizationId).toBeUndefined();
 	});
-
 	it("sets a jurisdiction profile through tenant-scoped store and rule ports", async () => {
 		const store = createStore();
 		const result = await setCompanyJurisdictionProfile(
@@ -339,7 +327,6 @@ describe("Corporate Administration company contracts", () => {
 			commandOptions(),
 			durableCommandDependencies(store),
 		);
-
 		expect(result.ok).toBe(true);
 		expect(store.lastSet).toMatchObject({
 			organizationId,
@@ -348,7 +335,6 @@ describe("Corporate Administration company contracts", () => {
 			entityType: "private_limited_company",
 		});
 	});
-
 	it("rejects stale legal company profile updates before mutation", async () => {
 		const store = createStore({ currentCompany: company(4) });
 		const result = await updateLegalCompanyProfile(
@@ -363,19 +349,12 @@ describe("Corporate Administration company contracts", () => {
 			commandOptions(),
 			durableCommandDependencies(store),
 		);
-
 		expect(result).toMatchObject({
 			ok: false,
 			code: "CONFLICT",
-			details: {
-				reason: "CORPORATE_ADMINISTRATION_STALE_VERSION",
-				expectedVersion: 3,
-				actualVersion: 4,
-			},
 		});
 		expect(store.lastUpdate).toBeUndefined();
 	});
-
 	it("rejects overlapping jurisdiction profiles before persistence", async () => {
 		const store = createStore({
 			existingProfiles: [profile({ from: "2026-01-01", to: null })],
@@ -393,30 +372,22 @@ describe("Corporate Administration company contracts", () => {
 			commandOptions(),
 			durableCommandDependencies(store),
 		);
-
 		expect(result).toMatchObject({
 			ok: false,
 			code: "CONFLICT",
-			details: {
-				reason: "CORPORATE_ADMINISTRATION_EFFECTIVE_RANGE_OVERLAP",
-			},
 		});
 		expect(store.lastSet).toBeUndefined();
 	});
-
 	it("lists legal companies with tenant scope and default pagination", async () => {
 		const store = createStore();
 		const result = await listLegalCompanies(undefined, queryOptions(), {
 			store,
 		});
-
 		expect(result.ok).toBe(true);
 		expect(store.lastListPageOrganizationId).toBe(organizationId);
 	});
-
 	it("evaluates effective-time and recorded-time jurisdiction profile rules", () => {
 		const current = profile({ from: "2026-01-01", to: "2026-12-31" });
-
 		expect(
 			isFutureDatedProfile({
 				profile: current,
@@ -456,7 +427,6 @@ describe("Corporate Administration company contracts", () => {
 			}),
 		).toBe(false);
 	});
-
 	it("supersedes jurisdiction profiles through the required store port names", async () => {
 		const store = createStore({
 			existingProfiles: [profile({ from: "2026-01-01", to: null })],
@@ -477,7 +447,6 @@ describe("Corporate Administration company contracts", () => {
 			commandOptions(),
 			durableCommandDependencies(store),
 		);
-
 		expect(result.ok).toBe(true);
 	});
 });

@@ -1,4 +1,4 @@
-import { fail, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import { conflict, invalidState } from "./domain-guards";
 import type {
 	EmployeeCaseActionType,
@@ -40,13 +40,12 @@ export function assertPolicyValidationForAction(input: {
 			input.actionType === "suspension_recommendation") &&
 		!input.policyValidationRecorded
 	) {
-		return fail(
-			"BAD_REQUEST",
-			"Policy validation is required for this action",
-			{
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "The request is invalid",
+			internalContext: {
 				humanResourcesCode: "human_resources.invalid_input",
 			},
-		);
+		});
 	}
 	return { ok: true, data: undefined };
 }
@@ -56,13 +55,12 @@ export function assertInterimMeasureDates(input: {
 	reviewOn: string;
 }): Result<void> {
 	if (input.reviewOn < input.startsOn) {
-		return fail(
-			"BAD_REQUEST",
-			"Interim review date must be on or after start date",
-			{
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "The request is invalid",
+			internalContext: {
 				humanResourcesCode: "human_resources.invalid_input",
 			},
-		);
+		});
 	}
 	return { ok: true, data: undefined };
 }

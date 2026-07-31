@@ -1,16 +1,12 @@
 "use server";
 
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { type GoodsReceipt, reverseGoodsReceipt } from "@afenda/receiving";
 import { z } from "zod";
-
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
 import { createReceivingCommandOptions } from "@/lib/erp/receiving-command-options";
 import { revalidateReceivingPaths } from "@/lib/erp/receiving-revalidate";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export interface ReverseGoodsReceiptActionData {
@@ -41,11 +37,9 @@ export async function reverseGoodsReceiptAction(
 				reason: formData.get("reason"),
 			});
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid receipt, version, and reverse reason.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid receipt, version, and reverse reason.",
+				});
 			}
 			const result = await reverseGoodsReceipt(
 				{

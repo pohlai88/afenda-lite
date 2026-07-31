@@ -1,5 +1,4 @@
-import type { Result } from "@afenda/errors/result";
-import { ok } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type {
 	HumanResourcesAttendanceSessionId,
@@ -528,5 +527,5 @@ export async function runAttendanceExceptionDetection(
 		return sequentialOuterOutcome1.value;
 	}
 
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }

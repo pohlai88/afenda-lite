@@ -1,5 +1,6 @@
 "use server";
 
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import {
 	activateCourse,
 	archiveCourse,
@@ -38,7 +39,6 @@ import {
 	waiveAssignment,
 } from "@afenda/human-resources";
 import { z } from "zod";
-
 import {
 	hrMutationContextSchema as mutationContextSchema,
 	withHrSessionContext as withSessionContext,
@@ -46,10 +46,6 @@ import {
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runHrTalentOperatorPermissionAction as runOperatorPermissionAction } from "@/app/actions/run-hr-operator-permission-action";
 import { createHumanResourcesCommandOptions } from "@/lib/erp/human-resources-command-options";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -78,11 +74,9 @@ export async function createCourseAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid course.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid course.",
+				});
 			}
 			const result = await createCourse(
 				withSessionContext(session, correlationId, parsed.data),
@@ -115,11 +109,9 @@ export async function archiveCourseAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid course archive request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid course archive request.",
+				});
 			}
 			const result = await archiveCourse(
 				withSessionContext(session, correlationId, parsed.data),
@@ -152,11 +144,9 @@ export async function activateCourseAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid course activation request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid course activation request.",
+				});
 			}
 			const result = await activateCourse(
 				withSessionContext(session, correlationId, parsed.data),
@@ -193,11 +183,9 @@ export async function listCoursesAction(input?: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter valid course filters.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter valid course filters.",
+				});
 			}
 			const result = await listCourses(
 				withSessionContext(session, correlationId, parsed.data ?? {}),
@@ -240,11 +228,9 @@ export async function createSessionAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid learning session.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid learning session.",
+				});
 			}
 			const result = await createSession(
 				withSessionContext(session, correlationId, parsed.data),
@@ -285,11 +271,9 @@ export async function listSessionsAction(input?: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter valid session filters.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter valid session filters.",
+				});
 			}
 			const result = await listSessions(
 				withSessionContext(session, correlationId, parsed.data ?? {}),
@@ -324,11 +308,9 @@ export async function startSessionAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid session start request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid session start request.",
+				});
 			}
 			const result = await startSession(
 				withSessionContext(session, correlationId, parsed.data),
@@ -363,11 +345,9 @@ export async function completeSessionAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid session complete request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid session complete request.",
+				});
 			}
 			const result = await completeSession(
 				withSessionContext(session, correlationId, parsed.data),
@@ -400,11 +380,9 @@ export async function cancelSessionAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid session cancel request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid session cancel request.",
+				});
 			}
 			const result = await cancelSession(
 				withSessionContext(session, correlationId, parsed.data),
@@ -443,11 +421,9 @@ export async function assignLearningAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid learning assignment.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid learning assignment.",
+				});
 			}
 			const result = await assignLearning(
 				withSessionContext(session, correlationId, parsed.data),
@@ -482,11 +458,9 @@ export async function enrolLearningAssignmentAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid enrolment request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid enrolment request.",
+				});
 			}
 			const result = await enrolAssignment(
 				withSessionContext(session, correlationId, parsed.data),
@@ -519,11 +493,9 @@ export async function waiveLearningAssignmentAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid waiver request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid waiver request.",
+				});
 			}
 			const result = await waiveAssignment(
 				withSessionContext(session, correlationId, parsed.data),
@@ -566,11 +538,9 @@ export async function listLearningAssignmentsAction(input?: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter valid assignment filters.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter valid assignment filters.",
+				});
 			}
 			const result = await listLearningAssignments(
 				withSessionContext(session, correlationId, parsed.data ?? {}),
@@ -617,11 +587,9 @@ export async function recordLearningCompletionAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid completion record.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid completion record.",
+				});
 			}
 			const result = await recordCompletion(
 				withSessionContext(session, correlationId, parsed.data),
@@ -660,11 +628,9 @@ export async function listLearningCompletionsAction(input?: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter valid completion filters.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter valid completion filters.",
+				});
 			}
 			const result = await listCompletions(
 				withSessionContext(session, correlationId, parsed.data ?? {}),
@@ -707,11 +673,9 @@ export async function issueCertificationAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid certification issue request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid certification issue request.",
+				});
 			}
 			const result = await issueCertification(
 				withSessionContext(session, correlationId, parsed.data),
@@ -744,11 +708,9 @@ export async function revokeCertificationAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid certification revoke request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid certification revoke request.",
+				});
 			}
 			const result = await revokeCertification(
 				withSessionContext(session, correlationId, parsed.data),
@@ -781,11 +743,9 @@ export async function expireCertificationAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid certification expire request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid certification expire request.",
+				});
 			}
 			const result = await expireCertification(
 				withSessionContext(session, correlationId, parsed.data),
@@ -820,11 +780,9 @@ export async function assignSessionInstructorAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid session instructor assignment.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid session instructor assignment.",
+				});
 			}
 			const result = await assignSessionInstructor(
 				withSessionContext(session, correlationId, parsed.data),
@@ -865,11 +823,9 @@ export async function recordLearningAttendanceAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid learning attendance record.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid learning attendance record.",
+				});
 			}
 			const result = await recordLearningAttendance(
 				withSessionContext(session, correlationId, parsed.data),
@@ -908,11 +864,9 @@ export async function listLearningAttendanceAction(input?: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter valid learning attendance filters.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter valid learning attendance filters.",
+				});
 			}
 			const result = await listLearningAttendance(
 				withSessionContext(session, correlationId, parsed.data ?? {}),
@@ -955,11 +909,9 @@ export async function renewCertificationAction(input: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid certification renewal request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid certification renewal request.",
+				});
 			}
 			const result = await renewCertification(
 				withSessionContext(session, correlationId, parsed.data),
@@ -1000,11 +952,9 @@ export async function listCertificationsAction(input?: {
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter valid certification filters.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter valid certification filters.",
+				});
 			}
 			const result = await listCertifications(
 				withSessionContext(session, correlationId, parsed.data ?? {}),

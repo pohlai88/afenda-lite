@@ -1,4 +1,4 @@
-import { ok } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 import type { DomainEvent } from "@afenda/events";
 import type { Employee, EmployeeListPage } from "@afenda/human-resources";
 import type { HumanResourcesEmployeeId } from "@afenda/human-resources/brands";
@@ -100,7 +100,7 @@ function createFactPublisher() {
 		].join(":");
 		const existing = entries.get(key);
 		if (existing !== undefined) {
-			return await ok(existing);
+			return await errorResult.ok(existing);
 		}
 		sequence += 1;
 		const created: DomainEvent = {
@@ -121,7 +121,7 @@ function createFactPublisher() {
 			processedAt: null,
 		};
 		entries.set(key, created);
-		return await ok(created);
+		return await errorResult.ok(created);
 	});
 	return { entries, publish };
 }
@@ -136,7 +136,7 @@ function createWorkItemSink() {
 			const key = `${input.workItem.organizationId}:${input.workItem.deduplicationKey}`;
 			const existing = entries.get(key);
 			if (existing !== undefined) {
-				return await ok(existing);
+				return await errorResult.ok(existing);
 			}
 			const created = {
 				id: `work-item-${entries.size + 1}`,
@@ -144,7 +144,7 @@ function createWorkItemSink() {
 				deduplicationKey: input.workItem.deduplicationKey,
 			};
 			entries.set(key, created);
-			return await ok(created);
+			return await errorResult.ok(created);
 		},
 	);
 	return { entries, record };
@@ -153,7 +153,7 @@ function createWorkItemSink() {
 function createSuccessfulNotificationRecorder() {
 	return {
 		record: vi.fn(async () =>
-			ok({
+			errorResult.ok({
 				id: "notification-work-item",
 				organizationId: "org-1",
 				userId: "employee-user-1",
@@ -177,7 +177,7 @@ function createSuccessfulNotificationRecorder() {
 describe("Human Resources platform integrations", () => {
 	it("delivers notification intent with an event deduplication key", async () => {
 		const record = vi.fn(async (_input: unknown) =>
-			ok({
+			errorResult.ok({
 				id: "notification-1",
 				organizationId: "org-1",
 				userId: "employee-user-1",
@@ -244,7 +244,6 @@ describe("Human Resources platform integrations", () => {
 		expect(result).toMatchObject({
 			ok: false,
 			code: "SERVICE_UNAVAILABLE",
-			message: "Human Resources platform work-item sink is not composed",
 		});
 		expect(publisher.publish).not.toHaveBeenCalled();
 		expect(notificationRecord).not.toHaveBeenCalled();
@@ -258,11 +257,7 @@ describe("Human Resources platform integrations", () => {
 			{ record: notificationRecord },
 			publisher,
 			{
-				record: async () => ({
-					ok: false,
-					code: "SERVICE_UNAVAILABLE",
-					message: "work-item store unavailable",
-				}),
+				record: async () => errorResult.fail("SERVICE_UNAVAILABLE"),
 			},
 		);
 		expect(unavailable).toMatchObject({
@@ -277,7 +272,7 @@ describe("Human Resources platform integrations", () => {
 			publisher,
 			{
 				record: async () =>
-					ok({
+					errorResult.ok({
 						id: "work-item-other",
 						organizationId: "org-other",
 						deduplicationKey: "wrong-key",
@@ -407,11 +402,7 @@ describe("Human Resources platform integrations", () => {
 	it("fails the handler so the outbox can retry when platform delivery fails", async () => {
 		const record = vi.fn();
 		const workItemSink = createWorkItemSink();
-		const publish = vi.fn(async () => ({
-			ok: false as const,
-			code: "INTERNAL_ERROR" as const,
-			message: "platform unavailable",
-		}));
+		const publish = vi.fn(async () => errorResult.fail("INTERNAL_ERROR"));
 
 		const result = await handleHumanResourcesPlatformEvent(
 			hrEvent(),
@@ -425,10 +416,10 @@ describe("Human Resources platform integrations", () => {
 	});
 	it("builds permission-tagged employee search projections", async () => {
 		const list = vi.fn(async () =>
-			ok(sampleEmployeeListPage({ organizationId: "org-1" })),
+			errorResult.ok(sampleEmployeeListPage({ organizationId: "org-1" })),
 		);
 		const upsert = vi.fn(async (rows: SearchUpsertInput[]) =>
-			ok(
+			errorResult.ok(
 				rows.map(
 					(row): SearchDocument => ({
 						id: `search-${row.documentId}`,
@@ -442,8 +433,10 @@ describe("Human Resources platform integrations", () => {
 				),
 			),
 		);
-		const listIds = vi.fn(async () => ok([sampleEmployeeId, "stale-employee"]));
-		const deleteDocument = vi.fn(async () => ok({ deleted: true }));
+		const listIds = vi.fn(async () =>
+			errorResult.ok([sampleEmployeeId, "stale-employee"]),
+		);
+		const deleteDocument = vi.fn(async () => errorResult.ok({ deleted: true }));
 
 		const result = await rebuildHumanResourcesEmployeeSearch(
 			{
@@ -478,7 +471,7 @@ describe("Human Resources platform integrations", () => {
 
 	it("fails closed when a list adapter returns another tenant", async () => {
 		const list = vi.fn(async () =>
-			ok(
+			errorResult.ok(
 				sampleEmployeeListPage({
 					organizationId: "org-other",
 					legalName: "Cross Tenant",
@@ -486,10 +479,12 @@ describe("Human Resources platform integrations", () => {
 			),
 		);
 		const upsert = vi.fn(async (_rows: SearchUpsertInput[]) =>
-			ok([] as SearchDocument[]),
+			errorResult.ok([] as SearchDocument[]),
 		);
-		const listIds = vi.fn(async () => ok([] as string[]));
-		const deleteDocument = vi.fn(async () => ok({ deleted: false }));
+		const listIds = vi.fn(async () => errorResult.ok([] as string[]));
+		const deleteDocument = vi.fn(async () =>
+			errorResult.ok({ deleted: false }),
+		);
 
 		const result = await rebuildHumanResourcesEmployeeSearch(
 			{
@@ -507,7 +502,7 @@ describe("Human Resources platform integrations", () => {
 
 	it("authorizes employee search before issuing a tenant-bound query", async () => {
 		const search = vi.fn(async () =>
-			ok([
+			errorResult.ok([
 				{
 					id: "search-1",
 					organizationId: "org-1",
@@ -546,7 +541,7 @@ describe("Human Resources platform integrations", () => {
 	});
 
 	it("does not query employee search when permission is denied", async () => {
-		const search = vi.fn(async () => ok([] as SearchHit[]));
+		const search = vi.fn(async () => errorResult.ok([] as SearchHit[]));
 
 		const result = await searchHumanResourcesEmployees(
 			{
@@ -580,7 +575,7 @@ describe("Human Resources platform integrations", () => {
 			},
 			{
 				hasPermission: async () => true,
-				search: async () => ok([invalidHit]),
+				search: async () => errorResult.ok([invalidHit]),
 			},
 		);
 

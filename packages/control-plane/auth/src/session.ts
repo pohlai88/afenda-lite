@@ -1,4 +1,4 @@
-import { normalizeUnknown } from "@afenda/errors";
+import { errorIngress } from "@afenda/errors";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
@@ -73,7 +73,7 @@ async function loadApiSession(): Promise<
 		if (isCookieMutationBlockedError(caught)) {
 			return { ok: false, reason: "needs_cookie_sync" };
 		}
-		throw normalizeUnknown(caught, "Unable to resolve session");
+		throw errorIngress.unknown(caught, { operation: "auth.session.resolve" });
 	}
 
 	if (error || !data?.user?.id) {

@@ -1,11 +1,6 @@
-import { fail, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type { PayrollCommandOptions } from "../command-options";
-import {
-	PAYROLL_ERROR_INVALID_STATE,
-	PAYROLL_ERROR_NOT_FOUND,
-	payrollErrorDetails,
-} from "../error-codes";
 import { PAYROLL_COMMAND_ASSIGNMENT_RECURRING_EARNING_CREATE } from "../module-ids";
 import { createPayrollRecurringEarningInputSchema } from "../schemas/assignments";
 import { buildPayrollCreateFingerprint } from "../shared/create-fingerprint";
@@ -38,25 +33,19 @@ export function createPayrollRecurringEarning(
 				return assignment;
 			}
 			if (assignment.data === null) {
-				return fail(
-					"NOT_FOUND",
-					"Payroll employee assignment not found",
-					payrollErrorDetails(PAYROLL_ERROR_NOT_FOUND),
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "Payroll employee assignment not found",
+				});
 			}
 			if (assignment.data.employeeId !== data.employeeId) {
-				return fail(
-					"CONFLICT",
-					"Assignment employee mismatch",
-					payrollErrorDetails(PAYROLL_ERROR_INVALID_STATE),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Assignment employee mismatch",
+				});
 			}
 			if (assignment.data.status !== "active") {
-				return fail(
-					"CONFLICT",
-					"Payroll employee assignment is not active",
-					payrollErrorDetails(PAYROLL_ERROR_INVALID_STATE),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Payroll employee assignment is not active",
+				});
 			}
 
 			const employeeResult = await requirePayrollEmployeeAtDate({
@@ -81,18 +70,14 @@ export function createPayrollRecurringEarning(
 				return earningRule;
 			}
 			if (earningRule.data === null) {
-				return fail(
-					"NOT_FOUND",
-					"Earning rule not found",
-					payrollErrorDetails(PAYROLL_ERROR_NOT_FOUND),
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "Earning rule not found",
+				});
 			}
 			if (earningRule.data.payGroupId !== assignment.data.payGroupId) {
-				return fail(
-					"CONFLICT",
-					"Earning rule pay group mismatch",
-					payrollErrorDetails(PAYROLL_ERROR_INVALID_STATE),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Earning rule pay group mismatch",
+				});
 			}
 			if (
 				!isEffectiveOnDate(
@@ -101,11 +86,9 @@ export function createPayrollRecurringEarning(
 					data.effectiveFrom,
 				)
 			) {
-				return fail(
-					"CONFLICT",
-					"Earning rule is not effective on requested date",
-					payrollErrorDetails(PAYROLL_ERROR_INVALID_STATE),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Earning rule is not effective on requested date",
+				});
 			}
 
 			const currency = assertCurrencyAlignment({

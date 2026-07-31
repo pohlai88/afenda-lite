@@ -5,7 +5,7 @@ import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
 
 import { randomUUID } from "node:crypto";
 
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	HUMAN_RESOURCES_CAREER_PLAN_ACKNOWLEDGED_EVENT,
 	HUMAN_RESOURCES_COMPETENCY_ASSESSED_EVENT,
@@ -379,7 +379,7 @@ function getCompetencyInOrg(
 	if (!record || record.organizationId !== organizationId) {
 		return notFound("Competency not found");
 	}
-	return ok(record);
+	return errorResult.ok(record);
 }
 
 function getJobCompetencyInOrg(
@@ -391,7 +391,7 @@ function getJobCompetencyInOrg(
 	if (!record || record.organizationId !== organizationId) {
 		return notFound("Job competency mapping not found");
 	}
-	return ok(record);
+	return errorResult.ok(record);
 }
 
 function getCompetencyAssessmentInOrg(
@@ -403,7 +403,7 @@ function getCompetencyAssessmentInOrg(
 	if (!record || record.organizationId !== organizationId) {
 		return notFound("Competency assessment not found");
 	}
-	return ok(record);
+	return errorResult.ok(record);
 }
 
 function getTalentProfileInOrg(
@@ -415,7 +415,7 @@ function getTalentProfileInOrg(
 	if (!record || record.organizationId !== organizationId) {
 		return notFound("Talent profile not found");
 	}
-	return ok(record);
+	return errorResult.ok(record);
 }
 
 function getTalentProfileAssessmentInOrg(
@@ -427,7 +427,7 @@ function getTalentProfileAssessmentInOrg(
 	if (!record || record.organizationId !== organizationId) {
 		return notFound("Talent profile assessment not found");
 	}
-	return ok(record);
+	return errorResult.ok(record);
 }
 
 function getTalentPoolInOrg(
@@ -439,7 +439,7 @@ function getTalentPoolInOrg(
 	if (!record || record.organizationId !== organizationId) {
 		return notFound("Talent pool not found");
 	}
-	return ok(record);
+	return errorResult.ok(record);
 }
 
 function getTalentPoolMemberInOrg(
@@ -451,7 +451,7 @@ function getTalentPoolMemberInOrg(
 	if (!record || record.organizationId !== organizationId) {
 		return notFound("Talent pool member not found");
 	}
-	return ok(record);
+	return errorResult.ok(record);
 }
 
 function getCareerPlanInOrg(
@@ -463,7 +463,7 @@ function getCareerPlanInOrg(
 	if (!record || record.organizationId !== organizationId) {
 		return notFound("Career plan not found");
 	}
-	return ok(record);
+	return errorResult.ok(record);
 }
 
 function getCareerPlanActionInOrg(
@@ -475,7 +475,7 @@ function getCareerPlanActionInOrg(
 	if (!record || record.organizationId !== organizationId) {
 		return notFound("Career plan action not found");
 	}
-	return ok(record);
+	return errorResult.ok(record);
 }
 
 function getSuccessionPlanInOrg(
@@ -487,7 +487,7 @@ function getSuccessionPlanInOrg(
 	if (!record || record.organizationId !== organizationId) {
 		return notFound("Succession plan not found");
 	}
-	return ok(record);
+	return errorResult.ok(record);
 }
 
 function getSuccessionCandidateInOrg(
@@ -499,7 +499,7 @@ function getSuccessionCandidateInOrg(
 	if (!record || record.organizationId !== organizationId) {
 		return notFound("Succession candidate not found");
 	}
-	return ok(record);
+	return errorResult.ok(record);
 }
 
 function resolveTalentIdempotencyReplay<
@@ -511,16 +511,17 @@ function resolveTalentIdempotencyReplay<
 	readValue: (record: TRecord) => TValue,
 ): Result<TValue | null> {
 	if (existing === undefined) {
-		return ok(null);
+		return errorResult.ok(null);
 	}
 	if (existing.createRequestFingerprint !== expectedFingerprint) {
-		return fail(
-			"CONFLICT",
-			"Idempotency key reused with different payload",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "The request conflicts with current state",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_CONFLICT,
+			),
+		});
 	}
-	return ok(readValue(existing));
+	return errorResult.ok(readValue(existing));
 }
 
 async function resolveSuccessionEmploymentStatus(
@@ -534,7 +535,7 @@ async function resolveSuccessionEmploymentStatus(
 	},
 ): Promise<Result<EmploymentStatus | null>> {
 	if (input.employeeId === null) {
-		return ok(null);
+		return errorResult.ok(null);
 	}
 	const employee = await host.getEmployeeById({
 		organizationId: input.organizationId,
@@ -550,7 +551,9 @@ async function resolveSuccessionEmploymentStatus(
 		organizationId: input.organizationId,
 		employeeId: input.employeeId,
 	});
-	return employment.ok ? ok(employment.data?.status ?? null) : employment;
+	return employment.ok
+		? errorResult.ok(employment.data?.status ?? null)
+		: employment;
 }
 
 export function createMemoryTalentMethods(
@@ -564,9 +567,9 @@ export function createMemoryTalentMethods(
 			const stateValue65 = getState();
 			const record = stateValue65.competencies.get(input.competencyId);
 			if (!record || record.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...record });
+			return await errorResult.ok({ ...record });
 		},
 
 		async findCompetencyByIdempotencyKey(input) {
@@ -574,9 +577,12 @@ export function createMemoryTalentMethods(
 			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
 			const record = stateValue64.competencyIdempotency.get(key);
 			if (!record) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...record, competency: { ...record.competency } });
+			return await errorResult.ok({
+				...record,
+				competency: { ...record.competency },
+			});
 		},
 
 		async createCompetency(record, ports, meta) {
@@ -635,7 +641,7 @@ export function createMemoryTalentMethods(
 				return audit;
 			}
 
-			return ok({ ...competency });
+			return errorResult.ok({ ...competency });
 		},
 
 		async updateCompetency(input, ports, meta) {
@@ -684,7 +690,7 @@ export function createMemoryTalentMethods(
 				return audit;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async retireCompetency(input, ports, meta) {
@@ -734,7 +740,7 @@ export function createMemoryTalentMethods(
 				return audit;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async listCompetencies(input) {
@@ -756,7 +762,7 @@ export function createMemoryTalentMethods(
 				},
 			);
 			const { items, totalCount } = paginate(filtered, page, pageSize);
-			return await ok({
+			return await errorResult.ok({
 				competencies: items.map((item) => ({ ...item })),
 				totalCount,
 				page,
@@ -837,7 +843,7 @@ export function createMemoryTalentMethods(
 				return audit;
 			}
 
-			return ok({ ...mapping });
+			return errorResult.ok({ ...mapping });
 		},
 
 		async removeCompetencyFromJob(input, ports, meta) {
@@ -884,7 +890,7 @@ export function createMemoryTalentMethods(
 				return audit;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async listJobCompetencies(input) {
@@ -897,7 +903,7 @@ export function createMemoryTalentMethods(
 					mapping.jobId === input.jobId,
 			);
 			const { items, totalCount } = paginate(filtered, page, pageSize);
-			return await ok({
+			return await errorResult.ok({
 				jobCompetencies: items.map((item) => ({ ...item })),
 				totalCount,
 				page,
@@ -911,9 +917,9 @@ export function createMemoryTalentMethods(
 			const stateValue56 = getState();
 			const record = stateValue56.competencyAssessments.get(input.assessmentId);
 			if (!record || record.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...record });
+			return await errorResult.ok({ ...record });
 		},
 
 		async findCurrentCompetencyAssessment(input) {
@@ -928,9 +934,9 @@ export function createMemoryTalentMethods(
 					assessment.status === "current",
 			);
 			if (!record) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...record });
+			return await errorResult.ok({ ...record });
 		},
 
 		async findCompetencyAssessmentByIdempotencyKey(input) {
@@ -938,9 +944,12 @@ export function createMemoryTalentMethods(
 			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
 			const record = stateValue54.competencyAssessmentIdempotency.get(key);
 			if (!record) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...record, assessment: { ...record.assessment } });
+			return await errorResult.ok({
+				...record,
+				assessment: { ...record.assessment },
+			});
 		},
 
 		async createCompetencyAssessment(record, ports, meta) {
@@ -1046,7 +1055,7 @@ export function createMemoryTalentMethods(
 				return outbox;
 			}
 
-			return ok({ ...assessment });
+			return errorResult.ok({ ...assessment });
 		},
 
 		async supersedeCompetencyAssessment(record, ports, meta) {
@@ -1066,7 +1075,7 @@ export function createMemoryTalentMethods(
 				return replay;
 			}
 			if (replay.data !== null) {
-				return ok(replay.data);
+				return errorResult.ok(replay.data);
 			}
 
 			const source = getCompetencyAssessmentInOrg(
@@ -1182,7 +1191,7 @@ export function createMemoryTalentMethods(
 				return outbox;
 			}
 
-			return ok({ ...assessment });
+			return errorResult.ok({ ...assessment });
 		},
 
 		async expireCompetencyAssessment(input, ports, meta) {
@@ -1249,7 +1258,7 @@ export function createMemoryTalentMethods(
 				return outbox;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async getEmployeeCompetencyProfile(input) {
@@ -1274,7 +1283,7 @@ export function createMemoryTalentMethods(
 				)
 				.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
 				.map((assessment) => ({ ...assessment }));
-			return ok({
+			return errorResult.ok({
 				organizationId: input.organizationId,
 				employeeId: input.employeeId,
 				assessments,
@@ -1287,9 +1296,9 @@ export function createMemoryTalentMethods(
 			const stateValue49 = getState();
 			const record = stateValue49.talentProfiles.get(input.talentProfileId);
 			if (!record || record.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...record });
+			return await errorResult.ok({ ...record });
 		},
 
 		async findTalentProfileByEmployeeId(input) {
@@ -1300,9 +1309,9 @@ export function createMemoryTalentMethods(
 					profile.employeeId === input.employeeId,
 			);
 			if (!record) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...record });
+			return await errorResult.ok({ ...record });
 		},
 
 		async findTalentProfileByIdempotencyKey(input) {
@@ -1310,9 +1319,12 @@ export function createMemoryTalentMethods(
 			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
 			const record = stateValue47.talentProfileIdempotency.get(key);
 			if (!record) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...record, profile: { ...record.profile } });
+			return await errorResult.ok({
+				...record,
+				profile: { ...record.profile },
+			});
 		},
 
 		async createTalentProfile(record, ports, meta) {
@@ -1392,7 +1404,7 @@ export function createMemoryTalentMethods(
 				return outbox;
 			}
 
-			return ok({ ...profile });
+			return errorResult.ok({ ...profile });
 		},
 
 		async updateTalentProfile(input, ports, meta) {
@@ -1452,7 +1464,7 @@ export function createMemoryTalentMethods(
 				return outbox;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async archiveTalentProfile(input, ports, meta) {
@@ -1499,7 +1511,7 @@ export function createMemoryTalentMethods(
 				return audit;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async getTalentProfileByEmployee(input) {
@@ -1510,9 +1522,9 @@ export function createMemoryTalentMethods(
 					profile.employeeId === input.employeeId,
 			);
 			if (!record) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...record });
+			return await errorResult.ok({ ...record });
 		},
 
 		// Talent profile assessment
@@ -1577,7 +1589,7 @@ export function createMemoryTalentMethods(
 				return audit;
 			}
 
-			return ok({ ...assessment });
+			return errorResult.ok({ ...assessment });
 		},
 
 		async confirmTalentProfileAssessment(input, ports, meta) {
@@ -1666,7 +1678,7 @@ export function createMemoryTalentMethods(
 				return audit;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async listTalentProfileAssessments(input) {
@@ -1681,7 +1693,7 @@ export function createMemoryTalentMethods(
 				)
 				.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
 				.map((assessment) => ({ ...assessment }));
-			return await ok({
+			return await errorResult.ok({
 				assessments,
 			} satisfies TalentProfileAssessmentListPage);
 		},
@@ -1691,9 +1703,9 @@ export function createMemoryTalentMethods(
 			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
 			const record = stateValue39.talentProfileMobilityIdempotency.get(key);
 			if (!record) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({
+			return await errorResult.ok({
 				mobility: { ...record.mobility },
 				createRequestFingerprint: record.createRequestFingerprint,
 			});
@@ -1712,13 +1724,14 @@ export function createMemoryTalentMethods(
 					existingByKey.createRequestFingerprint !==
 					record.createRequestFingerprint
 				) {
-					return fail(
-						"CONFLICT",
-						"Idempotency key reused with different payload",
-						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-					);
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+						internalContext: humanResourcesErrorDetails(
+							HUMAN_RESOURCES_ERROR_CONFLICT,
+						),
+					});
 				}
-				return ok({ ...existingByKey.mobility });
+				return errorResult.ok({ ...existingByKey.mobility });
 			}
 
 			const profile = getTalentProfileInOrg(
@@ -1806,7 +1819,7 @@ export function createMemoryTalentMethods(
 				return audit;
 			}
 
-			return ok({ ...mobility });
+			return errorResult.ok({ ...mobility });
 		},
 
 		async listTalentProfileMobility(input) {
@@ -1821,7 +1834,7 @@ export function createMemoryTalentMethods(
 				)
 				.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
 				.map((mobility) => ({ ...mobility }));
-			return await ok({
+			return await errorResult.ok({
 				mobilities,
 			} satisfies TalentProfileMobilityListPage);
 		},
@@ -1832,9 +1845,9 @@ export function createMemoryTalentMethods(
 			const record =
 				stateValue36.talentCriticalRoleReadinessIdempotency.get(key);
 			if (!record) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({
+			return await errorResult.ok({
 				readiness: { ...record.readiness },
 				createRequestFingerprint: record.createRequestFingerprint,
 			});
@@ -1854,13 +1867,14 @@ export function createMemoryTalentMethods(
 					existingByKey.createRequestFingerprint !==
 					record.createRequestFingerprint
 				) {
-					return fail(
-						"CONFLICT",
-						"Idempotency key reused with different payload",
-						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-					);
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+						internalContext: humanResourcesErrorDetails(
+							HUMAN_RESOURCES_ERROR_CONFLICT,
+						),
+					});
 				}
-				return ok({ ...existingByKey.readiness });
+				return errorResult.ok({ ...existingByKey.readiness });
 			}
 
 			const profile = getTalentProfileInOrg(
@@ -1961,7 +1975,7 @@ export function createMemoryTalentMethods(
 				return audit;
 			}
 
-			return ok({ ...readiness });
+			return errorResult.ok({ ...readiness });
 		},
 
 		async listCriticalRoleReadiness(input) {
@@ -1976,7 +1990,7 @@ export function createMemoryTalentMethods(
 				)
 				.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
 				.map((readiness) => ({ ...readiness }));
-			return await ok({
+			return await errorResult.ok({
 				readinessRecords,
 			} satisfies TalentCriticalRoleReadinessListPage);
 		},
@@ -1987,9 +2001,9 @@ export function createMemoryTalentMethods(
 			const stateValue33 = getState();
 			const record = stateValue33.talentPools.get(input.poolId);
 			if (!record || record.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...record });
+			return await errorResult.ok({ ...record });
 		},
 
 		async findTalentPoolByIdempotencyKey(input) {
@@ -1997,9 +2011,9 @@ export function createMemoryTalentMethods(
 			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
 			const record = stateValue32.talentPoolIdempotency.get(key);
 			if (!record) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...record, pool: { ...record.pool } });
+			return await errorResult.ok({ ...record, pool: { ...record.pool } });
 		},
 
 		async createTalentPool(record, ports, meta) {
@@ -2056,7 +2070,7 @@ export function createMemoryTalentMethods(
 				return audit;
 			}
 
-			return ok({ ...pool });
+			return errorResult.ok({ ...pool });
 		},
 
 		async updateTalentPool(input, ports, meta) {
@@ -2107,7 +2121,7 @@ export function createMemoryTalentMethods(
 				return audit;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async closeTalentPool(input, ports, meta) {
@@ -2154,7 +2168,7 @@ export function createMemoryTalentMethods(
 				return audit;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		// Talent pool member
@@ -2164,9 +2178,9 @@ export function createMemoryTalentMethods(
 			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
 			const record = stateValue28.talentPoolMemberIdempotency.get(key);
 			if (!record) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...record, member: { ...record.member } });
+			return await errorResult.ok({ ...record, member: { ...record.member } });
 		},
 
 		async nominateTalentPoolMember(record, ports, meta) {
@@ -2256,7 +2270,7 @@ export function createMemoryTalentMethods(
 				return audit;
 			}
 
-			return ok({ ...member });
+			return errorResult.ok({ ...member });
 		},
 
 		async approveTalentPoolMember(input, ports, meta) {
@@ -2320,7 +2334,7 @@ export function createMemoryTalentMethods(
 				return outbox;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async removeTalentPoolMember(input, ports, meta) {
@@ -2380,7 +2394,7 @@ export function createMemoryTalentMethods(
 				return outbox;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async listTalentPoolMembers(input) {
@@ -2402,7 +2416,7 @@ export function createMemoryTalentMethods(
 				return true;
 			});
 			const { items, totalCount } = paginate(filtered, page, pageSize);
-			return await ok({
+			return await errorResult.ok({
 				members: items.map((item) => ({ ...item })),
 				totalCount,
 				page,
@@ -2417,9 +2431,12 @@ export function createMemoryTalentMethods(
 			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
 			const record = stateValue23.careerPlanIdempotency.get(key);
 			if (!record) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...record, careerPlan: { ...record.careerPlan } });
+			return await errorResult.ok({
+				...record,
+				careerPlan: { ...record.careerPlan },
+			});
 		},
 
 		async createCareerPlan(record, ports, meta) {
@@ -2488,7 +2505,7 @@ export function createMemoryTalentMethods(
 				return audit;
 			}
 
-			return ok({ ...plan });
+			return errorResult.ok({ ...plan });
 		},
 
 		async updateCareerPlan(input, ports, meta) {
@@ -2535,7 +2552,7 @@ export function createMemoryTalentMethods(
 				return audit;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async acknowledgeCareerPlan(input, ports, meta) {
@@ -2597,7 +2614,7 @@ export function createMemoryTalentMethods(
 				return outbox;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async closeCareerPlan(input, ports, meta) {
@@ -2647,14 +2664,14 @@ export function createMemoryTalentMethods(
 				return audit;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async getCareerPlanById(input) {
 			const stateValue18 = getState();
 			const record = stateValue18.careerPlans.get(input.careerPlanId);
 			if (!record || record.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
 			const actions = Array.from(stateValue18.careerPlanActions.values())
 				.filter(
@@ -2665,7 +2682,7 @@ export function createMemoryTalentMethods(
 				.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
 				.map((action) => ({ ...action }));
 			const withActions: CareerPlanWithActions = { ...record, actions };
-			return await ok(withActions);
+			return await errorResult.ok(withActions);
 		},
 
 		async listEmployeeCareerPlans(input) {
@@ -2687,7 +2704,7 @@ export function createMemoryTalentMethods(
 				},
 			);
 			const { items, totalCount } = paginate(filtered, page, pageSize);
-			return await ok({
+			return await errorResult.ok({
 				careerPlans: items.map((item) => ({ ...item })),
 				totalCount,
 				page,
@@ -2746,7 +2763,7 @@ export function createMemoryTalentMethods(
 				return audit;
 			}
 
-			return ok({ ...action });
+			return errorResult.ok({ ...action });
 		},
 
 		async completeCareerPlanAction(input, ports, meta) {
@@ -2793,16 +2810,16 @@ export function createMemoryTalentMethods(
 				return audit;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async getCareerPlanActionById(input) {
 			const stateValue14 = getState();
 			const record = stateValue14.careerPlanActions.get(input.actionId);
 			if (!record || record.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...record });
+			return await errorResult.ok({ ...record });
 		},
 
 		// Succession plan
@@ -2812,9 +2829,9 @@ export function createMemoryTalentMethods(
 			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
 			const record = stateValue13.successionPlanIdempotency.get(key);
 			if (!record) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({
+			return await errorResult.ok({
 				...record,
 				successionPlan: { ...record.successionPlan },
 			});
@@ -2887,7 +2904,7 @@ export function createMemoryTalentMethods(
 				return audit;
 			}
 
-			return ok({ ...plan });
+			return errorResult.ok({ ...plan });
 		},
 
 		async updateSuccessionPlan(input, ports, meta) {
@@ -2936,7 +2953,7 @@ export function createMemoryTalentMethods(
 				return audit;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async closeSuccessionPlan(input, ports, meta) {
@@ -2986,16 +3003,16 @@ export function createMemoryTalentMethods(
 				return audit;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async getSuccessionPlanById(input) {
 			const stateValue9 = getState();
 			const record = stateValue9.successionPlans.get(input.successionPlanId);
 			if (!record || record.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...record });
+			return await errorResult.ok({ ...record });
 		},
 
 		async listSuccessionPlans(input) {
@@ -3020,7 +3037,7 @@ export function createMemoryTalentMethods(
 				},
 			);
 			const { items, totalCount } = paginate(filtered, page, pageSize);
-			return await ok({
+			return await errorResult.ok({
 				successionPlans: items.map((item) => ({ ...item })),
 				totalCount,
 				page,
@@ -3035,9 +3052,12 @@ export function createMemoryTalentMethods(
 			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
 			const record = stateValue7.successionCandidateIdempotency.get(key);
 			if (!record) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...record, candidate: { ...record.candidate } });
+			return await errorResult.ok({
+				...record,
+				candidate: { ...record.candidate },
+			});
 		},
 
 		async nominateSuccessionCandidate(record, ports, meta) {
@@ -3131,7 +3151,7 @@ export function createMemoryTalentMethods(
 				return outbox;
 			}
 
-			return ok({ ...candidate });
+			return errorResult.ok({ ...candidate });
 		},
 
 		async assessSuccessionReadiness(input, ports, meta) {
@@ -3202,7 +3222,7 @@ export function createMemoryTalentMethods(
 				return outbox;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async approveSuccessionCandidate(input, ports, meta) {
@@ -3263,7 +3283,7 @@ export function createMemoryTalentMethods(
 				return outbox;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async removeSuccessionCandidate(input, ports, meta) {
@@ -3310,7 +3330,7 @@ export function createMemoryTalentMethods(
 				return audit;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async listSuccessionCandidates(input) {
@@ -3332,7 +3352,7 @@ export function createMemoryTalentMethods(
 				return true;
 			});
 			const { items, totalCount } = paginate(filtered, page, pageSize);
-			return await ok({
+			return await errorResult.ok({
 				candidates: items.map((item) => ({ ...item })),
 				totalCount,
 				page,
@@ -3391,7 +3411,7 @@ export function createMemoryTalentMethods(
 				readySoonCandidateCount,
 				totalActiveCandidateCount,
 			};
-			return await ok(coverage);
+			return await errorResult.ok(coverage);
 		},
 	};
 }

@@ -1,4 +1,4 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { z } from "zod";
 
 import {
@@ -50,7 +50,7 @@ export async function runOrganizationCommand<
 		command: config.command,
 		resolveDeps: (opts) => {
 			const { store, ports } = resolveCommandDeps(opts);
-			return ok({ store, ports });
+			return errorResult.ok({ store, ports });
 		},
 		execute: config.execute,
 	});
@@ -75,7 +75,7 @@ export async function runOrganizationQuery<
 		query: config.query,
 		resolveDeps: (opts) => {
 			const { store } = resolveCommandDeps(opts);
-			return ok({ store });
+			return errorResult.ok({ store });
 		},
 		execute: config.execute,
 	});

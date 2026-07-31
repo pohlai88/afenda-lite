@@ -1,4 +1,4 @@
-import { ok } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 import { describe, expect, it, vi } from "vitest";
 
 import {
@@ -82,12 +82,12 @@ function deletionPort(
 	overrides: Partial<HumanResourcesPrivacyDeletionPort> = {},
 ): HumanResourcesPrivacyDeletionPort {
 	return {
-		getProcessorBoundary: vi.fn(async () => ok(boundary)),
+		getProcessorBoundary: vi.fn(async () => errorResult.ok(boundary)),
 		recordDeletionDecision: vi.fn(async () =>
-			ok({ evidenceReference: "audit://privacy/decision-1" }),
+			errorResult.ok({ evidenceReference: "audit://privacy/decision-1" }),
 		),
 		executeDeletionDecision: vi.fn(async () =>
-			ok({
+			errorResult.ok({
 				affectedRecordCount: 2,
 				executionReference: "privacy://execution-1",
 			}),
@@ -186,7 +186,9 @@ describe("Human Resources privacy verification kernel", () => {
 		const result = await decideHumanResourcesSubjectDeletion(
 			decisionInput({ classifications: [EXPIRED_RECRUITMENT_CLASSIFICATION] }),
 			deletionPort({
-				getProcessorBoundary: vi.fn(async () => ok(unsupportedBoundary)),
+				getProcessorBoundary: vi.fn(async () =>
+					errorResult.ok(unsupportedBoundary),
+				),
 			}),
 		);
 
@@ -211,7 +213,7 @@ describe("Human Resources privacy verification kernel", () => {
 			decisionInput(),
 			deletionPort({
 				getProcessorBoundary: vi.fn(async () =>
-					ok({
+					errorResult.ok({
 						...boundary,
 						primaryProcessor: {
 							...boundary.primaryProcessor,
@@ -227,7 +229,7 @@ describe("Human Resources privacy verification kernel", () => {
 			decisionInput(),
 			deletionPort({
 				getProcessorBoundary: vi.fn(async () =>
-					ok({ ...boundary, organizationId: "org-other" }),
+					errorResult.ok({ ...boundary, organizationId: "org-other" }),
 				),
 			}),
 		);
@@ -249,7 +251,7 @@ describe("Human Resources privacy verification kernel", () => {
 			port,
 		);
 		expect(executed).toEqual(
-			ok({
+			errorResult.ok({
 				affectedRecordCount: 2,
 				executionReference: "privacy://execution-1",
 			}),

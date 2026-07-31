@@ -10,7 +10,7 @@
  * A previously applied row must return its recorded result rather than repeat
  * the mutation. Replay is an idempotent success path, not a governance failure.
  */
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	governanceRequestNotApproved,
@@ -75,7 +75,7 @@ export function assertImportBatchApproved(input: {
 			currentStatus: input.status,
 		});
 	}
-	return ok(true);
+	return errorResult.ok(true);
 }
 
 export function assertImportBatchWorkflowVersion(input: {
@@ -92,7 +92,7 @@ export function assertImportBatchWorkflowVersion(input: {
 			actualVersion: input.actualWorkflowVersion,
 		});
 	}
-	return ok(true);
+	return errorResult.ok(true);
 }
 
 export function decideImportRowApplication(input: {
@@ -106,19 +106,19 @@ export function decideImportRowApplication(input: {
 	switch (applyStatus) {
 		case "applied":
 		case "replayed":
-			return ok({
+			return errorResult.ok({
 				kind: "replay",
 				rowId: row.rowId,
 				recordedResultEntityId: row.resultEntityId,
 				recordedResultEntityVersion: row.resultEntityVersion,
 			});
 		case "applying":
-			return ok({ kind: "busy", rowId: row.rowId });
+			return errorResult.ok({ kind: "busy", rowId: row.rowId });
 		case "skipped":
-			return ok({ kind: "skip", rowId: row.rowId });
+			return errorResult.ok({ kind: "skip", rowId: row.rowId });
 		case "pending":
 		case "failed":
-			return ok({ kind: "apply", rowId: row.rowId });
+			return errorResult.ok({ kind: "apply", rowId: row.rowId });
 		default:
 			return unsupportedApplyStatus(applyStatus);
 	}

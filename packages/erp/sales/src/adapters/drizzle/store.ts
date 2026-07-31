@@ -19,8 +19,12 @@ import {
 	salesReturnAuthorization,
 	salesReturnAuthorizationLine,
 } from "@afenda/db";
-import { normalizePostgresUnknown } from "@afenda/errors/adapters/postgres";
-import { fail, failFromAppError, ok, type Result } from "@afenda/errors/result";
+import {
+	errorIngress,
+	errorProject,
+	errorResult,
+	type Result,
+} from "@afenda/errors";
 
 const SQL_IDENTIFIER_PATTERN = /^[a-z_]+$/u;
 
@@ -57,8 +61,10 @@ import type {
 	SalesQuotationLine,
 } from "../../types";
 
-function failFromPersistence(error: unknown, fallbackMessage: string) {
-	return failFromAppError(normalizePostgresUnknown(error, fallbackMessage));
+function failFromPersistence(error: unknown, _fallbackMessage: string) {
+	return errorProject.result(
+		errorIngress.postgres(error, { operation: "persistence.postgres" }),
+	);
 }
 
 type EvidenceSeed = Omit<MutationEvidence, "entityId" | "version">;
@@ -406,7 +412,7 @@ async function atomicInsert(
 		await runNeonHttpTransaction((sql) =>
 			mutationQueries(sql, statement, params, evidence, entityId, version),
 		);
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	} catch (error) {
 		return failFromPersistence(error, "Could not persist Sales mutation");
 	}
@@ -440,7 +446,7 @@ async function atomicUpdate(
 				expectedVersion + 1,
 			),
 		]);
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	} catch (error) {
 		return failFromPersistence(
 			error,
@@ -519,8 +525,8 @@ export class DrizzleSalesStore implements SalesStore {
 			)
 			.limit(1);
 		return rows[0]
-			? ok(mapEntry(rows[0]))
-			: fail("INTERNAL_ERROR", "Price-book entry was not persisted");
+			? errorResult.ok(mapEntry(rows[0]))
+			: errorResult.fail("INTERNAL_ERROR");
 	}
 	async getPriceBook(input: Parameters<SalesStore["getPriceBook"]>[0]) {
 		const rows = await db
@@ -533,7 +539,7 @@ export class DrizzleSalesStore implements SalesStore {
 				),
 			)
 			.limit(1);
-		return ok(rows[0] ? mapBook(rows[0]) : null);
+		return errorResult.ok(rows[0] ? mapBook(rows[0]) : null);
 	}
 	async listPriceBooks(input: Parameters<SalesStore["listPriceBooks"]>[0]) {
 		const conditions = [
@@ -550,7 +556,10 @@ export class DrizzleSalesStore implements SalesStore {
 			.limit(input.pageSize + 1);
 		const hasNext = rows.length > input.pageSize;
 		const items = rows.slice(0, input.pageSize).map(mapBook);
-		return ok({ items, nextCursor: hasNext ? items.at(-1)?.id : undefined });
+		return errorResult.ok({
+			items,
+			nextCursor: hasNext ? items.at(-1)?.id : undefined,
+		});
 	}
 	async updatePriceBookStatus(
 		input: Parameters<SalesStore["updatePriceBookStatus"]>[0],
@@ -590,7 +599,7 @@ export class DrizzleSalesStore implements SalesStore {
 				),
 			)
 			.orderBy(asc(salesPriceBook.priority));
-		return ok(
+		return errorResult.ok(
 			rows
 				.filter(
 					({ book, entry }) =>
@@ -696,8 +705,8 @@ export class DrizzleSalesStore implements SalesStore {
 			)
 			.limit(1);
 		return rows[0]
-			? ok(mapQuotationLine(rows[0]))
-			: fail("INTERNAL_ERROR", "Quotation line was not persisted");
+			? errorResult.ok(mapQuotationLine(rows[0]))
+			: errorResult.fail("INTERNAL_ERROR");
 	}
 	async transitionQuotation(
 		input: Parameters<SalesStore["transitionQuotation"]>[0],
@@ -731,7 +740,7 @@ export class DrizzleSalesStore implements SalesStore {
 				),
 			)
 			.limit(1);
-		return ok(rows[0] ? mapQuotation(rows[0]) : null);
+		return errorResult.ok(rows[0] ? mapQuotation(rows[0]) : null);
 	}
 	async listQuotationLines(
 		input: Parameters<SalesStore["listQuotationLines"]>[0],
@@ -746,7 +755,7 @@ export class DrizzleSalesStore implements SalesStore {
 				),
 			)
 			.orderBy(asc(salesQuotationLine.lineNo));
-		return ok(rows.map(mapQuotationLine));
+		return errorResult.ok(rows.map(mapQuotationLine));
 	}
 
 	async listQuotations(input: Parameters<SalesStore["listQuotations"]>[0]) {
@@ -764,7 +773,10 @@ export class DrizzleSalesStore implements SalesStore {
 			.limit(input.pageSize + 1);
 		const hasNext = rows.length > input.pageSize;
 		const items = rows.slice(0, input.pageSize).map(mapQuotation);
-		return ok({ items, nextCursor: hasNext ? items.at(-1)?.id : undefined });
+		return errorResult.ok({
+			items,
+			nextCursor: hasNext ? items.at(-1)?.id : undefined,
+		});
 	}
 	async createOrder(
 		input: Parameters<SalesStore["createOrder"]>[0],
@@ -878,8 +890,8 @@ export class DrizzleSalesStore implements SalesStore {
 			)
 			.limit(1);
 		return rows[0]
-			? ok(mapOrderLine(rows[0]))
-			: fail("INTERNAL_ERROR", "Sales-order line was not persisted");
+			? errorResult.ok(mapOrderLine(rows[0]))
+			: errorResult.fail("INTERNAL_ERROR");
 	}
 	async transitionOrder(
 		input: Parameters<SalesStore["transitionOrder"]>[0],
@@ -989,7 +1001,7 @@ export class DrizzleSalesStore implements SalesStore {
 				),
 			)
 			.limit(1);
-		return ok(rows[0] ? mapOrder(rows[0]) : null);
+		return errorResult.ok(rows[0] ? mapOrder(rows[0]) : null);
 	}
 	async listOrders(input: Parameters<SalesStore["listOrders"]>[0]) {
 		const conditions = [eq(salesOrder.organizationId, input.organizationId)];
@@ -1008,7 +1020,7 @@ export class DrizzleSalesStore implements SalesStore {
 		const hasNext = rows.length > input.pageSize;
 		const items = rows.slice(0, input.pageSize).map(mapOrder);
 		const nextCursor = hasNext ? items.at(-1)?.id : undefined;
-		return ok(nextCursor ? { items, nextCursor } : { items });
+		return errorResult.ok(nextCursor ? { items, nextCursor } : { items });
 	}
 	async listOrderLines(input: Parameters<SalesStore["listOrderLines"]>[0]) {
 		const rows = await db
@@ -1021,7 +1033,7 @@ export class DrizzleSalesStore implements SalesStore {
 				),
 			)
 			.orderBy(asc(salesOrderLine.lineNo));
-		return ok(rows.map(mapOrderLine));
+		return errorResult.ok(rows.map(mapOrderLine));
 	}
 	async listOrderSchedules(
 		input: Parameters<SalesStore["listOrderSchedules"]>[0],
@@ -1036,7 +1048,7 @@ export class DrizzleSalesStore implements SalesStore {
 				),
 			)
 			.orderBy(asc(salesOrderSchedule.requestedDate));
-		return ok(rows.map(mapSchedule));
+		return errorResult.ok(rows.map(mapSchedule));
 	}
 	async placeHold(
 		input: Parameters<SalesStore["placeHold"]>[0],
@@ -1101,7 +1113,7 @@ export class DrizzleSalesStore implements SalesStore {
 					eq(salesOrderHold.status, "open"),
 				),
 			);
-		return ok(rows.map(mapHold));
+		return errorResult.ok(rows.map(mapHold));
 	}
 	async recordFulfillment(
 		input: Parameters<SalesStore["recordFulfillment"]>[0],
@@ -1120,7 +1132,9 @@ export class DrizzleSalesStore implements SalesStore {
 			.limit(1);
 		const [line] = lineRows;
 		if (!line) {
-			return fail("NOT_FOUND", "Sales-order line not found");
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Sales-order line not found",
+			});
 		}
 		const next = await addDecimals([
 			line.fulfilledQuantity,
@@ -1130,7 +1144,9 @@ export class DrizzleSalesStore implements SalesStore {
 			return next;
 		}
 		if (Number(next.data) > Number(line.quantity)) {
-			return fail("CONFLICT", "Fulfilled quantity exceeds ordered quantity");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Fulfilled quantity exceeds ordered quantity",
+			});
 		}
 		try {
 			await runNeonHttpTransaction((sql) => [
@@ -1252,8 +1268,8 @@ export class DrizzleSalesStore implements SalesStore {
 			)
 			.limit(1);
 		return rows[0]
-			? ok(mapReturnLine(rows[0]))
-			: fail("INTERNAL_ERROR", "Return line was not persisted");
+			? errorResult.ok(mapReturnLine(rows[0]))
+			: errorResult.fail("INTERNAL_ERROR");
 	}
 	async getReturnAuthorization(
 		input: Parameters<SalesStore["getReturnAuthorization"]>[0],
@@ -1268,7 +1284,7 @@ export class DrizzleSalesStore implements SalesStore {
 				),
 			)
 			.limit(1);
-		return ok(rows[0] ? mapReturn(rows[0]) : null);
+		return errorResult.ok(rows[0] ? mapReturn(rows[0]) : null);
 	}
 	async listReturnAuthorizations(
 		input: Parameters<SalesStore["listReturnAuthorizations"]>[0],
@@ -1289,7 +1305,10 @@ export class DrizzleSalesStore implements SalesStore {
 			.limit(input.pageSize + 1);
 		const hasNext = rows.length > input.pageSize;
 		const items = rows.slice(0, input.pageSize).map(mapReturn);
-		return ok({ items, nextCursor: hasNext ? items.at(-1)?.id : undefined });
+		return errorResult.ok({
+			items,
+			nextCursor: hasNext ? items.at(-1)?.id : undefined,
+		});
 	}
 	async listReturnLines(input: Parameters<SalesStore["listReturnLines"]>[0]) {
 		const rows = await db
@@ -1305,7 +1324,7 @@ export class DrizzleSalesStore implements SalesStore {
 				),
 			)
 			.orderBy(asc(salesReturnAuthorizationLine.id));
-		return ok(rows.map(mapReturnLine));
+		return errorResult.ok(rows.map(mapReturnLine));
 	}
 	async transitionReturn(
 		input: Parameters<SalesStore["transitionReturn"]>[0],
@@ -1337,8 +1356,8 @@ export class DrizzleSalesStore implements SalesStore {
 			)
 			.limit(1);
 		return rows[0]
-			? ok(mapBook(rows[0]))
-			: fail("INTERNAL_ERROR", "Price book was not persisted");
+			? errorResult.ok(mapBook(rows[0]))
+			: errorResult.fail("INTERNAL_ERROR");
 	}
 	private async getQuotationRequired(
 		org: string,
@@ -1349,8 +1368,8 @@ export class DrizzleSalesStore implements SalesStore {
 			id: salesQuotationIdSchema.parse(id),
 		});
 		return value.data
-			? ok(value.data)
-			: fail("INTERNAL_ERROR", "Sales quotation was not persisted");
+			? errorResult.ok(value.data)
+			: errorResult.fail("INTERNAL_ERROR");
 	}
 	private async getOrderRequired(
 		org: string,
@@ -1361,8 +1380,8 @@ export class DrizzleSalesStore implements SalesStore {
 			id: salesOrderIdSchema.parse(id),
 		});
 		return value.data
-			? ok(value.data)
-			: fail("INTERNAL_ERROR", "Sales order was not persisted");
+			? errorResult.ok(value.data)
+			: errorResult.fail("INTERNAL_ERROR");
 	}
 	private async getHold(org: string, id: string): Promise<Result<SalesHold>> {
 		const rows = await db
@@ -1373,8 +1392,10 @@ export class DrizzleSalesStore implements SalesStore {
 			)
 			.limit(1);
 		return rows[0]
-			? ok(mapHold(rows[0]))
-			: fail("NOT_FOUND", "Sales-order hold not found");
+			? errorResult.ok(mapHold(rows[0]))
+			: errorResult.fail("NOT_FOUND", {
+					publicMessage: "Sales-order hold not found",
+				});
 	}
 	private async getReturn(
 		org: string,
@@ -1391,8 +1412,10 @@ export class DrizzleSalesStore implements SalesStore {
 			)
 			.limit(1);
 		return rows[0]
-			? ok(mapReturn(rows[0]))
-			: fail("NOT_FOUND", "Return authorization not found");
+			? errorResult.ok(mapReturn(rows[0]))
+			: errorResult.fail("NOT_FOUND", {
+					publicMessage: "Return authorization not found",
+				});
 	}
 }
 export function createDrizzleSalesStore(): SalesStore {

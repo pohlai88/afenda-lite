@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { MasterDataEventType } from "@afenda/events";
 import { isWarehouseParentTypeCompatible } from "../../src/capabilities/core-organization-masters/core-master-policy";
 import { resolveItemOperationalProfile } from "../../src/capabilities/core-organization-masters/item-operational-profile";
@@ -261,19 +261,19 @@ function pageResult<T>(
 	};
 }
 
-function codeConflictDetails(): MasterFailureDetails {
+function _codeConflictDetails(): MasterFailureDetails {
 	return { reason: "MASTER_CODE_CONFLICT" };
 }
 
-function versionConflictDetails(): MasterFailureDetails {
+function _versionConflictDetails(): MasterFailureDetails {
 	return { reason: "MASTER_VERSION_CONFLICT" };
 }
 
-function crossOrgDetails(): MasterFailureDetails {
+function _crossOrgDetails(): MasterFailureDetails {
 	return { reason: "MASTER_CROSS_ORG_REFERENCE" };
 }
 
-function validationDetails(message?: string): MasterFailureDetails {
+function _validationDetails(message?: string): MasterFailureDetails {
 	return { reason: "MASTER_VALIDATION_FAILED", message };
 }
 
@@ -443,17 +443,17 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			const normalized = code.trim().toUpperCase();
 			for (const row of this.countries.values()) {
 				if (row.code.toUpperCase() === normalized) {
-					return ok({ ...row });
+					return errorResult.ok({ ...row });
 				}
 			}
-			return ok(null);
+			return errorResult.ok(null);
 		});
 	}
 
 	getRefCountryById(id: string): Promise<Result<RefCountry | null>> {
 		return resolveAsync(() => {
 			const row = this.countries.get(id);
-			return ok(row === undefined ? null : { ...row });
+			return errorResult.ok(row === undefined ? null : { ...row });
 		});
 	}
 
@@ -462,17 +462,17 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			const normalized = code.trim().toUpperCase();
 			for (const row of this.currencies.values()) {
 				if (row.code.toUpperCase() === normalized) {
-					return ok({ ...row });
+					return errorResult.ok({ ...row });
 				}
 			}
-			return ok(null);
+			return errorResult.ok(null);
 		});
 	}
 
 	getRefCurrencyById(id: string): Promise<Result<RefCurrency | null>> {
 		return resolveAsync(() => {
 			const row = this.currencies.get(id);
-			return ok(row === undefined ? null : { ...row });
+			return errorResult.ok(row === undefined ? null : { ...row });
 		});
 	}
 
@@ -481,10 +481,10 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			const normalized = code.trim().toLowerCase();
 			for (const row of this.languages.values()) {
 				if (row.code.toLowerCase() === normalized) {
-					return ok({ ...row });
+					return errorResult.ok({ ...row });
 				}
 			}
-			return ok(null);
+			return errorResult.ok(null);
 		});
 	}
 
@@ -493,10 +493,10 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			const normalized = ianaName.trim();
 			for (const row of this.timeZones.values()) {
 				if (row.ianaName === normalized) {
-					return ok({ ...row });
+					return errorResult.ok({ ...row });
 				}
 			}
-			return ok(null);
+			return errorResult.ok(null);
 		});
 	}
 
@@ -507,17 +507,17 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			const normalized = code.trim().toLowerCase();
 			for (const row of this.dimensions.values()) {
 				if (row.code === normalized) {
-					return ok({ ...row });
+					return errorResult.ok({ ...row });
 				}
 			}
-			return ok(null);
+			return errorResult.ok(null);
 		});
 	}
 
 	getRefUomById(id: string): Promise<Result<RefUom | null>> {
 		return resolveAsync(() => {
 			const row = this.uoms.get(id);
-			return ok(row === undefined ? null : { ...row });
+			return errorResult.ok(row === undefined ? null : { ...row });
 		});
 	}
 
@@ -526,16 +526,16 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			const normalized = code.trim().toUpperCase();
 			for (const row of this.uoms.values()) {
 				if (row.code.toUpperCase() === normalized) {
-					return ok({ ...row });
+					return errorResult.ok({ ...row });
 				}
 			}
-			return ok(null);
+			return errorResult.ok(null);
 		});
 	}
 
 	listRefUoms(): Promise<Result<RefUom[]>> {
 		return resolveAsync(() =>
-			ok([...this.uoms.values()].map((row) => ({ ...row }))),
+			errorResult.ok([...this.uoms.values()].map((row) => ({ ...row }))),
 		);
 	}
 
@@ -546,9 +546,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		return resolveAsync(() => {
 			const row = this.parties.get(id);
 			if (row === undefined || row.organizationId !== organizationId) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
-			return ok(cloneParty(row));
+			return errorResult.ok(cloneParty(row));
 		});
 	}
 
@@ -564,10 +564,10 @@ export class MemoryMasterDataStore implements MasterDataStore {
 					row.retiredAt === null &&
 					row.mergedIntoId === null
 				) {
-					return ok(cloneParty(row));
+					return errorResult.ok(cloneParty(row));
 				}
 			}
-			return ok(null);
+			return errorResult.ok(null);
 		});
 	}
 
@@ -586,7 +586,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 						? a.id.localeCompare(b.id)
 						: a.normalizedCode.localeCompare(b.normalizedCode),
 				);
-			return ok(paginate(rows, filter.page, filter.pageSize).map(cloneParty));
+			return errorResult.ok(
+				paginate(rows, filter.page, filter.pageSize).map(cloneParty),
+			);
 		});
 	}
 
@@ -617,7 +619,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 						? a.id.localeCompare(b.id)
 						: a.normalizedCode.localeCompare(b.normalizedCode),
 				);
-			return ok(paginate(rows, filter.page, filter.pageSize).map(cloneParty));
+			return errorResult.ok(
+				paginate(rows, filter.page, filter.pageSize).map(cloneParty),
+			);
 		});
 	}
 
@@ -643,10 +647,10 @@ export class MemoryMasterDataStore implements MasterDataStore {
 					party.retiredAt === null &&
 					party.mergedIntoId === null
 				) {
-					return ok(cloneParty(party));
+					return errorResult.ok(cloneParty(party));
 				}
 			}
-			return ok(null);
+			return errorResult.ok(null);
 		});
 	}
 
@@ -670,7 +674,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 						? a.id.localeCompare(b.id)
 						: a.normalizedCode.localeCompare(b.normalizedCode),
 				);
-			return ok(paginate(rows, filter.page, filter.pageSize).map(cloneParty));
+			return errorResult.ok(
+				paginate(rows, filter.page, filter.pageSize).map(cloneParty),
+			);
 		});
 	}
 
@@ -680,11 +686,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		meta: MutationMeta,
 	): Promise<Result<Party>> {
 		if (this.hasLivePartyCode(record.organizationId, record.normalizedCode)) {
-			return fail(
-				"CONFLICT",
-				"Party code already exists",
-				codeConflictDetails(),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Party code already exists",
+			});
 		}
 		const now = new Date();
 		const party: Party = {
@@ -740,8 +744,8 @@ export class MemoryMasterDataStore implements MasterDataStore {
 					existing.status === "active",
 			);
 			if (duplicate) {
-				return fail("CONFLICT", "External id already exists", {
-					reason: "MASTER_EXTERNAL_ID_CONFLICT",
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "External id already exists",
 				});
 			}
 		}
@@ -775,7 +779,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			return sideEffect;
 		}
 		this.applyImportMutationResult(meta, party.id, party.version);
-		return ok(cloneParty(party));
+		return errorResult.ok(cloneParty(party));
 	}
 
 	async updateParty(
@@ -785,23 +789,19 @@ export class MemoryMasterDataStore implements MasterDataStore {
 	): Promise<Result<Party>> {
 		const existing = this.parties.get(record.id);
 		if (existing === undefined) {
-			return fail("NOT_FOUND", "Party not found", {
-				reason: "MASTER_NOT_FOUND",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Party not found",
+			});
 		}
 		if (existing.organizationId !== record.organizationId) {
-			return fail(
-				"CONFLICT",
-				"Party belongs to another organization",
-				crossOrgDetails(),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Party belongs to another organization",
+			});
 		}
 		if (existing.version !== record.expectedVersion) {
-			return fail(
-				"CONFLICT",
-				"Party version conflict",
-				versionConflictDetails(),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Party version conflict",
+			});
 		}
 		const snapshot = cloneParty(existing);
 		const updated: Party = {
@@ -860,7 +860,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			return sideEffect;
 		}
 		this.applyImportMutationResult(meta, updated.id, updated.version);
-		return ok(cloneParty(updated));
+		return errorResult.ok(cloneParty(updated));
 	}
 
 	async transitionParty(
@@ -873,23 +873,19 @@ export class MemoryMasterDataStore implements MasterDataStore {
 	): Promise<Result<Party>> {
 		const existing = this.parties.get(record.id);
 		if (existing === undefined) {
-			return fail("NOT_FOUND", "Party not found", {
-				reason: "MASTER_NOT_FOUND",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Party not found",
+			});
 		}
 		if (existing.organizationId !== record.organizationId) {
-			return fail(
-				"CONFLICT",
-				"Party belongs to another organization",
-				crossOrgDetails(),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Party belongs to another organization",
+			});
 		}
 		if (existing.version !== record.expectedVersion) {
-			return fail(
-				"CONFLICT",
-				"Party version conflict",
-				versionConflictDetails(),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Party version conflict",
+			});
 		}
 		const lifecycle =
 			record.toStatus === "draft"
@@ -909,11 +905,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 					role.retiredAt === null,
 			)
 		) {
-			return fail(
-				"CONFLICT",
-				"Party activation requires at least one active role",
-				{ reason: "MASTER_INVALID_STATE" } satisfies MasterFailureDetails,
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Party activation requires at least one active role",
+			});
 		}
 		let crSnapshot: ChangeRequest | null = null;
 		if (record.changeRequestId !== undefined) {
@@ -925,9 +919,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				cr.commandKind !== "activate_party" ||
 				cr.subjectEntityId !== record.id
 			) {
-				return fail("CONFLICT", "Change request cannot be claimed", {
-					reason: "MASTER_CHANGE_REQUEST_INVALID",
-				} satisfies MasterFailureDetails);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Change request cannot be claimed",
+				});
 			}
 			crSnapshot = { ...cr };
 			this.changeRequests.set(cr.id, {
@@ -1034,7 +1028,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				}
 			}
 		}
-		return ok(cloneParty(updated));
+		return errorResult.ok(cloneParty(updated));
 	}
 
 	async mergeParties(
@@ -1050,26 +1044,26 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			target === undefined ||
 			target.organizationId !== record.organizationId
 		) {
-			return fail("NOT_FOUND", "Party not found for merge", {
-				reason: "MASTER_NOT_FOUND",
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Party not found for merge",
 			});
 		}
 		if (source.mergedIntoId !== null || target.mergedIntoId !== null) {
-			return fail("CONFLICT", "Party already merged", {
-				reason: "MASTER_INVALID_STATE",
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Party already merged",
 			});
 		}
 		if (source.partyKind !== target.partyKind) {
-			return fail("CONFLICT", "Incompatible party kinds for merge", {
-				reason: "MASTER_INVALID_STATE",
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Incompatible party kinds for merge",
 			});
 		}
 		if (
 			source.version !== record.sourceExpectedVersion ||
 			target.version !== record.targetExpectedVersion
 		) {
-			return fail("CONFLICT", "Party version conflict on merge", {
-				reason: "MASTER_VERSION_CONFLICT",
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Party version conflict on merge",
 			});
 		}
 
@@ -1081,9 +1075,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			cr.commandKind !== "merge_parties" ||
 			cr.subjectEntityId !== target.id
 		) {
-			return fail("CONFLICT", "Change request cannot be claimed", {
-				reason: "MASTER_CHANGE_REQUEST_INVALID",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Change request cannot be claimed",
+			});
 		}
 		const crSnapshot = { ...cr };
 		this.changeRequests.set(cr.id, {
@@ -1394,7 +1388,10 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				return crSide;
 			}
 		}
-		return ok({ survivor: cloneParty(survivor), merged: cloneParty(merged) });
+		return errorResult.ok({
+			survivor: cloneParty(survivor),
+			merged: cloneParty(merged),
+		});
 	}
 
 	getChangeRequestById(
@@ -1404,9 +1401,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		return resolveAsync(() => {
 			const row = this.changeRequests.get(id);
 			if (row === undefined || row.organizationId !== organizationId) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
-			return ok({ ...row, payload: { ...row.payload } });
+			return errorResult.ok({ ...row, payload: { ...row.payload } });
 		});
 	}
 
@@ -1431,7 +1428,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 					return true;
 				})
 				.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
-			return ok(
+			return errorResult.ok(
 				paginate(rows, filter.page, filter.pageSize).map((row) => ({
 					...row,
 					payload: { ...row.payload },
@@ -1450,9 +1447,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				existing.organizationId === record.organizationId &&
 				existing.normalizedCode === record.normalizedCode
 			) {
-				return fail("CONFLICT", "Change request code already exists", {
-					reason: "MASTER_CODE_CONFLICT",
-				} satisfies MasterFailureDetails);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Change request code already exists",
+				});
 			}
 		}
 		const now = new Date();
@@ -1499,7 +1496,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		if (!side.ok) {
 			return side;
 		}
-		return ok({ ...row, payload: { ...row.payload } });
+		return errorResult.ok({ ...row, payload: { ...row.payload } });
 	}
 
 	async transitionChangeRequest(
@@ -1512,19 +1509,19 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			existing === undefined ||
 			existing.organizationId !== record.organizationId
 		) {
-			return fail("NOT_FOUND", "Change request not found", {
-				reason: "MASTER_NOT_FOUND",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Change request not found",
+			});
 		}
 		if (existing.version !== record.expectedVersion) {
-			return fail("CONFLICT", "Change request version conflict", {
-				reason: "MASTER_VERSION_CONFLICT",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Change request version conflict",
+			});
 		}
 		if (existing.status !== "submitted") {
-			return fail("CONFLICT", "Change request is not submitted", {
-				reason: "MASTER_CHANGE_REQUEST_INVALID",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Change request is not submitted",
+			});
 		}
 		const snapshot = { ...existing };
 		const now = new Date();
@@ -1565,7 +1562,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		if (!side.ok) {
 			return side;
 		}
-		return ok({ ...updated, payload: { ...updated.payload } });
+		return errorResult.ok({ ...updated, payload: { ...updated.payload } });
 	}
 
 	getItemGroupById(
@@ -1575,9 +1572,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		return resolveAsync(() => {
 			const row = this.itemGroups.get(id);
 			if (row === undefined || row.organizationId !== organizationId) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
-			return ok(cloneItemGroup(row));
+			return errorResult.ok(cloneItemGroup(row));
 		});
 	}
 
@@ -1592,10 +1589,10 @@ export class MemoryMasterDataStore implements MasterDataStore {
 					row.normalizedCode === normalizedCode &&
 					row.retiredAt === null
 				) {
-					return ok(cloneItemGroup(row));
+					return errorResult.ok(cloneItemGroup(row));
 				}
 			}
-			return ok(null);
+			return errorResult.ok(null);
 		});
 	}
 
@@ -1614,7 +1611,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 						? a.id.localeCompare(b.id)
 						: a.normalizedCode.localeCompare(b.normalizedCode),
 				);
-			return ok(
+			return errorResult.ok(
 				paginate(rows, filter.page, filter.pageSize).map(cloneItemGroup),
 			);
 		});
@@ -1628,11 +1625,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		if (
 			this.hasLiveItemGroupCode(record.organizationId, record.normalizedCode)
 		) {
-			return fail(
-				"CONFLICT",
-				"Item group code already exists",
-				codeConflictDetails(),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Item group code already exists",
+			});
 		}
 		const parentCheck = this.assertParentItemGroup(
 			record.organizationId,
@@ -1685,7 +1680,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			return sideEffect;
 		}
 		this.applyImportMutationResult(meta, group.id, group.version);
-		return ok(cloneItemGroup(group));
+		return errorResult.ok(cloneItemGroup(group));
 	}
 
 	async updateItemGroup(
@@ -1695,23 +1690,19 @@ export class MemoryMasterDataStore implements MasterDataStore {
 	): Promise<Result<ItemGroup>> {
 		const existing = this.itemGroups.get(record.id);
 		if (existing === undefined) {
-			return fail("NOT_FOUND", "Item group not found", {
-				reason: "MASTER_NOT_FOUND",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Item group not found",
+			});
 		}
 		if (existing.organizationId !== record.organizationId) {
-			return fail(
-				"CONFLICT",
-				"Item group belongs to another organization",
-				crossOrgDetails(),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Item group belongs to another organization",
+			});
 		}
 		if (existing.version !== record.expectedVersion) {
-			return fail(
-				"CONFLICT",
-				"Item group version conflict",
-				versionConflictDetails(),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Item group version conflict",
+			});
 		}
 		const nextParentId =
 			record.parentId === undefined ? existing.parentId : record.parentId;
@@ -1779,7 +1770,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			return sideEffect;
 		}
 		this.applyImportMutationResult(meta, updated.id, updated.version);
-		return ok(cloneItemGroup(updated));
+		return errorResult.ok(cloneItemGroup(updated));
 	}
 
 	async transitionItemGroup(
@@ -1792,23 +1783,19 @@ export class MemoryMasterDataStore implements MasterDataStore {
 	): Promise<Result<ItemGroup>> {
 		const existing = this.itemGroups.get(record.id);
 		if (existing === undefined) {
-			return fail("NOT_FOUND", "Item group not found", {
-				reason: "MASTER_NOT_FOUND",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Item group not found",
+			});
 		}
 		if (existing.organizationId !== record.organizationId) {
-			return fail(
-				"CONFLICT",
-				"Item group belongs to another organization",
-				crossOrgDetails(),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Item group belongs to another organization",
+			});
 		}
 		if (existing.version !== record.expectedVersion) {
-			return fail(
-				"CONFLICT",
-				"Item group version conflict",
-				versionConflictDetails(),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Item group version conflict",
+			});
 		}
 		const lifecycle = assertLifecycleTransition(
 			existing.status,
@@ -1825,9 +1812,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				parent.status !== "active" ||
 				parent.retiredAt !== null
 			) {
-				return fail("CONFLICT", "Item group parent must be active", {
-					reason: "MASTER_INVALID_STATE",
-				} satisfies MasterFailureDetails);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Item group parent must be active",
+				});
 			}
 		}
 		if (record.toStatus === "retired") {
@@ -1844,13 +1831,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 					item.retiredAt === null,
 			);
 			if (hasLiveChild || hasLiveItem) {
-				return fail("CONFLICT", "Item group has local dependency blockers", {
-					reason: "MASTER_DEPENDENCY_BLOCKED",
-					blockers: [
-						...(hasLiveChild ? ["item_group.child"] : []),
-						...(hasLiveItem ? ["item_group.item"] : []),
-					],
-				} satisfies MasterFailureDetails);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Item group has local dependency blockers",
+				});
 			}
 		}
 		const snapshot = cloneItemGroup(existing);
@@ -1904,7 +1887,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		if (!sideEffect.ok) {
 			return sideEffect;
 		}
-		return ok(cloneItemGroup(updated));
+		return errorResult.ok(cloneItemGroup(updated));
 	}
 
 	getItemById(
@@ -1914,9 +1897,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		return resolveAsync(() => {
 			const row = this.items.get(id);
 			if (row === undefined || row.organizationId !== organizationId) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
-			return ok(cloneItem(row));
+			return errorResult.ok(cloneItem(row));
 		});
 	}
 
@@ -1931,10 +1914,10 @@ export class MemoryMasterDataStore implements MasterDataStore {
 					row.normalizedCode === normalizedCode &&
 					row.retiredAt === null
 				) {
-					return ok(cloneItem(row));
+					return errorResult.ok(cloneItem(row));
 				}
 			}
-			return ok(null);
+			return errorResult.ok(null);
 		});
 	}
 
@@ -1955,7 +1938,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 						? a.id.localeCompare(b.id)
 						: a.normalizedCode.localeCompare(b.normalizedCode),
 				);
-			return ok(paginate(rows, filter.page, filter.pageSize).map(cloneItem));
+			return errorResult.ok(
+				paginate(rows, filter.page, filter.pageSize).map(cloneItem),
+			);
 		});
 	}
 
@@ -1965,45 +1950,31 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		meta: MutationMeta,
 	): Promise<Result<Item>> {
 		if (this.hasLiveItemCode(record.organizationId, record.normalizedCode)) {
-			return fail(
-				"CONFLICT",
-				"Item code already exists",
-				codeConflictDetails(),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Item code already exists",
+			});
 		}
 		const baseUom = this.uoms.get(record.baseUomId);
 		if (baseUom === undefined) {
-			return fail("BAD_REQUEST", "baseUomId is not a known platform UoM", {
-				reason: "MASTER_VALIDATION_FAILED",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage: "baseUomId is not a known platform UoM",
+			});
 		}
 		if (!baseUom.active) {
-			return fail(
-				"BAD_REQUEST",
-				"baseUomId must reference an active platform UoM",
-				{
-					reason: "MASTER_VALIDATION_FAILED",
-				} satisfies MasterFailureDetails,
-			);
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage: "baseUomId must reference an active platform UoM",
+			});
 		}
 		const group = this.itemGroups.get(record.itemGroupId);
 		if (group === undefined || group.organizationId !== record.organizationId) {
-			return fail(
-				"BAD_REQUEST",
-				"itemGroupId must exist in the same organization",
-				{
-					reason: "MASTER_CROSS_ORG_REFERENCE",
-				} satisfies MasterFailureDetails,
-			);
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage: "itemGroupId must exist in the same organization",
+			});
 		}
 		if (group.status !== "active" || group.retiredAt !== null) {
-			return fail(
-				"CONFLICT",
-				"itemGroupId must reference an active item group",
-				{
-					reason: "MASTER_INVALID_STATE",
-				} satisfies MasterFailureDetails,
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "itemGroupId must reference an active item group",
+			});
 		}
 		const now = new Date();
 		const profile = resolveItemOperationalProfile({
@@ -2101,7 +2072,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			return sideEffect;
 		}
 		this.applyImportMutationResult(meta, item.id, item.version);
-		return ok(cloneItem(item));
+		return errorResult.ok(cloneItem(item));
 	}
 
 	async updateItem(
@@ -2111,23 +2082,17 @@ export class MemoryMasterDataStore implements MasterDataStore {
 	): Promise<Result<Item>> {
 		const existing = this.items.get(record.id);
 		if (existing === undefined) {
-			return fail("NOT_FOUND", "Item not found", {
-				reason: "MASTER_NOT_FOUND",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("NOT_FOUND", { publicMessage: "Item not found" });
 		}
 		if (existing.organizationId !== record.organizationId) {
-			return fail(
-				"CONFLICT",
-				"Item belongs to another organization",
-				crossOrgDetails(),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Item belongs to another organization",
+			});
 		}
 		if (existing.version !== record.expectedVersion) {
-			return fail(
-				"CONFLICT",
-				"Item version conflict",
-				versionConflictDetails(),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Item version conflict",
+			});
 		}
 		const nextBaseUomId = record.baseUomId ?? existing.baseUomId;
 		const nextGroupId = record.itemGroupId ?? existing.itemGroupId;
@@ -2150,11 +2115,10 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				(itemTypeChanged ? undefined : existing.serviceIndicator),
 		});
 		if (nextBaseUomId !== existing.baseUomId) {
-			return fail(
-				"CONFLICT",
-				"Base UoM changes require a governed item conversion operation",
-				{ reason: "MASTER_INVALID_STATE" } satisfies MasterFailureDetails,
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage:
+					"Base UoM changes require a governed item conversion operation",
+			});
 		}
 		if (nextItemType !== existing.itemType) {
 			const hasMaterialDependencies =
@@ -2188,44 +2152,32 @@ export class MemoryMasterDataStore implements MasterDataStore {
 						row.itemId === record.id,
 				);
 			if (hasMaterialDependencies) {
-				return fail("CONFLICT", "Item type has material dependency blockers", {
-					reason: "MASTER_DEPENDENCY_BLOCKED",
-				} satisfies MasterFailureDetails);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Item type has material dependency blockers",
+				});
 			}
 		}
 		const baseUom = this.uoms.get(nextBaseUomId);
 		if (baseUom === undefined) {
-			return fail("BAD_REQUEST", "baseUomId is not a known platform UoM", {
-				reason: "MASTER_VALIDATION_FAILED",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage: "baseUomId is not a known platform UoM",
+			});
 		}
 		if (!baseUom.active) {
-			return fail(
-				"BAD_REQUEST",
-				"baseUomId must reference an active platform UoM",
-				{
-					reason: "MASTER_VALIDATION_FAILED",
-				} satisfies MasterFailureDetails,
-			);
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage: "baseUomId must reference an active platform UoM",
+			});
 		}
 		const group = this.itemGroups.get(nextGroupId);
 		if (group === undefined || group.organizationId !== record.organizationId) {
-			return fail(
-				"BAD_REQUEST",
-				"itemGroupId must exist in the same organization",
-				{
-					reason: "MASTER_CROSS_ORG_REFERENCE",
-				} satisfies MasterFailureDetails,
-			);
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage: "itemGroupId must exist in the same organization",
+			});
 		}
 		if (group.status !== "active" || group.retiredAt !== null) {
-			return fail(
-				"CONFLICT",
-				"itemGroupId must reference an active item group",
-				{
-					reason: "MASTER_INVALID_STATE",
-				} satisfies MasterFailureDetails,
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "itemGroupId must reference an active item group",
+			});
 		}
 		const snapshot = cloneItem(existing);
 		const updated: Item = {
@@ -2370,7 +2322,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			return sideEffect;
 		}
 		this.applyImportMutationResult(meta, updated.id, updated.version);
-		return ok(cloneItem(updated));
+		return errorResult.ok(cloneItem(updated));
 	}
 
 	async transitionItem(
@@ -2383,23 +2335,17 @@ export class MemoryMasterDataStore implements MasterDataStore {
 	): Promise<Result<Item>> {
 		const existing = this.items.get(record.id);
 		if (existing === undefined) {
-			return fail("NOT_FOUND", "Item not found", {
-				reason: "MASTER_NOT_FOUND",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("NOT_FOUND", { publicMessage: "Item not found" });
 		}
 		if (existing.organizationId !== record.organizationId) {
-			return fail(
-				"CONFLICT",
-				"Item belongs to another organization",
-				crossOrgDetails(),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Item belongs to another organization",
+			});
 		}
 		if (existing.version !== record.expectedVersion) {
-			return fail(
-				"CONFLICT",
-				"Item version conflict",
-				versionConflictDetails(),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Item version conflict",
+			});
 		}
 		const lifecycle =
 			record.toStatus === "draft"
@@ -2419,11 +2365,10 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				baseUom === undefined ||
 				!baseUom.active
 			) {
-				return fail(
-					"CONFLICT",
-					"Item requires an active item group and active platform UoM",
-					{ reason: "MASTER_INVALID_STATE" } satisfies MasterFailureDetails,
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage:
+						"Item requires an active item group and active platform UoM",
+				});
 			}
 		}
 		if (record.toStatus === "retired") {
@@ -2451,9 +2396,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 						row.itemId === record.id,
 				);
 			if (hasLocalBlocker) {
-				return fail("CONFLICT", "Item has local dependency blockers", {
-					reason: "MASTER_DEPENDENCY_BLOCKED",
-				} satisfies MasterFailureDetails);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Item has local dependency blockers",
+				});
 			}
 		}
 		const snapshot = cloneItem(existing);
@@ -2574,7 +2519,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				return variantSide;
 			}
 		}
-		return ok(cloneItem(updated));
+		return errorResult.ok(cloneItem(updated));
 	}
 
 	getWarehouseById(
@@ -2584,9 +2529,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		return resolveAsync(() => {
 			const row = this.warehouses.get(id);
 			if (row === undefined || row.organizationId !== organizationId) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
-			return ok(cloneWarehouse(row));
+			return errorResult.ok(cloneWarehouse(row));
 		});
 	}
 
@@ -2601,10 +2546,10 @@ export class MemoryMasterDataStore implements MasterDataStore {
 					row.normalizedCode === normalizedCode &&
 					row.retiredAt === null
 				) {
-					return ok(cloneWarehouse(row));
+					return errorResult.ok(cloneWarehouse(row));
 				}
 			}
-			return ok(null);
+			return errorResult.ok(null);
 		});
 	}
 
@@ -2623,7 +2568,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 						? a.id.localeCompare(b.id)
 						: a.normalizedCode.localeCompare(b.normalizedCode),
 				);
-			return ok(
+			return errorResult.ok(
 				paginate(rows, filter.page, filter.pageSize).map(cloneWarehouse),
 			);
 		});
@@ -2637,11 +2582,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		if (
 			this.hasLiveWarehouseCode(record.organizationId, record.normalizedCode)
 		) {
-			return fail(
-				"CONFLICT",
-				"Warehouse code already exists",
-				codeConflictDetails(),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Warehouse code already exists",
+			});
 		}
 		const parentCheck = this.assertParentWarehouse(
 			record.organizationId,
@@ -2658,9 +2601,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		) {
 			const country = this.countries.get(record.addressCountryId);
 			if (country === undefined || !country.active) {
-				return fail("BAD_REQUEST", "Warehouse address country must be active", {
-					reason: "MASTER_VALIDATION_FAILED",
-				} satisfies MasterFailureDetails);
+				return errorResult.fail("BAD_REQUEST", {
+					publicMessage: "Warehouse address country must be active",
+				});
 			}
 		}
 		const now = new Date();
@@ -2713,7 +2656,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			return sideEffect;
 		}
 		this.applyImportMutationResult(meta, warehouse.id, warehouse.version);
-		return ok(cloneWarehouse(warehouse));
+		return errorResult.ok(cloneWarehouse(warehouse));
 	}
 
 	async updateWarehouse(
@@ -2723,23 +2666,19 @@ export class MemoryMasterDataStore implements MasterDataStore {
 	): Promise<Result<Warehouse>> {
 		const existing = this.warehouses.get(record.id);
 		if (existing === undefined) {
-			return fail("NOT_FOUND", "Warehouse not found", {
-				reason: "MASTER_NOT_FOUND",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Warehouse not found",
+			});
 		}
 		if (existing.organizationId !== record.organizationId) {
-			return fail(
-				"CONFLICT",
-				"Warehouse belongs to another organization",
-				crossOrgDetails(),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Warehouse belongs to another organization",
+			});
 		}
 		if (existing.version !== record.expectedVersion) {
-			return fail(
-				"CONFLICT",
-				"Warehouse version conflict",
-				versionConflictDetails(),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Warehouse version conflict",
+			});
 		}
 		const snapshot = cloneWarehouse(existing);
 		const nextLocationType = record.locationType ?? existing.locationType;
@@ -2750,20 +2689,19 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		if (nextAddressCountryId !== null) {
 			const country = this.countries.get(nextAddressCountryId);
 			if (country === undefined || !country.active) {
-				return fail("BAD_REQUEST", "Warehouse address country must be active", {
-					reason: "MASTER_VALIDATION_FAILED",
-				} satisfies MasterFailureDetails);
+				return errorResult.fail("BAD_REQUEST", {
+					publicMessage: "Warehouse address country must be active",
+				});
 			}
 		}
 		if (
 			nextLocationType !== existing.locationType &&
 			existing.status !== "draft"
 		) {
-			return fail(
-				"CONFLICT",
-				"Warehouse location type can change only while the warehouse is draft",
-				{ reason: "MASTER_INVALID_STATE" } satisfies MasterFailureDetails,
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage:
+					"Warehouse location type can change only while the warehouse is draft",
+			});
 		}
 		if (nextLocationType !== existing.locationType) {
 			const parentCheck = this.assertParentWarehouse(
@@ -2790,9 +2728,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 					row.warehouseId === existing.id,
 			);
 			if (incompatibleChild || hasExternalId) {
-				return fail("CONFLICT", "Warehouse type has dependency blockers", {
-					reason: "MASTER_DEPENDENCY_BLOCKED",
-				} satisfies MasterFailureDetails);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Warehouse type has dependency blockers",
+				});
 			}
 		}
 		const updated: Warehouse = {
@@ -2851,7 +2789,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			return sideEffect;
 		}
 		this.applyImportMutationResult(meta, updated.id, updated.version);
-		return ok(cloneWarehouse(updated));
+		return errorResult.ok(cloneWarehouse(updated));
 	}
 
 	async moveWarehouse(
@@ -2861,30 +2799,25 @@ export class MemoryMasterDataStore implements MasterDataStore {
 	): Promise<Result<Warehouse>> {
 		const existing = this.warehouses.get(record.id);
 		if (existing === undefined) {
-			return fail("NOT_FOUND", "Warehouse not found", {
-				reason: "MASTER_NOT_FOUND",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Warehouse not found",
+			});
 		}
 		if (existing.organizationId !== record.organizationId) {
-			return fail(
-				"CONFLICT",
-				"Warehouse belongs to another organization",
-				crossOrgDetails(),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Warehouse belongs to another organization",
+			});
 		}
 		if (existing.version !== record.expectedVersion) {
-			return fail(
-				"CONFLICT",
-				"Warehouse version conflict",
-				versionConflictDetails(),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Warehouse version conflict",
+			});
 		}
 		if (existing.status !== "draft" && existing.status !== "inactive") {
-			return fail(
-				"CONFLICT",
-				"Only draft or inactive warehouses may move without governed operational clearance",
-				{ reason: "MASTER_INVALID_STATE" } satisfies MasterFailureDetails,
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage:
+					"Only draft or inactive warehouses may move without governed operational clearance",
+			});
 		}
 		const parentCheck = this.assertParentWarehouse(
 			record.organizationId,
@@ -2933,7 +2866,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		if (!sideEffect.ok) {
 			return sideEffect;
 		}
-		return ok(cloneWarehouse(updated));
+		return errorResult.ok(cloneWarehouse(updated));
 	}
 
 	async transitionWarehouse(
@@ -2946,23 +2879,19 @@ export class MemoryMasterDataStore implements MasterDataStore {
 	): Promise<Result<Warehouse>> {
 		const existing = this.warehouses.get(record.id);
 		if (existing === undefined) {
-			return fail("NOT_FOUND", "Warehouse not found", {
-				reason: "MASTER_NOT_FOUND",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Warehouse not found",
+			});
 		}
 		if (existing.organizationId !== record.organizationId) {
-			return fail(
-				"CONFLICT",
-				"Warehouse belongs to another organization",
-				crossOrgDetails(),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Warehouse belongs to another organization",
+			});
 		}
 		if (existing.version !== record.expectedVersion) {
-			return fail(
-				"CONFLICT",
-				"Warehouse version conflict",
-				versionConflictDetails(),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Warehouse version conflict",
+			});
 		}
 		const lifecycle = assertLifecycleTransition(
 			existing.status,
@@ -2979,9 +2908,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				parent.status !== "active" ||
 				parent.retiredAt !== null
 			) {
-				return fail("CONFLICT", "Warehouse parent must be active", {
-					reason: "MASTER_INVALID_STATE",
-				} satisfies MasterFailureDetails);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Warehouse parent must be active",
+				});
 			}
 		}
 		if (record.toStatus === "retired") {
@@ -2997,9 +2926,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 					row.warehouseId === record.id,
 			);
 			if (hasLiveChild || hasExternalId) {
-				return fail("CONFLICT", "Warehouse has local dependency blockers", {
-					reason: "MASTER_DEPENDENCY_BLOCKED",
-				} satisfies MasterFailureDetails);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Warehouse has local dependency blockers",
+				});
 			}
 		}
 		const snapshot = cloneWarehouse(existing);
@@ -3053,7 +2982,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		if (!sideEffect.ok) {
 			return sideEffect;
 		}
-		return ok(cloneWarehouse(updated));
+		return errorResult.ok(cloneWarehouse(updated));
 	}
 
 	getPaymentTermById(
@@ -3063,9 +2992,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		return resolveAsync(() => {
 			const row = this.paymentTerms.get(id);
 			if (row === undefined || row.organizationId !== organizationId) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
-			return ok(clonePaymentTerm(row));
+			return errorResult.ok(clonePaymentTerm(row));
 		});
 	}
 
@@ -3080,10 +3009,10 @@ export class MemoryMasterDataStore implements MasterDataStore {
 					row.normalizedCode === normalizedCode &&
 					row.retiredAt === null
 				) {
-					return ok(clonePaymentTerm(row));
+					return errorResult.ok(clonePaymentTerm(row));
 				}
 			}
-			return ok(null);
+			return errorResult.ok(null);
 		});
 	}
 
@@ -3102,7 +3031,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 						? a.id.localeCompare(b.id)
 						: a.normalizedCode.localeCompare(b.normalizedCode),
 				);
-			return ok(
+			return errorResult.ok(
 				paginate(rows, filter.page, filter.pageSize).map(clonePaymentTerm),
 			);
 		});
@@ -3121,21 +3050,17 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		if (rule.currencyRestrictionId !== null) {
 			const currency = this.currencies.get(rule.currencyRestrictionId);
 			if (currency === undefined || !currency.active) {
-				return fail(
-					"BAD_REQUEST",
-					"Payment term currency restriction must be active",
-					{ reason: "MASTER_VALIDATION_FAILED" } satisfies MasterFailureDetails,
-				);
+				return errorResult.fail("BAD_REQUEST", {
+					publicMessage: "Payment term currency restriction must be active",
+				});
 			}
 		}
 		if (
 			this.hasLivePaymentTermCode(record.organizationId, record.normalizedCode)
 		) {
-			return fail(
-				"CONFLICT",
-				"Payment term code already exists",
-				codeConflictDetails(),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Payment term code already exists",
+			});
 		}
 		const now = new Date();
 		const term: PaymentTerm = {
@@ -3183,7 +3108,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		if (!sideEffect.ok) {
 			return sideEffect;
 		}
-		return ok(clonePaymentTerm(term));
+		return errorResult.ok(clonePaymentTerm(term));
 	}
 
 	async updatePaymentTerm(
@@ -3193,28 +3118,24 @@ export class MemoryMasterDataStore implements MasterDataStore {
 	): Promise<Result<PaymentTerm>> {
 		const existing = this.paymentTerms.get(record.id);
 		if (existing === undefined) {
-			return fail("NOT_FOUND", "Payment term not found", {
-				reason: "MASTER_NOT_FOUND",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Payment term not found",
+			});
 		}
 		if (existing.organizationId !== record.organizationId) {
-			return fail(
-				"CONFLICT",
-				"Payment term belongs to another organization",
-				crossOrgDetails(),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Payment term belongs to another organization",
+			});
 		}
 		if (existing.version !== record.expectedVersion) {
-			return fail(
-				"CONFLICT",
-				"Payment term version conflict",
-				versionConflictDetails(),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Payment term version conflict",
+			});
 		}
 		if (existing.status === "retired") {
-			return fail("CONFLICT", "Retired payment terms are immutable", {
-				reason: "MASTER_INVALID_STATE",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Retired payment terms are immutable",
+			});
 		}
 		const ruleResult = normalizePaymentTermRule({
 			netDays: record.netDays ?? existing.netDays,
@@ -3248,11 +3169,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		if (rule.currencyRestrictionId !== null) {
 			const currency = this.currencies.get(rule.currencyRestrictionId);
 			if (currency === undefined || !currency.active) {
-				return fail(
-					"BAD_REQUEST",
-					"Payment term currency restriction must be active",
-					{ reason: "MASTER_VALIDATION_FAILED" } satisfies MasterFailureDetails,
-				);
+				return errorResult.fail("BAD_REQUEST", {
+					publicMessage: "Payment term currency restriction must be active",
+				});
 			}
 		}
 		const snapshot = clonePaymentTerm(existing);
@@ -3307,7 +3226,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		if (!sideEffect.ok) {
 			return sideEffect;
 		}
-		return ok(clonePaymentTerm(updated));
+		return errorResult.ok(clonePaymentTerm(updated));
 	}
 
 	async transitionPaymentTerm(
@@ -3320,23 +3239,19 @@ export class MemoryMasterDataStore implements MasterDataStore {
 	): Promise<Result<PaymentTerm>> {
 		const existing = this.paymentTerms.get(record.id);
 		if (existing === undefined) {
-			return fail("NOT_FOUND", "Payment term not found", {
-				reason: "MASTER_NOT_FOUND",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Payment term not found",
+			});
 		}
 		if (existing.organizationId !== record.organizationId) {
-			return fail(
-				"CONFLICT",
-				"Payment term belongs to another organization",
-				crossOrgDetails(),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Payment term belongs to another organization",
+			});
 		}
 		if (existing.version !== record.expectedVersion) {
-			return fail(
-				"CONFLICT",
-				"Payment term version conflict",
-				versionConflictDetails(),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Payment term version conflict",
+			});
 		}
 		const lifecycle = assertLifecycleTransition(
 			existing.status,
@@ -3396,7 +3311,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		if (!sideEffect.ok) {
 			return sideEffect;
 		}
-		return ok(clonePaymentTerm(updated));
+		return errorResult.ok(clonePaymentTerm(updated));
 	}
 
 	getTaxRegistrationById(
@@ -3406,9 +3321,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		return resolveAsync(() => {
 			const row = this.taxRegistrations.get(id);
 			if (row === undefined || row.organizationId !== organizationId) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
-			return ok(cloneTaxRegistration(row));
+			return errorResult.ok(cloneTaxRegistration(row));
 		});
 	}
 
@@ -3433,7 +3348,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 								b.normalizedRegistrationNumber,
 							),
 				);
-			return ok(
+			return errorResult.ok(
 				paginate(rows, filter.page, filter.pageSize).map(cloneTaxRegistration),
 			);
 		});
@@ -3471,10 +3386,10 @@ export class MemoryMasterDataStore implements MasterDataStore {
 						{ validFrom: row.validFrom, validTo: row.validTo },
 					)
 				) {
-					return ok(cloneTaxRegistration(row));
+					return errorResult.ok(cloneTaxRegistration(row));
 				}
 			}
-			return ok(null);
+			return errorResult.ok(null);
 		});
 	}
 
@@ -3485,20 +3400,20 @@ export class MemoryMasterDataStore implements MasterDataStore {
 	): Promise<Result<TaxRegistration>> {
 		const party = this.parties.get(record.partyId);
 		if (party === undefined || party.organizationId !== record.organizationId) {
-			return fail("NOT_FOUND", "Party not found", {
-				reason: "MASTER_NOT_FOUND",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Party not found",
+			});
 		}
 		if (party.status === "retired") {
-			return fail("CONFLICT", "Party is retired", {
-				reason: "MASTER_INVALID_STATE",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Party is retired",
+			});
 		}
 		const country = this.countries.get(record.jurisdictionCountryId);
 		if (country === undefined || !country.active) {
-			return fail("BAD_REQUEST", "Active jurisdiction country not found", {
-				reason: "MASTER_VALIDATION_FAILED",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage: "Active jurisdiction country not found",
+			});
 		}
 		if (
 			isInvalidValidityRange({
@@ -3506,9 +3421,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				validTo: record.validTo,
 			})
 		) {
-			return fail("BAD_REQUEST", "validTo must be after validFrom", {
-				reason: "MASTER_VALIDATION_FAILED",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage: "validTo must be after validFrom",
+			});
 		}
 		if (
 			this.hasLiveTaxRegistrationIdentity(
@@ -3519,11 +3434,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				record.normalizedRegistrationNumber,
 			)
 		) {
-			return fail(
-				"CONFLICT",
-				"Tax registration identity already exists",
-				codeConflictDetails(),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Tax registration identity already exists",
+			});
 		}
 		const now = new Date();
 		const row: TaxRegistration = {
@@ -3590,7 +3503,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		if (!sideEffect.ok) {
 			return sideEffect;
 		}
-		return ok(cloneTaxRegistration(row));
+		return errorResult.ok(cloneTaxRegistration(row));
 	}
 
 	async updateTaxRegistration(
@@ -3600,28 +3513,24 @@ export class MemoryMasterDataStore implements MasterDataStore {
 	): Promise<Result<TaxRegistration>> {
 		const existing = this.taxRegistrations.get(record.id);
 		if (existing === undefined) {
-			return fail("NOT_FOUND", "Tax registration not found", {
-				reason: "MASTER_NOT_FOUND",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Tax registration not found",
+			});
 		}
 		if (existing.organizationId !== record.organizationId) {
-			return fail(
-				"CONFLICT",
-				"Tax registration belongs to another organization",
-				crossOrgDetails(),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Tax registration belongs to another organization",
+			});
 		}
 		if (existing.version !== record.expectedVersion) {
-			return fail(
-				"CONFLICT",
-				"Tax registration version conflict",
-				versionConflictDetails(),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Tax registration version conflict",
+			});
 		}
 		if (existing.status === "retired") {
-			return fail("CONFLICT", "Retired tax registrations are immutable", {
-				reason: "MASTER_INVALID_STATE",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Retired tax registrations are immutable",
+			});
 		}
 		const nextValidFrom =
 			record.validFrom === undefined ? existing.validFrom : record.validFrom;
@@ -3633,15 +3542,15 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				validTo: nextValidTo,
 			})
 		) {
-			return fail("BAD_REQUEST", "validTo must be after validFrom", {
-				reason: "MASTER_VALIDATION_FAILED",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage: "validTo must be after validFrom",
+			});
 		}
 		if (existing.status === "active") {
 			if (nextValidFrom === null) {
-				return fail("CONFLICT", "Active tax registration requires validFrom", {
-					reason: "MASTER_INVALID_STATE",
-				} satisfies MasterFailureDetails);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Active tax registration requires validFrom",
+				});
 			}
 			const overlap = await this.findOverlappingActiveTaxRegistration({
 				organizationId: existing.organizationId,
@@ -3656,11 +3565,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				return overlap;
 			}
 			if (overlap.data !== null) {
-				return fail(
-					"CONFLICT",
-					"Active tax registration validity ranges overlap",
-					{ reason: "MASTER_VALIDITY_OVERLAP" } satisfies MasterFailureDetails,
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Active tax registration validity ranges overlap",
+				});
 			}
 		}
 		const snapshot = cloneTaxRegistration(existing);
@@ -3719,7 +3626,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		if (!sideEffect.ok) {
 			return sideEffect;
 		}
-		return ok(cloneTaxRegistration(updated));
+		return errorResult.ok(cloneTaxRegistration(updated));
 	}
 
 	async transitionTaxRegistration(
@@ -3732,23 +3639,19 @@ export class MemoryMasterDataStore implements MasterDataStore {
 	): Promise<Result<TaxRegistration>> {
 		const existing = this.taxRegistrations.get(record.id);
 		if (existing === undefined) {
-			return fail("NOT_FOUND", "Tax registration not found", {
-				reason: "MASTER_NOT_FOUND",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Tax registration not found",
+			});
 		}
 		if (existing.organizationId !== record.organizationId) {
-			return fail(
-				"CONFLICT",
-				"Tax registration belongs to another organization",
-				crossOrgDetails(),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Tax registration belongs to another organization",
+			});
 		}
 		if (existing.version !== record.expectedVersion) {
-			return fail(
-				"CONFLICT",
-				"Tax registration version conflict",
-				versionConflictDetails(),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Tax registration version conflict",
+			});
 		}
 		const lifecycle =
 			existing.status === "retired" && record.toStatus === "blocked"
@@ -3762,9 +3665,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		}
 		if (record.toStatus === "active") {
 			if (existing.validFrom === null) {
-				return fail("CONFLICT", "Active tax registration requires validFrom", {
-					reason: "MASTER_INVALID_STATE",
-				} satisfies MasterFailureDetails);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Active tax registration requires validFrom",
+				});
 			}
 			if (
 				isInvalidValidityRange({
@@ -3772,9 +3675,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 					validTo: existing.validTo,
 				})
 			) {
-				return fail("BAD_REQUEST", "validTo must be after validFrom", {
-					reason: "MASTER_VALIDATION_FAILED",
-				} satisfies MasterFailureDetails);
+				return errorResult.fail("BAD_REQUEST", {
+					publicMessage: "validTo must be after validFrom",
+				});
 			}
 			const party = this.parties.get(existing.partyId);
 			if (
@@ -3782,15 +3685,15 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				party.organizationId !== existing.organizationId ||
 				party.status === "retired"
 			) {
-				return fail("CONFLICT", "Party is unavailable", {
-					reason: "MASTER_INVALID_STATE",
-				} satisfies MasterFailureDetails);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Party is unavailable",
+				});
 			}
 			const country = this.countries.get(existing.jurisdictionCountryId);
 			if (country === undefined || !country.active) {
-				return fail("BAD_REQUEST", "Active jurisdiction country not found", {
-					reason: "MASTER_VALIDATION_FAILED",
-				} satisfies MasterFailureDetails);
+				return errorResult.fail("BAD_REQUEST", {
+					publicMessage: "Active jurisdiction country not found",
+				});
 			}
 			const overlap = await this.findOverlappingActiveTaxRegistration({
 				organizationId: existing.organizationId,
@@ -3805,11 +3708,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				return overlap;
 			}
 			if (overlap.data !== null) {
-				return fail(
-					"CONFLICT",
-					"Active tax registration validity ranges overlap",
-					{ reason: "MASTER_VALIDITY_OVERLAP" } satisfies MasterFailureDetails,
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Active tax registration validity ranges overlap",
+				});
 			}
 		}
 		const snapshot = cloneTaxRegistration(existing);
@@ -3866,7 +3767,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		if (!sideEffect.ok) {
 			return sideEffect;
 		}
-		return ok(cloneTaxRegistration(updated));
+		return errorResult.ok(cloneTaxRegistration(updated));
 	}
 
 	private hasLivePartyCode(
@@ -4076,53 +3977,47 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		parentId: string | null,
 	): Result<true> {
 		if (parentId === null) {
-			return ok(true);
+			return errorResult.ok(true);
 		}
 		if (selfId !== null && parentId === selfId) {
-			return fail(
-				"BAD_REQUEST",
-				"Item group cannot parent itself",
-				validationDetails(),
-			);
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage: "Item group cannot parent itself",
+			});
 		}
 		const parent = this.itemGroups.get(parentId);
 		if (parent === undefined || parent.organizationId !== organizationId) {
-			return fail(
-				"CONFLICT",
-				"Item group parent must exist in the same organization",
-				crossOrgDetails(),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Item group parent must exist in the same organization",
+			});
 		}
 		if (parent.status !== "active" || parent.retiredAt !== null) {
-			return fail("CONFLICT", "Item group parent must be active", {
-				reason: "MASTER_INVALID_STATE",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Item group parent must be active",
+			});
 		}
 		let cursor: string | null = parent.parentId;
 		const seen = new Set<string>([parentId]);
 		while (cursor !== null) {
 			if (selfId !== null && cursor === selfId) {
-				return fail("CONFLICT", "Item group parent would create a cycle", {
-					reason: "MASTER_INVALID_STATE",
-				} satisfies MasterFailureDetails);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Item group parent would create a cycle",
+				});
 			}
 			if (seen.has(cursor)) {
-				return fail("CONFLICT", "Item group parent would create a cycle", {
-					reason: "MASTER_INVALID_STATE",
-				} satisfies MasterFailureDetails);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Item group parent would create a cycle",
+				});
 			}
 			seen.add(cursor);
 			const next = this.itemGroups.get(cursor);
 			if (next === undefined || next.organizationId !== organizationId) {
-				return fail(
-					"CONFLICT",
-					"Item group parent chain crosses organizations",
-					crossOrgDetails(),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Item group parent chain crosses organizations",
+				});
 			}
 			cursor = next.parentId;
 		}
-		return ok(true);
+		return errorResult.ok(true);
 	}
 
 	private assertParentWarehouse(
@@ -4132,66 +4027,55 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		childLocationType: Warehouse["locationType"],
 	): Result<true> {
 		if (parentId === null) {
-			return ok(true);
+			return errorResult.ok(true);
 		}
 		if (selfId !== null && parentId === selfId) {
-			return fail(
-				"BAD_REQUEST",
-				"Warehouse cannot parent itself",
-				validationDetails(),
-			);
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage: "Warehouse cannot parent itself",
+			});
 		}
 		const parent = this.warehouses.get(parentId);
 		if (parent === undefined || parent.organizationId !== organizationId) {
-			return fail(
-				"CONFLICT",
-				"Warehouse parent must exist in the same organization",
-				crossOrgDetails(),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Warehouse parent must exist in the same organization",
+			});
 		}
 		if (parent.status !== "active" || parent.retiredAt !== null) {
-			return fail("CONFLICT", "Warehouse parent must be active", {
-				reason: "MASTER_INVALID_STATE",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Warehouse parent must be active",
+			});
 		}
 		if (
 			!isWarehouseParentTypeCompatible(parent.locationType, childLocationType)
 		) {
-			return fail(
-				"BAD_REQUEST",
-				"Warehouse parent and child location types are incompatible",
-				{ reason: "MASTER_VALIDATION_FAILED" } satisfies MasterFailureDetails,
-			);
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage:
+					"Warehouse parent and child location types are incompatible",
+			});
 		}
 		let cursor: string | null = parent.parentId;
 		const seen = new Set<string>([parentId]);
 		while (cursor !== null) {
 			if (selfId !== null && cursor === selfId) {
-				return fail(
-					"BAD_REQUEST",
-					"Warehouse parent would create a cycle",
-					validationDetails(),
-				);
+				return errorResult.fail("BAD_REQUEST", {
+					publicMessage: "Warehouse parent would create a cycle",
+				});
 			}
 			if (seen.has(cursor)) {
-				return fail(
-					"BAD_REQUEST",
-					"Warehouse parent would create a cycle",
-					validationDetails(),
-				);
+				return errorResult.fail("BAD_REQUEST", {
+					publicMessage: "Warehouse parent would create a cycle",
+				});
 			}
 			seen.add(cursor);
 			const next = this.warehouses.get(cursor);
 			if (next === undefined || next.organizationId !== organizationId) {
-				return fail(
-					"CONFLICT",
-					"Warehouse parent chain crosses organizations",
-					crossOrgDetails(),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Warehouse parent chain crosses organizations",
+				});
 			}
 			cursor = next.parentId;
 		}
-		return ok(true);
+		return errorResult.ok(true);
 	}
 
 	private async commitMutation(
@@ -4247,7 +4131,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			rollback();
 			return outboxResult;
 		}
-		return ok(true);
+		return errorResult.ok(true);
 	}
 
 	/** Object-form wrapper used by extension mutations. */
@@ -4303,7 +4187,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 					count += 1;
 				}
 			}
-			return ok(count);
+			return errorResult.ok(count);
 		});
 	}
 
@@ -4318,7 +4202,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 						r.partyId === filter.partyId,
 				)
 				.sort((a, b) => a.roleCode.localeCompare(b.roleCode));
-			return ok({
+			return errorResult.ok({
 				items: paginate(rows, filter.page, filter.pageSize).map((r) => ({
 					...r,
 				})),
@@ -4342,7 +4226,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 						role.archivedAt === null,
 				)
 				.sort((a, b) => a.roleCode.localeCompare(b.roleCode));
-			return ok({
+			return errorResult.ok({
 				items: paginate(rows, filter.page, filter.pageSize).map((role) => ({
 					...role,
 				})),
@@ -4360,7 +4244,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 	): Promise<Result<PartyRole | null>> {
 		return resolveAsync(() => {
 			const role = this.partyRoles.get(id);
-			return ok(
+			return errorResult.ok(
 				role?.organizationId === organizationId && role.partyId === partyId
 					? { ...role }
 					: null,
@@ -4380,7 +4264,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 	> {
 		const role = this.partyRoles.get(id);
 		if (role === undefined || role.organizationId !== organizationId) {
-			return ok({ role: null, party: null, activeRoleCount: 0 });
+			return errorResult.ok({ role: null, party: null, activeRoleCount: 0 });
 		}
 		const party = this.parties.get(role.partyId);
 		const activeRoleCount = await this.countActivePartyRoles(
@@ -4390,7 +4274,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		if (!activeRoleCount.ok) {
 			return activeRoleCount;
 		}
-		return ok({
+		return errorResult.ok({
 			role: { ...role },
 			party:
 				party?.organizationId === organizationId
@@ -4409,8 +4293,8 @@ export class MemoryMasterDataStore implements MasterDataStore {
 	): Promise<Result<PartyRole>> {
 		const party = this.parties.get(record.partyId);
 		if (!party || party.organizationId !== record.organizationId) {
-			return fail("NOT_FOUND", "Party not found", {
-				reason: "MASTER_NOT_FOUND",
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Party not found",
 			});
 		}
 		const now = new Date();
@@ -4464,7 +4348,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			return side;
 		}
 		this.partyRoles.set(role.id, role);
-		return ok({ ...role });
+		return errorResult.ok({ ...role });
 	}
 
 	async updatePartyRole(
@@ -4474,8 +4358,8 @@ export class MemoryMasterDataStore implements MasterDataStore {
 	): Promise<Result<PartyRole>> {
 		const role = this.partyRoles.get(record.id);
 		if (!role || role.organizationId !== record.organizationId) {
-			return fail("NOT_FOUND", "Party role not found", {
-				reason: "MASTER_NOT_FOUND",
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Party role not found",
 			});
 		}
 		const version = assertExpectedExtensionVersion(
@@ -4487,13 +4371,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			return version;
 		}
 		if (role.status !== "draft" && role.status !== "inactive") {
-			return fail(
-				"CONFLICT",
-				"Only draft or inactive party roles can be updated",
-				{
-					reason: "MASTER_INVALID_STATE",
-				},
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Only draft or inactive party roles can be updated",
+			});
 		}
 		const next: PartyRole = {
 			...role,
@@ -4510,8 +4390,8 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			next.validTo !== null &&
 			next.validTo < next.validFrom
 		) {
-			return fail("BAD_REQUEST", "validTo must not precede validFrom", {
-				reason: "MASTER_VALIDATION_FAILED",
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage: "validTo must not precede validFrom",
 			});
 		}
 		const previous = { ...role };
@@ -4549,7 +4429,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		if (!side.ok) {
 			return side;
 		}
-		return ok({ ...next });
+		return errorResult.ok({ ...next });
 	}
 
 	async transitionPartyRole(
@@ -4562,8 +4442,8 @@ export class MemoryMasterDataStore implements MasterDataStore {
 	): Promise<Result<PartyRole>> {
 		const role = this.partyRoles.get(record.id);
 		if (!role || role.organizationId !== record.organizationId) {
-			return fail("NOT_FOUND", "Party role not found", {
-				reason: "MASTER_NOT_FOUND",
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Party role not found",
 			});
 		}
 		const version = assertExpectedExtensionVersion(
@@ -4601,11 +4481,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 					sibling.archivedAt === null,
 			)
 		) {
-			return fail(
-				"CONFLICT",
-				"An active party role of this type already exists",
-				codeConflictDetails(),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "An active party role of this type already exists",
+			});
 		}
 		const party = this.parties.get(role.partyId);
 		if (
@@ -4614,16 +4492,16 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			party.status === "retired" ||
 			party.mergedIntoId !== null
 		) {
-			return fail("CONFLICT", "Party cannot accept extension transitions", {
-				reason: "MASTER_INVALID_STATE",
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Party cannot accept extension transitions",
 			});
 		}
 		if (
 			transition.data.parentStateRequirement === "parent_active" &&
 			party.status !== "active"
 		) {
-			return fail("CONFLICT", "Party must be active for this transition", {
-				reason: "MASTER_INVALID_STATE",
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Party must be active for this transition",
 			});
 		}
 		// Active party cannot lose its final active role (reverse of activation invariant).
@@ -4642,13 +4520,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				return activeCount;
 			}
 			if (activeCount.data <= 1) {
-				return fail(
-					"CONFLICT",
-					"An active party cannot lose its final active role",
-					{
-						reason: "MASTER_FINAL_ACTIVE_ROLE",
-					},
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "An active party cannot lose its final active role",
+				});
 			}
 		}
 		const next: PartyRole = {
@@ -4704,7 +4578,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		if (!side.ok) {
 			return side;
 		}
-		return ok({ ...next });
+		return errorResult.ok({ ...next });
 	}
 
 	listPartyAddresses(
@@ -4718,7 +4592,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 						r.partyId === filter.parentId,
 				)
 				.sort((a, b) => a.line1.localeCompare(b.line1));
-			return ok(
+			return errorResult.ok(
 				paginate(rows, filter.page, filter.pageSize).map((r) => ({ ...r })),
 			);
 		});
@@ -4736,9 +4610,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				row.organizationId !== organizationId ||
 				row.partyId !== partyId
 			) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
-			return ok({ ...row });
+			return errorResult.ok({ ...row });
 		});
 	}
 
@@ -4757,7 +4631,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 					address.status === "active" &&
 					address.archivedAt === null,
 			);
-			return ok(row ? { ...row } : null);
+			return errorResult.ok(row ? { ...row } : null);
 		});
 	}
 
@@ -4768,8 +4642,8 @@ export class MemoryMasterDataStore implements MasterDataStore {
 	): Promise<Result<PartyAddress>> {
 		const party = this.parties.get(record.partyId);
 		if (!party || party.organizationId !== record.organizationId) {
-			return fail("NOT_FOUND", "Party not found", {
-				reason: "MASTER_NOT_FOUND",
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Party not found",
 			});
 		}
 		if (
@@ -4777,24 +4651,20 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			party.retiredAt !== null ||
 			party.mergedIntoId !== null
 		) {
-			return fail("CONFLICT", "Party cannot accept extension mutations", {
-				reason: "MASTER_INVALID_STATE",
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Party cannot accept extension mutations",
 			});
 		}
 		const country = this.countries.get(record.countryId);
 		if (!country) {
-			return fail("BAD_REQUEST", "Referenced country does not exist", {
-				reason: "MASTER_VALIDATION_FAILED",
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage: "Referenced country does not exist",
 			});
 		}
 		if (!country.active) {
-			return fail(
-				"CONFLICT",
-				"New active addresses require an active country",
-				{
-					reason: "MASTER_INVALID_STATE",
-				},
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "New active addresses require an active country",
+			});
 		}
 		if (
 			record.effectiveFrom !== undefined &&
@@ -4803,11 +4673,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			record.effectiveTo !== null &&
 			record.effectiveFrom > record.effectiveTo
 		) {
-			return fail(
-				"BAD_REQUEST",
-				"Invalid effective date range",
-				validationDetails(),
-			);
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage: "Invalid effective date range",
+			});
 		}
 		const now = new Date();
 		const row: PartyAddress = {
@@ -4893,7 +4761,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			return side;
 		}
 		this.partyAddresses.set(row.id, row);
-		return ok({ ...row });
+		return errorResult.ok({ ...row });
 	}
 
 	async updatePartyAddress(
@@ -4903,8 +4771,8 @@ export class MemoryMasterDataStore implements MasterDataStore {
 	): Promise<Result<PartyAddress>> {
 		const row = this.partyAddresses.get(record.id);
 		if (!row || row.organizationId !== record.organizationId) {
-			return fail("NOT_FOUND", "Party address not found", {
-				reason: "MASTER_NOT_FOUND",
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Party address not found",
 			});
 		}
 		const version = assertExpectedExtensionVersion(
@@ -4923,8 +4791,8 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			party.retiredAt !== null ||
 			party.mergedIntoId !== null
 		) {
-			return fail("CONFLICT", "Party cannot accept extension mutations", {
-				reason: "MASTER_INVALID_STATE",
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Party cannot accept extension mutations",
 			});
 		}
 		const next: PartyAddress = {
@@ -4958,31 +4826,23 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		};
 		const country = this.countries.get(next.countryId);
 		if (!country) {
-			return fail(
-				"BAD_REQUEST",
-				"Referenced country does not exist",
-				validationDetails(),
-			);
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage: "Referenced country does not exist",
+			});
 		}
 		if (!country.active) {
-			return fail(
-				"CONFLICT",
-				"New active addresses require an active country",
-				{
-					reason: "MASTER_INVALID_STATE",
-				},
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "New active addresses require an active country",
+			});
 		}
 		if (
 			next.effectiveFrom !== null &&
 			next.effectiveTo !== null &&
 			next.effectiveFrom > next.effectiveTo
 		) {
-			return fail(
-				"BAD_REQUEST",
-				"Invalid effective date range",
-				validationDetails(),
-			);
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage: "Invalid effective date range",
+			});
 		}
 		const prev = { ...row };
 		const demoted = next.isPrimary
@@ -5042,7 +4902,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		if (!side.ok) {
 			return side;
 		}
-		return ok({ ...next });
+		return errorResult.ok({ ...next });
 	}
 
 	listPartyContacts(filter: ParentListFilter): Promise<Result<PartyContact[]>> {
@@ -5054,7 +4914,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 						r.partyId === filter.parentId,
 				)
 				.sort((a, b) => a.value.localeCompare(b.value));
-			return ok(
+			return errorResult.ok(
 				paginate(rows, filter.page, filter.pageSize).map((r) => ({ ...r })),
 			);
 		});
@@ -5077,7 +4937,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 					contact.status === "active" &&
 					contact.archivedAt === null,
 			);
-			return ok(row ? { ...row } : null);
+			return errorResult.ok(row ? { ...row } : null);
 		});
 	}
 
@@ -5088,8 +4948,8 @@ export class MemoryMasterDataStore implements MasterDataStore {
 	): Promise<Result<PartyContact>> {
 		const party = this.parties.get(record.partyId);
 		if (!party || party.organizationId !== record.organizationId) {
-			return fail("NOT_FOUND", "Party not found", {
-				reason: "MASTER_NOT_FOUND",
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Party not found",
 			});
 		}
 		if (
@@ -5097,8 +4957,8 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			party.retiredAt !== null ||
 			party.mergedIntoId !== null
 		) {
-			return fail("CONFLICT", "Party cannot accept extension mutations", {
-				reason: "MASTER_INVALID_STATE",
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Party cannot accept extension mutations",
 			});
 		}
 		if (
@@ -5108,11 +4968,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			record.effectiveTo !== null &&
 			record.effectiveFrom > record.effectiveTo
 		) {
-			return fail(
-				"BAD_REQUEST",
-				"Invalid effective date range",
-				validationDetails(),
-			);
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage: "Invalid effective date range",
+			});
 		}
 		const now = new Date();
 		const row: PartyContact = {
@@ -5195,7 +5053,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			return side;
 		}
 		this.partyContacts.set(row.id, row);
-		return ok({ ...row });
+		return errorResult.ok({ ...row });
 	}
 
 	async updatePartyContact(
@@ -5205,8 +5063,8 @@ export class MemoryMasterDataStore implements MasterDataStore {
 	): Promise<Result<PartyContact>> {
 		const row = this.partyContacts.get(record.id);
 		if (!row || row.organizationId !== record.organizationId) {
-			return fail("NOT_FOUND", "Party contact not found", {
-				reason: "MASTER_NOT_FOUND",
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Party contact not found",
 			});
 		}
 		const version = assertExpectedExtensionVersion(
@@ -5221,11 +5079,10 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			(record.contactType === undefined) !== (record.value === undefined) ||
 			(record.value === undefined) !== (record.normalizedValue === undefined)
 		) {
-			return fail(
-				"BAD_REQUEST",
-				"Contact type, value, and normalized value must change together",
-				validationDetails(),
-			);
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage:
+					"Contact type, value, and normalized value must change together",
+			});
 		}
 		if (
 			record.verificationStatus !== undefined &&
@@ -5235,11 +5092,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 					record.verifiedAt !== undefined &&
 					record.verifiedAt !== null))
 		) {
-			return fail(
-				"BAD_REQUEST",
-				"Invalid party contact verification evidence",
-				validationDetails(),
-			);
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage: "Invalid party contact verification evidence",
+			});
 		}
 		const party = this.parties.get(row.partyId);
 		if (
@@ -5249,8 +5104,8 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			party.retiredAt !== null ||
 			party.mergedIntoId !== null
 		) {
-			return fail("CONFLICT", "Party cannot accept extension mutations", {
-				reason: "MASTER_INVALID_STATE",
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Party cannot accept extension mutations",
 			});
 		}
 		const contactIdentityChanged =
@@ -5288,11 +5143,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			next.effectiveTo !== null &&
 			next.effectiveFrom > next.effectiveTo
 		) {
-			return fail(
-				"BAD_REQUEST",
-				"Invalid effective date range",
-				validationDetails(),
-			);
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage: "Invalid effective date range",
+			});
 		}
 		const prev = { ...row };
 		const demoted = next.isPrimary
@@ -5353,7 +5206,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		if (!side.ok) {
 			return side;
 		}
-		return ok({ ...next });
+		return errorResult.ok({ ...next });
 	}
 
 	updatePartyContactVerification(
@@ -5371,8 +5224,8 @@ export class MemoryMasterDataStore implements MasterDataStore {
 	): Promise<Result<PartyExternalId>> {
 		const party = this.parties.get(record.partyId);
 		if (!party || party.organizationId !== record.organizationId) {
-			return fail("NOT_FOUND", "Party not found", {
-				reason: "MASTER_NOT_FOUND",
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Party not found",
 			});
 		}
 		for (const existing of this.partyExternalIds.values()) {
@@ -5383,8 +5236,8 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				existing.externalIdType === record.externalIdType &&
 				existing.normalizedValue === record.normalizedValue
 			) {
-				return fail("CONFLICT", "External id already exists", {
-					reason: "MASTER_EXTERNAL_ID_CONFLICT",
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "External id already exists",
 				});
 			}
 		}
@@ -5465,7 +5318,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			return side;
 		}
 		this.partyExternalIds.set(row.id, row);
-		return ok({ ...row });
+		return errorResult.ok({ ...row });
 	}
 
 	findPartyByExternalId(
@@ -5487,15 +5340,15 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				}
 			}
 			if (matches.length === 0) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			if (matches.length > 1) {
-				return fail("CONFLICT", "External id resolves to multiple parties", {
-					reason: "MASTER_EXTERNAL_ID_CONFLICT",
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "External id resolves to multiple parties",
 				});
 			}
 			const party = this.parties.get(matches[0].partyId);
-			return ok(party ? cloneParty(party) : null);
+			return errorResult.ok(party ? cloneParty(party) : null);
 		});
 	}
 
@@ -5505,8 +5358,8 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		meta: { correlationId: string },
 	): Promise<Result<PartyRelationship>> {
 		if (record.sourcePartyId === record.targetPartyId) {
-			return fail("BAD_REQUEST", "Party relationship cannot be reflexive", {
-				reason: "MASTER_VALIDATION_FAILED",
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage: "Party relationship cannot be reflexive",
 			});
 		}
 		const from = this.parties.get(record.sourcePartyId);
@@ -5520,11 +5373,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			from.mergedIntoId !== null ||
 			to.mergedIntoId !== null
 		) {
-			return fail(
-				"CONFLICT",
-				"Parties must exist in the same organization",
-				crossOrgDetails(),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Parties must exist in the same organization",
+			});
 		}
 		for (const existing of this.partyRelationships.values()) {
 			if (
@@ -5534,11 +5385,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				existing.relationshipType === record.relationshipType &&
 				existing.status === "active"
 			) {
-				return fail(
-					"CONFLICT",
-					"Relationship already exists",
-					codeConflictDetails(),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Relationship already exists",
+				});
 			}
 		}
 		if (
@@ -5558,8 +5407,8 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				record.sourcePartyId,
 			)
 		) {
-			return fail("CONFLICT", "Party relationship would create a cycle", {
-				reason: "MASTER_RELATIONSHIP_CYCLE",
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Party relationship would create a cycle",
 			});
 		}
 		const now = new Date();
@@ -5611,7 +5460,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			return side;
 		}
 		this.partyRelationships.set(row.id, row);
-		return ok({ ...row });
+		return errorResult.ok({ ...row });
 	}
 
 	listPartyRelationships(
@@ -5628,7 +5477,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				.sort(
 					(left, right) => left.createdAt.getTime() - right.createdAt.getTime(),
 				);
-			return ok({
+			return errorResult.ok({
 				items: paginate(rows, filter.page, filter.pageSize).map((row) => ({
 					...row,
 				})),
@@ -5649,39 +5498,35 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				item.organizationId !== filter.organizationId ||
 				item.status === "retired"
 			) {
-				return fail("NOT_FOUND", "Item not found", {
-					reason: "MASTER_NOT_FOUND",
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "Item not found",
 				});
 			}
 			if (filter.alternateUomId === item.baseUomId) {
-				return fail("BAD_REQUEST", "Item UoM conversion duplicates base UoM", {
-					reason: "MASTER_INVALID_UOM_CONVERSION",
-					field: "alternateUomId",
+				return errorResult.fail("BAD_REQUEST", {
+					publicMessage: "Item UoM conversion duplicates base UoM",
 				});
 			}
 			const baseUom = this.uoms.get(item.baseUomId);
 			const altUom = this.uoms.get(filter.alternateUomId);
 			if (!(baseUom && altUom)) {
-				return fail("BAD_REQUEST", "UoM not found", {
-					reason: "MASTER_VALIDATION_FAILED",
-					field: "alternateUomId",
+				return errorResult.fail("BAD_REQUEST", {
+					publicMessage: "UoM not found",
 				});
 			}
 			if (!(baseUom.active && altUom.active)) {
-				return fail("BAD_REQUEST", "UoM must be active", {
-					reason: "MASTER_VALIDATION_FAILED",
-					field: "alternateUomId",
+				return errorResult.fail("BAD_REQUEST", {
+					publicMessage: "UoM must be active",
 				});
 			}
 			const baseDimension = this.dimensions.get(baseUom.dimensionId);
 			const alternateDimension = this.dimensions.get(altUom.dimensionId);
 			if (!(baseDimension && alternateDimension)) {
-				return fail("BAD_REQUEST", "UoM dimension not found", {
-					reason: "MASTER_VALIDATION_FAILED",
-					field: "alternateUomId",
+				return errorResult.fail("BAD_REQUEST", {
+					publicMessage: "UoM dimension not found",
 				});
 			}
-			return ok({
+			return errorResult.ok({
 				itemId: item.id,
 				baseUomId: item.baseUomId,
 				alternateUomId: filter.alternateUomId,
@@ -5702,7 +5547,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 						r.itemId === filter.itemId,
 				)
 				.sort((a, b) => a.alternateUomId.localeCompare(b.alternateUomId));
-			return ok(
+			return errorResult.ok(
 				pageResult(
 					rows.map((r) => ({ ...r })),
 					filter.page,
@@ -5724,7 +5569,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 					uom.status === "active" &&
 					uom.archivedAt === null,
 			);
-			return ok(row ? { ...row } : null);
+			return errorResult.ok(row ? { ...row } : null);
 		});
 	}
 
@@ -5740,7 +5585,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 					uom.status === "active" &&
 					uom.archivedAt === null,
 			);
-			return ok(row ? { ...row } : null);
+			return errorResult.ok(row ? { ...row } : null);
 		});
 	}
 
@@ -5751,26 +5596,23 @@ export class MemoryMasterDataStore implements MasterDataStore {
 	): Promise<Result<ItemUom>> {
 		const item = this.items.get(record.itemId);
 		if (!item || item.organizationId !== record.organizationId) {
-			return fail("NOT_FOUND", "Item not found", {
-				reason: "MASTER_NOT_FOUND",
-			});
+			return errorResult.fail("NOT_FOUND", { publicMessage: "Item not found" });
 		}
 		const baseUom = this.uoms.get(item.baseUomId);
 		const altUom = this.uoms.get(record.alternateUomId);
 		if (!(baseUom && altUom)) {
-			return fail("BAD_REQUEST", "UoM not found", {
-				reason: "MASTER_VALIDATION_FAILED",
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage: "UoM not found",
 			});
 		}
 		if (!(baseUom.active && altUom.active)) {
-			return fail("BAD_REQUEST", "UoM must be active", {
-				reason: "MASTER_VALIDATION_FAILED",
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage: "UoM must be active",
 			});
 		}
 		if (record.alternateUomId === item.baseUomId) {
-			return fail("BAD_REQUEST", "Item UoM conversion duplicates base UoM", {
-				reason: "MASTER_INVALID_UOM_CONVERSION",
-				field: "alternateUomId",
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage: "Item UoM conversion duplicates base UoM",
 			});
 		}
 		const factor = normalizeItemUomConversionFactor(record.conversionFactor);
@@ -5778,15 +5620,15 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			return factor;
 		}
 		if (record.alternateUomId === item.baseUomId && factor.data !== "1") {
-			return fail("BAD_REQUEST", "Base UoM conversion factor must equal 1", {
-				reason: "MASTER_INVALID_UOM_CONVERSION",
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage: "Base UoM conversion factor must equal 1",
 			});
 		}
 		const baseDimension = this.dimensions.get(baseUom.dimensionId);
 		const alternateDimension = this.dimensions.get(altUom.dimensionId);
 		if (!(baseDimension && alternateDimension)) {
-			return fail("BAD_REQUEST", "UoM dimension not found", {
-				reason: "MASTER_VALIDATION_FAILED",
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage: "UoM dimension not found",
 			});
 		}
 		const compatible = assertItemUomCompatibility({
@@ -5802,8 +5644,8 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			(record.isDefaultPurchaseUom && !record.isPurchaseUom) ||
 			(record.isDefaultSalesUom && !record.isSalesUom)
 		) {
-			return fail("BAD_REQUEST", "Default UoM usage is inconsistent", {
-				reason: "MASTER_INVALID_UOM_CONVERSION",
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage: "Default UoM usage is inconsistent",
 			});
 		}
 		for (const existing of this.itemUoms.values()) {
@@ -5813,8 +5655,8 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				existing.alternateUomId === record.alternateUomId &&
 				existing.status === "active"
 			) {
-				return fail("CONFLICT", "Item UoM conversion already exists", {
-					reason: "MASTER_DUPLICATE",
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Item UoM conversion already exists",
 				});
 			}
 		}
@@ -5903,7 +5745,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			return side;
 		}
 		this.itemUoms.set(row.id, row);
-		return ok({ ...row });
+		return errorResult.ok({ ...row });
 	}
 
 	async createItemBarcode(
@@ -5917,9 +5759,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			item.organizationId !== record.organizationId ||
 			item.status === "retired"
 		) {
-			return fail("NOT_FOUND", "Item not found", {
-				reason: "MASTER_NOT_FOUND",
-			});
+			return errorResult.fail("NOT_FOUND", { publicMessage: "Item not found" });
 		}
 		const normalized = normalizeBarcode({
 			rawValue: record.barcodeValue,
@@ -5936,8 +5776,8 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			return packQuantity;
 		}
 		if ((record.uomId === null) !== (packQuantity === null)) {
-			return fail("BAD_REQUEST", "Invalid barcode packaging", {
-				reason: "MASTER_INVALID_BARCODE",
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage: "Invalid barcode packaging",
 			});
 		}
 		if (record.uomId !== null) {
@@ -5954,8 +5794,8 @@ export class MemoryMasterDataStore implements MasterDataStore {
 							conversion.archivedAt === null,
 					));
 			if (!usableForItem) {
-				return fail("BAD_REQUEST", "Barcode UoM is not valid for the item", {
-					reason: "MASTER_INVALID_BARCODE",
+				return errorResult.fail("BAD_REQUEST", {
+					publicMessage: "Barcode UoM is not valid for the item",
 				});
 			}
 		}
@@ -5965,11 +5805,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				existing.symbology === record.symbology &&
 				existing.normalizedValue === normalized.data.normalizedValue
 			) {
-				return fail(
-					"CONFLICT",
-					"Barcode already exists",
-					codeConflictDetails(),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Barcode already exists",
+				});
 			}
 		}
 		const previousPrimaries: ItemBarcode[] = [];
@@ -6049,7 +5887,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			return side;
 		}
 		this.itemBarcodes.set(row.id, row);
-		return ok({ ...row });
+		return errorResult.ok({ ...row });
 	}
 
 	findItemByBarcode(filter: ItemBarcodeLookup): Promise<Result<Item | null>> {
@@ -6063,17 +5901,16 @@ export class MemoryMasterDataStore implements MasterDataStore {
 						(row.status === "active" && row.archivedAt === null)),
 			);
 			if (matches.length > 1) {
-				return fail("CONFLICT", "Barcode resolves to multiple items", {
-					reason: "MASTER_DUPLICATE",
-					candidateCount: matches.length,
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Barcode resolves to multiple items",
 				});
 			}
 			const [barcode] = matches;
 			if (barcode === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const item = this.items.get(barcode.itemId);
-			return ok(item === undefined ? null : { ...item });
+			return errorResult.ok(item === undefined ? null : { ...item });
 		});
 	}
 
@@ -6088,9 +5925,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			item.organizationId !== record.organizationId ||
 			item.status === "retired"
 		) {
-			return fail("NOT_FOUND", "Item not found", {
-				reason: "MASTER_NOT_FOUND",
-			});
+			return errorResult.fail("NOT_FOUND", { publicMessage: "Item not found" });
 		}
 		const normalized = normalizeExternalId(record);
 		if (!normalized.ok) {
@@ -6105,11 +5940,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				existing.status === "active" &&
 				existing.archivedAt === null
 			) {
-				return fail(
-					"CONFLICT",
-					"External ID already exists",
-					codeConflictDetails(),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "External ID already exists",
+				});
 			}
 		}
 		const previousPrimaries: ItemExternalId[] = [];
@@ -6190,7 +6023,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			return side;
 		}
 		this.itemExternalIds.set(row.id, row);
-		return ok({ ...row });
+		return errorResult.ok({ ...row });
 	}
 
 	findItemByExternalId(
@@ -6208,17 +6041,16 @@ export class MemoryMasterDataStore implements MasterDataStore {
 					externalId.archivedAt === null,
 			);
 			if (matches.length > 1) {
-				return fail("CONFLICT", "External id resolves to multiple items", {
-					reason: "MASTER_DUPLICATE",
-					candidateCount: matches.length,
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "External id resolves to multiple items",
 				});
 			}
 			const [ext] = matches;
 			if (ext === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const item = this.items.get(ext.itemId);
-			return ok(item ? cloneItem(item) : null);
+			return errorResult.ok(item ? cloneItem(item) : null);
 		});
 	}
 
@@ -6233,9 +6065,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			item.organizationId !== record.organizationId ||
 			item.status === "retired"
 		) {
-			return fail("NOT_FOUND", "Item not found", {
-				reason: "MASTER_NOT_FOUND",
-			});
+			return errorResult.fail("NOT_FOUND", { publicMessage: "Item not found" });
 		}
 		const normalized = normalizeItemAlias(record.aliasValue);
 		if (!normalized.ok) {
@@ -6248,8 +6078,8 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		if (record.languageId !== null) {
 			const language = this.languages.get(record.languageId);
 			if (language?.active !== true) {
-				return fail("BAD_REQUEST", "Alias language is not active", {
-					reason: "MASTER_VALIDATION_FAILED",
+				return errorResult.fail("BAD_REQUEST", {
+					publicMessage: "Alias language is not active",
 				});
 			}
 		}
@@ -6303,7 +6133,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			return side;
 		}
 		this.itemAliases.set(row.id, row);
-		return ok({ ...row });
+		return errorResult.ok({ ...row });
 	}
 
 	listItemAliases(
@@ -6317,7 +6147,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 						alias.itemId === filter.itemId,
 				)
 				.sort((left, right) => left.aliasValue.localeCompare(right.aliasValue));
-			return ok(
+			return errorResult.ok(
 				pageResult(
 					rows.map((row) => ({ ...row })),
 					filter.page,
@@ -6358,7 +6188,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				const codeOrder = left.code.localeCompare(right.code);
 				return codeOrder === 0 ? left.id.localeCompare(right.id) : codeOrder;
 			});
-			return ok(pageResult(items, filter.page, filter.pageSize));
+			return errorResult.ok(pageResult(items, filter.page, filter.pageSize));
 		});
 	}
 
@@ -6372,12 +6202,11 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			return matches;
 		}
 		if (matches.data.items.length > 1) {
-			return fail("CONFLICT", "Alias resolves to multiple active items", {
-				reason: "MASTER_DUPLICATE",
-				candidateCount: matches.data.items.length,
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Alias resolves to multiple active items",
 			});
 		}
-		return ok(matches.data.items[0] ?? null);
+		return errorResult.ok(matches.data.items[0] ?? null);
 	}
 
 	async createWarehouseExternalId(
@@ -6387,13 +6216,13 @@ export class MemoryMasterDataStore implements MasterDataStore {
 	): Promise<Result<WarehouseExternalId>> {
 		const warehouse = this.warehouses.get(record.warehouseId);
 		if (!warehouse || warehouse.organizationId !== record.organizationId) {
-			return fail("NOT_FOUND", "Warehouse not found", {
-				reason: "MASTER_NOT_FOUND",
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Warehouse not found",
 			});
 		}
 		if (warehouse.status === "retired" || warehouse.retiredAt !== null) {
-			return fail("CONFLICT", "Retired warehouse cannot receive identifiers", {
-				reason: "MASTER_INVALID_STATE",
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Retired warehouse cannot receive identifiers",
 			});
 		}
 		for (const existing of this.warehouseExternalIds.values()) {
@@ -6405,11 +6234,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				existing.status === "active" &&
 				existing.archivedAt === null
 			) {
-				return fail(
-					"CONFLICT",
-					"External id already exists",
-					codeConflictDetails(),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "External id already exists",
+				});
 			}
 		}
 		const now = new Date();
@@ -6461,7 +6288,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			return side;
 		}
 		this.warehouseExternalIds.set(row.id, row);
-		return ok({ ...row });
+		return errorResult.ok({ ...row });
 	}
 
 	findWarehouseByExternalId(
@@ -6485,17 +6312,16 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				}
 			}
 			if (matches.length > 1) {
-				return fail("CONFLICT", "External ID resolves to multiple warehouses", {
-					reason: "MASTER_EXTERNAL_ID_CONFLICT",
-					candidateCount: matches.length,
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "External ID resolves to multiple warehouses",
 				});
 			}
 			const [ext] = matches;
 			if (ext === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const warehouse = this.warehouses.get(ext.warehouseId);
-			return ok(
+			return errorResult.ok(
 				warehouse?.status === "active" && warehouse.retiredAt === null
 					? cloneWarehouse(warehouse)
 					: null,
@@ -6510,9 +6336,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		return resolveAsync(() => {
 			const row = this.itemTemplates.get(id);
 			if (row === undefined || row.organizationId !== organizationId) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
-			return ok(cloneItemTemplate(row));
+			return errorResult.ok(cloneItemTemplate(row));
 		});
 	}
 
@@ -6527,10 +6353,10 @@ export class MemoryMasterDataStore implements MasterDataStore {
 					row.normalizedCode === normalizedCode &&
 					row.retiredAt === null
 				) {
-					return ok(cloneItemTemplate(row));
+					return errorResult.ok(cloneItemTemplate(row));
 				}
 			}
-			return ok(null);
+			return errorResult.ok(null);
 		});
 	}
 
@@ -6547,7 +6373,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 						? a.id.localeCompare(b.id)
 						: a.normalizedCode.localeCompare(b.normalizedCode),
 				);
-			return ok(
+			return errorResult.ok(
 				paginate(rows, filter.page, filter.pageSize).map(cloneItemTemplate),
 			);
 		});
@@ -6561,11 +6387,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		if (
 			this.hasLiveItemTemplateCode(record.organizationId, record.normalizedCode)
 		) {
-			return fail(
-				"CONFLICT",
-				"Item template code already exists",
-				codeConflictDetails(),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Item template code already exists",
+			});
 		}
 		const now = new Date();
 		const template: ItemTemplate = {
@@ -6608,7 +6432,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		if (!sideEffect.ok) {
 			return sideEffect;
 		}
-		return ok(cloneItemTemplate(template));
+		return errorResult.ok(cloneItemTemplate(template));
 	}
 
 	async updateItemTemplate(
@@ -6618,16 +6442,14 @@ export class MemoryMasterDataStore implements MasterDataStore {
 	): Promise<Result<ItemTemplate>> {
 		const existing = this.itemTemplates.get(record.id);
 		if (existing === undefined) {
-			return fail("NOT_FOUND", "Item template not found", {
-				reason: "MASTER_NOT_FOUND",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Item template not found",
+			});
 		}
 		if (existing.organizationId !== record.organizationId) {
-			return fail(
-				"CONFLICT",
-				"Item template belongs to another organization",
-				crossOrgDetails(),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Item template belongs to another organization",
+			});
 		}
 		const version = assertExpectedExtensionVersion(
 			existing,
@@ -6671,7 +6493,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		if (!sideEffect.ok) {
 			return sideEffect;
 		}
-		return ok(cloneItemTemplate(updated));
+		return errorResult.ok(cloneItemTemplate(updated));
 	}
 
 	async transitionItemTemplate(
@@ -6684,16 +6506,14 @@ export class MemoryMasterDataStore implements MasterDataStore {
 	): Promise<Result<ItemTemplate>> {
 		const existing = this.itemTemplates.get(record.id);
 		if (existing === undefined) {
-			return fail("NOT_FOUND", "Item template not found", {
-				reason: "MASTER_NOT_FOUND",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Item template not found",
+			});
 		}
 		if (existing.organizationId !== record.organizationId) {
-			return fail(
-				"CONFLICT",
-				"Item template belongs to another organization",
-				crossOrgDetails(),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Item template belongs to another organization",
+			});
 		}
 		const version = assertExpectedExtensionVersion(
 			existing,
@@ -6734,9 +6554,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 						),
 				);
 			if (incomplete) {
-				return fail("CONFLICT", "Item template structure is incomplete", {
-					reason: "MASTER_INVALID_STATE",
-				} satisfies MasterFailureDetails);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Item template structure is incomplete",
+				});
 			}
 		}
 		if (
@@ -6748,9 +6568,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 					variant.retiredAt === null,
 			)
 		) {
-			return fail("CONFLICT", "Item template has live variants", {
-				reason: "MASTER_DEPENDENCY_BLOCKED",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Item template has live variants",
+			});
 		}
 		const snapshot = cloneItemTemplate(existing);
 		const now = new Date();
@@ -6803,7 +6623,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		if (!sideEffect.ok) {
 			return sideEffect;
 		}
-		return ok(cloneItemTemplate(updated));
+		return errorResult.ok(cloneItemTemplate(updated));
 	}
 
 	listItemTemplateAttributes(
@@ -6826,7 +6646,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 					}
 					return a.id.localeCompare(b.id);
 				});
-			return ok(rows.map(cloneItemTemplateAttribute));
+			return errorResult.ok(rows.map(cloneItemTemplateAttribute));
 		});
 	}
 
@@ -6850,7 +6670,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 					}
 					return a.id.localeCompare(b.id);
 				});
-			return ok(rows.map(cloneItemTemplateAttributeOption));
+			return errorResult.ok(rows.map(cloneItemTemplateAttributeOption));
 		});
 	}
 
@@ -6864,16 +6684,16 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				attribute === undefined ||
 				attribute.organizationId !== organizationId
 			) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const template = this.itemTemplates.get(attribute.templateId);
 			if (
 				template === undefined ||
 				template.organizationId !== organizationId
 			) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
-			return ok({
+			return errorResult.ok({
 				attribute: cloneItemTemplateAttribute(attribute),
 				template: cloneItemTemplate(template),
 			});
@@ -6905,7 +6725,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 						? a.id.localeCompare(b.id)
 						: a.sortOrder - b.sortOrder,
 				);
-			return ok(rows.map(cloneItemTemplateAttributeOption));
+			return errorResult.ok(rows.map(cloneItemTemplateAttributeOption));
 		});
 	}
 
@@ -6919,22 +6739,14 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			template === undefined ||
 			template.organizationId !== record.organizationId
 		) {
-			return fail("NOT_FOUND", "Item template not found", {
-				reason: "MASTER_NOT_FOUND",
-				field: "templateId",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Item template not found",
+			});
 		}
 		if (template.status !== "draft") {
-			return fail(
-				"CONFLICT",
-				"Template attributes can only be added while draft",
-				{
-					reason: "MASTER_INVALID_STATE",
-					field: "templateId",
-					actualStatus: template.status,
-					requiredStatus: "draft",
-				} satisfies MasterFailureDetails,
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Template attributes can only be added while draft",
+			});
 		}
 		if (
 			this.hasTemplateAttributeCode(
@@ -6943,11 +6755,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				record.normalizedCode,
 			)
 		) {
-			return fail(
-				"CONFLICT",
-				"Template attribute code already exists",
-				codeConflictDetails(),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Template attribute code already exists",
+			});
 		}
 		const now = new Date();
 		const attribute: ItemTemplateAttribute = {
@@ -7015,7 +6825,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		if (!sideEffect.ok) {
 			return sideEffect;
 		}
-		return ok(cloneItemTemplateAttribute(attribute));
+		return errorResult.ok(cloneItemTemplateAttribute(attribute));
 	}
 
 	async addItemTemplateAttributeOption(
@@ -7028,44 +6838,33 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			attribute === undefined ||
 			attribute.organizationId !== record.organizationId
 		) {
-			return fail("NOT_FOUND", "Item template attribute not found", {
-				reason: "MASTER_NOT_FOUND",
-				field: "attributeId",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Item template attribute not found",
+			});
 		}
 		if (
 			attribute.dataType !== "single_option" &&
 			attribute.dataType !== "multiple_option"
 		) {
-			return fail(
-				"CONFLICT",
-				"Options can only be added to option-compatible attributes",
-				{
-					reason: "MASTER_INVALID_STATE",
-					field: "attributeId",
-				} satisfies MasterFailureDetails,
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage:
+					"Options can only be added to option-compatible attributes",
+			});
 		}
 		const template = this.itemTemplates.get(attribute.templateId);
 		if (
 			template === undefined ||
 			template.organizationId !== record.organizationId
 		) {
-			return fail("NOT_FOUND", "Item template not found", {
-				reason: "MASTER_NOT_FOUND",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Item template not found",
+			});
 		}
 		if (template.status !== "draft") {
-			return fail(
-				"CONFLICT",
-				"Template attribute options can only be added while draft",
-				{
-					reason: "MASTER_INVALID_STATE",
-					field: "attributeId",
-					actualStatus: template.status,
-					requiredStatus: "draft",
-				} satisfies MasterFailureDetails,
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage:
+					"Template attribute options can only be added while draft",
+			});
 		}
 		if (
 			this.hasTemplateAttributeOptionCode(
@@ -7074,11 +6873,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				record.normalizedCode,
 			)
 		) {
-			return fail(
-				"CONFLICT",
-				"Template attribute option code already exists",
-				codeConflictDetails(),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Template attribute option code already exists",
+			});
 		}
 		const now = new Date();
 		const option: ItemTemplateAttributeOption = {
@@ -7136,7 +6933,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		if (!sideEffect.ok) {
 			return sideEffect;
 		}
-		return ok(cloneItemTemplateAttributeOption(option));
+		return errorResult.ok(cloneItemTemplateAttributeOption(option));
 	}
 
 	archiveItemTemplateAttributeOptionForTest(
@@ -7146,9 +6943,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 	): Result<ItemTemplateAttributeOption> {
 		const existing = this.itemTemplateAttributeOptions.get(optionId);
 		if (existing === undefined || existing.organizationId !== organizationId) {
-			return fail("NOT_FOUND", "Item template attribute option not found", {
-				reason: "MASTER_NOT_FOUND",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Item template attribute option not found",
+			});
 		}
 		const archived: ItemTemplateAttributeOption = {
 			...existing,
@@ -7160,7 +6957,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			updatedAt: new Date(),
 		};
 		this.itemTemplateAttributeOptions.set(archived.id, archived);
-		return ok(cloneItemTemplateAttributeOption(archived));
+		return errorResult.ok(cloneItemTemplateAttributeOption(archived));
 	}
 
 	getItemVariantById(
@@ -7170,13 +6967,13 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		return resolveAsync(() => {
 			const variant = this.itemVariants.get(id);
 			if (variant === undefined || variant.organizationId !== organizationId) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const assembled = this.assembleItemVariant(variant);
 			if (assembled === null) {
-				return fail("INTERNAL_ERROR", "Item variant item row missing");
+				return errorResult.fail("INTERNAL_ERROR");
 			}
-			return ok(assembled);
+			return errorResult.ok(assembled);
 		});
 	}
 
@@ -7211,7 +7008,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 					? a.id.localeCompare(b.id)
 					: a.item.normalizedCode.localeCompare(b.item.normalizedCode),
 			);
-			return ok(
+			return errorResult.ok(
 				paginate(assembled, filter.page, filter.pageSize).map(cloneItemVariant),
 			);
 		});
@@ -7223,44 +7020,40 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		meta: { correlationId: string },
 	): Promise<Result<ItemVariant>> {
 		if (this.hasLiveItemCode(record.organizationId, record.normalizedCode)) {
-			return fail(
-				"CONFLICT",
-				"Item code or variant combination already exists",
-				codeConflictDetails(),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Item code or variant combination already exists",
+			});
 		}
 		const baseUom = this.uoms.get(record.baseUomId);
 		if (baseUom === undefined || !baseUom.active) {
-			return fail("BAD_REQUEST", "baseUomId is not a known platform UoM", {
-				reason: "MASTER_VALIDATION_FAILED",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage: "baseUomId is not a known platform UoM",
+			});
 		}
 		const group = this.itemGroups.get(record.itemGroupId);
 		if (group === undefined || group.organizationId !== record.organizationId) {
-			return fail(
-				"CONFLICT",
-				"itemGroupId must exist in the same organization",
-				{ reason: "MASTER_CROSS_ORG_REFERENCE" } satisfies MasterFailureDetails,
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "itemGroupId must exist in the same organization",
+			});
 		}
 		if (group.status === "retired" || group.retiredAt !== null) {
-			return fail("CONFLICT", "itemGroupId must not be retired", {
-				reason: "MASTER_INVALID_STATE",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "itemGroupId must not be retired",
+			});
 		}
 		const template = this.itemTemplates.get(record.templateId);
 		if (
 			template === undefined ||
 			template.organizationId !== record.organizationId
 		) {
-			return fail("NOT_FOUND", "Item template not found", {
-				reason: "MASTER_NOT_FOUND",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Item template not found",
+			});
 		}
 		if (template.status !== "active" || template.retiredAt !== null) {
-			return fail("CONFLICT", "Variants require an active template", {
-				reason: "MASTER_INVALID_STATE",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Variants require an active template",
+			});
 		}
 		const attributes = [...this.itemTemplateAttributes.values()].filter(
 			(attribute) =>
@@ -7279,21 +7072,21 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		}> = [];
 		for (const value of record.attributeValues) {
 			if (seen.has(value.attributeId)) {
-				return fail("BAD_REQUEST", "Duplicate template attribute value", {
-					reason: "MASTER_VALIDATION_FAILED",
-				} satisfies MasterFailureDetails);
+				return errorResult.fail("BAD_REQUEST", {
+					publicMessage: "Duplicate template attribute value",
+				});
 			}
 			seen.add(value.attributeId);
 			const attribute = attributeById.get(value.attributeId);
 			if (attribute === undefined) {
-				return fail("BAD_REQUEST", "Unknown template attribute", {
-					reason: "MASTER_VALIDATION_FAILED",
-				} satisfies MasterFailureDetails);
+				return errorResult.fail("BAD_REQUEST", {
+					publicMessage: "Unknown template attribute",
+				});
 			}
 			if (value.valueType !== attribute.dataType) {
-				return fail("BAD_REQUEST", "Attribute value type mismatch", {
-					reason: "MASTER_VALIDATION_FAILED",
-				} satisfies MasterFailureDetails);
+				return errorResult.fail("BAD_REQUEST", {
+					publicMessage: "Attribute value type mismatch",
+				});
 			}
 			const normalized = normalizeVariantAttributeValue({
 				dataType: attribute.dataType,
@@ -7343,9 +7136,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 							option.archivedAt !== null,
 					)
 				) {
-					return fail("BAD_REQUEST", "Invalid option attribute value", {
-						reason: "MASTER_VALIDATION_FAILED",
-					} satisfies MasterFailureDetails);
+					return errorResult.fail("BAD_REQUEST", {
+						publicMessage: "Invalid option attribute value",
+					});
 				}
 				expectedNormalizedValue = selectedOptions
 					.map((option) => option?.normalizedCode ?? "")
@@ -7353,9 +7146,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 					.join(",");
 			}
 			if (value.normalizedValue !== expectedNormalizedValue) {
-				return fail("BAD_REQUEST", "Invalid normalized attribute value", {
-					reason: "MASTER_VALIDATION_FAILED",
-				} satisfies MasterFailureDetails);
+				return errorResult.fail("BAD_REQUEST", {
+					publicMessage: "Invalid normalized attribute value",
+				});
 			}
 			if (attribute.isVariantDefining) {
 				entries.push({
@@ -7370,9 +7163,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			) ||
 			buildCombinationKey(entries) !== record.combinationKey
 		) {
-			return fail("BAD_REQUEST", "Variant attribute set is incomplete", {
-				reason: "MASTER_VALIDATION_FAILED",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage: "Variant attribute set is incomplete",
+			});
 		}
 		if (
 			this.hasLiveCombinationKey(
@@ -7381,11 +7174,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				record.combinationKey,
 			)
 		) {
-			return fail(
-				"CONFLICT",
-				"Item code or variant combination already exists",
-				codeConflictDetails(),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Item code or variant combination already exists",
+			});
 		}
 
 		const now = new Date();
@@ -7561,9 +7352,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 
 		const assembled = this.assembleItemVariant(variant);
 		if (assembled === null) {
-			return fail("INTERNAL_ERROR", "Item variant create returned no row");
+			return errorResult.fail("INTERNAL_ERROR");
 		}
-		return ok(assembled);
+		return errorResult.ok(assembled);
 	}
 
 	async retireItemVariant(
@@ -7580,9 +7371,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			item.organizationId !== record.organizationId ||
 			variant.itemId !== record.itemId
 		) {
-			return fail("NOT_FOUND", "Item variant not found", {
-				reason: "MASTER_NOT_FOUND",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Item variant not found",
+			});
 		}
 		const variantVersion = assertExpectedCoreVersion(
 			variant,
@@ -7616,8 +7407,8 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			this.itemVariants.get(record.variantId) ?? variant,
 		);
 		return assembled === null
-			? fail("INTERNAL_ERROR", "Item variant retire returned no row")
-			: ok(assembled);
+			? errorResult.fail("INTERNAL_ERROR")
+			: errorResult.ok(assembled);
 	}
 
 	getImportBatchByIdempotencyKey(
@@ -7630,10 +7421,10 @@ export class MemoryMasterDataStore implements MasterDataStore {
 					batch.organizationId === organizationId &&
 					batch.idempotencyKey === idempotencyKey
 				) {
-					return ok(batch);
+					return errorResult.ok(batch);
 				}
 			}
-			return ok(null);
+			return errorResult.ok(null);
 		});
 	}
 
@@ -7648,7 +7439,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 			return existing;
 		}
 		if (existing.data !== null) {
-			return ok({ kind: "existing", batch: existing.data });
+			return errorResult.ok({ kind: "existing", batch: existing.data });
 		}
 		const now = new Date();
 		const batch: ImportBatchRecord = {
@@ -7695,7 +7486,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				updatedAt: now,
 			});
 		}
-		return ok({ kind: "claimed", batch });
+		return errorResult.ok({ kind: "claimed", batch });
 	}
 
 	acquireImportBatchLease(
@@ -7707,19 +7498,19 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				batch === undefined ||
 				batch.organizationId !== record.organizationId
 			) {
-				return fail("NOT_FOUND", "Import batch not found", {
-					reason: "MASTER_NOT_FOUND",
-				} satisfies MasterFailureDetails);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "Import batch not found",
+				});
 			}
 			if (batch.status === "applied") {
-				return ok({ kind: "completed", batch });
+				return errorResult.ok({ kind: "completed", batch });
 			}
 			const leaseActive =
 				batch.status === "applying" &&
 				batch.leaseExpiresAt !== null &&
 				batch.leaseExpiresAt.getTime() > Date.now();
 			if (leaseActive) {
-				return ok({ kind: "busy", batch });
+				return errorResult.ok({ kind: "busy", batch });
 			}
 			const acquired: ImportBatchRecord = {
 				...batch,
@@ -7729,7 +7520,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				updatedAt: new Date(),
 			};
 			this.importBatches.set(acquired.id, acquired);
-			return ok({ kind: "acquired", batch: acquired });
+			return errorResult.ok({ kind: "acquired", batch: acquired });
 		});
 	}
 
@@ -7738,7 +7529,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 		batchId: string,
 	): Promise<Result<ImportBatchRowRecord[]>> {
 		return resolveAsync(() =>
-			ok(
+			errorResult.ok(
 				[...this.importBatchRows.values()]
 					.filter(
 						(row) =>
@@ -7759,9 +7550,9 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				batch.organizationId !== record.organizationId ||
 				batch.leaseOwner !== record.leaseOwner
 			) {
-				return fail("CONFLICT", "Import batch lease was lost", {
-					reason: "MASTER_VERSION_CONFLICT",
-				} satisfies MasterFailureDetails);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Import batch lease was lost",
+				});
 			}
 			const completedAt = new Date();
 			for (const result of record.rows) {
@@ -7796,7 +7587,7 @@ export class MemoryMasterDataStore implements MasterDataStore {
 				updatedAt: completedAt,
 			};
 			this.importBatches.set(completed.id, completed);
-			return ok(completed);
+			return errorResult.ok(completed);
 		});
 	}
 }

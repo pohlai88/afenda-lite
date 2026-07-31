@@ -1,5 +1,4 @@
-import type { Result } from "@afenda/errors/result";
-import { ok } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type { HumanResourcesCommandOptions } from "../command-options";
 import { endAssignment, getAssignment } from "../core/assignment";
@@ -176,5 +175,5 @@ export async function compensateHireAttemptProgress(
 		];
 	}
 
-	return ok(log);
+	return errorResult.ok(log);
 }

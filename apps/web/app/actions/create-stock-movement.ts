@@ -2,20 +2,15 @@
 
 import { randomUUID } from "node:crypto";
 import { requireRole } from "@afenda/auth";
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { createCorrelationId } from "@afenda/http";
 import { createStockMovement, type StockMovement } from "@afenda/inventory";
 import { z } from "zod";
-
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { forbidUnlessPermission } from "@/app/actions/permission-gate";
 import { revalidateInventoryPaths } from "@/app/actions/revalidate-inventory-paths";
 import { createInventoryCommandOptions } from "@/lib/erp/inventory-command-options";
 import { logProductEvent } from "@/modules/platform/observability/product-log";
-import {
-	type ActionResult,
-	actionFail,
-	actionFailInternal,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export interface CreateStockMovementActionData {
@@ -93,11 +88,10 @@ export async function createStockMovementAction(
 			adjustmentNote: formValue(formData.get("adjustmentNote")),
 		});
 		if (!parsed.success) {
-			return actionFail(
-				"VALIDATION_ERROR",
-				"Enter a valid movement code, source, and warehouse fields.",
-				parsed.details,
-			);
+			return errorResult.fail("VALIDATION_ERROR", {
+				publicMessage:
+					"Enter a valid movement code, source, and warehouse fields.",
+			});
 		}
 
 		const permission =
@@ -145,9 +139,6 @@ export async function createStockMovementAction(
 			path: "createStockMovementAction",
 			code: "INTERNAL_ERROR",
 		});
-		return actionFailInternal(
-			"Could not create stock movement. Try again or contact an admin.",
-			correlationId,
-		);
+		return errorResult.fail("INTERNAL_ERROR", { correlationId });
 	}
 }

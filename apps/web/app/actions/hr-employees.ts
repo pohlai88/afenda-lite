@@ -1,5 +1,6 @@
 "use server";
 
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import {
 	createEmployee,
 	createEmployeeInputSchema,
@@ -15,7 +16,6 @@ import {
 	updateEmployee,
 	updateEmployeeInputSchema,
 } from "@afenda/human-resources";
-
 import {
 	hrActionSchema,
 	hrMutationContextSchema as mutationContextSchema,
@@ -26,10 +26,6 @@ import { runHrWorkforceOperatorPermissionAction as runOperatorPermissionAction }
 import { runMemberPermissionAction } from "@/app/actions/run-member-permission-action";
 import { createHumanResourcesCommandOptions } from "@/lib/erp/human-resources-command-options";
 import { createHumanResourcesIdentityResolverPort } from "@/lib/erp/human-resources-identity-resolver-port";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 const createEmployeeActionSchema = hrActionSchema(createEmployeeInputSchema);
@@ -57,11 +53,9 @@ export async function createEmployeeAction(input: {
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(createEmployeeActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid employee.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid employee.",
+				});
 			}
 			const result = await createEmployee(
 				withSessionContext(session, correlationId, parsed.data),
@@ -89,11 +83,9 @@ export async function updateEmployeeAction(input: {
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(updateEmployeeActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid employee update.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid employee update.",
+				});
 			}
 			const result = await updateEmployee(
 				withSessionContext(session, correlationId, parsed.data),
@@ -119,11 +111,9 @@ export async function getEmployeeAction(input: {
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(getEmployeeActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid employee lookup.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid employee lookup.",
+				});
 			}
 			const result = await getEmployeeById(
 				withSessionContext(session, correlationId, parsed.data),
@@ -153,11 +143,9 @@ export async function listEmployeesAction(input?: {
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(listEmployeesActionSchema.optional(), input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter valid employee list filters.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter valid employee list filters.",
+				});
 			}
 			const result = await listEmployees(
 				withSessionContext(session, correlationId, parsed.data ?? {}),
@@ -185,11 +173,9 @@ export async function getEmployeeProfileAction(input: {
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(getEmployeeProfileActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid employee profile request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid employee profile request.",
+				});
 			}
 			const result = await getEmployeeProfile(
 				withSessionContext(session, correlationId, parsed.data),
@@ -215,11 +201,9 @@ export async function getOwnEmployeeProfileAction(input: {
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(getOwnEmployeeProfileActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid profile request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid profile request.",
+				});
 			}
 
 			const identity =
@@ -230,10 +214,7 @@ export async function getOwnEmployeeProfileAction(input: {
 					},
 				);
 			if (!identity.ok || identity.data === null) {
-				return actionFail(
-					"FORBIDDEN",
-					"Your account is not linked to an active employee record.",
-				);
+				return errorResult.fail("FORBIDDEN");
 			}
 
 			const result = await getEmployeeProfile(

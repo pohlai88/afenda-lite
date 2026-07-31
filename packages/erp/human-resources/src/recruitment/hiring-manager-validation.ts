@@ -1,4 +1,4 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type { HumanResourcesEmployeeId } from "../brands";
 import { invalidState, notFound } from "../shared/domain-guards";
@@ -46,5 +46,5 @@ export async function validateHiringManagerEmployee(
 		);
 	}
 
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }

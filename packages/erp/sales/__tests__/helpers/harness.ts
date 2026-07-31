@@ -1,4 +1,4 @@
-import { ok } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 import type { SalesCommandOptions } from "../../src/command-options";
 import type { MasterDataSnapshotPort } from "../../src/ports";
 import {
@@ -25,7 +25,7 @@ export function mutationContext(idempotencyKey: string) {
 export const masterData: MasterDataSnapshotPort = {
 	resolveCustomer(input) {
 		return Promise.resolve(
-			ok({
+			errorResult.ok({
 				partyId: input.partyId,
 				code: "CUST-001",
 				name: "Acme Trading",
@@ -37,7 +37,7 @@ export const masterData: MasterDataSnapshotPort = {
 	},
 	resolveItem(input) {
 		return Promise.resolve(
-			ok({
+			errorResult.ok({
 				itemId: input.itemId,
 				code: "ITEM-001",
 				name: "Industrial Widget",

@@ -24,7 +24,7 @@ import {
 	hrPerformanceReviewParticipant,
 	runNeonHttpTransaction,
 } from "@afenda/db";
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	HUMAN_RESOURCES_IMPROVEMENT_PLAN_COMPLETED_EVENT,
 	HUMAN_RESOURCES_IMPROVEMENT_PLAN_STARTED_EVENT,
@@ -505,15 +505,15 @@ function mapCycleSql(row: CycleSqlRow): Result<PerformanceCycle> {
 	}
 	const status = performanceCycleStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail("INTERNAL_ERROR", "Invalid cycle status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 	const weightingModel = performanceWeightingModelSchema.safeParse(
 		row.weighting_model,
 	);
 	if (!weightingModel.success) {
-		return fail("INTERNAL_ERROR", "Invalid weighting model");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organization_id,
 		code: row.code,
@@ -575,9 +575,9 @@ function mapParticipantSql(
 	}
 	const status = performanceCycleParticipantStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail("INTERNAL_ERROR", "Invalid participant status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organization_id,
 		cycleId: cycleId.data,
@@ -601,9 +601,9 @@ function mapReviewPeriodSql(
 	}
 	const kind = performanceCycleReviewPeriodKindSchema.safeParse(row.kind);
 	if (!kind.success) {
-		return fail("INTERNAL_ERROR", "Invalid review period kind");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: row.id,
 		organizationId: row.organization_id,
 		cycleId: cycleId.data,
@@ -633,14 +633,11 @@ function mapEligibilitySql(
 	for (const status of statuses) {
 		const parsed = employmentStatusSchema.safeParse(status);
 		if (!parsed.success) {
-			return fail(
-				"INTERNAL_ERROR",
-				"Invalid performance cycle eligibility employment status",
-			);
+			return errorResult.fail("INTERNAL_ERROR");
 		}
 		allowedEmploymentStatuses.push(parsed.data);
 	}
-	return ok({
+	return errorResult.ok({
 		id: row.id,
 		organizationId: row.organization_id,
 		cycleId: cycleId.data,
@@ -689,7 +686,7 @@ async function loadCycleReviewPeriods(input: {
 			}
 			periods.push(mapped.data);
 		}
-		return ok(periods);
+		return errorResult.ok(periods);
 	} catch (error) {
 		return mapPersistenceFailure(error, "Failed to load cycle review periods");
 	}
@@ -715,7 +712,7 @@ async function loadCycleEligibility(input: {
 			.limit(1);
 		const [row] = rows;
 		if (!row) {
-			return ok(null);
+			return errorResult.ok(null);
 		}
 		return mapEligibilitySql({
 			id: row.id,
@@ -770,20 +767,20 @@ function mapGoalSql(row: GoalSqlRow): Result<PerformanceGoal> {
 	}
 	const status = performanceGoalStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail("INTERNAL_ERROR", "Invalid goal status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 	const goalKind = performanceGoalKindSchema.safeParse(row.goal_kind);
 	if (!goalKind.success) {
-		return fail("INTERNAL_ERROR", "Invalid goal kind");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 	const alignedToGoalId =
 		row.aligned_to_goal_id === null
-			? ok(null)
+			? errorResult.ok(null)
 			: parseHumanResourcesGoalId(row.aligned_to_goal_id);
 	if (isResultFailure(alignedToGoalId)) {
 		return alignedToGoalId;
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organization_id,
 		cycleId: cycleId.data,
@@ -849,7 +846,7 @@ function mapGoalProgressSql(
 	if (!goalId.ok) {
 		return goalId;
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organization_id,
 		goalId: goalId.data,
@@ -899,9 +896,9 @@ function mapReviewSql(row: ReviewSqlRow): Result<PerformanceReview> {
 	}
 	const status = performanceReviewStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail("INTERNAL_ERROR", "Invalid review status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organization_id,
 		cycleId: cycleId.data,
@@ -960,7 +957,7 @@ async function findFinalizedReviewReplay(input: {
 			)
 			.limit(1);
 		const [row] = rows;
-		return row ? mapReview(row) : ok(null);
+		return row ? mapReview(row) : errorResult.ok(null);
 	} catch (error) {
 		return mapPersistenceFailure(error, "Failed to check finalize idempotency");
 	}
@@ -991,7 +988,7 @@ function validateReviewFinalizationContent(input: {
 	if (!(selfAssessment.submittedAt && managerAssessment.submittedAt)) {
 		return invalidState("Both self and manager assessments must be submitted");
 	}
-	return ok(true);
+	return errorResult.ok(true);
 }
 
 function mapReviewParticipantSql(
@@ -1014,7 +1011,7 @@ function mapReviewParticipantSql(
 		employeeId = parsed.data;
 	}
 	const role = row.role as PerformanceReviewParticipant["role"];
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organization_id,
 		reviewId: reviewId.data,
@@ -1049,9 +1046,9 @@ function mapAssessmentSql(
 	}
 	const kind = performanceAssessmentKindSchema.safeParse(row.kind);
 	if (!kind.success) {
-		return fail("INTERNAL_ERROR", "Invalid assessment kind");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organization_id,
 		reviewId: reviewId.data,
@@ -1113,9 +1110,9 @@ function mapPlanSql(row: PlanSqlRow): Result<PerformanceImprovementPlan> {
 	}
 	const status = performanceImprovementPlanStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail("INTERNAL_ERROR", "Invalid improvement plan status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organization_id,
 		reviewId: reviewId.data,
@@ -1183,9 +1180,9 @@ function mapCheckpointSql(
 	}
 	const outcome = performanceCheckpointOutcomeSchema.safeParse(row.outcome);
 	if (!outcome.success) {
-		return fail("INTERNAL_ERROR", "Invalid checkpoint outcome");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organization_id,
 		planId: planId.data,
@@ -1259,7 +1256,7 @@ async function assertEmployeeEmployment(
 	if (employment.data.employeeId !== employeeId) {
 		return invalidInput("Employment does not belong to employee");
 	}
-	return ok(true);
+	return errorResult.ok(true);
 }
 
 async function isActiveParticipantDb(
@@ -1280,7 +1277,7 @@ async function isActiveParticipantDb(
 				),
 			)
 			.limit(1);
-		return ok(rows.length > 0);
+		return errorResult.ok(rows.length > 0);
 	} catch (error) {
 		return mapPersistenceFailure(error, "Failed to check cycle participant");
 	}
@@ -1291,13 +1288,14 @@ function newBrandId<T>(schema: {
 }): Result<T> {
 	const parsed = schema.safeParse(randomUUID());
 	if (!parsed.success || parsed.data === undefined) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Invalid generated identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 async function mutateGoalStatus(
@@ -1584,7 +1582,7 @@ async function listImprovementPlanCheckpointsForPlan(input: {
 			}
 			checkpoints.push(mapped.data);
 		}
-		return ok(checkpoints);
+		return errorResult.ok(checkpoints);
 	} catch (error) {
 		return mapPersistenceFailure(
 			error,
@@ -1919,7 +1917,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapCycle(row);
 		} catch (error) {
@@ -1941,13 +1939,13 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const cycle = mapCycle(row);
 			if (!cycle.ok) {
 				return cycle;
 			}
-			return ok({
+			return errorResult.ok({
 				cycle: cycle.data,
 				createRequestFingerprint: row.createRequestFingerprint,
 			});
@@ -1973,7 +1971,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				existing.data.createRequestFingerprint ===
 				record.createRequestFingerprint
 			) {
-				return ok(existing.data.cycle);
+				return errorResult.ok(existing.data.cycle);
 			}
 			return conflict("Idempotency key already used with different data");
 		}
@@ -2052,11 +2050,12 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			]);
 			const [row] = rows;
 			if (!row) {
-				return fail(
-					"CONFLICT",
-					"Performance cycle with this code already exists",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_CONFLICT,
+					),
+				});
 			}
 			return mapCycleSql(row);
 		} catch (error) {
@@ -2073,17 +2072,18 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 						replay.data.createRequestFingerprint ===
 						record.createRequestFingerprint
 					) {
-						return ok(replay.data.cycle);
+						return errorResult.ok(replay.data.cycle);
 					}
 					return conflict("Idempotency key already used with different data");
 				}
 			}
 			if (isPostgresUniqueViolation(error)) {
-				return fail(
-					"CONFLICT",
-					"Performance cycle with this code already exists",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_CONFLICT,
+					),
+				});
 			}
 			return mapPersistenceFailure(error, "Failed to create performance cycle");
 		}
@@ -2873,10 +2873,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			for (let index = 1; index < results.length; index += 1) {
 				const [row] = results[index] as ReviewPeriodSqlRow[];
 				if (!row) {
-					return fail(
-						"INTERNAL_ERROR",
-						"Failed to set performance cycle review periods",
-					);
+					return errorResult.fail("INTERNAL_ERROR");
 				}
 				const mapped = mapReviewPeriodSql(row);
 				if (!mapped.ok) {
@@ -2885,7 +2882,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				inserted.push(mapped.data);
 			}
 
-			return ok(inserted);
+			return errorResult.ok(inserted);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -3140,7 +3137,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				return employees;
 			}
 			if (employees.data.employees.length === 0) {
-				return ok(undefined);
+				return errorResult.ok(undefined);
 			}
 
 			const sequentialOuterOutcome1 = await runSequential(
@@ -3219,7 +3216,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				page * pageSize >= employees.data.totalCount ||
 				employees.data.employees.length < pageSize
 			) {
-				return ok(undefined);
+				return errorResult.ok(undefined);
 			}
 			return enrollPage(page + 1);
 		};
@@ -3228,7 +3225,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			return enrollment;
 		}
 
-		return ok(enrolled);
+		return errorResult.ok(enrolled);
 	},
 
 	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
@@ -3564,7 +3561,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				}
 				cycles.push(mapped.data);
 			}
-			return ok({
+			return errorResult.ok({
 				cycles,
 				totalCount,
 				page: input.page,
@@ -3597,7 +3594,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				}
 				participants.push(mapped.data);
 			}
-			return ok(participants);
+			return errorResult.ok(participants);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to list cycle participants");
 		}
@@ -3617,7 +3614,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapGoal(row);
 		} catch (error) {
@@ -3639,13 +3636,13 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const goal = mapGoal(row);
 			if (!goal.ok) {
 				return goal;
 			}
-			return ok({
+			return errorResult.ok({
 				goal: goal.data,
 				createRequestFingerprint: row.createRequestFingerprint,
 			});
@@ -3671,7 +3668,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				existing.data.createRequestFingerprint ===
 				record.createRequestFingerprint
 			) {
-				return ok(existing.data.goal);
+				return errorResult.ok(existing.data.goal);
 			}
 			return conflict("Idempotency key already used with different data");
 		}
@@ -3824,7 +3821,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			]);
 			const [row] = rows;
 			if (!row) {
-				return fail("INTERNAL_ERROR", "Failed to create performance goal");
+				return errorResult.fail("INTERNAL_ERROR");
 			}
 			return mapGoalSql(row);
 		} catch (error) {
@@ -3841,7 +3838,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 						replay.data.createRequestFingerprint ===
 						record.createRequestFingerprint
 					) {
-						return ok(replay.data.goal);
+						return errorResult.ok(replay.data.goal);
 					}
 					return conflict("Idempotency key already used with different data");
 				}
@@ -4056,7 +4053,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 
 		const parent =
 			input.alignedToGoalId === null
-				? ok(null)
+				? errorResult.ok(null)
 				: await this.getPerformanceGoalById({
 						organizationId: input.organizationId,
 						goalId: input.alignedToGoalId,
@@ -4499,7 +4496,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			]);
 			const [row] = rows;
 			if (!row) {
-				return fail("INTERNAL_ERROR", "Failed to record goal progress");
+				return errorResult.fail("INTERNAL_ERROR");
 			}
 			return mapGoalProgressSql(row);
 		} catch (error) {
@@ -4532,7 +4529,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				}
 				progress.push(mapped.data);
 			}
-			return ok({
+			return errorResult.ok({
 				progress,
 				totalCount,
 				page: input.page,
@@ -4570,7 +4567,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				}
 				goals.push(mapped.data);
 			}
-			return ok({
+			return errorResult.ok({
 				goals,
 				totalCount,
 				page: input.page,
@@ -4664,10 +4661,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				managerAssessmentId.ok
 			)
 		) {
-			return fail(
-				"INTERNAL_ERROR",
-				"Failed to allocate performance review identifiers",
-			);
+			return errorResult.fail("INTERNAL_ERROR");
 		}
 
 		const preparedAudit = preparePerformanceAudit({
@@ -4815,7 +4809,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			]);
 			const [row] = rows;
 			if (!row) {
-				return fail("INTERNAL_ERROR", "Failed to start performance review");
+				return errorResult.fail("INTERNAL_ERROR");
 			}
 			return mapReviewSql(row);
 		} catch (error) {
@@ -4908,10 +4902,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		const participantId = newBrandId(humanResourcesReviewParticipantIdSchema);
 		const assessmentId = newBrandId(humanResourcesAssessmentIdSchema);
 		if (!(participantId.ok && assessmentId.ok)) {
-			return fail(
-				"INTERNAL_ERROR",
-				"Failed to allocate delegated reviewer identifiers",
-			);
+			return errorResult.fail("INTERNAL_ERROR");
 		}
 		const sequenceNumber = nextDelegatedSequenceNumber(
 			existing.data.participants,
@@ -5507,7 +5498,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			return replay;
 		}
 		if (replay.data !== null) {
-			return ok(replay.data);
+			return errorResult.ok(replay.data);
 		}
 
 		const detail = await this.getPerformanceReviewById({
@@ -5648,7 +5639,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 					return concurrentReplay;
 				}
 				if (concurrentReplay.data !== null) {
-					return ok(concurrentReplay.data);
+					return errorResult.ok(concurrentReplay.data);
 				}
 			}
 			return mapPersistenceFailure(
@@ -5791,7 +5782,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const review = mapReview(row);
 			if (!review.ok) {
@@ -5850,7 +5841,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				assessments.push(mapped.data);
 			}
 
-			return ok(
+			return errorResult.ok(
 				projectPerformanceReviewDetailForReader(
 					{ review: review.data, participants, assessments },
 					input.includeConfidential,
@@ -5885,7 +5876,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				}
 				reviews.push(mapped.data);
 			}
-			return ok({
+			return errorResult.ok({
 				reviews: redactReviewList(reviews, input.includeConfidential),
 				totalCount,
 				page: input.page,
@@ -5919,7 +5910,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				);
 			const reviewIds = participantRows.map((p) => p.reviewId);
 			if (reviewIds.length === 0) {
-				return ok({
+				return errorResult.ok({
 					reviews: [],
 					totalCount: 0,
 					page: input.page,
@@ -5951,7 +5942,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				}
 				reviews.push(mapped.data);
 			}
-			return ok({
+			return errorResult.ok({
 				reviews,
 				totalCount,
 				page: input.page,
@@ -5982,7 +5973,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapPlan(row);
 		} catch (error) {
@@ -6010,13 +6001,13 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const plan = mapPlan(row);
 			if (!plan.ok) {
 				return plan;
 			}
-			return ok({
+			return errorResult.ok({
 				plan: plan.data,
 				createRequestFingerprint: row.createRequestFingerprint,
 			});
@@ -6042,7 +6033,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				existing.data.createRequestFingerprint ===
 				record.createRequestFingerprint
 			) {
-				return ok(existing.data.plan);
+				return errorResult.ok(existing.data.plan);
 			}
 			return conflict("Idempotency key already used with different data");
 		}
@@ -6110,7 +6101,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			if (!checkpointId.ok) {
 				return checkpointId;
 			}
-			checkpointIds.push(ok(checkpointId.data));
+			checkpointIds.push(errorResult.ok(checkpointId.data));
 		}
 		const checkpointAudits = new Map<
 			string,
@@ -6223,7 +6214,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			});
 			const [row] = rows;
 			if (!row) {
-				return fail("INTERNAL_ERROR", "Failed to create improvement plan");
+				return errorResult.fail("INTERNAL_ERROR");
 			}
 			return mapPlanSql(row);
 		} catch (error) {
@@ -6240,7 +6231,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 						replay.data.createRequestFingerprint ===
 						record.createRequestFingerprint
 					) {
-						return ok(replay.data.plan);
+						return errorResult.ok(replay.data.plan);
 					}
 					return conflict("Idempotency key already used with different data");
 				}
@@ -6997,7 +6988,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				}
 				plans.push(mapped.data);
 			}
-			return ok({
+			return errorResult.ok({
 				plans,
 				totalCount,
 				page: input.page,
@@ -7029,7 +7020,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 		if (!checkpoints.ok) {
 			return checkpoints;
 		}
-		return ok({
+		return errorResult.ok({
 			checkpoints: checkpoints.data,
 			totalCount: checkpoints.data.length,
 		} satisfies PerformanceImprovementCheckpointListPage);
@@ -7124,7 +7115,7 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				return sequentialOutcome2.value;
 			}
 
-			return ok({
+			return errorResult.ok({
 				employeeId: input.employeeId,
 				entries,
 			});

@@ -1,4 +1,4 @@
-import { fail, ok } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 import {
 	getItemById,
 	getPartyById,
@@ -37,12 +37,12 @@ export function createSalesMasterDataPort(): MasterDataSnapshotPort {
 			}
 			const party = partyResult.data;
 			if (party?.status !== "active") {
-				return fail("CONFLICT", "Customer master is not active", {
-					reason: "SALES_MASTER_NOT_USABLE",
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Customer master is not active",
 				});
 			}
 			if (!input.paymentTermId) {
-				return ok({
+				return errorResult.ok({
 					partyId: input.partyId,
 					code: party.code,
 					name: party.name,
@@ -61,11 +61,11 @@ export function createSalesMasterDataPort(): MasterDataSnapshotPort {
 			}
 			const term = termResult.data;
 			if (term?.status !== "active") {
-				return fail("CONFLICT", "Payment term master is not active", {
-					reason: "SALES_MASTER_NOT_USABLE",
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Payment term master is not active",
 				});
 			}
-			return ok({
+			return errorResult.ok({
 				partyId: input.partyId,
 				code: party.code,
 				name: party.name,
@@ -89,29 +89,25 @@ export function createSalesMasterDataPort(): MasterDataSnapshotPort {
 			}
 			const item = itemResult.data;
 			if (item?.status !== "active" || !item.sellable) {
-				return fail("CONFLICT", "Item master is not sellable", {
-					reason: "SALES_MASTER_NOT_USABLE",
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Item master is not sellable",
 				});
 			}
 			const uomId = refUomIdSchema.safeParse(
 				input.requestedUomId ?? item.baseUomId,
 			);
 			if (!uomId.success) {
-				return fail(
-					"VALIDATION_ERROR",
-					"Unit of measure identifier is invalid",
-					{
-						reason: "SALES_MASTER_NOT_USABLE",
-					},
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Unit of measure identifier is invalid",
+				});
 			}
 			const uom = await references.getUomById(uomId.data);
 			if (!uom?.active) {
-				return fail("CONFLICT", "Unit of measure is not active", {
-					reason: "SALES_MASTER_NOT_USABLE",
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Unit of measure is not active",
 				});
 			}
-			return ok({
+			return errorResult.ok({
 				itemId: input.itemId,
 				code: item.code,
 				name: item.name,

@@ -6,7 +6,7 @@ import {
 } from "@afenda/corporate-administration";
 import { createDrizzleCorporateAdministrationEstablishmentStore } from "@afenda/corporate-administration/adapters/drizzle";
 import { db } from "@afenda/db";
-import { ok } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -40,7 +40,7 @@ describe.skipIf(!RUN_CORPORATE_ADMINISTRATION_NEON_PARITY)(
 				companyStore: base.store,
 				establishmentStore,
 				addressReferences: {
-					getPartyAddress: async () => ok(null),
+					getPartyAddress: async () => errorResult.ok(null),
 				},
 			};
 			const options = caCommandOptions({ organizationId });

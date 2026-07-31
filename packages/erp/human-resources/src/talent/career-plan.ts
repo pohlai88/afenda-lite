@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { HumanResourcesCommandOptions } from "../command-options";
 import { resolveCommandDeps } from "../command-options";
 import {
@@ -86,13 +86,14 @@ export function createCareerPlan(
 				if (
 					existingByKey.data.createRequestFingerprint !== requestFingerprint
 				) {
-					return fail(
-						"CONFLICT",
-						"Idempotency key reused with different payload",
-						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-					);
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+						internalContext: humanResourcesErrorDetails(
+							HUMAN_RESOURCES_ERROR_CONFLICT,
+						),
+					});
 				}
-				return ok(existingByKey.data.careerPlan);
+				return errorResult.ok(existingByKey.data.careerPlan);
 			}
 
 			return store.createCareerPlan(
@@ -294,7 +295,7 @@ export function getCareerPlanById(
 		resolveRequestedFields: () => talentSensitiveQueryRequestedFields(),
 		project: (value: CareerPlanWithActions, projection) =>
 			projectCareerPlanWithActionsFromDecision(value, projection),
-		execute: async ({ loaded }) => ok(loaded),
+		execute: async ({ loaded }) => errorResult.ok(loaded),
 	});
 }
 

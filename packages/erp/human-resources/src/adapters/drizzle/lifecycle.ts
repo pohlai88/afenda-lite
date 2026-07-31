@@ -27,7 +27,7 @@ import {
 	hrTermination,
 	runNeonHttpTransaction,
 } from "@afenda/db";
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	HUMAN_RESOURCES_CLEARANCE_COMPLETED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_CONFIRMED_EVENT,
@@ -363,7 +363,7 @@ function mapOnboardingCase(
 	}
 	const status = onboardingCaseStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail("INTERNAL_ERROR", "Invalid onboarding case status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 	let sourceOfferId = null as OnboardingCase["sourceOfferId"];
 	if (row.sourceOfferId !== null) {
@@ -373,7 +373,7 @@ function mapOnboardingCase(
 		}
 		sourceOfferId = offerId.data;
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		employmentId: employmentId.data,
@@ -407,17 +407,17 @@ function mapProbation(
 	}
 	const status = probationStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail("INTERNAL_ERROR", "Invalid probation status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 	let outcome: ProbationOutcome | null = null;
 	if (row.outcome !== null) {
 		const parsed = probationOutcomeSchema.safeParse(row.outcome);
 		if (!parsed.success) {
-			return fail("INTERNAL_ERROR", "Invalid probation outcome");
+			return errorResult.fail("INTERNAL_ERROR");
 		}
 		outcome = parsed.data;
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		employmentId: employmentId.data,
@@ -461,7 +461,7 @@ function mapProbationAssessment(
 	if (!employeeId.ok) {
 		return employeeId;
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		probationReviewId: probationReviewId.data,
@@ -494,7 +494,7 @@ function mapConfirmation(
 	if (!employeeId.ok) {
 		return employeeId;
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		employmentId: employmentId.data,
@@ -551,9 +551,9 @@ function mapMovement(
 	}
 	const kind = movementKindSchema.safeParse(row.movementKind);
 	if (!kind.success) {
-		return fail("INTERNAL_ERROR", "Invalid movement kind");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		employmentId: employmentId.data,
@@ -590,9 +590,9 @@ function mapTermination(
 	}
 	const status = terminationStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail("INTERNAL_ERROR", "Invalid termination status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		employmentId: employmentId.data,
@@ -630,7 +630,7 @@ function mapOffboardingCase(
 	}
 	const status = offboardingCaseStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail("INTERNAL_ERROR", "Invalid offboarding case status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 	let terminationId = null as OffboardingCase["terminationId"];
 	if (row.terminationId !== null) {
@@ -640,7 +640,7 @@ function mapOffboardingCase(
 		}
 		terminationId = parsed.data;
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		employmentId: employmentId.data,
@@ -670,9 +670,9 @@ function mapOnboardingTask(
 	}
 	const status = lifecycleTaskStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail("INTERNAL_ERROR", "Invalid onboarding task status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		caseId: caseId.data,
@@ -702,9 +702,9 @@ function mapOffboardingTask(
 	}
 	const status = lifecycleTaskStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail("INTERNAL_ERROR", "Invalid offboarding task status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		caseId: caseId.data,
@@ -738,9 +738,9 @@ function mapClearance(row: typeof hrClearance.$inferSelect): Result<Clearance> {
 	}
 	const status = clearanceStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail("INTERNAL_ERROR", "Invalid clearance status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		offboardingCaseId: offboardingCaseId.data,
@@ -774,12 +774,9 @@ function mapOffboardingAccessRevocation(
 	}
 	const status = offboardingAccessRevocationStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid offboarding access revocation status",
-		);
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		offboardingCaseId: offboardingCaseId.data,
@@ -814,9 +811,9 @@ function mapOffboardingPayrollHandoff(
 	}
 	const status = offboardingPayrollHandoffStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail("INTERNAL_ERROR", "Invalid offboarding payroll handoff status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		offboardingCaseId: offboardingCaseId.data,
@@ -851,9 +848,9 @@ function mapOnboardingOrientation(
 	}
 	const status = onboardingOrientationStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail("INTERNAL_ERROR", "Invalid onboarding orientation status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		onboardingCaseId: onboardingCaseId.data,
@@ -888,12 +885,9 @@ function mapOnboardingEquipmentHandoff(
 	}
 	const status = onboardingEquipmentHandoffStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid onboarding equipment handoff status",
-		);
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		onboardingCaseId: onboardingCaseId.data,
@@ -928,9 +922,9 @@ function mapOnboardingAccessHandoff(
 	}
 	const status = onboardingAccessHandoffStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail("INTERNAL_ERROR", "Invalid onboarding access handoff status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		onboardingCaseId: onboardingCaseId.data,
@@ -1259,7 +1253,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapOnboardingCase(row);
 		} catch (error) {
@@ -1281,13 +1275,13 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const mapped = mapOnboardingCase(row);
 			if (!mapped.ok) {
 				return mapped;
 			}
-			return ok({
+			return errorResult.ok({
 				onboardingCase: mapped.data,
 				startRequestFingerprint: row.createRequestFingerprint,
 			});
@@ -1314,7 +1308,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			) {
 				return conflict("Idempotency key reused with different payload");
 			}
-			return ok(existing.data.onboardingCase);
+			return errorResult.ok(existing.data.onboardingCase);
 		}
 
 		const employment = await this.getEmploymentById({
@@ -1534,7 +1528,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 					) {
 						return conflict("Idempotency key reused with different payload");
 					}
-					return ok(replay.data.onboardingCase);
+					return errorResult.ok(replay.data.onboardingCase);
 				}
 			}
 			return mapPersistenceFailure(error, "Failed to start onboarding");
@@ -1630,7 +1624,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 				if (result.data === null) {
 					return notFound("Onboarding case not found");
 				}
-				return ok(result.data);
+				return errorResult.ok(result.data);
 			});
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to complete onboarding task");
@@ -1790,7 +1784,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapOnboardingOrientation(row);
 		} catch (error) {
@@ -1831,7 +1825,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapOnboardingEquipmentHandoff(row);
 		} catch (error) {
@@ -1869,7 +1863,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapOnboardingAccessHandoff(row);
 		} catch (error) {
@@ -1928,7 +1922,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			orientation.status,
 		);
 		if (!parsedStatus.success) {
-			return fail("INTERNAL_ERROR", "Invalid onboarding orientation status");
+			return errorResult.fail("INTERNAL_ERROR");
 		}
 		const transition = assertOnboardingOrientationStatusTransition(
 			parsedStatus.data,
@@ -2035,7 +2029,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			if (loaded.data === null) {
 				return notFound("Onboarding case not found");
 			}
-			return ok(loaded.data);
+			return errorResult.ok(loaded.data);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -2092,10 +2086,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			equipmentHandoff.status,
 		);
 		if (!parsedStatus.success) {
-			return fail(
-				"INTERNAL_ERROR",
-				"Invalid onboarding equipment handoff status",
-			);
+			return errorResult.fail("INTERNAL_ERROR");
 		}
 		const transition = assertOnboardingEquipmentHandoffStatusTransition(
 			parsedStatus.data,
@@ -2205,7 +2196,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			if (loaded.data === null) {
 				return notFound("Onboarding case not found");
 			}
-			return ok(loaded.data);
+			return errorResult.ok(loaded.data);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -2262,7 +2253,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			accessHandoff.status,
 		);
 		if (!parsedStatus.success) {
-			return fail("INTERNAL_ERROR", "Invalid onboarding access handoff status");
+			return errorResult.fail("INTERNAL_ERROR");
 		}
 		const transition = assertOnboardingAccessHandoffStatusTransition(
 			parsedStatus.data,
@@ -2372,7 +2363,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			if (loaded.data === null) {
 				return notFound("Onboarding case not found");
 			}
-			return ok(loaded.data);
+			return errorResult.ok(loaded.data);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -2395,7 +2386,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapProbation(row);
 		} catch (error) {
@@ -2423,7 +2414,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 				}
 				mapped.push(result.data);
 			}
-			return ok(mapped);
+			return errorResult.ok(mapped);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -2465,7 +2456,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 				}
 				mapped.push(result.data);
 			}
-			return ok(mapped);
+			return errorResult.ok(mapped);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -2488,13 +2479,13 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const mapped = mapProbation(row);
 			if (!mapped.ok) {
 				return mapped;
 			}
-			return ok({
+			return errorResult.ok({
 				probationReview: mapped.data,
 				openRequestFingerprint: row.createRequestFingerprint,
 			});
@@ -2521,7 +2512,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			) {
 				return conflict("Idempotency key reused with different payload");
 			}
-			return ok(existing.data.probationReview);
+			return errorResult.ok(existing.data.probationReview);
 		}
 		const dateCheck = assertProbationDateRange({
 			startsOn: record.startsOn,
@@ -2624,7 +2615,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 					) {
 						return conflict("Idempotency key reused with different payload");
 					}
-					return ok(replay.data.probationReview);
+					return errorResult.ok(replay.data.probationReview);
 				}
 			}
 			return mapPersistenceFailure(error, "Failed to open probation");
@@ -3060,7 +3051,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapConfirmation(row);
 		} catch (error) {
@@ -3088,13 +3079,13 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const mapped = mapConfirmation(row);
 			if (!mapped.ok) {
 				return mapped;
 			}
-			return ok({
+			return errorResult.ok({
 				employmentConfirmation: mapped.data,
 				confirmRequestFingerprint: row.createRequestFingerprint,
 			});
@@ -3122,7 +3113,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			) {
 				return conflict("Idempotency key reused with different payload");
 			}
-			return ok(existing.data.employmentConfirmation);
+			return errorResult.ok(existing.data.employmentConfirmation);
 		}
 
 		const employment = await this.getEmploymentById({
@@ -3285,7 +3276,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 					) {
 						return conflict("Idempotency key reused with different payload");
 					}
-					return ok(replay.data.employmentConfirmation);
+					return errorResult.ok(replay.data.employmentConfirmation);
 				}
 				return conflict("Employment already has a confirmation");
 			}
@@ -3307,13 +3298,13 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const mapped = mapMovement(row);
 			if (!mapped.ok) {
 				return mapped;
 			}
-			return ok({
+			return errorResult.ok({
 				employmentMovement: mapped.data,
 				transferRequestFingerprint: row.createRequestFingerprint,
 			});
@@ -3348,7 +3339,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			if (existing.data.transferRequestFingerprint !== fingerprint) {
 				return conflict("Idempotency key reused with different payload");
 			}
-			return ok(existing.data.employmentMovement);
+			return errorResult.ok(existing.data.employmentMovement);
 		}
 
 		const openAssignment = await this.findOpenAssignmentByEmployment({
@@ -3640,7 +3631,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 					if (replay.data.transferRequestFingerprint !== fingerprint) {
 						return conflict("Idempotency key reused with different payload");
 					}
-					return ok(replay.data.employmentMovement);
+					return errorResult.ok(replay.data.employmentMovement);
 				}
 			}
 			return mapPersistenceFailure(error, "Failed to transfer assignment");
@@ -3661,7 +3652,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapTermination(row);
 		} catch (error) {
@@ -3683,13 +3674,13 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const mapped = mapTermination(row);
 			if (!mapped.ok) {
 				return mapped;
 			}
-			return ok({
+			return errorResult.ok({
 				termination: mapped.data,
 				terminationRequestFingerprint: row.createRequestFingerprint,
 			});
@@ -3717,7 +3708,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			) {
 				return conflict("Idempotency key reused with different payload");
 			}
-			return ok(existing.data.termination);
+			return errorResult.ok(existing.data.termination);
 		}
 
 		const employment = await this.getEmploymentById({
@@ -3850,7 +3841,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 					) {
 						return conflict("Idempotency key reused with different payload");
 					}
-					return ok(replay.data.termination);
+					return errorResult.ok(replay.data.termination);
 				}
 				return conflict("Employment already has an open termination draft");
 			}
@@ -4158,7 +4149,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapOffboardingCase(row);
 		} catch (error) {
@@ -4180,13 +4171,13 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const mapped = mapOffboardingCase(row);
 			if (!mapped.ok) {
 				return mapped;
 			}
-			return ok({
+			return errorResult.ok({
 				offboardingCase: mapped.data,
 				startRequestFingerprint: row.createRequestFingerprint,
 			});
@@ -4213,7 +4204,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			) {
 				return conflict("Idempotency key reused with different payload");
 			}
-			return ok(existing.data.offboardingCase);
+			return errorResult.ok(existing.data.offboardingCase);
 		}
 
 		const employment = await this.getEmploymentById({
@@ -4454,7 +4445,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 					) {
 						return conflict("Idempotency key reused with different payload");
 					}
-					return ok(replay.data.offboardingCase);
+					return errorResult.ok(replay.data.offboardingCase);
 				}
 			}
 			return mapPersistenceFailure(error, "Failed to start offboarding");
@@ -4539,7 +4530,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			if (loaded.data === null) {
 				return notFound("Offboarding case not found");
 			}
-			return ok(loaded.data);
+			return errorResult.ok(loaded.data);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -4634,7 +4625,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			if (!row) {
 				return conflict("Unable to record exit interview");
 			}
-			return ok(offboardingCase.data);
+			return errorResult.ok(offboardingCase.data);
 		} catch (error) {
 			if (isPostgresUniqueViolation(error)) {
 				return conflict("Exit interview already recorded for this case");
@@ -4746,7 +4737,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			if (loaded.data === null) {
 				return notFound("Offboarding case not found");
 			}
-			return ok(loaded.data);
+			return errorResult.ok(loaded.data);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to record clearance");
 		}
@@ -4918,7 +4909,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 				}
 				tasks.push(mapped.data);
 			}
-			return ok(tasks);
+			return errorResult.ok(tasks);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to list onboarding tasks");
 		}
@@ -4938,7 +4929,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapOnboardingTask(row);
 		} catch (error) {
@@ -4976,7 +4967,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 				}
 				tasks.push(mapped.data);
 			}
-			return ok(tasks);
+			return errorResult.ok(tasks);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to list offboarding tasks");
 		}
@@ -5006,7 +4997,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapClearance(row);
 		} catch (error) {
@@ -5044,7 +5035,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapOffboardingAccessRevocation(row);
 		} catch (error) {
@@ -5085,7 +5076,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapOffboardingPayrollHandoff(row);
 		} catch (error) {
@@ -5180,7 +5171,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			if (loaded.data === null) {
 				return notFound("Offboarding case not found");
 			}
-			return ok(loaded.data);
+			return errorResult.ok(loaded.data);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -5269,7 +5260,7 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			if (loaded.data === null) {
 				return notFound("Offboarding case not found");
 			}
-			return ok(loaded.data);
+			return errorResult.ok(loaded.data);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,

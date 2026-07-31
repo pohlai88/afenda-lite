@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import { z } from "zod";
 
 import {
@@ -8,7 +8,6 @@ import {
 import { createCorporateAdministrationCommandFingerprint } from "../../command-identity";
 import type { CorporateAdministrationCommandOptions } from "../../command-options";
 import { createCorporateAdministrationDomainEventEnvelope } from "../../domain-events";
-import { corporateAdministrationErrorDetails } from "../../error-codes";
 import { eventIdSchema } from "../../kernel/brands";
 import { toImmutableCanonicalJson } from "../../kernel/canonical-json";
 import { toCanonicalInstant } from "../../kernel/dates";
@@ -64,13 +63,9 @@ export async function registerLegalCompanyDraft(
 ): Promise<Result<LegalCompany>> {
 	const parsed = registerLegalCompanyDraftInputSchema.safeParse(input);
 	if (!parsed.success) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Corporate Administration input is invalid",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_VALIDATION_FAILED",
-			),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "Corporate Administration input is invalid",
+		});
 	}
 
 	const authorized = await requireCorporateAdministrationPermission(
@@ -118,34 +113,19 @@ export async function registerLegalCompanyDraft(
 	if (reservation.data.status === "replay") {
 		const replay = legalCompanySchema.safeParse(reservation.data.result);
 		return replay.success
-			? ok(replay.data)
-			: fail(
-					"SERVICE_UNAVAILABLE",
-					"Corporate Administration idempotency replay is unavailable.",
-					corporateAdministrationErrorDetails(
-						"CORPORATE_ADMINISTRATION_EXTERNAL_DEPENDENCY_UNAVAILABLE",
-						{ field: "idempotency.result" },
-					),
-				);
+			? errorResult.ok(replay.data)
+			: errorResult.fail("SERVICE_UNAVAILABLE");
 	}
 	if (reservation.data.status === "conflict") {
-		return fail(
-			"CONFLICT",
-			"Corporate Administration idempotency key was reused with different input.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_IDEMPOTENCY_CONFLICT",
-				{ field: "idempotencyKey" },
-			),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage:
+				"Corporate Administration idempotency key was reused with different input.",
+		});
 	}
 	if (reservation.data.status === "in_progress") {
-		return fail(
-			"CONFLICT",
-			"Corporate Administration command is already in progress.",
-			corporateAdministrationErrorDetails("CORPORATE_ADMINISTRATION_CONFLICT", {
-				field: "idempotencyKey",
-			}),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Corporate Administration command is already in progress.",
+		});
 	}
 	const acquired = reservation.data;
 
@@ -166,25 +146,17 @@ export async function registerLegalCompanyDraft(
 	}
 	if (party.data === null || party.data.kind !== "organization") {
 		await releaseReservation();
-		return fail(
-			"VALIDATION_ERROR",
-			"Corporate Administration legal company requires an organization party.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_REFERENCE_INVALID",
-				{ field: "masterDataPartyId" },
-			),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage:
+				"Corporate Administration legal company requires an organization party.",
+		});
 	}
 	if (!party.data.active) {
 		await releaseReservation();
-		return fail(
-			"CONFLICT",
-			"Corporate Administration legal company party is inactive.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_REFERENCE_INACTIVE",
-				{ field: "masterDataPartyId" },
-			),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage:
+				"Corporate Administration legal company party is inactive.",
+		});
 	}
 
 	const rules = await dependencies.jurisdictionRules.listEntityTypeRules({
@@ -316,5 +288,5 @@ function asLegalCompanyFailure(result: Result<unknown>): Result<LegalCompany> {
 	if (result.ok) {
 		throw new TypeError("Expected Corporate Administration failure Result");
 	}
-	return fail(result.code, result.message, result.details);
+	return result;
 }

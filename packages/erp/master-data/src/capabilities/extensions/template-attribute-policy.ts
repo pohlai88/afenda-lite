@@ -1,7 +1,5 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import { z } from "zod";
-
-import type { MasterFailureDetails } from "../../contracts/reasons";
 
 export const ITEM_TEMPLATE_ATTRIBUTE_DATA_TYPES = [
 	"text",
@@ -305,21 +303,18 @@ export function parseTemplateAttributeValidationRules(
 ): Result<ItemTemplateAttributeValidationRules> {
 	const parsed = validationRulesSchemaFor(dataType).safeParse(rawRules ?? {});
 	if (!parsed.success) {
-		const issues = parsed.error.issues.map((issue) => ({
+		const _issues = parsed.error.issues.map((issue) => ({
 			path:
 				issue.path.length === 0
 					? "validationRules"
 					: `validationRules.${issue.path.join(".")}`,
 			message: issue.message,
 		}));
-		return fail("BAD_REQUEST", "Invalid template attribute validation rules", {
-			reason: "MASTER_VALIDATION_FAILED",
-			field: "validationRules",
-			issuePaths: issues.map((issue) => issue.path),
-			issues,
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Invalid template attribute validation rules",
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 /** Compatibility mapping for the original text/option public input. */

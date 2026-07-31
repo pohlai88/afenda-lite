@@ -22,7 +22,7 @@ import {
 	requireCorporateAdministrationPermission,
 	userIdSchema,
 } from "@afenda/corporate-administration";
-import type { ErrorCode } from "@afenda/errors";
+import type { CanonicalErrorCode } from "@afenda/errors";
 import { describe, expect, expectTypeOf, it, vi } from "vitest";
 
 describe("Corporate Administration authorization and boundary contracts", () => {
@@ -32,40 +32,28 @@ describe("Corporate Administration authorization and boundary contracts", () => 
 		permission:
 			"corporate_administration.synthetic" as CorporateAdministrationAuthorizationInput["permission"],
 	};
-
 	it("denies access when authorization is unavailable", async () => {
 		const result = await requireCorporateAdministrationPermission(
 			undefined,
 			input,
 		);
-
 		expect(result.ok).toBe(false);
 		if (!result.ok) {
 			expect(result.code).toBe("FORBIDDEN");
-			expect(result.message).toBe(
-				"Corporate Administration permission is required",
-			);
-			expect(result.details).toEqual({
-				reason: "CORPORATE_ADMINISTRATION_FORBIDDEN",
-				permission: "corporate_administration.synthetic",
-			});
+			expect(result.message).toBe("The operation is not permitted");
 		}
 	});
-
 	it("denies access when permission is rejected", async () => {
 		const authorization: CorporateAdministrationAuthorizationContext = {
 			can: vi.fn().mockResolvedValue(false),
 		};
-
 		const result = await requireCorporateAdministrationPermission(
 			authorization,
 			input,
 		);
-
 		expect(result.ok).toBe(false);
 		expect(authorization.can).toHaveBeenCalledWith(input);
 	});
-
 	it("does not treat module_admin as an implicit bypass", async () => {
 		const authorization: CorporateAdministrationAuthorizationContext = {
 			can: vi.fn().mockResolvedValue(false),
@@ -75,44 +63,36 @@ describe("Corporate Administration authorization and boundary contracts", () => 
 			permission:
 				"corporate_administration.module_admin" as CorporateAdministrationAuthorizationInput["permission"],
 		};
-
 		const result = await requireCorporateAdministrationPermission(
 			authorization,
 			moduleAdminInput,
 		);
-
 		expect(result.ok).toBe(false);
 		expect(authorization.can).toHaveBeenCalledWith(moduleAdminInput);
 	});
-
 	it("allows an explicitly authorized tenant capability", async () => {
 		const authorization: CorporateAdministrationAuthorizationContext = {
 			can: vi.fn().mockResolvedValue(true),
 		};
-
 		const result = await requireCorporateAdministrationPermission(
 			authorization,
 			input,
 		);
-
 		expect(result).toEqual({
 			ok: true,
 			data: undefined,
 		});
 		expect(authorization.can).toHaveBeenCalledWith(input);
 	});
-
 	it("does not hide authorization-provider failures", async () => {
 		const failure = new Error("Authorization provider unavailable");
 		const authorization: CorporateAdministrationAuthorizationContext = {
 			can: vi.fn().mockRejectedValue(failure),
 		};
-
 		await expect(
 			requireCorporateAdministrationPermission(authorization, input),
 		).rejects.toBe(failure);
 	});
-
 	it("keeps command and query execution context contracts consistent", () => {
 		expectTypeOf<CorporateAdministrationCommandOptions>().toExtend<CorporateAdministrationExecutionContext>();
 		expectTypeOf<CorporateAdministrationQueryOptions>().toEqualTypeOf<CorporateAdministrationExecutionContext>();
@@ -148,7 +128,6 @@ describe("Corporate Administration authorization and boundary contracts", () => 
 			"clock",
 		);
 	});
-
 	it("returns identical FORBIDDEN shape for missing wiring and explicit denial", async () => {
 		const denied: CorporateAdministrationAuthorizationContext = {
 			can: vi.fn().mockResolvedValue(false),
@@ -161,14 +140,12 @@ describe("Corporate Administration authorization and boundary contracts", () => 
 			denied,
 			input,
 		);
-
 		expect(missing.ok).toBe(false);
 		expect(rejected.ok).toBe(false);
 		if (!(missing.ok || rejected.ok)) {
 			expect(missing).toEqual(rejected);
 		}
 	});
-
 	it("maps CA-1.4 company and establishment IDs to permissions", () => {
 		expect(CORPORATE_ADMINISTRATION_PERMISSION_CODES).toEqual([
 			"corporate_administration.company.read",
@@ -306,7 +283,6 @@ describe("Corporate Administration authorization and boundary contracts", () => 
 			listOverdueResolutionActions: "corporate_administration.resolution.read",
 		});
 	});
-
 	it("rejects unsafe semantic error metadata", () => {
 		expect(() =>
 			corporateAdministrationErrorDetails(
@@ -315,7 +291,6 @@ describe("Corporate Administration authorization and boundary contracts", () => 
 			),
 		).toThrow();
 	});
-
 	it("accepts only strict non-sensitive failure metadata", () => {
 		const metadata = corporateAdministrationFailureMetadataSchema.parse({
 			field: "normalizedCode",
@@ -325,7 +300,6 @@ describe("Corporate Administration authorization and boundary contracts", () => 
 			actualVersion: 2,
 			correlationId: "correlation-123",
 		});
-
 		expect(metadata).toEqual({
 			field: "normalizedCode",
 			entityType: "test_entity",
@@ -335,7 +309,6 @@ describe("Corporate Administration authorization and boundary contracts", () => 
 			correlationId: "correlation-123",
 		});
 		expect(Object.isFrozen(metadata)).toBe(true);
-
 		for (const key of [
 			"name",
 			"registrationNumber",
@@ -348,14 +321,12 @@ describe("Corporate Administration authorization and boundary contracts", () => 
 				corporateAdministrationFailureMetadataSchema.parse({ [key]: "value" }),
 			).toThrow();
 		}
-
 		expect(() =>
 			corporateAdministrationFailureMetadataSchema.parse({
 				field: "https://example.test/document",
 			}),
 		).toThrow();
 	});
-
 	it("maps every domain error reason to a result code", () => {
 		expect(
 			Object.keys(CORPORATE_ADMINISTRATION_RESULT_CODE_BY_REASON).sort(),
@@ -365,14 +336,13 @@ describe("Corporate Administration authorization and boundary contracts", () => 
 				"CORPORATE_ADMINISTRATION_UNKNOWN",
 			).success,
 		).toBe(false);
-
 		for (const reason of CORPORATE_ADMINISTRATION_ERROR_CODES) {
-			const resultCode: ErrorCode = corporateAdministrationResultCode(reason);
+			const resultCode: CanonicalErrorCode =
+				corporateAdministrationResultCode(reason);
 			expect(resultCode).toBeDefined();
 			expect(corporateAdministrationErrorCodeSchema.parse(reason)).toBe(reason);
 		}
 	});
-
 	it("constructs validated corporate administration failure details", () => {
 		expect(
 			corporateAdministrationErrorDetails(
@@ -392,7 +362,6 @@ describe("Corporate Administration authorization and boundary contracts", () => 
 			correlationId: "correlation-123",
 		});
 	});
-
 	it("rejects unknown or unsafe corporate administration failure details", () => {
 		expect(() =>
 			corporateAdministrationFailureDetailsSchema.parse({

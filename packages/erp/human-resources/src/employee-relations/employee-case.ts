@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
@@ -87,13 +87,14 @@ export function openEmployeeCase(
 			}
 			if (existing.data !== null) {
 				if (existing.data.createRequestFingerprint !== fingerprint) {
-					return fail(
-						"CONFLICT",
-						"Idempotency key reused with different payload",
-						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-					);
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+						internalContext: humanResourcesErrorDetails(
+							HUMAN_RESOURCES_ERROR_CONFLICT,
+						),
+					});
 				}
-				return ok(existing.data.case);
+				return errorResult.ok(existing.data.case);
 			}
 			return store.openEmployeeCase(
 				{
@@ -322,7 +323,7 @@ export function getEmployeeCaseById(
 		schema: getEmployeeCaseByIdInputSchema,
 		invalidMessage: "Invalid employee case get input",
 		query: HUMAN_RESOURCES_QUERY_EMPLOYEE_CASE_GET,
-		execute: async ({ employeeCase }) => ok(employeeCase),
+		execute: async ({ employeeCase }) => errorResult.ok(employeeCase),
 		project: (value, projection) =>
 			projectEmployeeCaseFromDecision(value, projection),
 	});

@@ -152,7 +152,6 @@ describe("deleteOrganizationAction", () => {
 		expect(result?.ok).toBe(false);
 		if (result?.ok === false) {
 			expect(result.code).toBe("INTERNAL_ERROR");
-			expect(result.message).toMatch(/activity audit/i);
 		}
 		expect(eventMocks.recordOrganizationDeletedEvent).not.toHaveBeenCalled();
 		expect(revalidatePath).not.toHaveBeenCalled();

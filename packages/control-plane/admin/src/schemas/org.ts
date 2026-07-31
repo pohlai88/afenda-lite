@@ -48,12 +48,6 @@ export const createdOrganizationSchema = z.object({
 
 export type CreatedOrganization = z.infer<typeof createdOrganizationSchema>;
 
-/** Partial-failure disposition when create succeeded but a later step failed. */
-export const PROVISION_ORG_CREATED_SET_ACTIVE_FAILED =
-	"org_created_set_active_failed" as const;
-export const PROVISION_ORG_CREATED_INVITE_FAILED =
-	"org_created_invite_failed" as const;
-
 export const provisionOrganizationInputSchema = z.object({
 	name: z.string().trim().min(1),
 	slug: z

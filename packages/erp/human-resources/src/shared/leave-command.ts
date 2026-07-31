@@ -1,4 +1,4 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { z } from "zod";
 import {
 	type HumanResourcesCommandOptions,
@@ -81,13 +81,13 @@ export async function runLeaveCommand<
 		parityResourceKind: "leave_request",
 		resolveOptions: async (opts, data) => {
 			if (config.authorize === undefined) {
-				return ok(opts);
+				return errorResult.ok(opts);
 			}
 			const authorized = await config.authorize(opts, data);
 			if (!authorized.ok) {
 				return authorized;
 			}
-			return ok({
+			return errorResult.ok({
 				...opts,
 				authorization: CUSTOM_AUTHORIZE_PROVEN,
 			});
@@ -99,7 +99,7 @@ export async function runLeaveCommand<
 			if (!workCalendar.ok) {
 				return workCalendar;
 			}
-			return ok({
+			return errorResult.ok({
 				store,
 				ports,
 				workCalendar: workCalendar.data,
@@ -136,7 +136,7 @@ export async function runLeaveQuery<
 			if (!workCalendar.ok) {
 				return workCalendar;
 			}
-			return ok({
+			return errorResult.ok({
 				store,
 				workCalendar: workCalendar.data,
 				authorization,
@@ -186,7 +186,7 @@ export async function requireLeaveCancelApprovedPermission(
 		permission: HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_APPROVE_TEAM,
 	});
 	if (approveTeam.ok) {
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	}
 	return requireLeaveRequestBackdatePermission(options, input);
 }
@@ -230,10 +230,10 @@ export async function assertLeaveRequestSensitiveReadAllowed(
 	},
 ): Promise<Result<void>> {
 	if (!input.policy.sensitive) {
-		return await ok(undefined);
+		return await errorResult.ok(undefined);
 	}
 	if (input.request.createdBy === input.actorUserId) {
-		return await ok(undefined);
+		return await errorResult.ok(undefined);
 	}
 	return await requireLeaveRequestSensitiveRead(options, {
 		organizationId: input.organizationId,

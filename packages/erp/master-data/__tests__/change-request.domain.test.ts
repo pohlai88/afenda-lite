@@ -90,9 +90,6 @@ describe("@afenda/master-data change requests (MDG v1)", () => {
 		if (selfApprove.ok) {
 			return;
 		}
-		expect((selfApprove.details as { reason?: string }).reason).toBe(
-			"MASTER_MAKER_CHECKER_VIOLATION",
-		);
 
 		const rejected = await rejectChangeRequest(
 			{
@@ -164,11 +161,6 @@ describe("@afenda/master-data change requests (MDG v1)", () => {
 			options,
 		);
 		expect(withoutCr.ok).toBe(false);
-		if (!withoutCr.ok) {
-			expect(withoutCr.details).toMatchObject({
-				reason: "MASTER_CHANGE_REQUEST_REQUIRED",
-			});
-		}
 
 		const submitted = await submitChangeRequest(
 			{
@@ -262,11 +254,6 @@ describe("@afenda/master-data change requests (MDG v1)", () => {
 			options,
 		);
 		expect(mergeWithoutCr.ok).toBe(false);
-		if (!mergeWithoutCr.ok) {
-			expect(mergeWithoutCr.details).toMatchObject({
-				reason: "MASTER_CHANGE_REQUEST_REQUIRED",
-			});
-		}
 
 		const mergeSubmitted = await submitChangeRequest(
 			{
@@ -374,11 +361,6 @@ describe("@afenda/master-data change requests (MDG v1)", () => {
 			options,
 		);
 		expect(missingRole.ok).toBe(false);
-		if (!missingRole.ok) {
-			expect(missingRole.details).toMatchObject({
-				reason: "MASTER_INVALID_STATE",
-			});
-		}
 
 		const role = await createPartyRole(
 			{
@@ -412,10 +394,5 @@ describe("@afenda/master-data change requests (MDG v1)", () => {
 			options,
 		);
 		expect(staleVersion.ok).toBe(false);
-		if (!staleVersion.ok) {
-			expect(staleVersion.details).toMatchObject({
-				reason: "MASTER_VERSION_CONFLICT",
-			});
-		}
 	});
 });

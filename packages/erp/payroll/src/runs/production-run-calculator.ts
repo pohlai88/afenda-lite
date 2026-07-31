@@ -1,17 +1,12 @@
 import { randomUUID } from "node:crypto";
 
-import { fail, ok } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 
 import {
 	parsePayrollResultLineId,
 	parsePayrollRunEmployeeId,
 	parsePayrollStatutoryResultId,
 } from "../brands";
-import {
-	PAYROLL_ERROR_NOT_FOUND,
-	PAYROLL_ERROR_VALIDATION,
-	payrollErrorDetails,
-} from "../error-codes";
 import type {
 	PayrollEmployeeQueryPort,
 	PayrollRunCalculatorPort,
@@ -107,11 +102,9 @@ export function createProductionPayrollRunCalculator(input: {
 				return period;
 			}
 			if (period.data === null) {
-				return fail(
-					"NOT_FOUND",
-					"Payroll period not found",
-					payrollErrorDetails(PAYROLL_ERROR_NOT_FOUND),
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "Payroll period not found",
+				});
 			}
 
 			const payGroup = await input.store.getPayGroup({
@@ -122,11 +115,9 @@ export function createProductionPayrollRunCalculator(input: {
 				return payGroup;
 			}
 			if (payGroup.data === null) {
-				return fail(
-					"NOT_FOUND",
-					"Pay group not found",
-					payrollErrorDetails(PAYROLL_ERROR_NOT_FOUND),
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "Pay group not found",
+				});
 			}
 
 			const effectiveDate = period.data.periodEnd;
@@ -184,11 +175,7 @@ export function createProductionPayrollRunCalculator(input: {
 					variableInputs.ok
 				)
 			) {
-				return fail(
-					"INTERNAL_ERROR",
-					"Unexpected payroll calculation load failure",
-					payrollErrorDetails(PAYROLL_ERROR_VALIDATION),
-				);
+				return errorResult.fail("INTERNAL_ERROR");
 			}
 
 			const employeeFilter =
@@ -331,11 +318,7 @@ export function createProductionPayrollRunCalculator(input: {
 
 				const parsedSnapshot = payrollJsonObjectSchema.safeParse(snapshot);
 				if (!parsedSnapshot.success) {
-					return fail(
-						"INTERNAL_ERROR",
-						"Payroll calculation snapshot is not JSON serializable",
-						payrollErrorDetails(PAYROLL_ERROR_VALIDATION),
-					);
+					return errorResult.fail("INTERNAL_ERROR");
 				}
 
 				const snapshotHash = hashSnapshot(parsedSnapshot.data);
@@ -486,7 +469,7 @@ export function createProductionPayrollRunCalculator(input: {
 				return persistedStatutory;
 			}
 
-			return ok({
+			return errorResult.ok({
 				calculationSnapshotHash: bundleHash,
 				calculationVersion: PAYROLL_CALCULATION_VERSION,
 				roundingPolicyJson: { ...roundingPolicy },

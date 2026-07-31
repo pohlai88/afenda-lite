@@ -1,4 +1,4 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import { lifecycleEffectiveDateIncoherent } from "./lifecycle-errors";
 import type { LifecycleTransitionContext } from "./types";
@@ -40,7 +40,7 @@ export function assertEffectiveDatedLifecycleCoherence(
 ): Result<true> {
 	const availability = evaluateEffectiveDatedAvailability(input);
 	if (input.status !== "active" || availability.effectiveAvailable) {
-		return ok(true);
+		return errorResult.ok(true);
 	}
 	return lifecycleEffectiveDateIncoherent({
 		...context,

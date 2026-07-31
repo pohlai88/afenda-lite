@@ -1,6 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
-
-import type { MasterFailureDetails } from "../../contracts/reasons";
+import { errorResult, type Result } from "@afenda/errors";
 import type { PartyContact, PartyContactType } from "../../types";
 import {
 	normalizeEmail,
@@ -9,11 +7,10 @@ import {
 
 const MAX_CONTACT_VALUE_LENGTH = 500;
 
-function invalidContactValue(message: string): Result<never> {
-	return fail("BAD_REQUEST", message, {
-		reason: "MASTER_VALIDATION_FAILED",
-		field: "value",
-	} satisfies MasterFailureDetails);
+function invalidContactValue(_message: string): Result<never> {
+	return errorResult.fail("BAD_REQUEST", {
+		publicMessage: "The request is invalid",
+	});
 }
 
 function normalizeWebsite(value: string): Result<string> {
@@ -35,7 +32,7 @@ function normalizeWebsite(value: string): Result<string> {
 			url.port = "";
 		}
 		url.hash = "";
-		return ok(url.toString());
+		return errorResult.ok(url.toString());
 	} catch {
 		return invalidContactValue("Website contact value is invalid");
 	}
@@ -71,11 +68,11 @@ export function normalizePartyContactValue(
 			if (!website.ok) {
 				return website;
 			}
-			return ok({ value, normalizedValue: website.data });
+			return errorResult.ok({ value, normalizedValue: website.data });
 		}
 		case "messaging":
 		case "other":
-			return ok({ value, normalizedValue: value });
+			return errorResult.ok({ value, normalizedValue: value });
 		default:
 			return invalidContactValue("Party contact type is invalid");
 	}

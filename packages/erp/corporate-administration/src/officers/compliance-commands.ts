@@ -1,4 +1,4 @@
-import { fail, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS,
@@ -9,7 +9,6 @@ import {
 	type DurableLegalCompanyCommandDependencies,
 	runDurableCompanyCommand,
 } from "../company/commands/durable-command";
-import { corporateAdministrationErrorDetails } from "../error-codes";
 import { parseCorporateAdministrationInput } from "../parse-input";
 import {
 	conflictDisclosureSchema,
@@ -592,49 +591,35 @@ async function validateSource(
 		: { ok: true, data: undefined };
 }
 
-function notFound(entityType: string): Result<never> {
-	return fail(
-		"NOT_FOUND",
-		"Corporate Administration record was not found.",
-		corporateAdministrationErrorDetails("CORPORATE_ADMINISTRATION_NOT_FOUND", {
-			entityType,
-		}),
-	);
+function notFound(_entityType: string): Result<never> {
+	return errorResult.fail("NOT_FOUND", {
+		publicMessage: "Corporate Administration record was not found.",
+	});
 }
 
-function stale(expectedVersion: number, actualVersion: number): Result<never> {
-	return fail(
-		"CONFLICT",
-		"Corporate Administration record version is stale.",
-		corporateAdministrationErrorDetails(
-			"CORPORATE_ADMINISTRATION_STALE_VERSION",
-			{ expectedVersion, actualVersion },
-		),
-	);
+function stale(
+	_expectedVersion: number,
+	_actualVersion: number,
+): Result<never> {
+	return errorResult.fail("CONFLICT", {
+		publicMessage: "Corporate Administration record version is stale.",
+	});
 }
 
-function invalidChronology(field: string): Result<never> {
-	return fail(
-		"CONFLICT",
-		"Corporate Administration chronology is invalid.",
-		corporateAdministrationErrorDetails(
-			"CORPORATE_ADMINISTRATION_CHRONOLOGY_INVALID",
-			{ field },
-		),
-	);
+function invalidChronology(_field: string): Result<never> {
+	return errorResult.fail("CONFLICT", {
+		publicMessage: "Corporate Administration chronology is invalid.",
+	});
 }
 
-function invalidReference(field: string, inactive: boolean): Result<never> {
-	return fail(
-		inactive ? "CONFLICT" : "VALIDATION_ERROR",
-		"Corporate Administration reference is unavailable.",
-		corporateAdministrationErrorDetails(
-			inactive
-				? "CORPORATE_ADMINISTRATION_REFERENCE_INACTIVE"
-				: "CORPORATE_ADMINISTRATION_REFERENCE_INVALID",
-			{ field },
-		),
-	);
+function invalidReference(_field: string, inactive: boolean): Result<never> {
+	return inactive
+		? errorResult.fail("CONFLICT", {
+				publicMessage: "Corporate Administration reference is unavailable.",
+			})
+		: errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Corporate Administration reference is unavailable.",
+			});
 }
 
 function serializeDeclaration(result: OfficerDeclaration) {

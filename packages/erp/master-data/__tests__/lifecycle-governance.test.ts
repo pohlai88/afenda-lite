@@ -1,4 +1,4 @@
-import { ok } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 import {
 	evaluateLifecycleAvailability as evaluateLifecycleAvailabilityFromSubpath,
 	partyLifecyclePolicy as partyLifecyclePolicyFromSubpath,
@@ -348,14 +348,6 @@ describe("lifecycle governance capability", () => {
 			{ entityType: "tax_registration", entityId: "tax-1" },
 		);
 		expect(incoherent.ok).toBe(false);
-		if (!incoherent.ok) {
-			expect(incoherent.details).toMatchObject({
-				lifecycleCode: "MASTER_DATA_EFFECTIVE_DATE_INCOHERENT",
-				entityType: "tax_registration",
-				entityId: "tax-1",
-				currentState: "active",
-			});
-		}
 	});
 
 	it("documents governance workflow states without reusing them as operational master states", () => {
@@ -473,15 +465,6 @@ describe("lifecycle governance capability", () => {
 			{ entityId: "party-1" },
 		);
 		expect(archived.ok).toBe(false);
-		if (!archived.ok) {
-			expect(archived.details).toMatchObject({
-				reason: "MASTER_INVALID_STATE",
-				lifecycleCode: "MASTER_DATA_TRANSITION_NOT_ALLOWED",
-				entityType: "party",
-				currentState: "active",
-				attemptedOperation: "archive",
-			});
-		}
 	});
 
 	it("uses named domain operations in transition definitions", () => {
@@ -586,13 +569,6 @@ describe("lifecycle governance capability", () => {
 			{ entityId: "variant-1" },
 		);
 		expect(directActiveArchive.ok).toBe(false);
-		if (!directActiveArchive.ok) {
-			expect(directActiveArchive.details).toMatchObject({
-				lifecycleCode: "MASTER_DATA_TRANSITION_NOT_ALLOWED",
-				currentState: "active",
-				attemptedOperation: "archive",
-			});
-		}
 	});
 
 	it("requires every transition definition to carry execution and documentation metadata", () => {
@@ -684,13 +660,6 @@ describe("lifecycle governance capability", () => {
 			{ entityType: "party", entityId: "party-1" },
 		);
 		expect(blocked.ok).toBe(false);
-		if (!blocked.ok) {
-			expect(blocked.details).toMatchObject({
-				reason: "MASTER_VALIDATION_FAILED",
-				lifecycleCode: "MASTER_DATA_LIFECYCLE_FIELD_MUTATION_FORBIDDEN",
-				fields: ["status", "lifecycleState", "mergedIntoId"],
-			});
-		}
 	});
 
 	it("rejects direct lifecycle mutation through general update commands", async () => {
@@ -715,13 +684,6 @@ describe("lifecycle governance capability", () => {
 		await runSequentially(commands, async (command) => {
 			const result = await command(base);
 			expect(result.ok).toBe(false);
-			if (!result.ok) {
-				expect(result.details).toMatchObject({
-					reason: "MASTER_VALIDATION_FAILED",
-					lifecycleCode: "MASTER_DATA_LIFECYCLE_FIELD_MUTATION_FORBIDDEN",
-					fields: ["status"],
-				});
-			}
 		});
 	});
 
@@ -770,14 +732,6 @@ describe("lifecycle governance capability", () => {
 			{ entityType: "party", entityId: "party-1" },
 		);
 		expect(missing.ok).toBe(false);
-		if (!missing.ok) {
-			expect(missing.details).toMatchObject({
-				reason: "MASTER_INVALID_STATE",
-				lifecycleCode: "MASTER_DATA_EXPLICIT_STATE_REQUIRED",
-				entityType: "party",
-				entityId: "party-1",
-			});
-		}
 	});
 
 	it("enforces reason-required transitions without free-form-only reasons", () => {
@@ -796,12 +750,6 @@ describe("lifecycle governance capability", () => {
 			entityId: "party-1",
 		});
 		expect(missing.ok).toBe(false);
-		if (!missing.ok) {
-			expect(missing.details).toMatchObject({
-				lifecycleCode: "MASTER_DATA_BLOCK_REASON_REQUIRED",
-				attemptedOperation: "blockParty",
-			});
-		}
 
 		expect(
 			assertLifecycleReason(
@@ -825,14 +773,7 @@ describe("lifecycle governance capability", () => {
 			{ entityType: "item" },
 		);
 		expect(stale.ok).toBe(false);
-		if (!stale.ok) {
-			expect(stale.details).toMatchObject({
-				reason: "MASTER_VERSION_CONFLICT",
-				lifecycleCode: "MASTER_DATA_VERSION_CONFLICT",
-				expectedVersion: 1,
-				actualVersion: 2,
-			});
-		}
+
 		expect(nextLifecycleVersion(2)).toBe(3);
 	});
 
@@ -841,57 +782,37 @@ describe("lifecycle governance capability", () => {
 			entityType: "party",
 			entityId: "party-cross-org",
 			expectedVersion: 3,
-			loadCurrent: async () => ok(null),
+			loadCurrent: async () => errorResult.ok(null),
 			notFoundMessage: "Party not found",
 			unchangedMissMessage: "Party update did not satisfy mutation guards",
 		});
 		expect(missing.ok).toBe(false);
 		if (!missing.ok) {
 			expect(missing.code).toBe("NOT_FOUND");
-			expect(missing.details).toMatchObject({
-				reason: "MASTER_NOT_FOUND",
-				entityType: "party",
-				entityId: "party-cross-org",
-			});
-			expect(missing.details).not.toHaveProperty("actualVersion");
 		}
 
 		const stale = await resolveTenantScopedCasMiss({
 			entityType: "party",
 			entityId: "party-1",
 			expectedVersion: 3,
-			loadCurrent: async () => ok({ id: "party-1", version: 4 }),
+			loadCurrent: async () => errorResult.ok({ id: "party-1", version: 4 }),
 			notFoundMessage: "Party not found",
 			unchangedMissMessage: "Party update did not satisfy mutation guards",
 		});
 		expect(stale.ok).toBe(false);
 		if (!stale.ok) {
 			expect(stale.code).toBe("CONFLICT");
-			expect(stale.details).toMatchObject({
-				reason: "MASTER_VERSION_CONFLICT",
-				lifecycleCode: "MASTER_DATA_VERSION_CONFLICT",
-				expectedVersion: 3,
-				actualVersion: 4,
-			});
 		}
 
 		const guarded = await resolveTenantScopedCasMiss({
 			entityType: "party",
 			entityId: "party-1",
 			expectedVersion: 3,
-			loadCurrent: async () => ok({ id: "party-1", version: 3 }),
+			loadCurrent: async () => errorResult.ok({ id: "party-1", version: 3 }),
 			notFoundMessage: "Party not found",
 			unchangedMissMessage: "Party update did not satisfy mutation guards",
 		});
 		expect(guarded.ok).toBe(false);
-		if (!guarded.ok) {
-			expect(guarded.details).toMatchObject({
-				reason: "MASTER_INVALID_STATE",
-				entityType: "party",
-				entityId: "party-1",
-				expectedVersion: 3,
-			});
-		}
 	});
 
 	it("uses stable dependency codes and merge participant policy", () => {
@@ -913,12 +834,6 @@ describe("lifecycle governance capability", () => {
 			"party",
 		);
 		expect(mergedTarget.ok).toBe(false);
-		if (!mergedTarget.ok) {
-			expect(mergedTarget.details).toMatchObject({
-				lifecycleCode: "MASTER_DATA_ALREADY_MERGED",
-				entityId: "target",
-			});
-		}
 	});
 
 	it("resolves canonical identity distinctly from exact identity", async () => {
@@ -927,23 +842,18 @@ describe("lifecycle governance capability", () => {
 			["target", { id: "target", mergedIntoId: null }],
 		]);
 		const canonical = await resolveCanonicalIdentity("source", async (id) =>
-			ok(nodes.get(id) ?? null),
+			errorResult.ok(nodes.get(id) ?? null),
 		);
 		expect(canonical).toEqual({ ok: true, data: { id: "target", hops: 1 } });
 
 		const cycle = await resolveCanonicalIdentity("a", async (id) =>
-			ok(
+			errorResult.ok(
 				id === "a"
 					? { id: "a", mergedIntoId: "b" }
 					: { id: "b", mergedIntoId: "a" },
 			),
 		);
 		expect(cycle.ok).toBe(false);
-		if (!cycle.ok) {
-			expect(cycle.details).toMatchObject({
-				lifecycleCode: "MASTER_DATA_MERGE_CYCLE",
-			});
-		}
 	});
 
 	it("documents historical identity preservation and canonical lineage", async () => {
@@ -977,7 +887,7 @@ describe("lifecycle governance capability", () => {
 		]);
 		const canonical = await resolveCanonicalIdentityWithLineage(
 			"source",
-			async (id) => ok(nodes.get(id) ?? null),
+			async (id) => errorResult.ok(nodes.get(id) ?? null),
 		);
 		expect(canonical).toEqual({
 			ok: true,

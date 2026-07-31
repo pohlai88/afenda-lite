@@ -897,6 +897,43 @@ export const HUMAN_RESOURCES_EFFECTIVE_TRUTH_CLASSIFICATION = [
 			"Immutable downloadable bulk rejection evidence by checkpoint version",
 	}),
 	row({
+		table: "hr_bulk_export_artifact_chunk",
+		category: "append-only-operational-fact",
+		domain: "core",
+		cluster: "A",
+		rationale: "Content-addressed export artifact chunk produced by a bulk job",
+	}),
+	row({
+		table: "hr_bulk_export_job",
+		category: "transactional-state-machine",
+		domain: "core",
+		cluster: "A",
+		rationale: "Durable export progress, completion, failure and purge state",
+	}),
+	row({
+		table: "hr_bulk_import_job",
+		category: "transactional-state-machine",
+		domain: "core",
+		cluster: "A",
+		rationale:
+			"Durable import validation, execution, completion and purge state",
+	}),
+	row({
+		table: "hr_bulk_import_job_row",
+		category: "append-only-operational-fact",
+		domain: "core",
+		cluster: "A",
+		rationale:
+			"Ordered per-row import evidence retained through payload lifecycle",
+	}),
+	row({
+		table: "hr_user_employee",
+		category: "bounded-assignment",
+		domain: "workforce-foundation",
+		cluster: "A",
+		rationale: "Effective-dated actor-to-employee identity assignment",
+	}),
+	row({
 		table: "hr_reliability_work_item",
 		category: "transactional-state-machine",
 		domain: "core",

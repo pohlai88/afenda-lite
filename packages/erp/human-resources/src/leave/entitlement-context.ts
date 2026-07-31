@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type { HumanResourcesLeaveEntitlementId } from "../brands";
 import { assertLeavePolicyPublished } from "../shared/leave-guards";
@@ -19,9 +19,11 @@ export async function loadLeaveEntitlementForCommand(
 		return entitlement;
 	}
 	if (entitlement.data === null) {
-		return fail("NOT_FOUND", "Leave entitlement not found");
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "The requested resource was not found",
+		});
 	}
-	return ok(entitlement.data);
+	return errorResult.ok(entitlement.data);
 }
 
 export async function loadPublishedLeavePolicyForEntitlement(
@@ -44,13 +46,15 @@ export async function loadPublishedLeavePolicyForEntitlement(
 		return policy;
 	}
 	if (policy.data === null) {
-		return fail("NOT_FOUND", "Leave policy not found");
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "The requested resource was not found",
+		});
 	}
 	const published = assertLeavePolicyPublished(policy.data.status);
 	if (!published.ok) {
 		return published;
 	}
-	return ok({
+	return errorResult.ok({
 		policy: policy.data,
 		balanceRules: resolveLeavePolicyBalanceRulesFromInput(policy.data),
 	});

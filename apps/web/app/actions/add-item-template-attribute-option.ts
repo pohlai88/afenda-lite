@@ -1,6 +1,7 @@
 "use server";
 
 import { getSession } from "@afenda/auth";
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { createCorrelationId } from "@afenda/http";
 import {
 	addItemTemplateAttributeOption,
@@ -12,11 +13,6 @@ import { mapPackageResult } from "@/app/actions/map-package-result";
 import { forbidUnlessPermission } from "@/app/actions/permission-gate";
 import { createMasterDataAuthorizationPort } from "@/lib/erp/master-data-authorization-port";
 import { logProductEvent } from "@/modules/platform/observability/product-log";
-import {
-	type ActionResult,
-	actionFail,
-	actionFailInternal,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export interface AddItemTemplateAttributeOptionActionData {
@@ -46,11 +42,9 @@ export async function addItemTemplateAttributeOptionAction(
 		label: formData.get("label"),
 	});
 	if (!parsed.success) {
-		return actionFail(
-			"VALIDATION_ERROR",
-			"Enter a valid attribute, option code, and label.",
-			parsed.details,
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "Enter a valid attribute, option code, and label.",
+		});
 	}
 
 	const permissionDenied = await forbidUnlessPermission(
@@ -90,9 +84,6 @@ export async function addItemTemplateAttributeOptionAction(
 			path: "addItemTemplateAttributeOptionAction",
 			code: "INTERNAL_ERROR",
 		});
-		return actionFailInternal(
-			"Could not add attribute option. Try again or contact an admin.",
-			correlationId,
-		);
+		return errorResult.fail("INTERNAL_ERROR", { correlationId });
 	}
 }

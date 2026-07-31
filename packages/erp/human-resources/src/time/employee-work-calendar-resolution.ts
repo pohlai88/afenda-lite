@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	type HumanResourcesWorkCalendarId,
@@ -173,18 +173,20 @@ export async function resolveEmployeeWorkCalendar(
 		candidates,
 	});
 	if (selected === null) {
-		return fail(
-			"NOT_FOUND",
-			"No active work calendar is assigned for this employment.",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-		);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "The requested resource was not found",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			),
+		});
 	}
 	if ("conflict" in selected) {
-		return fail(
-			"CONFLICT",
-			"Multiple scoped work calendar assignments tie at the same precedence level.",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "The request conflicts with current state",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_CONFLICT,
+			),
+		});
 	}
 
 	const effectiveCalendar = await resolveWorkCalendarLineageAtAsOf(
@@ -199,12 +201,13 @@ export async function resolveEmployeeWorkCalendar(
 		return effectiveCalendar;
 	}
 	if (effectiveCalendar.data === null) {
-		return fail(
-			"NOT_FOUND",
-			"Work calendar not found.",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-		);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "The requested resource was not found",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			),
+		});
 	}
 
-	return ok({ calendarId: effectiveCalendar.data.id });
+	return errorResult.ok({ calendarId: effectiveCalendar.data.id });
 }

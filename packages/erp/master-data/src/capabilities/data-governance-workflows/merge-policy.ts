@@ -1,4 +1,4 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import { assertDistinctMergeParticipants } from "../lifecycle-governance";
 import {
@@ -147,7 +147,7 @@ function validateMergeRequest(
 		return mergeNotAuthorized(input, request.id);
 	}
 
-	return ok(true);
+	return errorResult.ok(true);
 }
 
 function validateMergeVersions(
@@ -211,7 +211,7 @@ function validateMergeVersions(
 		});
 	}
 
-	return ok(true);
+	return errorResult.ok(true);
 }
 
 function validateMergeDomainConstraints(
@@ -251,7 +251,7 @@ function validateMergeDomainConstraints(
 		return mergeNotAuthorized(input, request.id);
 	}
 
-	return ok(true);
+	return errorResult.ok(true);
 }
 
 function hasValidReasonEvidence(evidence: MergeReasonEvidence | null): boolean {

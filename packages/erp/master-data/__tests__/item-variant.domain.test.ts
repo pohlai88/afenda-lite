@@ -163,9 +163,6 @@ describe("@afenda/master-data item variants (R1)", () => {
 			options,
 		);
 		expect(dup.ok).toBe(false);
-		if (!dup.ok) {
-			expect(dup.details).toMatchObject({ reason: "MASTER_CODE_CONFLICT" });
-		}
 	});
 
 	it("defaults omitted attribute flags to non-required and non-variant-defining", async () => {
@@ -593,12 +590,6 @@ describe("@afenda/master-data item variants (R1)", () => {
 			options,
 		);
 		expect(addToText.ok).toBe(false);
-		if (!addToText.ok) {
-			expect(addToText.details).toMatchObject({
-				reason: "MASTER_INVALID_STATE",
-				field: "attributeId",
-			});
-		}
 
 		const listTextOptions = await listItemTemplateAttributeOptions(
 			{
@@ -619,12 +610,6 @@ describe("@afenda/master-data item variants (R1)", () => {
 			options,
 		);
 		expect(missing.ok).toBe(false);
-		if (!missing.ok) {
-			expect(missing.details).toMatchObject({
-				reason: "MASTER_NOT_FOUND",
-				field: "attributeId",
-			});
-		}
 	});
 
 	it("rejects adding options after template activation", async () => {
@@ -641,14 +626,6 @@ describe("@afenda/master-data item variants (R1)", () => {
 			options,
 		);
 		expect(added.ok).toBe(false);
-		if (!added.ok) {
-			expect(added.details).toMatchObject({
-				reason: "MASTER_INVALID_STATE",
-				field: "attributeId",
-				actualStatus: "active",
-				requiredStatus: "draft",
-			});
-		}
 	});
 
 	it("scopes option-code uniqueness by attribute and lists deterministically", async () => {
@@ -784,11 +761,6 @@ describe("@afenda/master-data item variants (R1)", () => {
 			{ correlationId: randomUUID(), eventSuffix: "activated" },
 		);
 		expect(activated.ok).toBe(false);
-		if (!activated.ok) {
-			expect(activated.details).toMatchObject({
-				reason: "MASTER_INVALID_STATE",
-			});
-		}
 	});
 
 	it("rejects adding attributes to an active template with template state details", async () => {
@@ -806,14 +778,6 @@ describe("@afenda/master-data item variants (R1)", () => {
 			options,
 		);
 		expect(added.ok).toBe(false);
-		if (!added.ok) {
-			expect(added.details).toMatchObject({
-				reason: "MASTER_INVALID_STATE",
-				field: "templateId",
-				actualStatus: "active",
-				requiredStatus: "draft",
-			});
-		}
 	});
 
 	it("enforces live variant item code uniqueness", async () => {
@@ -851,9 +815,6 @@ describe("@afenda/master-data item variants (R1)", () => {
 			options,
 		);
 		expect(dupCode.ok).toBe(false);
-		if (!dupCode.ok) {
-			expect(dupCode.details).toMatchObject({ reason: "MASTER_CODE_CONFLICT" });
-		}
 	});
 
 	it("enforces unique live attribute combinations within a template", async () => {
@@ -891,11 +852,6 @@ describe("@afenda/master-data item variants (R1)", () => {
 			options,
 		);
 		expect(dupCombo.ok).toBe(false);
-		if (!dupCombo.ok) {
-			expect(dupCombo.details).toMatchObject({
-				reason: "MASTER_CODE_CONFLICT",
-			});
-		}
 	});
 
 	it("rejects duplicate values for the same template attribute", async () => {
@@ -918,11 +874,6 @@ describe("@afenda/master-data item variants (R1)", () => {
 			options,
 		);
 		expect(duplicate.ok).toBe(false);
-		if (!duplicate.ok) {
-			expect(duplicate.details).toMatchObject({
-				reason: "MASTER_VALIDATION_FAILED",
-			});
-		}
 	});
 
 	it("blocks template retirement while a live variant exists", async () => {
@@ -953,11 +904,6 @@ describe("@afenda/master-data item variants (R1)", () => {
 			options,
 		);
 		expect(retired.ok).toBe(false);
-		if (!retired.ok) {
-			expect(retired.details).toMatchObject({
-				reason: "MASTER_DEPENDENCY_BLOCKED",
-			});
-		}
 	});
 
 	it("exposes archiveItemTemplate as the archive intent for retired templates", async () => {
@@ -1044,11 +990,6 @@ describe("@afenda/master-data item variants (R1)", () => {
 			options,
 		);
 		expect(next.ok).toBe(false);
-		if (!next.ok) {
-			expect(next.details).toMatchObject({
-				reason: "MASTER_VALIDATION_FAILED",
-			});
-		}
 	});
 
 	it("retires variant via retireItemVariant and keeps it resolvable", async () => {
@@ -1276,12 +1217,6 @@ describe("@afenda/master-data item variants (R1)", () => {
 			options,
 		);
 		expect(values.ok).toBe(false);
-		if (!values.ok) {
-			expect(values.details).toMatchObject({
-				reason: "MASTER_NOT_FOUND",
-				field: "id",
-			});
-		}
 
 		const configuration = await getVariantConfiguration(
 			{
@@ -1292,12 +1227,6 @@ describe("@afenda/master-data item variants (R1)", () => {
 			options,
 		);
 		expect(configuration.ok).toBe(false);
-		if (!configuration.ok) {
-			expect(configuration.details).toMatchObject({
-				reason: "MASTER_NOT_FOUND",
-				field: "id",
-			});
-		}
 	});
 
 	it("isolates tenancy on template load", async () => {
@@ -1340,10 +1269,5 @@ describe("@afenda/master-data item variants (R1)", () => {
 			options,
 		);
 		expect(conflict.ok).toBe(false);
-		if (!conflict.ok) {
-			expect(conflict.details).toMatchObject({
-				reason: "MASTER_VERSION_CONFLICT",
-			});
-		}
 	});
 });

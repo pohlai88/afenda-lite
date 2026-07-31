@@ -1,5 +1,4 @@
-import type { Result } from "@afenda/errors/result";
-import { fail, ok } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { z } from "zod";
 import type { HumanResourcesEmployeeId } from "../brands";
 import {
@@ -93,7 +92,7 @@ export async function runPerformanceCommand<
 		parityResourceKind: "performance_review",
 		resolveOptions: async (opts, data) => {
 			if (config.authorize === undefined) {
-				return ok(opts);
+				return errorResult.ok(opts);
 			}
 			const { store, ports, authorization, identityResolver } =
 				resolveCommandDeps(opts);
@@ -106,7 +105,7 @@ export async function runPerformanceCommand<
 			if (!authorized.ok) {
 				return authorized;
 			}
-			return ok({
+			return errorResult.ok({
 				...opts,
 				authorization: CUSTOM_AUTHORIZE_PROVEN,
 			});
@@ -114,7 +113,7 @@ export async function runPerformanceCommand<
 		resolveDeps: (opts) => {
 			const { store, ports, authorization, identityResolver } =
 				resolveCommandDeps(opts);
-			return ok({ store, ports, authorization, identityResolver });
+			return errorResult.ok({ store, ports, authorization, identityResolver });
 		},
 		execute: (data, deps) => config.execute(data, deps),
 	});
@@ -130,11 +129,11 @@ export async function requirePerformanceGoalOwnScope(
 ): Promise<Result<void>> {
 	const { authorization, identityResolver } = resolveCommandDeps(options);
 	if (!identityResolver) {
-		return fail(
-			"UNAUTHORIZED",
-			"Human Resources identity resolver port is required",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_UNAUTHORIZED),
-		);
+		return errorResult.fail("UNAUTHORIZED", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_UNAUTHORIZED,
+			),
+		});
 	}
 
 	const adminCheck = await requireAdminResourceAccess(
@@ -146,7 +145,7 @@ export async function requirePerformanceGoalOwnScope(
 		},
 	);
 	if (adminCheck.ok) {
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	}
 
 	return requireOwnResourceAccess(
@@ -172,11 +171,11 @@ export async function requirePerformanceGoalManagerScope(
 ): Promise<Result<void>> {
 	const { authorization, identityResolver } = resolveCommandDeps(options);
 	if (!identityResolver) {
-		return fail(
-			"UNAUTHORIZED",
-			"Human Resources identity resolver port is required",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_UNAUTHORIZED),
-		);
+		return errorResult.fail("UNAUTHORIZED", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_UNAUTHORIZED,
+			),
+		});
 	}
 
 	const adminCheck = await requireAdminResourceAccess(
@@ -188,7 +187,7 @@ export async function requirePerformanceGoalManagerScope(
 		},
 	);
 	if (adminCheck.ok) {
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	}
 
 	return requireManagerResourceAccess(
@@ -225,7 +224,9 @@ export async function requirePerformanceGoalByIdOwnScope(
 		return goal;
 	}
 	if (goal.data === null) {
-		return fail("NOT_FOUND", "Performance goal not found");
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "The requested resource was not found",
+		});
 	}
 	if (goal.data.goalKind === "manager") {
 		return requirePerformanceGoalManagerScope(options, deps, {
@@ -262,7 +263,7 @@ export async function runPerformanceQuery<
 		resolveDeps: (opts) => {
 			const { store, authorization, identityResolver } =
 				resolveCommandDeps(opts);
-			return ok({ store, authorization, identityResolver });
+			return errorResult.ok({ store, authorization, identityResolver });
 		},
 		execute: config.execute,
 	});
@@ -293,11 +294,11 @@ export async function runPerformanceEmployeeScopedQuery<
 	const { store, authorization, identityResolver } =
 		resolveCommandDeps(options);
 	if (!identityResolver) {
-		return fail(
-			"UNAUTHORIZED",
-			"Human Resources identity resolver port is required",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_UNAUTHORIZED),
-		);
+		return errorResult.fail("UNAUTHORIZED", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_UNAUTHORIZED,
+			),
+		});
 	}
 
 	const authorized = await requirePerformanceEmployeeReadScope(
@@ -333,11 +334,11 @@ export async function requirePerformanceEmployeeReadScope(
 	},
 ): Promise<Result<void>> {
 	if (!authorization) {
-		return fail(
-			"UNAUTHORIZED",
-			"Human Resources authorization port is required",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_UNAUTHORIZED),
-		);
+		return errorResult.fail("UNAUTHORIZED", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_UNAUTHORIZED,
+			),
+		});
 	}
 
 	// Check admin permission first
@@ -350,7 +351,7 @@ export async function requirePerformanceEmployeeReadScope(
 		},
 	);
 	if (adminCheck.ok) {
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	}
 
 	// For employee-scoped access, verify ownership or manager access
@@ -366,7 +367,7 @@ export async function requirePerformanceEmployeeReadScope(
 			},
 		);
 		if (ownCheck.ok) {
-			return ok(undefined);
+			return errorResult.ok(undefined);
 		}
 
 		// Check manager permission
@@ -382,12 +383,14 @@ export async function requirePerformanceEmployeeReadScope(
 			},
 		);
 		if (managerCheck.ok) {
-			return ok(undefined);
+			return errorResult.ok(undefined);
 		}
 	}
 
-	return fail("FORBIDDEN", "Missing required human resources permission", {
-		...humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
+	return errorResult.fail("FORBIDDEN", {
+		internalContext: {
+			...humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
+		},
 	});
 }
 
@@ -413,8 +416,10 @@ async function resolvePerformanceResourceEmployee(
 			return goal;
 		}
 		return goal.data === null
-			? fail("NOT_FOUND", "Performance goal not found")
-			: ok(goal.data.employeeId);
+			? errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+				})
+			: errorResult.ok(goal.data.employeeId);
 	}
 	if (input.reviewId) {
 		const reviewId = parseHumanResourcesReviewId(input.reviewId);
@@ -430,10 +435,12 @@ async function resolvePerformanceResourceEmployee(
 			return review;
 		}
 		return review.data === null
-			? fail("NOT_FOUND", "Performance review not found")
-			: ok(review.data.review.employeeId);
+			? errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+				})
+			: errorResult.ok(review.data.review.employeeId);
 	}
-	return ok(null);
+	return errorResult.ok(null);
 }
 
 /** Query path for resource-specific performance reads (goal, review) with ownership validation. */
@@ -463,19 +470,19 @@ export async function runPerformanceResourceScopedQuery<
 	const { store, authorization, identityResolver } =
 		resolveCommandDeps(options);
 	if (!identityResolver) {
-		return fail(
-			"UNAUTHORIZED",
-			"Human Resources identity resolver port is required",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_UNAUTHORIZED),
-		);
+		return errorResult.fail("UNAUTHORIZED", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_UNAUTHORIZED,
+			),
+		});
 	}
 
 	if (!authorization) {
-		return fail(
-			"UNAUTHORIZED",
-			"Human Resources authorization port is required",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_UNAUTHORIZED),
-		);
+		return errorResult.fail("UNAUTHORIZED", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_UNAUTHORIZED,
+			),
+		});
 	}
 
 	// Check admin permission first
@@ -536,7 +543,7 @@ export async function requirePerformanceConfidentialRead(
 	},
 ): Promise<Result<void>> {
 	if (!input.includeConfidential) {
-		return await ok(undefined);
+		return await errorResult.ok(undefined);
 	}
 	return await requireHumanResourcesManifestPermission(options, {
 		organizationId: input.organizationId,

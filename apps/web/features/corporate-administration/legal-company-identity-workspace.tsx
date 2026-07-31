@@ -1,5 +1,6 @@
 "use client";
 
+import type { Result as ActionResult } from "@afenda/errors";
 import {
 	Button,
 	Card,
@@ -21,7 +22,6 @@ import {
 import type * as React from "react";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
-
 import {
 	addCompanyNameFormAction,
 	endCompanyActivityFormAction,
@@ -33,7 +33,6 @@ import {
 	supersedeCompanyLegalFormFormAction,
 	supersedeCompanyNameFormAction,
 } from "@/app/actions/legal-company-identity-actions";
-import type { ActionResult } from "@/modules/platform/schemas/action-result";
 
 import { ActionFeedback } from "./legal-company-workspace";
 

@@ -1,4 +1,4 @@
 interface:
   display_name: "Afenda Elite Kernel"
-  short_description: "Deterministic kernels and error contracts"
-  default_prompt: "Use $afenda-elite-kernel to scaffold or upgrade a reusable package kernel, including applying @afenda/errors at consumer boundaries."
+  short_description: "Discover and upgrade reusable package kernels"
+  default_prompt: "Use $afenda-elite-kernel to inventory a package band, select one bounded package capability, and implement or verify it with reproducible evidence."

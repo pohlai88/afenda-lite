@@ -1,294 +1,257 @@
 # `@afenda/errors`
 
-Transport-neutral error kernel for Platform packages and BFF adapters: closed codes, runtime-owned `AppError` identity, safe public and diagnostic projections, `Result`, atomic HTTP projection, and total duck-typed PostgreSQL normalization — **without** Next.js or database drivers.
+The sole semantic owner of shared Afenda failures.
 
-Use this package when you need a shared ok/fail wire shape or HTTP-safe error vocabulary across `@afenda/*` and `apps/web`. Domain `ok` / `reason` unions stay in domain modules; map them at adapters. Maintainers run lint / typecheck / Vitest via the filter scripts below (Node `24.x`, pnpm `≥10.33.4` from the repo root `engines`).
+`@afenda/errors` owns canonical codes, public wording policy, typed public
+details, retryability, HTTP projection, diagnostics, PostgreSQL normalization,
+wire compatibility, and OpenAPI responses. Consumers use one package-root
+facade and never interpret those policies themselves.
 
-## Consume
+## Current status
 
-Workspace dependency — import by export path:
+| Surface | State |
+|---|---|
+| Canonical registry and five capability facades | Verified |
+| Repository consumer cutover | Implemented; boundary and strict semantic gates green |
+| Compatibility subpaths and `AppError` | Deleted |
+| Governance seal | Sealed; evidence in `PR.md` and `.protected.sha256` |
+
+The durable authority is [CONTRACT.md](./CONTRACT.md). It records the frozen
+semantic decisions, implementation evidence, migration lanes, and seal
+conditions. This README is the permanent consumer and maintainer entry.
+
+## Permanent consumer surface
+
+This is a private workspace package.
 
 ```ts
 import {
-  AppError,
-  ERROR_CODES,
-  type SafeDetails,
-	DEFAULT_INTERNAL_MESSAGE,
-	errorDiagnosticFields,
-  normalizeUnknown,
-  sanitizeErrorDetails,
-  serializeAppError,
-  rateLimited,
-  serviceUnavailable,
+	errorIngress,
+	errorOpenApi,
+	errorProject,
+	errorResult,
+	errorWire,
+	type Failure,
+	type Result,
 } from "@afenda/errors";
-import { ok, fail, failFromAppError, failFromUnknown, type Result } from "@afenda/errors/result";
-import { projectHttpError } from "@afenda/errors/http";
-import { normalizePostgresUnknown } from "@afenda/errors/adapters/postgres";
 ```
 
-Factories also re-export from `@afenda/errors/common` (same symbols as the root barrel).
+`package.json` exposes only `"."`. Import from `@afenda/errors`; subpath imports
+are unsupported and rejected by repository governance.
 
-**Living consumers:** every mandatory consumer is reported by
-`pnpm run check:errors-adoption -- --strict`. Current adopted methods include
-`Result<T>` boundaries, normalized catches, explicit PostgreSQL adapter mapping,
-shared persistence mappers, HTTP projection, and AppError factories. Do not
-maintain a hand-written consumer list in this README.
+## Semantic ownership
 
-## Maintain
+The logically singular registry is physically modular under
+`src/contract/definitions`. Types, public data, retry, HTTP, diagnostics, wire,
+PostgreSQL ingress, and OpenAPI projections derive from that registry.
+
+Consumers may:
+
+- create canonical Results;
+- normalize known, unknown, or PostgreSQL failures;
+- propagate typed failures;
+- request an approved projection;
+- declare finite endpoint outcomes.
+
+Consumers must not interpret canonical codes into shared status, retry,
+wording, diagnostics, serialization, or operational behavior.
+
+## Consumer decision table
+
+| Need | Capability |
+|---|---|
+| Return success | `errorResult.ok(data)` |
+| Return a known public failure | `errorResult.fail(code, input)` |
+| Attach/read trusted non-wire domain context | `errorResult.withContext(result, context)` / `errorResult.context(result)` |
+| Create an opaque boundary failure | `errorIngress.code(code, input)` |
+| Normalize an unknown exception | `errorIngress.unknown(error, context)` |
+| Normalize a PostgreSQL exception | `errorIngress.postgres(error, context)` |
+| Convert opaque failure to `ResultFailure` | `errorProject.result(failure)` |
+| Derive HTTP status, body, and headers | `errorProject.http(failure)` |
+| Derive retry disposition | `errorProject.retry(failure)` |
+| Derive safe diagnostic fields | `errorProject.diagnostics(failure)` |
+| Serialize or deserialize a boundary envelope | `errorWire` |
+| Generate error responses for OpenAPI | `errorOpenApi.responses(codes)` |
+
+## Results
+
+`Result<T, C>` is the single public result contract.
+
+```ts
+import { errorResult, type Result } from "@afenda/errors";
+
+export function findInvoice(id: string): Result<{ id: string }> {
+	if (id === "") {
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "Enter an invoice id.",
+			fieldErrors: { id: ["Enter an invoice id."] },
+		});
+	}
+
+	return errorResult.ok({ id });
+}
+```
+
+Narrow with `result.ok`. Failures always include `code`, `message`,
+`messageKey`, and `ok: false`. Details exist only when the registry policy for
+that code allows them.
+
+Public message overrides must resolve to static source text. Do not pass
+exception messages, vendor text, database text, translated runtime text, or
+user input.
+
+## Unknown failures
+
+Catch at the owning boundary and normalize once.
+
+```ts
+try {
+	return await dependency.run();
+} catch (caught) {
+	return errorProject.result(
+		errorIngress.unknown(caught, {
+			operation: "invoice.create",
+			correlationId,
+		}),
+	);
+}
+```
+
+Unknown values fail closed to `INTERNAL_ERROR`. A trusted package-owned
+`Failure` passes through unchanged; lookalike objects and values from another
+realm are not trusted.
+
+## PostgreSQL failures
+
+SQLSTATE inspection belongs only to `errorIngress.postgres`.
+
+```ts
+try {
+	await database.insert(invoice);
+	return errorResult.ok(invoice);
+} catch (caught) {
+	return errorProject.result(
+		errorIngress.postgres(caught, {
+			operation: "invoice.persist",
+		}),
+	);
+}
+```
+
+Reviewed serialization, deadlock, and lock-contention states become
+`CONCURRENCY_CONFLICT`. Reviewed transient availability states become
+`SERVICE_UNAVAILABLE`. Unique violations become `CONFLICT`. Unreviewed,
+authentication, configuration, programming, and malformed values become
+`INTERNAL_ERROR`.
+
+Consumers must not parse SQLSTATE, maintain vendor maps, or add a generic
+fallback after canonical normalization.
+
+## HTTP
+
+Project the complete response atomically.
+
+```ts
+const projected = errorProject.http(failure);
+
+return Response.json(projected.body, {
+	status: projected.status,
+	headers: projected.headers,
+});
+```
+
+The projection owns status, `{ error: ... }` body shape, safe public data, and
+`Retry-After`. Route handlers must not keep code-to-status maps or assemble
+known error envelopes manually.
+
+## Retry
+
+Retryability is exhaustive registry policy.
+
+```ts
+const retry = errorProject.retry(result);
+if (retry.retryable) {
+	// Apply the caller's bounded execution policy.
+}
+```
+
+Only `RATE_LIMITED` can carry occurrence-specific retry seconds. Consumers
+cannot override whether a code is retryable.
+
+## Wire compatibility
+
+`errorWire.serialize` emits `afenda.failure/v1`.
+`errorWire.deserialize` accepts current envelopes and retained historical input,
+normalizes aliases immediately, and returns a trusted opaque `Failure`.
+
+Historical aliases are private ingress data. They are never construction values
+and never create another consumer API.
+
+## OpenAPI
+
+Declare the finite codes an operation can expose and derive the responses.
+
+```ts
+const responses = errorOpenApi.responses([
+	"VALIDATION_ERROR",
+	"CONFLICT",
+	"INTERNAL_ERROR",
+]);
+```
+
+Duplicate HTTP statuses are grouped deterministically. Schemas, descriptions,
+and headers derive from the same registry used at runtime.
+
+## Security guarantees
+
+- `Failure` has private runtime identity.
+- Internal causes, stacks, SQL, credentials, vendor payloads, and arbitrary
+  metadata are never public.
+- `INTERNAL_ERROR` uses fixed wording and accepts only a bounded correlation id.
+- Validation field paths, field messages, public messages, operations, and
+  retry seconds are normalized and bounded.
+- Public projections are frozen.
+- Wire input remains untrusted until deserialized by this package.
+
+## Prohibited consumer behavior
+
+- Importing any subpath beneath the root `@afenda/errors` entrypoint.
+- Constructing or depending on `AppError`.
+- Defining another shared `Result`.
+- Copying a failure into another error envelope.
+- Switching on canonical codes to derive HTTP, retry, wording, diagnostics, or
+  operational behavior.
+- Parsing PostgreSQL codes outside this package.
+- Passing dynamic public wording.
+- Destructuring or rebinding capability methods.
+
+Domain packages may own typed domain outcomes. They normalize those outcomes to
+a canonical failure at their public boundary; they do not extend the shared
+registry with package-specific implementation states.
+
+## Maintainer verification
 
 ```bash
-pnpm --filter @afenda/errors protect:check
 pnpm --filter @afenda/errors lint
 pnpm --filter @afenda/errors typecheck
 pnpm --filter @afenda/errors test
+pnpm check:errors-boundary
+pnpm check:errors-semantics
 ```
 
-Requires root engines: **Node `24.x`**, **pnpm `≥10.33.4`**.
+The package test command includes registry contracts, hostile boundaries,
+static-copy analysis, and result/retry/wire/OpenAPI bundle containment.
 
-## Protection
+Repository gates enforce the root-only facade and reject distributed semantic
+interpretation. Update protected-package metadata only after all repository
+checks, generated documentation, Scratch synchronization, and the full
+repository suite pass.
 
-This package is protected after review. Every TypeScript source and test file
-must carry the package header:
+## Detailed authority
 
-```ts
-/**
- * @afenda/errors
- * Contract: afenda.errors/v1
- * Protected: changes require local pre-edit token and compatibility checks.
- */
-```
-
-Before editing, run:
-
-```bash
-pnpm --filter @afenda/errors protect:check
-```
-
-If the check fails, inspect the diff before changing anything else. For an
-intentional edit, keep the local unlock token in `.env.local`:
-
-```text
-AFENDA_PROTECTED_EDIT_TOKEN=<local-only-token>
-```
-
-After the change passes lint, typecheck, and tests, refresh the package hash:
-
-```bash
-pnpm --filter @afenda/errors protect:update
-pnpm --filter @afenda/errors protect:check
-```
-
-The committed `.protected.sha256` detects package drift. The token only permits
-refreshing that hash; it does not bypass review, tests, or compatibility
-validation.
-
-## Consumption Mandate
-
-`@afenda/errors` is the authoritative cross-boundary error kernel for the Afenda
-monorepo.
-
-Every failure crossing an Afenda package, infrastructure, job, or HTTP boundary
-MUST be represented using `@afenda/errors`. Failures contained entirely within a
-private function, pure utility, entity, or domain module MAY use local `Error`
-objects, predicates, or domain-specific outcome unions.
-
-### MUST Use `@afenda/errors`
-
-Use `@afenda/errors` for:
-
-- public package commands, queries, services, and facades
-- cross-package orchestration
-- infrastructure adapters that catch external failures
-- PostgreSQL error mapping through `@afenda/errors/adapters/postgres`
-- BFF, REST, RPC, server-action, and HTTP response boundaries
-- jobs, workers, retries, dead-letter paths, audit output, and monitoring-facing
-  failures
-- OpenAPI and API-contract error-code, status, and body definitions
-
-### MUST NOT Reimplement
-
-Do not create competing shared implementations of:
-
-- `AppError`
-- `Result<T>`
-- `ERROR_CODES`
-- `ERROR_HTTP_STATUS`
-- `projectHttpError`
-- `retryAfterSeconds`
-- PostgreSQL SQLSTATE mapping
-- shared unknown-error normalization
-
-Domain-specific `reason` unions are allowed, but they MUST be mapped to
-`@afenda/errors` before crossing a package, infrastructure, job, or transport
-boundary.
-
-### MUST NOT Import Directly
-
-Do not import `@afenda/errors` directly inside:
-
-- pure domain entities
-- value objects
-- low-level pure utilities
-- Drizzle schemas
-- migrations
-- reusable UI primitives
-
-These layers MUST expose local outcomes or receive display-ready state from
-their caller.
-
-### Private and Domain-Local Failures
-
-Private helpers, entities, value objects, predicates, and domain-internal
-workflows MAY use local failure shapes when the failure does not leave that
-private/domain scope:
-
-- local `Error`
-- boolean or predicate result
-- domain-specific `reason` union
-- domain-local discriminated outcome
-
-These outcomes MUST be mapped to `@afenda/errors` before crossing any package,
-infrastructure, worker, job, HTTP, or public-client boundary. Do not import
-`@afenda/errors` into pure domain objects just to satisfy a boundary contract;
-adapt at the command, query, repository, job, or transport edge instead.
-
-### Boundary Rule
-
-```text
-Failure stays inside one private module
--> local Error, predicate, or domain outcome is allowed
-
-Failure crosses a package boundary
--> use Result<T> or AppError
-
-Failure crosses an infrastructure boundary
--> use explicit adapter mapping
-
-Failure crosses an HTTP boundary
--> use projectHttpError exactly once
-
-Failure reaches a public client
--> serialize only; never expose Error, cause, stack, SQL, or driver data
-```
-
-### Consumption Enforcement
-
-Repository governance MUST verify:
-
-- no competing shared error-code registry
-- no competing shared `Result<T>` implementation
-- no duplicate HTTP error-status map
-- no raw `Error.message` in public responses
-- no direct serialization of `Error` or `AppError`
-- no automatic infrastructure guessing inside `normalizeUnknown`
-- no domain-specific codes added to the shared kernel
-- PostgreSQL failures are mapped only at explicit adapter boundaries
-- public package operations use an approved cross-boundary failure contract
-
-Run the current repository check with:
-
-```bash
-pnpm run check:errors-consumption
-```
-
-Package protection detects unauthorized drift. Consumption enforcement governs
-who must use `@afenda/errors`; the two controls are intentionally separate.
-
-### Normalization Enforcement
-
-Adoption answers **who consumes** `@afenda/errors`. Normalization answers
-whether consumers use the kernel through the same approved flow:
-
-```text
-Local/domain failure
--> explicit boundary mapping
--> AppError or Result<T>
--> safe serialization
--> HTTP projection only at BFF / transport boundaries
-```
-
-Repository consumers MUST normalize unknown failures with `normalizeUnknown` or
-`failFromUnknown`, convert existing `AppError` values with `failFromAppError`,
-map PostgreSQL failures explicitly and totally with `normalizePostgresUnknown`,
-serialize public `AppError` values with `serializeAppError`, and project HTTP
-failures atomically with `projectHttpError`.
-
-Unknown native or third-party failures always become `INTERNAL_ERROR` with
-`DEFAULT_INTERNAL_MESSAGE` and no public details. The optional normalization
-context is a bounded internal operation label, not client copy. Use
-`errorDiagnosticFields` for structured logging; it deliberately excludes
-message, cause, stack, SQL, credentials, and driver payloads.
-
-The normalization gate is separate from the adoption gate:
-
-```bash
-pnpm run check:errors-normalization
-pnpm run check:errors-normalization -- --strict
-```
-
-Non-strict mode fails confirmed unsafe drift. Strict mode additionally fails
-unresolved review findings. Every audit finding is classified with this
-repository vocabulary:
-
-```text
-CANONICAL
-DOMAIN_LOCAL_ALLOWED
-COMPATIBILITY_ADAPTER
-EXEMPT
-DEAD
-DUPLICATE
-UNSAFE
-INCONSISTENT
-STALE_DOCUMENTATION
-REVIEW
-```
-
-Only `CANONICAL`, `DOMAIN_LOCAL_ALLOWED`, `COMPATIBILITY_ADAPTER`, and
-documented `EXEMPT` classifications may remain at closure. `DUPLICATE`,
-`UNSAFE`, `INCONSISTENT`, `STALE_DOCUMENTATION`, `DEAD`, and unresolved
-`REVIEW` findings require cleanup, migration, or an explicit exemption.
-
-## Exports
-
-| Path | Role |
-|------|------|
-| `@afenda/errors` | `AppError`, `ERROR_CODES` / `ErrorCode` (+ `ApiErrorCode` aliases), `SafeDetails`, sanitize, normalize, safe diagnostics, serialize, common factories |
-| `@afenda/errors/result` | `Result` / `ok` / `fail` / `failFromAppError` / `failFromUnknown` (same wire as ActionResult; safe details only) |
-| `@afenda/errors/http` | `projectHttpError`, compatibility status/body helpers, bounded Retry-After helpers — no `NextResponse` |
-| `@afenda/errors/common` | Factories only (`badRequest` … `rateLimited` · `serviceUnavailable`) |
-| `@afenda/errors/adapters/postgres` | Total unknown/SQLSTATE → `AppError` normalization with typed retryability — no `pg` / Drizzle / Prisma |
-
-Closed codes include `RATE_LIMITED` (429) and `SERVICE_UNAVAILABLE` (503). Retry-After values are bounded from 1 second to `MAX_RETRY_AFTER_SECONDS` (24 hours). Rate-limit / outage **policy** lives in consumers; this package owns vocabulary, factories, and safe `details` only.
-
-PostgreSQL normalization is explicit, total adapter-boundary behavior:
-
-```ts
-return failFromAppError(normalizePostgresUnknown(error, "Save record"));
-```
-
-`normalizeUnknown` stays infrastructure-agnostic; it does not guess SQLSTATE,
-Redis, HTTP, or filesystem error sources. `isAppError` trusts only actual
-`AppError` instances created by this runtime, never structural lookalikes.
-
-## Ownership
-
-| Surface | Owner |
-|---------|-------|
-| Kernel codes · `AppError` · normalize · serialize · Result · HTTP helpers · Postgres duck-map | `@afenda/errors` |
-| Domain `ok` / `reason` unions | Domain packages / `apps/web/modules/*` |
-| Next `jsonError` / Zod OpenAPI wrappers | `apps/web` |
-
-**Layer:** Rank-1 Platform **leaf** (no `@afenda/*` runtime deps). Must not import Surfaces or `apps/*`. See [docs-V2/monorepo](../../../docs-V2/monorepo/README.md).
-
-## Out of scope
-
-Do not add to this package: Next.js handlers, ORM clients, UI/locale copy as contract, domain error codes, Zod schemas, tutorial `{ success, data }` envelopes, or a kernel `withErrorHandler`.
-
-## Authority
-
-| Topic | Link |
-|-------|------|
-| ActionResult · OpenAPI · REST error wire | [docs-V2/api](../../../docs-V2/api/README.md) |
-| Package DAG / leaf rules | [docs-V2/monorepo](../../../docs-V2/monorepo/README.md) · [LAYERS.md](../../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
-| API contract farm | [afenda-elite-api-contract](../../../.cursor/skills/afenda-elite-api-contract/SKILL.md) |
-| Agent checkout posture | [AGENTS.md](../../../AGENTS.md) |
+- [Architecture](../../../docs-V2/api/errors/architecture.md)
+- [Consumer contract](../../../docs-V2/api/errors/consumer-contract.md)
+- [Security model](../../../docs-V2/api/errors/security-model.md)
+- [Governance](../../../docs-V2/api/errors/governance.md)
+- [Maintainer guide](../../../docs-V2/api/errors/maintainer-guide.md)
+- [Semantic control-plane contract](./CONTRACT.md)

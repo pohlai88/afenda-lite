@@ -1,5 +1,6 @@
 "use client";
 
+import type { Result as ActionResult } from "@afenda/errors";
 import {
 	Alert,
 	AlertDescription,
@@ -12,7 +13,6 @@ import {
 } from "@afenda/ui-system";
 import type { ComponentProps } from "react";
 import { useActionState } from "react";
-
 import { addPaymentApplicationInstructionAction } from "@/app/actions/add-payment-application-instruction";
 import { createAndPostPaymentTransferAction } from "@/app/actions/create-and-post-payment-transfer";
 import { createDraftPaymentAction } from "@/app/actions/create-draft-payment";
@@ -21,7 +21,6 @@ import { getPaymentApplicationAvailabilityAction } from "@/app/actions/get-payme
 import { postPaymentAction } from "@/app/actions/post-payment";
 import { postRefundAction } from "@/app/actions/post-refund";
 import { reversePaymentAction } from "@/app/actions/reverse-payment";
-import type { ActionResult } from "@/modules/platform/schemas/action-result";
 
 interface Field {
 	label: string;

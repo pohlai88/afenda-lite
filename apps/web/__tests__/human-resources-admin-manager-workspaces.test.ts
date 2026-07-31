@@ -92,7 +92,7 @@ describe("HR administration and manager workspace contracts", () => {
 		expect(journeys).toContain(
 			"assignment.data.employeeId !== parsed.data.employeeId",
 		);
-		expect(journeys).toContain('actionFail("NOT_FOUND"');
+		expect(journeys).toContain('errorResult.fail("NOT_FOUND"');
 		expect(journeys).toContain("runOperatorPermissionAction");
 	});
 });

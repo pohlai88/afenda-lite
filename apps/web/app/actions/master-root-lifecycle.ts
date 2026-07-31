@@ -1,6 +1,10 @@
 "use server";
 
-import type { Result } from "@afenda/errors/result";
+import {
+	type Result as ActionResult,
+	errorResult,
+	type Result,
+} from "@afenda/errors";
 import {
 	activateItem,
 	activateItemGroup,
@@ -22,10 +26,7 @@ import { z } from "zod";
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runMemberPermissionAction } from "@/app/actions/run-member-permission-action";
 import { createMasterDataAuthorizationPort } from "@/lib/erp/master-data-authorization-port";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
+
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 const lifecycleFormSchema = z.object({
@@ -56,11 +57,9 @@ async function runRootLifecycle<
 		expectedVersion: input.formData.get("expectedVersion"),
 	});
 	if (!parsed.success) {
-		return actionFail(
-			"VALIDATION_ERROR",
-			`Provide a valid ${input.entityLabel} id and expected version.`,
-			parsed.details,
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+		});
 	}
 	return await runMemberPermissionAction({
 		path: input.path,

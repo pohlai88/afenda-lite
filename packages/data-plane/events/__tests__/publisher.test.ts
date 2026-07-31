@@ -19,7 +19,7 @@ describe("@afenda/events publisher", () => {
 
 		expect(result.ok).toBe(false);
 		if (!result.ok) {
-			expect(result.code).toBe("BAD_REQUEST");
+			expect(result.code).toBe("VALIDATION_ERROR");
 		}
 		expect(store.all()).toHaveLength(0);
 	});
@@ -39,7 +39,7 @@ describe("@afenda/events publisher", () => {
 
 		expect(result.ok).toBe(false);
 		if (!result.ok) {
-			expect(result.code).toBe("BAD_REQUEST");
+			expect(result.code).toBe("VALIDATION_ERROR");
 		}
 		expect(store.all()).toHaveLength(0);
 	});

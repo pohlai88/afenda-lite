@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import { z } from "zod";
 import {
 	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
@@ -24,23 +24,25 @@ export function parseRatingScale(
 		!("codes" in value) ||
 		!Array.isArray((value as { codes: unknown }).codes)
 	) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Rating scale must include a codes array.",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
 	const codes = (value as { codes: unknown[] }).codes.filter(
 		(c): c is string => typeof c === "string" && c.trim().length > 0,
 	);
 	if (codes.length === 0) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Rating scale must include at least one code.",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
-	return ok({ codes });
+	return errorResult.ok({ codes });
 }
 
 export function isRatingInScale(
@@ -57,15 +59,16 @@ export function assertRatingScaleUniqueCodes(
 	for (const code of scale.codes) {
 		const normalized = code.trim();
 		if (seen.has(normalized)) {
-			return fail(
-				"VALIDATION_ERROR",
-				"Rating scale codes must be unique.",
-				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-			);
+			return errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "The submitted data is invalid",
+				internalContext: humanResourcesErrorDetails(
+					HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+				),
+			});
 		}
 		seen.add(normalized);
 	}
-	return ok({ codes: scale.codes.map((code) => code.trim()) });
+	return errorResult.ok({ codes: scale.codes.map((code) => code.trim()) });
 }
 
 export function validateRatingInScale(
@@ -73,11 +76,12 @@ export function validateRatingInScale(
 	scale: PerformanceRatingScale,
 ): Result<string> {
 	if (!isRatingInScale(rating, scale)) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Rating is not in the cycle approved scale.",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
-	return ok(rating);
+	return errorResult.ok(rating);
 }

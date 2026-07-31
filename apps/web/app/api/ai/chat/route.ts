@@ -5,13 +5,14 @@ import {
 	type MachineModule,
 } from "@afenda/ai-the-machine";
 import { getApiSession } from "@afenda/auth";
+import { errorResult } from "@afenda/errors";
 import { applyRateLimitHeaders } from "@afenda/http";
-import { checkRateLimit, toRateLimitAppError } from "@afenda/rate-limit";
+import { checkRateLimit, toRateLimitFailure } from "@afenda/rate-limit";
 import {
 	canReachAiGateway,
 	createWebTheMachine,
 } from "@/modules/platform/ai/create-web-machine";
-import { jsonAppError, jsonError } from "@/modules/platform/api/json-response";
+import { jsonFailure } from "@/modules/platform/api/json-response";
 import { createPlatformRouteHandler } from "@/modules/platform/api/route-pipeline";
 
 export const maxDuration = 30;
@@ -60,7 +61,7 @@ export const POST = createPlatformRouteHandler(
 	async (request) => {
 		const session = await getApiSession();
 		if (session === null) {
-			return jsonError("UNAUTHORIZED", "Authentication required");
+			return jsonFailure(errorResult.fail("UNAUTHORIZED"));
 		}
 
 		const limit = await checkRateLimit({
@@ -68,8 +69,8 @@ export const POST = createPlatformRouteHandler(
 			key: session.userId,
 		});
 		if (!limit.ok) {
-			const error = toRateLimitAppError(limit);
-			const response = jsonAppError(error);
+			const error = toRateLimitFailure(limit);
+			const response = jsonFailure(error);
 			if (limit.reason === "rate_limited") {
 				applyRateLimitHeaders(response.headers, {
 					limit: limit.quota.limit,
@@ -81,23 +82,27 @@ export const POST = createPlatformRouteHandler(
 		}
 
 		if (!canReachAiGateway()) {
-			return jsonError("SERVICE_UNAVAILABLE", "AI Gateway is not configured", {
-				service: "ai_gateway",
-			});
+			return jsonFailure(errorResult.fail("SERVICE_UNAVAILABLE"));
 		}
 
 		let body: unknown;
 		try {
 			body = await request.json();
 		} catch {
-			return jsonError("BAD_REQUEST", "Invalid JSON body");
+			return jsonFailure(
+				errorResult.fail("BAD_REQUEST", {
+					publicMessage: "Invalid JSON body",
+				}),
+			);
 		}
 
 		const parsed = chatRequestSchema.safeParse(body);
 		if (!parsed.success) {
-			return jsonError("VALIDATION_ERROR", "Invalid chat request", {
-				issues: parsed.error.issues,
-			});
+			return jsonFailure(
+				errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Invalid chat request",
+				}),
+			);
 		}
 
 		const module = resolveModule(parsed.data.module, parsed.data.messages);

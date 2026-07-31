@@ -12,7 +12,7 @@ import {
 	inArray,
 	sql,
 } from "@afenda/db";
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	type HumanResourcesEmployeeId,
 	type HumanResourcesEmploymentId,
@@ -203,12 +203,16 @@ async function transitionLeavePolicyStatus(input: {
 			.returning();
 
 		if (result.length === 0) {
-			return fail("NOT_FOUND", "Leave policy not found or version mismatch");
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "The requested resource was not found",
+			});
 		}
 
 		const policy = result.at(0);
 		if (!policy) {
-			return fail("NOT_FOUND", "Leave policy not found or version mismatch");
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "The requested resource was not found",
+			});
 		}
 
 		// Record audit via canonical emission executor
@@ -332,7 +336,7 @@ function parseEmploymentStatuses(raw: string): Result<EmploymentStatus[]> {
 			}
 			statuses.push(status.data);
 		}
-		return ok(statuses);
+		return errorResult.ok(statuses);
 	} catch {
 		return invalidState("Invalid leave policy eligibility statuses");
 	}
@@ -386,7 +390,7 @@ function mapLeavePolicy(
 		}
 		supersedesPolicyId = parsed.data;
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		code: row.code,
@@ -460,7 +464,7 @@ function mapLeavePolicyEligibility(
 	if (!statuses.ok) {
 		return statuses;
 	}
-	return ok({
+	return errorResult.ok({
 		id: row.id,
 		organizationId: row.organizationId,
 		policyId: policyId.data,
@@ -496,7 +500,7 @@ function mapLeaveEntitlement(
 	if (!status.success) {
 		return invalidState("Invalid leave entitlement status");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		employeeId: employeeId.data,
@@ -545,7 +549,7 @@ function mapLeaveAdjustment(
 	if (!status.success) {
 		return invalidState("Invalid leave adjustment status");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		entitlementId: entitlementId.data,
@@ -598,7 +602,7 @@ function mapLeaveRequest(
 	if (!status.success) {
 		return invalidState("Invalid leave request status");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		employeeId: employeeId.data,
@@ -638,7 +642,7 @@ function mapLeaveRequestSegment(
 	if (!dayPortion.success) {
 		return invalidState("Invalid leave segment day portion");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		requestId: requestId.data,
@@ -669,7 +673,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				.limit(1);
 			const [row] = rows;
 			if (row === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapLeavePolicy(row);
 		} catch (error) {
@@ -691,7 +695,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				.limit(1);
 			const [row] = rows;
 			if (row === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapLeavePolicyEligibility(row);
 		} catch (error) {
@@ -712,10 +716,10 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			return employment;
 		}
 		if (employment.data === null) {
-			return ok(null);
+			return errorResult.ok(null);
 		}
 		if (employment.data.employeeId !== input.employeeId) {
-			return ok(null);
+			return errorResult.ok(null);
 		}
 
 		try {
@@ -743,7 +747,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				asOf: input.asOfDate,
 			});
 			if (policy === null) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 
 			const eligibility = await this.getLeavePolicyEligibility({
@@ -754,7 +758,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				return eligibility;
 			}
 			if (eligibility.data === null) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 
 			const tenureDays = Math.floor(
@@ -767,20 +771,20 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 					employment.data.status,
 				)
 			) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			if (
 				eligibility.data.minTenureDays !== null &&
 				tenureDays < eligibility.data.minTenureDays
 			) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 
 			const resolved: ResolvedLeavePolicy = {
 				policy,
 				eligibility: eligibility.data,
 			};
-			return ok(resolved);
+			return errorResult.ok(resolved);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -799,7 +803,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 		if (!primary.ok) {
 			return primary;
 		}
-		return ok(primary.data?.managerEmployeeId ?? null);
+		return errorResult.ok(primary.data?.managerEmployeeId ?? null);
 	},
 
 	async findLeavePolicyByCode(input) {
@@ -817,7 +821,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				.limit(1);
 			const [row] = rows;
 			if (row === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapLeavePolicy(row);
 		} catch (error) {
@@ -1038,7 +1042,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			if (result.data === null) {
 				return notFound("Leave policy not found");
 			}
-			return ok(result.data);
+			return errorResult.ok(result.data);
 		});
 	},
 
@@ -1196,7 +1200,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			if (result.data === null) {
 				return notFound("Leave policy not found");
 			}
-			return ok(result.data);
+			return errorResult.ok(result.data);
 		});
 	},
 
@@ -1221,7 +1225,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				}
 				policies.push(mapped.data);
 			}
-			return ok({
+			return errorResult.ok({
 				policies,
 				totalCount,
 				page: input.page,
@@ -1246,7 +1250,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				.limit(1);
 			const [row] = rows;
 			if (row === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapLeaveEntitlement(row);
 		} catch (error) {
@@ -1268,13 +1272,13 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				.limit(1);
 			const [row] = rows;
 			if (row === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const entitlement = mapLeaveEntitlement(row);
 			if (!entitlement.ok) {
 				return entitlement;
 			}
-			return ok({
+			return errorResult.ok({
 				entitlement: entitlement.data,
 				createRequestFingerprint: row.createRequestFingerprint,
 			} satisfies IdempotentLeaveEntitlementRecord);
@@ -1374,7 +1378,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 						replay.data.createRequestFingerprint ===
 						record.createRequestFingerprint
 					) {
-						return ok(replay.data.entitlement);
+						return errorResult.ok(replay.data.entitlement);
 					}
 					return conflict("Idempotency key already used with different data");
 				}
@@ -1621,13 +1625,13 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				.limit(1);
 			const [row] = rows;
 			if (row === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const adjustment = mapLeaveAdjustment(row);
 			if (!adjustment.ok) {
 				return adjustment;
 			}
-			return ok({
+			return errorResult.ok({
 				adjustment: adjustment.data,
 				createRequestFingerprint: row.createRequestFingerprint,
 			});
@@ -1652,7 +1656,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			if (
 				replay.data.createRequestFingerprint === record.createRequestFingerprint
 			) {
-				return ok(replay.data.adjustment);
+				return errorResult.ok(replay.data.adjustment);
 			}
 			return conflict("Idempotency key already used with different data");
 		}
@@ -1778,7 +1782,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 						replayValue.data.createRequestFingerprint ===
 						record.createRequestFingerprint
 					) {
-						return ok(replayValue.data.adjustment);
+						return errorResult.ok(replayValue.data.adjustment);
 					}
 					return conflict("Idempotency key already used with different data");
 				}
@@ -1814,7 +1818,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				}
 				entitlements.push(mapped.data);
 			}
-			return ok({
+			return errorResult.ok({
 				entitlements,
 				totalCount,
 				page: input.page,
@@ -1845,7 +1849,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				}
 				adjustments.push(mapped.data);
 			}
-			return ok(adjustments);
+			return errorResult.ok(adjustments);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to list leave adjustments");
 		}
@@ -1857,7 +1861,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			return entitlement;
 		}
 		if (entitlement.data === null) {
-			return ok(null);
+			return errorResult.ok(null);
 		}
 
 		const policy = await this.getLeavePolicyById({
@@ -1887,7 +1891,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				adjustments.data,
 			),
 		};
-		return ok(balance);
+		return errorResult.ok(balance);
 	},
 
 	async getLeaveRequestById(input) {
@@ -1904,7 +1908,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				.limit(1);
 			const [row] = rows;
 			if (row === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapLeaveRequest(row);
 		} catch (error) {
@@ -1926,13 +1930,13 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				.limit(1);
 			const [row] = rows;
 			if (row === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const request = mapLeaveRequest(row);
 			if (!request.ok) {
 				return request;
 			}
-			return ok({
+			return errorResult.ok({
 				request: request.data,
 				createRequestFingerprint: row.createRequestFingerprint,
 			} satisfies IdempotentLeaveRequestRecord);
@@ -1964,7 +1968,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				}
 				segments.push(mapped.data);
 			}
-			return ok(segments);
+			return errorResult.ok(segments);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -1993,7 +1997,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 					row.id !== input.excludeRequestId,
 			);
 			if (requests.length === 0) {
-				return ok([]);
+				return errorResult.ok([]);
 			}
 			const requestIds = requests.map((row) => row.id);
 			const rows = await db
@@ -2013,7 +2017,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				}
 				segments.push(mapped.data);
 			}
-			return ok(segments);
+			return errorResult.ok(segments);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -2124,9 +2128,9 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 							return replay;
 						}
 						if (replay.data === null) {
-							return ok(null);
+							return errorResult.ok(null);
 						}
-						return ok({
+						return errorResult.ok({
 							fingerprint: replay.data.createRequestFingerprint,
 							value: replay.data.request,
 						});
@@ -2741,7 +2745,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				}
 				requests.push(mapped.data);
 			}
-			return ok({
+			return errorResult.ok({
 				requests,
 				totalCount,
 				page: input.page,
@@ -2794,7 +2798,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				}
 				requests.push(mapped.data);
 			}
-			return ok({
+			return errorResult.ok({
 				requests,
 				totalCount,
 				page: input.page,
@@ -2859,7 +2863,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			if (sequentialOutcome1.kind === "return") {
 				return sequentialOutcome1.value;
 			}
-			return ok({
+			return errorResult.ok({
 				entries,
 				totalCount,
 				page: input.page,
@@ -2884,7 +2888,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				request.data.status !== "approved" ||
 				request.data.approvedAt === null
 			) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 
 			const policy = await this.getLeavePolicyById({
@@ -2895,7 +2899,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				return policy;
 			}
 			if (policy.data === null) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 
 			const segments = await this.listLeaveRequestSegments({
@@ -2926,7 +2930,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 				approvedAt: request.data.approvedAt.toISOString(),
 				correlationId: input.correlationId,
 			};
-			return ok(handoff);
+			return errorResult.ok(handoff);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,

@@ -13,23 +13,11 @@ import {
 	runNeonHttpTransaction,
 } from "@afenda/db";
 import {
-	normalizePostgresUnknown,
-	postgresSqlState,
-} from "@afenda/errors/adapters/postgres";
-import { fail, failFromAppError, ok, type Result } from "@afenda/errors/result";
-
-import {
-	PURCHASING_ERROR_CODE_CONFLICT,
-	PURCHASING_ERROR_ORDER_ALREADY_CANCELLED,
-	PURCHASING_ERROR_ORDER_ALREADY_CLOSED,
-	PURCHASING_ERROR_ORDER_ALREADY_POSTED,
-	PURCHASING_ERROR_ORDER_EMPTY_LINES,
-	PURCHASING_ERROR_ORDER_NOT_DRAFT,
-	PURCHASING_ERROR_ORDER_NOT_FOUND,
-	PURCHASING_ERROR_ORDER_NOT_POSTED,
-	PURCHASING_ERROR_ORDER_VERSION_CONFLICT,
-	purchasingErrorDetails,
-} from "./error-codes";
+	errorIngress,
+	errorProject,
+	errorResult,
+	type Result,
+} from "@afenda/errors";
 import type { MutationPorts } from "./ports";
 import type {
 	OrderCancelRecord,
@@ -49,8 +37,10 @@ import {
 
 const PURCHASING_AUDIT_SOURCE = "purchasing.drizzle-store";
 
-function failFromPersistence(error: unknown, fallbackMessage: string) {
-	return failFromAppError(normalizePostgresUnknown(error, fallbackMessage));
+function failFromPersistence(error: unknown, _fallbackMessage: string) {
+	return errorProject.result(
+		errorIngress.postgres(error, { operation: "persistence.postgres" }),
+	);
 }
 
 interface OrderSqlRow {
@@ -275,7 +265,6 @@ function eventPayloadJson(input: Record<string, unknown>): string {
 	return JSON.stringify(input);
 }
 
-const SQLSTATE_UNIQUE_VIOLATION = "23505";
 const CREATE_IDEMPOTENCY_CONSTRAINT_PATTERN =
 	/purchase_order_org_create_idempotency_uidx|create_idempotency_key/i;
 const LINE_IDEMPOTENCY_CONSTRAINT_PATTERN =
@@ -304,10 +293,6 @@ function readConstraintName(error: unknown): string {
 	);
 }
 
-function isUniqueViolation(error: unknown): boolean {
-	return postgresSqlState(error) === SQLSTATE_UNIQUE_VIOLATION;
-}
-
 function isCreateIdempotencyConflict(error: unknown): boolean {
 	return CREATE_IDEMPOTENCY_CONSTRAINT_PATTERN.test(readConstraintName(error));
 }
@@ -318,12 +303,9 @@ function isLineIdempotencyConflict(error: unknown): boolean {
 
 function mapWriteError(
 	error: unknown,
-	conflictMessage: string,
+	_conflictMessage: string,
 	fallbackMessage: string,
 ): Result<never> {
-	if (isUniqueViolation(error)) {
-		return fail("CONFLICT", conflictMessage);
-	}
 	return failFromPersistence(error, fallbackMessage);
 }
 
@@ -420,9 +402,9 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 			]);
 			const [row] = rows;
 			if (row === undefined) {
-				return fail("INTERNAL_ERROR", "Purchase order create returned no row");
+				return errorResult.fail("INTERNAL_ERROR");
 			}
-			return ok(mapOrder(row, []));
+			return errorResult.ok(mapOrder(row, []));
 		} catch (error) {
 			if (isCreateIdempotencyConflict(error)) {
 				const existing = await this.getOrderByCreateIdempotencyKey(
@@ -433,15 +415,8 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 					return existing;
 				}
 				if (existing.data !== null) {
-					return ok(existing.data);
+					return errorResult.ok(existing.data);
 				}
-			}
-			if (isUniqueViolation(error)) {
-				return fail(
-					"CONFLICT",
-					"Purchase order code already exists",
-					purchasingErrorDetails(PURCHASING_ERROR_CODE_CONFLICT),
-				);
 			}
 			return failFromPersistence(error, "Failed to create purchase order");
 		}
@@ -460,24 +435,20 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 			return orderResult;
 		}
 		if (orderResult.data === null) {
-			return fail(
-				"NOT_FOUND",
-				"Purchase order not found",
-				purchasingErrorDetails(PURCHASING_ERROR_ORDER_NOT_FOUND),
-			);
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Purchase order not found",
+			});
 		}
 		const replay = orderResult.data.lines.find(
 			(line) => line.lineIdempotencyKey === record.lineIdempotencyKey,
 		);
 		if (replay !== undefined) {
-			return ok(replay);
+			return errorResult.ok(replay);
 		}
 		if (orderResult.data.status !== "draft") {
-			return fail(
-				"CONFLICT",
-				"Cannot add lines to a posted or cancelled order",
-				purchasingErrorDetails(PURCHASING_ERROR_ORDER_NOT_DRAFT),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Cannot add lines to a posted or cancelled order",
+			});
 		}
 		const lineNo =
 			orderResult.data.lines.reduce(
@@ -591,12 +562,9 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 			]);
 			const [row] = rows;
 			if (row === undefined) {
-				return fail(
-					"INTERNAL_ERROR",
-					"Purchase order line create returned no row",
-				);
+				return errorResult.fail("INTERNAL_ERROR");
 			}
-			return ok(mapLine(row));
+			return errorResult.ok(mapLine(row));
 		} catch (error) {
 			if (isLineIdempotencyConflict(error)) {
 				const reloaded = await this.getOrderById(
@@ -610,7 +578,7 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 					(row) => row.lineIdempotencyKey === record.lineIdempotencyKey,
 				);
 				if (line !== undefined) {
-					return ok(line);
+					return errorResult.ok(line);
 				}
 			}
 			return mapWriteError(
@@ -634,43 +602,33 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 			return existing;
 		}
 		if (existing.data === null) {
-			return fail(
-				"NOT_FOUND",
-				"Purchase order not found",
-				purchasingErrorDetails(PURCHASING_ERROR_ORDER_NOT_FOUND),
-			);
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Purchase order not found",
+			});
 		}
 		const currentOrder = existing.data;
 		if (currentOrder.status === "posted") {
 			if (currentOrder.postIdempotencyKey === record.postIdempotencyKey) {
-				return ok(currentOrder);
+				return errorResult.ok(currentOrder);
 			}
-			return fail(
-				"CONFLICT",
-				"Purchase order is already posted",
-				purchasingErrorDetails(PURCHASING_ERROR_ORDER_ALREADY_POSTED),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Purchase order is already posted",
+			});
 		}
 		if (currentOrder.status !== "draft") {
-			return fail(
-				"CONFLICT",
-				"Purchase order cannot be posted",
-				purchasingErrorDetails(PURCHASING_ERROR_ORDER_NOT_DRAFT),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Purchase order cannot be posted",
+			});
 		}
 		if (currentOrder.version !== record.expectedVersion) {
-			return fail(
-				"CONFLICT",
-				"Purchase order version conflict",
-				purchasingErrorDetails(PURCHASING_ERROR_ORDER_VERSION_CONFLICT),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Purchase order version conflict",
+			});
 		}
 		if (currentOrder.lines.length === 0) {
-			return fail(
-				"CONFLICT",
-				"Cannot post order without lines",
-				purchasingErrorDetails(PURCHASING_ERROR_ORDER_EMPTY_LINES),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Cannot post order without lines",
+			});
 		}
 
 		const auditId = randomUUID();
@@ -805,11 +763,9 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 			});
 			const [row] = rows;
 			if (row === undefined) {
-				return fail(
-					"CONFLICT",
-					"Purchase order version conflict",
-					purchasingErrorDetails(PURCHASING_ERROR_ORDER_VERSION_CONFLICT),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Purchase order version conflict",
+				});
 			}
 			const reloaded = await this.getOrderById(
 				record.organizationId,
@@ -819,12 +775,9 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 				return reloaded;
 			}
 			if (reloaded.data === null) {
-				return fail(
-					"INTERNAL_ERROR",
-					"Posted purchase order missing after write",
-				);
+				return errorResult.fail("INTERNAL_ERROR");
 			}
-			return ok(reloaded.data);
+			return errorResult.ok(reloaded.data);
 		} catch (error) {
 			return mapWriteError(
 				error,
@@ -847,36 +800,28 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 			return existing;
 		}
 		if (existing.data === null) {
-			return fail(
-				"NOT_FOUND",
-				"Purchase order not found",
-				purchasingErrorDetails(PURCHASING_ERROR_ORDER_NOT_FOUND),
-			);
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Purchase order not found",
+			});
 		}
 		const currentOrder = existing.data;
 		if (currentOrder.status === "cancelled") {
 			if (currentOrder.cancelIdempotencyKey === record.cancelIdempotencyKey) {
-				return ok(currentOrder);
+				return errorResult.ok(currentOrder);
 			}
-			return fail(
-				"CONFLICT",
-				"Purchase order is already cancelled",
-				purchasingErrorDetails(PURCHASING_ERROR_ORDER_ALREADY_CANCELLED),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Purchase order is already cancelled",
+			});
 		}
 		if (currentOrder.status !== "draft") {
-			return fail(
-				"CONFLICT",
-				"Only draft purchase orders can be cancelled",
-				purchasingErrorDetails(PURCHASING_ERROR_ORDER_NOT_DRAFT),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Only draft purchase orders can be cancelled",
+			});
 		}
 		if (currentOrder.version !== record.expectedVersion) {
-			return fail(
-				"CONFLICT",
-				"Purchase order version conflict",
-				purchasingErrorDetails(PURCHASING_ERROR_ORDER_VERSION_CONFLICT),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Purchase order version conflict",
+			});
 		}
 
 		const auditId = randomUUID();
@@ -972,11 +917,9 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 			]);
 			const [row] = rows;
 			if (row === undefined) {
-				return fail(
-					"CONFLICT",
-					"Purchase order version conflict",
-					purchasingErrorDetails(PURCHASING_ERROR_ORDER_VERSION_CONFLICT),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Purchase order version conflict",
+				});
 			}
 			const reloaded = await this.getOrderById(
 				record.organizationId,
@@ -986,12 +929,9 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 				return reloaded;
 			}
 			if (reloaded.data === null) {
-				return fail(
-					"INTERNAL_ERROR",
-					"Cancelled purchase order missing after write",
-				);
+				return errorResult.fail("INTERNAL_ERROR");
 			}
-			return ok(reloaded.data);
+			return errorResult.ok(reloaded.data);
 		} catch (error) {
 			return mapWriteError(
 				error,
@@ -1014,36 +954,28 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 			return existing;
 		}
 		if (existing.data === null) {
-			return fail(
-				"NOT_FOUND",
-				"Purchase order not found",
-				purchasingErrorDetails(PURCHASING_ERROR_ORDER_NOT_FOUND),
-			);
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Purchase order not found",
+			});
 		}
 		const currentOrder = existing.data;
 		if (currentOrder.status === "closed") {
 			if (currentOrder.closeIdempotencyKey === record.closeIdempotencyKey) {
-				return ok(currentOrder);
+				return errorResult.ok(currentOrder);
 			}
-			return fail(
-				"CONFLICT",
-				"Purchase order is already closed",
-				purchasingErrorDetails(PURCHASING_ERROR_ORDER_ALREADY_CLOSED),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Purchase order is already closed",
+			});
 		}
 		if (currentOrder.status !== "posted") {
-			return fail(
-				"CONFLICT",
-				"Only posted purchase orders can be closed",
-				purchasingErrorDetails(PURCHASING_ERROR_ORDER_NOT_POSTED),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Only posted purchase orders can be closed",
+			});
 		}
 		if (currentOrder.version !== record.expectedVersion) {
-			return fail(
-				"CONFLICT",
-				"Purchase order version conflict",
-				purchasingErrorDetails(PURCHASING_ERROR_ORDER_VERSION_CONFLICT),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Purchase order version conflict",
+			});
 		}
 
 		const auditId = randomUUID();
@@ -1130,11 +1062,9 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 			]);
 			const [row] = rows;
 			if (row === undefined) {
-				return fail(
-					"CONFLICT",
-					"Purchase order version conflict",
-					purchasingErrorDetails(PURCHASING_ERROR_ORDER_VERSION_CONFLICT),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Purchase order version conflict",
+				});
 			}
 			const reloaded = await this.getOrderById(
 				record.organizationId,
@@ -1144,12 +1074,9 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 				return reloaded;
 			}
 			if (reloaded.data === null) {
-				return fail(
-					"INTERNAL_ERROR",
-					"Closed purchase order missing after write",
-				);
+				return errorResult.fail("INTERNAL_ERROR");
 			}
-			return ok(reloaded.data);
+			return errorResult.ok(reloaded.data);
 		} catch (error) {
 			return mapWriteError(
 				error,
@@ -1175,7 +1102,7 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 				)
 				.limit(1);
 			if (header === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const lines = await db
 				.select()
@@ -1187,7 +1114,7 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 					),
 				)
 				.orderBy(asc(purchaseOrderLine.lineNo));
-			return ok(
+			return errorResult.ok(
 				mapOrder(
 					mapHeaderRow(header),
 					lines.map((line) => mapLineFromSelect(line)),
@@ -1214,7 +1141,7 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 				)
 				.limit(1);
 			if (header === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const lines = await db
 				.select()
@@ -1226,7 +1153,7 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 					),
 				)
 				.orderBy(asc(purchaseOrderLine.lineNo));
-			return ok(
+			return errorResult.ok(
 				mapOrder(
 					mapHeaderRow(header),
 					lines.map((line) => mapLineFromSelect(line)),
@@ -1257,7 +1184,7 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 				.offset((filter.page - 1) * filter.pageSize);
 
 			if (headers.length === 0) {
-				return ok([]);
+				return errorResult.ok([]);
 			}
 
 			const orderIds = headers.map((header) => header.id);
@@ -1283,7 +1210,7 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 				}
 			}
 
-			return ok(
+			return errorResult.ok(
 				headers.map((header) =>
 					mapOrder(mapHeaderRow(header), linesByOrderId.get(header.id) ?? []),
 				),

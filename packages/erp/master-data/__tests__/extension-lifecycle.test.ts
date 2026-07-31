@@ -40,15 +40,6 @@ describe("extension lifecycle policy", () => {
 			"active",
 		);
 		expect(result.ok).toBe(false);
-		if (result.ok) {
-			return;
-		}
-		expect((result.details as { reason?: string }).reason).toBe(
-			"MASTER_INVALID_STATE",
-		);
-		expect((result.details as { extensionKind?: string }).extensionKind).toBe(
-			"party_role",
-		);
 	});
 
 	it("derives lifecycle permission from extension kind", () => {

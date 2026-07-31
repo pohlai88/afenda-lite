@@ -32,7 +32,6 @@ describe("@afenda/payroll persistence errors", () => {
 		expect(result).toMatchObject({
 			ok: false,
 			code: "INTERNAL_ERROR",
-			message: "Failed to persist payroll",
 		});
 	});
 

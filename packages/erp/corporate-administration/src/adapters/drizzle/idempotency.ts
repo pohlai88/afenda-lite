@@ -1,8 +1,6 @@
 // biome-ignore-all lint/style/useDestructuring: Explicit receipt payload access keeps replay evidence visible.
 import { and, caMutationReceipt, eq, type NeonHttpSql, sql } from "@afenda/db";
-import { fail, ok, type Result } from "@afenda/errors/result";
-
-import { corporateAdministrationErrorDetails } from "../../error-codes";
+import { errorResult, type Result } from "@afenda/errors";
 import type {
 	CorporateAdministrationIdempotencyBeginInput,
 	CorporateAdministrationIdempotencyBeginOutcome,
@@ -75,7 +73,7 @@ export class DrizzleCorporateAdministrationIdempotencyPort
 				.onConflictDoNothing()
 				.returning();
 			if (inserted[0] !== undefined) {
-				return ok({ status: "acquired", reservationToken });
+				return errorResult.ok({ status: "acquired", reservationToken });
 			}
 
 			const rows = await this.#database
@@ -85,17 +83,10 @@ export class DrizzleCorporateAdministrationIdempotencyPort
 				.limit(1);
 			const row = rows[0];
 			if (row === undefined) {
-				return fail(
-					"SERVICE_UNAVAILABLE",
-					"Corporate Administration idempotency state is unavailable.",
-					corporateAdministrationErrorDetails(
-						"CORPORATE_ADMINISTRATION_EXTERNAL_DEPENDENCY_UNAVAILABLE",
-						{ field: "idempotencyKey" },
-					),
-				);
+				return errorResult.fail("SERVICE_UNAVAILABLE");
 			}
 			if (row.fingerprint !== input.fingerprint) {
-				return ok({
+				return errorResult.ok({
 					status: "conflict",
 					existingFingerprint: commandFingerprintSchema.parse(row.fingerprint),
 				});
@@ -103,15 +94,8 @@ export class DrizzleCorporateAdministrationIdempotencyPort
 			if (row.status === "completed") {
 				const replay = parseReplayResult(row.result);
 				return replay.success
-					? ok({ status: "replay", result: replay.data })
-					: fail(
-							"SERVICE_UNAVAILABLE",
-							"Corporate Administration idempotency replay is unavailable.",
-							corporateAdministrationErrorDetails(
-								"CORPORATE_ADMINISTRATION_EXTERNAL_DEPENDENCY_UNAVAILABLE",
-								{ field: "idempotency.result" },
-							),
-						);
+					? errorResult.ok({ status: "replay", result: replay.data })
+					: errorResult.fail("SERVICE_UNAVAILABLE");
 			}
 			if (row.status === "released") {
 				const updated = await this.#database
@@ -132,10 +116,10 @@ export class DrizzleCorporateAdministrationIdempotencyPort
 					)
 					.returning();
 				return updated[0] === undefined
-					? ok({ status: "in_progress" })
-					: ok({ status: "acquired", reservationToken });
+					? errorResult.ok({ status: "in_progress" })
+					: errorResult.ok({ status: "acquired", reservationToken });
 			}
-			return ok({ status: "in_progress" });
+			return errorResult.ok({ status: "in_progress" });
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
@@ -170,7 +154,7 @@ export class DrizzleCorporateAdministrationIdempotencyPort
 							AND status = 'in_progress'
 					`;
 				});
-				return ok(undefined);
+				return errorResult.ok(undefined);
 			}
 			const updated = await this.#database
 				.update(caMutationReceipt)
@@ -185,7 +169,7 @@ export class DrizzleCorporateAdministrationIdempotencyPort
 				.returning();
 			return updated[0] === undefined
 				? staleReservationResult()
-				: ok(undefined);
+				: errorResult.ok(undefined);
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
@@ -211,7 +195,7 @@ export class DrizzleCorporateAdministrationIdempotencyPort
 				.returning();
 			return updated[0] === undefined
 				? staleReservationResult()
-				: ok(undefined);
+				: errorResult.ok(undefined);
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);

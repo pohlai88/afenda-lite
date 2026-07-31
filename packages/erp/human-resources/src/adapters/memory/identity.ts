@@ -1,4 +1,4 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type { HumanResourcesEmployeeId } from "../../brands";
 import type { HumanResourcesEmployeeIdentity } from "../../identity-resolver";
@@ -39,10 +39,10 @@ export function createMemoryHumanResourcesIdentityStore(
 			);
 
 			if (!mapping) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
 
-			return await ok({
+			return await errorResult.ok({
 				employeeId: mapping.employeeId,
 				relationshipType: mapping.relationshipType,
 				effectiveFrom: mapping.effectiveFrom,
@@ -64,7 +64,7 @@ export function createMemoryHumanResourcesIdentityStore(
 				return userEmployeeResult;
 			}
 			if (!userEmployeeResult.data) {
-				return ok([]);
+				return errorResult.ok([]);
 			}
 
 			const managerEmployeeId = userEmployeeResult.data.employeeId;
@@ -81,7 +81,7 @@ export function createMemoryHumanResourcesIdentityStore(
 				)
 				.map((line) => line.employeeId);
 
-			return ok(employeeIds);
+			return errorResult.ok(employeeIds);
 		},
 
 		async createUserEmployeeMapping(input: {
@@ -108,7 +108,7 @@ export function createMemoryHumanResourcesIdentityStore(
 			};
 
 			mappings.push(mapping);
-			return await ok({ id });
+			return await errorResult.ok({ id });
 		},
 	};
 }

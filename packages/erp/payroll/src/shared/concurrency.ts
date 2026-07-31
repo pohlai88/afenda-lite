@@ -1,21 +1,14 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
-
-import {
-	PAYROLL_ERROR_STALE_VERSION,
-	payrollErrorDetails,
-} from "../error-codes";
+import { errorResult, type Result } from "@afenda/errors";
 
 export function assertExpectedVersion(
 	currentVersion: number,
 	expectedVersion: number,
-	message = "Resource version is stale",
+	_message = "Resource version is stale",
 ): Result<void> {
 	if (currentVersion !== expectedVersion) {
-		return fail(
-			"CONFLICT",
-			message,
-			payrollErrorDetails(PAYROLL_ERROR_STALE_VERSION),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "The request conflicts with current state",
+		});
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }

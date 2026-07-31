@@ -2,19 +2,15 @@
 
 import { randomUUID } from "node:crypto";
 import { registerLegalCompanyDraft } from "@afenda/corporate-administration";
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runMemberPermissionAction } from "@/app/actions/run-member-permission-action";
 import {
 	createCorporateAdministrationCommandOptions,
 	createCorporateAdministrationLegalCompanyDependencies,
 } from "@/lib/erp/corporate-administration-command-options";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 const registerLegalCompanyDraftActionSchema = z.object({
@@ -47,7 +43,9 @@ export async function registerLegalCompanyDraftAction(
 				idempotencyKey: formData.get("idempotencyKey") ?? undefined,
 			});
 			if (!parsed.success) {
-				return actionFail("VALIDATION_ERROR", parsed.error, parsed.details);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "The submitted data is invalid",
+				});
 			}
 
 			const result = await registerLegalCompanyDraft(

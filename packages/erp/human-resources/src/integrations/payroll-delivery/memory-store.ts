@@ -1,4 +1,4 @@
-import { fail, ok } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 
 import type { PayrollDeliveryStorePort } from "./ports";
 import type { PayrollDeliveryRecord } from "./types";
@@ -32,13 +32,13 @@ export function createMemoryPayrollDeliveryStore(): PayrollDeliveryStorePort & {
 					idempotencyMapKey(input.organizationId, input.idempotencyKey),
 				);
 				const record = id ? records.get(id) : undefined;
-				return ok(record ? clone(record) : null);
+				return errorResult.ok(record ? clone(record) : null);
 			});
 		},
 		getById(input) {
 			return runSynchronousMemoryOperation(() => {
 				const record = records.get(input.deliveryId);
-				return ok(
+				return errorResult.ok(
 					record?.organizationId === input.organizationId
 						? clone(record)
 						: null,
@@ -48,12 +48,11 @@ export function createMemoryPayrollDeliveryStore(): PayrollDeliveryStorePort & {
 		listPending(input) {
 			return runSynchronousMemoryOperation(() => {
 				if (!Number.isInteger(input.limit) || input.limit < 1) {
-					return fail(
-						"VALIDATION_ERROR",
-						"Pending delivery limit must be positive",
-					);
+					return errorResult.fail("VALIDATION_ERROR", {
+						publicMessage: "The submitted data is invalid",
+					});
 				}
-				return ok(
+				return errorResult.ok(
 					Array.from(records.values())
 						.filter(
 							(record) =>
@@ -77,11 +76,13 @@ export function createMemoryPayrollDeliveryStore(): PayrollDeliveryStorePort & {
 					record.idempotencyKey,
 				);
 				if (records.has(record.id) || idempotency.has(key)) {
-					return fail("CONFLICT", "Payroll delivery already exists");
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+					});
 				}
 				records.set(record.id, clone(record));
 				idempotency.set(key, record.id);
-				return ok(clone(record));
+				return errorResult.ok(clone(record));
 			});
 		},
 		createCorrection(input) {
@@ -98,13 +99,17 @@ export function createMemoryPayrollDeliveryStore(): PayrollDeliveryStorePort & {
 					source.status !== "correction_required" ||
 					source.supersededByDeliveryId !== null
 				) {
-					return fail("CONFLICT", "Payroll delivery correction conflict");
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+					});
 				}
 				if (
 					records.has(input.correction.id) ||
 					idempotency.has(correctionKey)
 				) {
-					return fail("CONFLICT", "Payroll delivery already exists");
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+					});
 				}
 				const linkedSource: PayrollDeliveryRecord = {
 					...source,
@@ -116,17 +121,21 @@ export function createMemoryPayrollDeliveryStore(): PayrollDeliveryStorePort & {
 				records.set(source.id, clone(linkedSource));
 				records.set(input.correction.id, clone(input.correction));
 				idempotency.set(correctionKey, input.correction.id);
-				return ok(clone(input.correction));
+				return errorResult.ok(clone(input.correction));
 			});
 		},
 		update(input) {
 			return runSynchronousMemoryOperation(() => {
 				const current = records.get(input.deliveryId);
 				if (!current || current.organizationId !== input.organizationId) {
-					return fail("NOT_FOUND", "Payroll delivery not found");
+					return errorResult.fail("NOT_FOUND", {
+						publicMessage: "The requested resource was not found",
+					});
 				}
 				if (current.version !== input.expectedVersion) {
-					return fail("CONFLICT", "Payroll delivery version conflict");
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+					});
 				}
 				if (
 					input.next.id !== current.id ||
@@ -134,10 +143,12 @@ export function createMemoryPayrollDeliveryStore(): PayrollDeliveryStorePort & {
 					input.next.idempotencyKey !== current.idempotencyKey ||
 					input.next.version !== current.version + 1
 				) {
-					return fail("VALIDATION_ERROR", "Invalid payroll delivery update");
+					return errorResult.fail("VALIDATION_ERROR", {
+						publicMessage: "The submitted data is invalid",
+					});
 				}
 				records.set(current.id, clone(input.next));
-				return ok(clone(input.next));
+				return errorResult.ok(clone(input.next));
 			});
 		},
 		clear() {

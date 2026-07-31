@@ -1,6 +1,7 @@
 "use server";
 
 import { requireRole } from "@afenda/auth";
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { createCorrelationId } from "@afenda/http";
 import { revalidatePath } from "next/cache";
 import { forbidUnlessPermission } from "@/app/actions/permission-gate";
@@ -8,12 +9,6 @@ import { revokeOrgRoleWithAudit } from "@/modules/identity/domain/revoke-org-rol
 import { revokeOrgRoleCommandSchema } from "@/modules/identity/schemas/revoke-org-role";
 import { readRequestAttribution } from "@/modules/platform/domain/request-attribution";
 import { logProductEvent } from "@/modules/platform/observability/product-log";
-import {
-	type ActionResult,
-	actionFail,
-	actionFailInternal,
-	actionOk,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export interface RevokeOrgRoleActionData {
@@ -44,11 +39,9 @@ export async function revokeOrgRoleAction(
 		assignmentId: formData.get("assignmentId"),
 	});
 	if (!parsed.success) {
-		return actionFail(
-			"VALIDATION_ERROR",
-			"Enter a valid assignment id.",
-			parsed.details,
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "Enter a valid assignment id.",
+		});
 	}
 
 	const permissionDenied = await forbidUnlessPermission(
@@ -84,14 +77,11 @@ export async function revokeOrgRoleAction(
 			path: "revokeOrgRoleAction",
 			code: "INTERNAL_ERROR",
 		});
-		return actionFailInternal(
-			"Role revocation failed. Try again or contact an admin.",
-			correlationId,
-		);
+		return errorResult.fail("INTERNAL_ERROR", { correlationId });
 	}
 
 	if (!result.ok) {
-		return actionFail(result.code, result.message);
+		return result;
 	}
 
 	logProductEvent({
@@ -105,7 +95,7 @@ export async function revokeOrgRoleAction(
 
 	revalidatePath("/admin");
 
-	return actionOk({
+	return errorResult.ok({
 		assignmentId: result.assignment.id,
 		userId: result.assignment.userId,
 		roleId: result.assignment.roleId,

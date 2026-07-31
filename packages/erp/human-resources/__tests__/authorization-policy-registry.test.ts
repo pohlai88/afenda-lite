@@ -25,6 +25,7 @@ import {
 import type { HumanResourcesAuthorizationRequest } from "../src/shared/authorization-types";
 import { authorizeHumanResourcesOperation } from "../src/shared/contextual-authorization";
 import { helperAssert as assert } from "./helpers/helper-assert";
+import { humanResourcesContextFromResult } from "./helpers/result-details";
 
 function grantingAuthorization(
 	permissions: ReadonlySet<string>,
@@ -117,9 +118,8 @@ function expectAuthorizationDenied(
 		return;
 	}
 	assert.strictEqual(result.code, "FORBIDDEN");
-	assert.strictEqual(result.message, "Human Resources authorization denied");
 	assert.doesNotMatch(result.message, /manager|case membership|investigator/i);
-	assert.deepInclude(result.details, {
+	assert.deepInclude(humanResourcesContextFromResult(result), {
 		humanResourcesCode: HUMAN_RESOURCES_ERROR_AUTHORIZATION_DENIED,
 		denyCode,
 	});
@@ -232,7 +232,7 @@ describe("authorizeHumanResourcesOperation facade", () => {
 		);
 		expectAuthorizationDenied(result, "cross_tenant");
 		if (!result.ok) {
-			expect(result.details).toMatchObject({
+			expect(humanResourcesContextFromResult(result)).toMatchObject({
 				policyId: "hr.tenant-boundary",
 				resourceKind: "leave_request",
 				resourceId: "leave-1",
@@ -250,7 +250,7 @@ describe("authorizeHumanResourcesOperation facade", () => {
 			return;
 		}
 		expect(result.code).toBe("FORBIDDEN");
-		expect(result.details).toMatchObject({
+		expect(humanResourcesContextFromResult(result)).toMatchObject({
 			humanResourcesCode: HUMAN_RESOURCES_ERROR_FORBIDDEN,
 			permission: HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_OWN,
 		});
@@ -270,7 +270,7 @@ describe("authorizeHumanResourcesOperation facade", () => {
 		);
 		expectAuthorizationDenied(result, "permission_denied");
 		if (!result.ok) {
-			expect(result.details).toMatchObject({
+			expect(humanResourcesContextFromResult(result)).toMatchObject({
 				policyId: "hr.manifest-permission",
 			});
 		}

@@ -1,5 +1,10 @@
-import { normalizeUnknown } from "@afenda/errors";
-import { fail, ok, type Result } from "@afenda/errors/result";
+import {
+	errorIngress,
+	errorProject,
+	errorResult,
+	type Result,
+} from "@afenda/errors";
+
 import { resolveEventStore } from "./resolve-store";
 import { eventDispatchOptionsSchema } from "./schemas";
 import type { EventStore } from "./store";
@@ -23,7 +28,9 @@ export interface EventDispatcher {
 }
 
 function errorMessage(error: unknown): string {
-	return normalizeUnknown(error, "Domain event handler failed").message;
+	return errorProject.result(
+		errorIngress.unknown(error, { operation: "events.dispatch" }),
+	).message;
 }
 
 interface EventDispatchOutcome {
@@ -46,7 +53,7 @@ async function dispatchEvent(
 	store: EventStore,
 ): Promise<Result<EventDispatchOutcome>> {
 	if (handler === undefined) {
-		return ok({ event, failed: 0, processed: 0, skipped: 1 });
+		return errorResult.ok({ event, failed: 0, processed: 0, skipped: 1 });
 	}
 	try {
 		await handler(event);
@@ -58,8 +65,13 @@ async function dispatchEvent(
 			return marked;
 		}
 		return marked.data === null
-			? fail("INTERNAL_ERROR", `Failed to mark event ${event.id} processed`)
-			: ok({ event: marked.data, failed: 0, processed: 1, skipped: 0 });
+			? errorResult.fail("INTERNAL_ERROR")
+			: errorResult.ok({
+					event: marked.data,
+					failed: 0,
+					processed: 1,
+					skipped: 0,
+				});
 	} catch (error) {
 		const marked = await store.markFailed({
 			id: event.id,
@@ -70,8 +82,13 @@ async function dispatchEvent(
 			return marked;
 		}
 		return marked.data === null
-			? fail("INTERNAL_ERROR", `Failed to mark event ${event.id} failed`)
-			: ok({ event: marked.data, failed: 1, processed: 0, skipped: 0 });
+			? errorResult.fail("INTERNAL_ERROR")
+			: errorResult.ok({
+					event: marked.data,
+					failed: 1,
+					processed: 0,
+					skipped: 0,
+				});
 	}
 }
 
@@ -87,8 +104,8 @@ export function createEventDispatcher(
 		): Promise<Result<EventDispatchSummary>> {
 			const parsed = eventDispatchOptionsSchema.safeParse(input);
 			if (!parsed.success) {
-				return fail("BAD_REQUEST", "Invalid event dispatch input", {
-					fieldErrors: parsed.error.flatten().fieldErrors,
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Invalid event dispatch input",
 				});
 			}
 
@@ -122,14 +139,14 @@ export function createEventDispatcher(
 					return accumulated;
 				},
 				Promise.resolve(
-					ok({ events: [], failed: 0, processed: 0, skipped: 0 }),
+					errorResult.ok({ events: [], failed: 0, processed: 0, skipped: 0 }),
 				),
 			);
 			if (!dispatched.ok) {
 				return dispatched;
 			}
 
-			return ok({
+			return errorResult.ok({
 				claimed: claimed.length,
 				...dispatched.data,
 			});

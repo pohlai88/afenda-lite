@@ -131,10 +131,9 @@ describe("HR employee self-service attendance Action", () => {
 
 		const result = await recordOwnAttendanceAction(null, formData);
 
-		expect(result).toEqual({
+		expect(result).toMatchObject({
 			ok: false,
 			code: "FORBIDDEN",
-			message: "Your account is not linked to an active employee record.",
 		});
 		expect(mocks.recordClockOut).not.toHaveBeenCalled();
 	});

@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	requireMasterCommandPermission,
@@ -10,7 +10,6 @@ import {
 	resolveCommandDeps,
 	resolveStore,
 } from "../../command-options";
-import type { MasterFailureDetails } from "../../contracts/reasons";
 import {
 	MASTER_COMMAND_TAX_REGISTRATION_ACTIVATE,
 	MASTER_COMMAND_TAX_REGISTRATION_BLOCK,
@@ -63,17 +62,12 @@ async function assertPartyInOrg(
 		return party;
 	}
 	if (party.data === null) {
-		return fail("NOT_FOUND", "Party not found", {
-			reason: "MASTER_NOT_FOUND",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("NOT_FOUND", { publicMessage: "Party not found" });
 	}
 	if (party.data.status === "retired") {
-		return fail("CONFLICT", "Party is retired", {
-			reason: "MASTER_INVALID_STATE",
-			field: "partyId",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("CONFLICT", { publicMessage: "Party is retired" });
 	}
-	return ok(true);
+	return errorResult.ok(true);
 }
 
 async function assertActiveCountry(
@@ -85,12 +79,11 @@ async function assertActiveCountry(
 		return country;
 	}
 	if (country.data === null || !country.data.active) {
-		return fail("BAD_REQUEST", "Active jurisdiction country not found", {
-			reason: "MASTER_VALIDATION_FAILED",
-			field: "jurisdictionCountryId",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Active jurisdiction country not found",
+		});
 	}
-	return ok(true);
+	return errorResult.ok(true);
 }
 
 async function assertNoActiveOverlap(
@@ -98,10 +91,9 @@ async function assertNoActiveOverlap(
 	candidate: TaxRegistration,
 ): Promise<Result<true>> {
 	if (candidate.validFrom === null) {
-		return fail("CONFLICT", "Activation requires validFrom", {
-			reason: "MASTER_INVALID_STATE",
-			field: "validFrom",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Activation requires validFrom",
+		});
 	}
 	const conflict = await store.findOverlappingActiveTaxRegistration({
 		organizationId: candidate.organizationId,
@@ -116,12 +108,11 @@ async function assertNoActiveOverlap(
 		return conflict;
 	}
 	if (conflict.data !== null) {
-		return fail("CONFLICT", "Active tax registration validity ranges overlap", {
-			reason: "MASTER_VALIDITY_OVERLAP",
-			conflictingId: conflict.data.id,
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Active tax registration validity ranges overlap",
+		});
 	}
-	return ok(true);
+	return errorResult.ok(true);
 }
 
 function assertValidity(range: {
@@ -129,11 +120,11 @@ function assertValidity(range: {
 	validTo: Date | null;
 }): Result<true> {
 	if (isInvalidValidityRange(range)) {
-		return fail("BAD_REQUEST", "validTo must be after validFrom", {
-			reason: "MASTER_VALIDATION_FAILED",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "validTo must be after validFrom",
+		});
 	}
-	return ok(true);
+	return errorResult.ok(true);
 }
 
 async function projectTaxRegistrationResult(
@@ -143,7 +134,7 @@ async function projectTaxRegistrationResult(
 	if (!result.ok) {
 		return result;
 	}
-	return ok(toTaxRegistrationProjection(result.data));
+	return errorResult.ok(toTaxRegistrationProjection(result.data));
 }
 
 export async function createTaxRegistration(
@@ -250,9 +241,9 @@ export async function updateTaxRegistration(
 		return current;
 	}
 	if (current.data === null) {
-		return fail("NOT_FOUND", "Tax registration not found", {
-			reason: "MASTER_NOT_FOUND",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Tax registration not found",
+		});
 	}
 	const nextValidFrom =
 		parsed.data.validFrom === undefined
@@ -329,9 +320,9 @@ async function transitionTaxRegistrationStatus(
 		return current;
 	}
 	if (current.data === null) {
-		return fail("NOT_FOUND", "Tax registration not found", {
-			reason: "MASTER_NOT_FOUND",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Tax registration not found",
+		});
 	}
 	const lifecycle =
 		transitionKind === "restore"
@@ -342,10 +333,9 @@ async function transitionTaxRegistrationStatus(
 	}
 	if (toStatus === "active") {
 		if (current.data.validFrom === null) {
-			return fail("CONFLICT", "Activation requires valid_from", {
-				reason: "MASTER_INVALID_STATE",
-				field: "validFrom",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Activation requires valid_from",
+			});
 		}
 		const validity = assertValidity({
 			validFrom: current.data.validFrom,
@@ -476,9 +466,9 @@ export async function getTaxRegistration(
 		return result;
 	}
 	if (result.data === null) {
-		return ok(null);
+		return errorResult.ok(null);
 	}
-	return ok(toTaxRegistrationProjection(result.data));
+	return errorResult.ok(toTaxRegistrationProjection(result.data));
 }
 
 export async function listTaxRegistrations(
@@ -514,7 +504,7 @@ export async function listTaxRegistrations(
 	if (!result.ok) {
 		return result;
 	}
-	return ok(result.data.map(toTaxRegistrationProjection));
+	return errorResult.ok(result.data.map(toTaxRegistrationProjection));
 }
 
 export function listTaxRegistrationsUpdatedSince(
@@ -532,10 +522,9 @@ export function listTaxRegistrationsUpdatedSince(
 		}
 		if (parsed.data.updatedSince === undefined) {
 			return Promise.resolve(
-				fail("BAD_REQUEST", "updatedSince is required", {
-					reason: "MASTER_VALIDATION_FAILED",
-					field: "updatedSince",
-				} satisfies MasterFailureDetails),
+				errorResult.fail("BAD_REQUEST", {
+					publicMessage: "updatedSince is required",
+				}),
 			);
 		}
 		return listTaxRegistrations(parsed.data, options);
@@ -571,7 +560,7 @@ export async function findTaxRegistrationsByParty(
 	if (!result.ok) {
 		return result;
 	}
-	return ok(result.data.map(toTaxRegistrationProjection));
+	return errorResult.ok(result.data.map(toTaxRegistrationProjection));
 }
 
 export async function getSensitiveTaxRegistration(
@@ -603,9 +592,9 @@ export async function getSensitiveTaxRegistration(
 		return result;
 	}
 	if (result.data === null) {
-		return ok(null);
+		return errorResult.ok(null);
 	}
-	return ok(toSensitiveTaxRegistrationProjection(result.data));
+	return errorResult.ok(toSensitiveTaxRegistrationProjection(result.data));
 }
 
 export async function listSensitiveTaxRegistrations(
@@ -640,7 +629,7 @@ export async function listSensitiveTaxRegistrations(
 	if (!result.ok) {
 		return result;
 	}
-	return ok(result.data.map(toSensitiveTaxRegistrationProjection));
+	return errorResult.ok(result.data.map(toSensitiveTaxRegistrationProjection));
 }
 
 export async function findSensitiveTaxRegistrationsByParty(
@@ -671,5 +660,5 @@ export async function findSensitiveTaxRegistrationsByParty(
 	if (!result.ok) {
 		return result;
 	}
-	return ok(result.data.map(toSensitiveTaxRegistrationProjection));
+	return errorResult.ok(result.data.map(toSensitiveTaxRegistrationProjection));
 }

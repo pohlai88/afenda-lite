@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_EXPIRED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_NEARING_EXPIRY_EVENT,
@@ -280,7 +280,7 @@ async function emitDocumentNearingExpiryIfNeeded(
 			asOf: input.asOf,
 		})
 	) {
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	}
 	const outbox = await appendComplianceOutbox(state, ports, meta, {
 		organizationId: input.document.organizationId,
@@ -289,7 +289,7 @@ async function emitDocumentNearingExpiryIfNeeded(
 		entityType: "hr_employee_document",
 		entityId: input.document.id,
 	});
-	return outbox.ok ? ok(undefined) : outbox;
+	return outbox.ok ? errorResult.ok(undefined) : outbox;
 }
 
 async function transitionDocumentRequirementStatus(
@@ -358,7 +358,7 @@ async function transitionDocumentRequirementStatus(
 		return audit;
 	}
 
-	return ok({ ...updated });
+	return errorResult.ok({ ...updated });
 }
 
 async function transitionEmployeeDocumentStatus(
@@ -481,7 +481,7 @@ async function transitionEmployeeDocumentStatus(
 		return sequentialOutcome1.value;
 	}
 
-	return ok({ ...updated });
+	return errorResult.ok({ ...updated });
 }
 
 async function transitionWorkEligibilityStatus(
@@ -587,7 +587,7 @@ async function transitionWorkEligibilityStatus(
 		return sequentialOutcome2.value;
 	}
 
-	return ok({ ...updated });
+	return errorResult.ok({ ...updated });
 }
 
 async function transitionPolicyAcknowledgementStatus(
@@ -705,7 +705,7 @@ async function transitionPolicyAcknowledgementStatus(
 		return sequentialOutcome3.value;
 	}
 
-	return ok({ ...updated });
+	return errorResult.ok({ ...updated });
 }
 
 // --- Document Requirement ---
@@ -722,9 +722,9 @@ export function createMemoryComplianceMethods(
 		}): Promise<Result<DocumentRequirement | null>> {
 			const requirement = state.documentRequirements.get(input.requirementId);
 			if (!requirement || requirement.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...requirement });
+			return await errorResult.ok({ ...requirement });
 		},
 
 		async findDocumentRequirementByCode(input: {
@@ -737,7 +737,9 @@ export function createMemoryComplianceMethods(
 						row.organizationId === input.organizationId &&
 						row.code === input.code,
 				) ?? null;
-			return await ok(requirement === null ? null : { ...requirement });
+			return await errorResult.ok(
+				requirement === null ? null : { ...requirement },
+			);
 		},
 
 		async createDocumentRequirement(
@@ -800,7 +802,7 @@ export function createMemoryComplianceMethods(
 				return audit;
 			}
 
-			return ok({ ...requirement });
+			return errorResult.ok({ ...requirement });
 		},
 
 		async updateDocumentRequirement(
@@ -874,7 +876,7 @@ export function createMemoryComplianceMethods(
 				return audit;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async publishDocumentRequirement(
@@ -938,7 +940,7 @@ export function createMemoryComplianceMethods(
 				.slice(start, start + input.pageSize)
 				.map((row) => ({ ...row }));
 
-			return await ok({
+			return await errorResult.ok({
 				requirements,
 				totalCount,
 				page: input.page,
@@ -954,9 +956,9 @@ export function createMemoryComplianceMethods(
 		}): Promise<Result<EmployeeDocument | null>> {
 			const document = state.employeeDocuments.get(input.documentId);
 			if (!document || document.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...document });
+			return await errorResult.ok({ ...document });
 		},
 
 		async findEmployeeDocumentByIdempotencyKey(input: {
@@ -966,9 +968,12 @@ export function createMemoryComplianceMethods(
 			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
 			const record = state.employeeDocumentIdempotencyByKey.get(key);
 			if (!record) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...record, document: { ...record.document } });
+			return await errorResult.ok({
+				...record,
+				document: { ...record.document },
+			});
 		},
 
 		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
@@ -1004,7 +1009,7 @@ export function createMemoryComplianceMethods(
 				) {
 					return conflict("Idempotency key reused with different payload");
 				}
-				return ok({ ...existing.document });
+				return errorResult.ok({ ...existing.document });
 			}
 
 			const employeeResult = await this.getEmployeeById({
@@ -1140,7 +1145,7 @@ export function createMemoryComplianceMethods(
 				return sequentialOutcome4.value;
 			}
 
-			return ok({ ...document });
+			return errorResult.ok({ ...document });
 		},
 
 		async updateEmployeeDocumentMetadata(
@@ -1233,7 +1238,7 @@ export function createMemoryComplianceMethods(
 				return nearingExpiry;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async verifyEmployeeDocument(
@@ -1370,7 +1375,7 @@ export function createMemoryComplianceMethods(
 				.slice(start, start + input.pageSize)
 				.map((row) => toEmployeeDocumentListItem(row));
 
-			return await ok({
+			return await errorResult.ok({
 				documents,
 				totalCount,
 				page: input.page,
@@ -1422,7 +1427,7 @@ export function createMemoryComplianceMethods(
 				.slice(start, start + input.pageSize)
 				.map((row) => ({ ...row }));
 
-			return await ok({
+			return await errorResult.ok({
 				requirements,
 				totalCount,
 				page: input.page,
@@ -1471,7 +1476,7 @@ export function createMemoryComplianceMethods(
 				.slice(start, start + input.pageSize)
 				.map((row) => toEmployeeDocumentListItem(row));
 
-			return await ok({
+			return await errorResult.ok({
 				documents,
 				totalCount,
 				page: input.page,
@@ -1487,9 +1492,9 @@ export function createMemoryComplianceMethods(
 		}): Promise<Result<WorkEligibility | null>> {
 			const eligibility = state.workEligibilities.get(input.eligibilityId);
 			if (!eligibility || eligibility.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...eligibility });
+			return await errorResult.ok({ ...eligibility });
 		},
 
 		async getActiveWorkEligibilityForEmployee(input: {
@@ -1506,7 +1511,9 @@ export function createMemoryComplianceMethods(
 				.sort((a, b) => b.issuedOn.localeCompare(a.issuedOn));
 
 			const eligibility = active[0] ?? null;
-			return await ok(eligibility === null ? null : { ...eligibility });
+			return await errorResult.ok(
+				eligibility === null ? null : { ...eligibility },
+			);
 		},
 
 		async findWorkEligibilityByIdempotencyKey(input: {
@@ -1516,9 +1523,12 @@ export function createMemoryComplianceMethods(
 			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
 			const record = state.workEligibilityIdempotencyByKey.get(key);
 			if (!record) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...record, eligibility: { ...record.eligibility } });
+			return await errorResult.ok({
+				...record,
+				eligibility: { ...record.eligibility },
+			});
 		},
 
 		async recordWorkEligibility(
@@ -1549,7 +1559,7 @@ export function createMemoryComplianceMethods(
 				) {
 					return conflict("Idempotency key reused with different payload");
 				}
-				return ok({ ...existing.eligibility });
+				return errorResult.ok({ ...existing.eligibility });
 			}
 
 			const employeeResult = await this.getEmployeeById({
@@ -1629,7 +1639,7 @@ export function createMemoryComplianceMethods(
 				return audit;
 			}
 
-			return ok({ ...eligibility });
+			return errorResult.ok({ ...eligibility });
 		},
 
 		async verifyWorkEligibility(
@@ -1783,7 +1793,7 @@ export function createMemoryComplianceMethods(
 				return outbox;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async closeWorkEligibility(
@@ -1849,7 +1859,7 @@ export function createMemoryComplianceMethods(
 				.slice(start, start + input.pageSize)
 				.map((row) => ({ ...row }));
 
-			return await ok({
+			return await errorResult.ok({
 				eligibilities,
 				totalCount,
 				page: input.page,
@@ -1870,9 +1880,9 @@ export function createMemoryComplianceMethods(
 				!acknowledgement ||
 				acknowledgement.organizationId !== input.organizationId
 			) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...acknowledgement });
+			return await errorResult.ok({ ...acknowledgement });
 		},
 
 		async findPolicyAcknowledgementByIdempotencyKey(input: {
@@ -1882,9 +1892,9 @@ export function createMemoryComplianceMethods(
 			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
 			const record = state.policyAcknowledgementIdempotencyByKey.get(key);
 			if (!record) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({
+			return await errorResult.ok({
 				...record,
 				acknowledgement: { ...record.acknowledgement },
 			});
@@ -1916,7 +1926,7 @@ export function createMemoryComplianceMethods(
 				) {
 					return conflict("Idempotency key reused with different payload");
 				}
-				return ok({ ...existing.acknowledgement });
+				return errorResult.ok({ ...existing.acknowledgement });
 			}
 
 			const employeeResult = await this.getEmployeeById({
@@ -2012,7 +2022,7 @@ export function createMemoryComplianceMethods(
 				return outbox;
 			}
 
-			return ok({ ...acknowledgement });
+			return errorResult.ok({ ...acknowledgement });
 		},
 
 		async acknowledgePolicy(
@@ -2167,7 +2177,7 @@ export function createMemoryComplianceMethods(
 				return outbox;
 			}
 
-			return ok({ ...replacement });
+			return errorResult.ok({ ...replacement });
 		},
 
 		async getPolicyAcknowledgementStatus(input: {
@@ -2190,15 +2200,15 @@ export function createMemoryComplianceMethods(
 			}
 
 			if (matches.length === 0) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
 
 			matches.sort((a, b) => b.issuedAt.getTime() - a.issuedAt.getTime());
 			const [latest] = matches;
 			if (!latest) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...latest });
+			return await errorResult.ok({ ...latest });
 		},
 
 		async listOutstandingPolicyAcknowledgements(input: {
@@ -2227,7 +2237,7 @@ export function createMemoryComplianceMethods(
 				.slice(start, start + input.pageSize)
 				.map((row) => ({ ...row }));
 
-			return await ok({
+			return await errorResult.ok({
 				acknowledgements,
 				totalCount,
 				page: input.page,
@@ -2261,7 +2271,7 @@ export function createMemoryComplianceMethods(
 			});
 			const totalCount = filtered.length;
 			const start = (input.page - 1) * input.pageSize;
-			return await ok({
+			return await errorResult.ok({
 				acknowledgements: filtered
 					.slice(start, start + input.pageSize)
 					.map((row) => ({ ...row })),
@@ -2359,7 +2369,7 @@ export function createMemoryComplianceMethods(
 					isPolicyAcknowledgementOutstanding(row.requirementStatus),
 			).length;
 
-			return ok({
+			return errorResult.ok({
 				organizationId: input.organizationId,
 				employeeId: input.employeeId,
 				missingRequiredDocumentCount,

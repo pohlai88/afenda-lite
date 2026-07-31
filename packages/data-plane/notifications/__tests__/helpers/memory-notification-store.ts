@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type { NotificationStore } from "../../src/store";
 import type {
@@ -22,7 +22,7 @@ function assertOk<T>(result: Result<T>): T {
 }
 
 function okAsync<T>(data: T): Promise<Result<T>> {
-	return Promise.resolve(ok(data));
+	return Promise.resolve(errorResult.ok(data));
 }
 
 export { assertOk };

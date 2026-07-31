@@ -11,7 +11,7 @@
 6. return ok(domainEntity)
 ```
 
-Every public function returns `Promise<Result<T>>` from `@afenda/errors/result`.
+Every public function returns `Promise<Result<T>>` from root `@afenda/errors`.
 
 ## Slice landing checklist
 

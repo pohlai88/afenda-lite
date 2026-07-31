@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	addExactDecimals,
@@ -40,9 +40,13 @@ export function addReportingDecimals(
 	const parsedLeft = parseExactDecimal(left);
 	const parsedRight = parseExactDecimal(right);
 	if (parsedLeft === null || parsedRight === null) {
-		return fail("VALIDATION_ERROR", "Reporting decimal is invalid");
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+		});
 	}
-	return ok(formatExactDecimal(addExactDecimals(parsedLeft, parsedRight)));
+	return errorResult.ok(
+		formatExactDecimal(addExactDecimals(parsedLeft, parsedRight)),
+	);
 }
 
 export function subtractReportingDecimals(
@@ -52,9 +56,13 @@ export function subtractReportingDecimals(
 	const parsedLeft = parseExactDecimal(left);
 	const parsedRight = parseExactDecimal(right);
 	if (parsedLeft === null || parsedRight === null) {
-		return fail("VALIDATION_ERROR", "Reporting decimal is invalid");
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+		});
 	}
-	return ok(formatExactDecimal(subtractExactDecimals(parsedLeft, parsedRight)));
+	return errorResult.ok(
+		formatExactDecimal(subtractExactDecimals(parsedLeft, parsedRight)),
+	);
 }
 
 export function ratioPercent(numerator: number, denominator: number): string {
@@ -76,13 +84,15 @@ export function averageReportingDecimals(
 	values: readonly string[],
 ): Result<string | null> {
 	if (values.length === 0) {
-		return ok(null);
+		return errorResult.ok(null);
 	}
 	let total: ExactDecimal = { coefficient: 0n, scale: 0 };
 	for (const value of values) {
 		const parsed = parseExactDecimal(value);
 		if (parsed === null) {
-			return fail("VALIDATION_ERROR", "Reporting decimal is invalid");
+			return errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "The submitted data is invalid",
+			});
 		}
 		total = addExactDecimals(total, parsed);
 	}
@@ -90,7 +100,9 @@ export function averageReportingDecimals(
 	const scaledCoefficient =
 		total.coefficient * 10n ** BigInt(outputScale - total.scale);
 	const quotient = scaledCoefficient / BigInt(values.length);
-	return ok(formatExactDecimal({ coefficient: quotient, scale: outputScale }));
+	return errorResult.ok(
+		formatExactDecimal({ coefficient: quotient, scale: outputScale }),
+	);
 }
 
 export function loadReconciledReportingFacts(input: {
@@ -117,51 +129,40 @@ export function loadReconciledReportingFacts(input: {
 		}
 		const returned = result.data;
 		if (returned.page !== page || returned.pageSize !== REPORTING_PAGE_SIZE) {
-			return fail(
-				"INTERNAL_ERROR",
-				"Reporting source returned invalid pagination metadata",
-			);
+			return errorResult.fail("INTERNAL_ERROR");
 		}
 		if (returned.total < 0 || returned.total > MAX_REPORTING_FACTS_PER_KIND) {
-			return fail(
-				"INTERNAL_ERROR",
-				"Reporting source total is outside the supported range",
-			);
+			return errorResult.fail("INTERNAL_ERROR");
 		}
 		expectedTotal ??= returned.total;
 		if (returned.total !== expectedTotal) {
-			return fail("CONFLICT", "Reporting source changed during reconciliation");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "The request conflicts with current state",
+			});
 		}
 		for (const fact of returned.entries) {
 			if (
 				fact.organizationId !== input.organizationId ||
 				fact.kind !== input.kind
 			) {
-				return fail(
-					"INTERNAL_ERROR",
-					"Reporting source crossed a tenant or fact boundary",
-				);
+				return errorResult.fail("INTERNAL_ERROR");
 			}
 			if (ids.has(fact.id)) {
-				return fail("CONFLICT", "Reporting source returned a duplicate fact");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+				});
 			}
 			ids.add(fact.id);
 			facts.push(fact);
 		}
 		if (facts.length > expectedTotal) {
-			return fail(
-				"INTERNAL_ERROR",
-				"Reporting source returned more facts than declared",
-			);
+			return errorResult.fail("INTERNAL_ERROR");
 		}
 		if (facts.length === expectedTotal) {
-			return ok(facts);
+			return errorResult.ok(facts);
 		}
 		if (returned.entries.length === 0) {
-			return fail(
-				"INTERNAL_ERROR",
-				"Reporting source pagination ended before reconciliation",
-			);
+			return errorResult.fail("INTERNAL_ERROR");
 		}
 		return loadPage(page + 1);
 	}

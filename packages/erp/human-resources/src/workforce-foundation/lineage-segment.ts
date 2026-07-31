@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
@@ -10,24 +10,26 @@ export function validateLineageSegmentEffectiveOn(input: {
 	effectiveOn: string;
 }): Result<void> {
 	if (input.effectiveOn <= input.openEffectiveFrom) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Effective date must be after the open segment start date",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_CONFLICT,
+			),
+		});
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertLineageSegmentMutable(input: {
 	lineageStatus: "active" | "superseded";
 }): Result<void> {
 	if (input.lineageStatus === "superseded") {
-		return fail(
-			"CONFLICT",
-			"Closed lineage segments cannot be modified",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "The request conflicts with current state",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_CONFLICT,
+			),
+		});
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }

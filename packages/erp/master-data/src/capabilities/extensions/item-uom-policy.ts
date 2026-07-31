@@ -1,6 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
-
-import type { MasterFailureDetails } from "../../contracts/reasons";
+import { errorResult, type Result } from "@afenda/errors";
 
 export const ITEM_UOM_FACTOR_PRECISION = 24 as const;
 export const ITEM_UOM_FACTOR_SCALE = 12 as const;
@@ -43,7 +41,7 @@ export function normalizeItemUomConversionFactor(raw: string): Result<string> {
 		return invalidFactor();
 	}
 
-	return ok(
+	return errorResult.ok(
 		fractionPart.length > 0 ? `${integerPart}.${fractionPart}` : integerPart,
 	);
 }
@@ -66,80 +64,56 @@ export function assertItemUomCompatibility(input: {
 		input.packagingApprovalReference?.normalize("NFC").trim() ?? null;
 
 	if (!ITEM_UOM_COMPATIBILITY_MODE_SET.has(input.compatibilityMode)) {
-		return fail("BAD_REQUEST", "Item UoM compatibility mode is invalid", {
-			reason: "MASTER_INVALID_UOM_CONVERSION",
-			field: "compatibilityMode",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Item UoM compatibility mode is invalid",
+		});
 	}
 
 	if (baseDimensionCode !== alternateDimensionCode) {
-		return fail(
-			"BAD_REQUEST",
-			"Cross-dimension item UoM conversion is not permitted",
-			{
-				reason: "MASTER_INVALID_UOM_CONVERSION",
-				field: "alternateUomId",
-			} satisfies MasterFailureDetails,
-		);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Cross-dimension item UoM conversion is not permitted",
+		});
 	}
 
 	switch (input.compatibilityMode) {
 		case "physical_dimension":
 			if (packagingApprovalReference !== null) {
-				return fail(
-					"BAD_REQUEST",
-					"Packaging approval applies only to packaging/count compatibility",
-					{
-						reason: "MASTER_VALIDATION_FAILED",
-						field: "packagingApprovalReference",
-					} satisfies MasterFailureDetails,
-				);
+				return errorResult.fail("BAD_REQUEST", {
+					publicMessage:
+						"Packaging approval applies only to packaging/count compatibility",
+				});
 			}
-			return ok(true);
+			return errorResult.ok(true);
 
 		case "packaging_count":
 			if (baseDimensionCode !== "count") {
-				return fail(
-					"BAD_REQUEST",
-					"Packaging/count conversion requires count-dimension UoMs",
-					{
-						reason: "MASTER_INVALID_UOM_CONVERSION",
-						field: "compatibilityMode",
-					} satisfies MasterFailureDetails,
-				);
+				return errorResult.fail("BAD_REQUEST", {
+					publicMessage:
+						"Packaging/count conversion requires count-dimension UoMs",
+				});
 			}
 
 			if (
 				packagingApprovalReference === null ||
 				packagingApprovalReference.length === 0
 			) {
-				return fail(
-					"BAD_REQUEST",
-					"Packaging/count conversion requires approval evidence",
-					{
-						reason: "MASTER_INVALID_UOM_CONVERSION",
-						field: "packagingApprovalReference",
-					} satisfies MasterFailureDetails,
-				);
+				return errorResult.fail("BAD_REQUEST", {
+					publicMessage:
+						"Packaging/count conversion requires approval evidence",
+				});
 			}
 
-			return ok(true);
+			return errorResult.ok(true);
 
 		default:
-			return fail("BAD_REQUEST", "Item UoM compatibility mode is invalid", {
-				reason: "MASTER_INVALID_UOM_CONVERSION",
-				field: "compatibilityMode",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage: "Item UoM compatibility mode is invalid",
+			});
 	}
 }
 
 function invalidFactor(): Result<never> {
-	return fail(
-		"BAD_REQUEST",
-		`conversionFactor must be positive with at most ${ITEM_UOM_MAX_INTEGER_DIGITS} integer and ${ITEM_UOM_FACTOR_SCALE} fractional digits`,
-		{
-			reason: "MASTER_INVALID_UOM_CONVERSION",
-			field: "conversionFactor",
-		} satisfies MasterFailureDetails,
-	);
+	return errorResult.fail("BAD_REQUEST", {
+		publicMessage: "The request is invalid",
+	});
 }

@@ -1,5 +1,6 @@
 "use server";
 
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import {
 	acknowledgePolicy,
 	cancelApprovedLeaveRequest,
@@ -16,15 +17,10 @@ import {
 import { resolveHumanResourcesStore } from "@afenda/human-resources/resolve-store";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runMemberPermissionAction } from "@/app/actions/run-member-permission-action";
 import { createHumanResourcesCommandOptions } from "@/lib/erp/human-resources-command-options";
 import { createHumanResourcesIdentityResolverPort } from "@/lib/erp/human-resources-identity-resolver-port";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 const HR_SELF_SERVICE_PATH = "/client/human-resources";
@@ -76,10 +72,7 @@ async function resolveOwnEmployee(input: {
 			input,
 		);
 	if (!identity.ok || identity.data === null) {
-		return actionFail(
-			"FORBIDDEN",
-			"Your account is not linked to an active employee record.",
-		);
+		return errorResult.fail("FORBIDDEN");
 	}
 	return { ok: true, data: { employeeId: identity.data.employeeId } };
 }
@@ -109,11 +102,9 @@ export async function createOwnLeaveDraftAction(
 				requestedQuantity: formData.get("requestedQuantity"),
 			});
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid entitlement, date range, and quantity.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid entitlement, date range, and quantity.",
+				});
 			}
 
 			const employee = await resolveOwnEmployee({
@@ -136,10 +127,7 @@ export async function createOwnLeaveDraftAction(
 				entitlement.data === null ||
 				entitlement.data.employeeId !== employee.data.employeeId
 			) {
-				return actionFail(
-					"FORBIDDEN",
-					"That leave entitlement is not available.",
-				);
+				return errorResult.fail("FORBIDDEN");
 			}
 
 			const result = await createDraftLeaveRequest(
@@ -184,11 +172,9 @@ export async function changeOwnLeaveRequestAction(
 				intent: formData.get("intent"),
 			});
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"The leave request could not be updated.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "The leave request could not be updated.",
+				});
 			}
 
 			const employee = await resolveOwnEmployee({
@@ -209,7 +195,7 @@ export async function changeOwnLeaveRequestAction(
 				request.data === null ||
 				request.data.employeeId !== employee.data.employeeId
 			) {
-				return actionFail("FORBIDDEN", "That leave request is not available.");
+				return errorResult.fail("FORBIDDEN");
 			}
 
 			const execute =
@@ -251,11 +237,9 @@ export async function cancelOwnApprovedLeaveAction(
 				note: formData.get("note") || undefined,
 			});
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"The approved leave could not be cancelled.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "The approved leave could not be cancelled.",
+				});
 			}
 			const employee = await resolveOwnEmployee({
 				organizationId: session.orgId,
@@ -276,10 +260,7 @@ export async function cancelOwnApprovedLeaveAction(
 				request.data.employeeId !== employee.data.employeeId ||
 				request.data.status !== "approved"
 			) {
-				return actionFail(
-					"FORBIDDEN",
-					"That approved leave is not cancellable.",
-				);
+				return errorResult.fail("FORBIDDEN");
 			}
 
 			const result = await cancelApprovedLeaveRequest(
@@ -317,11 +298,9 @@ export async function submitOwnTimesheetAction(
 				expectedVersion: formData.get("expectedVersion"),
 			});
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"The timesheet could not be submitted.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "The timesheet could not be submitted.",
+				});
 			}
 			const employee = await resolveOwnEmployee({
 				organizationId: session.orgId,
@@ -341,7 +320,7 @@ export async function submitOwnTimesheetAction(
 				timesheet.data === null ||
 				timesheet.data.employeeId !== employee.data.employeeId
 			) {
-				return actionFail("FORBIDDEN", "That timesheet is not available.");
+				return errorResult.fail("FORBIDDEN");
 			}
 
 			const result = await submitTimesheet(
@@ -378,11 +357,9 @@ export async function acknowledgeOwnPolicyAction(
 				expectedVersion: formData.get("expectedVersion"),
 			});
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"The policy acknowledgement could not be recorded.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "The policy acknowledgement could not be recorded.",
+				});
 			}
 			const employee = await resolveOwnEmployee({
 				organizationId: session.orgId,
@@ -404,10 +381,7 @@ export async function acknowledgeOwnPolicyAction(
 				acknowledgement.data.employeeId !== employee.data.employeeId ||
 				acknowledgement.data.requirementStatus !== "outstanding"
 			) {
-				return actionFail(
-					"FORBIDDEN",
-					"That policy acknowledgement is not outstanding.",
-				);
+				return errorResult.fail("FORBIDDEN");
 			}
 
 			const result = await acknowledgePolicy(

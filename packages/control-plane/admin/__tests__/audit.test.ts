@@ -93,7 +93,7 @@ describe("@afenda/admin rbac audit", () => {
 		const result = await listRbacAudit({ orgId: "  " });
 		expect(result.ok).toBe(false);
 		if (!result.ok) {
-			expect(result.code).toBe("BAD_REQUEST");
+			expect(result.code).toBe("VALIDATION_ERROR");
 		}
 		expect(select).not.toHaveBeenCalled();
 	});
@@ -107,7 +107,7 @@ describe("@afenda/admin rbac audit", () => {
 		});
 		expect(result.ok).toBe(false);
 		if (!result.ok) {
-			expect(result.code).toBe("BAD_REQUEST");
+			expect(result.code).toBe("VALIDATION_ERROR");
 		}
 		expect(select).not.toHaveBeenCalled();
 	});
@@ -120,7 +120,7 @@ describe("@afenda/admin rbac audit", () => {
 		});
 		expect(result.ok).toBe(false);
 		if (!result.ok) {
-			expect(result.code).toBe("BAD_REQUEST");
+			expect(result.code).toBe("VALIDATION_ERROR");
 		}
 		expect(select).not.toHaveBeenCalled();
 	});
@@ -172,10 +172,9 @@ describe("@afenda/admin rbac audit", () => {
 			throw new Error("db down");
 		});
 		const { listRbacAudit } = await import("../src/audit");
-		await expect(listRbacAudit({ orgId: "org-1" })).resolves.toEqual({
+		await expect(listRbacAudit({ orgId: "org-1" })).resolves.toMatchObject({
 			ok: false,
 			code: "INTERNAL_ERROR",
-			message: "Failed to list RBAC audit rows",
 		});
 	});
 
@@ -189,7 +188,7 @@ describe("@afenda/admin rbac audit", () => {
 		});
 		expect(result.ok).toBe(false);
 		if (!result.ok) {
-			expect(result.code).toBe("BAD_REQUEST");
+			expect(result.code).toBe("VALIDATION_ERROR");
 		}
 		expect(insert).not.toHaveBeenCalled();
 	});
@@ -264,7 +263,7 @@ describe("@afenda/admin rbac audit", () => {
 		});
 		expect(result.ok).toBe(false);
 		if (!result.ok) {
-			expect(result.code).toBe("BAD_REQUEST");
+			expect(result.code).toBe("VALIDATION_ERROR");
 		}
 		expect(insert).not.toHaveBeenCalled();
 	});

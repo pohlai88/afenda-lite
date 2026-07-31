@@ -1,3 +1,4 @@
+import { errorProject } from "@afenda/errors";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { checkRateLimit } from "../src/check";
@@ -6,7 +7,7 @@ import {
 	resetResolvedRateLimitBackend,
 	resolveRateLimitBackend,
 } from "../src/resolve-store";
-import { toRateLimitAppError } from "../src/to-app-error";
+import { toRateLimitFailure } from "../src/to-failure";
 import type { RateLimitResult, RateLimitStore } from "../src/types";
 
 const envMocks = vi.hoisted(() => ({
@@ -181,23 +182,24 @@ describe("checkRateLimit (memory store)", () => {
 	});
 });
 
-describe("toRateLimitAppError", () => {
-	it("maps rate_limited and unavailable to AppError codes", () => {
-		const limited = toRateLimitAppError({
+describe("toRateLimitFailure", () => {
+	it("maps rate_limited and unavailable to canonical failures", () => {
+		const limited = toRateLimitFailure({
 			ok: false,
 			reason: "rate_limited",
 			retryAfterSeconds: 9,
 			quota: { limit: 5, remaining: 0, resetEpochMs: Date.now() + 9000 },
 		});
-		expect(limited.code).toBe("RATE_LIMITED");
-		expect(limited.details).toEqual({ retryAfter: 9 });
+		expect(errorProject.result(limited)).toMatchObject({
+			code: "RATE_LIMITED",
+			details: { retryAfterSeconds: 9 },
+		});
 
-		const unavailable = toRateLimitAppError({
+		const unavailable = toRateLimitFailure({
 			ok: false,
 			reason: "unavailable",
 			service: "upstash_redis",
 		});
-		expect(unavailable.code).toBe("SERVICE_UNAVAILABLE");
-		expect(unavailable.details).toEqual({ service: "upstash_redis" });
+		expect(errorProject.result(unavailable).code).toBe("SERVICE_UNAVAILABLE");
 	});
 });

@@ -1,10 +1,6 @@
-import { fail, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type { PayrollCommandOptions } from "../command-options";
-import {
-	PAYROLL_ERROR_INVALID_STATE,
-	payrollErrorDetails,
-} from "../error-codes";
 import {
 	PAYROLL_COMMAND_RUN_CALCULATE,
 	PAYROLL_QUERY_RUN_GET,
@@ -40,11 +36,9 @@ export function recordPayrollException(
 				return loaded;
 			}
 			if (loaded.data.status === "reversed") {
-				return fail(
-					"CONFLICT",
-					"Cannot record exceptions on reversed payroll runs",
-					payrollErrorDetails(PAYROLL_ERROR_INVALID_STATE),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Cannot record exceptions on reversed payroll runs",
+				});
 			}
 
 			return store.createException(

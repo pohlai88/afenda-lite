@@ -2,7 +2,7 @@
  * C01-A scoped work calendar — shared memory / Drizzle contract.
  */
 
-import { ok } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 import { afterAll, describe, expect, it } from "vitest";
 import type { HumanResourcesCommandOptions } from "../src/command-options";
 import { createAssignment } from "../src/core/assignment";
@@ -67,7 +67,7 @@ function withContextKeys(
 				if (!base.ok) {
 					return base;
 				}
-				return ok({
+				return errorResult.ok({
 					...base.data,
 					departmentId:
 						keys.departmentId === undefined

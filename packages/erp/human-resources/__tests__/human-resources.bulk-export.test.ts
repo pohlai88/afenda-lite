@@ -1,4 +1,4 @@
-import { fail, ok } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 import { describe, expect, it, vi } from "vitest";
 import {
 	HUMAN_RESOURCES_PERMISSION_PRIVACY_EXPORT,
@@ -30,7 +30,7 @@ const definition = {
 function source(organizationId = "org-1"): HumanResourcesBulkExportSource {
 	return {
 		list: vi.fn(async () =>
-			ok([
+			errorResult.ok([
 				{
 					organizationId,
 					recordId: "employee-1",
@@ -51,7 +51,9 @@ function source(organizationId = "org-1"): HumanResourcesBulkExportSource {
 function ports(allowed = true): HumanResourcesBulkExportPorts {
 	return {
 		authorize: vi.fn(async () => allowed),
-		recordPrivacyEvidence: vi.fn(async () => ok({ evidenceId: "evidence-1" })),
+		recordPrivacyEvidence: vi.fn(async () =>
+			errorResult.ok({ evidenceId: "evidence-1" }),
+		),
 	};
 }
 
@@ -66,7 +68,7 @@ describe("Human Resources bulk export", () => {
 		);
 
 		expect(result).toEqual(
-			ok({
+			errorResult.ok({
 				organizationId: "org-1",
 				exportType: "employee",
 				fields: ["employeeNumber", "legalName"],
@@ -119,7 +121,7 @@ describe("Human Resources bulk export", () => {
 	it("does not release rows when privacy evidence cannot be recorded", async () => {
 		const exportPorts = ports();
 		exportPorts.recordPrivacyEvidence = vi.fn(async () =>
-			fail("INTERNAL_ERROR", "audit unavailable"),
+			errorResult.fail("INTERNAL_ERROR"),
 		);
 		const result = await runHumanResourcesBulkExport(
 			request,
@@ -128,6 +130,6 @@ describe("Human Resources bulk export", () => {
 			exportPorts,
 		);
 
-		expect(result).toEqual(fail("INTERNAL_ERROR", "audit unavailable"));
+		expect(result).toEqual(errorResult.fail("INTERNAL_ERROR"));
 	});
 });

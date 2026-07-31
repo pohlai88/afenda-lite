@@ -1,7 +1,7 @@
 // biome-ignore-all lint/suspicious/useAwait: The deterministic memory adapter implements asynchronous corporate administration ports.
 // biome-ignore-all lint/suspicious/noShadow: Domain-local callback names mirror the company records they inspect.
 import { randomUUID } from "node:crypto";
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	isVisibleAtKnownTime,
 	matchesAsOf,
@@ -39,7 +39,6 @@ import type {
 	LegalCompanyListPage,
 	LegalCompanyTimelineEntry,
 } from "../../company/types";
-import { corporateAdministrationErrorDetails } from "../../error-codes";
 import {
 	companyActivityIdSchema,
 	companyFinancialYearIdSchema,
@@ -127,9 +126,9 @@ export function createMemoryCorporateAdministrationLegalCompanyStore(): MemoryCo
 				companies.get(key(input.organizationId, input.legalCompanyId)),
 			);
 			if (company === null) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
-			return ok({
+			return errorResult.ok({
 				...company,
 				currentJurisdictionProfile: findCurrentProfile({
 					organizationId: input.organizationId,
@@ -168,7 +167,7 @@ export function createMemoryCorporateAdministrationLegalCompanyStore(): MemoryCo
 					jurisdictionCountryCode: company.homeJurisdictionCountryCode,
 					entityType: "draft_legal_company",
 				}));
-			return ok({ items, nextCursor: null });
+			return errorResult.ok({ items, nextCursor: null });
 		},
 		async registerLegalCompanyDraft(input) {
 			const duplicate = Array.from(companies.values()).find(
@@ -177,14 +176,10 @@ export function createMemoryCorporateAdministrationLegalCompanyStore(): MemoryCo
 					codeKey(input.organizationId, input.normalizedCompanyCode),
 			);
 			if (duplicate !== undefined) {
-				return fail(
-					"CONFLICT",
-					"Corporate Administration legal company code already exists.",
-					corporateAdministrationErrorDetails(
-						"CORPORATE_ADMINISTRATION_CONFLICT",
-						{ field: "companyCode" },
-					),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage:
+						"Corporate Administration legal company code already exists.",
+				});
 			}
 			const legalCompanyId = legalCompanyIdSchema.parse(randomUUID());
 			const company: LegalCompany = {
@@ -210,34 +205,23 @@ export function createMemoryCorporateAdministrationLegalCompanyStore(): MemoryCo
 				key(input.organizationId, legalCompanyId),
 				cloneCompany(company),
 			);
-			return ok(company);
+			return errorResult.ok(company);
 		},
 		async updateLegalCompanyProfile(input) {
 			const existing = companies.get(
 				key(input.organizationId, input.legalCompanyId),
 			);
 			if (existing === undefined) {
-				return fail(
-					"NOT_FOUND",
-					"Corporate Administration legal company was not found.",
-					corporateAdministrationErrorDetails(
-						"CORPORATE_ADMINISTRATION_NOT_FOUND",
-						{ entityType: "legalCompany" },
-					),
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage:
+						"Corporate Administration legal company was not found.",
+				});
 			}
 			if (existing.version !== input.expectedVersion) {
-				return fail(
-					"CONFLICT",
-					"Corporate Administration legal company version is stale.",
-					corporateAdministrationErrorDetails(
-						"CORPORATE_ADMINISTRATION_STALE_VERSION",
-						{
-							expectedVersion: input.expectedVersion,
-							actualVersion: existing.version,
-						},
-					),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage:
+						"Corporate Administration legal company version is stale.",
+				});
 			}
 			const updated: LegalCompany = {
 				...existing,
@@ -246,7 +230,7 @@ export function createMemoryCorporateAdministrationLegalCompanyStore(): MemoryCo
 				version: input.expectedVersion + 1,
 			};
 			companies.set(key(input.organizationId, input.legalCompanyId), updated);
-			return ok(cloneCompany(updated));
+			return errorResult.ok(cloneCompany(updated));
 		},
 		async insertJurisdictionProfile(input) {
 			const jurisdictionProfileId = randomUUID();
@@ -276,19 +260,15 @@ export function createMemoryCorporateAdministrationLegalCompanyStore(): MemoryCo
 					updatedAt: input.recordedAt,
 				});
 			}
-			return ok(profile);
+			return errorResult.ok(profile);
 		},
 		async supersedeJurisdictionProfile(input) {
 			const superseded = jurisdictionProfiles.get(input.jurisdictionProfileId);
 			if (superseded === undefined) {
-				return fail(
-					"NOT_FOUND",
-					"Corporate Administration jurisdiction profile was not found.",
-					corporateAdministrationErrorDetails(
-						"CORPORATE_ADMINISTRATION_NOT_FOUND",
-						{ entityType: "companyJurisdictionProfile" },
-					),
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage:
+						"Corporate Administration jurisdiction profile was not found.",
+				});
 			}
 			const replacementId = randomUUID();
 			const replacement: CompanyJurisdictionProfile = {
@@ -312,16 +292,16 @@ export function createMemoryCorporateAdministrationLegalCompanyStore(): MemoryCo
 				version: input.expectedProfileVersion + 1,
 			});
 			jurisdictionProfiles.set(replacementId, cloneProfile(replacement));
-			return ok(replacement);
+			return errorResult.ok(replacement);
 		},
 		async findJurisdictionProfileAsOf(input) {
-			return ok(findCurrentProfile(input));
+			return errorResult.ok(findCurrentProfile(input));
 		},
 		async listJurisdictionProfiles(input) {
-			return ok(listProfiles(input).map(cloneProfile));
+			return errorResult.ok(listProfiles(input).map(cloneProfile));
 		},
 		async hasOverlappingJurisdictionProfile(input) {
-			return ok(
+			return errorResult.ok(
 				listProfiles(input).some(
 					(profile) =>
 						profile.jurisdictionProfileId !==
@@ -343,9 +323,9 @@ export function createMemoryCorporateAdministrationLegalCompanyStore(): MemoryCo
 		async findCompanyNameById(organizationId, companyNameId) {
 			const name = companyNames.get(companyNameId);
 			if (name === undefined || name.organizationId !== organizationId) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
-			return ok(cloneCompanyName(name));
+			return errorResult.ok(cloneCompanyName(name));
 		},
 		async getCompanyName(input) {
 			const name = companyNames.get(input.companyNameId);
@@ -355,9 +335,9 @@ export function createMemoryCorporateAdministrationLegalCompanyStore(): MemoryCo
 				name.legalCompanyId !== input.legalCompanyId ||
 				!isKnownAt(name, input.knownAt)
 			) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
-			return ok(cloneCompanyName(name));
+			return errorResult.ok(cloneCompanyName(name));
 		},
 		async listCompanyNames(query) {
 			const items: CompanyNameListItem[] = listCompanyNameRecords(query)
@@ -389,7 +369,10 @@ export function createMemoryCorporateAdministrationLegalCompanyStore(): MemoryCo
 					effectiveTo: name.effectiveTo,
 					status: name.status,
 				}));
-			return ok({ items, nextCursor: null } satisfies CompanyNameListPage);
+			return errorResult.ok({
+				items,
+				nextCursor: null,
+			} satisfies CompanyNameListPage);
 		},
 		async findCompanyNameAsOf(query) {
 			const name =
@@ -410,7 +393,7 @@ export function createMemoryCorporateAdministrationLegalCompanyStore(): MemoryCo
 							right.recordedAt.getTime() - left.recordedAt.getTime();
 						return recorded === 0 ? left.id.localeCompare(right.id) : recorded;
 					})[0] ?? null;
-			return ok(name === null ? null : cloneCompanyName(name));
+			return errorResult.ok(name === null ? null : cloneCompanyName(name));
 		},
 		async findOverlappingCompanyName(query) {
 			const name =
@@ -441,11 +424,11 @@ export function createMemoryCorporateAdministrationLegalCompanyStore(): MemoryCo
 							right.recordedAt.getTime() - left.recordedAt.getTime();
 						return recorded === 0 ? left.id.localeCompare(right.id) : recorded;
 					})[0] ?? null;
-			return ok(name === null ? null : cloneCompanyName(name));
+			return errorResult.ok(name === null ? null : cloneCompanyName(name));
 		},
 		async hasOverlappingCompanyName(input) {
 			const overlap = await this.findOverlappingCompanyName(input);
-			return overlap.ok ? ok(overlap.data !== null) : overlap;
+			return overlap.ok ? errorResult.ok(overlap.data !== null) : overlap;
 		},
 		async supersedeCompanyName(input) {
 			const predecessor = companyNames.get(input.companyNameId);
@@ -487,7 +470,7 @@ export function createMemoryCorporateAdministrationLegalCompanyStore(): MemoryCo
 				version: input.expectedNameVersion + 1,
 			});
 			companyNames.set(replacementId, cloneCompanyName(replacement));
-			return ok(cloneCompanyName(replacement));
+			return errorResult.ok(cloneCompanyName(replacement));
 		},
 		async retireCompanyName(input) {
 			const name = companyNames.get(input.companyNameId);
@@ -509,10 +492,10 @@ export function createMemoryCorporateAdministrationLegalCompanyStore(): MemoryCo
 				version: input.expectedNameVersion + 1,
 			};
 			companyNames.set(input.companyNameId, cloneCompanyName(retired));
-			return ok(cloneCompanyName(retired));
+			return errorResult.ok(cloneCompanyName(retired));
 		},
 		async lockCompanyNameScope() {
-			return ok(undefined);
+			return errorResult.ok(undefined);
 		},
 		async insertCompanyLegalForm(input) {
 			return setCompanyLegalFormRecord(input);
@@ -528,12 +511,12 @@ export function createMemoryCorporateAdministrationLegalCompanyStore(): MemoryCo
 				form.legalCompanyId !== input.legalCompanyId ||
 				!isKnownAt(form, input.knownAt)
 			) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
-			return ok(cloneLegalForm(form));
+			return errorResult.ok(cloneLegalForm(form));
 		},
 		async listCompanyLegalForms(input) {
-			return ok(
+			return errorResult.ok(
 				listLegalFormRecords(input)
 					.filter((form) => isKnownAt(form, input.knownAt))
 					.sort(compareLegalForms)
@@ -564,7 +547,7 @@ export function createMemoryCorporateAdministrationLegalCompanyStore(): MemoryCo
 							right.recordedAt.getTime() - left.recordedAt.getTime();
 						return recorded === 0 ? left.id.localeCompare(right.id) : recorded;
 					})[0] ?? null;
-			return ok(form === null ? null : cloneLegalForm(form));
+			return errorResult.ok(form === null ? null : cloneLegalForm(form));
 		},
 		async findOverlappingCompanyLegalForm(query) {
 			const form =
@@ -590,11 +573,11 @@ export function createMemoryCorporateAdministrationLegalCompanyStore(): MemoryCo
 							right.recordedAt.getTime() - left.recordedAt.getTime();
 						return recorded === 0 ? left.id.localeCompare(right.id) : recorded;
 					})[0] ?? null;
-			return ok(form === null ? null : cloneLegalForm(form));
+			return errorResult.ok(form === null ? null : cloneLegalForm(form));
 		},
 		async hasOverlappingCompanyLegalForm(input) {
 			const overlap = await this.findOverlappingCompanyLegalForm(input);
-			return overlap.ok ? ok(overlap.data !== null) : overlap;
+			return overlap.ok ? errorResult.ok(overlap.data !== null) : overlap;
 		},
 		async supersedeCompanyLegalForm(input) {
 			const predecessor = legalForms.get(input.companyLegalFormHistoryId);
@@ -634,10 +617,10 @@ export function createMemoryCorporateAdministrationLegalCompanyStore(): MemoryCo
 				version: input.expectedLegalFormVersion + 1,
 			});
 			legalForms.set(replacementId, cloneLegalForm(replacement));
-			return ok(cloneLegalForm(replacement));
+			return errorResult.ok(cloneLegalForm(replacement));
 		},
 		async lockCompanyLegalFormScope() {
-			return ok(undefined);
+			return errorResult.ok(undefined);
 		},
 		async registerCompanyIdentifier(input) {
 			const overlap = validateIdentifierEffectiveRange({
@@ -662,7 +645,7 @@ export function createMemoryCorporateAdministrationLegalCompanyStore(): MemoryCo
 				updatedAt: input.recordedAt,
 				expectedVersion: input.expectedCompanyVersion,
 			});
-			return ok(cloneIdentifier(identifier));
+			return errorResult.ok(cloneIdentifier(identifier));
 		},
 		async supersedeCompanyIdentifier(input) {
 			const predecessor = identifiers.get(input.companyIdentifierId);
@@ -701,7 +684,7 @@ export function createMemoryCorporateAdministrationLegalCompanyStore(): MemoryCo
 				version: input.expectedIdentifierVersion + 1,
 			});
 			identifiers.set(replacementId, cloneIdentifier(replacement));
-			return ok(cloneIdentifier(replacement));
+			return errorResult.ok(cloneIdentifier(replacement));
 		},
 		async retireCompanyIdentifier(input) {
 			const identifier = identifiers.get(input.companyIdentifierId);
@@ -729,7 +712,7 @@ export function createMemoryCorporateAdministrationLegalCompanyStore(): MemoryCo
 				version: input.expectedIdentifierVersion + 1,
 			};
 			identifiers.set(input.companyIdentifierId, cloneIdentifier(retired));
-			return ok(cloneIdentifier(retired));
+			return errorResult.ok(cloneIdentifier(retired));
 		},
 		async getCompanyIdentifier(input) {
 			const identifier = identifiers.get(input.companyIdentifierId);
@@ -739,9 +722,9 @@ export function createMemoryCorporateAdministrationLegalCompanyStore(): MemoryCo
 				identifier.legalCompanyId !== input.legalCompanyId ||
 				!isKnownAt(identifier, input.knownAt)
 			) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
-			return ok(cloneIdentifier(identifier));
+			return errorResult.ok(cloneIdentifier(identifier));
 		},
 		async listCompanyIdentifiers(query) {
 			const items: CompanyIdentifierListItem[] = listIdentifierRecords(query)
@@ -764,7 +747,7 @@ export function createMemoryCorporateAdministrationLegalCompanyStore(): MemoryCo
 				.sort(compareIdentifiers)
 				.slice(0, query.pageSize ?? 50)
 				.map(toIdentifierListItem);
-			return ok({
+			return errorResult.ok({
 				items,
 				nextCursor: null,
 			} satisfies CompanyIdentifierListPage);
@@ -795,7 +778,9 @@ export function createMemoryCorporateAdministrationLegalCompanyStore(): MemoryCo
 							right.recordedAt.getTime() - left.recordedAt.getTime();
 						return recorded === 0 ? left.id.localeCompare(right.id) : recorded;
 					})[0] ?? null;
-			return ok(identifier === null ? null : cloneIdentifier(identifier));
+			return errorResult.ok(
+				identifier === null ? null : cloneIdentifier(identifier),
+			);
 		},
 		async findOverlappingCompanyIdentifier(query) {
 			const identifier =
@@ -829,10 +814,12 @@ export function createMemoryCorporateAdministrationLegalCompanyStore(): MemoryCo
 							right.recordedAt.getTime() - left.recordedAt.getTime();
 						return recorded === 0 ? left.id.localeCompare(right.id) : recorded;
 					})[0] ?? null;
-			return ok(identifier === null ? null : cloneIdentifier(identifier));
+			return errorResult.ok(
+				identifier === null ? null : cloneIdentifier(identifier),
+			);
 		},
 		async lockCompanyIdentifierScope() {
-			return ok(undefined);
+			return errorResult.ok(undefined);
 		},
 		async setCompanyFinancialYear(input) {
 			const overlap = validateFinancialYearChronology({
@@ -852,7 +839,7 @@ export function createMemoryCorporateAdministrationLegalCompanyStore(): MemoryCo
 				updatedAt: input.recordedAt,
 				expectedVersion: input.expectedCompanyVersion,
 			});
-			return ok(cloneFinancialYear(financialYear));
+			return errorResult.ok(cloneFinancialYear(financialYear));
 		},
 		async findCompanyFinancialYearAsOf(query) {
 			const financialYear =
@@ -869,7 +856,7 @@ export function createMemoryCorporateAdministrationLegalCompanyStore(): MemoryCo
 							right.recordedAt.getTime() - left.recordedAt.getTime();
 						return recorded === 0 ? left.id.localeCompare(right.id) : recorded;
 					})[0] ?? null;
-			return ok(
+			return errorResult.ok(
 				financialYear === null ? null : cloneFinancialYear(financialYear),
 			);
 		},
@@ -892,12 +879,12 @@ export function createMemoryCorporateAdministrationLegalCompanyStore(): MemoryCo
 							right.recordedAt.getTime() - left.recordedAt.getTime();
 						return recorded === 0 ? left.id.localeCompare(right.id) : recorded;
 					})[0] ?? null;
-			return ok(
+			return errorResult.ok(
 				financialYear === null ? null : cloneFinancialYear(financialYear),
 			);
 		},
 		async lockCompanyFinancialYearScope() {
-			return ok(undefined);
+			return errorResult.ok(undefined);
 		},
 		async registerCompanyActivity(input) {
 			const overlap = validateActivityEffectiveRange({
@@ -920,7 +907,7 @@ export function createMemoryCorporateAdministrationLegalCompanyStore(): MemoryCo
 				updatedAt: input.recordedAt,
 				expectedVersion: input.expectedCompanyVersion,
 			});
-			return ok(cloneActivity(activity));
+			return errorResult.ok(cloneActivity(activity));
 		},
 		async endCompanyActivity(input) {
 			const activity = activities.get(input.companyActivityId);
@@ -947,7 +934,7 @@ export function createMemoryCorporateAdministrationLegalCompanyStore(): MemoryCo
 				version: input.expectedActivityVersion + 1,
 			};
 			activities.set(input.companyActivityId, cloneActivity(ended));
-			return ok(cloneActivity(ended));
+			return errorResult.ok(cloneActivity(ended));
 		},
 		async getCompanyActivity(input) {
 			const activity = activities.get(input.companyActivityId);
@@ -957,12 +944,12 @@ export function createMemoryCorporateAdministrationLegalCompanyStore(): MemoryCo
 				activity.legalCompanyId !== input.legalCompanyId ||
 				!isKnownAt(activity, input.knownAt)
 			) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
-			return ok(cloneActivity(activity));
+			return errorResult.ok(cloneActivity(activity));
 		},
 		async listCompanyActivitiesAsOf(query) {
-			return ok(
+			return errorResult.ok(
 				listActivityRecords(query)
 					.filter(
 						(activity) =>
@@ -995,9 +982,9 @@ export function createMemoryCorporateAdministrationLegalCompanyStore(): MemoryCo
 				companies.get(key(input.organizationId, input.legalCompanyId)),
 			);
 			if (company === null) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
-			return ok({
+			return errorResult.ok({
 				...company,
 				currentJurisdictionProfile: findCurrentProfile({
 					organizationId: input.organizationId,
@@ -1046,7 +1033,7 @@ export function createMemoryCorporateAdministrationLegalCompanyStore(): MemoryCo
 				updatedByUserId: input.recordedByUserId,
 				updatedAt: input.recordedAt,
 			});
-			return ok(cloneStatusHistory(record));
+			return errorResult.ok(cloneStatusHistory(record));
 		},
 		async findCompanyStatusAsOf(query) {
 			const status =
@@ -1064,7 +1051,9 @@ export function createMemoryCorporateAdministrationLegalCompanyStore(): MemoryCo
 							right.version - left.version ||
 							left.id.localeCompare(right.id),
 					)[0] ?? null;
-			return ok(status === null ? null : cloneStatusHistory(status));
+			return errorResult.ok(
+				status === null ? null : cloneStatusHistory(status),
+			);
 		},
 		async listCompaniesByStatus(query) {
 			const items = Array.from(companies.values())
@@ -1095,7 +1084,7 @@ export function createMemoryCorporateAdministrationLegalCompanyStore(): MemoryCo
 					jurisdictionCountryCode: company.homeJurisdictionCountryCode,
 					entityType: "draft_legal_company",
 				}));
-			return ok({ items, nextCursor: null });
+			return errorResult.ok({ items, nextCursor: null });
 		},
 		async getLegalCompanyTimeline(input) {
 			const company = companies.get(
@@ -1127,7 +1116,7 @@ export function createMemoryCorporateAdministrationLegalCompanyStore(): MemoryCo
 					});
 				}
 			}
-			return ok(
+			return errorResult.ok(
 				entries.sort((left, right) =>
 					"recordedAt" in left && "recordedAt" in right
 						? new Date(left.recordedAt).getTime() -
@@ -1438,7 +1427,7 @@ export function createMemoryCorporateAdministrationLegalCompanyStore(): MemoryCo
 			updatedAt: input.recordedAt,
 			expectedVersion: input.expectedCompanyVersion,
 		});
-		return Promise.resolve(ok(cloneCompanyName(name)));
+		return Promise.resolve(errorResult.ok(cloneCompanyName(name)));
 	}
 
 	function setCompanyLegalFormRecord(
@@ -1471,7 +1460,7 @@ export function createMemoryCorporateAdministrationLegalCompanyStore(): MemoryCo
 			updatedAt: input.recordedAt,
 			expectedVersion: input.expectedCompanyVersion,
 		});
-		return Promise.resolve(ok(cloneLegalForm(form)));
+		return Promise.resolve(errorResult.ok(cloneLegalForm(form)));
 	}
 }
 
@@ -1479,47 +1468,31 @@ function cloneNullable(company: LegalCompany | undefined): LegalCompany | null {
 	return company === undefined ? null : cloneCompany(company);
 }
 
-function notFound(entityType: string): Result<never> {
-	return fail(
-		"NOT_FOUND",
-		"Corporate Administration record was not found.",
-		corporateAdministrationErrorDetails("CORPORATE_ADMINISTRATION_NOT_FOUND", {
-			entityType,
-		}),
-	);
+function notFound(_entityType: string): Result<never> {
+	return errorResult.fail("NOT_FOUND", {
+		publicMessage: "Corporate Administration record was not found.",
+	});
 }
 
-function stale(expectedVersion: number, actualVersion: number): Result<never> {
-	return fail(
-		"CONFLICT",
-		"Corporate Administration record version is stale.",
-		corporateAdministrationErrorDetails(
-			"CORPORATE_ADMINISTRATION_STALE_VERSION",
-			{ expectedVersion, actualVersion },
-		),
-	);
+function stale(
+	_expectedVersion: number,
+	_actualVersion: number,
+): Result<never> {
+	return errorResult.fail("CONFLICT", {
+		publicMessage: "Corporate Administration record version is stale.",
+	});
 }
 
-function invalidTransition(field: string): Result<never> {
-	return fail(
-		"CONFLICT",
-		"Corporate Administration record transition is invalid.",
-		corporateAdministrationErrorDetails(
-			"CORPORATE_ADMINISTRATION_INVALID_TRANSITION",
-			{ field },
-		),
-	);
+function invalidTransition(_field: string): Result<never> {
+	return errorResult.fail("CONFLICT", {
+		publicMessage: "Corporate Administration record transition is invalid.",
+	});
 }
 
-function validationFailed(field: string): Result<never> {
-	return fail(
-		"VALIDATION_ERROR",
-		"Corporate Administration record validation failed.",
-		corporateAdministrationErrorDetails(
-			"CORPORATE_ADMINISTRATION_VALIDATION_FAILED",
-			{ field },
-		),
-	);
+function validationFailed(_field: string): Result<never> {
+	return errorResult.fail("VALIDATION_ERROR", {
+		publicMessage: "Corporate Administration record validation failed.",
+	});
 }
 
 function isKnownAt(

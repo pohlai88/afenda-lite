@@ -1,4 +1,4 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { z } from "zod";
 
 import {
@@ -86,7 +86,7 @@ export async function runWorkforcePlanningCommand<
 		resolveResource: async (data) => resolveWorkforcePlanningResource(data),
 		resolveDeps: (opts) => {
 			const { store, ports } = resolveCommandDeps(opts);
-			return ok({ store, ports });
+			return errorResult.ok({ store, ports });
 		},
 		execute: config.execute,
 	});
@@ -114,7 +114,7 @@ export async function runWorkforcePlanningQuery<
 		project: projectAuthorizedFields,
 		resolveDeps: (opts) => {
 			const { store } = resolveCommandDeps(opts);
-			return ok({ store });
+			return errorResult.ok({ store });
 		},
 		execute: config.execute,
 	});

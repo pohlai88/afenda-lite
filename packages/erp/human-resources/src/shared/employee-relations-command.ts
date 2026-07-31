@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { z } from "zod";
 import {
 	type HumanResourcesCommandOptions,
@@ -65,7 +65,7 @@ export async function runEmployeeRelationsCommand<
 		resolveDeps: (opts) => {
 			const { store, ports, authorization, identityResolver } =
 				resolveCommandDeps(opts);
-			return ok({ store, ports, authorization, identityResolver });
+			return errorResult.ok({ store, ports, authorization, identityResolver });
 		},
 		execute: config.execute,
 	});
@@ -102,7 +102,7 @@ export async function runEmployeeRelationsQuery<
 		resolveDeps: (opts) => {
 			const { store, authorization, identityResolver } =
 				resolveCommandDeps(opts);
-			return ok({ store, authorization, identityResolver });
+			return errorResult.ok({ store, authorization, identityResolver });
 		},
 		execute: config.execute,
 	});
@@ -112,11 +112,11 @@ export async function requireEmployeeRelationsIdentityResolver(
 	identityResolver: HumanResourcesIdentityResolverPort | undefined,
 ): Promise<Result<HumanResourcesIdentityResolverPort>> {
 	if (!identityResolver) {
-		return await fail(
-			"UNAUTHORIZED",
-			"Human Resources identity resolver port is required",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_UNAUTHORIZED),
-		);
+		return await errorResult.fail("UNAUTHORIZED", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_UNAUTHORIZED,
+			),
+		});
 	}
-	return await ok(identityResolver);
+	return await errorResult.ok(identityResolver);
 }

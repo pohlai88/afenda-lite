@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import { type EmployeeListPage, listEmployees } from "@afenda/human-resources";
 import {
 	deleteSearchDocument,
@@ -103,10 +103,7 @@ export async function searchHumanResourcesEmployees(
 	deps: SearchHumanResourcesEmployeesDeps = productionSearchDeps(),
 ): Promise<Result<SearchHit[]>> {
 	if (!(await deps.hasPermission(input.session))) {
-		return fail(
-			"FORBIDDEN",
-			"You do not have permission to search Human Resources employees",
-		);
+		return errorResult.fail("FORBIDDEN");
 	}
 
 	const searched = await deps.search({
@@ -128,13 +125,10 @@ export async function searchHumanResourcesEmployees(
 				HUMAN_RESOURCES_EMPLOYEE_SEARCH_PERMISSION,
 	);
 	if (invalidHit) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Human Resources search returned a document outside its authorization boundary",
-		);
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 
-	return ok(searched.data);
+	return errorResult.ok(searched.data);
 }
 
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Projection pagination keeps tenant validation, upsert, and prune ordering explicit.
@@ -165,10 +159,7 @@ export async function rebuildHumanResourcesEmployeeSearch(
 				(employee) => employee.organizationId !== input.organizationId,
 			)
 		) {
-			return fail(
-				"INTERNAL_ERROR",
-				"Human Resources search projection received a cross-tenant employee",
-			);
+			return errorResult.fail("INTERNAL_ERROR");
 		}
 
 		if (employees.length > 0) {
@@ -197,10 +188,7 @@ export async function rebuildHumanResourcesEmployeeSearch(
 		}
 		visited += employees.length;
 		if (employees.length === 0 && visited < totalCount) {
-			return fail(
-				"INTERNAL_ERROR",
-				"Human Resources search projection pagination ended early",
-			);
+			return errorResult.fail("INTERNAL_ERROR");
 		}
 
 		page += 1;
@@ -235,7 +223,7 @@ export async function rebuildHumanResourcesEmployeeSearch(
 		}
 	}
 
-	return ok({
+	return errorResult.ok({
 		organizationId: input.organizationId,
 		projected: documents.length,
 		pruned,

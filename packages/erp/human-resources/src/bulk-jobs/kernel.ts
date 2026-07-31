@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	DEFAULT_HUMAN_RESOURCES_BULK_ROWS_PER_RUN,
@@ -103,7 +103,9 @@ export async function enqueueHumanResourcesBulkImport<Row>(
 		maxRowsPerRun < 1 ||
 		maxRowsPerRun > MAX_HUMAN_RESOURCES_BULK_ROWS
 	) {
-		return fail("VALIDATION_ERROR", "Invalid Human Resources bulk job bounds");
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+		});
 	}
 	const requestFingerprint = fingerprintHumanResourcesBulkJob(input);
 	const existing = await store.findImportJob(input);
@@ -112,8 +114,10 @@ export async function enqueueHumanResourcesBulkImport<Row>(
 	}
 	if (existing.data) {
 		return existing.data.requestFingerprint === requestFingerprint
-			? ok(existing.data)
-			: fail("CONFLICT", "Bulk import idempotency conflict");
+			? errorResult.ok(existing.data)
+			: errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+				});
 	}
 	const id = randomUUID();
 	const job: HumanResourcesBulkImportJob = {
@@ -189,8 +193,10 @@ export async function enqueueHumanResourcesBulkExport(
 	}
 	if (existing.data) {
 		return existing.data.requestFingerprint === requestFingerprint
-			? ok(existing.data)
-			: fail("CONFLICT", "Bulk export idempotency conflict");
+			? errorResult.ok(existing.data)
+			: errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+				});
 	}
 	const id = randomUUID();
 	const job: HumanResourcesBulkExportJob = {

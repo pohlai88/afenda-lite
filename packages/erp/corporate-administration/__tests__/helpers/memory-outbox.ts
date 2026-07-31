@@ -4,7 +4,7 @@ import type {
 	CorporateAdministrationPendingEvent,
 } from "@afenda/corporate-administration";
 import { createCorporateAdministrationDomainEventEnvelope } from "@afenda/corporate-administration";
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 export function createMemoryCorporateAdministrationOutboxPort(input?: {
 	onAppend?: (events: readonly CorporateAdministrationPendingEvent[]) => void;
@@ -17,7 +17,7 @@ export function createMemoryCorporateAdministrationOutboxPort(input?: {
 				createCorporateAdministrationDomainEventEnvelope(event),
 			);
 			input?.onAppend?.(validatedEvents);
-			return ok(undefined);
+			return errorResult.ok(undefined);
 		},
 	});
 }

@@ -1,14 +1,10 @@
 "use server";
 
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { getPurchaseOrderById, type PurchaseOrder } from "@afenda/purchasing";
-
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
 import { createPurchasingCommandOptions } from "@/lib/erp/purchasing-command-options";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
 
 export interface GetPurchaseOrderActionData {
 	order: PurchaseOrder;
@@ -40,7 +36,9 @@ export async function getPurchaseOrderAction(
 				return mapped;
 			}
 			if (mapped.data === null) {
-				return actionFail("NOT_FOUND", "Purchase order not found");
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "Purchase order not found",
+				});
 			}
 			return { ok: true, data: { order: mapped.data } };
 		},

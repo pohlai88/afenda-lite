@@ -1,6 +1,4 @@
-import { fail, type Result } from "@afenda/errors/result";
-
-import type { MasterFailureDetails } from "../../contracts/reasons";
+import { errorResult, type Result } from "@afenda/errors";
 import type { MasterStatus } from "../../types";
 
 export type ExtensionParentType =
@@ -16,31 +14,27 @@ export type ExtensionParentStatus = MasterStatus | "merged";
 
 /** Produces the package-standard typed validation failure for an extension field. */
 export function extensionValidationFailure(
-	message: string,
-	field: string,
+	_message: string,
+	_field: string,
 ): Result<never> {
-	return fail("BAD_REQUEST", message, {
-		reason: "MASTER_VALIDATION_FAILED",
-		field,
-	} satisfies MasterFailureDetails);
+	return errorResult.fail("BAD_REQUEST", {
+		publicMessage: "The request is invalid",
+	});
 }
 
 export function extensionParentNotFound(
-	parentType: ExtensionParentType,
+	_parentType: ExtensionParentType,
 ): Result<never> {
-	return fail("NOT_FOUND", `${parentType} not found`, {
-		reason: "MASTER_NOT_FOUND",
-		parentType,
-	} satisfies MasterFailureDetails);
+	return errorResult.fail("NOT_FOUND", {
+		publicMessage: "The requested resource was not found",
+	});
 }
 
 export function extensionParentStateFailure(
-	parentType: ExtensionParentType,
-	status: ExtensionParentStatus,
+	_parentType: ExtensionParentType,
+	_status: ExtensionParentStatus,
 ): Result<never> {
-	return fail("CONFLICT", `${parentType} cannot accept new extensions`, {
-		reason: "MASTER_INVALID_STATE",
-		parentType,
-		status,
-	} satisfies MasterFailureDetails);
+	return errorResult.fail("CONFLICT", {
+		publicMessage: "The request conflicts with current state",
+	});
 }

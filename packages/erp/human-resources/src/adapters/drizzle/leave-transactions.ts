@@ -15,7 +15,7 @@ import {
 	type NeonHttpTransactionResults,
 	runNeonHttpTransaction,
 } from "@afenda/db";
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { OutboxFactInput } from "../../ports";
 
 /**
@@ -384,22 +384,19 @@ export function resolveIdempotentCreateReplay<T>(params: {
 		}
 		if (replay.data !== null) {
 			if (replay.data.fingerprint === params.expectedFingerprint) {
-				return ok(replay.data.value);
+				return errorResult.ok(replay.data.value);
 			}
-			return fail(
-				"CONFLICT",
-				params.mismatchMessage ??
-					"Idempotency key already used with different data",
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "The request conflicts with current state",
+			});
 		}
 		if (attempt < maxAttempts - 1) {
 			await new Promise((resolve) => setTimeout(resolve, 25 * (attempt + 1)));
 			return resolveAttempt(attempt + 1);
 		}
-		return fail(
-			"CONFLICT",
-			params.conflictMessage ?? "Idempotency key conflict",
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "The request conflicts with current state",
+		});
 	};
 	return resolveAttempt(0);
 }
@@ -423,15 +420,21 @@ export function validateTransactionInput(input: {
 	actorUserId: string;
 }): Result<void> {
 	if (!input.organizationId) {
-		return fail("VALIDATION_ERROR", "organizationId is required");
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+		});
 	}
 	if (!input.correlationId) {
-		return fail("VALIDATION_ERROR", "correlationId is required");
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+		});
 	}
 	if (!input.actorUserId) {
-		return fail("VALIDATION_ERROR", "actorUserId is required");
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+		});
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 /**

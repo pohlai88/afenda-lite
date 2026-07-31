@@ -1,4 +1,4 @@
-import { fail, ok } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -24,7 +24,7 @@ const authorization = {
 };
 const successfulEffects = {
 	emit() {
-		return Promise.resolve(ok(undefined));
+		return Promise.resolve(errorResult.ok(undefined));
 	},
 };
 
@@ -138,7 +138,7 @@ describe("accounting transaction rollback", () => {
 				...options,
 				effects: {
 					emit() {
-						return Promise.resolve(fail("INTERNAL_ERROR", "outbox failed"));
+						return Promise.resolve(errorResult.fail("INTERNAL_ERROR"));
 					},
 				},
 			},
@@ -180,7 +180,7 @@ describe("accounting transaction rollback", () => {
 				...options,
 				effects: {
 					emit() {
-						return Promise.resolve(fail("INTERNAL_ERROR", "outbox failed"));
+						return Promise.resolve(errorResult.fail("INTERNAL_ERROR"));
 					},
 				},
 			},

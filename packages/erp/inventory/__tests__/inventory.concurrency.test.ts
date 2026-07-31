@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
 
-import {
-	INVENTORY_ERROR_IDEMPOTENCY_CONFLICT,
-	INVENTORY_ERROR_INSUFFICIENT_AVAILABLE,
-} from "../src/error-codes";
 import { createMemoryInventoryStore } from "../src/memory-store";
 import {
 	addStockMovementLine,
@@ -142,9 +138,7 @@ describe("@afenda/inventory concurrency", () => {
 		expect(okResults).toHaveLength(1);
 		expect(failedResults).toHaveLength(1);
 		if (failedResults.length === 1 && !failedResults[0].ok) {
-			expect(failedResults[0].details?.inventoryCode).toBe(
-				INVENTORY_ERROR_INSUFFICIENT_AVAILABLE,
-			);
+			expect(failedResults[0].code).toBe("CONFLICT");
 		}
 
 		const availability = await getStockAvailability(
@@ -264,9 +258,6 @@ describe("@afenda/inventory concurrency", () => {
 		expect(conflict.ok).toBe(false);
 		if (!conflict.ok) {
 			expect(conflict.code).toBe("CONFLICT");
-			expect(conflict.details?.inventoryCode).toBe(
-				INVENTORY_ERROR_IDEMPOTENCY_CONFLICT,
-			);
 		}
 	});
 });

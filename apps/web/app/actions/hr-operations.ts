@@ -1,14 +1,10 @@
 "use server";
 
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { queryDomainEvents, retryFailedDomainEvent } from "@afenda/events";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-
 import { runHrIntegrationOperatorPermissionAction as runOperatorPermissionAction } from "@/app/actions/run-hr-operator-permission-action";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 const retrySchema = z.object({
@@ -30,11 +26,9 @@ export async function retryFailedHrEventAction(
 				confirmation: formData.get("confirmation"),
 			});
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Confirm the failed HR event retry.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Confirm the failed HR event retry.",
+				});
 			}
 
 			const target = await queryDomainEvents({
@@ -46,7 +40,9 @@ export async function retryFailedHrEventAction(
 				pageSize: 1,
 			});
 			if (!target.ok || target.data.total !== 1) {
-				return actionFail("NOT_FOUND", "Failed HR event not found.");
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "Failed HR event not found.",
+				});
 			}
 
 			const retried = await retryFailedDomainEvent({
@@ -54,7 +50,7 @@ export async function retryFailedHrEventAction(
 				id: parsed.data.eventId,
 			});
 			if (!retried.ok) {
-				return actionFail(retried.code, retried.message, retried.details);
+				return retried;
 			}
 
 			revalidatePath("/admin/human-resources/operations");

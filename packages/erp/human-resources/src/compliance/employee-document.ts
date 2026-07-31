@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
@@ -131,13 +131,14 @@ export function registerEmployeeDocument(
 				if (
 					existingByKey.data.createRequestFingerprint !== requestFingerprint
 				) {
-					return fail(
-						"CONFLICT",
-						"Idempotency key reused with different payload",
-						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-					);
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+						internalContext: humanResourcesErrorDetails(
+							HUMAN_RESOURCES_ERROR_CONFLICT,
+						),
+					});
 				}
-				return ok(existingByKey.data.document);
+				return errorResult.ok(existingByKey.data.document);
 			}
 
 			const identifierLast4 =
@@ -195,7 +196,9 @@ export function updateEmployeeDocumentMetadata(
 					return existing;
 				}
 				if (existing.data === null) {
-					return fail("NOT_FOUND", "Employee document not found");
+					return errorResult.fail("NOT_FOUND", {
+						publicMessage: "The requested resource was not found",
+					});
 				}
 				const dateRange = assertValidDocumentDateRange({
 					issuedOn: existing.data.issuedOn,
@@ -346,14 +349,13 @@ export function getEmployeeDocument(
 				return documentResult;
 			}
 			if (documentResult.data === null) {
-				return fail("NOT_FOUND", "Employee document not found");
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+				});
 			}
 
 			if (!identityResolver) {
-				return fail(
-					"UNAUTHORIZED",
-					"Identity resolver is required for employee document access",
-				);
+				return errorResult.fail("UNAUTHORIZED");
 			}
 			const scope = await requireComplianceEmployeeReadScope(
 				identityResolver,
@@ -373,10 +375,12 @@ export function getEmployeeDocument(
 				actorUserId: data.actorUserId,
 			});
 			if (sensitive.ok) {
-				return ok(toEmployeeDocumentSensitiveDetail(documentResult.data));
+				return errorResult.ok(
+					toEmployeeDocumentSensitiveDetail(documentResult.data),
+				);
 			}
 
-			return ok(toEmployeeDocumentListItem(documentResult.data));
+			return errorResult.ok(toEmployeeDocumentListItem(documentResult.data));
 		},
 	});
 }

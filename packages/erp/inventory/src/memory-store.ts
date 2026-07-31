@@ -1,23 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { fail, ok, type Result } from "@afenda/errors/result";
-
-import {
-	INVENTORY_ERROR_CODE_CONFLICT,
-	INVENTORY_ERROR_INSUFFICIENT_AVAILABLE,
-	INVENTORY_ERROR_INSUFFICIENT_ON_HAND,
-	INVENTORY_ERROR_INVALID_TRANSFER,
-	INVENTORY_ERROR_MOVEMENT_ALREADY_CANCELLED,
-	INVENTORY_ERROR_MOVEMENT_ALREADY_POSTED,
-	INVENTORY_ERROR_MOVEMENT_EMPTY_LINES,
-	INVENTORY_ERROR_MOVEMENT_NOT_DRAFT,
-	INVENTORY_ERROR_MOVEMENT_NOT_FOUND,
-	INVENTORY_ERROR_MOVEMENT_VERSION_CONFLICT,
-	INVENTORY_ERROR_RESERVATION_ALREADY_RELEASED,
-	INVENTORY_ERROR_RESERVATION_NOT_FOUND,
-	INVENTORY_ERROR_RESERVATION_VERSION_CONFLICT,
-	inventoryErrorDetails,
-} from "./error-codes";
+import { errorResult, type Result } from "@afenda/errors";
 import type { MutationPorts } from "./ports";
 import { resolveAsync } from "./resolve-async";
 import {
@@ -104,73 +87,58 @@ function decideMemoryMovementPost(
 ): Result<MemoryPostDecision> {
 	if (movement.status === "posted") {
 		return movement.postIdempotencyKey === record.postIdempotencyKey
-			? ok({ kind: "replay" })
-			: fail(
-					"CONFLICT",
-					"Stock movement is already posted",
-					inventoryErrorDetails(INVENTORY_ERROR_MOVEMENT_ALREADY_POSTED),
-				);
+			? errorResult.ok({ kind: "replay" })
+			: errorResult.fail("CONFLICT", {
+					publicMessage: "Stock movement is already posted",
+				});
 	}
 	if (movement.status === "cancelled") {
-		return fail(
-			"CONFLICT",
-			"Cancelled stock movements cannot be posted",
-			inventoryErrorDetails(INVENTORY_ERROR_MOVEMENT_ALREADY_CANCELLED),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Cancelled stock movements cannot be posted",
+		});
 	}
 	if (movement.status !== "draft") {
-		return fail(
-			"CONFLICT",
-			"Stock movement is not in draft status",
-			inventoryErrorDetails(INVENTORY_ERROR_MOVEMENT_NOT_DRAFT),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Stock movement is not in draft status",
+		});
 	}
 	if (movement.version !== record.expectedVersion) {
-		return fail(
-			"CONFLICT",
-			"Stock movement version conflict",
-			inventoryErrorDetails(INVENTORY_ERROR_MOVEMENT_VERSION_CONFLICT),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Stock movement version conflict",
+		});
 	}
 	if (movement.lines.length === 0) {
-		return fail(
-			"CONFLICT",
-			"Cannot post stock movement without lines",
-			inventoryErrorDetails(INVENTORY_ERROR_MOVEMENT_EMPTY_LINES),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Cannot post stock movement without lines",
+		});
 	}
 	if (movement.reservationId !== null && movement.movementType !== "issue") {
-		return fail(
-			"CONFLICT",
-			"Only issue movements may consume reservations",
-			inventoryErrorDetails(INVENTORY_ERROR_MOVEMENT_NOT_DRAFT),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Only issue movements may consume reservations",
+		});
 	}
 	try {
-		return ok({ effects: computeBalanceEffects(movement), kind: "proceed" });
+		return errorResult.ok({
+			effects: computeBalanceEffects(movement),
+			kind: "proceed",
+		});
 	} catch {
-		return fail(
-			"CONFLICT",
-			"Stock movement warehouses are invalid",
-			inventoryErrorDetails(INVENTORY_ERROR_INVALID_TRANSFER),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Stock movement warehouses are invalid",
+		});
 	}
 }
 
 function movementNotFound(): Result<never> {
-	return fail(
-		"NOT_FOUND",
-		"Stock movement not found",
-		inventoryErrorDetails(INVENTORY_ERROR_MOVEMENT_NOT_FOUND),
-	);
+	return errorResult.fail("NOT_FOUND", {
+		publicMessage: "Stock movement not found",
+	});
 }
 
 function reservationNotFound(): Result<never> {
-	return fail(
-		"NOT_FOUND",
-		"Stock reservation not found",
-		inventoryErrorDetails(INVENTORY_ERROR_RESERVATION_NOT_FOUND),
-	);
+	return errorResult.fail("NOT_FOUND", {
+		publicMessage: "Stock reservation not found",
+	});
 }
 
 function paginate<T>(items: T[], page: number, pageSize: number): T[] {
@@ -210,17 +178,15 @@ export class MemoryInventoryStore implements InventoryStore {
 				existing.organizationId === record.organizationId &&
 				existing.createIdempotencyKey === record.createIdempotencyKey
 			) {
-				return ok(cloneMovement(existing));
+				return errorResult.ok(cloneMovement(existing));
 			}
 			if (
 				existing.organizationId === record.organizationId &&
 				existing.normalizedCode === record.normalizedCode
 			) {
-				return fail(
-					"CONFLICT",
-					"Stock movement code already exists",
-					inventoryErrorDetails(INVENTORY_ERROR_CODE_CONFLICT),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Stock movement code already exists",
+				});
 			}
 		}
 
@@ -308,7 +274,7 @@ export class MemoryInventoryStore implements InventoryStore {
 			return outbox;
 		}
 
-		return ok(cloneMovement(movement));
+		return errorResult.ok(cloneMovement(movement));
 	}
 
 	async addLine(
@@ -328,31 +294,31 @@ export class MemoryInventoryStore implements InventoryStore {
 			(candidate) => candidate.lineIdempotencyKey === record.lineIdempotencyKey,
 		);
 		if (replay !== undefined) {
-			return ok({ ...replay });
+			return errorResult.ok({ ...replay });
 		}
 
 		if (movement.status !== "draft") {
-			return fail(
-				"CONFLICT",
-				"Cannot add lines to a non-draft stock movement",
-				inventoryErrorDetails(INVENTORY_ERROR_MOVEMENT_NOT_DRAFT),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Cannot add lines to a non-draft stock movement",
+			});
 		}
 		if (movement.version !== record.expectedVersion) {
-			return fail(
-				"CONFLICT",
-				"Stock movement version conflict",
-				inventoryErrorDetails(INVENTORY_ERROR_MOVEMENT_VERSION_CONFLICT),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Stock movement version conflict",
+			});
 		}
 
 		const quantity = parseQuantity(record.quantity);
 		if (movement.movementType === "adjustment") {
 			if (quantity === 0) {
-				return fail("BAD_REQUEST", "Adjustment quantity must be non-zero");
+				return errorResult.fail("BAD_REQUEST", {
+					publicMessage: "Adjustment quantity must be non-zero",
+				});
 			}
 		} else if (quantity <= 0) {
-			return fail("BAD_REQUEST", "Quantity must be a positive number");
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage: "Quantity must be a positive number",
+			});
 		}
 
 		const previous = cloneMovement(movement);
@@ -407,7 +373,7 @@ export class MemoryInventoryStore implements InventoryStore {
 			return audit;
 		}
 
-		return ok({ ...line });
+		return errorResult.ok({ ...line });
 	}
 
 	async postMovement(
@@ -428,7 +394,7 @@ export class MemoryInventoryStore implements InventoryStore {
 			return decision;
 		}
 		if (decision.data.kind === "replay") {
-			return ok(cloneMovement(movement));
+			return errorResult.ok(cloneMovement(movement));
 		}
 		const reservationResult = await this.resolveMemoryPostReservation(
 			record.organizationId,
@@ -565,7 +531,7 @@ export class MemoryInventoryStore implements InventoryStore {
 			return outbox;
 		}
 
-		return ok(cloneMovement(movement));
+		return errorResult.ok(cloneMovement(movement));
 	}
 
 	async cancelMovement(
@@ -582,34 +548,26 @@ export class MemoryInventoryStore implements InventoryStore {
 		}
 		if (movement.status === "cancelled") {
 			if (movement.cancelIdempotencyKey === record.cancelIdempotencyKey) {
-				return ok(cloneMovement(movement));
+				return errorResult.ok(cloneMovement(movement));
 			}
-			return fail(
-				"CONFLICT",
-				"Stock movement is already cancelled",
-				inventoryErrorDetails(INVENTORY_ERROR_MOVEMENT_ALREADY_CANCELLED),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Stock movement is already cancelled",
+			});
 		}
 		if (movement.status === "posted") {
-			return fail(
-				"CONFLICT",
-				"Posted stock movements cannot be cancelled",
-				inventoryErrorDetails(INVENTORY_ERROR_MOVEMENT_ALREADY_POSTED),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Posted stock movements cannot be cancelled",
+			});
 		}
 		if (movement.status !== "draft") {
-			return fail(
-				"CONFLICT",
-				"Only draft stock movements can be cancelled",
-				inventoryErrorDetails(INVENTORY_ERROR_MOVEMENT_NOT_DRAFT),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Only draft stock movements can be cancelled",
+			});
 		}
 		if (movement.version !== record.expectedVersion) {
-			return fail(
-				"CONFLICT",
-				"Stock movement version conflict",
-				inventoryErrorDetails(INVENTORY_ERROR_MOVEMENT_VERSION_CONFLICT),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Stock movement version conflict",
+			});
 		}
 
 		const previous = cloneMovement(movement);
@@ -665,7 +623,7 @@ export class MemoryInventoryStore implements InventoryStore {
 			return outbox;
 		}
 
-		return ok(cloneMovement(movement));
+		return errorResult.ok(cloneMovement(movement));
 	}
 
 	async reserveStock(
@@ -678,23 +636,23 @@ export class MemoryInventoryStore implements InventoryStore {
 				existing.organizationId === record.organizationId &&
 				existing.createIdempotencyKey === record.createIdempotencyKey
 			) {
-				return ok(cloneReservation(existing));
+				return errorResult.ok(cloneReservation(existing));
 			}
 			if (
 				existing.organizationId === record.organizationId &&
 				existing.normalizedCode === record.normalizedCode
 			) {
-				return fail(
-					"CONFLICT",
-					"Stock reservation code already exists",
-					inventoryErrorDetails(INVENTORY_ERROR_CODE_CONFLICT),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Stock reservation code already exists",
+				});
 			}
 		}
 
 		const quantity = parseQuantity(record.quantity);
 		if (quantity <= 0) {
-			return fail("BAD_REQUEST", "Reservation quantity must be positive");
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage: "Reservation quantity must be positive",
+			});
 		}
 
 		const balanceApply = this.applyEffects(
@@ -795,7 +753,7 @@ export class MemoryInventoryStore implements InventoryStore {
 			return outbox;
 		}
 
-		return ok(cloneReservation(reservation));
+		return errorResult.ok(cloneReservation(reservation));
 	}
 
 	async releaseReservation(
@@ -812,36 +770,28 @@ export class MemoryInventoryStore implements InventoryStore {
 		}
 		if (reservation.status === record.terminalStatus) {
 			if (reservation.releaseIdempotencyKey === record.releaseIdempotencyKey) {
-				return ok(cloneReservation(reservation));
+				return errorResult.ok(cloneReservation(reservation));
 			}
-			return fail(
-				"CONFLICT",
-				"Stock reservation is already terminated",
-				inventoryErrorDetails(INVENTORY_ERROR_RESERVATION_ALREADY_RELEASED),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Stock reservation is already terminated",
+			});
 		}
 		if (!isReleasableReservationStatus(reservation.status)) {
-			return fail(
-				"CONFLICT",
-				"Stock reservation cannot be terminated",
-				inventoryErrorDetails(INVENTORY_ERROR_RESERVATION_ALREADY_RELEASED),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Stock reservation cannot be terminated",
+			});
 		}
 		if (reservation.version !== record.expectedVersion) {
-			return fail(
-				"CONFLICT",
-				"Stock reservation version conflict",
-				inventoryErrorDetails(INVENTORY_ERROR_RESERVATION_VERSION_CONFLICT),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Stock reservation version conflict",
+			});
 		}
 
 		const remainingQuantity = getReservationRemainingQuantity(reservation);
 		if (remainingQuantity < 0) {
-			return fail(
-				"CONFLICT",
-				"Stock reservation remaining quantity is invalid",
-				inventoryErrorDetails(INVENTORY_ERROR_INSUFFICIENT_AVAILABLE),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Stock reservation remaining quantity is invalid",
+			});
 		}
 
 		const balanceApply = this.applyReservationReleaseBalance(
@@ -912,7 +862,7 @@ export class MemoryInventoryStore implements InventoryStore {
 			return outbox;
 		}
 
-		return ok(cloneReservation(reservation));
+		return errorResult.ok(cloneReservation(reservation));
 	}
 
 	getMovementById(
@@ -925,9 +875,9 @@ export class MemoryInventoryStore implements InventoryStore {
 				movement === undefined ||
 				movement.organizationId !== organizationId
 			) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
-			return ok(cloneMovement(movement));
+			return errorResult.ok(cloneMovement(movement));
 		});
 	}
 
@@ -941,10 +891,10 @@ export class MemoryInventoryStore implements InventoryStore {
 					movement.organizationId === organizationId &&
 					movement.createIdempotencyKey === createIdempotencyKey
 				) {
-					return ok(cloneMovement(movement));
+					return errorResult.ok(cloneMovement(movement));
 				}
 			}
-			return ok(null);
+			return errorResult.ok(null);
 		});
 	}
 
@@ -970,7 +920,7 @@ export class MemoryInventoryStore implements InventoryStore {
 					return right.id.localeCompare(left.id);
 				})
 				.map(cloneMovement);
-			return ok(paginate(rows, filter.page, filter.pageSize));
+			return errorResult.ok(paginate(rows, filter.page, filter.pageSize));
 		});
 	}
 
@@ -1004,7 +954,7 @@ export class MemoryInventoryStore implements InventoryStore {
 					return right.id.localeCompare(left.id);
 				})
 				.map(cloneReservation);
-			return ok(paginate(rows, filter.page, filter.pageSize));
+			return errorResult.ok(paginate(rows, filter.page, filter.pageSize));
 		});
 	}
 
@@ -1049,7 +999,7 @@ export class MemoryInventoryStore implements InventoryStore {
 					asOfLedgerSequence,
 					balanceVersion: balance.version,
 				}));
-			return ok(rows);
+			return errorResult.ok(rows);
 		});
 	}
 
@@ -1063,9 +1013,9 @@ export class MemoryInventoryStore implements InventoryStore {
 				reservation === undefined ||
 				reservation.organizationId !== organizationId
 			) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
-			return ok(cloneReservation(reservation));
+			return errorResult.ok(cloneReservation(reservation));
 		});
 	}
 
@@ -1079,15 +1029,17 @@ export class MemoryInventoryStore implements InventoryStore {
 					reservation.organizationId === organizationId &&
 					reservation.createIdempotencyKey === createIdempotencyKey
 				) {
-					return ok(cloneReservation(reservation));
+					return errorResult.ok(cloneReservation(reservation));
 				}
 			}
-			return ok(null);
+			return errorResult.ok(null);
 		});
 	}
 
 	getLedgerSequence(organizationId: string): Promise<Result<number>> {
-		return resolveAsync(() => ok(this.getLedgerSequenceValue(organizationId)));
+		return resolveAsync(() =>
+			errorResult.ok(this.getLedgerSequenceValue(organizationId)),
+		);
 	}
 
 	listLedgerEntries(organizationId: string): Promise<
@@ -1100,7 +1052,7 @@ export class MemoryInventoryStore implements InventoryStore {
 		>
 	> {
 		return resolveAsync(() =>
-			ok(
+			errorResult.ok(
 				this.ledger
 					.filter((entry) => entry.organizationId === organizationId)
 					.sort((left, right) => left.ledgerSequence - right.ledgerSequence)
@@ -1115,7 +1067,7 @@ export class MemoryInventoryStore implements InventoryStore {
 
 	listBalances(organizationId: string): Promise<Result<StockBalance[]>> {
 		return resolveAsync(() =>
-			ok(
+			errorResult.ok(
 				[...this.balances.values()]
 					.filter((balance) => balance.organizationId === organizationId)
 					.sort((left, right) => {
@@ -1143,7 +1095,7 @@ export class MemoryInventoryStore implements InventoryStore {
 		>
 	> {
 		return resolveAsync(() =>
-			ok(
+			errorResult.ok(
 				[...this.reservations.values()]
 					.filter(
 						(reservation) => reservation.organizationId === organizationId,
@@ -1198,18 +1150,12 @@ export class MemoryInventoryStore implements InventoryStore {
 		reservation: StockReservation,
 	): Result<{ effects: BalanceEffect[]; consumedQuantity: number }> {
 		if (movement.warehouseId === null || movement.warehouseCode === null) {
-			return fail(
-				"INTERNAL_ERROR",
-				"Issue movement missing warehouse for reservation consumption",
-				inventoryErrorDetails(INVENTORY_ERROR_INVALID_TRANSFER),
-			);
+			return errorResult.fail("INTERNAL_ERROR");
 		}
 		if (movement.warehouseId !== reservation.warehouseId) {
-			return fail(
-				"CONFLICT",
-				"Linked reservation belongs to a different warehouse",
-				inventoryErrorDetails(INVENTORY_ERROR_INSUFFICIENT_AVAILABLE),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Linked reservation belongs to a different warehouse",
+			});
 		}
 
 		const quantitiesByLineId = new Map<string, number>();
@@ -1224,23 +1170,20 @@ export class MemoryInventoryStore implements InventoryStore {
 		}
 
 		if (consumedQuantity <= 0) {
-			return fail(
-				"CONFLICT",
-				"Linked reservation does not match any issue line",
-				inventoryErrorDetails(INVENTORY_ERROR_INSUFFICIENT_AVAILABLE),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Linked reservation does not match any issue line",
+			});
 		}
 
 		const remainingQuantity = getReservationRemainingQuantity(reservation);
 		if (remainingQuantity < consumedQuantity) {
-			return fail(
-				"CONFLICT",
-				"Reservation remaining quantity is insufficient for issue post",
-				inventoryErrorDetails(INVENTORY_ERROR_INSUFFICIENT_AVAILABLE),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage:
+					"Reservation remaining quantity is insufficient for issue post",
+			});
 		}
 
-		return ok({
+		return errorResult.ok({
 			consumedQuantity,
 			effects: effects.map((effect) => {
 				const lineQuantity =
@@ -1265,7 +1208,11 @@ export class MemoryInventoryStore implements InventoryStore {
 		effects: BalanceEffect[],
 	): Promise<Result<MemoryPostReservation>> {
 		if (movement.reservationId === null) {
-			return ok({ consumedQuantity: 0, effects, reservation: undefined });
+			return errorResult.ok({
+				consumedQuantity: 0,
+				effects,
+				reservation: undefined,
+			});
 		}
 		const reservationResult = await this.getReservationById(
 			organizationId,
@@ -1286,11 +1233,9 @@ export class MemoryInventoryStore implements InventoryStore {
 			reservation.status === "expired" ||
 			reservation.status === "cancelled"
 		) {
-			return fail(
-				"CONFLICT",
-				"Stock reservation cannot be consumed",
-				inventoryErrorDetails(INVENTORY_ERROR_RESERVATION_ALREADY_RELEASED),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Stock reservation cannot be consumed",
+			});
 		}
 		const adjustedEffects = this.applyReservationConsumption(
 			effects,
@@ -1298,7 +1243,7 @@ export class MemoryInventoryStore implements InventoryStore {
 			reservation,
 		);
 		return adjustedEffects.ok
-			? ok({ ...adjustedEffects.data, reservation })
+			? errorResult.ok({ ...adjustedEffects.data, reservation })
 			: adjustedEffects;
 	}
 
@@ -1355,7 +1300,7 @@ export class MemoryInventoryStore implements InventoryStore {
 					input.reservation,
 					previousReservation,
 				);
-				return fail("INTERNAL_ERROR", "Balance missing after movement post");
+				return errorResult.fail("INTERNAL_ERROR");
 			}
 			nextLedgerSequence += 1;
 			this.ledger.push({
@@ -1379,7 +1324,11 @@ export class MemoryInventoryStore implements InventoryStore {
 				createdAt: now,
 			});
 		}
-		return ok({ ledgerSnapshot, previousMovement, previousReservation });
+		return errorResult.ok({
+			ledgerSnapshot,
+			previousMovement,
+			previousReservation,
+		});
 	}
 
 	private applyReservationReleaseBalance(
@@ -1389,7 +1338,7 @@ export class MemoryInventoryStore implements InventoryStore {
 		remainingQuantity: number,
 	): Result<BalanceRollback> {
 		if (remainingQuantity === 0) {
-			return ok(new Map<string, StockBalance | null>());
+			return errorResult.ok(new Map<string, StockBalance | null>());
 		}
 		return this.applyEffects(organizationId, actorUserId, [
 			{
@@ -1442,27 +1391,21 @@ export class MemoryInventoryStore implements InventoryStore {
 
 			if (available < 0) {
 				this.restoreBalances(rollback);
-				return fail(
-					"CONFLICT",
-					"Insufficient available stock",
-					inventoryErrorDetails(INVENTORY_ERROR_INSUFFICIENT_AVAILABLE),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Insufficient available stock",
+				});
 			}
 			if (reserved < 0) {
 				this.restoreBalances(rollback);
-				return fail(
-					"CONFLICT",
-					"Insufficient reserved stock",
-					inventoryErrorDetails(INVENTORY_ERROR_INSUFFICIENT_AVAILABLE),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Insufficient reserved stock",
+				});
 			}
 			if (onHand < 0) {
 				this.restoreBalances(rollback);
-				return fail(
-					"CONFLICT",
-					"Stock on-hand would become negative",
-					inventoryErrorDetails(INVENTORY_ERROR_INSUFFICIENT_ON_HAND),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Stock on-hand would become negative",
+				});
 			}
 
 			if (existing === undefined) {
@@ -1498,7 +1441,7 @@ export class MemoryInventoryStore implements InventoryStore {
 			existing.updatedAt = now;
 		}
 
-		return ok(rollback);
+		return errorResult.ok(rollback);
 	}
 
 	private restoreBalances(rollback: BalanceRollback): void {

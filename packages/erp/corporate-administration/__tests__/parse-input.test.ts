@@ -16,13 +16,11 @@ describe("Corporate Administration safe input parsing", () => {
 			amount: z.string().default("0").pipe(canonicalDecimalSchema),
 		})
 		.strict();
-
 	it("preserves schema transforms, defaults, and brands", () => {
 		const result = parseCorporateAdministrationInput(inputSchema, {
 			organizationId: " org_1 ",
 			code: " ca-01 ",
 		});
-
 		expect(result).toEqual({
 			ok: true,
 			data: {
@@ -32,7 +30,6 @@ describe("Corporate Administration safe input parsing", () => {
 			},
 		});
 	});
-
 	it("omits undefined object fields from parsed optional command input", () => {
 		const optionalSchema = z
 			.object({
@@ -50,7 +47,6 @@ describe("Corporate Administration safe input parsing", () => {
 				),
 			})
 			.strict();
-
 		const result = parseCorporateAdministrationInput(optionalSchema, {
 			required: "kept",
 			optional: undefined,
@@ -65,7 +61,6 @@ describe("Corporate Administration safe input parsing", () => {
 				},
 			],
 		});
-
 		expect(result).toEqual({
 			ok: true,
 			data: {
@@ -75,7 +70,6 @@ describe("Corporate Administration safe input parsing", () => {
 			},
 		});
 	});
-
 	it("returns governed validation failures without submitted values or Zod details", () => {
 		const submittedSecret = "raw secret value";
 		const result = parseCorporateAdministrationInput(inputSchema, {
@@ -83,21 +77,14 @@ describe("Corporate Administration safe input parsing", () => {
 			code: submittedSecret,
 			unexpected: submittedSecret,
 		});
-
 		expect(result.ok).toBe(false);
 		if (result.ok) {
 			return;
 		}
-
 		expect(result.code).toBe("VALIDATION_ERROR");
-		expect(result.details).toEqual({
-			reason: "CORPORATE_ADMINISTRATION_VALIDATION_FAILED",
-			field: "code",
-		});
 		expect(JSON.stringify(result)).not.toContain(submittedSecret);
 		expect(JSON.stringify(result)).not.toContain("issues");
 	});
-
 	it("normalizes array paths and omits malformed field paths", () => {
 		const nestedSchema = z.object({
 			officers: z.array(z.object({ partyId: organizationIdSchema })),
@@ -107,9 +94,7 @@ describe("Corporate Administration safe input parsing", () => {
 		});
 		expect(nested).toMatchObject({
 			ok: false,
-			details: { field: "officers[0].partyId" },
 		});
-
 		const malformedPathSchema = z.string().superRefine((_value, context) => {
 			context.addIssue({
 				code: "custom",
@@ -125,12 +110,9 @@ describe("Corporate Administration safe input parsing", () => {
 			ok: false,
 			code: "VALIDATION_ERROR",
 			message: "Corporate Administration input is invalid",
-			details: {
-				reason: "CORPORATE_ADMINISTRATION_VALIDATION_FAILED",
-			},
+			messageKey: "errors.validationError",
 		});
 	});
-
 	it("does not throw for ordinary invalid input but propagates unexpected transform failures", () => {
 		expect(() =>
 			parseCorporateAdministrationInput(inputSchema, {
@@ -138,7 +120,6 @@ describe("Corporate Administration safe input parsing", () => {
 				code: 42,
 			}),
 		).not.toThrow();
-
 		const transformFailure = new Error(
 			`${CORPORATE_ADMINISTRATION_MODULE_ID} transform failed`,
 		);

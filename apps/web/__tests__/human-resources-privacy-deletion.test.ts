@@ -1,5 +1,5 @@
 import type { AuditEntry, AuditRecorder } from "@afenda/audit";
-import { ok } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 import {
 	type HumanResourcesPrivacyPort,
 	parseHumanResourcesEmployeeId,
@@ -32,10 +32,14 @@ function privacyPort(input?: {
 }): HumanResourcesPrivacyPort {
 	return {
 		exportSubject: vi.fn(async () =>
-			ok({ exportReference: "privacy://export", recordCount: 0, records: [] }),
+			errorResult.ok({
+				exportReference: "privacy://export",
+				recordCount: 0,
+				records: [],
+			}),
 		),
 		getSubjectPrivacyCase: vi.fn(async () =>
-			ok({
+			errorResult.ok({
 				organizationId: input?.organizationId ?? "org-privacy",
 				subjectEmployeeId: employeeId,
 				exports: [],
@@ -47,12 +51,20 @@ function privacyPort(input?: {
 				recentOperations: [],
 			}),
 		),
-		rectifySubject: vi.fn(async () => ok({ rectifiedRecordCount: 0 })),
-		anonymizeSubject: vi.fn(async () => ok({ anonymizedRecordCount: 3 })),
-		evaluateAnonymization: vi.fn(async () => ok({ allowed: true })),
-		placeLegalHold: vi.fn(async () => ok({ legalHoldId: "hold-1" })),
-		releaseLegalHold: vi.fn(async () => ok(undefined)),
-		redactDownstream: vi.fn(async () => ok({ redactedSystemCount: 0 })),
+		rectifySubject: vi.fn(async () =>
+			errorResult.ok({ rectifiedRecordCount: 0 }),
+		),
+		anonymizeSubject: vi.fn(async () =>
+			errorResult.ok({ anonymizedRecordCount: 3 }),
+		),
+		evaluateAnonymization: vi.fn(async () => errorResult.ok({ allowed: true })),
+		placeLegalHold: vi.fn(async () =>
+			errorResult.ok({ legalHoldId: "hold-1" }),
+		),
+		releaseLegalHold: vi.fn(async () => errorResult.ok(undefined)),
+		redactDownstream: vi.fn(async () =>
+			errorResult.ok({ redactedSystemCount: 0 }),
+		),
 	};
 }
 
@@ -69,12 +81,13 @@ function auditRecorder() {
 				action: "CREATE";
 				metadata: Record<string, unknown>;
 			};
-			return await ok({
+			return await errorResult.ok({
 				id: "audit-decision-1",
 				...record,
 				changes: [],
 				oldValue: null,
 				newValue: null,
+				eventContext: null,
 				ipAddress: null,
 				userAgent: null,
 				createdAt: new Date("2026-07-28T00:00:00.000Z"),

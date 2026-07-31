@@ -1,19 +1,15 @@
 "use server";
 
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import {
 	type ReceivingDiscrepancy,
 	recordReceivingDiscrepancy,
 } from "@afenda/receiving";
 import { z } from "zod";
-
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
 import { createReceivingCommandOptions } from "@/lib/erp/receiving-command-options";
 import { revalidateReceivingPaths } from "@/lib/erp/receiving-revalidate";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export interface RecordReceivingDiscrepancyActionData {
@@ -70,11 +66,10 @@ export async function recordReceivingDiscrepancyAction(
 				notes: formData.get("notes") ?? undefined,
 			});
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid receipt, discrepancy type, and positive quantity.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage:
+						"Enter a valid receipt, discrepancy type, and positive quantity.",
+				});
 			}
 			const result = await recordReceivingDiscrepancy(
 				{

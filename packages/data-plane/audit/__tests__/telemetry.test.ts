@@ -89,7 +89,7 @@ describe("@afenda/audit telemetry", () => {
 				expect.objectContaining({
 					operation: "record",
 					outcome: "rejected",
-					errorCode: "BAD_REQUEST",
+					errorCode: "VALIDATION_ERROR",
 				}),
 				expect.objectContaining({ operation: "query", rowCount: 1 }),
 				expect.objectContaining({ operation: "cursor_query", rowCount: 1 }),

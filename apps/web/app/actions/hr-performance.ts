@@ -1,6 +1,10 @@
 "use server";
 
-import type { Result } from "@afenda/errors/result";
+import {
+	type Result as ActionResult,
+	errorResult,
+	type Result,
+} from "@afenda/errors";
 import type {
 	EmployeePerformanceHistory,
 	PerformanceCycle,
@@ -128,10 +132,7 @@ import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runHrTalentOperatorPermissionAction as runOperatorPermissionAction } from "@/app/actions/run-hr-operator-permission-action";
 import { createHumanResourcesCommandOptions } from "@/lib/erp/human-resources-command-options";
 import type { ProductPermissionCode } from "@/modules/identity/domain/session-permission";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
+
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 const createPerformanceCycleActionSchema = hrActionSchema(
@@ -294,11 +295,9 @@ async function runPerformanceAction<Key extends string, Value>(config: {
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(config.schema, config.input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					config.validationMessage,
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "The submitted data is invalid",
+				});
 			}
 			const result = await config.execute(
 				withSessionContext(
@@ -332,11 +331,9 @@ export async function createPerformanceCycleAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(createPerformanceCycleActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid performance cycle.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid performance cycle.",
+				});
 			}
 			const result = await createPerformanceCycle(
 				withSessionContext(session, correlationId, parsed.data),
@@ -361,11 +358,9 @@ export async function openPerformanceCycleAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(openPerformanceCycleActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid cycle open request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid cycle open request.",
+				});
 			}
 			const result = await openPerformanceCycle(
 				withSessionContext(session, correlationId, parsed.data),
@@ -390,11 +385,9 @@ export async function getPerformanceCycleByIdAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(getPerformanceCycleByIdActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid cycle lookup.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid cycle lookup.",
+				});
 			}
 			const result = await getPerformanceCycleById(
 				withSessionContext(session, correlationId, parsed.data),
@@ -419,11 +412,9 @@ export async function listPerformanceCyclesAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(listPerformanceCyclesActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter valid cycle list filters.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter valid cycle list filters.",
+				});
 			}
 			const result = await listPerformanceCycles(
 				withSessionContext(session, correlationId, parsed.data),
@@ -448,11 +439,9 @@ export async function createPerformanceGoalAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(createPerformanceGoalActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid performance goal.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid performance goal.",
+				});
 			}
 			const result = await createPerformanceGoal(
 				withSessionContext(session, correlationId, parsed.data),
@@ -477,11 +466,9 @@ export async function listEmployeeGoalsAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(listEmployeeGoalsActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter valid goal list filters.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter valid goal list filters.",
+				});
 			}
 			const result = await listEmployeeGoals(
 				withSessionContext(session, correlationId, parsed.data),
@@ -506,11 +493,9 @@ export async function startPerformanceReviewAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(startPerformanceReviewActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid review start request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid review start request.",
+				});
 			}
 			const result = await startPerformanceReview(
 				withSessionContext(session, correlationId, parsed.data),
@@ -535,11 +520,9 @@ export async function getPerformanceReviewByIdAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(getPerformanceReviewByIdActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid review lookup.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid review lookup.",
+				});
 			}
 			const result = await getPerformanceReviewById(
 				withSessionContext(session, correlationId, parsed.data),
@@ -567,11 +550,9 @@ export async function listEmployeePerformanceReviewsAction(
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter valid review list filters.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter valid review list filters.",
+				});
 			}
 			const result = await listEmployeePerformanceReviews(
 				withSessionContext(session, correlationId, parsed.data),
@@ -599,11 +580,9 @@ export async function listReviewsPendingManagerActionAction(
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter valid pending review filters.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter valid pending review filters.",
+				});
 			}
 			const result = await listReviewsPendingManagerAction(
 				withSessionContext(session, correlationId, parsed.data),
@@ -631,11 +610,9 @@ export async function getEmployeePerformanceHistoryAction(
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid performance history request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid performance history request.",
+				});
 			}
 			const result = await getEmployeePerformanceHistory(
 				withSessionContext(session, correlationId, parsed.data),
@@ -660,11 +637,9 @@ export async function createImprovementPlanAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(createImprovementPlanActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid improvement plan.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid improvement plan.",
+				});
 			}
 			const result = await createImprovementPlan(
 				withSessionContext(session, correlationId, parsed.data),

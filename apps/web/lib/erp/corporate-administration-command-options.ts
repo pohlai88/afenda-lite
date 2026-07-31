@@ -45,7 +45,7 @@ import {
 	refLanguage,
 	runNeonHttpTransaction,
 } from "@afenda/db";
-import { ok } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 import {
 	findSensitiveTaxRegistrationsByParty,
 	getSensitiveTaxRegistration,
@@ -71,7 +71,7 @@ const corporateAdministrationClock: ClockPort = {
 
 const activeDraftJurisdictionRules: CompanyJurisdictionRulePort = {
 	listEntityTypeRules: async (input) =>
-		ok([
+		errorResult.ok([
 			{
 				jurisdictionCountryCode: input.jurisdictionCountryCode,
 				entityTypes: ["draft_legal_company", "private_limited_company"],
@@ -98,9 +98,9 @@ const partyReferences: CompanyPartyReferencePort = {
 			.limit(1);
 		const [row] = rows;
 		if (row === undefined) {
-			return ok(null);
+			return errorResult.ok(null);
 		}
-		return ok({
+		return errorResult.ok({
 			partyId: row.partyId,
 			kind: row.partyKind === "organization" ? "organization" : "person",
 			active: row.status === "active",
@@ -119,7 +119,7 @@ const referenceData: CompanyReferenceDataPort = {
 			.where(eq(refLanguage.code, input.languageCode))
 			.limit(1);
 		const [row] = rows;
-		return ok(
+		return errorResult.ok(
 			row === undefined ? null : { languageCode: row.code, active: row.active },
 		);
 	},
@@ -133,12 +133,12 @@ const referenceData: CompanyReferenceDataPort = {
 			.from(refLanguage)
 			.where(eq(refLanguage.code, input.languageCode))
 			.limit(1);
-		return ok(rows[0] ?? null);
+		return errorResult.ok(rows[0] ?? null);
 	},
 	validateSourceDocument: async (input) =>
-		ok({ sourceDocumentId: input.sourceDocumentId, active: true }),
+		errorResult.ok({ sourceDocumentId: input.sourceDocumentId, active: true }),
 	resolveLegalForm: async (input) =>
-		ok({
+		errorResult.ok({
 			code: input.legalFormCode,
 			active: true,
 			jurisdictionCode: input.jurisdictionCode,
@@ -146,9 +146,9 @@ const referenceData: CompanyReferenceDataPort = {
 			effectiveDate: input.effectiveDate,
 		}),
 	validateLegalFormCompatibility: async () =>
-		ok({ compatible: true, active: true }),
+		errorResult.ok({ compatible: true, active: true }),
 	listLegalFormCompatibilityRules: async (input) =>
-		ok([
+		errorResult.ok([
 			{
 				jurisdictionCode: input.jurisdictionCode,
 				legalFormCodes: ["private_limited_company"],
@@ -166,7 +166,7 @@ const referenceData: CompanyReferenceDataPort = {
 			.from(refCountry)
 			.where(eq(refCountry.code, input.countryCode))
 			.limit(1);
-		return ok(rows[0] ?? null);
+		return errorResult.ok(rows[0] ?? null);
 	},
 	resolveCurrency: async (input) => {
 		const rows = await db
@@ -180,7 +180,7 @@ const referenceData: CompanyReferenceDataPort = {
 			.where(eq(refCurrency.code, input.currencyCode))
 			.limit(1);
 		const [row] = rows;
-		return ok(
+		return errorResult.ok(
 			row === undefined
 				? null
 				: {
@@ -192,7 +192,7 @@ const referenceData: CompanyReferenceDataPort = {
 		);
 	},
 	resolveIdentifierAuthority: async (input) =>
-		ok({
+		errorResult.ok({
 			code: input.authorityCode,
 			active: true,
 			jurisdictionCode: input.jurisdictionCode,
@@ -203,7 +203,7 @@ const referenceData: CompanyReferenceDataPort = {
 			removePresentationSeparators: true,
 		}),
 	resolveActivityClassification: async (input) =>
-		ok({
+		errorResult.ok({
 			code: input.activityCode,
 			active: true,
 			classificationSystem: input.classificationSystem,
@@ -212,18 +212,18 @@ const referenceData: CompanyReferenceDataPort = {
 			requiresRegulator: input.classificationSystem === "regulated_activity",
 		}),
 	resolveRegulator: async (input) =>
-		ok({
+		errorResult.ok({
 			code: input.regulatorCode,
 			active: true,
 			displayName: input.regulatorCode,
 		}),
 	resolveRegisteredActivity: async (input) =>
-		ok({ code: input.activityCode, active: true }),
+		errorResult.ok({ code: input.activityCode, active: true }),
 };
 
 const documentObjects: DocumentObjectPort = {
 	resolveDocumentObject: async (input) =>
-		ok({
+		errorResult.ok({
 			documentObjectRef: input.documentObjectRef,
 			active: true,
 		}),
@@ -259,11 +259,11 @@ const addressReferences: AddressReferencePort = {
 			.limit(1);
 		const [row] = rows;
 		if (row === undefined) {
-			return ok(null);
+			return errorResult.ok(null);
 		}
 		const activeFrom = row.effectiveFrom?.toISOString().slice(0, 10);
 		const activeTo = row.effectiveTo?.toISOString().slice(0, 10);
-		return ok({
+		return errorResult.ok({
 			organizationId: organizationIdSchema.parse(row.organizationId),
 			partyId: row.partyId,
 			active:
@@ -295,7 +295,9 @@ const taxRegistrations: TaxRegistrationReadPort = {
 		if (!result.ok) {
 			return result;
 		}
-		return ok(result.data === null ? null : toTaxReadModel(result.data));
+		return errorResult.ok(
+			result.data === null ? null : toTaxReadModel(result.data),
+		);
 	},
 	findTaxRegistrationsForParty: async (input) => {
 		const result = await findSensitiveTaxRegistrationsByParty(
@@ -309,14 +311,14 @@ const taxRegistrations: TaxRegistrationReadPort = {
 		if (!result.ok) {
 			return result;
 		}
-		return ok(result.data.map(toTaxReadModel));
+		return errorResult.ok(result.data.map(toTaxReadModel));
 	},
 	findPotentialDuplicateTaxRegistration: async (input) => {
 		const normalized = normalizeTaxRegistrationNumber(
 			input.normalizedRegistrationNumber,
 		);
 		if (!normalized.ok) {
-			return ok(null);
+			return errorResult.ok(null);
 		}
 		const result = await listSensitiveTaxRegistrations(
 			{
@@ -338,13 +340,15 @@ const taxRegistrations: TaxRegistrationReadPort = {
 					normalizedTaxRegistrationNumber(row.registrationNumber) ===
 						normalized.data.normalizedRegistrationNumber,
 			) ?? null;
-		return ok(duplicate === null ? null : toTaxReadModel(duplicate));
+		return errorResult.ok(
+			duplicate === null ? null : toTaxReadModel(duplicate),
+		);
 	},
 };
 
 export function createCorporateAdministrationApprovalDecisionPort(): ApprovalDecisionPort {
 	return {
-		verify: async () => ok(null),
+		verify: async () => errorResult.ok(null),
 	};
 }
 

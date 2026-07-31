@@ -1,4 +1,4 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	type DuplicateWarningRecord,
@@ -160,7 +160,7 @@ export function assertApprovedMergeAuthorization(
 		return mergeNotAuthorized(warning);
 	}
 
-	return ok(true);
+	return errorResult.ok(true);
 }
 
 export function validateDuplicateWarningRecord(
@@ -180,7 +180,7 @@ export function validateDuplicateWarningRecord(
 
 	const reviewReason = validateDuplicateWarningReview(warning);
 	return reviewReason === null
-		? ok(true)
+		? errorResult.ok(true)
 		: duplicateWarningInvalid(reviewReason);
 }
 
@@ -273,7 +273,7 @@ function validateDuplicateWarningSignals(
 			fields: forbiddenSignals,
 		});
 	}
-	return ok(true);
+	return errorResult.ok(true);
 }
 
 function validateDuplicateWarningReview(

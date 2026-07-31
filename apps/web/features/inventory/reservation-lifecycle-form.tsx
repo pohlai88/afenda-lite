@@ -1,5 +1,6 @@
 "use client";
 
+import type { Result as ActionResult } from "@afenda/errors";
 import type { StockReservation } from "@afenda/inventory";
 import {
 	Alert,
@@ -12,11 +13,7 @@ import {
 	Spinner,
 } from "@afenda/ui-system";
 import { useActionState, useMemo } from "react";
-
-import {
-	type ActionResult,
-	actionFieldMessage,
-} from "@/modules/platform/schemas/action-result";
+import { actionFieldMessage } from "@/modules/platform/schemas/action-result";
 
 type ReservationLifecycleActionState = ActionResult<{
 	reservation: StockReservation;

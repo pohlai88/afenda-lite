@@ -6,9 +6,7 @@ import {
 	caGovernanceMembership,
 	eq,
 } from "@afenda/db";
-import { fail, ok, type Result } from "@afenda/errors/result";
-
-import { corporateAdministrationErrorDetails } from "../../error-codes";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	governanceBodyMatchesAsOf,
 	governanceMembershipMatchesAsOf,
@@ -126,7 +124,7 @@ class DrizzleCorporateAdministrationGovernanceStore implements GovernanceStore {
 				const sql = asSql(database);
 				return sql`INSERT INTO ca_governance_body (id, organization_id, legal_company_id, body_type, body_code, normalized_body_code, display_name, description, effective_from, effective_to, status, retirement_reason, recorded_at, recorded_by, source_document_id, version, created_at, updated_at) VALUES (${id}, ${input.organizationId}, ${input.legalCompanyId}, ${input.bodyType}, ${input.bodyCode}, ${input.normalizedBodyCode}, ${input.displayName}, ${input.description}, ${input.effectiveFrom}, NULL, 'active', NULL, ${now}, ${input.recordedBy}, ${input.sourceDocumentId}, 1, ${now}, ${now})`;
 			});
-			return ok(row);
+			return errorResult.ok(row);
 		}
 		return this.#write(async () => {
 			await this.#database.insert(caGovernanceBody).values({
@@ -179,7 +177,7 @@ class DrizzleCorporateAdministrationGovernanceStore implements GovernanceStore {
 				const sql = asSql(database);
 				return sql`UPDATE ca_governance_body SET display_name = ${input.displayName}, description = ${input.description}, recorded_at = ${now}, recorded_by = ${input.recordedBy}, source_document_id = ${input.sourceDocumentId}, version = version + 1, updated_at = ${now} WHERE organization_id = ${input.organizationId} AND id = ${input.governanceBodyId} AND version = ${input.expectedVersion}`;
 			});
-			return ok(updated);
+			return errorResult.ok(updated);
 		}
 		return this.#write(async () => {
 			await this.#database
@@ -234,7 +232,7 @@ class DrizzleCorporateAdministrationGovernanceStore implements GovernanceStore {
 				const sql = asSql(database);
 				return sql`UPDATE ca_governance_body SET effective_to = ${input.retiredOn}, status = 'retired', retirement_reason = ${input.reason}, recorded_at = ${now}, recorded_by = ${input.recordedBy}, source_document_id = ${input.sourceDocumentId}, version = version + 1, updated_at = ${now} WHERE organization_id = ${input.organizationId} AND id = ${input.governanceBodyId} AND version = ${input.expectedVersion}`;
 			});
-			return ok(updated);
+			return errorResult.ok(updated);
 		}
 		return this.#write(async () => {
 			await this.#database
@@ -302,7 +300,7 @@ class DrizzleCorporateAdministrationGovernanceStore implements GovernanceStore {
 		if (!listed.ok) {
 			return listed;
 		}
-		return ok(
+		return errorResult.ok(
 			listed.data
 				.filter(
 					(row) =>
@@ -353,7 +351,7 @@ class DrizzleCorporateAdministrationGovernanceStore implements GovernanceStore {
 				const sql = asSql(database);
 				return sql`INSERT INTO ca_governance_membership (id, organization_id, legal_company_id, governance_body_id, member_kind, member_party_id, role_seat_code, seat_label, membership_role, voting_entitlement, is_chair, term_from, term_to, status, end_reason, recorded_at, recorded_by, source_document_id, version, created_at, updated_at) VALUES (${id}, ${input.organizationId}, ${input.legalCompanyId}, ${input.governanceBodyId}, ${input.memberKind}, ${input.memberPartyId}, ${input.roleSeatCode}, ${input.seatLabel}, ${input.membershipRole}, ${input.votingEntitlement}, ${input.isChair}, ${input.termFrom}, ${input.termTo}, 'active', NULL, ${now}, ${input.recordedBy}, ${input.sourceDocumentId}, 1, ${now}, ${now})`;
 			});
-			return ok(row);
+			return errorResult.ok(row);
 		}
 		return this.#write(async () => {
 			await this.#database.insert(caGovernanceMembership).values(values);
@@ -394,7 +392,7 @@ class DrizzleCorporateAdministrationGovernanceStore implements GovernanceStore {
 				const sql = asSql(database);
 				return sql`UPDATE ca_governance_membership SET seat_label = ${input.seatLabel}, membership_role = ${input.membershipRole}, voting_entitlement = ${input.votingEntitlement}, is_chair = ${input.isChair}, term_from = ${input.termFrom}, term_to = ${input.termTo}, recorded_at = ${now}, recorded_by = ${input.recordedBy}, source_document_id = ${input.sourceDocumentId}, version = version + 1, updated_at = ${now} WHERE organization_id = ${input.organizationId} AND id = ${input.governanceMembershipId} AND version = ${input.expectedVersion}`;
 			});
-			return ok(updated);
+			return errorResult.ok(updated);
 		}
 		return this.#write(async () => {
 			await this.#database
@@ -453,7 +451,7 @@ class DrizzleCorporateAdministrationGovernanceStore implements GovernanceStore {
 				const sql = asSql(database);
 				return sql`UPDATE ca_governance_membership SET term_to = ${input.endedOn}, status = 'ended', end_reason = ${input.reason}, recorded_at = ${now}, recorded_by = ${input.recordedBy}, source_document_id = ${input.sourceDocumentId}, version = version + 1, updated_at = ${now} WHERE organization_id = ${input.organizationId} AND id = ${input.governanceMembershipId} AND version = ${input.expectedVersion}`;
 			});
-			return ok(updated);
+			return errorResult.ok(updated);
 		}
 		return this.#write(async () => {
 			await this.#database
@@ -481,7 +479,7 @@ class DrizzleCorporateAdministrationGovernanceStore implements GovernanceStore {
 
 	async #read<T>(work: () => Promise<T>): Promise<Result<T>> {
 		try {
-			return ok(await work());
+			return errorResult.ok(await work());
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
@@ -607,20 +605,16 @@ function asSql(
 }
 
 function notFound(): Result<never> {
-	return fail(
-		"NOT_FOUND",
-		"Corporate Administration record was not found.",
-		corporateAdministrationErrorDetails("CORPORATE_ADMINISTRATION_NOT_FOUND"),
-	);
+	return errorResult.fail("NOT_FOUND", {
+		publicMessage: "Corporate Administration record was not found.",
+	});
 }
 
-function stale(expectedVersion: number, actualVersion: number): Result<never> {
-	return fail(
-		"CONFLICT",
-		"Corporate Administration record version is stale.",
-		corporateAdministrationErrorDetails(
-			"CORPORATE_ADMINISTRATION_STALE_VERSION",
-			{ expectedVersion, actualVersion },
-		),
-	);
+function stale(
+	_expectedVersion: number,
+	_actualVersion: number,
+): Result<never> {
+	return errorResult.fail("CONFLICT", {
+		publicMessage: "Corporate Administration record version is stale.",
+	});
 }

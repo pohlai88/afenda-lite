@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { SalesCommandId, SalesQueryId } from "./module-ids";
 import type { SalesPermission } from "./permissions";
 
@@ -65,15 +65,11 @@ async function requirePermission(
 	},
 ): Promise<Result<void>> {
 	if (!port) {
-		return fail("UNAUTHORIZED", "Sales authorization port is required", {
-			permission: input.permission,
-		});
+		return errorResult.fail("UNAUTHORIZED");
 	}
 	return (await port.can(input))
-		? ok(undefined)
-		: fail("FORBIDDEN", "Missing required Sales permission", {
-				permission: input.permission,
-			});
+		? errorResult.ok(undefined)
+		: errorResult.fail("FORBIDDEN");
 }
 export function requireSalesCommandPermission(
 	port: SalesAuthorizationPort | undefined,

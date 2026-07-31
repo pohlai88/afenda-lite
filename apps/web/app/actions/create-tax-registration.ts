@@ -1,6 +1,7 @@
 "use server";
 
 import { getSession } from "@afenda/auth";
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { createCorrelationId } from "@afenda/http";
 import {
 	createTaxRegistration,
@@ -13,11 +14,6 @@ import { mapPackageResult } from "@/app/actions/map-package-result";
 import { forbidUnlessPermission } from "@/app/actions/permission-gate";
 import { createMasterDataAuthorizationPort } from "@/lib/erp/master-data-authorization-port";
 import { logProductEvent } from "@/modules/platform/observability/product-log";
-import {
-	type ActionResult,
-	actionFail,
-	actionFailInternal,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export interface CreateTaxRegistrationActionData {
@@ -63,11 +59,10 @@ export async function createTaxRegistrationAction(
 				: undefined,
 	});
 	if (!parsed.success) {
-		return actionFail(
-			"VALIDATION_ERROR",
-			"Enter a valid party, jurisdiction, type, and registration number.",
-			parsed.details,
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage:
+				"Enter a valid party, jurisdiction, type, and registration number.",
+		});
 	}
 
 	const permissionDenied = await forbidUnlessPermission(
@@ -88,10 +83,9 @@ export async function createTaxRegistrationAction(
 			{ authorization: createMasterDataAuthorizationPort() },
 		);
 		if (!country.ok || country.data === null) {
-			return actionFail(
-				"VALIDATION_ERROR",
-				"Unknown jurisdiction country code.",
-			);
+			return errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Unknown jurisdiction country code.",
+			});
 		}
 
 		const result = await createTaxRegistration(
@@ -128,9 +122,6 @@ export async function createTaxRegistrationAction(
 			path: "createTaxRegistrationAction",
 			code: "INTERNAL_ERROR",
 		});
-		return actionFailInternal(
-			"Could not create tax registration. Try again or contact an admin.",
-			correlationId,
-		);
+		return errorResult.fail("INTERNAL_ERROR", { correlationId });
 	}
 }

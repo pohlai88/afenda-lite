@@ -1,5 +1,5 @@
 /** Party role commands and queries. */
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	requireMasterCommandPermission,
@@ -9,7 +9,6 @@ import type {
 	MasterCommandOptions,
 	MasterQueryOptions,
 } from "../../command-options";
-import type { MasterFailureDetails } from "../../contracts/reasons";
 import {
 	MASTER_COMMAND_PARTY_ROLE_ACTIVATE,
 	MASTER_COMMAND_PARTY_ROLE_ARCHIVE,
@@ -50,22 +49,20 @@ async function assertPartyCanLoseActiveRole(
 		return context;
 	}
 	if (context.data.role === null) {
-		return fail("NOT_FOUND", "Party role not found", {
-			reason: "MASTER_NOT_FOUND",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Party role not found",
+		});
 	}
 	if (
 		context.data.role.status === "active" &&
 		context.data.party?.status === "active" &&
 		context.data.activeRoleCount <= 1
 	) {
-		return fail(
-			"CONFLICT",
-			"An active party cannot lose its final active role",
-			{ reason: "MASTER_FINAL_ACTIVE_ROLE" } satisfies MasterFailureDetails,
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "An active party cannot lose its final active role",
+		});
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export async function createPartyRole(

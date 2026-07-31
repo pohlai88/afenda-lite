@@ -13,7 +13,7 @@ import {
 	hrEmployeeCompensation,
 	runNeonHttpTransaction,
 } from "@afenda/db";
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import { HUMAN_RESOURCES_COMPENSATION_CHANGED_EVENT } from "@afenda/events/schemas";
 
 import {
@@ -150,7 +150,7 @@ async function findEmployeeCompensationByEmploymentAndStatus(
 			.limit(1);
 		const [row] = rows;
 		if (!row) {
-			return ok(null);
+			return errorResult.ok(null);
 		}
 		return mapEmployeeCompensationSql({
 			id: row.id,
@@ -1010,7 +1010,7 @@ function prepareEmployeeCompensationCorrectionAudits(input: {
 		return preparedSuccessorAudit;
 	}
 
-	return ok({
+	return errorResult.ok({
 		endedAudit,
 		successorAudit: preparedSuccessorAudit.data,
 		supersededAudit: preparedSupersededAudit.data,
@@ -1047,7 +1047,7 @@ export async function drizzleCorrectEmployeeCompensation(
 		return existingReplay;
 	}
 	if (existingReplay.data !== null) {
-		return ok(existingReplay.data);
+		return errorResult.ok(existingReplay.data);
 	}
 
 	const predecessorResult = await host.getEmployeeCompensation({
@@ -1357,7 +1357,7 @@ export async function drizzleCorrectEmployeeCompensation(
 				return replay;
 			}
 			if (replay.data !== null) {
-				return ok(replay.data);
+				return errorResult.ok(replay.data);
 			}
 		}
 		return mapPersistenceFailure(

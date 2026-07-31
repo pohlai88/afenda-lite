@@ -1,5 +1,5 @@
 import { and, db, eq, isNull, platformRole } from "@afenda/db";
-import { AppError } from "@afenda/errors";
+import { errorIngress } from "@afenda/errors";
 
 export type AssignableRole = typeof platformRole.$inferSelect;
 
@@ -15,9 +15,9 @@ export async function listAssignableRoles(
 ): Promise<AssignableRole[]> {
 	const trimmed = orgId.trim();
 	if (trimmed.length === 0) {
-		throw new AppError({
-			code: "BAD_REQUEST",
-			message: "listAssignableRoles requires non-empty orgId",
+		throw errorIngress.code("BAD_REQUEST", {
+			operation: "identity.roles.list",
+			publicMessage: "Organization is required",
 		});
 	}
 

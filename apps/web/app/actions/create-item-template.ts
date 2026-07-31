@@ -1,6 +1,7 @@
 "use server";
 
 import { getSession } from "@afenda/auth";
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { createCorrelationId } from "@afenda/http";
 import { createItemTemplate, type ItemTemplate } from "@afenda/master-data";
 import { revalidatePath } from "next/cache";
@@ -9,11 +10,6 @@ import { mapPackageResult } from "@/app/actions/map-package-result";
 import { forbidUnlessPermission } from "@/app/actions/permission-gate";
 import { createMasterDataAuthorizationPort } from "@/lib/erp/master-data-authorization-port";
 import { logProductEvent } from "@/modules/platform/observability/product-log";
-import {
-	type ActionResult,
-	actionFail,
-	actionFailInternal,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export interface CreateItemTemplateActionData {
@@ -41,11 +37,9 @@ export async function createItemTemplateAction(
 		name: formData.get("name"),
 	});
 	if (!parsed.success) {
-		return actionFail(
-			"VALIDATION_ERROR",
-			"Enter a valid template code and name.",
-			parsed.details,
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "Enter a valid template code and name.",
+		});
 	}
 
 	const permissionDenied = await forbidUnlessPermission(
@@ -84,9 +78,6 @@ export async function createItemTemplateAction(
 			path: "createItemTemplateAction",
 			code: "INTERNAL_ERROR",
 		});
-		return actionFailInternal(
-			"Could not create item template. Try again or contact an admin.",
-			correlationId,
-		);
+		return errorResult.fail("INTERNAL_ERROR", { correlationId });
 	}
 }

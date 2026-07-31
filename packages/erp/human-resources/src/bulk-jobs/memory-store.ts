@@ -1,4 +1,4 @@
-import { fail, ok } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 import type { ReliabilityWorkItem } from "../reliability/types";
 import type {
 	HumanResourcesBulkExportArtifactChunk,
@@ -45,13 +45,13 @@ export function createMemoryHumanResourcesBulkJobStore(): HumanResourcesBulkJobS
 					scoped(input.organizationId, input.idempotencyKey),
 				);
 				const job = id === undefined ? undefined : imports.get(id);
-				return ok(job === undefined ? null : clone(job));
+				return errorResult.ok(job === undefined ? null : clone(job));
 			});
 		},
 		getImportJob(input) {
 			return runSynchronousMemoryOperation(() => {
 				const job = imports.get(input.jobId);
-				return ok(
+				return errorResult.ok(
 					job?.organizationId === input.organizationId ? clone(job) : null,
 				);
 			});
@@ -64,20 +64,22 @@ export function createMemoryHumanResourcesBulkJobStore(): HumanResourcesBulkJobS
 					importKeys.has(key) ||
 					!insertWork(input.workItem)
 				) {
-					return fail("CONFLICT", "Bulk import job already exists");
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+					});
 				}
 				imports.set(input.job.id, clone(input.job));
 				importKeys.set(key, input.job.id);
 				rows.set(input.job.id, clone([...input.rows]));
-				return ok(clone(input.job));
+				return errorResult.ok(clone(input.job));
 			});
 		},
 		listImportRows(input) {
 			return runSynchronousMemoryOperation(() => {
 				const job = imports.get(input.jobId);
 				return job?.organizationId === input.organizationId
-					? ok(clone(rows.get(input.jobId) ?? []))
-					: ok([]);
+					? errorResult.ok(clone(rows.get(input.jobId) ?? []))
+					: errorResult.ok([]);
 			});
 		},
 		commitImportJob(input) {
@@ -89,11 +91,15 @@ export function createMemoryHumanResourcesBulkJobStore(): HumanResourcesBulkJobS
 					current.version !== input.expectedVersion ||
 					input.job.version !== input.expectedVersion + 1
 				) {
-					return fail("CONFLICT", "Bulk import job version changed");
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+					});
 				}
 				for (const item of [input.successorWorkItem, input.cleanupWorkItem]) {
 					if (item && work.has(item.id)) {
-						return fail("CONFLICT", "Bulk work already exists");
+						return errorResult.fail("CONFLICT", {
+							publicMessage: "The request conflicts with current state",
+						});
 					}
 				}
 				imports.set(input.job.id, clone(input.job));
@@ -103,14 +109,16 @@ export function createMemoryHumanResourcesBulkJobStore(): HumanResourcesBulkJobS
 				if (input.cleanupWorkItem) {
 					insertWork(input.cleanupWorkItem);
 				}
-				return ok(clone(input.job));
+				return errorResult.ok(clone(input.job));
 			});
 		},
 		purgeImportPayload(input) {
 			return runSynchronousMemoryOperation(() => {
 				const job = imports.get(input.jobId);
 				if (!job || job.organizationId !== input.organizationId) {
-					return fail("NOT_FOUND", "Bulk import job not found");
+					return errorResult.fail("NOT_FOUND", {
+						publicMessage: "The requested resource was not found",
+					});
 				}
 				rows.set(
 					input.jobId,
@@ -126,7 +134,7 @@ export function createMemoryHumanResourcesBulkJobStore(): HumanResourcesBulkJobS
 					updatedAt: input.now,
 				};
 				imports.set(job.id, clone(updated));
-				return ok(clone(updated));
+				return errorResult.ok(clone(updated));
 			});
 		},
 		findExportJob(input) {
@@ -135,13 +143,13 @@ export function createMemoryHumanResourcesBulkJobStore(): HumanResourcesBulkJobS
 					scoped(input.organizationId, input.idempotencyKey),
 				);
 				const job = id === undefined ? undefined : exports.get(id);
-				return ok(job === undefined ? null : clone(job));
+				return errorResult.ok(job === undefined ? null : clone(job));
 			});
 		},
 		getExportJob(input) {
 			return runSynchronousMemoryOperation(() => {
 				const job = exports.get(input.jobId);
-				return ok(
+				return errorResult.ok(
 					job?.organizationId === input.organizationId ? clone(job) : null,
 				);
 			});
@@ -154,11 +162,13 @@ export function createMemoryHumanResourcesBulkJobStore(): HumanResourcesBulkJobS
 					exportKeys.has(key) ||
 					!insertWork(input.workItem)
 				) {
-					return fail("CONFLICT", "Bulk export job already exists");
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+					});
 				}
 				exports.set(input.job.id, clone(input.job));
 				exportKeys.set(key, input.job.id);
-				return ok(clone(input.job));
+				return errorResult.ok(clone(input.job));
 			});
 		},
 		completeExportJob(input) {
@@ -171,21 +181,23 @@ export function createMemoryHumanResourcesBulkJobStore(): HumanResourcesBulkJobS
 					input.job.version !== input.expectedVersion + 1 ||
 					work.has(input.cleanupWorkItem.id)
 				) {
-					return fail("CONFLICT", "Bulk export job version changed");
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+					});
 				}
 				exports.set(input.job.id, clone(input.job));
 				chunks.set(input.job.id, clone([...input.chunks]));
 				insertWork(input.cleanupWorkItem);
-				return ok(clone(input.job));
+				return errorResult.ok(clone(input.job));
 			});
 		},
 		loadExportArtifact(input) {
 			return runSynchronousMemoryOperation(() => {
 				const job = exports.get(input.jobId);
 				if (!job || job.organizationId !== input.organizationId) {
-					return ok(null);
+					return errorResult.ok(null);
 				}
-				return ok({
+				return errorResult.ok({
 					job: clone(job),
 					content: (chunks.get(job.id) ?? [])
 						.sort((a, b) => a.chunkIndex - b.chunkIndex)
@@ -198,7 +210,9 @@ export function createMemoryHumanResourcesBulkJobStore(): HumanResourcesBulkJobS
 			return runSynchronousMemoryOperation(() => {
 				const job = exports.get(input.jobId);
 				if (!job || job.organizationId !== input.organizationId) {
-					return fail("NOT_FOUND", "Bulk export job not found");
+					return errorResult.fail("NOT_FOUND", {
+						publicMessage: "The requested resource was not found",
+					});
 				}
 				chunks.delete(job.id);
 				const updated = {
@@ -208,7 +222,7 @@ export function createMemoryHumanResourcesBulkJobStore(): HumanResourcesBulkJobS
 					updatedAt: input.now,
 				};
 				exports.set(job.id, clone(updated));
-				return ok(clone(updated));
+				return errorResult.ok(clone(updated));
 			});
 		},
 	};

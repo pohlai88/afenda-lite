@@ -1,4 +1,4 @@
-import { ok } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 
@@ -64,7 +64,7 @@ describe("workforce planning authorization enforcement", () => {
 				invalidMessage: "Invalid workforce planning authorization input",
 				query: HUMAN_RESOURCES_QUERY_HEADCOUNT_PLAN_GET,
 				execute: async () =>
-					ok({
+					errorResult.ok({
 						id: "plan-1",
 						status: "approved",
 						employeeActuals: [{ employeeId: "employee-1", fte: "1.0000" }],
@@ -83,7 +83,7 @@ describe("workforce planning authorization enforcement", () => {
 	});
 
 	it("does not let read permission execute a prepare command", async () => {
-		const execute = vi.fn(async () => ok({ id: "plan-1" }));
+		const execute = vi.fn(async () => errorResult.ok({ id: "plan-1" }));
 		const result = await runWorkforcePlanningCommand(
 			{
 				organizationId: "org-wfp-auth",
@@ -108,7 +108,7 @@ describe("workforce planning authorization enforcement", () => {
 	});
 
 	it("does not carry a planner grant across organizations", async () => {
-		const execute = vi.fn(async () => ok({ id: "plan-foreign" }));
+		const execute = vi.fn(async () => errorResult.ok({ id: "plan-foreign" }));
 		const result = await runWorkforcePlanningQuery(
 			{
 				organizationId: "org-wfp-foreign",

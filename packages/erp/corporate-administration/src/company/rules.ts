@@ -1,7 +1,5 @@
 // biome-ignore-all lint/style/noNestedTernary: Three-state date normalization remains adjacent to its policy rule.
-import { fail, ok, type Result } from "@afenda/errors/result";
-
-import { corporateAdministrationErrorDetails } from "../error-codes";
+import { errorResult, type Result } from "@afenda/errors";
 import type { CanonicalDate, CanonicalInstant } from "../kernel/dates";
 import { compareCanonicalDates } from "../kernel/dates";
 import {
@@ -114,16 +112,11 @@ export function validateCompanyNameType(
 	nameType: string,
 ): Result<CompanyNameType> {
 	if (COMPANY_NAME_TYPES.includes(nameType as CompanyNameType)) {
-		return ok(nameType as CompanyNameType);
+		return errorResult.ok(nameType as CompanyNameType);
 	}
-	return fail(
-		"VALIDATION_ERROR",
-		"Corporate Administration company name type is invalid.",
-		corporateAdministrationErrorDetails(
-			"CORPORATE_ADMINISTRATION_VALIDATION_FAILED",
-			{ field: "nameType" },
-		),
-	);
+	return errorResult.fail("VALIDATION_ERROR", {
+		publicMessage: "Corporate Administration company name type is invalid.",
+	});
 }
 
 export function validateCompanyNameLanguage(
@@ -131,16 +124,11 @@ export function validateCompanyNameLanguage(
 ): Result<string> {
 	const trimmed = languageCode.trim();
 	if (LANGUAGE_CODE_PATTERN.test(trimmed)) {
-		return ok(trimmed);
+		return errorResult.ok(trimmed);
 	}
-	return fail(
-		"VALIDATION_ERROR",
-		"Corporate Administration company name language is invalid.",
-		corporateAdministrationErrorDetails(
-			"CORPORATE_ADMINISTRATION_VALIDATION_FAILED",
-			{ field: "languageCode" },
-		),
-	);
+	return errorResult.fail("VALIDATION_ERROR", {
+		publicMessage: "Corporate Administration company name language is invalid.",
+	});
 }
 
 export function normalizeCompanyIdentifierValue(
@@ -206,20 +194,12 @@ export function assertNonTaxCompanyIdentifierType(
 	identifierType: CompanyIdentifierType | string,
 ): Result<void> {
 	if (isTaxIdentifierType(identifierType)) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Corporate Administration does not own tax identifiers. Use Master Data tax registration.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_REFERENCE_INVALID",
-				{
-					field: "identifierType",
-					owner: "@afenda/master-data",
-					surface: "md_tax_registration",
-				},
-			),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage:
+				"Corporate Administration does not own tax identifiers. Use Master Data tax registration.",
+		});
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function validateIdentifierAuthority(
@@ -227,16 +207,11 @@ export function validateIdentifierAuthority(
 ): Result<string> {
 	const trimmed = authorityCode.trim();
 	if (AUTHORITY_CODE_PATTERN.test(trimmed)) {
-		return ok(trimmed);
+		return errorResult.ok(trimmed);
 	}
-	return fail(
-		"VALIDATION_ERROR",
-		"Corporate Administration identifier authority is invalid.",
-		corporateAdministrationErrorDetails(
-			"CORPORATE_ADMINISTRATION_REFERENCE_INVALID",
-			{ field: "authorityCode" },
-		),
-	);
+	return errorResult.fail("VALIDATION_ERROR", {
+		publicMessage: "Corporate Administration identifier authority is invalid.",
+	});
 }
 
 export function validateIdentifierJurisdiction(
@@ -244,16 +219,12 @@ export function validateIdentifierJurisdiction(
 ): Result<string> {
 	const trimmed = jurisdictionCode.trim();
 	if (COUNTRY_CODE_PATTERN.test(trimmed)) {
-		return ok(trimmed);
+		return errorResult.ok(trimmed);
 	}
-	return fail(
-		"VALIDATION_ERROR",
-		"Corporate Administration identifier jurisdiction is invalid.",
-		corporateAdministrationErrorDetails(
-			"CORPORATE_ADMINISTRATION_REFERENCE_INVALID",
-			{ field: "jurisdictionCode" },
-		),
-	);
+	return errorResult.fail("VALIDATION_ERROR", {
+		publicMessage:
+			"Corporate Administration identifier jurisdiction is invalid.",
+	});
 }
 
 export function validateCompanyIdentifierEffectiveRange(input: {
@@ -315,16 +286,12 @@ export function validateIdentifierEffectiveRange(input: {
 			),
 	);
 	if (overlap === undefined) {
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	}
-	return fail(
-		"CONFLICT",
-		"Corporate Administration company identifier overlaps an existing identifier in the same jurisdiction and authority.",
-		corporateAdministrationErrorDetails(
-			"CORPORATE_ADMINISTRATION_EFFECTIVE_RANGE_OVERLAP",
-			{ field: "effectivePeriod" },
-		),
-	);
+	return errorResult.fail("CONFLICT", {
+		publicMessage:
+			"Corporate Administration company identifier overlaps an existing identifier in the same jurisdiction and authority.",
+	});
 }
 
 export function validateIdentifierSupersession(input: {
@@ -332,39 +299,24 @@ export function validateIdentifierSupersession(input: {
 	expectedVersion: number;
 }): Result<CompanyIdentifier> {
 	if (input.identifier === null) {
-		return fail(
-			"NOT_FOUND",
-			"Corporate Administration company identifier was not found.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_NOT_FOUND",
-				{ entityType: "companyIdentifier" },
-			),
-		);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage:
+				"Corporate Administration company identifier was not found.",
+		});
 	}
 	if (input.identifier.status !== "active") {
-		return fail(
-			"CONFLICT",
-			"Corporate Administration company identifier is not active.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_INVALID_TRANSITION",
-				{ field: "companyIdentifierId" },
-			),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage:
+				"Corporate Administration company identifier is not active.",
+		});
 	}
 	if (input.identifier.version !== input.expectedVersion) {
-		return fail(
-			"CONFLICT",
-			"Corporate Administration company identifier version is stale.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_STALE_VERSION",
-				{
-					expectedVersion: input.expectedVersion,
-					actualVersion: input.identifier.version,
-				},
-			),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage:
+				"Corporate Administration company identifier version is stale.",
+		});
 	}
-	return ok(input.identifier);
+	return errorResult.ok(input.identifier);
 }
 
 export function validateCompanyFinancialYearStart(input: {
@@ -384,14 +336,10 @@ export function validateFinancialYearEnd(input: {
 	allowFebruary29?: boolean;
 }): Result<void> {
 	if (!Number.isInteger(input.month) || input.month < 1 || input.month > 12) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Corporate Administration financial-year month is invalid.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_VALIDATION_FAILED",
-				{ field: "yearEndMonth" },
-			),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage:
+				"Corporate Administration financial-year month is invalid.",
+		});
 	}
 	const daysInMonth = DAYS_IN_COMMON_YEAR_MONTH[input.month - 1] ?? 0;
 	if (
@@ -400,26 +348,17 @@ export function validateFinancialYearEnd(input: {
 		input.day >
 			daysInMonth + (input.month === 2 && input.allowFebruary29 ? 1 : 0)
 	) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Corporate Administration financial-year day is invalid.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_VALIDATION_FAILED",
-				{ field: "yearEndDay" },
-			),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "Corporate Administration financial-year day is invalid.",
+		});
 	}
 	if (input.month === 2 && input.day === 29 && !input.allowFebruary29) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Corporate Administration financial-year February 29 policy is invalid.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_VALIDATION_FAILED",
-				{ field: "yearEndDay" },
-			),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage:
+				"Corporate Administration financial-year February 29 policy is invalid.",
+		});
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function validateFinancialYearChronology(input: {
@@ -440,16 +379,12 @@ export function validateFinancialYearChronology(input: {
 			),
 	);
 	if (overlap === undefined) {
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	}
-	return fail(
-		"CONFLICT",
-		"Corporate Administration financial-year definition overlaps an existing definition.",
-		corporateAdministrationErrorDetails(
-			"CORPORATE_ADMINISTRATION_EFFECTIVE_RANGE_OVERLAP",
-			{ field: "effectivePeriod" },
-		),
-	);
+	return errorResult.fail("CONFLICT", {
+		publicMessage:
+			"Corporate Administration financial-year definition overlaps an existing definition.",
+	});
 }
 
 export function validateFinancialYearSupersession(input: {
@@ -457,29 +392,17 @@ export function validateFinancialYearSupersession(input: {
 	expectedVersion: number;
 }): Result<CompanyFinancialYear> {
 	if (input.financialYear === null) {
-		return fail(
-			"NOT_FOUND",
-			"Corporate Administration financial year was not found.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_NOT_FOUND",
-				{ entityType: "companyFinancialYear" },
-			),
-		);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Corporate Administration financial year was not found.",
+		});
 	}
 	if (input.financialYear.version !== input.expectedVersion) {
-		return fail(
-			"CONFLICT",
-			"Corporate Administration financial year version is stale.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_STALE_VERSION",
-				{
-					expectedVersion: input.expectedVersion,
-					actualVersion: input.financialYear.version,
-				},
-			),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage:
+				"Corporate Administration financial year version is stale.",
+		});
 	}
-	return ok(input.financialYear);
+	return errorResult.ok(input.financialYear);
 }
 
 export function resolveFinancialYearAsOf(input: {
@@ -510,16 +433,12 @@ export function validateCompanyActivityClassification(
 		classification === "regulated" ||
 		classification === "operational"
 	) {
-		return ok(classification);
+		return errorResult.ok(classification);
 	}
-	return fail(
-		"VALIDATION_ERROR",
-		"Corporate Administration activity classification is invalid.",
-		corporateAdministrationErrorDetails(
-			"CORPORATE_ADMINISTRATION_VALIDATION_FAILED",
-			{ field: "classification" },
-		),
-	);
+	return errorResult.fail("VALIDATION_ERROR", {
+		publicMessage:
+			"Corporate Administration activity classification is invalid.",
+	});
 }
 
 export function validateActivityEffectiveRange(input: {
@@ -550,16 +469,12 @@ export function validateActivityEffectiveRange(input: {
 			),
 	);
 	if (overlap === undefined) {
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	}
-	return fail(
-		"CONFLICT",
-		"Corporate Administration company activity overlaps an existing activity.",
-		corporateAdministrationErrorDetails(
-			"CORPORATE_ADMINISTRATION_EFFECTIVE_RANGE_OVERLAP",
-			{ field: "effectivePeriod" },
-		),
-	);
+	return errorResult.fail("CONFLICT", {
+		publicMessage:
+			"Corporate Administration company activity overlaps an existing activity.",
+	});
 }
 
 export function validateActivityAuthority(input: {
@@ -576,24 +491,15 @@ export function validateActivityAuthority(input: {
 		return classification;
 	}
 	if (input.classificationSystem.trim().length === 0) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Corporate Administration activity classification system is invalid.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_REFERENCE_INVALID",
-				{ field: "classificationSystem" },
-			),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage:
+				"Corporate Administration activity classification system is invalid.",
+		});
 	}
 	if (input.activityCode.trim().length === 0) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Corporate Administration activity code is invalid.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_REFERENCE_INVALID",
-				{ field: "activityCode" },
-			),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "Corporate Administration activity code is invalid.",
+		});
 	}
 	if (
 		classification.data === "regulated" &&
@@ -601,30 +507,22 @@ export function validateActivityAuthority(input: {
 			input.regulatorCode === null ||
 			input.regulatorCode.trim().length === 0)
 	) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Corporate Administration regulated activity requires a regulator.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_REFERENCE_INVALID",
-				{ field: "regulatorCode" },
-			),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage:
+				"Corporate Administration regulated activity requires a regulator.",
+		});
 	}
 	if (
 		input.jurisdictionCode !== undefined &&
 		input.jurisdictionCode !== null &&
 		!COUNTRY_CODE_PATTERN.test(input.jurisdictionCode)
 	) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Corporate Administration activity jurisdiction is invalid.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_REFERENCE_INVALID",
-				{ field: "jurisdictionCode" },
-			),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage:
+				"Corporate Administration activity jurisdiction is invalid.",
+		});
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function resolveActivitiesAsOf(input: {
@@ -681,29 +579,21 @@ export function validateLegalCompanyStatusTransition(
 	}>,
 ): Result<void> {
 	if (input.from === input.to) {
-		return fail(
-			"CONFLICT",
-			"Corporate Administration legal company status is already current.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_INVALID_TRANSITION",
-				{ field: "status" },
-			),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage:
+				"Corporate Administration legal company status is already current.",
+		});
 	}
 	const allowedTransitions = LEGAL_COMPANY_STATUS_TRANSITIONS[
 		input.from
 	] as readonly LegalCompanyStatus[];
 	if (!allowedTransitions.includes(input.to)) {
-		return fail(
-			"CONFLICT",
-			"Corporate Administration legal company status transition is invalid.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_INVALID_TRANSITION",
-				{ field: "status" },
-			),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage:
+				"Corporate Administration legal company status transition is invalid.",
+		});
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function legalCompanyStatusRequiresApproval(
@@ -748,52 +638,34 @@ export function assertJurisdictionEntityTypeCompatible(input: {
 			candidate.jurisdictionCountryCode === input.jurisdictionCountryCode,
 	);
 	if (rule === undefined) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Corporate Administration jurisdiction is not configured.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_REFERENCE_INVALID",
-				{ field: "jurisdictionCountryCode" },
-			),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "Corporate Administration jurisdiction is not configured.",
+		});
 	}
 	if (!rule.active) {
-		return fail(
-			"CONFLICT",
-			"Corporate Administration jurisdiction is inactive.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_REFERENCE_INACTIVE",
-				{ field: "jurisdictionCountryCode" },
-			),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Corporate Administration jurisdiction is inactive.",
+		});
 	}
 	if (!rule.entityTypes.includes(input.entityType)) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Corporate Administration entity type is not valid for the jurisdiction.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_REFERENCE_INVALID",
-				{ field: "entityType" },
-			),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage:
+				"Corporate Administration entity type is not valid for the jurisdiction.",
+		});
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertEffectivePeriodChronology(
 	range: EffectiveRange,
 ): Result<void> {
 	if (range.to !== null && compareCanonicalDates(range.from, range.to) >= 0) {
-		return fail(
-			"CONFLICT",
-			"Corporate Administration effective period is chronologically invalid.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_CHRONOLOGY_INVALID",
-				{ field: "effectiveRange" },
-			),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage:
+				"Corporate Administration effective period is chronologically invalid.",
+		});
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function validateCompanyNameEffectiveRange(input: {
@@ -819,13 +691,10 @@ export function validateCompanyNameEffectiveRange(input: {
 			effectiveRangesOverlap(companyNameEffectiveRange(name), input.candidate),
 	);
 	if (duplicate !== undefined) {
-		return fail(
-			"CONFLICT",
-			"Corporate Administration company name duplicates an effective name for the same type and language.",
-			corporateAdministrationErrorDetails("CORPORATE_ADMINISTRATION_CONFLICT", {
-				field: "normalizedName",
-			}),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage:
+				"Corporate Administration company name duplicates an effective name for the same type and language.",
+		});
 	}
 
 	const overlap = input.existing.find(
@@ -837,16 +706,12 @@ export function validateCompanyNameEffectiveRange(input: {
 			effectiveRangesOverlap(companyNameEffectiveRange(name), input.candidate),
 	);
 	if (overlap === undefined) {
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	}
-	return fail(
-		"CONFLICT",
-		"Corporate Administration company name overlaps an existing name for the same type and language.",
-		corporateAdministrationErrorDetails(
-			"CORPORATE_ADMINISTRATION_EFFECTIVE_RANGE_OVERLAP",
-			{ field: "effectivePeriod" },
-		),
-	);
+	return errorResult.fail("CONFLICT", {
+		publicMessage:
+			"Corporate Administration company name overlaps an existing name for the same type and language.",
+	});
 }
 
 export function validateLegalFormEffectiveRange(input: {
@@ -869,16 +734,12 @@ export function validateLegalFormEffectiveRange(input: {
 			),
 	);
 	if (overlap === undefined) {
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	}
-	return fail(
-		"CONFLICT",
-		"Corporate Administration legal form overlaps an existing legal form.",
-		corporateAdministrationErrorDetails(
-			"CORPORATE_ADMINISTRATION_EFFECTIVE_RANGE_OVERLAP",
-			{ field: "effectivePeriod" },
-		),
-	);
+	return errorResult.fail("CONFLICT", {
+		publicMessage:
+			"Corporate Administration legal form overlaps an existing legal form.",
+	});
 }
 
 export function validateLegalFormCompatibility(input: {
@@ -891,46 +752,30 @@ export function validateLegalFormCompatibility(input: {
 		(candidate) => candidate.jurisdictionCode === input.jurisdictionCode,
 	);
 	if (rule === undefined) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Corporate Administration legal-form jurisdiction is not configured.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_REFERENCE_INVALID",
-				{ field: "jurisdictionCode" },
-			),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage:
+				"Corporate Administration legal-form jurisdiction is not configured.",
+		});
 	}
 	if (!rule.active) {
-		return fail(
-			"CONFLICT",
-			"Corporate Administration legal-form jurisdiction is inactive.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_REFERENCE_INACTIVE",
-				{ field: "jurisdictionCode" },
-			),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage:
+				"Corporate Administration legal-form jurisdiction is inactive.",
+		});
 	}
 	if (!rule.legalFormCodes.includes(input.legalFormCode)) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Corporate Administration legal form is not valid for the jurisdiction.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_REFERENCE_INVALID",
-				{ field: "legalFormCode" },
-			),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage:
+				"Corporate Administration legal form is not valid for the jurisdiction.",
+		});
 	}
 	if (!rule.entityTypeCodes.includes(input.entityTypeCode)) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Corporate Administration entity type is not valid for the legal form.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_REFERENCE_INVALID",
-				{ field: "entityTypeCode" },
-			),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage:
+				"Corporate Administration entity type is not valid for the legal form.",
+		});
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertNoJurisdictionProfileOverlap(input: {
@@ -945,16 +790,12 @@ export function assertNoJurisdictionProfileOverlap(input: {
 			effectiveRangesOverlap(profile.effectiveRange, input.candidate),
 	);
 	if (overlap === undefined) {
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	}
-	return fail(
-		"CONFLICT",
-		"Corporate Administration jurisdiction profile overlaps an existing profile.",
-		corporateAdministrationErrorDetails(
-			"CORPORATE_ADMINISTRATION_EFFECTIVE_RANGE_OVERLAP",
-			{ field: "effectiveRange" },
-		),
-	);
+	return errorResult.fail("CONFLICT", {
+		publicMessage:
+			"Corporate Administration jurisdiction profile overlaps an existing profile.",
+	});
 }
 
 export function assertNoCompanyNameOverlap(input: {
@@ -983,39 +824,24 @@ export function assertSupersessionEligible(input: {
 	expectedVersion: number;
 }): Result<CompanyJurisdictionProfile> {
 	if (input.profile === null) {
-		return fail(
-			"NOT_FOUND",
-			"Corporate Administration jurisdiction profile was not found.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_NOT_FOUND",
-				{ entityType: "companyJurisdictionProfile" },
-			),
-		);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage:
+				"Corporate Administration jurisdiction profile was not found.",
+		});
 	}
 	if (input.profile.supersededAt !== null) {
-		return fail(
-			"CONFLICT",
-			"Corporate Administration jurisdiction profile is already superseded.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_INVALID_TRANSITION",
-				{ field: "jurisdictionProfileId" },
-			),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage:
+				"Corporate Administration jurisdiction profile is already superseded.",
+		});
 	}
 	if (input.profile.version !== input.expectedVersion) {
-		return fail(
-			"CONFLICT",
-			"Corporate Administration jurisdiction profile version is stale.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_STALE_VERSION",
-				{
-					expectedVersion: input.expectedVersion,
-					actualVersion: input.profile.version,
-				},
-			),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage:
+				"Corporate Administration jurisdiction profile version is stale.",
+		});
 	}
-	return ok(input.profile);
+	return errorResult.ok(input.profile);
 }
 
 export function assertCompanyNameSupersessionEligible(input: {
@@ -1023,39 +849,21 @@ export function assertCompanyNameSupersessionEligible(input: {
 	expectedVersion: number;
 }): Result<CompanyName> {
 	if (input.name === null) {
-		return fail(
-			"NOT_FOUND",
-			"Corporate Administration company name was not found.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_NOT_FOUND",
-				{ entityType: "companyName" },
-			),
-		);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Corporate Administration company name was not found.",
+		});
 	}
 	if (input.name.status !== "active") {
-		return fail(
-			"CONFLICT",
-			"Corporate Administration company name is not active.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_INVALID_TRANSITION",
-				{ field: "companyNameId" },
-			),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Corporate Administration company name is not active.",
+		});
 	}
 	if (input.name.version !== input.expectedVersion) {
-		return fail(
-			"CONFLICT",
-			"Corporate Administration company name version is stale.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_STALE_VERSION",
-				{
-					expectedVersion: input.expectedVersion,
-					actualVersion: input.name.version,
-				},
-			),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Corporate Administration company name version is stale.",
+		});
 	}
-	return ok(input.name);
+	return errorResult.ok(input.name);
 }
 
 export function validateCompanyNameSupersession(input: {
@@ -1077,39 +885,21 @@ export function assertLegalFormSupersessionEligible(input: {
 	expectedVersion: number;
 }): Result<CompanyLegalForm> {
 	if (input.legalForm === null) {
-		return fail(
-			"NOT_FOUND",
-			"Corporate Administration legal form was not found.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_NOT_FOUND",
-				{ entityType: "companyLegalForm" },
-			),
-		);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Corporate Administration legal form was not found.",
+		});
 	}
 	if (input.legalForm.status !== "active") {
-		return fail(
-			"CONFLICT",
-			"Corporate Administration legal form is not active.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_INVALID_TRANSITION",
-				{ field: "companyLegalFormHistoryId" },
-			),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Corporate Administration legal form is not active.",
+		});
 	}
 	if (input.legalForm.version !== input.expectedVersion) {
-		return fail(
-			"CONFLICT",
-			"Corporate Administration legal form version is stale.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_STALE_VERSION",
-				{
-					expectedVersion: input.expectedVersion,
-					actualVersion: input.legalForm.version,
-				},
-			),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Corporate Administration legal form version is stale.",
+		});
 	}
-	return ok(input.legalForm);
+	return errorResult.ok(input.legalForm);
 }
 
 export function validateLegalFormSupersession(input: {

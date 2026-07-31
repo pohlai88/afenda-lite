@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
@@ -28,19 +28,21 @@ function decodePayload(
 			typeof parsed.token !== "string" ||
 			parsed.token.length === 0
 		) {
-			return fail(
-				"VALIDATION_ERROR",
-				"Attendance connector cursor is malformed.",
-				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-			);
+			return errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "The submitted data is invalid",
+				internalContext: humanResourcesErrorDetails(
+					HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+				),
+			});
 		}
-		return ok(parsed);
+		return errorResult.ok(parsed);
 	} catch {
-		return fail(
-			"VALIDATION_ERROR",
-			"Attendance connector cursor is malformed.",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
 }
 
@@ -49,22 +51,21 @@ export function resolveAttendanceConnectorPullCursor(input: {
 	cursor?: string;
 }): Result<{ pullCursor?: string }> {
 	if (input.cursor === undefined) {
-		return ok({});
+		return errorResult.ok({});
 	}
 	const decoded = decodePayload(input.cursor);
 	if (!decoded.ok) {
 		return decoded;
 	}
 	if (decoded.data.organizationId !== input.organizationId) {
-		return fail(
-			"CONFLICT",
-			"Attendance connector cursor belongs to a different organization.",
-			humanResourcesErrorDetails(
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "The request conflicts with current state",
+			internalContext: humanResourcesErrorDetails(
 				HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 			),
-		);
+		});
 	}
-	return ok({ pullCursor: decoded.data.token });
+	return errorResult.ok({ pullCursor: decoded.data.token });
 }
 
 export function bindAttendanceConnectorCursor(input: {

@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	getItemById,
 	getRefUomById,
@@ -28,7 +28,7 @@ export function createMasterDataLookupPort(
 			if (!result.ok) {
 				return result;
 			}
-			return ok(result.data);
+			return errorResult.ok(result.data);
 		},
 		async getRefUomById(
 			organizationId: string,
@@ -42,7 +42,7 @@ export function createMasterDataLookupPort(
 			if (!result.ok) {
 				return result;
 			}
-			return ok(result.data);
+			return errorResult.ok(result.data);
 		},
 		async getWarehouseById(
 			organizationId: string,
@@ -56,20 +56,22 @@ export function createMasterDataLookupPort(
 			if (!result.ok) {
 				return result;
 			}
-			return ok(result.data);
+			return errorResult.ok(result.data);
 		},
 	};
 }
 
 export function requireMaster<T>(
 	result: Result<T | null>,
-	notFoundMessage: string,
+	_notFoundMessage: string,
 ): Result<T> {
 	if (!result.ok) {
 		return result;
 	}
 	if (result.data === null) {
-		return fail("NOT_FOUND", notFoundMessage);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "The requested resource was not found",
+		});
 	}
-	return ok(result.data);
+	return errorResult.ok(result.data);
 }

@@ -1,6 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
-
-import type { MasterFailureDetails } from "../../contracts/reasons";
+import { errorResult, type Result } from "@afenda/errors";
 
 export const MAX_MASTER_CODE_LENGTH = 64 as const;
 export const MAX_SEARCH_TEXT_LENGTH = 512 as const;
@@ -22,43 +20,30 @@ export function normalizeMasterCode(raw: string): Result<{
 	normalizedCode: string;
 }> {
 	if (typeof raw !== "string") {
-		return fail("BAD_REQUEST", "Master code must be a string", {
-			reason: "MASTER_VALIDATION_FAILED",
-			field: "code",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Master code must be a string",
+		});
 	}
 
 	const code = raw.normalize("NFC").trim();
 	if (code.length === 0) {
-		return fail("BAD_REQUEST", "Master code is required", {
-			reason: "MASTER_VALIDATION_FAILED",
-			field: "code",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Master code is required",
+		});
 	}
 	if (code.length > MAX_MASTER_CODE_LENGTH) {
-		return fail(
-			"BAD_REQUEST",
-			`Master code must not exceed ${MAX_MASTER_CODE_LENGTH} characters`,
-			{
-				reason: "MASTER_VALIDATION_FAILED",
-				field: "code",
-				maxLength: MAX_MASTER_CODE_LENGTH,
-			} satisfies MasterFailureDetails,
-		);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "The request is invalid",
+		});
 	}
 
 	const normalizedCode = code.toUpperCase();
 	if (!NORMALIZED_CODE_RE.test(normalizedCode)) {
-		return fail(
-			"BAD_REQUEST",
-			"Master code may contain only A-Z, 0-9, '.', '_' and '-'",
-			{
-				reason: "MASTER_VALIDATION_FAILED",
-				field: "code",
-			} satisfies MasterFailureDetails,
-		);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Master code may contain only A-Z, 0-9, '.', '_' and '-'",
+		});
 	}
-	return ok({ code, normalizedCode });
+	return errorResult.ok({ code, normalizedCode });
 }
 
 export function normalizeSearchText(
@@ -94,7 +79,7 @@ export function normalizeSearchText(
 		);
 	}
 
-	return ok({
+	return errorResult.ok({
 		text,
 		normalizedText: text.normalize("NFKC").toLowerCase(),
 	});
@@ -138,7 +123,7 @@ export function normalizeEmail(raw: string): Result<{
 		return invalidNormalization("Email contact value is invalid", "value");
 	}
 
-	return ok({ value, normalizedValue: `${local}@${domain}` });
+	return errorResult.ok({ value, normalizedValue: `${local}@${domain}` });
 }
 
 export function normalizePhone(raw: string): Result<{
@@ -162,7 +147,7 @@ export function normalizePhone(raw: string): Result<{
 			"value",
 		);
 	}
-	return ok({ value, normalizedValue });
+	return errorResult.ok({ value, normalizedValue });
 }
 
 export function normalizeExternalIdValue(input: {
@@ -196,7 +181,7 @@ export function normalizeExternalIdValue(input: {
 		);
 	}
 
-	return ok({
+	return errorResult.ok({
 		value,
 		normalizedValue: input.caseSensitive ? value : value.toUpperCase(),
 		caseSensitive: input.caseSensitive,
@@ -204,13 +189,11 @@ export function normalizeExternalIdValue(input: {
 }
 
 function invalidNormalization(
-	message: string,
-	field: string,
-	extra: Record<string, unknown> = {},
+	_message: string,
+	_field: string,
+	_extra: Record<string, unknown> = {},
 ): Result<never> {
-	return fail("BAD_REQUEST", message, {
-		reason: "MASTER_VALIDATION_FAILED",
-		field,
-		...extra,
-	} satisfies MasterFailureDetails);
+	return errorResult.fail("BAD_REQUEST", {
+		publicMessage: "The request is invalid",
+	});
 }

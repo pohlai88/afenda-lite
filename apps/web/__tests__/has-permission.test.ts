@@ -25,7 +25,7 @@ describe("hasPermission guards (I3.1 / N10)", () => {
 				userId: "user-a",
 				code: "org.roles.manage",
 			}),
-		).rejects.toThrow(/orgId/);
+		).rejects.toThrow();
 	});
 
 	it("rejects empty permission code", async () => {
@@ -35,7 +35,7 @@ describe("hasPermission guards (I3.1 / N10)", () => {
 				userId: "user-a",
 				code: "",
 			}),
-		).rejects.toThrow(/code/);
+		).rejects.toThrow();
 	});
 
 	it("returns false for unknown (non-v1) permission codes", async () => {

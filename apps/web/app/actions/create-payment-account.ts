@@ -1,17 +1,13 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { createPaymentAccount, type PaymentAccount } from "@afenda/payments";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
 import { createPaymentsCommandOptions } from "@/lib/erp/payments-command-options";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export type CreatePaymentAccountActionState = ActionResult<{
@@ -42,11 +38,9 @@ export async function createPaymentAccountAction(
 				currencyCode: formData.get("currencyCode"),
 			});
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter valid payment account details.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter valid payment account details.",
+				});
 			}
 			const mapped = mapPackageResult(
 				await createPaymentAccount(

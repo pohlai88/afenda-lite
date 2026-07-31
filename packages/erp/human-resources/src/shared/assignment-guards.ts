@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	HUMAN_RESOURCES_ERROR_ASSIGNMENT_OUTSIDE_EMPLOYMENT_RANGE,
@@ -13,23 +13,21 @@ export const MULTIPLE_PRIMARY_ASSIGNMENTS_AT_ASOF_MESSAGE =
 	"Multiple assignments are effective on the requested date";
 
 export function multiplePrimaryAssignmentsAtAsOf(): Result<never> {
-	return fail(
-		"CONFLICT",
-		MULTIPLE_PRIMARY_ASSIGNMENTS_AT_ASOF_MESSAGE,
-		humanResourcesErrorDetails(
+	return errorResult.fail("CONFLICT", {
+		publicMessage: "The request conflicts with current state",
+		internalContext: humanResourcesErrorDetails(
 			HUMAN_RESOURCES_ERROR_MULTIPLE_PRIMARY_ASSIGNMENTS,
 		),
-	);
+	});
 }
 
-function assignmentOutsideEmploymentRange(message: string): Result<never> {
-	return fail(
-		"VALIDATION_ERROR",
-		message,
-		humanResourcesErrorDetails(
+function assignmentOutsideEmploymentRange(_message: string): Result<never> {
+	return errorResult.fail("VALIDATION_ERROR", {
+		publicMessage: "The submitted data is invalid",
+		internalContext: humanResourcesErrorDetails(
 			HUMAN_RESOURCES_ERROR_ASSIGNMENT_OUTSIDE_EMPLOYMENT_RANGE,
 		),
-	);
+	});
 }
 
 export function assertNoAssignmentOverlap(input: {
@@ -54,14 +52,15 @@ export function assertNoAssignmentOverlap(input: {
 				endsOnB: assignment.endsOn,
 			})
 		) {
-			return fail(
-				"CONFLICT",
-				"Assignment date range overlaps an existing assignment for this employment",
-				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "The request conflicts with current state",
+				internalContext: humanResourcesErrorDetails(
+					HUMAN_RESOURCES_ERROR_CONFLICT,
+				),
+			});
 		}
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertAssignmentWithinEmployment(input: {
@@ -87,7 +86,7 @@ export function assertAssignmentWithinEmployment(input: {
 			);
 		}
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertTransferAssignmentRanges(input: {

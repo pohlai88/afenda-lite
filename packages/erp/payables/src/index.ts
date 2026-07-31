@@ -1,6 +1,6 @@
 import "server-only";
 
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import { createEventPublisher } from "@afenda/events";
 import { z } from "zod";
 
@@ -193,7 +193,7 @@ function resolveEffects(effects?: PayablesEffects): PayablesEffects {
 				sourceModule: "payables",
 				type: event.type,
 			});
-			return result.ok ? ok(undefined) : result;
+			return result.ok ? errorResult.ok(undefined) : result;
 		},
 	};
 }
@@ -201,13 +201,13 @@ function resolveEffects(effects?: PayablesEffects): PayablesEffects {
 function parse<T>(
 	schema: z.ZodType<T>,
 	input: unknown,
-	message: string,
+	_message: string,
 ): Result<T> {
 	const parsed = schema.safeParse(input);
 	return parsed.success
-		? ok(parsed.data)
-		: fail("BAD_REQUEST", message, {
-				fieldErrors: parsed.error.flatten().fieldErrors,
+		? errorResult.ok(parsed.data)
+		: errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "The submitted data is invalid",
 			});
 }
 
@@ -299,10 +299,7 @@ export async function matchSupplierInvoice(
 		options.purchaseOrderMatch === undefined ||
 		options.goodsReceiptMatch === undefined
 	) {
-		return fail(
-			"UNAUTHORIZED",
-			"Purchase order and goods receipt match ports are required",
-		);
+		return errorResult.fail("UNAUTHORIZED");
 	}
 
 	const store = resolveStore(options.store);
@@ -314,20 +311,30 @@ export async function matchSupplierInvoice(
 		return invoiceResult;
 	}
 	if (invoiceResult.data === null) {
-		return fail("NOT_FOUND", "Supplier invoice not found");
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Supplier invoice not found",
+		});
 	}
 	const invoice = invoiceResult.data;
 	if (invoice.version !== parsed.data.expectedVersion) {
-		return fail("CONFLICT", "Supplier invoice version conflict");
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Supplier invoice version conflict",
+		});
 	}
 	if (invoice.status !== "draft" || invoice.documentType !== "invoice") {
-		return fail("CONFLICT", "Only draft supplier invoices can be matched");
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Only draft supplier invoices can be matched",
+		});
 	}
 	if (invoice.lines.length === 0) {
-		return fail("CONFLICT", "Cannot match an invoice without lines");
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Cannot match an invoice without lines",
+		});
 	}
 	if (Number(invoice.totalAmount) <= 0) {
-		return fail("CONFLICT", "Cannot match an invoice without a positive total");
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Cannot match an invoice without a positive total",
+		});
 	}
 
 	const poBasis = await options.purchaseOrderMatch.getPurchaseOrderMatchBasis({
@@ -338,7 +345,9 @@ export async function matchSupplierInvoice(
 		return poBasis;
 	}
 	if (poBasis.data === null) {
-		return fail("NOT_FOUND", "Purchase order not found for matching");
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Purchase order not found for matching",
+		});
 	}
 
 	const grBasis = await options.goodsReceiptMatch.getGoodsReceiptMatchBasis({
@@ -349,7 +358,9 @@ export async function matchSupplierInvoice(
 		return grBasis;
 	}
 	if (grBasis.data === null) {
-		return fail("NOT_FOUND", "Goods receipt not found for matching");
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Goods receipt not found for matching",
+		});
 	}
 
 	const matchEvaluation = evaluateThreeWayMatch({
@@ -400,20 +411,21 @@ export async function postSupplierInvoice(
 		return current;
 	}
 	if (current.data === null) {
-		return fail("NOT_FOUND", "Supplier invoice not found");
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Supplier invoice not found",
+		});
 	}
 	const match = current.data.matchResult;
 	if (match === null || match.result === "exception") {
-		return fail(
-			"CONFLICT",
-			"Supplier invoice requires a successful three-way match",
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Supplier invoice requires a successful three-way match",
+		});
 	}
 	if (
 		options.purchaseOrderMatch === undefined ||
 		options.goodsReceiptMatch === undefined
 	) {
-		return fail("UNAUTHORIZED", "Match ports are required before posting");
+		return errorResult.fail("UNAUTHORIZED");
 	}
 	const [purchaseOrder, goodsReceipt] = await Promise.all([
 		options.purchaseOrderMatch.getPurchaseOrderMatchBasis({
@@ -437,10 +449,10 @@ export async function postSupplierInvoice(
 		purchaseOrder.data.version !== match.purchaseOrderVersion ||
 		goodsReceipt.data.version !== match.goodsReceiptVersion
 	) {
-		return fail(
-			"CONFLICT",
-			"Three-way match evidence is stale; rematch before posting",
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage:
+				"Three-way match evidence is stale; rematch before posting",
+		});
 	}
 	return store.postInvoice({
 		...parsed.data,
@@ -599,7 +611,7 @@ export async function applySupplierPayment(
 	}
 
 	if (options.postedPayment === undefined) {
-		return fail("UNAUTHORIZED", "Posted payment query port is required");
+		return errorResult.fail("UNAUTHORIZED");
 	}
 
 	const store = resolveStore(options.store);
@@ -611,14 +623,15 @@ export async function applySupplierPayment(
 		return invoiceResult;
 	}
 	if (invoiceResult.data === null) {
-		return fail("NOT_FOUND", "Supplier invoice not found");
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Supplier invoice not found",
+		});
 	}
 	const invoice = invoiceResult.data;
 	if (invoice.status !== "posted" || invoice.documentType !== "invoice") {
-		return fail(
-			"CONFLICT",
-			"Payment application requires a posted supplier invoice",
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Payment application requires a posted supplier invoice",
+		});
 	}
 
 	const paymentBasis = await options.postedPayment.getPostedPayment({
@@ -629,20 +642,20 @@ export async function applySupplierPayment(
 		return paymentBasis;
 	}
 	if (paymentBasis.data === null) {
-		return fail("NOT_FOUND", "Posted payment not found for application");
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Posted payment not found for application",
+		});
 	}
 	if (paymentBasis.data.status !== "posted") {
-		return fail("CONFLICT", "Payment must be posted before application");
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Payment must be posted before application",
+		});
 	}
 	if (paymentBasis.data.currencyCode !== invoice.currencyCode) {
-		return fail(
-			"CONFLICT",
-			"Payment and invoice currencies must match for application",
-			{
-				invoiceCurrency: invoice.currencyCode,
-				paymentCurrency: paymentBasis.data.currencyCode,
-			},
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage:
+				"Payment and invoice currencies must match for application",
+		});
 	}
 
 	return store.applyPayment({

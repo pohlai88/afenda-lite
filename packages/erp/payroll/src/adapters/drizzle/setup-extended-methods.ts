@@ -10,7 +10,7 @@ import {
 	payrollRuleFinalizedUsage,
 	payrollStatutoryRule,
 } from "@afenda/db";
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	parsePayrollCalendarId,
@@ -80,7 +80,7 @@ function mapCalendarRow(
 	if (!id.ok) {
 		return id;
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		code: row.code,
@@ -108,7 +108,7 @@ function mapPayGroupRow(
 	if (!calendarId.ok) {
 		return calendarId;
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		calendarId: calendarId.data,
@@ -135,7 +135,7 @@ function mapPeriodRow(
 	if (!payGroupId.ok) {
 		return payGroupId;
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		payGroupId: payGroupId.data,
@@ -162,7 +162,7 @@ function mapEarningRuleRow(
 	if (!payGroupId.ok) {
 		return payGroupId;
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		payGroupId: payGroupId.data,
@@ -195,7 +195,7 @@ function mapDeductionRuleRow(
 	if (!payGroupId.ok) {
 		return payGroupId;
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		payGroupId: payGroupId.data,
@@ -236,7 +236,7 @@ function mapStatutoryRuleRow(
 			"Persisted payroll statutory rule configuration is invalid",
 		);
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		payGroupId: payGroupId.data,
@@ -301,7 +301,7 @@ export function createDrizzleSetupExtendedMethods(
 					),
 				)
 				.limit(1);
-			return ok(rows[0] !== undefined);
+			return errorResult.ok(rows[0] !== undefined);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -416,7 +416,7 @@ export function createDrizzleSetupExtendedMethods(
 					}
 					calendars.push(mapped.data);
 				}
-				return ok(calendars);
+				return errorResult.ok(calendars);
 			} catch (error) {
 				return mapPersistenceFailure(error, "Failed to list payroll calendars");
 			}
@@ -720,7 +720,7 @@ export function createDrizzleSetupExtendedMethods(
 					.limit(1);
 				const [row] = rows;
 				if (row === undefined) {
-					return ok(null);
+					return errorResult.ok(null);
 				}
 				return mapEarningRuleRow(row);
 			} catch (error) {
@@ -1015,7 +1015,7 @@ export function createDrizzleSetupExtendedMethods(
 				return successorResult;
 			}
 
-			return ok({
+			return errorResult.ok({
 				superseded: supersededMapped.data,
 				successor: successorResult.data,
 			} satisfies PayrollRuleSupersedeResult<PayrollEarningRule>);
@@ -1035,7 +1035,7 @@ export function createDrizzleSetupExtendedMethods(
 					.limit(1);
 				const [row] = rows;
 				if (row === undefined) {
-					return ok(null);
+					return errorResult.ok(null);
 				}
 				return mapDeductionRuleRow(row);
 			} catch (error) {
@@ -1335,7 +1335,7 @@ export function createDrizzleSetupExtendedMethods(
 				return successorResult;
 			}
 
-			return ok({
+			return errorResult.ok({
 				superseded: supersededMapped.data,
 				successor: successorResult.data,
 			} satisfies PayrollRuleSupersedeResult<PayrollDeductionRule>);
@@ -1355,7 +1355,7 @@ export function createDrizzleSetupExtendedMethods(
 					.limit(1);
 				const [row] = rows;
 				if (row === undefined) {
-					return ok(null);
+					return errorResult.ok(null);
 				}
 				return mapStatutoryRuleRow(row);
 			} catch (error) {
@@ -1646,7 +1646,7 @@ export function createDrizzleSetupExtendedMethods(
 				return successorResult;
 			}
 
-			return ok({
+			return errorResult.ok({
 				superseded: supersededMapped.data,
 				successor: successorResult.data,
 			} satisfies PayrollRuleSupersedeResult<PayrollStatutoryRule>);
@@ -1665,10 +1665,10 @@ export function createDrizzleSetupExtendedMethods(
 					ruleId: usageInput.ruleId,
 					runId: runId.data,
 				});
-				return ok({ recorded: true as const });
+				return errorResult.ok({ recorded: true as const });
 			} catch (error) {
 				if (isPostgresUniqueViolation(error)) {
-					return ok({ recorded: true as const });
+					return errorResult.ok({ recorded: true as const });
 				}
 				return mapPersistenceFailure(
 					error,

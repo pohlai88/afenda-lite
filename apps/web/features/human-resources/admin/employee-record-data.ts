@@ -1,5 +1,5 @@
 import type { Session } from "@afenda/auth";
-import { fail, type ResultFailure } from "@afenda/errors/result";
+import type { ResultFailure } from "@afenda/errors";
 import {
 	HUMAN_RESOURCES_ASSIGNMENT_CREATED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_TERMINATED_EVENT,
@@ -240,11 +240,7 @@ export async function loadEmployeeAdminRecord(input: {
 		options,
 	);
 	if (!employeeResult.ok) {
-		return fail(
-			employeeResult.code,
-			employeeResult.message,
-			employeeResult.details,
-		);
+		return employeeResult;
 	}
 
 	const [

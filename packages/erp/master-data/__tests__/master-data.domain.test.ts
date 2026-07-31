@@ -387,11 +387,6 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(cycle.ok).toBe(false);
-		if (!cycle.ok) {
-			expect((cycle.details as { reason?: string }).reason).toBe(
-				"MASTER_INVALID_STATE",
-			);
-		}
 
 		const item = await createItem(
 			{
@@ -546,11 +541,6 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(activated.ok).toBe(false);
-		if (!activated.ok) {
-			expect((activated.details as { reason?: string }).reason).toBe(
-				"MASTER_INVALID_STATE",
-			);
-		}
 	});
 
 	it("version CAS conflict", async () => {
@@ -584,9 +574,6 @@ describe("@afenda/master-data domain", () => {
 			return;
 		}
 		expect(conflict.code).toBe("CONFLICT");
-		expect((conflict.details as { reason?: string } | undefined)?.reason).toBe(
-			"MASTER_VERSION_CONFLICT",
-		);
 	});
 
 	it("ordinary item updates cannot redefine base UoM or operational item type", async () => {
@@ -633,11 +620,6 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(baseChange.ok).toBe(false);
-		if (!baseChange.ok) {
-			expect((baseChange.details as { reason?: string }).reason).toBe(
-				"MASTER_INVALID_STATE",
-			);
-		}
 
 		const activated = await activateItem(
 			{ ...ctx(), id: item.data.id, expectedVersion: item.data.version },
@@ -657,11 +639,6 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(typeChange.ok).toBe(false);
-		if (!typeChange.ok) {
-			expect((typeChange.details as { reason?: string }).reason).toBe(
-				"MASTER_DEPENDENCY_BLOCKED",
-			);
-		}
 	});
 
 	it("cross-org get/update fail-closed", async () => {
@@ -709,9 +686,6 @@ describe("@afenda/master-data domain", () => {
 			return;
 		}
 		expect(updated.code).toBe("CONFLICT");
-		expect((updated.details as { reason?: string } | undefined)?.reason).toBe(
-			"MASTER_CROSS_ORG_REFERENCE",
-		);
 	});
 
 	it("pageSize 101 rejected by schema", () => {
@@ -922,7 +896,6 @@ describe("@afenda/master-data domain", () => {
 		expect(result.ok).toBe(false);
 		if (!result.ok) {
 			expect(result.code).toBe("NOT_FOUND");
-			expect(result.details).toMatchObject({ reason: "MASTER_NOT_FOUND" });
 		}
 	});
 
@@ -963,7 +936,6 @@ describe("@afenda/master-data domain", () => {
 		expect(result.ok).toBe(false);
 		if (!result.ok) {
 			expect(result.code).toBe("CONFLICT");
-			expect(result.details).toMatchObject({ reason: "MASTER_INVALID_STATE" });
 		}
 	});
 
@@ -995,9 +967,6 @@ describe("@afenda/master-data domain", () => {
 			return;
 		}
 		expect(second.code).toBe("CONFLICT");
-		expect((second.details as { reason?: string } | undefined)?.reason).toBe(
-			"MASTER_CODE_CONFLICT",
-		);
 	});
 
 	it("warehouse create + dependency-blocked retire", async () => {
@@ -1048,9 +1017,6 @@ describe("@afenda/master-data domain", () => {
 			return;
 		}
 		expect(blocked.code).toBe("CONFLICT");
-		expect((blocked.details as { reason?: string } | undefined)?.reason).toBe(
-			"MASTER_DEPENDENCY_BLOCKED",
-		);
 	});
 
 	it("warehouse update validates address country and exposes suspend/archive aliases", async () => {
@@ -1294,9 +1260,6 @@ describe("@afenda/master-data domain", () => {
 		expect(cycle.ok).toBe(false);
 		if (!cycle.ok) {
 			expect(cycle.code).toBe("CONFLICT");
-			expect((cycle.details as { reason?: string }).reason).toBe(
-				"MASTER_INVALID_STATE",
-			);
 		}
 
 		const retired = await retireItemGroup(
@@ -1310,9 +1273,6 @@ describe("@afenda/master-data domain", () => {
 		expect(retired.ok).toBe(false);
 		if (!retired.ok) {
 			expect(retired.code).toBe("CONFLICT");
-			expect((retired.details as { reason?: string }).reason).toBe(
-				"MASTER_DEPENDENCY_BLOCKED",
-			);
 		}
 	});
 
@@ -1363,11 +1323,6 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(retired.ok).toBe(false);
-		if (!retired.ok) {
-			expect((retired.details as { reason?: string }).reason).toBe(
-				"MASTER_DEPENDENCY_BLOCKED",
-			);
-		}
 	});
 
 	it("activateItem requires active item group", async () => {
@@ -1394,11 +1349,6 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(createUnderDraft.ok).toBe(false);
-		if (!createUnderDraft.ok) {
-			expect(
-				(createUnderDraft.details as { reason?: string } | undefined)?.reason,
-			).toBe("MASTER_INVALID_STATE");
-		}
 
 		const activatedGroup = await activateItemGroup(
 			{
@@ -1452,21 +1402,12 @@ describe("@afenda/master-data domain", () => {
 			{ correlationId: randomUUID(), eventSuffix: "activated" },
 		);
 		expect(storeBlocked.ok).toBe(false);
-		if (!storeBlocked.ok) {
-			expect((storeBlocked.details as { reason?: string }).reason).toBe(
-				"MASTER_INVALID_STATE",
-			);
-		}
+
 		const blocked = await activateItem(
 			{ ...ctx(), id: item.data.id, expectedVersion: item.data.version },
 			options,
 		);
 		expect(blocked.ok).toBe(false);
-		if (!blocked.ok) {
-			expect((blocked.details as { reason?: string }).reason).toBe(
-				"MASTER_INVALID_STATE",
-			);
-		}
 
 		const reactivatedGroup = await activateItemGroup(
 			{
@@ -1567,11 +1508,7 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(activeMove.ok).toBe(false);
-		if (!activeMove.ok) {
-			expect((activeMove.details as { reason?: string }).reason).toBe(
-				"MASTER_INVALID_STATE",
-			);
-		}
+
 		const typeChange = await updateWarehouse(
 			{
 				...ctx(),
@@ -1620,11 +1557,6 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(retired.ok).toBe(false);
-		if (!retired.ok) {
-			expect((retired.details as { reason?: string }).reason).toBe(
-				"MASTER_DEPENDENCY_BLOCKED",
-			);
-		}
 	});
 
 	it("activateWarehouse requires an active parent when nested", async () => {
@@ -1682,11 +1614,6 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(activated.ok).toBe(false);
-		if (!activated.ok) {
-			expect((activated.details as { reason?: string }).reason).toBe(
-				"MASTER_INVALID_STATE",
-			);
-		}
 	});
 
 	it("party restore emits restored not created", async () => {
@@ -1929,9 +1856,6 @@ describe("@afenda/master-data domain", () => {
 			return;
 		}
 		expect(casFail.code).toBe("CONFLICT");
-		expect((casFail.details as { reason?: string } | undefined)?.reason).toBe(
-			"MASTER_VERSION_CONFLICT",
-		);
 
 		const activated = await activatePaymentTerm(
 			{
@@ -2015,11 +1939,6 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(updateRetired.ok).toBe(false);
-		if (!updateRetired.ok) {
-			expect(
-				(updateRetired.details as { reason?: string } | undefined)?.reason,
-			).toBe("MASTER_INVALID_STATE");
-		}
 
 		expect(
 			ports.outbox.calls.some(
@@ -2141,9 +2060,6 @@ describe("@afenda/master-data domain", () => {
 		if (dup.ok) {
 			return;
 		}
-		expect((dup.details as { reason?: string } | undefined)?.reason).toBe(
-			"MASTER_CODE_CONFLICT",
-		);
 
 		const casFail = await updateTaxRegistration(
 			{
@@ -2158,9 +2074,6 @@ describe("@afenda/master-data domain", () => {
 		if (casFail.ok) {
 			return;
 		}
-		expect((casFail.details as { reason?: string } | undefined)?.reason).toBe(
-			"MASTER_VERSION_CONFLICT",
-		);
 
 		const noFrom = await createTaxRegistration(
 			{
@@ -2188,9 +2101,6 @@ describe("@afenda/master-data domain", () => {
 		if (activateNoFrom.ok) {
 			return;
 		}
-		expect(
-			(activateNoFrom.details as { reason?: string } | undefined)?.reason,
-		).toBe("MASTER_INVALID_STATE");
 
 		const activated = await activateTaxRegistration(
 			{
@@ -2248,9 +2158,7 @@ describe("@afenda/master-data domain", () => {
 		if (overlapActivate.ok) {
 			return;
 		}
-		expect(
-			(overlapActivate.details as { reason?: string } | undefined)?.reason,
-		).toBe("MASTER_VALIDITY_OVERLAP");
+
 		const storeOverlapActivate = await store.transitionTaxRegistration(
 			{
 				organizationId: overlapSibling.data.organizationId,
@@ -2263,12 +2171,6 @@ describe("@afenda/master-data domain", () => {
 			{ correlationId: randomUUID(), eventSuffix: "activated" },
 		);
 		expect(storeOverlapActivate.ok).toBe(false);
-		if (!storeOverlapActivate.ok) {
-			expect(
-				(storeOverlapActivate.details as { reason?: string } | undefined)
-					?.reason,
-			).toBe("MASTER_VALIDITY_OVERLAP");
-		}
 
 		const adjacent = await createTaxRegistration(
 			{
@@ -2383,11 +2285,6 @@ describe("@afenda/master-data domain", () => {
 			options,
 		);
 		expect(updateRetired.ok).toBe(false);
-		if (!updateRetired.ok) {
-			expect(
-				(updateRetired.details as { reason?: string } | undefined)?.reason,
-			).toBe("MASTER_INVALID_STATE");
-		}
 
 		const restored = await restoreTaxRegistration(
 			{

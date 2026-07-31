@@ -1,6 +1,10 @@
 "use server";
 
-import type { Result } from "@afenda/errors/result";
+import {
+	type Result as ActionResult,
+	errorResult,
+	type Result,
+} from "@afenda/errors";
 import {
 	approveLeaveRequest,
 	approvePerformanceGoal,
@@ -43,11 +47,7 @@ import {
 } from "@/features/human-resources/manager/manager-scope";
 import { createHumanResourcesCommandOptions } from "@/lib/erp/human-resources-command-options";
 import type { ProductPermissionCode } from "@/modules/identity/domain/session-permission";
-import {
-	type ActionResult,
-	actionFail,
-	actionOk,
-} from "@/modules/platform/schemas/action-result";
+
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export type ManagerJourneyActionState = ActionResult<{
@@ -197,9 +197,9 @@ function packageContext(session: ManagerSession, correlationId: string) {
 }
 
 function scopeFailure(
-	message = "This item is outside your current team scope.",
+	_message = "This item is outside your current team scope.",
 ) {
-	return actionFail("FORBIDDEN", message);
+	return errorResult.fail("FORBIDDEN");
 }
 
 async function completeJourney<T>(
@@ -211,7 +211,7 @@ async function completeJourney<T>(
 		return mapped;
 	}
 	revalidatePath("/client/human-resources/manager");
-	return await actionOk({ message });
+	return await errorResult.ok({ message });
 }
 
 async function runManagerJourney(input: {
@@ -241,11 +241,9 @@ export async function managerLeaveDecisionAction(
 				note: formValue(formData, "note") ?? "",
 			});
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid leave decision.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid leave decision.",
+				});
 			}
 			const scope = await resolveManagerScope(session);
 			if (!scope.ok) {
@@ -300,11 +298,9 @@ export async function managerTimesheetDecisionAction(
 				note: formValue(formData, "note") ?? "",
 			});
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid timesheet decision.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid timesheet decision.",
+				});
 			}
 			const scope = await resolveManagerScope(session);
 			if (!scope.ok) {
@@ -379,11 +375,9 @@ export async function managerAttendanceDecisionAction(
 				evidenceReference: formValue(formData, "evidenceReference") ?? "",
 			});
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid attendance exception decision.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid attendance exception decision.",
+				});
 			}
 			const scope = await resolveManagerScope(session);
 			if (!scope.ok) {
@@ -460,11 +454,9 @@ export async function managerProbationDecisionAction(
 				evidenceReference: formValue(formData, "evidenceReference") ?? "",
 			});
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid probation decision.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid probation decision.",
+				});
 			}
 			const scope = await resolveManagerScope(session);
 			if (!scope.ok) {
@@ -555,11 +547,9 @@ export async function managerPerformanceDecisionAction(
 				note: formValue(formData, "note") ?? "",
 			});
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid performance decision.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid performance decision.",
+				});
 			}
 			const scope = await resolveManagerScope(session);
 			if (!scope.ok) {
@@ -669,11 +659,9 @@ export async function managerTalentDecisionAction(
 				evidenceSummary: formValue(formData, "evidenceSummary"),
 			});
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid talent assessment.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid talent assessment.",
+				});
 			}
 			const scope = await resolveManagerScope(session);
 			if (
@@ -737,11 +725,9 @@ export async function managerSuccessionDecisionAction(
 				evidenceSummary: formValue(formData, "evidenceSummary") ?? "",
 			});
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid succession decision.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid succession decision.",
+				});
 			}
 			const scope = await resolveManagerScope(session);
 			if (

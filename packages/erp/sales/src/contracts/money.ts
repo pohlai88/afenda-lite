@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import { z } from "zod";
 
 const TRAILING_ZERO_PATTERN = /0+$/u;
@@ -22,15 +22,15 @@ const SCALE = 1_000_000n;
 export function decimalToScaled(value: string): Result<bigint> {
 	const parsed = decimalAmountSchema.safeParse(value);
 	if (!parsed.success) {
-		return fail("BAD_REQUEST", "Enter a valid decimal amount", {
-			reason: "SALES_INVALID_MONEY",
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Enter a valid decimal amount",
 		});
 	}
 	const negative = parsed.data.startsWith("-");
 	const unsigned = negative ? parsed.data.slice(1) : parsed.data;
 	const [whole = "0", fraction = ""] = unsigned.split(".");
 	const scaled = BigInt(whole) * SCALE + BigInt(fraction.padEnd(6, "0"));
-	return ok(negative ? -scaled : scaled);
+	return errorResult.ok(negative ? -scaled : scaled);
 }
 
 export function scaledToDecimal(value: bigint): string {
@@ -58,7 +58,7 @@ export function multiplyDecimal(left: string, right: string): Result<string> {
 		product >= 0n
 			? (product + SCALE / 2n) / SCALE
 			: (product - SCALE / 2n) / SCALE;
-	return ok(scaledToDecimal(rounded));
+	return errorResult.ok(scaledToDecimal(rounded));
 }
 
 export function addDecimals(values: readonly string[]): Result<string> {
@@ -70,5 +70,5 @@ export function addDecimals(values: readonly string[]): Result<string> {
 		}
 		total += parsed.data;
 	}
-	return ok(scaledToDecimal(total));
+	return errorResult.ok(scaledToDecimal(total));
 }

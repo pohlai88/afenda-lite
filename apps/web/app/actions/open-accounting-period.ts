@@ -4,16 +4,12 @@ import {
 	type AccountingPeriod,
 	openAccountingPeriod,
 } from "@afenda/accounting";
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
 import { createAccountingCommandOptions } from "@/lib/erp/accounting-command-options";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export type OpenAccountingPeriodActionState = ActionResult<{
@@ -41,11 +37,9 @@ export async function openAccountingPeriodAction(
 				endDate: formData.get("endDate"),
 			});
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter valid accounting period dates.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter valid accounting period dates.",
+				});
 			}
 			const mapped = mapPackageResult(
 				await openAccountingPeriod(

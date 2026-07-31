@@ -1,6 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
-
-import { corporateAdministrationErrorDetails } from "../error-codes";
+import { errorResult, type Result } from "@afenda/errors";
 import type { CanonicalDate } from "../kernel/dates";
 import {
 	type EffectiveRange,
@@ -52,16 +50,12 @@ export function validateMembershipWithinBody(input: {
 		(input.body.effectiveTo !== null &&
 			(input.term.to === null || input.term.to > input.body.effectiveTo))
 	) {
-		return fail(
-			"CONFLICT",
-			"Governance membership term must stay within the governance body term.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_CHRONOLOGY_INVALID",
-				{ field: "term" },
-			),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage:
+				"Governance membership term must stay within the governance body term.",
+		});
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertNoGovernanceMembershipConflict(input: {
@@ -103,15 +97,12 @@ export function assertNoGovernanceMembershipConflict(input: {
 			);
 		}
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
-function conflict(field: string): Result<never> {
-	return fail(
-		"CONFLICT",
-		"Governance membership conflicts with existing active membership.",
-		corporateAdministrationErrorDetails("CORPORATE_ADMINISTRATION_CONFLICT", {
-			field,
-		}),
-	);
+function conflict(_field: string): Result<never> {
+	return errorResult.fail("CONFLICT", {
+		publicMessage:
+			"Governance membership conflicts with existing active membership.",
+	});
 }

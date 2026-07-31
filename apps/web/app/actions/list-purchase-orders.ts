@@ -1,11 +1,10 @@
 "use server";
 
+import type { Result as ActionResult } from "@afenda/errors";
 import { listPurchaseOrders, type PurchaseOrder } from "@afenda/purchasing";
-
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
 import { createPurchasingCommandOptions } from "@/lib/erp/purchasing-command-options";
-import type { ActionResult } from "@/modules/platform/schemas/action-result";
 
 export interface ListPurchaseOrdersActionData {
 	orders: PurchaseOrder[];

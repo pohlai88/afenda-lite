@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import { createProductionCurrencyLookup } from "./compensation-benefits/currency-lookup";
 import { createVaultDocumentReferenceAdapter } from "./compliance/vault-document-reference-adapter";
 import {
@@ -64,16 +64,17 @@ export function resolveStore(store?: HumanResourcesStore): HumanResourcesStore {
 
 function requireCommandOptionPort<T>(
 	value: T | undefined,
-	message: string,
+	_message: string,
 ): Result<T> {
 	if (value === undefined) {
-		return fail(
-			"CONFLICT",
-			message,
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_DEPENDENCY_UNAVAILABLE),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "The request conflicts with current state",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_DEPENDENCY_UNAVAILABLE,
+			),
+		});
 	}
-	return ok(value);
+	return errorResult.ok(value);
 }
 
 export function requireWorkCalendar(
@@ -113,10 +114,10 @@ export function requireDocumentReference(
 	options: HumanResourcesCommandOptions,
 ): Result<DocumentReferencePort> {
 	if (options.documentReference !== undefined) {
-		return ok(options.documentReference);
+		return errorResult.ok(options.documentReference);
 	}
 	if (options.documentObjectResolver !== undefined) {
-		return ok(
+		return errorResult.ok(
 			createVaultDocumentReferenceAdapter({
 				resolver: options.documentObjectResolver,
 			}),

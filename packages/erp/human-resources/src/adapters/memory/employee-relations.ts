@@ -4,7 +4,7 @@ import type { HumanResourcesMutationMeta } from "../../shared/mutation-meta";
  */
 
 import { randomUUID } from "node:crypto";
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	HUMAN_RESOURCES_EMPLOYEE_CASE_ACTION_APPROVED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_CASE_APPEAL_RESOLVED_EVENT,
@@ -222,7 +222,7 @@ function getCaseInOrg(
 	if (!caseRecord || caseRecord.organizationId !== organizationId) {
 		return notFound("Case not found", HUMAN_RESOURCES_ERROR_NOT_FOUND);
 	}
-	return ok(caseRecord);
+	return errorResult.ok(caseRecord);
 }
 
 function getActionInCase(
@@ -241,7 +241,7 @@ function getActionInCase(
 	) {
 		return notFound("Case action not found");
 	}
-	return ok(action);
+	return errorResult.ok(action);
 }
 
 function resolveActionReplay(
@@ -253,16 +253,17 @@ function resolveActionReplay(
 	expectedFingerprint: string,
 ): Result<EmployeeCaseAction | null> {
 	if (existing === null) {
-		return ok(null);
+		return errorResult.ok(null);
 	}
 	if (existing.createRequestFingerprint !== expectedFingerprint) {
-		return fail(
-			"CONFLICT",
-			"Idempotency key reused with different payload",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "The request conflicts with current state",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_CONFLICT,
+			),
+		});
 	}
-	return ok(cloneAction(existing.action));
+	return errorResult.ok(cloneAction(existing.action));
 }
 
 function getCaseWithAccess(
@@ -344,7 +345,7 @@ function appendCaseEvent(
 		createdAt: now,
 	};
 	state.events.set(event.id, event);
-	return ok(event);
+	return errorResult.ok(event);
 }
 
 export function createMemoryEmployeeRelationsMethods(
@@ -357,9 +358,9 @@ export function createMemoryEmployeeRelationsMethods(
 			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
 			const record = state.caseIdempotency.get(key);
 			if (!record) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({
+			return await errorResult.ok({
 				caseId: record.caseId,
 				createRequestFingerprint: record.createRequestFingerprint,
 				case: cloneCase(record.case),
@@ -381,13 +382,14 @@ export function createMemoryEmployeeRelationsMethods(
 					existing.data.createRequestFingerprint !==
 					record.createRequestFingerprint
 				) {
-					return fail(
-						"CONFLICT",
-						"Idempotency key reused with different payload",
-						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-					);
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+						internalContext: humanResourcesErrorDetails(
+							HUMAN_RESOURCES_ERROR_CONFLICT,
+						),
+					});
 				}
-				return ok(cloneCase(existing.data.case));
+				return errorResult.ok(cloneCase(existing.data.case));
 			}
 
 			const employee = await this.getEmployeeById({
@@ -518,7 +520,7 @@ export function createMemoryEmployeeRelationsMethods(
 				return outbox;
 			}
 
-			return ok(cloneCase(caseRecord));
+			return errorResult.ok(cloneCase(caseRecord));
 		},
 
 		async getEmployeeCaseById(input) {
@@ -527,16 +529,16 @@ export function createMemoryEmployeeRelationsMethods(
 			if (!result.ok) {
 				return await result;
 			}
-			return await ok(cloneCase(result.data));
+			return await errorResult.ok(cloneCase(result.data));
 		},
 
 		async findEmployeeCaseInOrganization(input) {
 			const state = erState;
 			const loaded = getCaseInOrg(state, input.organizationId, input.caseId);
 			if (!loaded.ok) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok(cloneCase(loaded.data));
+			return await errorResult.ok(cloneCase(loaded.data));
 		},
 
 		async listEmployeeCases(input) {
@@ -550,7 +552,7 @@ export function createMemoryEmployeeRelationsMethods(
 				}
 				return true;
 			});
-			return await ok(filtered.map(cloneCase));
+			return await errorResult.ok(filtered.map(cloneCase));
 		},
 
 		async listCasesAssignedToActor(input) {
@@ -560,7 +562,7 @@ export function createMemoryEmployeeRelationsMethods(
 					caseRecord.organizationId === input.organizationId &&
 					caseRecord.ownerActorUserId === input.ownerActorUserId,
 			);
-			return await ok(filtered.map(cloneCase));
+			return await errorResult.ok(filtered.map(cloneCase));
 		},
 
 		async listOpenEmployeeRelationsCases(input) {
@@ -570,7 +572,7 @@ export function createMemoryEmployeeRelationsMethods(
 					caseRecord.organizationId === input.organizationId &&
 					caseRecord.status !== "closed",
 			);
-			return await ok(filtered.map(cloneCase));
+			return await errorResult.ok(filtered.map(cloneCase));
 		},
 
 		async getEmployeeRelationsHistoryByEmployee(input) {
@@ -580,7 +582,7 @@ export function createMemoryEmployeeRelationsMethods(
 					caseRecord.organizationId === input.organizationId &&
 					caseRecord.employeeId === input.employeeId,
 			);
-			return await ok(filtered.map(cloneCase));
+			return await errorResult.ok(filtered.map(cloneCase));
 		},
 
 		async updateEmployeeCaseClassification(input, ports, meta) {
@@ -637,7 +639,7 @@ export function createMemoryEmployeeRelationsMethods(
 				return audit;
 			}
 
-			return ok(cloneCase(updated));
+			return errorResult.ok(cloneCase(updated));
 		},
 
 		async assignEmployeeCaseOwner(input, ports, meta) {
@@ -715,7 +717,7 @@ export function createMemoryEmployeeRelationsMethods(
 				return outbox;
 			}
 
-			return ok(cloneCase(updated));
+			return errorResult.ok(cloneCase(updated));
 		},
 
 		async addEmployeeCaseParticipant(input, ports, meta) {
@@ -787,7 +789,7 @@ export function createMemoryEmployeeRelationsMethods(
 				return audit;
 			}
 
-			return ok(cloneCase(updated));
+			return errorResult.ok(cloneCase(updated));
 		},
 
 		async recordEmployeeCaseEvent(input, ports, meta) {
@@ -844,7 +846,7 @@ export function createMemoryEmployeeRelationsMethods(
 				return audit;
 			}
 
-			return ok(cloneEvent(event.data));
+			return errorResult.ok(cloneEvent(event.data));
 		},
 
 		async addEmployeeCaseEvidenceReference(input, ports, meta) {
@@ -894,7 +896,7 @@ export function createMemoryEmployeeRelationsMethods(
 				return audit;
 			}
 
-			return ok(cloneEvent(event.data));
+			return errorResult.ok(cloneEvent(event.data));
 		},
 
 		async redactEmployeeCaseEvidenceReference(input, ports, meta) {
@@ -946,7 +948,7 @@ export function createMemoryEmployeeRelationsMethods(
 				return audit;
 			}
 
-			return ok(cloneEvent(event.data));
+			return errorResult.ok(cloneEvent(event.data));
 		},
 
 		async issueInterimEmployeeMeasure(input, ports, meta) {
@@ -1027,7 +1029,7 @@ export function createMemoryEmployeeRelationsMethods(
 				return outbox;
 			}
 
-			return ok(cloneCase(updated));
+			return errorResult.ok(cloneCase(updated));
 		},
 
 		async recordEmployeeCaseFinding(input, ports, meta) {
@@ -1106,7 +1108,7 @@ export function createMemoryEmployeeRelationsMethods(
 				return outbox;
 			}
 
-			return ok(cloneCase(updated));
+			return errorResult.ok(cloneCase(updated));
 		},
 
 		async findEmployeeCaseActionByIdempotencyKey(input) {
@@ -1114,9 +1116,9 @@ export function createMemoryEmployeeRelationsMethods(
 			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
 			const record = state.actionIdempotency.get(key);
 			if (!record) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({
+			return await errorResult.ok({
 				actionId: record.actionId,
 				createRequestFingerprint: record.createRequestFingerprint,
 				action: cloneAction(record.action),
@@ -1140,7 +1142,7 @@ export function createMemoryEmployeeRelationsMethods(
 				return replay;
 			}
 			if (replay.data !== null) {
-				return ok(replay.data);
+				return errorResult.ok(replay.data);
 			}
 
 			const loaded = getCaseInOrg(state, record.organizationId, record.caseId);
@@ -1237,7 +1239,7 @@ export function createMemoryEmployeeRelationsMethods(
 				return audit;
 			}
 
-			return ok(cloneAction(action));
+			return errorResult.ok(cloneAction(action));
 		},
 
 		async approveEmployeeCaseAction(input, ports, meta) {
@@ -1342,7 +1344,7 @@ export function createMemoryEmployeeRelationsMethods(
 				return outbox;
 			}
 
-			return ok(cloneAction(updatedAction));
+			return errorResult.ok(cloneAction(updatedAction));
 		},
 
 		async findEmployeeCaseAppealByIdempotencyKey(input) {
@@ -1350,9 +1352,9 @@ export function createMemoryEmployeeRelationsMethods(
 			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
 			const record = state.appealIdempotency.get(key);
 			if (!record) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({
+			return await errorResult.ok({
 				appealId: record.appealId,
 				createRequestFingerprint: record.createRequestFingerprint,
 				appeal: cloneAppeal(record.appeal),
@@ -1374,13 +1376,14 @@ export function createMemoryEmployeeRelationsMethods(
 					existing.data.createRequestFingerprint !==
 					record.createRequestFingerprint
 				) {
-					return fail(
-						"CONFLICT",
-						"Idempotency key reused with different payload",
-						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-					);
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+						internalContext: humanResourcesErrorDetails(
+							HUMAN_RESOURCES_ERROR_CONFLICT,
+						),
+					});
 				}
-				return ok(cloneAppeal(existing.data.appeal));
+				return errorResult.ok(cloneAppeal(existing.data.appeal));
 			}
 
 			const loaded = getCaseInOrg(state, record.organizationId, record.caseId);
@@ -1499,7 +1502,7 @@ export function createMemoryEmployeeRelationsMethods(
 				return outbox;
 			}
 
-			return ok(cloneAppeal(appeal));
+			return errorResult.ok(cloneAppeal(appeal));
 		},
 
 		async resolveEmployeeCaseAppeal(input, ports, meta) {
@@ -1598,7 +1601,7 @@ export function createMemoryEmployeeRelationsMethods(
 				return outbox;
 			}
 
-			return ok(cloneAppeal(updatedAppeal));
+			return errorResult.ok(cloneAppeal(updatedAppeal));
 		},
 
 		async closeEmployeeCase(input, ports, meta) {
@@ -1676,7 +1679,7 @@ export function createMemoryEmployeeRelationsMethods(
 				return outbox;
 			}
 
-			return ok(cloneCase(updated));
+			return errorResult.ok(cloneCase(updated));
 		},
 
 		async reopenEmployeeCase(input, ports, meta) {
@@ -1748,7 +1751,7 @@ export function createMemoryEmployeeRelationsMethods(
 				return outbox;
 			}
 
-			return ok(cloneCase(updated));
+			return errorResult.ok(cloneCase(updated));
 		},
 
 		async getEmployeeCaseTimeline(input) {
@@ -1769,7 +1772,7 @@ export function createMemoryEmployeeRelationsMethods(
 				caseId: input.caseId,
 				events,
 			};
-			return await ok(timeline);
+			return await errorResult.ok(timeline);
 		},
 
 		async getEmployeeCaseOutcome(input) {
@@ -1815,7 +1818,7 @@ export function createMemoryEmployeeRelationsMethods(
 								employmentId: loaded.data.employmentId,
 							},
 			};
-			return await ok(outcome);
+			return await errorResult.ok(outcome);
 		},
 	};
 }

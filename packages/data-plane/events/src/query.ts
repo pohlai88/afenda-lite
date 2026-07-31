@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import { resolveEventStore } from "./resolve-store";
 import {
 	type EventPage,
@@ -20,8 +20,8 @@ export async function queryDomainEvents(
 ): Promise<Result<EventPage>> {
 	const parsed = eventQueryOptionsSchema.safeParse(input);
 	if (!parsed.success) {
-		return fail("BAD_REQUEST", "Invalid event query input", {
-			fieldErrors: parsed.error.flatten().fieldErrors,
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "Invalid event query input",
 		});
 	}
 
@@ -47,7 +47,7 @@ export async function queryDomainEvents(
 		pageSize: options.pageSize,
 	});
 
-	return ok(page);
+	return errorResult.ok(page);
 }
 
 /**
@@ -60,8 +60,8 @@ export function purgeProcessedDomainEvents(
 	const parsed = eventPurgeOptionsSchema.safeParse(input);
 	if (!parsed.success) {
 		return Promise.resolve(
-			fail("BAD_REQUEST", "Invalid event purge input", {
-				fieldErrors: parsed.error.flatten().fieldErrors,
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Invalid event purge input",
 			}),
 		);
 	}
@@ -79,8 +79,8 @@ export async function retryFailedDomainEvent(
 ): Promise<Result<DomainEvent>> {
 	const parsed = eventRetryOptionsSchema.safeParse(input);
 	if (!parsed.success) {
-		return fail("BAD_REQUEST", "Invalid event retry input", {
-			fieldErrors: parsed.error.flatten().fieldErrors,
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "Invalid event retry input",
 		});
 	}
 
@@ -92,9 +92,11 @@ export async function retryFailedDomainEvent(
 		return result;
 	}
 	if (result.data === null) {
-		return fail("NOT_FOUND", "Failed domain event not found");
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Failed domain event not found",
+		});
 	}
-	return ok(result.data);
+	return errorResult.ok(result.data);
 }
 
 /**
@@ -107,8 +109,8 @@ export async function replayProcessedDomainEvent(
 ): Promise<Result<DomainEvent>> {
 	const parsed = eventReplayOptionsSchema.safeParse(input);
 	if (!parsed.success) {
-		return fail("BAD_REQUEST", "Invalid event replay input", {
-			fieldErrors: parsed.error.flatten().fieldErrors,
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "Invalid event replay input",
 		});
 	}
 
@@ -121,7 +123,9 @@ export async function replayProcessedDomainEvent(
 		return result;
 	}
 	if (result.data === null) {
-		return fail("NOT_FOUND", "Processed domain event not found");
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Processed domain event not found",
+		});
 	}
-	return ok(result.data);
+	return errorResult.ok(result.data);
 }

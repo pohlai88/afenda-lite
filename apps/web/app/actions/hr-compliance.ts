@@ -1,5 +1,6 @@
 "use server";
 
+import type { Result as ActionResult } from "@afenda/errors";
 import type {
 	ComplianceExpiryOperations,
 	DocumentRequirement,
@@ -71,13 +72,11 @@ import {
 	verifyWorkEligibilityInputSchema,
 	workEligibilityTransitionInputSchema,
 } from "@afenda/human-resources/schemas";
-
 import {
 	invokeHrPackage,
 	runHrComplianceHumanResourcesAction as runHrHumanResourcesAction,
 } from "@/app/actions/hr-action-runner";
 import { hrActionSchema } from "@/app/actions/hr-mutation-context";
-import type { ActionResult } from "@/modules/platform/schemas/action-result";
 
 const COMPLIANCE_ADMIN = "human-resources.compliance.administer" as const;
 const DOCUMENT_REQUIREMENT_MANAGE =

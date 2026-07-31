@@ -1,11 +1,10 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	CORPORATE_ADMINISTRATION_QUERY_PERMISSIONS,
 	requireCorporateAdministrationPermission,
 } from "../authorization";
 import type { CorporateAdministrationQueryOptions } from "../command-options";
-import { corporateAdministrationErrorDetails } from "../error-codes";
 import { parseCorporateAdministrationInput } from "../parse-input";
 import { calculateOfficerEligibilityAsOf } from "./compliance-rules";
 import {
@@ -62,7 +61,7 @@ export async function getOfficerEligibilityAsOf(
 	if (!disqualifications.ok) {
 		return disqualifications;
 	}
-	return ok(
+	return errorResult.ok(
 		calculateOfficerEligibilityAsOf({
 			officerAppointmentId: parsed.data.officerAppointmentId,
 			asOf: parsed.data.asOf,
@@ -157,12 +156,8 @@ function authorize(
 	});
 }
 
-export function officerComplianceNotFound(entityType: string): Result<never> {
-	return fail(
-		"NOT_FOUND",
-		"Corporate Administration record was not found.",
-		corporateAdministrationErrorDetails("CORPORATE_ADMINISTRATION_NOT_FOUND", {
-			entityType,
-		}),
-	);
+export function officerComplianceNotFound(_entityType: string): Result<never> {
+	return errorResult.fail("NOT_FOUND", {
+		publicMessage: "Corporate Administration record was not found.",
+	});
 }

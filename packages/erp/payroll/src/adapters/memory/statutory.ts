@@ -1,5 +1,5 @@
 // biome-ignore-all lint/suspicious/useAwait: The deterministic memory adapter implements asynchronous payroll statutory ports.
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type { PayrollRunId } from "../../brands";
 import type { MutationPorts } from "../../ports";
@@ -52,7 +52,7 @@ function assertRunAllowsStatutoryMutation(
 			"Finalized or reversed payroll runs cannot change statutory results",
 		);
 	}
-	return ok(true);
+	return errorResult.ok(true);
 }
 
 export function createMemoryStatutoryMethods(input: {
@@ -114,7 +114,7 @@ export function createMemoryStatutoryMethods(input: {
 				return audit;
 			}
 
-			return ok(results);
+			return errorResult.ok(results);
 		},
 
 		async listStatutoryResultsForRun(listInput) {
@@ -123,7 +123,7 @@ export function createMemoryStatutoryMethods(input: {
 					result.organizationId === listInput.organizationId &&
 					result.runId === listInput.runId,
 			);
-			return ok(results.map(cloneStatutoryResult));
+			return errorResult.ok(results.map(cloneStatutoryResult));
 		},
 	};
 }

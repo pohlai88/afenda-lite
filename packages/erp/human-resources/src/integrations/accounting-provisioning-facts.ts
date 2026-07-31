@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	type DomainEvent,
 	HUMAN_RESOURCES_ASSIGNMENT_CREATED_EVENT,
@@ -72,12 +72,11 @@ function requiredMetadataString(
 ): Result<string> {
 	const value = event.metadata?.[key];
 	if (typeof value !== "string" || value.trim().length === 0) {
-		return fail(
-			"VALIDATION_ERROR",
-			`Human Resources integration metadata ${key} is required`,
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+		});
 	}
-	return ok(value.trim());
+	return errorResult.ok(value.trim());
 }
 
 function baseFact(event: DomainEvent, kind: string): IntegrationFactBase {
@@ -108,16 +107,17 @@ export function projectHumanResourcesAccountingProvisioningFacts(
 ): Result<readonly HumanResourcesAccountingProvisioningFact[]> {
 	const payload = humanResourcesEntityPayloadSchema.safeParse(event.payload);
 	if (!payload.success) {
-		return fail("VALIDATION_ERROR", "Human Resources event payload is invalid");
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+		});
 	}
 	if (
 		payload.data.organizationId !== event.organizationId ||
 		payload.data.correlationId !== event.correlationId
 	) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Human Resources event envelope does not match its payload",
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+		});
 	}
 
 	if (event.type === HUMAN_RESOURCES_TIME_PAYROLL_HANDOFF_READY_EVENT) {
@@ -128,7 +128,7 @@ export function projectHumanResourcesAccountingProvisioningFacts(
 		if (!approvalEvidenceId.ok) {
 			return approvalEvidenceId;
 		}
-		return ok([
+		return errorResult.ok([
 			{
 				...baseFact(event, "payroll-posting"),
 				kind: "payroll_posting",
@@ -154,12 +154,11 @@ export function projectHumanResourcesAccountingProvisioningFacts(
 			return allocationPercentage;
 		}
 		if (!ALLOCATION_PERCENTAGE_PATTERN.test(allocationPercentage.data)) {
-			return fail(
-				"VALIDATION_ERROR",
-				"Cost-centre allocation percentage is invalid",
-			);
+			return errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "The submitted data is invalid",
+			});
 		}
-		return ok([
+		return errorResult.ok([
 			{
 				...baseFact(event, "cost-centre-allocation"),
 				kind: "cost_centre_allocation",
@@ -173,7 +172,7 @@ export function projectHumanResourcesAccountingProvisioningFacts(
 	const headcountAction =
 		HEADCOUNT_ACTIONS[event.type as keyof typeof HEADCOUNT_ACTIONS];
 	if (headcountAction !== undefined) {
-		return ok([
+		return errorResult.ok([
 			{
 				...baseFact(event, "headcount-budget"),
 				kind: "headcount_budget",
@@ -186,7 +185,7 @@ export function projectHumanResourcesAccountingProvisioningFacts(
 	const accessAction =
 		ACCESS_ACTIONS[event.type as keyof typeof ACCESS_ACTIONS];
 	if (accessAction !== undefined) {
-		return ok([
+		return errorResult.ok([
 			{
 				...baseFact(event, "access-provisioning"),
 				kind: "access_provisioning",
@@ -200,7 +199,7 @@ export function projectHumanResourcesAccountingProvisioningFacts(
 		event.type === HUMAN_RESOURCES_ONBOARDING_STARTED_EVENT ||
 		event.type === HUMAN_RESOURCES_OFFBOARDING_STARTED_EVENT
 	) {
-		return ok([
+		return errorResult.ok([
 			{
 				...baseFact(event, "equipment-assignment"),
 				kind: "equipment_assignment",
@@ -213,5 +212,5 @@ export function projectHumanResourcesAccountingProvisioningFacts(
 		]);
 	}
 
-	return ok([]);
+	return errorResult.ok([]);
 }

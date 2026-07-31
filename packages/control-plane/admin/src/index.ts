@@ -52,8 +52,6 @@ export {
 	deletedOrganizationSchema,
 	deleteOrganizationInputSchema,
 	organizationSummarySchema,
-	PROVISION_ORG_CREATED_INVITE_FAILED,
-	PROVISION_ORG_CREATED_SET_ACTIVE_FAILED,
 	provisionOrganizationInputSchema,
 	provisionOrganizationResultSchema,
 } from "./schemas/org";

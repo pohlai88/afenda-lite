@@ -1,4 +1,4 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type {
 	HumanResourcesEmployeeId,
@@ -59,5 +59,5 @@ export async function resolveActiveTimeEmployment(
 	if (loaded.data.endsOn !== null && input.workDate > loaded.data.endsOn) {
 		return invalidInput("Time fact follows employment end");
 	}
-	return ok(loaded.data);
+	return errorResult.ok(loaded.data);
 }

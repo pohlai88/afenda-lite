@@ -118,6 +118,51 @@ function targetGitChanges(repoRoot, targetFromRepo) {
 		.filter(Boolean);
 }
 
+function inspectDirectory(repoRoot, target) {
+	const targetFromRepo = relative(repoRoot, target).replaceAll("\\", "/");
+	const files = collectFiles(target);
+	const fileRecords = files.map((path) => {
+		const bytes = readFileSync(resolve(target, path));
+		return { path, bytes: bytes.length, sha256: sha256(bytes) };
+	});
+	const digestInput = fileRecords
+		.map((file) => `${file.path}\0${file.bytes}\0${file.sha256}`)
+		.join("\n");
+	const gitChanges = targetGitChanges(repoRoot, targetFromRepo);
+
+	return {
+		target: targetFromRepo,
+		contentDigest: sha256(digestInput),
+		package: readPackageJson(target),
+		summary: {
+			fileCount: fileRecords.length,
+			sourceFileCount: files.filter((path) => path.startsWith("src/")).length,
+			testFileCount: files.filter((path) =>
+				/(^|\/)(__tests__|testing)(\/|$)|\.(test|spec)\.[^.]+$/.test(path),
+			).length,
+			hasReadme: files.some((path) => path.toLowerCase() === "readme.md"),
+			hasTsconfig: files.some((path) => path === "tsconfig.json"),
+		},
+		workingTree: {
+			state: gitChanges.length === 0 ? "clean" : "dirty",
+			changes: gitChanges,
+		},
+		files: fileRecords,
+	};
+}
+
+function immediateChildPackages(repoRoot, target) {
+	return readdirSync(target, { withFileTypes: true })
+		.filter(
+			(entry) =>
+				entry.isDirectory() &&
+				!shouldExclude(entry.name, true) &&
+				existsSync(resolve(target, entry.name, "package.json")),
+		)
+		.map((entry) => inspectDirectory(repoRoot, resolve(target, entry.name)))
+		.toSorted((left, right) => left.target.localeCompare(right.target));
+}
+
 const [targetArgument, ...extraArguments] = process.argv.slice(2);
 if (targetArgument === undefined || extraArguments.length > 0) {
 	fail("usage: inspect-target.mjs <repository-relative-target>");
@@ -132,36 +177,14 @@ if (!(existsSync(target) && statSync(target).isDirectory())) {
 	fail(`target directory does not exist: ${targetArgument}`);
 }
 
-const targetFromRepo = relative(repoRoot, target).replaceAll("\\", "/");
-const files = collectFiles(target);
-const fileRecords = files.map((path) => {
-	const bytes = readFileSync(resolve(target, path));
-	return { path, bytes: bytes.length, sha256: sha256(bytes) };
-});
-const digestInput = fileRecords
-	.map((file) => `${file.path}\0${file.bytes}\0${file.sha256}`)
-	.join("\n");
-const gitChanges = targetGitChanges(repoRoot, targetFromRepo);
+const inspectedTarget = inspectDirectory(repoRoot, target);
 
 const report = {
-	snapshotVersion: 1,
-	target: targetFromRepo,
-	contentDigest: sha256(digestInput),
-	package: readPackageJson(target),
-	summary: {
-		fileCount: fileRecords.length,
-		sourceFileCount: files.filter((path) => path.startsWith("src/")).length,
-		testFileCount: files.filter((path) =>
-			/(^|\/)(__tests__|testing)(\/|$)|\.(test|spec)\.[^.]+$/.test(path),
-		).length,
-		hasReadme: files.some((path) => path.toLowerCase() === "readme.md"),
-		hasTsconfig: files.some((path) => path === "tsconfig.json"),
-	},
-	workingTree: {
-		state: gitChanges.length === 0 ? "clean" : "dirty",
-		changes: gitChanges,
-	},
-	files: fileRecords,
+	snapshotVersion: 2,
+	...inspectedTarget,
+	childPackages: immediateChildPackages(repoRoot, target).map(
+		({ files: _files, ...childPackage }) => childPackage,
+	),
 };
 
 process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);

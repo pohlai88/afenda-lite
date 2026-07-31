@@ -61,7 +61,7 @@ Unregistered package folders are not governed catalog entries until they are add
 |---------|---------|--------|------|
 | [`@afenda/config`](./foundation/config/README.md) | Node/build | Active | Shared Biome + TypeScript bases (dev-time only) |
 | [`@afenda/env`](./foundation/env/README.md) | Node/build | Active | Typed env contract (`createEnv` + Zod) — sole product env SSOT |
-| [`@afenda/errors`](./foundation/errors/README.md) | Universal | Active | Transport-neutral `AppError` / codes / `Result` leaf |
+| [`@afenda/errors`](./foundation/errors/README.md) | Universal | Active | Root-only error capability kernel and canonical `Result` owner |
 | [`@afenda/testing`](./foundation/testing/README.md) | Dev/test | Active | Shared Vitest/Playwright test utilities (not a runtime product import) |
 
 ### Runtime Infrastructure — Rank 1B — [`runtime/`](./runtime/README.md)

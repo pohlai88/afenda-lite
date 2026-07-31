@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 
-import { AppError } from "@afenda/errors";
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
+
 import {
 	type ApprovedPayrollHandoff,
 	HANDOFF_PAYROLL_CONTRACT_VERSION,
@@ -42,8 +42,8 @@ const ORGANIZATION_ID = "org-local-performance";
 const ACTOR_ID = "actor-local-performance";
 
 const mutationPorts: MutationPorts = {
-	audit: { record: async () => ok({ id: randomUUID() }) },
-	outbox: { append: async () => ok({ id: randomUUID() }) },
+	audit: { record: async () => errorResult.ok({ id: randomUUID() }) },
+	outbox: { append: async () => errorResult.ok({ id: randomUUID() }) },
 };
 
 const mutationMeta = {
@@ -53,11 +53,7 @@ const mutationMeta = {
 
 function unwrap<T>(result: Result<T>): T {
 	if (!result.ok) {
-		throw new AppError({
-			code: result.code,
-			message: result.message,
-			...(result.details === undefined ? {} : { details: result.details }),
-		});
+		throw new Error(result.message);
 	}
 	return result.data;
 }
@@ -457,7 +453,7 @@ export async function createHrLocalBenchmarkWorkloads(): Promise<
 							{
 								checkpoints: createMemoryBulkCheckpointPort(),
 								commands: {
-									createEmployee: async () => ok({ id: "dry-run" }),
+									createEmployee: async () => errorResult.ok({ id: "dry-run" }),
 								},
 							},
 						),
@@ -507,7 +503,7 @@ export async function createHrLocalBenchmarkWorkloads(): Promise<
 					store,
 					clock: { now: () => new Date("2026-01-02T00:00:00.000Z") },
 					producer: {
-						publish: async () => ok({ receiptId: "local-receipt" }),
+						publish: async () => errorResult.ok({ receiptId: "local-receipt" }),
 					},
 				};
 				const queued = unwrap(

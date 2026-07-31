@@ -40,7 +40,7 @@ import {
 	or,
 	sql,
 } from "@afenda/db";
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { HumanResourcesEventType } from "@afenda/events";
 import {
 	HUMAN_RESOURCES_TIME_ATTENDANCE_CORRECTED_EVENT,
@@ -347,7 +347,7 @@ function mapCalendar(
 	}
 	const supersedesCalendarId =
 		row.supersedesCalendarId === null
-			? ok(null)
+			? errorResult.ok(null)
 			: parseHumanResourcesWorkCalendarId(row.supersedesCalendarId);
 	if (isResultFailure(supersedesCalendarId)) {
 		return supersedesCalendarId;
@@ -357,9 +357,9 @@ function mapCalendar(
 		row.status !== "superseded" &&
 		row.status !== "archived"
 	) {
-		return fail("INTERNAL_ERROR", "Invalid work calendar status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		code: row.code,
@@ -390,9 +390,9 @@ function mapHolidayOverrideKind(
 		value === "replacement_workday" ||
 		value === "closure"
 	) {
-		return ok(value);
+		return errorResult.ok(value);
 	}
-	return fail("INTERNAL_ERROR", "Invalid work calendar override kind");
+	return errorResult.fail("INTERNAL_ERROR");
 }
 
 function mapHoliday(
@@ -410,7 +410,7 @@ function mapHoliday(
 	if (!overrideKind.ok) {
 		return overrideKind;
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		calendarId: calendarId.data,
@@ -447,7 +447,7 @@ function mapEmploymentCalendar(
 	if (!calendarId.ok) {
 		return calendarId;
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		employeeId: employeeId.data,
@@ -469,7 +469,7 @@ function parseTimeApprovalSteps(
 	value: unknown,
 ): Result<TimeApprovalAuthority[]> {
 	if (!Array.isArray(value)) {
-		return fail("INTERNAL_ERROR", "Invalid time policy approval steps");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 	const steps: TimeApprovalAuthority[] = [];
 	for (const step of value) {
@@ -479,11 +479,11 @@ function parseTimeApprovalSteps(
 			step !== "hr" &&
 			step !== "payroll"
 		) {
-			return fail("INTERNAL_ERROR", "Invalid time policy approval authority");
+			return errorResult.fail("INTERNAL_ERROR");
 		}
 		steps.push(step);
 	}
-	return ok(steps);
+	return errorResult.ok(steps);
 }
 
 function mapTimePolicy(
@@ -499,7 +499,7 @@ function mapTimePolicy(
 		row.status !== "superseded" &&
 		row.status !== "archived"
 	) {
-		return fail("INTERNAL_ERROR", "Invalid time policy status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 	const approvalSteps = parseTimeApprovalSteps(row.approvalSteps);
 	if (!approvalSteps.ok) {
@@ -513,7 +513,7 @@ function mapTimePolicy(
 		}
 		supersedesPolicyId = parsed.data;
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		code: row.code,
@@ -549,7 +549,7 @@ function mapTimePolicyAssignment(
 	if (!employmentId.ok) {
 		return employmentId;
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		policyId: policyId.data,
@@ -577,9 +577,9 @@ function mapTimeApprovalAuthorityAssignment(
 		row.authority !== "hr" &&
 		row.authority !== "payroll"
 	) {
-		return fail("INTERNAL_ERROR", "Invalid time approval authority");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		actorUserId: row.actorUserId,
@@ -617,7 +617,7 @@ function mapWorkCalendarScopeAssignment(
 	if (!WORK_CALENDAR_SCOPE_TYPES.has(row.scopeType as WorkCalendarScopeType)) {
 		return invalidState("Work calendar scope type is invalid");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		scopeType: row.scopeType as WorkCalendarScopeType,
@@ -640,7 +640,7 @@ function mapShift(row: typeof hrShift.$inferSelect): Result<Shift> {
 	}
 	const supersedesShiftId =
 		row.supersedesShiftId === null
-			? ok(null)
+			? errorResult.ok(null)
 			: parseHumanResourcesShiftId(row.supersedesShiftId);
 	if (isResultFailure(supersedesShiftId)) {
 		return supersedesShiftId;
@@ -652,7 +652,7 @@ function mapShift(row: typeof hrShift.$inferSelect): Result<Shift> {
 		row.shiftKind !== "rest_day" &&
 		row.shiftKind !== "public_holiday"
 	) {
-		return fail("INTERNAL_ERROR", "Invalid shift kind");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 	if (
 		row.status !== "draft" &&
@@ -660,9 +660,9 @@ function mapShift(row: typeof hrShift.$inferSelect): Result<Shift> {
 		row.status !== "superseded" &&
 		row.status !== "inactive"
 	) {
-		return fail("INTERNAL_ERROR", "Invalid shift status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		code: row.code,
@@ -704,7 +704,7 @@ function mapShiftBreak(
 	if (!shiftId.ok) {
 		return shiftId;
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		shiftId: shiftId.data,
@@ -748,9 +748,9 @@ function mapAssignment(
 		row.publicationStatus !== "cancelled" &&
 		row.publicationStatus !== "completed"
 	) {
-		return fail("INTERNAL_ERROR", "Invalid assignment status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		employeeId: employeeId.data,
@@ -782,7 +782,7 @@ function mapAssignmentSegment(
 	if (!assignmentId.ok) {
 		return assignmentId;
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		assignmentId: assignmentId.data,
@@ -828,7 +828,7 @@ function mapEvent(
 		row.eventType !== "break_end" &&
 		row.eventType !== "manual_adjustment"
 	) {
-		return fail("INTERNAL_ERROR", "Invalid attendance event type");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 	if (
 		row.source !== "self" &&
@@ -837,7 +837,7 @@ function mapEvent(
 		row.source !== "system" &&
 		row.source !== "manual"
 	) {
-		return fail("INTERNAL_ERROR", "Invalid attendance event source");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 	const deviceMetadata =
 		row.deviceMetadata !== null &&
@@ -845,7 +845,7 @@ function mapEvent(
 		!Array.isArray(row.deviceMetadata)
 			? (row.deviceMetadata as Record<string, unknown>)
 			: null;
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		employeeId: employeeId.data,
@@ -885,7 +885,7 @@ function mapAttendanceAdjustment(
 	if (!eventId.ok) {
 		return eventId;
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		eventId: eventId.data,
@@ -937,7 +937,7 @@ function mapSession(
 		row.resolutionStatus !== "needs_review" &&
 		row.resolutionStatus !== "voided"
 	) {
-		return fail("INTERNAL_ERROR", "Invalid session resolution status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 	const provenanceResult = z
 		.object({
@@ -959,7 +959,7 @@ function mapSession(
 		})
 		.safeParse(row.provenance ?? { automaticBreak: null });
 	if (!provenanceResult.success) {
-		return fail("INTERNAL_ERROR", "Invalid attendance session provenance");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 	let automaticBreak: AttendanceSession["provenance"]["automaticBreak"] = null;
 	if (provenanceResult.data.automaticBreak !== null) {
@@ -974,7 +974,7 @@ function mapSession(
 			policyId: policyId.data,
 		};
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		employeeId: employeeId.data,
@@ -1029,9 +1029,9 @@ function mapAttendanceBreakWaiverDecision(
 		row.authority !== "hr" &&
 		row.authority !== "payroll"
 	) {
-		return fail("INTERNAL_ERROR", "Invalid break waiver authority");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		sessionId: sessionId.data,
@@ -1090,7 +1090,7 @@ function mapException(
 		row.severity !== "warning" &&
 		row.severity !== "critical"
 	) {
-		return fail("INTERNAL_ERROR", "Invalid exception severity");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 	if (
 		row.reviewStatus !== "open" &&
@@ -1099,9 +1099,9 @@ function mapException(
 		row.reviewStatus !== "rejected" &&
 		row.reviewStatus !== "resolved"
 	) {
-		return fail("INTERNAL_ERROR", "Invalid exception review status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		employeeId: employeeId.data,
@@ -1149,7 +1149,7 @@ function mapTimesheet(row: typeof hrTimesheet.$inferSelect): Result<Timesheet> {
 		row.status !== "locked" &&
 		row.status !== "superseded"
 	) {
-		return fail("INTERNAL_ERROR", "Invalid timesheet status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 	let approvalPolicyId = null as Timesheet["approvalPolicyId"];
 	if (row.approvalPolicyId !== null) {
@@ -1165,7 +1165,7 @@ function mapTimesheet(row: typeof hrTimesheet.$inferSelect): Result<Timesheet> {
 	if (!requiredApprovalSteps.ok) {
 		return requiredApprovalSteps;
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		employeeId: employeeId.data,
@@ -1225,9 +1225,9 @@ function mapTimesheetApprovalDecision(
 		row.authority !== "hr" &&
 		row.authority !== "payroll"
 	) {
-		return fail("INTERNAL_ERROR", "Invalid timesheet approval authority");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		timesheetId: timesheetId.data,
@@ -1260,7 +1260,7 @@ function mapEntry(
 	if (!employeeId.ok) {
 		return employeeId;
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		timesheetId: timesheetId.data,
@@ -1315,9 +1315,9 @@ function mapOvertime(
 		row.status !== "verified" &&
 		row.status !== "cancelled"
 	) {
-		return fail("INTERNAL_ERROR", "Invalid overtime status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		employeeId: employeeId.data,
@@ -1363,14 +1363,14 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				)
 				.limit(1);
 			if (rows.length === 0) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const sourceRow = requirePersistenceRow(rows[0]);
 			const mapped = mapCalendar(sourceRow);
 			if (!mapped.ok) {
 				return mapped;
 			}
-			return ok({
+			return errorResult.ok({
 				calendar: mapped.data,
 				createRequestFingerprint: sourceRow.createRequestFingerprint,
 			});
@@ -1421,7 +1421,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (!recorded.ok) {
 				return recorded;
 			}
-			return ok(mapped.data);
+			return errorResult.ok(mapped.data);
 		} catch (error) {
 			if (isCreateIdempotencyUniqueViolation(error)) {
 				const replay = await this.findWorkCalendarByIdempotencyKey({
@@ -1436,7 +1436,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					replay.data.createRequestFingerprint ===
 						input.createRequestFingerprint
 				) {
-					return ok(replay.data.calendar);
+					return errorResult.ok(replay.data.calendar);
 				}
 				return conflict("Idempotency key already used with different data");
 			}
@@ -1608,7 +1608,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				]);
 				return recorded;
 			}
-			return ok({
+			return errorResult.ok({
 				superseded: superseded.data,
 				successor: successor.data,
 			});
@@ -1696,7 +1696,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (!recorded.ok) {
 				return recorded;
 			}
-			return ok(mapped.data);
+			return errorResult.ok(mapped.data);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to update work calendar");
 		}
@@ -1758,7 +1758,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (!recorded.ok) {
 				return recorded;
 			}
-			return ok(mapped.data);
+			return errorResult.ok(mapped.data);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to archive work calendar");
 		}
@@ -1777,7 +1777,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				)
 				.limit(1);
 			if (rows.length === 0) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapCalendar(requirePersistenceRow(rows[0]));
 		} catch (error) {
@@ -1808,7 +1808,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				}
 				mapped.push(item.data);
 			}
-			return ok(mapped);
+			return errorResult.ok(mapped);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to list work calendars");
 		}
@@ -1862,7 +1862,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (!recorded.ok) {
 				return recorded;
 			}
-			return ok(mapped.data);
+			return errorResult.ok(mapped.data);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -1896,7 +1896,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (!recorded.ok) {
 				return recorded;
 			}
-			return ok(undefined);
+			return errorResult.ok(undefined);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -1929,7 +1929,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				}
 				mapped.push(item.data);
 			}
-			return ok(mapped);
+			return errorResult.ok(mapped);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -1986,7 +1986,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (!recorded.ok) {
 				return recorded;
 			}
-			return ok(mapped.data);
+			return errorResult.ok(mapped.data);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -2067,7 +2067,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (!recorded.ok) {
 				return recorded;
 			}
-			return ok(mapped.data);
+			return errorResult.ok(mapped.data);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -2102,12 +2102,12 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				}
 				mapped.push(item.data);
 			}
-			return ok(mapped);
+			return errorResult.ok(mapped);
 		} catch (error) {
 			if (
 				isPostgresUndefinedTable(error, "hr_work_calendar_scope_assignment")
 			) {
-				return ok([]);
+				return errorResult.ok([]);
 			}
 			return mapPersistenceFailure(
 				error,
@@ -2192,7 +2192,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (!recorded.ok) {
 				return recorded;
 			}
-			return ok(mapped.data);
+			return errorResult.ok(mapped.data);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -2275,7 +2275,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (!recorded.ok) {
 				return recorded;
 			}
-			return ok(mapped.data);
+			return errorResult.ok(mapped.data);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -2306,7 +2306,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				)
 				.sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom));
 			if (!match) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const assignedCalendarRows = await db
 				.select()
@@ -2319,7 +2319,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				)
 				.limit(1);
 			if (assignedCalendarRows.length === 0) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const assignedCalendar = requirePersistenceRow(assignedCalendarRows[0]);
 			const calendarFamily = await db
@@ -2340,7 +2340,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					calendar.status === "active" || calendar.status === "superseded",
 			});
 			if (effectiveCalendar === null) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapEmploymentCalendar({
 				...match,
@@ -2367,14 +2367,14 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				)
 				.limit(1);
 			if (rows.length === 0) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const sourceRow = requirePersistenceRow(rows[0]);
 			const policy = mapTimePolicy(sourceRow);
 			if (!policy.ok) {
 				return policy;
 			}
-			return ok({
+			return errorResult.ok({
 				policy: policy.data,
 				createRequestFingerprint: sourceRow.createRequestFingerprint,
 			});
@@ -2433,7 +2433,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					);
 				return recorded;
 			}
-			return ok(mapped.data);
+			return errorResult.ok(mapped.data);
 		} catch (error) {
 			if (isCreateIdempotencyUniqueViolation(error)) {
 				return conflict("Time policy code or idempotency key already exists");
@@ -2560,7 +2560,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				]);
 				return recorded;
 			}
-			return ok({
+			return errorResult.ok({
 				superseded: superseded.data,
 				successor: successor.data,
 			});
@@ -2644,7 +2644,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					);
 				return recorded;
 			}
-			return ok(mapped.data);
+			return errorResult.ok(mapped.data);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to activate time policy");
 		}
@@ -2747,7 +2747,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					);
 				return recorded;
 			}
-			return ok(mapped.data);
+			return errorResult.ok(mapped.data);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to assign time policy");
 		}
@@ -2766,7 +2766,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				)
 				.limit(1);
 			if (rows.length === 0) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapTimePolicy(requirePersistenceRow(rows[0]));
 		} catch (error) {
@@ -2794,7 +2794,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				)
 				.sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom));
 			if (assignment === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const policyId = parseHumanResourcesTimePolicyId(assignment.policyId);
 			if (!policyId.ok) {
@@ -2808,7 +2808,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				return assignedPolicy;
 			}
 			if (assignedPolicy.data === null) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const policies = await db
 				.select()
@@ -2827,7 +2827,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				isEligible: (candidate) =>
 					candidate.status === "active" || candidate.status === "superseded",
 			});
-			return policy === null ? ok(null) : mapTimePolicy(policy);
+			return policy === null ? errorResult.ok(null) : mapTimePolicy(policy);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to resolve time policy");
 		}
@@ -2912,7 +2912,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					);
 				return recorded;
 			}
-			return ok(mapped.data);
+			return errorResult.ok(mapped.data);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -3016,7 +3016,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					);
 				return recorded;
 			}
-			return ok(mapped.data);
+			return errorResult.ok(mapped.data);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -3051,7 +3051,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				.orderBy(desc(hrTimeApprovalAuthorityAssignment.effectiveFrom))
 				.limit(1);
 			return rows.length === 0
-				? ok(null)
+				? errorResult.ok(null)
 				: mapTimeApprovalAuthorityAssignment(requirePersistenceRow(rows[0]));
 		} catch (error) {
 			return mapPersistenceFailure(
@@ -3074,14 +3074,14 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				)
 				.limit(1);
 			if (rows.length === 0) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const sourceRow = requirePersistenceRow(rows[0]);
 			const mapped = mapShift(sourceRow);
 			if (!mapped.ok) {
 				return mapped;
 			}
-			return ok({
+			return errorResult.ok({
 				shift: mapped.data,
 				createRequestFingerprint: sourceRow.createRequestFingerprint,
 			});
@@ -3142,7 +3142,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (!recorded.ok) {
 				return recorded;
 			}
-			return ok(mapped.data);
+			return errorResult.ok(mapped.data);
 		} catch (error) {
 			if (isCreateIdempotencyUniqueViolation(error)) {
 				const replay = await this.findShiftByIdempotencyKey({
@@ -3157,7 +3157,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					replay.data.createRequestFingerprint ===
 						input.createRequestFingerprint
 				) {
-					return ok(replay.data.shift);
+					return errorResult.ok(replay.data.shift);
 				}
 				return conflict("Idempotency key already used with different data");
 			}
@@ -3329,7 +3329,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				]);
 				return recorded;
 			}
-			return ok({
+			return errorResult.ok({
 				superseded: superseded.data,
 				successor: successor.data,
 			});
@@ -3438,7 +3438,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (!recorded.ok) {
 				return recorded;
 			}
-			return ok(mapped.data);
+			return errorResult.ok(mapped.data);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to update shift");
 		}
@@ -3464,7 +3464,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				)
 				.limit(1);
 			if (rows.length === 0) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapShift(requirePersistenceRow(rows[0]));
 		} catch (error) {
@@ -3493,7 +3493,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				}
 				mapped.push(item.data);
 			}
-			return ok(mapped);
+			return errorResult.ok(mapped);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to list shifts");
 		}
@@ -3543,7 +3543,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (!recorded.ok) {
 				return recorded;
 			}
-			return ok(mapped.data);
+			return errorResult.ok(mapped.data);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to add shift break");
 		}
@@ -3574,7 +3574,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (!recorded.ok) {
 				return recorded;
 			}
-			return ok(undefined);
+			return errorResult.ok(undefined);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to remove shift break");
 		}
@@ -3599,7 +3599,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				}
 				mapped.push(item.data);
 			}
-			return ok(mapped);
+			return errorResult.ok(mapped);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to list shift breaks");
 		}
@@ -3618,14 +3618,14 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				)
 				.limit(1);
 			if (rows.length === 0) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const sourceRow = requirePersistenceRow(rows[0]);
 			const mapped = mapAssignment(sourceRow);
 			if (!mapped.ok) {
 				return mapped;
 			}
-			return ok({
+			return errorResult.ok({
 				assignment: mapped.data,
 				createRequestFingerprint: sourceRow.createRequestFingerprint,
 			});
@@ -3744,7 +3744,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				]);
 				return recorded;
 			}
-			return ok(mapped.data);
+			return errorResult.ok(mapped.data);
 		} catch (error) {
 			if (isCreateIdempotencyUniqueViolation(error)) {
 				const replay = await this.findShiftAssignmentByIdempotencyKey({
@@ -3759,7 +3759,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					replay.data.createRequestFingerprint ===
 						input.createRequestFingerprint
 				) {
-					return ok(replay.data.assignment);
+					return errorResult.ok(replay.data.assignment);
 				}
 				return conflict("Idempotency key already used with different data");
 			}
@@ -3958,7 +3958,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (!recorded.ok) {
 				return recorded;
 			}
-			return ok(mapped.data);
+			return errorResult.ok(mapped.data);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to change shift assignment");
 		}
@@ -3977,7 +3977,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				)
 				.limit(1);
 			if (rows.length === 0) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapAssignment(requirePersistenceRow(rows[0]));
 		} catch (error) {
@@ -4027,7 +4027,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				}
 				mapped.push(item.data);
 			}
-			return ok(mapped);
+			return errorResult.ok(mapped);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to list shift assignments");
 		}
@@ -4040,7 +4040,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				return assignment;
 			}
 			if (assignment.data === null) {
-				return ok([]);
+				return errorResult.ok([]);
 			}
 			const rows = await db
 				.select()
@@ -4060,7 +4060,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				}
 				segments.push(mapped.data);
 			}
-			return ok(segments);
+			return errorResult.ok(segments);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -4100,7 +4100,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			mapped.sort(
 				(a, b) => rank[b.publicationStatus] - rank[a.publicationStatus],
 			);
-			return ok(mapped[0] ?? null);
+			return errorResult.ok(mapped[0] ?? null);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -4147,7 +4147,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				}
 				mapped.push(item.data);
 			}
-			return ok(mapped);
+			return errorResult.ok(mapped);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -4169,14 +4169,14 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				)
 				.limit(1);
 			if (rows.length === 0) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const sourceRow = requirePersistenceRow(rows[0]);
 			const mapped = mapEvent(sourceRow);
 			if (!mapped.ok) {
 				return mapped;
 			}
-			return ok({
+			return errorResult.ok({
 				event: mapped.data,
 				createRequestFingerprint: sourceRow.createRequestFingerprint,
 			});
@@ -4199,14 +4199,14 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				)
 				.limit(1);
 			if (rows.length === 0) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const sourceRow = requirePersistenceRow(rows[0]);
 			const mapped = mapEvent(sourceRow);
 			if (!mapped.ok) {
 				return mapped;
 			}
-			return ok({
+			return errorResult.ok({
 				event: mapped.data,
 				createRequestFingerprint: sourceRow.createRequestFingerprint,
 			});
@@ -4234,7 +4234,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				)
 				.limit(1);
 			if (rows.length === 0) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const sourceRow = requirePersistenceRow(rows[0]);
 			const snapshot = sourceRow.resultSnapshot;
@@ -4243,9 +4243,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				typeof snapshot !== "object" ||
 				Array.isArray(snapshot)
 			) {
-				return fail("INTERNAL_ERROR", "Invalid import batch snapshot");
+				return errorResult.fail("INTERNAL_ERROR");
 			}
-			return ok({
+			return errorResult.ok({
 				result: snapshot as AttendanceImportResult,
 				createRequestFingerprint: sourceRow.createRequestFingerprint,
 			});
@@ -4275,7 +4275,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				) {
 					return conflict("Idempotency key already used with different data");
 				}
-				return ok(existingBatch.data.result);
+				return errorResult.ok(existingBatch.data.result);
 			}
 
 			const importBatchId = randomUUID();
@@ -4586,7 +4586,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 						replay.data.createRequestFingerprint ===
 							input.createRequestFingerprint
 					) {
-						return ok(replay.data.result);
+						return errorResult.ok(replay.data.result);
 					}
 					return conflict("Idempotency key already used with different data");
 				}
@@ -4610,7 +4610,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (!audited.ok) {
 				return audited;
 			}
-			return ok(result);
+			return errorResult.ok(result);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to import attendance events");
 		}
@@ -4701,7 +4701,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (!event.ok) {
 				return event;
 			}
-			return ok(mapped.data);
+			return errorResult.ok(mapped.data);
 		} catch (error) {
 			if (isCreateIdempotencyUniqueViolation(error)) {
 				const replay = await this.findAttendanceEventByIdempotencyKey({
@@ -4716,7 +4716,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					replay.data.createRequestFingerprint ===
 						input.createRequestFingerprint
 				) {
-					return ok(replay.data.event);
+					return errorResult.ok(replay.data.event);
 				}
 				return conflict("Idempotency key already used with different data");
 			}
@@ -4738,12 +4738,14 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					replay.data.createRequestFingerprint ===
 						input.createRequestFingerprint
 				) {
-					return ok(replay.data.event);
+					return errorResult.ok(replay.data.event);
 				}
 				return conflict("Source reference already used with different data");
 			}
 			if (isPostgresForeignKeyViolation(error)) {
-				return fail("NOT_FOUND", "Employee not found in organization");
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+				});
 			}
 			return mapPersistenceFailure(error, "Failed to record attendance event");
 		}
@@ -4863,7 +4865,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (!mapped.ok) {
 				return mapped;
 			}
-			return ok(mapped.data);
+			return errorResult.ok(mapped.data);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to correct attendance event");
 		} finally {
@@ -4931,7 +4933,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (!recorded.ok) {
 				return recorded;
 			}
-			return ok(mapped.data);
+			return errorResult.ok(mapped.data);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to void attendance event");
 		}
@@ -4950,7 +4952,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				)
 				.limit(1);
 			if (rows.length === 0) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapEvent(requirePersistenceRow(rows[0]));
 		} catch (error) {
@@ -4982,7 +4984,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				}
 				adjustments.push(mapped.data);
 			}
-			return ok(adjustments);
+			return errorResult.ok(adjustments);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -5029,7 +5031,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				}
 				mapped.push(item.data);
 			}
-			return ok(sortAttendanceEventsForSession(mapped));
+			return errorResult.ok(sortAttendanceEventsForSession(mapped));
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to list attendance events");
 		}
@@ -5048,14 +5050,14 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				)
 				.limit(1);
 			if (rows.length === 0) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const sourceRow = requirePersistenceRow(rows[0]);
 			const mapped = mapSession(sourceRow);
 			if (!mapped.ok) {
 				return mapped;
 			}
-			return ok({
+			return errorResult.ok({
 				session: mapped.data,
 				createRequestFingerprint: sourceRow.createRequestFingerprint,
 			});
@@ -5177,7 +5179,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					await restoreAttendanceSession(previous);
 					return detected;
 				}
-				return ok(mapped.data);
+				return errorResult.ok(mapped.data);
 			}
 
 			const id = randomUUID();
@@ -5248,7 +5250,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					);
 				return detected;
 			}
-			return ok(mapped.data);
+			return errorResult.ok(mapped.data);
 		} catch (error) {
 			if (isCreateIdempotencyUniqueViolation(error)) {
 				const replay = await this.findAttendanceSessionByIdempotencyKey({
@@ -5263,7 +5265,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					replay.data.createRequestFingerprint ===
 						input.createRequestFingerprint
 				) {
-					return ok(replay.data.session);
+					return errorResult.ok(replay.data.session);
 				}
 				return conflict("Idempotency key already used with different data");
 			}
@@ -5287,7 +5289,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				)
 				.limit(1);
 			if (rows.length === 0) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapSession(requirePersistenceRow(rows[0]));
 		} catch (error) {
@@ -5458,7 +5460,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					);
 				return recorded;
 			}
-			return ok(mapped.data);
+			return errorResult.ok(mapped.data);
 		} catch (error) {
 			if (isPostgresUniqueViolation(error)) {
 				return conflict(
@@ -5495,7 +5497,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				}
 				mapped.push(decision.data);
 			}
-			return ok(mapped);
+			return errorResult.ok(mapped);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -5533,7 +5535,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				}
 				mapped.push(item.data);
 			}
-			return ok(mapped);
+			return errorResult.ok(mapped);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to list attendance sessions");
 		}
@@ -5555,7 +5557,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				.orderBy(desc(hrAttendanceSession.finalClockOutAt))
 				.limit(1);
 			if (rows.length === 0) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapSession(requirePersistenceRow(rows[0]));
 		} catch (error) {
@@ -5622,7 +5624,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (!event.ok) {
 				return event;
 			}
-			return ok(mapped.data);
+			return errorResult.ok(mapped.data);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -5666,7 +5668,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				)
 				.limit(1);
 			if (rows.length === 0) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapException(requirePersistenceRow(rows[0]));
 		} catch (error) {
@@ -5702,7 +5704,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				}
 				mapped.push(item.data);
 			}
-			return ok(mapped);
+			return errorResult.ok(mapped);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -5735,7 +5737,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				}
 				mapped.push(item.data);
 			}
-			return ok(mapped);
+			return errorResult.ok(mapped);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -5801,7 +5803,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				}
 				return true;
 			});
-			return ok({
+			return errorResult.ok({
 				organizationId: input.organizationId,
 				employeeId: input.employeeId,
 				localWorkDate: input.localWorkDate,
@@ -5834,14 +5836,14 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				)
 				.limit(1);
 			if (rows.length === 0) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const sourceRow = requirePersistenceRow(rows[0]);
 			const mapped = mapTimesheet(sourceRow);
 			if (!mapped.ok) {
 				return mapped;
 			}
-			return ok({
+			return errorResult.ok({
 				timesheet: mapped.data,
 				createRequestFingerprint: sourceRow.createRequestFingerprint,
 			});
@@ -5890,7 +5892,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (!recorded.ok) {
 				return recorded;
 			}
-			return ok(mapped.data);
+			return errorResult.ok(mapped.data);
 		} catch (error) {
 			if (isCreateIdempotencyUniqueViolation(error)) {
 				const replay = await this.findTimesheetByIdempotencyKey({
@@ -5905,7 +5907,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					replay.data.createRequestFingerprint ===
 						input.createRequestFingerprint
 				) {
-					return ok(replay.data.timesheet);
+					return errorResult.ok(replay.data.timesheet);
 				}
 				return conflict("Idempotency key already used with different data");
 			}
@@ -6228,7 +6230,10 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (!recorded.ok) {
 				return recorded;
 			}
-			return ok({ timesheet: timesheet.data, entries: entries.data });
+			return errorResult.ok({
+				timesheet: timesheet.data,
+				entries: entries.data,
+			});
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -6318,7 +6323,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (!recorded.ok) {
 				return recorded;
 			}
-			return ok(mapped.data);
+			return errorResult.ok(mapped.data);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to add timesheet entry");
 		}
@@ -6440,7 +6445,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (!recordedAudit.ok) {
 				return recordedAudit;
 			}
-			return ok(mapped.data);
+			return errorResult.ok(mapped.data);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to update timesheet entry");
 		}
@@ -6511,7 +6516,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (!recordedAudit.ok) {
 				return recordedAudit;
 			}
-			return ok(undefined);
+			return errorResult.ok(undefined);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to remove timesheet entry");
 		}
@@ -6696,7 +6701,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				}
 				return event;
 			}
-			return ok(mapped.data);
+			return errorResult.ok(mapped.data);
 		} catch (error) {
 			if (isPostgresUniqueViolation(error)) {
 				return conflict("Timesheet approval step already decided");
@@ -6735,7 +6740,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				}
 				mapped.push(item.data);
 			}
-			return ok(mapped);
+			return errorResult.ok(mapped);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -6832,7 +6837,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				)
 				.limit(1);
 			if (rows.length === 0) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapTimesheet(requirePersistenceRow(rows[0]));
 		} catch (error) {
@@ -6856,7 +6861,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				)
 				.limit(1);
 			if (rows.length === 0) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapTimesheet(requirePersistenceRow(rows[0]));
 		} catch (error) {
@@ -6894,7 +6899,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				}
 				mapped.push(item.data);
 			}
-			return ok(mapped);
+			return errorResult.ok(mapped);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to list timesheets");
 		}
@@ -6919,7 +6924,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				}
 				mapped.push(item.data);
 			}
-			return ok(mapped);
+			return errorResult.ok(mapped);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to list timesheet entries");
 		}
@@ -6932,13 +6937,13 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				return timesheet;
 			}
 			if (timesheet.data === null) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const entries = await this.listTimesheetEntries(input);
 			if (!entries.ok) {
 				return entries;
 			}
-			return ok({
+			return errorResult.ok({
 				timesheetId: timesheet.data.id,
 				totalRecordedMinutes: timesheet.data.totalRecordedMinutes,
 				totalApprovedMinutes: timesheet.data.totalApprovedMinutes,
@@ -6956,13 +6961,13 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				return timesheet;
 			}
 			if (timesheet.data === null) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			if (
 				timesheet.data.status !== "approved" &&
 				timesheet.data.status !== "locked"
 			) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const entries = await this.listTimesheetEntries({
 				organizationId: input.organizationId,
@@ -7005,7 +7010,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				).toISOString(),
 				approvalReference: timesheet.data.approvedBy ?? timesheet.data.id,
 			};
-			return ok(handoff);
+			return errorResult.ok(handoff);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -7027,14 +7032,14 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				)
 				.limit(1);
 			if (rows.length === 0) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const sourceRow = requirePersistenceRow(rows[0]);
 			const mapped = mapOvertime(sourceRow);
 			if (!mapped.ok) {
 				return mapped;
 			}
-			return ok({
+			return errorResult.ok({
 				request: mapped.data,
 				createRequestFingerprint: sourceRow.createRequestFingerprint,
 			});
@@ -7085,7 +7090,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (!recordedAudit.ok) {
 				return recordedAudit;
 			}
-			return ok(mapped.data);
+			return errorResult.ok(mapped.data);
 		} catch (error) {
 			if (isCreateIdempotencyUniqueViolation(error)) {
 				const replay = await this.findOvertimeRequestByIdempotencyKey({
@@ -7100,7 +7105,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					replay.data.createRequestFingerprint ===
 						input.createRequestFingerprint
 				) {
-					return ok(replay.data.request);
+					return errorResult.ok(replay.data.request);
 				}
 				return conflict("Idempotency key already used with different data");
 			}
@@ -7138,7 +7143,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				if (
 					existing.data.approvedMaximumMinutes === input.approvedMaximumMinutes
 				) {
-					return ok(existing.data);
+					return errorResult.ok(existing.data);
 				}
 				return conflict(
 					"Overtime request is already approved with different approved maximum minutes",
@@ -7211,7 +7216,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (!event.ok) {
 				return event;
 			}
-			return ok(mapped.data);
+			return errorResult.ok(mapped.data);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to approve overtime request");
 		}
@@ -7287,7 +7292,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (!recordedAudit.ok) {
 				return recordedAudit;
 			}
-			return ok(mapped.data);
+			return errorResult.ok(mapped.data);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to record overtime actual");
 		}
@@ -7365,7 +7370,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (!recordedAudit.ok) {
 				return recordedAudit;
 			}
-			return ok(mapped.data);
+			return errorResult.ok(mapped.data);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to verify overtime request");
 		}
@@ -7384,7 +7389,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				)
 				.limit(1);
 			if (rows.length === 0) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapOvertime(requirePersistenceRow(rows[0]));
 		} catch (error) {
@@ -7418,7 +7423,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				}
 				mapped.push(item.data);
 			}
-			return ok(mapped);
+			return errorResult.ok(mapped);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to list overtime requests");
 		}
@@ -7541,7 +7546,7 @@ async function transitionShiftStatus(
 		if (!recorded.ok) {
 			return recorded;
 		}
-		return ok(mapped.data);
+		return errorResult.ok(mapped.data);
 	} catch (error) {
 		return mapPersistenceFailure(error, "Failed to transition shift status");
 	}
@@ -7572,7 +7577,7 @@ function drizzleExceptionDetectionHost(
 							eq(hrAttendanceException.id, input.exceptionId),
 						),
 					);
-				return ok(undefined);
+				return errorResult.ok(undefined);
 			} catch (error) {
 				return mapPersistenceFailure(
 					error,
@@ -7714,7 +7719,7 @@ async function transitionAssignment(
 				return event;
 			}
 		}
-		return ok(mapped.data);
+		return errorResult.ok(mapped.data);
 	} catch (error) {
 		return mapPersistenceFailure(error, "Failed to transition assignment");
 	}
@@ -7801,7 +7806,7 @@ async function transitionException(
 		if (!recorded.ok) {
 			return recorded;
 		}
-		return ok(mapped.data);
+		return errorResult.ok(mapped.data);
 	} catch (error) {
 		return mapPersistenceFailure(error, "Failed to transition exception");
 	}
@@ -7952,7 +7957,7 @@ async function transitionTimesheet(
 		if (sequentialOutcome1.kind === "return") {
 			return sequentialOutcome1.value;
 		}
-		return ok(mapped.data);
+		return errorResult.ok(mapped.data);
 	} catch (error) {
 		return mapPersistenceFailure(error, "Failed to transition timesheet");
 	}
@@ -8041,7 +8046,7 @@ async function transitionOvertime(
 		if (!recorded.ok) {
 			return recorded;
 		}
-		return ok(mapped.data);
+		return errorResult.ok(mapped.data);
 	} catch (error) {
 		return mapPersistenceFailure(
 			error,

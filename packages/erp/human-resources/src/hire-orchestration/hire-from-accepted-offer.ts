@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type { HumanResourcesCommandOptions } from "../command-options";
 import { createAssignment } from "../core/assignment";
@@ -123,7 +123,7 @@ async function verifyReservation(
 	ctx: SagaContext,
 ): Promise<Result<HireAttempt>> {
 	if (isHireStepComplete(ctx.attempt, "reservation_verified")) {
-		return ok(ctx.attempt);
+		return errorResult.ok(ctx.attempt);
 	}
 
 	const listed = await listHeadcountReservations(
@@ -143,11 +143,12 @@ async function verifyReservation(
 		(reservation) => reservation.status === "active",
 	);
 	if (active.length > 0) {
-		return fail(
-			"CONFLICT",
-			"Active headcount reservation must be consumed before hire orchestration",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "The request conflicts with current state",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_CONFLICT,
+			),
+		});
 	}
 
 	const updated = await persistAttemptProgress(ctx, {
@@ -157,7 +158,7 @@ async function verifyReservation(
 		return updated;
 	}
 	ctx.attempt = updated.data;
-	return ok(updated.data);
+	return errorResult.ok(updated.data);
 }
 
 async function runPersonStep(ctx: SagaContext): Promise<Result<HireAttempt>> {
@@ -165,7 +166,7 @@ async function runPersonStep(ctx: SagaContext): Promise<Result<HireAttempt>> {
 		isHireStepComplete(ctx.attempt, "person_created") &&
 		ctx.attempt.personId
 	) {
-		return ok(ctx.attempt);
+		return errorResult.ok(ctx.attempt);
 	}
 
 	const created = await createPerson(
@@ -194,7 +195,7 @@ async function runPersonStep(ctx: SagaContext): Promise<Result<HireAttempt>> {
 		return failSaga(ctx, updated);
 	}
 	ctx.attempt = updated.data;
-	return ok(updated.data);
+	return errorResult.ok(updated.data);
 }
 
 async function runEmployeeStep(ctx: SagaContext): Promise<Result<HireAttempt>> {
@@ -202,7 +203,7 @@ async function runEmployeeStep(ctx: SagaContext): Promise<Result<HireAttempt>> {
 		isHireStepComplete(ctx.attempt, "employee_created") &&
 		ctx.attempt.employeeId
 	) {
-		return ok(ctx.attempt);
+		return errorResult.ok(ctx.attempt);
 	}
 
 	const created = await createEmployee(
@@ -231,7 +232,7 @@ async function runEmployeeStep(ctx: SagaContext): Promise<Result<HireAttempt>> {
 		return failSaga(ctx, updated);
 	}
 	ctx.attempt = updated.data;
-	return ok(updated.data);
+	return errorResult.ok(updated.data);
 }
 
 async function runEmploymentStep(
@@ -241,15 +242,15 @@ async function runEmploymentStep(
 		isHireStepComplete(ctx.attempt, "employment_created") &&
 		ctx.attempt.employmentId
 	) {
-		return ok(ctx.attempt);
+		return errorResult.ok(ctx.attempt);
 	}
 
 	if (ctx.attempt.employeeId === null) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Employee must exist before employment hire",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			),
+		});
 	}
 
 	const hired = await hireEmployment(
@@ -274,7 +275,7 @@ async function runEmploymentStep(
 		return failSaga(ctx, updated);
 	}
 	ctx.attempt = updated.data;
-	return ok(updated.data);
+	return errorResult.ok(updated.data);
 }
 
 async function runWorkerStep(ctx: SagaContext): Promise<Result<HireAttempt>> {
@@ -282,15 +283,15 @@ async function runWorkerStep(ctx: SagaContext): Promise<Result<HireAttempt>> {
 		isHireStepComplete(ctx.attempt, "worker_created") &&
 		ctx.attempt.workerId
 	) {
-		return ok(ctx.attempt);
+		return errorResult.ok(ctx.attempt);
 	}
 
 	if (ctx.attempt.personId === null || ctx.attempt.employeeId === null) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Person and employee must exist before worker create",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			),
+		});
 	}
 
 	const created = await createWorker(
@@ -321,7 +322,7 @@ async function runWorkerStep(ctx: SagaContext): Promise<Result<HireAttempt>> {
 		return failSaga(ctx, updated);
 	}
 	ctx.attempt = updated.data;
-	return ok(updated.data);
+	return errorResult.ok(updated.data);
 }
 
 async function runAssignmentStep(
@@ -331,15 +332,15 @@ async function runAssignmentStep(
 		isHireStepComplete(ctx.attempt, "assignment_created") &&
 		ctx.attempt.assignmentId
 	) {
-		return ok(ctx.attempt);
+		return errorResult.ok(ctx.attempt);
 	}
 
 	if (ctx.attempt.employmentId === null) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Employment must exist before assignment create",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			),
+		});
 	}
 
 	const assigned = await createAssignment(
@@ -370,7 +371,7 @@ async function runAssignmentStep(
 		return failSaga(ctx, updated);
 	}
 	ctx.attempt = updated.data;
-	return ok(updated.data);
+	return errorResult.ok(updated.data);
 }
 
 async function runOnboardingStep(
@@ -380,15 +381,15 @@ async function runOnboardingStep(
 		isHireStepComplete(ctx.attempt, "onboarding_started") &&
 		ctx.attempt.onboardingCaseId
 	) {
-		return ok(ctx.attempt);
+		return errorResult.ok(ctx.attempt);
 	}
 
 	if (ctx.attempt.employmentId === null) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Employment must exist before onboarding start",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			),
+		});
 	}
 
 	const onboarded = await startOnboarding(
@@ -419,7 +420,7 @@ async function runOnboardingStep(
 		return failSaga(ctx, updated);
 	}
 	ctx.attempt = updated.data;
-	return ok(updated.data);
+	return errorResult.ok(updated.data);
 }
 
 async function executeHireSaga(ctx: SagaContext): Promise<Result<HireAttempt>> {
@@ -444,7 +445,7 @@ async function executeHireSaga(ctx: SagaContext): Promise<Result<HireAttempt>> {
 		return sequentialOutcome1.value;
 	}
 
-	return ok(ctx.attempt);
+	return errorResult.ok(ctx.attempt);
 }
 
 function buildHandoff(
@@ -517,13 +518,12 @@ async function loadAcceptedOfferContext(
 		return offerResult;
 	}
 	if (offerResult.data.status !== "accepted") {
-		return fail(
-			"BAD_REQUEST",
-			"Offer must be accepted before hire orchestration",
-			humanResourcesErrorDetails(
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "The request is invalid",
+			internalContext: humanResourcesErrorDetails(
 				HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
 			),
-		);
+		});
 	}
 
 	const application = await deps.store.getApplicationById({
@@ -534,11 +534,12 @@ async function loadAcceptedOfferContext(
 		return application;
 	}
 	if (application.data === null) {
-		return fail(
-			"NOT_FOUND",
-			"Application not found for accepted offer",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-		);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "The requested resource was not found",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			),
+		});
 	}
 
 	const candidate = await getCandidate(
@@ -569,15 +570,14 @@ async function loadAcceptedOfferContext(
 
 	const positionId = requisition.data.positionId ?? data.positionId ?? null;
 	if (positionId === null) {
-		return fail(
-			"VALIDATION_ERROR",
-			"positionId is required when requisition has no position",
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+		});
 	}
 
 	const legalName = data.legalName?.trim() || candidate.data.displayName.trim();
 
-	return ok({
+	return errorResult.ok({
 		handoff: buildHandoff(
 			data,
 			offerResult.data,
@@ -624,11 +624,12 @@ export async function hireFromAcceptedOffer(
 			}
 			if (existing.data !== null) {
 				if (existing.data.requestFingerprint !== requestFingerprint) {
-					return fail(
-						"CONFLICT",
-						"Idempotency key reused with different payload",
-						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-					);
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+						internalContext: humanResourcesErrorDetails(
+							HUMAN_RESOURCES_ERROR_CONFLICT,
+						),
+					});
 				}
 				if (existing.data.attempt.status === "completed") {
 					const offerLoaded = await loadAcceptedOfferContext(
@@ -639,7 +640,7 @@ export async function hireFromAcceptedOffer(
 					if (!offerLoaded.ok) {
 						return offerLoaded;
 					}
-					return ok(
+					return errorResult.ok(
 						toResult(
 							{
 								input: data,
@@ -656,11 +657,12 @@ export async function hireFromAcceptedOffer(
 					);
 				}
 				if (existing.data.attempt.status === "failed_compensated") {
-					return fail(
-						"CONFLICT",
-						"Hire attempt previously failed and was compensated",
-						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-					);
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+						internalContext: humanResourcesErrorDetails(
+							HUMAN_RESOURCES_ERROR_CONFLICT,
+						),
+					});
 				}
 			}
 
@@ -724,7 +726,7 @@ export async function hireFromAcceptedOffer(
 				return outbox;
 			}
 
-			return ok(toResult(ctx, finished.data));
+			return errorResult.ok(toResult(ctx, finished.data));
 		},
 	});
 }

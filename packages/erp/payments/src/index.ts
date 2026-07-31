@@ -1,6 +1,6 @@
 import "server-only";
 
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { z } from "zod";
 
 import { requirePaymentsPermission } from "./authorization";
@@ -29,7 +29,6 @@ import {
 } from "./schemas";
 
 export type { PaymentsAuthorizationPort } from "./authorization";
-export * from "./error-codes";
 export type {
 	Payment,
 	PaymentAccount,
@@ -51,13 +50,13 @@ export * from "./schemas";
 const parse = <T>(
 	schema: z.ZodType<T>,
 	input: unknown,
-	message: string,
+	_message: string,
 ): Result<T> => {
 	const result = schema.safeParse(input);
 	return result.success
-		? ok(result.data)
-		: fail("BAD_REQUEST", message, {
-				fieldErrors: result.error.flatten().fieldErrors,
+		? errorResult.ok(result.data)
+		: errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "The submitted data is invalid",
 			});
 };
 

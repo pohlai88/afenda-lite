@@ -1,4 +1,4 @@
-import type { ErrorCode } from "@afenda/errors";
+import type { CanonicalErrorCode } from "@afenda/errors";
 import { z } from "zod";
 
 export const CORPORATE_ADMINISTRATION_ERROR_CODES = [
@@ -56,7 +56,10 @@ export const CORPORATE_ADMINISTRATION_RESULT_CODE_BY_REASON = {
 	CORPORATE_ADMINISTRATION_RECONCILIATION_FAILED: "CONFLICT",
 	CORPORATE_ADMINISTRATION_EXTERNAL_DEPENDENCY_UNAVAILABLE:
 		"SERVICE_UNAVAILABLE",
-} as const satisfies Record<CorporateAdministrationErrorCode, ErrorCode>;
+} as const satisfies Record<
+	CorporateAdministrationErrorCode,
+	CanonicalErrorCode
+>;
 
 const safeMetadataValueSchema = z
 	.string()
@@ -120,6 +123,6 @@ export function corporateAdministrationErrorDetails(
 
 export function corporateAdministrationResultCode(
 	reason: CorporateAdministrationErrorCode,
-): ErrorCode {
+): CanonicalErrorCode {
 	return CORPORATE_ADMINISTRATION_RESULT_CODE_BY_REASON[reason];
 }

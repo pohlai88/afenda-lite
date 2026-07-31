@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type {
 	HumanResourcesEmployeeId,
@@ -72,7 +72,7 @@ function collectAllPages<
 		if (hasMore) {
 			return collectPage(page + 1);
 		}
-		return ok(items);
+		return errorResult.ok(items);
 	}
 	return collectPage(1);
 }
@@ -93,11 +93,12 @@ export async function collectHumanResourcesSubjectData(
 		return employee;
 	}
 	if (employee.data === null) {
-		return fail(
-			"NOT_FOUND",
-			"Privacy subject employee was not found.",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-		);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "The requested resource was not found",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			),
+		});
 	}
 
 	const workerIds: string[] = [];
@@ -683,7 +684,7 @@ export async function collectHumanResourcesSubjectData(
 		);
 	}
 
-	return ok({
+	return errorResult.ok({
 		schemaVersion: HUMAN_RESOURCES_SUBJECT_EXPORT_SCHEMA_VERSION,
 		organizationId: input.organizationId,
 		generatedAt: input.generatedAt ?? new Date().toISOString(),
@@ -711,7 +712,7 @@ export async function listHumanResourcesSubjectInventoryRecords(input: {
 	if (!collected.ok) {
 		return collected;
 	}
-	return ok(
+	return errorResult.ok(
 		collected.data.records.map((record) => ({
 			recordId: record.entityId,
 			entity: record.entityType,

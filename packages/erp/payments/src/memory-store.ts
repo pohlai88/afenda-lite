@@ -1,17 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { fail, ok, type Result } from "@afenda/errors/result";
-
-import {
-	PAYMENTS_ERROR_ACCOUNT_NOT_FOUND,
-	PAYMENTS_ERROR_IDEMPOTENCY_CONFLICT,
-	PAYMENTS_ERROR_INSTRUCTION_NOT_FOUND,
-	PAYMENTS_ERROR_INSUFFICIENT_AVAILABILITY,
-	PAYMENTS_ERROR_PAYMENT_NOT_FOUND,
-	PAYMENTS_ERROR_REFUND_LIMIT_EXCEEDED,
-	PAYMENTS_ERROR_TRANSFER_INVALID,
-} from "./error-codes";
-import { failPayments } from "./fail-payments";
+import { errorResult, type Result } from "@afenda/errors";
 import type {
 	Payment,
 	PaymentAccount,
@@ -68,23 +57,17 @@ export class MemoryPaymentsStore implements PaymentsStore {
 	private find(organizationId: string, id: string): Result<Payment> {
 		const found = this.payments.get(id);
 		return found === undefined || found.organizationId !== organizationId
-			? failPayments(
-					"NOT_FOUND",
-					"Payment not found",
-					PAYMENTS_ERROR_PAYMENT_NOT_FOUND,
-				)
-			: ok(found);
+			? errorResult.fail("NOT_FOUND", { publicMessage: "Payment not found" })
+			: errorResult.ok(found);
 	}
 
 	private account(organizationId: string, id: string): Result<PaymentAccount> {
 		const found = this.accounts.get(id);
 		return found === undefined || found.organizationId !== organizationId
-			? failPayments(
-					"NOT_FOUND",
-					"Payment account not found",
-					PAYMENTS_ERROR_ACCOUNT_NOT_FOUND,
-				)
-			: ok(found);
+			? errorResult.fail("NOT_FOUND", {
+					publicMessage: "Payment account not found",
+				})
+			: errorResult.ok(found);
 	}
 
 	private idempotent(
@@ -95,14 +78,12 @@ export class MemoryPaymentsStore implements PaymentsStore {
 		const full = `${organizationId}:${key}`;
 		const existing = this.mutationKeys.get(full);
 		if (existing !== undefined && existing !== resourceId) {
-			return failPayments(
-				"CONFLICT",
-				"Idempotency key conflicts with another mutation",
-				PAYMENTS_ERROR_IDEMPOTENCY_CONFLICT,
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Idempotency key conflicts with another mutation",
+			});
 		}
 		this.mutationKeys.set(full, resourceId);
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	}
 
 	private buildDraft(record: PaymentCreateRecord): Result<Payment> {
@@ -114,21 +95,22 @@ export class MemoryPaymentsStore implements PaymentsStore {
 			return account;
 		}
 		if (account.data.currencyCode !== record.currencyCode) {
-			return fail(
-				"CONFLICT",
-				"Payment account currency differs from payment currency",
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Payment account currency differs from payment currency",
+			});
 		}
 		for (const payment of this.payments.values()) {
 			if (
 				payment.organizationId === record.organizationId &&
 				payment.normalizedCode === record.normalizedCode
 			) {
-				return fail("CONFLICT", "Payment code already exists");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Payment code already exists",
+				});
 			}
 		}
 		const now = new Date();
-		return ok({
+		return errorResult.ok({
 			id: randomUUID(),
 			organizationId: record.organizationId,
 			code: record.code,
@@ -172,7 +154,9 @@ export class MemoryPaymentsStore implements PaymentsStore {
 					account.organizationId === record.organizationId &&
 					account.normalizedCode === record.normalizedCode
 				) {
-					return fail("CONFLICT", "Payment account code already exists");
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "Payment account code already exists",
+					});
 				}
 			}
 			const now = new Date();
@@ -183,7 +167,7 @@ export class MemoryPaymentsStore implements PaymentsStore {
 				updatedAt: now,
 			};
 			this.accounts.set(account.id, account);
-			return ok({ ...account });
+			return errorResult.ok({ ...account });
 		});
 	}
 
@@ -191,7 +175,7 @@ export class MemoryPaymentsStore implements PaymentsStore {
 		organizationId: string,
 	): Promise<Result<PaymentAccount[]>> {
 		return resolveOperation(() =>
-			ok(
+			errorResult.ok(
 				[...this.accounts.values()]
 					.filter((account) => account.organizationId === organizationId)
 					.map((account) => ({ ...account })),
@@ -206,7 +190,7 @@ export class MemoryPaymentsStore implements PaymentsStore {
 					payment.organizationId === record.organizationId &&
 					payment.createIdempotencyKey === record.createIdempotencyKey
 				) {
-					return ok(clonePayment(payment));
+					return errorResult.ok(clonePayment(payment));
 				}
 			}
 			const created = this.buildDraft(record);
@@ -222,7 +206,7 @@ export class MemoryPaymentsStore implements PaymentsStore {
 				return idem;
 			}
 			this.payments.set(created.data.id, created.data);
-			return ok(clonePayment(created.data));
+			return errorResult.ok(clonePayment(created.data));
 		});
 	}
 
@@ -236,10 +220,9 @@ export class MemoryPaymentsStore implements PaymentsStore {
 			}
 			const payment = found.data;
 			if (payment.status !== "draft") {
-				return fail(
-					"CONFLICT",
-					"Application instructions require a draft payment",
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Application instructions require a draft payment",
+				});
 			}
 			if (
 				(payment.direction === "receipt" &&
@@ -247,10 +230,10 @@ export class MemoryPaymentsStore implements PaymentsStore {
 				(payment.direction === "disbursement" &&
 					record.targetModule !== "payables")
 			) {
-				return fail(
-					"CONFLICT",
-					"Application target is incompatible with payment direction",
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage:
+						"Application target is incompatible with payment direction",
+				});
 			}
 			const allocated = payment.applicationInstructions
 				.filter((candidate) =>
@@ -266,11 +249,9 @@ export class MemoryPaymentsStore implements PaymentsStore {
 				allocated + decimal(record.intendedAmount) >
 				decimal(payment.amount)
 			) {
-				return failPayments(
-					"CONFLICT",
-					"Application exceeds payment amount",
-					PAYMENTS_ERROR_INSUFFICIENT_AVAILABILITY,
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Application exceeds payment amount",
+				});
 			}
 			const instruction: PaymentApplicationInstruction = {
 				id: randomUUID(),
@@ -300,7 +281,7 @@ export class MemoryPaymentsStore implements PaymentsStore {
 			payment.version += 1;
 			payment.updatedBy = record.actorUserId;
 			payment.updatedAt = instruction.createdAt;
-			return ok({ ...instruction });
+			return errorResult.ok({ ...instruction });
 		});
 	}
 
@@ -312,10 +293,14 @@ export class MemoryPaymentsStore implements PaymentsStore {
 			}
 			const payment = found.data;
 			if (payment.status !== "draft" || payment.direction === "refund") {
-				return fail("CONFLICT", "Only draft non-refund payments can be posted");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Only draft non-refund payments can be posted",
+				});
 			}
 			if (payment.version !== record.expectedVersion) {
-				return fail("CONFLICT", "Payment version conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Payment version conflict",
+				});
 			}
 			const previous = clonePayment(payment);
 			const now = new Date();
@@ -335,7 +320,7 @@ export class MemoryPaymentsStore implements PaymentsStore {
 				this.payments.set(payment.id, previous);
 				return idempotent;
 			}
-			return ok(clonePayment(payment));
+			return errorResult.ok(clonePayment(payment));
 		});
 	}
 
@@ -349,10 +334,14 @@ export class MemoryPaymentsStore implements PaymentsStore {
 			}
 			const payment = found.data;
 			if (payment.status !== "posted") {
-				return fail("CONFLICT", "Only posted payments can be reversed");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Only posted payments can be reversed",
+				});
 			}
 			if (payment.version !== record.expectedVersion) {
-				return fail("CONFLICT", "Payment version conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Payment version conflict",
+				});
 			}
 			const previous = clonePayment(payment);
 			const now = new Date();
@@ -381,7 +370,7 @@ export class MemoryPaymentsStore implements PaymentsStore {
 				this.payments.set(payment.id, previous);
 				return idempotent;
 			}
-			return ok(clonePayment(payment));
+			return errorResult.ok(clonePayment(payment));
 		});
 	}
 
@@ -395,11 +384,9 @@ export class MemoryPaymentsStore implements PaymentsStore {
 	> {
 		return resolveOperation(() => {
 			if (record.fromPaymentAccountId === record.toPaymentAccountId) {
-				return failPayments(
-					"CONFLICT",
-					"Transfer accounts must differ",
-					PAYMENTS_ERROR_TRANSFER_INVALID,
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Transfer accounts must differ",
+				});
 			}
 			const from = this.account(
 				record.organizationId,
@@ -413,21 +400,18 @@ export class MemoryPaymentsStore implements PaymentsStore {
 				return to;
 			}
 			if (!(from.data.active && to.data.active)) {
-				return failPayments(
-					"CONFLICT",
-					"Transfer requires active payment accounts",
-					PAYMENTS_ERROR_TRANSFER_INVALID,
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Transfer requires active payment accounts",
+				});
 			}
 			if (
 				from.data.currencyCode !== record.currencyCode ||
 				to.data.currencyCode !== record.currencyCode
 			) {
-				return failPayments(
-					"CONFLICT",
-					"Transfer account currencies must match payment currency",
-					PAYMENTS_ERROR_TRANSFER_INVALID,
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage:
+						"Transfer account currencies must match payment currency",
+				});
 			}
 			const group = randomUUID();
 			const outgoing = this.buildDraft({
@@ -485,7 +469,7 @@ export class MemoryPaymentsStore implements PaymentsStore {
 				payment.postIdempotencyKey = record.idempotencyKey;
 				this.payments.set(payment.id, payment);
 			}
-			return ok({
+			return errorResult.ok({
 				outgoing: clonePayment(outgoing.data),
 				incoming: clonePayment(incoming.data),
 			});
@@ -505,7 +489,9 @@ export class MemoryPaymentsStore implements PaymentsStore {
 			}
 			const original = originalResult.data;
 			if (original.status !== "posted" || original.direction === "refund") {
-				return fail("CONFLICT", "Refund requires an active posted payment");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Refund requires an active posted payment",
+				});
 			}
 			const refunded = [...this.payments.values()]
 				.filter(
@@ -516,11 +502,9 @@ export class MemoryPaymentsStore implements PaymentsStore {
 				)
 				.reduce((total, row) => total + decimal(row.amount), 0n);
 			if (refunded + decimal(record.amount) > decimal(original.amount)) {
-				return failPayments(
-					"CONFLICT",
-					"Refund exceeds remaining refundable amount",
-					PAYMENTS_ERROR_REFUND_LIMIT_EXCEEDED,
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Refund exceeds remaining refundable amount",
+				});
 			}
 			const draft = this.buildDraft({
 				...record,
@@ -547,7 +531,7 @@ export class MemoryPaymentsStore implements PaymentsStore {
 			refund.postedBy = record.actorUserId;
 			refund.postIdempotencyKey = record.createIdempotencyKey;
 			this.payments.set(refund.id, refund);
-			return ok(clonePayment(refund));
+			return errorResult.ok(clonePayment(refund));
 		});
 	}
 
@@ -566,7 +550,9 @@ export class MemoryPaymentsStore implements PaymentsStore {
 					if (
 						decimal(record.appliedAmount) > decimal(instruction.intendedAmount)
 					) {
-						return fail("CONFLICT", "Applied amount exceeds intended amount");
+						return errorResult.fail("CONFLICT", {
+							publicMessage: "Applied amount exceeds intended amount",
+						});
 					}
 					instruction.appliedAmount = record.appliedAmount;
 					instruction.status =
@@ -575,14 +561,12 @@ export class MemoryPaymentsStore implements PaymentsStore {
 							? "applied"
 							: "partially_applied";
 					instruction.updatedAt = new Date();
-					return ok({ ...instruction });
+					return errorResult.ok({ ...instruction });
 				}
 			}
-			return failPayments(
-				"NOT_FOUND",
-				"Payment application instruction not found",
-				PAYMENTS_ERROR_INSTRUCTION_NOT_FOUND,
-			);
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Payment application instruction not found",
+			});
 		});
 	}
 
@@ -603,10 +587,9 @@ export class MemoryPaymentsStore implements PaymentsStore {
 						instruction.status !== "partially_applied" &&
 						instruction.status !== "applied"
 					) {
-						return fail(
-							"CONFLICT",
-							"Application instruction cannot be rejected",
-						);
+						return errorResult.fail("CONFLICT", {
+							publicMessage: "Application instruction cannot be rejected",
+						});
 					}
 					instruction.status =
 						record.rejectionCode === "PAYMENT_REVERSED"
@@ -614,21 +597,19 @@ export class MemoryPaymentsStore implements PaymentsStore {
 							: "rejected";
 					instruction.rejectionCode = record.rejectionCode;
 					instruction.updatedAt = new Date();
-					return ok({ ...instruction });
+					return errorResult.ok({ ...instruction });
 				}
 			}
-			return failPayments(
-				"NOT_FOUND",
-				"Payment application instruction not found",
-				PAYMENTS_ERROR_INSTRUCTION_NOT_FOUND,
-			);
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Payment application instruction not found",
+			});
 		});
 	}
 
 	getById(organizationId: string, id: string): Promise<Result<Payment | null>> {
 		return resolveOperation(() => {
 			const found = this.payments.get(id);
-			return ok(
+			return errorResult.ok(
 				found !== undefined && found.organizationId === organizationId
 					? clonePayment(found)
 					: null,
@@ -641,7 +622,7 @@ export class MemoryPaymentsStore implements PaymentsStore {
 	): Promise<Result<Payment[]>> {
 		return resolveOperation(() => {
 			const start = (filter.page - 1) * filter.pageSize;
-			return ok(
+			return errorResult.ok(
 				[...this.payments.values()]
 					.filter((row) => row.organizationId === filter.organizationId)
 					.filter(
@@ -673,10 +654,9 @@ export class MemoryPaymentsStore implements PaymentsStore {
 				return found;
 			}
 			if (found.data.status !== "posted") {
-				return fail(
-					"CONFLICT",
-					"Application availability requires a posted payment",
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Application availability requires a posted payment",
+				});
 			}
 			const intended = found.data.applicationInstructions
 				.filter((instruction) =>
@@ -696,7 +676,7 @@ export class MemoryPaymentsStore implements PaymentsStore {
 						payment.status === "posted",
 				)
 				.reduce((sum, payment) => sum + decimal(payment.amount), 0n);
-			return ok({
+			return errorResult.ok({
 				paymentId,
 				currencyCode: found.data.currencyCode,
 				postedAmount: found.data.amount,

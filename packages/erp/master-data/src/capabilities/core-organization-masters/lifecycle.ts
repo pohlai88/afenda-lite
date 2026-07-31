@@ -1,4 +1,4 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { MasterStatus } from "../../types";
 import {
 	decideLifecycleTransition,
@@ -126,7 +126,7 @@ export function assertLifecycleTransition(
 	if (!transition.ok) {
 		return transition;
 	}
-	return ok(true);
+	return errorResult.ok(true);
 }
 
 /** Restore is deliberately explicit and aggregate-owned. */
@@ -142,7 +142,7 @@ export function assertRestoreTransition(
 	if (!transition.ok) {
 		return transition;
 	}
-	return ok(true);
+	return errorResult.ok(true);
 }
 
 const taxRegistrationLifecyclePolicy = defineLifecyclePolicy<MasterStatus>({
@@ -197,5 +197,5 @@ export function assertTaxRegistrationLifecycleTransition(
 	if (!transition.ok) {
 		return transition;
 	}
-	return ok(true);
+	return errorResult.ok(true);
 }

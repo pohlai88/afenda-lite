@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	HUMAN_RESOURCES_CLEARANCE_COMPLETED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_CONFIRMED_EVENT,
@@ -502,9 +502,9 @@ export function createMemoryLifecycleMethods(
 		}): Promise<Result<OnboardingCase | null>> {
 			const row = state.onboardingCases.get(input.onboardingCaseId);
 			if (!row || row.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok(cloneOnboardingCase(row));
+			return await errorResult.ok(cloneOnboardingCase(row));
 		},
 
 		async findOnboardingByStartIdempotencyKey(input: {
@@ -515,9 +515,9 @@ export function createMemoryLifecycleMethods(
 				idempotencyMapKey(input.organizationId, input.idempotencyKey),
 			);
 			if (record === undefined) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({
+			return await errorResult.ok({
 				onboardingCase: cloneOnboardingCase(record.onboardingCase),
 				startRequestFingerprint: record.startRequestFingerprint,
 			});
@@ -543,7 +543,9 @@ export function createMemoryLifecycleMethods(
 				) {
 					return conflict("Idempotency key reused with different payload");
 				}
-				return ok(cloneOnboardingCase(existingByKey.data.onboardingCase));
+				return errorResult.ok(
+					cloneOnboardingCase(existingByKey.data.onboardingCase),
+				);
 			}
 
 			const employment = deps.core.employments.get(record.employmentId);
@@ -752,7 +754,7 @@ export function createMemoryLifecycleMethods(
 				return outbox;
 			}
 
-			return ok(cloneOnboardingCase(onboardingCase));
+			return errorResult.ok(cloneOnboardingCase(onboardingCase));
 		},
 
 		async completeOnboardingTask(
@@ -822,7 +824,7 @@ export function createMemoryLifecycleMethods(
 				return audit;
 			}
 
-			return ok(cloneOnboardingCase(onboardingCase));
+			return errorResult.ok(cloneOnboardingCase(onboardingCase));
 		},
 
 		async completeOnboarding(
@@ -937,7 +939,7 @@ export function createMemoryLifecycleMethods(
 				return outbox;
 			}
 
-			return ok(cloneOnboardingCase(updated));
+			return errorResult.ok(cloneOnboardingCase(updated));
 		},
 
 		async listOnboardingTasks(input: {
@@ -959,7 +961,7 @@ export function createMemoryLifecycleMethods(
 				)
 				.map((task) => ({ ...task, completedAt: task.completedAt }));
 			tasks.sort((a, b) => a.code.localeCompare(b.code));
-			return await ok(tasks);
+			return await errorResult.ok(tasks);
 		},
 
 		async getOnboardingTask(input: {
@@ -968,9 +970,9 @@ export function createMemoryLifecycleMethods(
 		}): Promise<Result<OnboardingTask | null>> {
 			const task = state.onboardingTasks.get(input.taskId);
 			if (!task || task.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...task, completedAt: task.completedAt });
+			return await errorResult.ok({ ...task, completedAt: task.completedAt });
 		},
 
 		async getOnboardingOrientationByCase(input: {
@@ -982,7 +984,7 @@ export function createMemoryLifecycleMethods(
 					item.organizationId === input.organizationId &&
 					item.onboardingCaseId === input.onboardingCaseId,
 			);
-			return await ok(
+			return await errorResult.ok(
 				row === undefined ? null : cloneOnboardingOrientation(row),
 			);
 		},
@@ -996,7 +998,7 @@ export function createMemoryLifecycleMethods(
 					item.organizationId === input.organizationId &&
 					item.onboardingCaseId === input.onboardingCaseId,
 			);
-			return await ok(
+			return await errorResult.ok(
 				row === undefined ? null : cloneOnboardingEquipmentHandoff(row),
 			);
 		},
@@ -1010,7 +1012,7 @@ export function createMemoryLifecycleMethods(
 					item.organizationId === input.organizationId &&
 					item.onboardingCaseId === input.onboardingCaseId,
 			);
-			return await ok(
+			return await errorResult.ok(
 				row === undefined ? null : cloneOnboardingAccessHandoff(row),
 			);
 		},
@@ -1092,7 +1094,7 @@ export function createMemoryLifecycleMethods(
 				return audit;
 			}
 
-			return ok(cloneOnboardingCase(onboardingCase));
+			return errorResult.ok(cloneOnboardingCase(onboardingCase));
 		},
 
 		async recordOnboardingEquipmentHandoff(
@@ -1177,7 +1179,7 @@ export function createMemoryLifecycleMethods(
 				return audit;
 			}
 
-			return ok(cloneOnboardingCase(onboardingCase));
+			return errorResult.ok(cloneOnboardingCase(onboardingCase));
 		},
 
 		async recordOnboardingAccessHandoff(
@@ -1262,7 +1264,7 @@ export function createMemoryLifecycleMethods(
 				return audit;
 			}
 
-			return ok(cloneOnboardingCase(onboardingCase));
+			return errorResult.ok(cloneOnboardingCase(onboardingCase));
 		},
 
 		// --- Lifecycle: probation ---
@@ -1273,9 +1275,9 @@ export function createMemoryLifecycleMethods(
 		}): Promise<Result<ProbationReview | null>> {
 			const row = state.probationReviews.get(input.probationReviewId);
 			if (!row || row.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok(cloneProbationReview(row));
+			return await errorResult.ok(cloneProbationReview(row));
 		},
 
 		async listProbationReviewsByEmployment(input: {
@@ -1290,7 +1292,7 @@ export function createMemoryLifecycleMethods(
 				)
 				.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
 				.map(cloneProbationReview);
-			return await ok(rows);
+			return await errorResult.ok(rows);
 		},
 
 		async listProbationAssessments(input: {
@@ -1309,7 +1311,7 @@ export function createMemoryLifecycleMethods(
 				)
 				.sort((a, b) => a.reviewedOn.localeCompare(b.reviewedOn))
 				.map(cloneProbationAssessment);
-			return await ok(rows);
+			return await errorResult.ok(rows);
 		},
 
 		async findProbationByOpenIdempotencyKey(input: {
@@ -1320,9 +1322,9 @@ export function createMemoryLifecycleMethods(
 				idempotencyMapKey(input.organizationId, input.idempotencyKey),
 			);
 			if (record === undefined) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({
+			return await errorResult.ok({
 				probationReview: cloneProbationReview(record.probationReview),
 				openRequestFingerprint: record.openRequestFingerprint,
 			});
@@ -1348,7 +1350,9 @@ export function createMemoryLifecycleMethods(
 				) {
 					return conflict("Idempotency key reused with different payload");
 				}
-				return ok(cloneProbationReview(existingByKey.data.probationReview));
+				return errorResult.ok(
+					cloneProbationReview(existingByKey.data.probationReview),
+				);
 			}
 
 			const employment = deps.core.employments.get(record.employmentId);
@@ -1431,7 +1435,7 @@ export function createMemoryLifecycleMethods(
 				return audit;
 			}
 
-			return ok(cloneProbationReview(probation));
+			return errorResult.ok(cloneProbationReview(probation));
 		},
 
 		async extendProbation(
@@ -1520,7 +1524,7 @@ export function createMemoryLifecycleMethods(
 				return outbox;
 			}
 
-			return ok(cloneProbationReview(updated));
+			return errorResult.ok(cloneProbationReview(updated));
 		},
 
 		async recordProbationAssessment(
@@ -1632,7 +1636,7 @@ export function createMemoryLifecycleMethods(
 				return outbox;
 			}
 
-			return ok(cloneProbationAssessment(assessment));
+			return errorResult.ok(cloneProbationAssessment(assessment));
 		},
 
 		async recordProbationOutcome(
@@ -1727,7 +1731,7 @@ export function createMemoryLifecycleMethods(
 				return outbox;
 			}
 
-			return ok(cloneProbationReview(updated));
+			return errorResult.ok(cloneProbationReview(updated));
 		},
 
 		// --- Lifecycle: confirmation ---
@@ -1740,9 +1744,9 @@ export function createMemoryLifecycleMethods(
 				input.employmentConfirmationId,
 			);
 			if (!row || row.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok(cloneEmploymentConfirmation(row));
+			return await errorResult.ok(cloneEmploymentConfirmation(row));
 		},
 
 		async findConfirmationByIdempotencyKey(input: {
@@ -1753,9 +1757,9 @@ export function createMemoryLifecycleMethods(
 				idempotencyMapKey(input.organizationId, input.idempotencyKey),
 			);
 			if (record === undefined) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({
+			return await errorResult.ok({
 				employmentConfirmation: cloneEmploymentConfirmation(
 					record.employmentConfirmation,
 				),
@@ -1783,7 +1787,7 @@ export function createMemoryLifecycleMethods(
 				) {
 					return conflict("Idempotency key reused with different payload");
 				}
-				return ok(
+				return errorResult.ok(
 					cloneEmploymentConfirmation(
 						existingByKey.data.employmentConfirmation,
 					),
@@ -1903,7 +1907,7 @@ export function createMemoryLifecycleMethods(
 				return outbox;
 			}
 
-			return ok(cloneEmploymentConfirmation(confirmation));
+			return errorResult.ok(cloneEmploymentConfirmation(confirmation));
 		},
 
 		// --- Lifecycle: transfer ---
@@ -1916,9 +1920,9 @@ export function createMemoryLifecycleMethods(
 				idempotencyMapKey(input.organizationId, input.idempotencyKey),
 			);
 			if (record === undefined) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({
+			return await errorResult.ok({
 				employmentMovement: cloneEmploymentMovement(record.employmentMovement),
 				transferRequestFingerprint: record.transferRequestFingerprint,
 			});
@@ -1962,7 +1966,7 @@ export function createMemoryLifecycleMethods(
 				if (existingByKey.data.transferRequestFingerprint !== fingerprint) {
 					return conflict("Idempotency key reused with different payload");
 				}
-				return ok(
+				return errorResult.ok(
 					cloneEmploymentMovement(existingByKey.data.employmentMovement),
 				);
 			}
@@ -2143,7 +2147,7 @@ export function createMemoryLifecycleMethods(
 				return outbox;
 			}
 
-			return ok(cloneEmploymentMovement(movement));
+			return errorResult.ok(cloneEmploymentMovement(movement));
 		},
 
 		// --- Lifecycle: termination ---
@@ -2154,9 +2158,9 @@ export function createMemoryLifecycleMethods(
 		}): Promise<Result<Termination | null>> {
 			const row = state.terminations.get(input.terminationId);
 			if (!row || row.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok(cloneTermination(row));
+			return await errorResult.ok(cloneTermination(row));
 		},
 
 		async findTerminationByIdempotencyKey(input: {
@@ -2167,9 +2171,9 @@ export function createMemoryLifecycleMethods(
 				idempotencyMapKey(input.organizationId, input.idempotencyKey),
 			);
 			if (record === undefined) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({
+			return await errorResult.ok({
 				termination: cloneTermination(record.termination),
 				terminationRequestFingerprint: record.terminationRequestFingerprint,
 			});
@@ -2195,7 +2199,7 @@ export function createMemoryLifecycleMethods(
 				) {
 					return conflict("Idempotency key reused with different payload");
 				}
-				return ok(cloneTermination(existingByKey.data.termination));
+				return errorResult.ok(cloneTermination(existingByKey.data.termination));
 			}
 
 			const employment = deps.core.employments.get(record.employmentId);
@@ -2277,7 +2281,7 @@ export function createMemoryLifecycleMethods(
 				return audit;
 			}
 
-			return ok(cloneTermination(termination));
+			return errorResult.ok(cloneTermination(termination));
 		},
 
 		async approveTermination(
@@ -2333,7 +2337,7 @@ export function createMemoryLifecycleMethods(
 				return audit;
 			}
 
-			return ok(cloneTermination(updated));
+			return errorResult.ok(cloneTermination(updated));
 		},
 
 		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
@@ -2472,7 +2476,7 @@ export function createMemoryLifecycleMethods(
 				return outbox;
 			}
 
-			return ok(cloneTermination(updatedTermination));
+			return errorResult.ok(cloneTermination(updatedTermination));
 		},
 
 		// --- Lifecycle: offboarding ---
@@ -2483,9 +2487,9 @@ export function createMemoryLifecycleMethods(
 		}): Promise<Result<OffboardingCase | null>> {
 			const row = state.offboardingCases.get(input.offboardingCaseId);
 			if (!row || row.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok(cloneOffboardingCase(row));
+			return await errorResult.ok(cloneOffboardingCase(row));
 		},
 
 		async findOffboardingByStartIdempotencyKey(input: {
@@ -2496,9 +2500,9 @@ export function createMemoryLifecycleMethods(
 				idempotencyMapKey(input.organizationId, input.idempotencyKey),
 			);
 			if (record === undefined) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({
+			return await errorResult.ok({
 				offboardingCase: cloneOffboardingCase(record.offboardingCase),
 				startRequestFingerprint: record.startRequestFingerprint,
 			});
@@ -2524,7 +2528,9 @@ export function createMemoryLifecycleMethods(
 				) {
 					return conflict("Idempotency key reused with different payload");
 				}
-				return ok(cloneOffboardingCase(existingByKey.data.offboardingCase));
+				return errorResult.ok(
+					cloneOffboardingCase(existingByKey.data.offboardingCase),
+				);
 			}
 
 			const employment = deps.core.employments.get(record.employmentId);
@@ -2747,7 +2753,7 @@ export function createMemoryLifecycleMethods(
 				return outbox;
 			}
 
-			return ok(cloneOffboardingCase(offboardingCase));
+			return errorResult.ok(cloneOffboardingCase(offboardingCase));
 		},
 
 		async completeOffboardingTask(
@@ -2819,7 +2825,7 @@ export function createMemoryLifecycleMethods(
 				return audit;
 			}
 
-			return ok(cloneOffboardingCase(offboardingCase));
+			return errorResult.ok(cloneOffboardingCase(offboardingCase));
 		},
 
 		async recordExitInterview(
@@ -2894,7 +2900,7 @@ export function createMemoryLifecycleMethods(
 				return audit;
 			}
 
-			return ok(cloneOffboardingCase(offboardingCase));
+			return errorResult.ok(cloneOffboardingCase(offboardingCase));
 		},
 
 		async recordClearance(
@@ -2986,7 +2992,7 @@ export function createMemoryLifecycleMethods(
 				return outbox;
 			}
 
-			return ok(cloneOffboardingCase(offboardingCase));
+			return errorResult.ok(cloneOffboardingCase(offboardingCase));
 		},
 
 		async completeOffboarding(
@@ -3111,7 +3117,7 @@ export function createMemoryLifecycleMethods(
 				return outbox;
 			}
 
-			return ok(cloneOffboardingCase(updated));
+			return errorResult.ok(cloneOffboardingCase(updated));
 		},
 
 		async listOffboardingTasks(input: {
@@ -3135,7 +3141,7 @@ export function createMemoryLifecycleMethods(
 				)
 				.map((task) => ({ ...task }));
 			tasks.sort((a, b) => a.code.localeCompare(b.code));
-			return await ok(tasks);
+			return await errorResult.ok(tasks);
 		},
 
 		async getClearanceByOffboardingCase(input: {
@@ -3157,7 +3163,7 @@ export function createMemoryLifecycleMethods(
 						row.organizationId === input.organizationId &&
 						row.offboardingCaseId === input.offboardingCaseId,
 				) ?? null;
-			return await ok(clearance === null ? null : { ...clearance });
+			return await errorResult.ok(clearance === null ? null : { ...clearance });
 		},
 
 		async getOffboardingAccessRevocationByCase(input: {
@@ -3179,7 +3185,7 @@ export function createMemoryLifecycleMethods(
 						revocation.organizationId === input.organizationId &&
 						revocation.offboardingCaseId === input.offboardingCaseId,
 				) ?? null;
-			return await ok(
+			return await errorResult.ok(
 				row === null ? null : cloneOffboardingAccessRevocation(row),
 			);
 		},
@@ -3203,7 +3209,7 @@ export function createMemoryLifecycleMethods(
 						handoff.organizationId === input.organizationId &&
 						handoff.offboardingCaseId === input.offboardingCaseId,
 				) ?? null;
-			return await ok(
+			return await errorResult.ok(
 				row === null ? null : cloneOffboardingPayrollHandoff(row),
 			);
 		},
@@ -3286,7 +3292,7 @@ export function createMemoryLifecycleMethods(
 				return audit;
 			}
 
-			return ok(cloneOffboardingCase(offboardingCase));
+			return errorResult.ok(cloneOffboardingCase(offboardingCase));
 		},
 
 		async recordOffboardingPayrollHandoff(
@@ -3367,7 +3373,7 @@ export function createMemoryLifecycleMethods(
 				return audit;
 			}
 
-			return ok(cloneOffboardingCase(offboardingCase));
+			return errorResult.ok(cloneOffboardingCase(offboardingCase));
 		},
 
 		// Compensation Grade

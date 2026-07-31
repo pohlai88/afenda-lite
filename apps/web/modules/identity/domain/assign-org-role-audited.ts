@@ -13,8 +13,8 @@ import {
 	platformRoleAssignment,
 	runNeonHttpTransaction,
 } from "@afenda/db";
-import { AppError } from "@afenda/errors";
-import { fail } from "@afenda/errors/result";
+import { errorIngress, errorResult } from "@afenda/errors";
+
 import {
 	type AssignOrgRoleInput,
 	type AssignOrgRoleResult,
@@ -150,10 +150,9 @@ export async function assignOrgRoleWithAudit(
 
 	const role = await findAssignableRole(roleId, orgId);
 	if (!role) {
-		return fail(
-			"NOT_FOUND",
-			"That role is not assignable in this organization.",
-		);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "That role is not assignable in this organization.",
+		});
 	}
 
 	const existing = await db
@@ -172,7 +171,9 @@ export async function assignOrgRoleWithAudit(
 
 	const [current] = existing;
 	if (current?.active) {
-		return fail("CONFLICT", "That role is already assigned to this user.");
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "That role is already assigned to this user.",
+		});
 	}
 
 	const reactivated = Boolean(current && !current.active);
@@ -293,20 +294,14 @@ export async function assignOrgRoleWithAudit(
 
 	const [row] = rows;
 	if (!row) {
-		return fail(
-			"BAD_REQUEST",
-			reactivated
-				? "Assignment could not be reactivated."
-				: "Assignment could not be created.",
-		);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "The request is invalid",
+		});
 	}
 
 	if (row.organization_id !== orgId) {
-		throw new AppError({
-			code: "INTERNAL_ERROR",
-			message:
-				"assignOrgRoleWithAudit: assignment organization_id mismatch after commit",
-			isOperational: false,
+		throw errorIngress.code("INTERNAL_ERROR", {
+			operation: "identity.role.assign",
 		});
 	}
 

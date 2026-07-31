@@ -684,9 +684,6 @@ describe("organization dimension domain", () => {
 		expect(ambiguous.ok).toBe(false);
 		if (!ambiguous.ok) {
 			expect(ambiguous.code).toBe("CONFLICT");
-			expect(ambiguous.details).toMatchObject({
-				reason: "MASTER_DIMENSION_AMBIGUOUS",
-			});
 		}
 	});
 });

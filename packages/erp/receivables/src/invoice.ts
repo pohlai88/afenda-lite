@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { z } from "zod";
 
 import {
@@ -66,7 +66,9 @@ async function validateDraftInvoiceSource(
 ): Promise<Result<void>> {
 	if (input.invoiceSource === "sales_order") {
 		if (deps.salesSource === undefined || input.salesOrderId === undefined) {
-			return fail("BAD_REQUEST", "Sales invoice source port is required");
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage: "Sales invoice source port is required",
+			});
 		}
 		const source = await deps.salesSource.getInvoiceableSalesOrder({
 			organizationId: input.organizationId,
@@ -77,12 +79,16 @@ async function validateDraftInvoiceSource(
 			return source;
 		}
 		return source.data === null
-			? fail("NOT_FOUND", "Invoiceable sales order not found")
-			: ok(undefined);
+			? errorResult.fail("NOT_FOUND", {
+					publicMessage: "Invoiceable sales order not found",
+				})
+			: errorResult.ok(undefined);
 	}
 	if (input.invoiceSource === "delivery") {
 		if (deps.deliverySource === undefined || input.deliveryId === undefined) {
-			return fail("BAD_REQUEST", "Delivery invoice source port is required");
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage: "Delivery invoice source port is required",
+			});
 		}
 		const source = await deps.deliverySource.getInvoiceableDelivery({
 			organizationId: input.organizationId,
@@ -93,10 +99,12 @@ async function validateDraftInvoiceSource(
 			return source;
 		}
 		return source.data === null
-			? fail("NOT_FOUND", "Invoiceable delivery not found")
-			: ok(undefined);
+			? errorResult.fail("NOT_FOUND", {
+					publicMessage: "Invoiceable delivery not found",
+				})
+			: errorResult.ok(undefined);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 function collectSalesOrderLineChecks(
@@ -107,16 +115,17 @@ function collectSalesOrderLineChecks(
 ): Promise<Result<SourceLineCheck[]>> {
 	return collectSequentially(invoice.lines, async (line) => {
 		if (line.salesOrderLineId === null) {
-			return fail(
-				"CONFLICT",
-				"Sales-order invoice lines require salesOrderLineId",
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Sales-order invoice lines require salesOrderLineId",
+			});
 		}
 		const sourceLine = source.lines.find(
 			(row) => row.salesOrderLineId === line.salesOrderLineId,
 		);
 		if (sourceLine === undefined) {
-			return fail("CONFLICT", "Invoice line source is not invoiceable");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Invoice line source is not invoiceable",
+			});
 		}
 		const posted = await deps.store.sumPostedQuantityForSourceLine({
 			organizationId: input.organizationId,
@@ -126,7 +135,7 @@ function collectSalesOrderLineChecks(
 		if (!posted.ok) {
 			return posted;
 		}
-		return ok({
+		return errorResult.ok({
 			salesOrderLineId: line.salesOrderLineId,
 			deliveryLineId: null,
 			quantity: line.quantity,
@@ -145,13 +154,17 @@ function collectDeliveryLineChecks(
 ): Promise<Result<SourceLineCheck[]>> {
 	return collectSequentially(invoice.lines, async (line) => {
 		if (line.deliveryLineId === null) {
-			return fail("CONFLICT", "Delivery invoice lines require deliveryLineId");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Delivery invoice lines require deliveryLineId",
+			});
 		}
 		const sourceLine = source.lines.find(
 			(row) => row.deliveryLineId === line.deliveryLineId,
 		);
 		if (sourceLine === undefined) {
-			return fail("CONFLICT", "Invoice line source is not invoiceable");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Invoice line source is not invoiceable",
+			});
 		}
 		const posted = await deps.store.sumPostedQuantityForSourceLine({
 			organizationId: input.organizationId,
@@ -161,7 +174,7 @@ function collectDeliveryLineChecks(
 		if (!posted.ok) {
 			return posted;
 		}
-		return ok({
+		return errorResult.ok({
 			salesOrderLineId: null,
 			deliveryLineId: line.deliveryLineId,
 			quantity: line.quantity,
@@ -179,10 +192,9 @@ async function buildSourceLineChecks(
 ): Promise<Result<SourceLineCheck[]>> {
 	if (invoice.invoiceSource === "sales_order") {
 		if (deps.salesSource === undefined || invoice.salesOrderId === null) {
-			return fail(
-				"BAD_REQUEST",
-				"Sales invoice source port is required at post",
-			);
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage: "Sales invoice source port is required at post",
+			});
 		}
 		const source = await deps.salesSource.getInvoiceableSalesOrder({
 			organizationId: input.organizationId,
@@ -193,16 +205,17 @@ async function buildSourceLineChecks(
 			return source;
 		}
 		if (source.data === null) {
-			return fail("NOT_FOUND", "Invoiceable sales order not found");
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Invoiceable sales order not found",
+			});
 		}
 		return collectSalesOrderLineChecks(invoice, input, deps, source.data);
 	}
 	if (invoice.invoiceSource === "delivery") {
 		if (deps.deliverySource === undefined || invoice.deliveryId === null) {
-			return fail(
-				"BAD_REQUEST",
-				"Delivery invoice source port is required at post",
-			);
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage: "Delivery invoice source port is required at post",
+			});
 		}
 		const source = await deps.deliverySource.getInvoiceableDelivery({
 			organizationId: input.organizationId,
@@ -213,11 +226,13 @@ async function buildSourceLineChecks(
 			return source;
 		}
 		if (source.data === null) {
-			return fail("NOT_FOUND", "Invoiceable delivery not found");
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Invoiceable delivery not found",
+			});
 		}
 		return collectDeliveryLineChecks(invoice, input, deps, source.data);
 	}
-	return ok([]);
+	return errorResult.ok([]);
 }
 
 export async function createDraftSalesInvoice(
@@ -367,7 +382,9 @@ export async function postSalesInvoice(
 		return invoice;
 	}
 	if (invoice.data === null) {
-		return fail("NOT_FOUND", "Sales invoice not found");
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Sales invoice not found",
+		});
 	}
 
 	const sourceLineChecks = await buildSourceLineChecks(
@@ -470,18 +487,26 @@ export async function applyCustomerReceipt(
 			return availability;
 		}
 		if (availability.data === null) {
-			return fail("NOT_FOUND", "Payment application instruction not found");
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Payment application instruction not found",
+			});
 		}
 		if (availability.data.paymentStatus !== "posted") {
-			return fail("CONFLICT", "Payment must be posted before application");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Payment must be posted before application",
+			});
 		}
 		if (availability.data.targetDocumentId !== parsed.data.salesInvoiceId) {
-			return fail("CONFLICT", "Instruction target does not match invoice");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Instruction target does not match invoice",
+			});
 		}
 		if (
 			decimal(parsed.data.amount) > decimal(availability.data.availableAmount)
 		) {
-			return fail("CONFLICT", "Application exceeds available payment value");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Application exceeds available payment value",
+			});
 		}
 	}
 

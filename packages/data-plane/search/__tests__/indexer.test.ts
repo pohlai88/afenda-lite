@@ -96,7 +96,7 @@ describe("@afenda/search indexer", () => {
 		);
 		expect(result.ok).toBe(false);
 		if (!result.ok) {
-			expect(result.code).toBe("BAD_REQUEST");
+			expect(result.code).toBe("VALIDATION_ERROR");
 		}
 	});
 });

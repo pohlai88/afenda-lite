@@ -1,5 +1,5 @@
 import type { NeonHttpSql } from "@afenda/db";
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type { EventSourceModule } from "./types";
 
@@ -82,7 +82,7 @@ export function createPendingDomainEventAppender(dependencies: {
 			events: readonly PendingDomainEventWriteInput[],
 		): Promise<Result<void>> {
 			if (events.length === 0) {
-				return ok(undefined);
+				return errorResult.ok(undefined);
 			}
 			await dependencies.executeTransaction(
 				(sql) =>
@@ -90,7 +90,7 @@ export function createPendingDomainEventAppender(dependencies: {
 						createStatement(event)(sql),
 					) as ReturnType<NeonHttpSql>[],
 			);
-			return ok(undefined);
+			return errorResult.ok(undefined);
 		},
 		createStatement,
 	});

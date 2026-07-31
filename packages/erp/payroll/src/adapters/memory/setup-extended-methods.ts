@@ -1,5 +1,5 @@
 // biome-ignore-all lint/suspicious/useAwait: The deterministic memory adapter implements asynchronous extended payroll setup ports.
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import { parsePayrollRunId } from "../../brands";
 import type { MutationPorts } from "../../ports";
@@ -82,7 +82,7 @@ export function createMemorySetupExtendedMethods(input: {
 		"isRuleVersionUsedByFinalizedRun"
 	> = {
 		async isRuleVersionUsedByFinalizedRun(checkInput) {
-			return ok(
+			return errorResult.ok(
 				state.ruleFinalizedUsage.has(ruleFinalizedUsageKey(checkInput)),
 			);
 		},
@@ -135,7 +135,7 @@ export function createMemorySetupExtendedMethods(input: {
 			state.calendars.set(calendar.id, calendar);
 			return audit;
 		}
-		return ok(cloneCalendar(updated));
+		return errorResult.ok(cloneCalendar(updated));
 	}
 
 	return {
@@ -154,7 +154,7 @@ export function createMemorySetupExtendedMethods(input: {
 					return true;
 				},
 			);
-			return ok(calendars.map(cloneCalendar));
+			return errorResult.ok(calendars.map(cloneCalendar));
 		},
 
 		async archiveCalendar(calendarInput, ports) {
@@ -203,7 +203,7 @@ export function createMemorySetupExtendedMethods(input: {
 				state.payGroups.set(payGroup.id, payGroup);
 				return audit;
 			}
-			return ok(clonePayGroup(updated));
+			return errorResult.ok(clonePayGroup(updated));
 		},
 
 		async archivePayGroup(payGroupInput, ports) {
@@ -247,7 +247,7 @@ export function createMemorySetupExtendedMethods(input: {
 				state.payGroups.set(payGroup.id, payGroup);
 				return audit;
 			}
-			return ok(clonePayGroup(updated));
+			return errorResult.ok(clonePayGroup(updated));
 		},
 
 		async updatePeriod(periodInput, ports) {
@@ -291,7 +291,7 @@ export function createMemorySetupExtendedMethods(input: {
 				state.periods.set(period.id, period);
 				return audit;
 			}
-			return ok(clonePeriod(updated));
+			return errorResult.ok(clonePeriod(updated));
 		},
 
 		async closePeriod(periodInput, ports) {
@@ -335,7 +335,7 @@ export function createMemorySetupExtendedMethods(input: {
 				state.periods.set(period.id, period);
 				return audit;
 			}
-			return ok(clonePeriod(updated));
+			return errorResult.ok(clonePeriod(updated));
 		},
 
 		async getEarningRule(getInput) {
@@ -344,9 +344,9 @@ export function createMemorySetupExtendedMethods(input: {
 				rule === undefined ||
 				rule.organizationId !== getInput.organizationId
 			) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
-			return ok(cloneEarningRule(rule));
+			return errorResult.ok(cloneEarningRule(rule));
 		},
 
 		async updateEarningRule(ruleInput, ports) {
@@ -404,7 +404,7 @@ export function createMemorySetupExtendedMethods(input: {
 				state.earningRules.set(rule.id, rule);
 				return audit;
 			}
-			return ok(cloneEarningRule(updated));
+			return errorResult.ok(cloneEarningRule(updated));
 		},
 
 		async archiveEarningRule(ruleInput, ports) {
@@ -456,7 +456,7 @@ export function createMemorySetupExtendedMethods(input: {
 				state.earningRules.set(rule.id, rule);
 				return audit;
 			}
-			return ok(cloneEarningRule(updated));
+			return errorResult.ok(cloneEarningRule(updated));
 		},
 
 		async supersedeEarningRule(record, ports) {
@@ -521,7 +521,7 @@ export function createMemorySetupExtendedMethods(input: {
 				return successorResult;
 			}
 
-			return ok({
+			return errorResult.ok({
 				superseded: cloneEarningRule(superseded),
 				successor: successorResult.data,
 			} satisfies PayrollRuleSupersedeResult<PayrollEarningRule>);
@@ -533,9 +533,9 @@ export function createMemorySetupExtendedMethods(input: {
 				rule === undefined ||
 				rule.organizationId !== getInput.organizationId
 			) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
-			return ok(cloneDeductionRule(rule));
+			return errorResult.ok(cloneDeductionRule(rule));
 		},
 
 		async updateDeductionRule(ruleInput, ports) {
@@ -597,7 +597,7 @@ export function createMemorySetupExtendedMethods(input: {
 				state.deductionRules.set(rule.id, rule);
 				return audit;
 			}
-			return ok(cloneDeductionRule(updated));
+			return errorResult.ok(cloneDeductionRule(updated));
 		},
 
 		async archiveDeductionRule(ruleInput, ports) {
@@ -649,7 +649,7 @@ export function createMemorySetupExtendedMethods(input: {
 				state.deductionRules.set(rule.id, rule);
 				return audit;
 			}
-			return ok(cloneDeductionRule(updated));
+			return errorResult.ok(cloneDeductionRule(updated));
 		},
 
 		async supersedeDeductionRule(record, ports) {
@@ -715,7 +715,7 @@ export function createMemorySetupExtendedMethods(input: {
 				return successorResult;
 			}
 
-			return ok({
+			return errorResult.ok({
 				superseded: cloneDeductionRule(superseded),
 				successor: successorResult.data,
 			} satisfies PayrollRuleSupersedeResult<PayrollDeductionRule>);
@@ -727,9 +727,9 @@ export function createMemorySetupExtendedMethods(input: {
 				rule === undefined ||
 				rule.organizationId !== getInput.organizationId
 			) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
-			return ok(cloneStatutoryRule(rule));
+			return errorResult.ok(cloneStatutoryRule(rule));
 		},
 
 		async updateStatutoryRule(ruleInput, ports) {
@@ -787,7 +787,7 @@ export function createMemorySetupExtendedMethods(input: {
 				state.statutoryRules.set(rule.id, rule);
 				return audit;
 			}
-			return ok(cloneStatutoryRule(updated));
+			return errorResult.ok(cloneStatutoryRule(updated));
 		},
 
 		async archiveStatutoryRule(ruleInput, ports) {
@@ -839,7 +839,7 @@ export function createMemorySetupExtendedMethods(input: {
 				state.statutoryRules.set(rule.id, rule);
 				return audit;
 			}
-			return ok(cloneStatutoryRule(updated));
+			return errorResult.ok(cloneStatutoryRule(updated));
 		},
 
 		async supersedeStatutoryRule(record, ports) {
@@ -903,7 +903,7 @@ export function createMemorySetupExtendedMethods(input: {
 				return successorResult;
 			}
 
-			return ok({
+			return errorResult.ok({
 				superseded: cloneStatutoryRule(superseded),
 				successor: successorResult.data,
 			} satisfies PayrollRuleSupersedeResult<PayrollStatutoryRule>);
@@ -915,11 +915,11 @@ export function createMemorySetupExtendedMethods(input: {
 				return runId;
 			}
 			state.ruleFinalizedUsage.add(ruleFinalizedUsageKey(usageInput));
-			return ok({ recorded: true as const });
+			return errorResult.ok({ recorded: true as const });
 		},
 
 		async isRuleVersionUsedByFinalizedRun(checkInput) {
-			return ok(
+			return errorResult.ok(
 				state.ruleFinalizedUsage.has(ruleFinalizedUsageKey(checkInput)),
 			);
 		},

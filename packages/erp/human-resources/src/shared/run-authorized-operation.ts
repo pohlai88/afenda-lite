@@ -1,5 +1,4 @@
-import { normalizeUnknown } from "@afenda/errors";
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorIngress, errorResult, type Result } from "@afenda/errors";
 
 import type { HumanResourcesCommandOptions } from "../command-options";
 import { HUMAN_RESOURCES_ERROR_AUTHORIZATION_DENIED } from "../error-codes";
@@ -29,7 +28,7 @@ import { resolveManifestOperationPermission } from "./manifest-permission";
 
 export { resolveManifestOperationPermission } from "./manifest-permission";
 
-const AUTHORIZATION_DENIED_MESSAGE =
+const _AUTHORIZATION_DENIED_MESSAGE =
 	"Human Resources authorization denied" as const;
 
 export interface HumanResourcesAuthorizedActorInput {
@@ -102,7 +101,7 @@ export function authorizationDecisionToFailure(
 		denyCode: decision.code,
 		...(decision.policyId === undefined ? {} : { policyId: decision.policyId }),
 	};
-	return fail("FORBIDDEN", AUTHORIZATION_DENIED_MESSAGE, details);
+	return errorResult.fail("FORBIDDEN", { internalContext: details });
 }
 
 export function createParityResourceShell(input: {
@@ -252,7 +251,7 @@ export async function runAuthorizedHumanResourcesOperation<
 				operationKind: params.operationKind,
 				observability: params.options.observability,
 				startedAtMs,
-				result: ok(result.data as Projected & Output),
+				result: errorResult.ok(result.data as Projected & Output),
 			});
 		}
 
@@ -261,7 +260,7 @@ export async function runAuthorizedHumanResourcesOperation<
 			operationKind: params.operationKind,
 			observability: params.options.observability,
 			startedAtMs,
-			result: ok(params.project(result.data, decision.projection)),
+			result: errorResult.ok(params.project(result.data, decision.projection)),
 		});
 	} catch (error) {
 		await recordAuthorizedOperationTelemetry({
@@ -272,7 +271,9 @@ export async function runAuthorizedHumanResourcesOperation<
 			outcome: "failure",
 			failureReason: "unknown",
 		});
-		throw normalizeUnknown(error, "Human Resources operation failed");
+		throw errorIngress.unknown(error, {
+			operation: "human-resources.authorized-operation",
+		});
 	}
 }
 
@@ -326,7 +327,7 @@ export async function runDomainAuthorizedOperation<
 			operationKind: params.operationKind,
 			observability: params.options.observability,
 			startedAtMs,
-			result: fail("FORBIDDEN", AUTHORIZATION_DENIED_MESSAGE, details),
+			result: errorResult.fail("FORBIDDEN", { internalContext: details }),
 			authorizationReason: "permission_missing",
 		});
 	}

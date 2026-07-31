@@ -1,4 +1,4 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type {
 	PurchaseOrderReceivingQueryPort,
@@ -68,7 +68,7 @@ export function createMemoryPurchaseOrderReceivingQueryPort(
 			purchaseOrderId: string;
 		}): Promise<Result<PurchaseOrderReceivingSnapshot | null>> {
 			return resolveAsync(() =>
-				ok(snapshots.get(input.purchaseOrderId) ?? null),
+				errorResult.ok(snapshots.get(input.purchaseOrderId) ?? null),
 			);
 		},
 	};

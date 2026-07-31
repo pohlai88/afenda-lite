@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { z } from "zod";
 import type { HumanResourcesEmployeeId } from "../brands";
 import {
@@ -113,7 +113,7 @@ export async function runComplianceCommand<
 			if (!documentReference.ok) {
 				return documentReference;
 			}
-			return ok({
+			return errorResult.ok({
 				store,
 				ports,
 				documentReference: documentReference.data,
@@ -144,7 +144,7 @@ export async function runComplianceQuery<
 		resolveDeps: (opts) => {
 			const { store, authorization, identityResolver } =
 				resolveCommandDeps(opts);
-			return ok({ store, authorization, identityResolver });
+			return errorResult.ok({ store, authorization, identityResolver });
 		},
 		execute: config.execute,
 	});
@@ -179,11 +179,11 @@ export async function runComplianceEmployeeScopedQuery<
 	const { store, authorization, identityResolver } =
 		resolveCommandDeps(options);
 	if (!identityResolver) {
-		return fail(
-			"UNAUTHORIZED",
-			"Human Resources identity resolver port is required",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_UNAUTHORIZED),
-		);
+		return errorResult.fail("UNAUTHORIZED", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_UNAUTHORIZED,
+			),
+		});
 	}
 
 	const authorized = await requireComplianceEmployeeReadScope(
@@ -231,7 +231,7 @@ export async function requireComplianceEmployeeReadScope(
 		},
 	);
 	if (adminCheck.ok) {
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	}
 
 	const hrOperatorPermissions = [
@@ -250,7 +250,7 @@ export async function requireComplianceEmployeeReadScope(
 				},
 			);
 			if (hrCheck.ok) {
-				return sequentialReturn(ok(undefined));
+				return sequentialReturn(errorResult.ok(undefined));
 			}
 		},
 	);
@@ -267,11 +267,11 @@ export async function requireComplianceEmployeeReadScope(
 		return identity;
 	}
 	if (!identity.data) {
-		return fail(
-			"FORBIDDEN",
-			"Actor is not an employee",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
-		);
+		return errorResult.fail("FORBIDDEN", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_FORBIDDEN,
+			),
+		});
 	}
 
 	const targetEmployeeId =
@@ -290,7 +290,7 @@ export async function requireComplianceEmployeeReadScope(
 		},
 	);
 	if (ownCheck.ok) {
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	}
 
 	if (input.employeeId !== undefined) {
@@ -303,12 +303,14 @@ export async function requireComplianceEmployeeReadScope(
 			return managed;
 		}
 		if (managed.data.includes(targetEmployeeId)) {
-			return ok(undefined);
+			return errorResult.ok(undefined);
 		}
 	}
 
-	return fail("FORBIDDEN", "Missing required human resources permission", {
-		...humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
+	return errorResult.fail("FORBIDDEN", {
+		internalContext: {
+			...humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
+		},
 	});
 }
 

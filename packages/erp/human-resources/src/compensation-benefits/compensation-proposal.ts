@@ -1,4 +1,4 @@
-import type { Result } from "@afenda/errors/result";
+import type { Result } from "@afenda/errors";
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_COMMAND_COMPENSATION_PROPOSAL_AMEND,
@@ -139,7 +139,10 @@ export function getCompensationProposal(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompensationProposal>> {
-	return runCompensationQuery(input, options, {
+	return runCompensationQuery<
+		typeof getCompensationProposalInputSchema,
+		CompensationProposal
+	>(input, options, {
 		schema: getCompensationProposalInputSchema,
 		invalidMessage: "Invalid compensation proposal get input",
 		query: HUMAN_RESOURCES_QUERY_COMPENSATION_PROPOSAL_GET,

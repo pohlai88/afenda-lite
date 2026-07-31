@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
@@ -10,24 +10,26 @@ import type {
 } from "./compensation-status";
 import { invalidInput, invalidState } from "./domain-guards";
 
-function alreadyInStatus(entity: string, status: string): Result<never> {
-	return fail(
-		"BAD_REQUEST",
-		`${entity} is already in status '${status}'`,
-		humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION),
-	);
+function alreadyInStatus(_entity: string, _status: string): Result<never> {
+	return errorResult.fail("BAD_REQUEST", {
+		publicMessage: "The request is invalid",
+		internalContext: humanResourcesErrorDetails(
+			HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+		),
+	});
 }
 
 function cannotTransition(
-	entity: string,
-	current: string,
-	next: string,
+	_entity: string,
+	_current: string,
+	_next: string,
 ): Result<never> {
-	return fail(
-		"BAD_REQUEST",
-		`Cannot transition ${entity} from '${current}' to '${next}'`,
-		humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION),
-	);
+	return errorResult.fail("BAD_REQUEST", {
+		publicMessage: "The request is invalid",
+		internalContext: humanResourcesErrorDetails(
+			HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+		),
+	});
 }
 
 export function assertValidReviewCyclePeriod(input: {
@@ -39,7 +41,7 @@ export function assertValidReviewCyclePeriod(input: {
 			"Review cycle period end must be on or after period start",
 		);
 	}
-	return ok(true);
+	return errorResult.ok(true);
 }
 
 export function canTransitionReviewCycleStatus(
@@ -68,7 +70,7 @@ export function assertReviewCycleStatusTransition(
 	if (!canTransitionReviewCycleStatus(current, next)) {
 		return cannotTransition("compensation review cycle", current, next);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertReviewCycleOpenForMutation(
@@ -77,7 +79,7 @@ export function assertReviewCycleOpenForMutation(
 	if (status !== "open") {
 		return invalidState("Compensation review cycle is not open");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function canRecordCompensationRecommendation(
@@ -94,7 +96,7 @@ export function assertCanRecordCompensationRecommendation(
 			"Compensation review must be in draft or recorded status to record a recommendation",
 		);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertCanFinalizeCompensationReview(review: {
@@ -117,5 +119,5 @@ export function assertCanFinalizeCompensationReview(review: {
 			"Review must have proposed amount, currency, and effective date before approval",
 		);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }

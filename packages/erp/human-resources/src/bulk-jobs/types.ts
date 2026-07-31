@@ -1,4 +1,4 @@
-import type { Result } from "@afenda/errors/result";
+import type { Result } from "@afenda/errors";
 
 import type { HumanResourcesBulkEntityType } from "../bulk/types";
 import type { HumanResourcesPermission } from "../permissions";

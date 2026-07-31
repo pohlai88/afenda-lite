@@ -1,5 +1,5 @@
 import type { CorporateAdministrationTransactionPort } from "@afenda/corporate-administration";
-import type { Result } from "@afenda/errors/result";
+import type { Result } from "@afenda/errors";
 
 /**
  * Single-process unit-test double that invokes `work` directly.

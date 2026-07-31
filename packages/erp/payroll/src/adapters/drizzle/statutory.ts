@@ -1,5 +1,5 @@
 import { and, db, eq, payrollRun, payrollStatutoryResult } from "@afenda/db";
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	type PayrollRunId,
@@ -63,7 +63,7 @@ function mapStatutoryResultRow(
 			"Persisted payroll statutory snapshot is invalid",
 		);
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		runId: runId.data,
@@ -107,7 +107,7 @@ async function assertRunAllowsStatutoryMutation(input: {
 				"Finalized or reversed payroll runs cannot change statutory results",
 			);
 		}
-		return ok(true);
+		return errorResult.ok(true);
 	} catch (error) {
 		return mapPersistenceFailure(error, "Failed to load payroll run");
 	}
@@ -175,7 +175,7 @@ export const drizzleStatutoryMethods: PayrollStatutoryStore = {
 				return audit;
 			}
 
-			return ok(results);
+			return errorResult.ok(results);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -203,7 +203,7 @@ export const drizzleStatutoryMethods: PayrollStatutoryStore = {
 				}
 				results.push(mapped.data);
 			}
-			return ok(results);
+			return errorResult.ok(results);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,

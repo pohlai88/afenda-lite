@@ -1,9 +1,9 @@
 "use server";
 
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import type { HireFromAcceptedOfferResult } from "@afenda/human-resources";
 import { hireFromAcceptedOffer } from "@afenda/human-resources";
 import { hireFromAcceptedOfferInputSchema } from "@afenda/human-resources/schemas";
-
 import {
 	hrActionSchema,
 	withHrSessionContext as withSessionContext,
@@ -11,10 +11,6 @@ import {
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runHrWorkforceOperatorPermissionAction as runOperatorPermissionAction } from "@/app/actions/run-hr-operator-permission-action";
 import { createHumanResourcesCommandOptions } from "@/lib/erp/human-resources-command-options";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 const hireFromAcceptedOfferActionSchema = hrActionSchema(
@@ -31,11 +27,9 @@ export async function hireFromAcceptedOfferAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(hireFromAcceptedOfferActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid hire from accepted offer request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid hire from accepted offer request.",
+				});
 			}
 			const result = await hireFromAcceptedOffer(
 				withSessionContext(session, correlationId, parsed.data),

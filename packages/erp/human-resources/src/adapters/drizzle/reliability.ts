@@ -7,7 +7,7 @@ import {
 	hrReliabilityWorkItem,
 	runNeonHttpTransaction,
 } from "@afenda/db";
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type { ReliabilityStorePort } from "../../reliability/ports";
 import type {
@@ -34,15 +34,15 @@ const WORK_STATUSES = new Set<ReliabilityWorkStatus>([
 	"dead_lettered",
 ]);
 
-function validDate(value: Date, field: string): Result<Date> {
+function validDate(value: Date, _field: string): Result<Date> {
 	return Number.isNaN(value.getTime())
-		? fail("INTERNAL_ERROR", `Reliability ${field} is invalid`)
-		: ok(value);
+		? errorResult.fail("INTERNAL_ERROR")
+		: errorResult.ok(value);
 }
 
 function mapWork(row: WorkRow): Result<ReliabilityWorkItem> {
 	if (!WORK_STATUSES.has(row.status as ReliabilityWorkStatus)) {
-		return fail("INTERNAL_ERROR", "Reliability work status is invalid");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 	const createdAt = validDate(row.createdAt, "createdAt");
 	if (!createdAt.ok) {
@@ -52,7 +52,7 @@ function mapWork(row: WorkRow): Result<ReliabilityWorkItem> {
 	if (!updatedAt.ok) {
 		return updatedAt;
 	}
-	return ok({
+	return errorResult.ok({
 		id: row.id,
 		organizationId: row.organizationId,
 		connector: row.connector as ReliabilityWorkItem["connector"],
@@ -85,7 +85,7 @@ function mapDeadLetter(
 	if (!failedAt.ok) {
 		return failedAt;
 	}
-	return ok({
+	return errorResult.ok({
 		id: row.id,
 		organizationId: row.organizationId,
 		workItemId: row.workItemId,
@@ -107,7 +107,7 @@ function mapDeadLetter(
 function mapCursor(row: CursorRow): Result<ConnectorCursor> {
 	const updatedAt = validDate(row.updatedAt, "cursor updatedAt");
 	return updatedAt.ok
-		? ok({
+		? errorResult.ok({
 				organizationId: row.organizationId,
 				connector: row.connector,
 				stream: row.stream,
@@ -159,7 +159,7 @@ async function getWork(input: {
 			),
 		)
 		.limit(1);
-	return rows[0] ? mapWork(rows[0]) : ok(null);
+	return rows[0] ? mapWork(rows[0]) : errorResult.ok(null);
 }
 
 export function createDrizzleReliabilityStore(): ReliabilityStorePort {
@@ -177,7 +177,7 @@ export function createDrizzleReliabilityStore(): ReliabilityStorePort {
 						),
 					)
 					.limit(1);
-				return rows[0] ? mapWork(rows[0]) : ok(null);
+				return rows[0] ? mapWork(rows[0]) : errorResult.ok(null);
 			} catch (error) {
 				return mapPersistenceFailure(error, "Failed to find reliability work");
 			}
@@ -198,12 +198,12 @@ export function createDrizzleReliabilityStore(): ReliabilityStorePort {
 					.insert(hrReliabilityWorkItem)
 					.values(workValues(item))
 					.returning();
-				return rows[0]
-					? mapWork(rows[0])
-					: fail("INTERNAL_ERROR", "Reliability work insert returned no row");
+				return rows[0] ? mapWork(rows[0]) : errorResult.fail("INTERNAL_ERROR");
 			} catch (error) {
 				return isPostgresUniqueViolation(error)
-					? fail("CONFLICT", "Reliability work item already exists")
+					? errorResult.fail("CONFLICT", {
+							publicMessage: "The request conflicts with current state",
+						})
 					: mapPersistenceFailure(error, "Failed to create reliability work");
 			}
 		},
@@ -255,7 +255,9 @@ export function createDrizzleReliabilityStore(): ReliabilityStorePort {
 						}
 						if (item.data === null) {
 							return sequentialReturn(
-								fail("NOT_FOUND", "Claimed reliability work was not found"),
+								errorResult.fail("NOT_FOUND", {
+									publicMessage: "The requested resource was not found",
+								}),
 							);
 						}
 						items.push(item.data);
@@ -264,7 +266,7 @@ export function createDrizzleReliabilityStore(): ReliabilityStorePort {
 				if (sequentialOutcome1.kind === "return") {
 					return sequentialOutcome1.value;
 				}
-				return ok(items);
+				return errorResult.ok(items);
 			} catch (error) {
 				return mapPersistenceFailure(
 					error,
@@ -275,7 +277,9 @@ export function createDrizzleReliabilityStore(): ReliabilityStorePort {
 		async commitAttempt(input) {
 			const item = input.workItem;
 			if (item.version !== input.expectedVersion + 1) {
-				return fail("CONFLICT", "Reliability work item version conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+				});
 			}
 			try {
 				if (input.deadLetter === null) {
@@ -305,7 +309,9 @@ export function createDrizzleReliabilityStore(): ReliabilityStorePort {
 						.returning();
 					return rows[0]
 						? mapWork(rows[0])
-						: fail("CONFLICT", "Reliability work item version conflict");
+						: errorResult.fail("CONFLICT", {
+								publicMessage: "The request conflicts with current state",
+							});
 				}
 				const dead = input.deadLetter;
 				const [saved] = await runNeonHttpTransaction((sqlTag) => [
@@ -341,19 +347,23 @@ export function createDrizzleReliabilityStore(): ReliabilityStorePort {
 					`,
 				]);
 				if (!saved[0]) {
-					return fail("CONFLICT", "Reliability work item version conflict");
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+					});
 				}
 				return getWork({
 					organizationId: item.organizationId,
 					workItemId: item.id,
 				}).then((result) =>
 					result.ok && result.data
-						? ok(result.data)
-						: fail("INTERNAL_ERROR", "Reliability work readback failed"),
+						? errorResult.ok(result.data)
+						: errorResult.fail("INTERNAL_ERROR"),
 				);
 			} catch (error) {
 				return isPostgresUniqueViolation(error)
-					? fail("CONFLICT", "Reliability dead letter already exists")
+					? errorResult.fail("CONFLICT", {
+							publicMessage: "The request conflicts with current state",
+						})
 					: mapPersistenceFailure(
 							error,
 							"Failed to commit reliability attempt",
@@ -372,7 +382,7 @@ export function createDrizzleReliabilityStore(): ReliabilityStorePort {
 						),
 					)
 					.limit(1);
-				return rows[0] ? mapDeadLetter(rows[0]) : ok(null);
+				return rows[0] ? mapDeadLetter(rows[0]) : errorResult.ok(null);
 			} catch (error) {
 				return mapPersistenceFailure(
 					error,
@@ -392,7 +402,7 @@ export function createDrizzleReliabilityStore(): ReliabilityStorePort {
 						),
 					)
 					.limit(1);
-				return rows[0] ? mapDeadLetter(rows[0]) : ok(null);
+				return rows[0] ? mapDeadLetter(rows[0]) : errorResult.ok(null);
 			} catch (error) {
 				return mapPersistenceFailure(
 					error,
@@ -437,19 +447,23 @@ export function createDrizzleReliabilityStore(): ReliabilityStorePort {
 					`,
 				]);
 				if (!created[0]) {
-					return fail("CONFLICT", "Reliability dead letter already replayed");
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+					});
 				}
 				return getWork({
 					organizationId: item.organizationId,
 					workItemId: item.id,
 				}).then((result) =>
 					result.ok && result.data
-						? ok(result.data)
-						: fail("INTERNAL_ERROR", "Reliability replay readback failed"),
+						? errorResult.ok(result.data)
+						: errorResult.fail("INTERNAL_ERROR"),
 				);
 			} catch (error) {
 				return isPostgresUniqueViolation(error)
-					? fail("CONFLICT", "Reliability work item already exists")
+					? errorResult.fail("CONFLICT", {
+							publicMessage: "The request conflicts with current state",
+						})
 					: mapPersistenceFailure(
 							error,
 							"Failed to replay reliability dead letter",
@@ -469,14 +483,16 @@ export function createDrizzleReliabilityStore(): ReliabilityStorePort {
 						),
 					)
 					.limit(1);
-				return rows[0] ? mapCursor(rows[0]) : ok(null);
+				return rows[0] ? mapCursor(rows[0]) : errorResult.ok(null);
 			} catch (error) {
 				return mapPersistenceFailure(error, "Failed to get connector cursor");
 			}
 		},
 		async commitCursor(input) {
 			if (input.cursor.version !== (input.expectedVersion ?? 0) + 1) {
-				return fail("CONFLICT", "Connector cursor version conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+				});
 			}
 			try {
 				const rows =
@@ -509,10 +525,14 @@ export function createDrizzleReliabilityStore(): ReliabilityStorePort {
 								.returning();
 				return rows[0]
 					? mapCursor(rows[0])
-					: fail("CONFLICT", "Connector cursor version conflict");
+					: errorResult.fail("CONFLICT", {
+							publicMessage: "The request conflicts with current state",
+						});
 			} catch (error) {
 				return isPostgresUniqueViolation(error)
-					? fail("CONFLICT", "Connector cursor version conflict")
+					? errorResult.fail("CONFLICT", {
+							publicMessage: "The request conflicts with current state",
+						})
 					: mapPersistenceFailure(error, "Failed to commit connector cursor");
 			}
 		},

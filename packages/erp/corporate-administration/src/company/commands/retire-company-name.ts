@@ -1,4 +1,4 @@
-import { fail, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS,
 	type CorporateAdministrationApprovalVerificationDependencies,
@@ -10,7 +10,6 @@ import type {
 	CorporateAdministrationApprovalCommandOptions,
 	CorporateAdministrationCommandOptions,
 } from "../../command-options";
-import { corporateAdministrationErrorDetails } from "../../error-codes";
 import { toCanonicalInstant } from "../../kernel/dates";
 import { parseCorporateAdministrationInput } from "../../parse-input";
 import {
@@ -97,24 +96,15 @@ export async function retireCompanyName(
 			return sourceDocument;
 		}
 		if (sourceDocument.data === null) {
-			return fail(
-				"NOT_FOUND",
-				"Corporate Administration source document was not found.",
-				corporateAdministrationErrorDetails(
-					"CORPORATE_ADMINISTRATION_REFERENCE_INVALID",
-					{ field: "sourceDocumentId" },
-				),
-			);
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage:
+					"Corporate Administration source document was not found.",
+			});
 		}
 		if (!sourceDocument.data.active) {
-			return fail(
-				"CONFLICT",
-				"Corporate Administration source document is inactive.",
-				corporateAdministrationErrorDetails(
-					"CORPORATE_ADMINISTRATION_REFERENCE_INACTIVE",
-					{ field: "sourceDocumentId" },
-				),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Corporate Administration source document is inactive.",
+			});
 		}
 	}
 
@@ -137,14 +127,10 @@ export async function retireCompanyName(
 		eligible.data.nameType !== "trading" &&
 		eligible.data.nameType !== "translated"
 	) {
-		return fail(
-			"CONFLICT",
-			"Corporate Administration only trading or translated company names can be retired directly.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_INVALID_TRANSITION",
-				{ field: "nameType" },
-			),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage:
+				"Corporate Administration only trading or translated company names can be retired directly.",
+		});
 	}
 
 	const occurredAt = toCanonicalInstant(dependencies.runtime.clock.now());
@@ -197,5 +183,5 @@ function asCompanyNameFailure(result: Result<unknown>): Result<CompanyName> {
 	if (result.ok) {
 		throw new TypeError("Expected Corporate Administration failure Result");
 	}
-	return fail(result.code, result.message, result.details);
+	return result;
 }

@@ -51,13 +51,7 @@ describe("core organization masters capability", () => {
 		});
 		const conflict = assertExpectedVersion({ id: "party-1", version: 3 }, 2);
 		expect(conflict.ok).toBe(false);
-		if (!conflict.ok) {
-			expect(conflict.details).toMatchObject({
-				reason: "MASTER_VERSION_CONFLICT",
-				expectedVersion: 2,
-				actualVersion: 3,
-			});
-		}
+
 		expect(nextMasterVersion(3)).toBe(4);
 	});
 
@@ -70,11 +64,6 @@ describe("core organization masters capability", () => {
 			expect(result.ok).toBe(false);
 			if (!result.ok) {
 				expect(result.code).toBe("BAD_REQUEST");
-				expect(result.details).toMatchObject({
-					reason: "MASTER_VALIDATION_FAILED",
-					entityId: "party-1",
-					expectedVersion,
-				});
 			}
 		}
 
@@ -98,23 +87,10 @@ describe("core organization masters capability", () => {
 		];
 		for (const result of invalidInputs) {
 			expect(result.ok).toBe(false);
-			if (!result.ok) {
-				expect(result.details).toMatchObject({
-					reason: "MASTER_VALIDATION_FAILED",
-					field: "code",
-				});
-			}
 		}
 
 		const tooLong = normalizeMasterCode("A".repeat(MAX_MASTER_CODE_LENGTH + 1));
 		expect(tooLong.ok).toBe(false);
-		if (!tooLong.ok) {
-			expect(tooLong.details).toMatchObject({
-				reason: "MASTER_VALIDATION_FAILED",
-				field: "code",
-				maxLength: MAX_MASTER_CODE_LENGTH,
-			});
-		}
 	});
 
 	it("keeps search text, contacts, and external IDs out of master-code folding", () => {

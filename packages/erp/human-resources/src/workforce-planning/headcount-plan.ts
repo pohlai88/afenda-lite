@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
@@ -75,13 +75,14 @@ export function createHeadcountPlan(
 				if (
 					existingByKey.data.createRequestFingerprint !== requestFingerprint
 				) {
-					return fail(
-						"CONFLICT",
-						"Idempotency key reused with different payload",
-						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-					);
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+						internalContext: humanResourcesErrorDetails(
+							HUMAN_RESOURCES_ERROR_CONFLICT,
+						),
+					});
 				}
-				return ok(existingByKey.data.plan);
+				return errorResult.ok(existingByKey.data.plan);
 			}
 
 			return store.createHeadcountPlan(
@@ -229,11 +230,12 @@ export function supersedeHeadcountPlan(
 				return source;
 			}
 			if (source.data === null) {
-				return fail(
-					"NOT_FOUND",
-					"Headcount plan not found",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_NOT_FOUND,
+					),
+				});
 			}
 
 			const requestFingerprint = fingerprintHeadcountPlanCreate({
@@ -255,13 +257,14 @@ export function supersedeHeadcountPlan(
 				if (
 					existingByKey.data.createRequestFingerprint !== requestFingerprint
 				) {
-					return fail(
-						"CONFLICT",
-						"Idempotency key reused with different payload",
-						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-					);
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+						internalContext: humanResourcesErrorDetails(
+							HUMAN_RESOURCES_ERROR_CONFLICT,
+						),
+					});
 				}
-				return ok(existingByKey.data.plan);
+				return errorResult.ok(existingByKey.data.plan);
 			}
 
 			return store.supersedeHeadcountPlan(
@@ -302,13 +305,14 @@ export function getHeadcountPlanById(
 				return plan;
 			}
 			if (plan.data === null) {
-				return fail(
-					"NOT_FOUND",
-					"Headcount plan not found",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_NOT_FOUND,
+					),
+				});
 			}
-			return ok(plan.data);
+			return errorResult.ok(plan.data);
 		},
 	});
 }
@@ -351,13 +355,14 @@ export function getApprovedHeadcountPlan(
 				return plan;
 			}
 			if (plan.data === null) {
-				return fail(
-					"NOT_FOUND",
-					"Approved headcount plan not found",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_NOT_FOUND,
+					),
+				});
 			}
-			return ok(plan.data);
+			return errorResult.ok(plan.data);
 		},
 	});
 }

@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 const MAX_RECEIPT_CODE_LENGTH = 64;
 
@@ -7,10 +7,9 @@ export function normalizeReceiptCode(
 ): Result<{ code: string; normalizedCode: string }> {
 	const code = input.trim();
 	if (code.length === 0 || code.length > MAX_RECEIPT_CODE_LENGTH) {
-		return fail(
-			"BAD_REQUEST",
-			`Receipt code must be 1-${MAX_RECEIPT_CODE_LENGTH} characters`,
-		);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "The request is invalid",
+		});
 	}
-	return ok({ code, normalizedCode: code.toUpperCase() });
+	return errorResult.ok({ code, normalizedCode: code.toUpperCase() });
 }

@@ -1,4 +1,4 @@
-import type { Result } from "@afenda/errors/result";
+import type { Result } from "@afenda/errors";
 
 import type { PayrollPeriodId, PayrollVariableInputId } from "../brands";
 import type { MutationPorts } from "../ports";

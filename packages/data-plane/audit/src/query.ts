@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import { auditEntriesToCsv } from "./csv";
 import { decodeAuditCursor, encodeAuditCursor } from "./cursor";
 import { createDrizzleAuditStore } from "./drizzle-store";
@@ -37,8 +37,8 @@ export function queryAuditLog(
 		async () => {
 			const parsed = auditQueryOptionsSchema.safeParse(input);
 			if (!parsed.success) {
-				return fail("BAD_REQUEST", "Invalid audit query input", {
-					fieldErrors: parsed.error.flatten().fieldErrors,
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Invalid audit query input",
 				});
 			}
 
@@ -64,7 +64,7 @@ export function queryAuditLog(
 				pageSize: options.pageSize,
 			});
 
-			return ok(page);
+			return errorResult.ok(page);
 		},
 		(page) => ({ rowCount: page.entries.length }),
 	);
@@ -83,8 +83,8 @@ export function queryAuditLogCursor(
 		async () => {
 			const parsed = auditCursorQueryInputSchema.safeParse(input);
 			if (!parsed.success) {
-				return fail("BAD_REQUEST", "Invalid audit cursor query input", {
-					fieldErrors: parsed.error.flatten().fieldErrors,
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Invalid audit cursor query input",
 				});
 			}
 
@@ -109,10 +109,10 @@ export function queryAuditLogCursor(
 			const entries = rows.data.slice(0, options.pageSize);
 			const finalEntry = entries.at(-1);
 			if (hasMore && finalEntry === undefined) {
-				return fail("INTERNAL_ERROR", "Audit cursor page is inconsistent");
+				return errorResult.fail("INTERNAL_ERROR");
 			}
 
-			return ok(
+			return errorResult.ok(
 				auditCursorPageSchema.parse({
 					entries,
 					nextCursor:
@@ -205,8 +205,8 @@ export function countByAction(
 				pageSize: 1,
 			});
 			if (!parsed.success) {
-				return fail("BAD_REQUEST", "Invalid audit count input", {
-					fieldErrors: parsed.error.flatten().fieldErrors,
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Invalid audit count input",
 				});
 			}
 
@@ -222,7 +222,7 @@ export function exportAuditLog(
 ): Promise<Result<string>> {
 	return onPromiseBoundary(async () => {
 		const result = await exportAuditLogDetailed(input, store);
-		return result.ok ? ok(result.data.content) : result;
+		return result.ok ? errorResult.ok(result.data.content) : result;
 	});
 }
 
@@ -239,8 +239,8 @@ export function exportAuditLogDetailed(
 		async () => {
 			const parsed = auditDetailedExportOptionsSchema.safeParse(input);
 			if (!parsed.success) {
-				return fail("BAD_REQUEST", "Invalid audit export input", {
-					fieldErrors: parsed.error.flatten().fieldErrors,
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Invalid audit export input",
 				});
 			}
 
@@ -266,10 +266,10 @@ export function exportAuditLogDetailed(
 			const entries = rows.data.slice(0, MAX_AUDIT_EXPORT_ROWS);
 			const finalEntry = entries.at(-1);
 			if (truncated && finalEntry === undefined) {
-				return fail("INTERNAL_ERROR", "Audit export page is inconsistent");
+				return errorResult.fail("INTERNAL_ERROR");
 			}
 
-			return ok({
+			return errorResult.ok({
 				content:
 					format === "json"
 						? JSON.stringify(entries, null, 2)
@@ -299,8 +299,8 @@ export function purgeOldEntries(
 		() => {
 			const parsed = auditPurgeOptionsSchema.safeParse(input);
 			if (!parsed.success) {
-				return fail("BAD_REQUEST", "Invalid audit purge input", {
-					fieldErrors: parsed.error.flatten().fieldErrors,
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Invalid audit purge input",
 				});
 			}
 

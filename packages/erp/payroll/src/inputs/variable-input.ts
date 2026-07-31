@@ -1,11 +1,6 @@
-import { fail, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type { PayrollCommandOptions } from "../command-options";
-import {
-	PAYROLL_ERROR_INVALID_STATE,
-	PAYROLL_ERROR_NOT_FOUND,
-	payrollErrorDetails,
-} from "../error-codes";
 import {
 	PAYROLL_COMMAND_INPUT_VARIABLE_CREATE,
 	PAYROLL_QUERY_INPUT_VARIABLE_GET,
@@ -83,18 +78,14 @@ export function createPayrollVariableInput(
 				return payGroup;
 			}
 			if (payGroup.data === null) {
-				return fail(
-					"NOT_FOUND",
-					"Pay group not found",
-					payrollErrorDetails(PAYROLL_ERROR_NOT_FOUND),
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "Pay group not found",
+				});
 			}
 			if (payGroup.data.status !== "active") {
-				return fail(
-					"CONFLICT",
-					"Pay group is not active",
-					payrollErrorDetails(PAYROLL_ERROR_INVALID_STATE),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Pay group is not active",
+				});
 			}
 
 			const period = await store.getPeriod({
@@ -105,25 +96,19 @@ export function createPayrollVariableInput(
 				return period;
 			}
 			if (period.data === null) {
-				return fail(
-					"NOT_FOUND",
-					"Payroll period not found",
-					payrollErrorDetails(PAYROLL_ERROR_NOT_FOUND),
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "Payroll period not found",
+				});
 			}
 			if (period.data.payGroupId !== data.payGroupId) {
-				return fail(
-					"CONFLICT",
-					"Period pay group mismatch",
-					payrollErrorDetails(PAYROLL_ERROR_INVALID_STATE),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Period pay group mismatch",
+				});
 			}
 			if (period.data.status !== "open") {
-				return fail(
-					"CONFLICT",
-					"Payroll period is not open",
-					payrollErrorDetails(PAYROLL_ERROR_INVALID_STATE),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Payroll period is not open",
+				});
 			}
 
 			const cutoff = assertInputBeforeCutoff({
@@ -142,18 +127,14 @@ export function createPayrollVariableInput(
 				return earningRule;
 			}
 			if (earningRule.data === null) {
-				return fail(
-					"NOT_FOUND",
-					"Earning rule not found",
-					payrollErrorDetails(PAYROLL_ERROR_NOT_FOUND),
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "Earning rule not found",
+				});
 			}
 			if (earningRule.data.payGroupId !== data.payGroupId) {
-				return fail(
-					"CONFLICT",
-					"Earning rule pay group mismatch",
-					payrollErrorDetails(PAYROLL_ERROR_INVALID_STATE),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Earning rule pay group mismatch",
+				});
 			}
 			if (
 				!isEffectiveOnDate(
@@ -162,11 +143,9 @@ export function createPayrollVariableInput(
 					data.effectiveFrom,
 				)
 			) {
-				return fail(
-					"CONFLICT",
-					"Earning rule is not effective on requested date",
-					payrollErrorDetails(PAYROLL_ERROR_INVALID_STATE),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Earning rule is not effective on requested date",
+				});
 			}
 
 			const currency = assertCurrencyAlignment({

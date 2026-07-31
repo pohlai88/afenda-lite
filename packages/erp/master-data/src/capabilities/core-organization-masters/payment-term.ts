@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	requireMasterCommandPermission,
@@ -10,7 +10,6 @@ import {
 	resolveCommandDeps,
 	resolveStore,
 } from "../../command-options";
-import type { MasterFailureDetails } from "../../contracts/reasons";
 import {
 	MASTER_COMMAND_PAYMENT_TERM_ACTIVATE,
 	MASTER_COMMAND_PAYMENT_TERM_CREATE,
@@ -193,9 +192,9 @@ async function transitionPaymentTermStatus(
 		return current;
 	}
 	if (current.data === null) {
-		return fail("NOT_FOUND", "Payment term not found", {
-			reason: "MASTER_NOT_FOUND",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Payment term not found",
+		});
 	}
 	const lifecycle = assertLifecycleTransition(current.data.status, toStatus);
 	if (!lifecycle.ok) {
@@ -208,10 +207,9 @@ async function transitionPaymentTermStatus(
 			entityId: parsed.data.id,
 		});
 		if (blockers.length > 0) {
-			return fail("CONFLICT", "Payment term has dependency blockers", {
-				reason: "MASTER_DEPENDENCY_BLOCKED",
-				blockers,
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Payment term has dependency blockers",
+			});
 		}
 	}
 	const result = await store.transitionPaymentTerm(
@@ -332,7 +330,7 @@ export async function existsPaymentTermByCode(
 	if (!result.ok) {
 		return result;
 	}
-	return ok(result.data !== null);
+	return errorResult.ok(result.data !== null);
 }
 
 export async function listPaymentTerms(

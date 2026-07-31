@@ -1,16 +1,12 @@
 "use server";
 
 import { type Journal, postJournal } from "@afenda/accounting";
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
 import { createAccountingCommandOptions } from "@/lib/erp/accounting-command-options";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export type PostJournalActionState = ActionResult<{ journal: Journal }> | null;
@@ -33,11 +29,9 @@ export async function postJournalAction(
 				expectedVersion: formData.get("expectedVersion"),
 			});
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid journal and version.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid journal and version.",
+				});
 			}
 			const mapped = mapPackageResult(
 				await postJournal(

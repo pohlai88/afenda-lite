@@ -1,4 +1,4 @@
-import { fail, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import { resolveNotificationStore } from "./resolve-store";
 import {
@@ -19,8 +19,8 @@ export function listNotifications(
 	const parsed = notificationListOptionsSchema.safeParse(input);
 	if (!parsed.success) {
 		return Promise.resolve(
-			fail("BAD_REQUEST", "Invalid notification list input", {
-				fieldErrors: parsed.error.flatten().fieldErrors,
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Invalid notification list input",
 			}),
 		);
 	}
@@ -34,8 +34,8 @@ export function countUnreadNotifications(
 	const parsed = notificationUnreadCountOptionsSchema.safeParse(input);
 	if (!parsed.success) {
 		return Promise.resolve(
-			fail("BAD_REQUEST", "Invalid notification unread-count input", {
-				fieldErrors: parsed.error.flatten().fieldErrors,
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Invalid notification unread-count input",
 			}),
 		);
 	}
@@ -49,8 +49,8 @@ export function markNotificationRead(
 	const parsed = notificationMarkReadOptionsSchema.safeParse(input);
 	if (!parsed.success) {
 		return Promise.resolve(
-			fail("BAD_REQUEST", "Invalid notification mark-read input", {
-				fieldErrors: parsed.error.flatten().fieldErrors,
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Invalid notification mark-read input",
 			}),
 		);
 	}
@@ -64,8 +64,8 @@ export function markAllNotificationsRead(
 	const parsed = notificationMarkAllReadOptionsSchema.safeParse(input);
 	if (!parsed.success) {
 		return Promise.resolve(
-			fail("BAD_REQUEST", "Invalid notification mark-all-read input", {
-				fieldErrors: parsed.error.flatten().fieldErrors,
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Invalid notification mark-all-read input",
 			}),
 		);
 	}
@@ -79,8 +79,8 @@ export function deleteNotification(
 	const parsed = notificationDeleteOptionsSchema.safeParse(input);
 	if (!parsed.success) {
 		return Promise.resolve(
-			fail("BAD_REQUEST", "Invalid notification delete input", {
-				fieldErrors: parsed.error.flatten().fieldErrors,
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Invalid notification delete input",
 			}),
 		);
 	}
@@ -94,8 +94,8 @@ export function purgeExpiredNotifications(
 	const parsed = notificationPurgeOptionsSchema.safeParse(input);
 	if (!parsed.success) {
 		return Promise.resolve(
-			fail("BAD_REQUEST", "Invalid notification purge input", {
-				fieldErrors: parsed.error.flatten().fieldErrors,
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Invalid notification purge input",
 			}),
 		);
 	}

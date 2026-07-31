@@ -1,4 +1,4 @@
-import { ok } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 import { beforeEach, describe, expect, it } from "vitest";
 import { createMemoryHumanResourcesStore } from "../src/adapters/memory/store";
 import type { HumanResourcesAuthorizationPort } from "../src/authorization";
@@ -58,17 +58,17 @@ describe("Security Boundary Tests", () => {
 					input.organizationId === organizationId &&
 					input.actorUserId === validActorUserId
 				) {
-					return await ok({
+					return await errorResult.ok({
 						employeeId: validEmployeeId,
 						relationshipType: "self" as const,
 						effectiveFrom: "2024-01-01",
 						effectiveUntil: null,
 					});
 				}
-				return await ok(null);
+				return await errorResult.ok(null);
 			},
 			async resolveManagerEmployeesForActor() {
-				return await ok([]);
+				return await errorResult.ok([]);
 			},
 		};
 	});
@@ -100,9 +100,7 @@ describe("Security Boundary Tests", () => {
 			);
 
 			expect(result.ok).toBe(false);
-			expect(result.message).toBe(
-				"Missing required human resources permission",
-			);
+			expect(result.code).toBe("FORBIDDEN");
 		});
 
 		it("should deny access when user has no employee identity", async () => {
@@ -117,7 +115,7 @@ describe("Security Boundary Tests", () => {
 			);
 
 			expect(result.ok).toBe(false);
-			expect(result.message).toBe("Actor is not an employee");
+			expect(result.code).toBe("FORBIDDEN");
 		});
 
 		it("should deny access when user lacks permission", async () => {
@@ -139,9 +137,7 @@ describe("Security Boundary Tests", () => {
 			);
 
 			expect(result.ok).toBe(false);
-			expect(result.message).toBe(
-				"Missing required human resources permission",
-			);
+			expect(result.code).toBe("FORBIDDEN");
 		});
 
 		it("should deny access when identity resolver is missing", async () => {
@@ -162,9 +158,7 @@ describe("Security Boundary Tests", () => {
 
 				// If we reach here, it should be a failed result
 				expect(result.ok).toBe(false);
-				expect(result.message).toContain(
-					"Missing required human resources permission",
-				);
+				expect(result.code).toBe("FORBIDDEN");
 			} catch (error) {
 				// Should catch the error when trying to call methods on null
 				expect(error).toBeDefined();
@@ -185,7 +179,7 @@ describe("Security Boundary Tests", () => {
 			);
 
 			expect(result.ok).toBe(false);
-			expect(result.message).toBe("Actor is not an employee");
+			expect(result.code).toBe("FORBIDDEN");
 		});
 	});
 
@@ -202,17 +196,17 @@ describe("Security Boundary Tests", () => {
 						asOf >= "2024-01-01" &&
 						asOf <= "2024-12-31"
 					) {
-						return await ok({
+						return await errorResult.ok({
 							employeeId: validEmployeeId,
 							relationshipType: "self" as const,
 							effectiveFrom: "2024-01-01",
 							effectiveUntil: "2024-12-31",
 						});
 					}
-					return await ok(null);
+					return await errorResult.ok(null);
 				},
 				async resolveManagerEmployeesForActor() {
-					return await ok([]);
+					return await errorResult.ok([]);
 				},
 			};
 
@@ -243,7 +237,7 @@ describe("Security Boundary Tests", () => {
 			);
 
 			expect(invalidResult.ok).toBe(false);
-			expect(invalidResult.message).toBe("Actor is not an employee");
+			expect(invalidResult.code).toBe("FORBIDDEN");
 		});
 	});
 
@@ -275,9 +269,7 @@ describe("Security Boundary Tests", () => {
 			);
 
 			expect(result.ok).toBe(false);
-			expect(result.message).toBe(
-				"Missing required human resources permission",
-			);
+			expect(result.code).toBe("FORBIDDEN");
 		});
 
 		it("should handle malformed organization IDs", async () => {
@@ -292,7 +284,7 @@ describe("Security Boundary Tests", () => {
 			);
 
 			expect(result.ok).toBe(false);
-			expect(result.message).toBe("Actor is not an employee");
+			expect(result.code).toBe("FORBIDDEN");
 		});
 
 		it("should handle malformed user IDs", async () => {
@@ -307,7 +299,7 @@ describe("Security Boundary Tests", () => {
 			);
 
 			expect(result.ok).toBe(false);
-			expect(result.message).toBe("Actor is not an employee");
+			expect(result.code).toBe("FORBIDDEN");
 		});
 	});
 
@@ -334,9 +326,7 @@ describe("Security Boundary Tests", () => {
 			);
 
 			expect(result.ok).toBe(false);
-			expect(result.message).toBe(
-				"Missing required human resources permission",
-			);
+			expect(result.code).toBe("FORBIDDEN");
 		});
 
 		it("should prevent bypass through permission name manipulation", async () => {
@@ -361,9 +351,7 @@ describe("Security Boundary Tests", () => {
 			);
 
 			expect(result.ok).toBe(false);
-			expect(result.message).toBe(
-				"Missing required human resources permission",
-			);
+			expect(result.code).toBe("FORBIDDEN");
 		});
 	});
 
@@ -422,9 +410,7 @@ describe("Security Boundary Tests", () => {
 				},
 			);
 			expect(idorResult.ok).toBe(false);
-			expect(idorResult.message).toContain(
-				"Missing required human resources permission",
-			);
+			expect(idorResult.code).toBe("FORBIDDEN");
 		});
 
 		it("should validate manager relationships through actual store queries", async () => {
@@ -454,17 +440,17 @@ describe("Security Boundary Tests", () => {
 			const identityResolverValue16: HumanResourcesIdentityResolverPort = {
 				async resolveEmployeeForActor(input) {
 					if (input.actorUserId === actorUserId) {
-						return await ok({
+						return await errorResult.ok({
 							employeeId: managerEmployeeId,
 							relationshipType: "self" as const,
 							effectiveFrom: "2024-01-01",
 							effectiveUntil: null,
 						});
 					}
-					return await ok(null);
+					return await errorResult.ok(null);
 				},
 				async resolveManagerEmployeesForActor() {
-					return await ok([]);
+					return await errorResult.ok([]);
 				},
 			};
 
@@ -478,9 +464,9 @@ describe("Security Boundary Tests", () => {
 					employeeId: string;
 				}) {
 					if (employeeId === employeeId1) {
-						return await ok(managerEmployeeId);
+						return await errorResult.ok(managerEmployeeId);
 					}
-					return await ok(null);
+					return await errorResult.ok(null);
 				},
 			};
 
@@ -511,9 +497,7 @@ describe("Security Boundary Tests", () => {
 				},
 			);
 			expect(managerDeniedResult.ok).toBe(false);
-			expect(managerDeniedResult.message).toContain(
-				"Actor is not the manager of the target employee",
-			);
+			expect(managerDeniedResult.code).toBe("FORBIDDEN");
 		});
 
 		it("should prevent identity spoofing attacks", async () => {
@@ -539,17 +523,17 @@ describe("Security Boundary Tests", () => {
 			const identityResolverValue18: HumanResourcesIdentityResolverPort = {
 				async resolveEmployeeForActor(input) {
 					if (input.actorUserId === actorUserId) {
-						return await ok({
+						return await errorResult.ok({
 							employeeId: legitEmployeeId,
 							relationshipType: "self" as const,
 							effectiveFrom: "2024-01-01",
 							effectiveUntil: null,
 						});
 					}
-					return await ok(null);
+					return await errorResult.ok(null);
 				},
 				async resolveManagerEmployeesForActor() {
-					return await ok([]);
+					return await errorResult.ok([]);
 				},
 			};
 
@@ -578,9 +562,7 @@ describe("Security Boundary Tests", () => {
 				},
 			);
 			expect(spoofResult.ok).toBe(false);
-			expect(spoofResult.message).toContain(
-				"Cannot access other employee's resources",
-			);
+			expect(spoofResult.code).toBe("FORBIDDEN");
 		});
 
 		it("should validate organization boundaries in identity resolution", async () => {
@@ -602,17 +584,17 @@ describe("Security Boundary Tests", () => {
 						input.organizationId === organizationId &&
 						input.actorUserId === actorUserId
 					) {
-						return await ok({
+						return await errorResult.ok({
 							employeeId,
 							relationshipType: "self" as const,
 							effectiveFrom: "2024-01-01",
 							effectiveUntil: null,
 						});
 					}
-					return await ok(null);
+					return await errorResult.ok(null);
 				},
 				async resolveManagerEmployeesForActor() {
-					return await ok([]);
+					return await errorResult.ok([]);
 				},
 			};
 
@@ -641,7 +623,7 @@ describe("Security Boundary Tests", () => {
 				},
 			);
 			expect(invalidOrgResult.ok).toBe(false);
-			expect(invalidOrgResult.message).toContain("Actor is not an employee");
+			expect(invalidOrgResult.code).toBe("FORBIDDEN");
 		});
 
 		it("should handle temporal identity attacks", async () => {
@@ -666,17 +648,17 @@ describe("Security Boundary Tests", () => {
 						asOf >= "2024-01-01" &&
 						asOf <= "2024-06-30"
 					) {
-						return await ok({
+						return await errorResult.ok({
 							employeeId,
 							relationshipType: "self" as const,
 							effectiveFrom: "2024-01-01",
 							effectiveUntil: "2024-06-30",
 						});
 					}
-					return await ok(null);
+					return await errorResult.ok(null);
 				},
 				async resolveManagerEmployeesForActor() {
-					return await ok([]);
+					return await errorResult.ok([]);
 				},
 			};
 
@@ -707,7 +689,7 @@ describe("Security Boundary Tests", () => {
 				},
 			);
 			expect(expiredResult.ok).toBe(false);
-			expect(expiredResult.message).toContain("Actor is not an employee");
+			expect(expiredResult.code).toBe("FORBIDDEN");
 		});
 	});
 
@@ -776,12 +758,7 @@ describe("Security Boundary Tests", () => {
 					result.ok,
 					`Attack vector '${vector.description}' should fail`,
 				).toBe(false);
-				expect(
-					result.message,
-					`Attack vector '${vector.description}' should return authorization error`,
-				).toMatch(
-					/Missing required human resources permission|Cannot access other employee's resources/,
-				);
+				expect(result.code).toBe("FORBIDDEN");
 			});
 		});
 
@@ -826,12 +803,7 @@ describe("Security Boundary Tests", () => {
 					result.ok,
 					`Organization attack '${attackOrg}' should fail`,
 				).toBe(false);
-				expect(
-					result.message,
-					`Organization attack '${attackOrg}' should return authorization error`,
-				).toMatch(
-					/Missing required human resources permission|Actor is not an employee/,
-				);
+				expect(result.code).toBe("FORBIDDEN");
 			});
 		});
 	});

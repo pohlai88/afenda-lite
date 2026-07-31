@@ -9,8 +9,12 @@ import {
 	platformRbacAudit,
 } from "@afenda/db";
 
-import { normalizePostgresUnknown } from "@afenda/errors/adapters/postgres";
-import { fail, failFromAppError, ok, type Result } from "@afenda/errors/result";
+import {
+	errorIngress,
+	errorProject,
+	errorResult,
+	type Result,
+} from "@afenda/errors";
 
 import {
 	type DeleteRbacAuditInput,
@@ -25,8 +29,10 @@ import {
 	recordRbacAuditCommandSchema,
 } from "./schemas/audit";
 
-function failFromPersistence(error: unknown, fallbackMessage: string) {
-	return failFromAppError(normalizePostgresUnknown(error, fallbackMessage));
+function failFromPersistence(error: unknown, _fallbackMessage: string) {
+	return errorProject.result(
+		errorIngress.postgres(error, { operation: "persistence.postgres" }),
+	);
 }
 
 function parseAuditRow(row: {
@@ -105,8 +111,8 @@ export async function listRbacAudit(
 ): Promise<Result<RbacAuditPage>> {
 	const parsed = listRbacAuditInputSchema.safeParse(input);
 	if (!parsed.success) {
-		return fail("BAD_REQUEST", "Invalid RBAC audit list input", {
-			fieldErrors: parsed.error.flatten().fieldErrors,
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "Invalid RBAC audit list input",
 		});
 	}
 
@@ -137,7 +143,7 @@ export async function listRbacAudit(
 			pageSize: command.pageSize,
 		});
 
-		return ok(page);
+		return errorResult.ok(page);
 	} catch (error) {
 		return failFromPersistence(error, "Failed to list RBAC audit rows");
 	}
@@ -152,8 +158,8 @@ export async function recordRbacAudit(
 ): Promise<Result<RbacAuditRow>> {
 	const parsed = recordRbacAuditCommandSchema.safeParse(input);
 	if (!parsed.success) {
-		return fail("BAD_REQUEST", "Invalid RBAC audit write input", {
-			fieldErrors: parsed.error.flatten().fieldErrors,
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "Invalid RBAC audit write input",
 		});
 	}
 
@@ -179,10 +185,10 @@ export async function recordRbacAudit(
 			.returning();
 
 		if (!row) {
-			return fail("INTERNAL_ERROR", "recordRbacAudit insert returned no row");
+			return errorResult.fail("INTERNAL_ERROR");
 		}
 
-		return ok(parseAuditRow(row));
+		return errorResult.ok(parseAuditRow(row));
 	} catch (error) {
 		return failFromPersistence(error, "Failed to record RBAC audit row");
 	}
@@ -197,8 +203,8 @@ export async function deleteRbacAuditRow(
 ): Promise<Result<RbacAuditRow | null>> {
 	const parsed = deleteRbacAuditInputSchema.safeParse(input);
 	if (!parsed.success) {
-		return fail("BAD_REQUEST", "Invalid RBAC audit delete input", {
-			fieldErrors: parsed.error.flatten().fieldErrors,
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "Invalid RBAC audit delete input",
 		});
 	}
 
@@ -216,9 +222,9 @@ export async function deleteRbacAuditRow(
 			.returning();
 
 		if (!row) {
-			return ok(null);
+			return errorResult.ok(null);
 		}
-		return ok(parseAuditRow(row));
+		return errorResult.ok(parseAuditRow(row));
 	} catch (error) {
 		return failFromPersistence(error, "Failed to delete RBAC audit row");
 	}

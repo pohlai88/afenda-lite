@@ -9,7 +9,7 @@ import {
 	lte,
 	or,
 } from "@afenda/db";
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type { HumanResourcesEmployeeId } from "../../brands";
 import type { HumanResourcesEmployeeIdentity } from "../../identity-resolver";
@@ -47,14 +47,14 @@ export const drizzleIdentityMethods: HumanResourcesIdentityStore = {
 				.limit(1);
 
 			if (result.length === 0) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 
 			const mapping = result.at(0);
 			if (!mapping) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
-			return ok({
+			return errorResult.ok({
 				employeeId: mapping.employeeId as HumanResourcesEmployeeId,
 				relationshipType: mapping.relationshipType as "self" | "proxy",
 				effectiveFrom: mapping.effectiveFrom,
@@ -82,7 +82,7 @@ export const drizzleIdentityMethods: HumanResourcesIdentityStore = {
 			});
 
 			if (!(userEmployeeResult.ok && userEmployeeResult.data)) {
-				return ok([]);
+				return errorResult.ok([]);
 			}
 
 			const managerEmployeeId = userEmployeeResult.data.employeeId;
@@ -110,7 +110,7 @@ export const drizzleIdentityMethods: HumanResourcesIdentityStore = {
 			const employeeIds = result.map(
 				(r) => r.employeeId as HumanResourcesEmployeeId,
 			);
-			return ok(employeeIds);
+			return errorResult.ok(employeeIds);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -144,10 +144,10 @@ export const drizzleIdentityMethods: HumanResourcesIdentityStore = {
 
 			const [created] = result;
 			if (!created) {
-				return fail("INTERNAL_ERROR", "Failed to create user employee mapping");
+				return errorResult.fail("INTERNAL_ERROR");
 			}
 
-			return ok({ id: created.id });
+			return errorResult.ok({ id: created.id });
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,

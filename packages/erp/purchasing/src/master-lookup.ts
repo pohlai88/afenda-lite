@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	getItemById,
 	getPartyById,
@@ -33,7 +33,7 @@ export function createMasterDataLookupPort(
 			if (!result.ok) {
 				return result;
 			}
-			return ok(result.data);
+			return errorResult.ok(result.data);
 		},
 		async getItemById(
 			organizationId: string,
@@ -47,7 +47,7 @@ export function createMasterDataLookupPort(
 			if (!result.ok) {
 				return result;
 			}
-			return ok(result.data);
+			return errorResult.ok(result.data);
 		},
 		async getPaymentTermById(
 			organizationId: string,
@@ -61,7 +61,7 @@ export function createMasterDataLookupPort(
 			if (!result.ok) {
 				return result;
 			}
-			return ok(result.data);
+			return errorResult.ok(result.data);
 		},
 		async getRefUomById(
 			organizationId: string,
@@ -75,7 +75,7 @@ export function createMasterDataLookupPort(
 			if (!result.ok) {
 				return result;
 			}
-			return ok(result.data);
+			return errorResult.ok(result.data);
 		},
 		async hasActiveSupplierRole(
 			organizationId: string,
@@ -98,7 +98,7 @@ export function createMasterDataLookupPort(
 			const active = roles.data.items.some(
 				(role) => role.roleCode === "supplier" && role.status === "active",
 			);
-			return ok(active);
+			return errorResult.ok(active);
 		},
 		async getWarehouseById(
 			organizationId: string,
@@ -112,20 +112,22 @@ export function createMasterDataLookupPort(
 			if (!result.ok) {
 				return result;
 			}
-			return ok(result.data);
+			return errorResult.ok(result.data);
 		},
 	};
 }
 
 export function requireMaster<T>(
 	result: Result<T | null>,
-	notFoundMessage: string,
+	_notFoundMessage: string,
 ): Result<T> {
 	if (!result.ok) {
 		return result;
 	}
 	if (result.data === null) {
-		return fail("NOT_FOUND", notFoundMessage);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "The requested resource was not found",
+		});
 	}
-	return ok(result.data);
+	return errorResult.ok(result.data);
 }

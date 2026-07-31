@@ -1,5 +1,6 @@
 "use server";
 
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import type {
 	EmploymentConfirmation,
 	ProbationAssessment,
@@ -36,7 +37,6 @@ import {
 	recordProbationAssessmentInputSchema,
 	recordProbationOutcomeInputSchema,
 } from "@afenda/human-resources/schemas";
-
 import {
 	hrActionSchema,
 	withHrSessionContext as withSessionContext,
@@ -44,10 +44,6 @@ import {
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runHrWorkforceOperatorPermissionAction as runOperatorPermissionAction } from "@/app/actions/run-hr-operator-permission-action";
 import { createHumanResourcesCommandOptions } from "@/lib/erp/human-resources-command-options";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 const openProbationActionSchema = hrActionSchema(openProbationInputSchema);
@@ -62,11 +58,9 @@ export async function openProbationAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(openProbationActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid probation open request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid probation open request.",
+				});
 			}
 			const result = await openProbation(
 				withSessionContext(session, correlationId, parsed.data),
@@ -93,11 +87,9 @@ export async function extendProbationAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(extendProbationActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid probation extension.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid probation extension.",
+				});
 			}
 			const result = await extendProbation(
 				withSessionContext(session, correlationId, parsed.data),
@@ -126,11 +118,9 @@ export async function recordProbationAssessmentAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(recordProbationAssessmentActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid probation assessment.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid probation assessment.",
+				});
 			}
 			const result = await recordProbationAssessment(
 				withSessionContext(session, correlationId, parsed.data),
@@ -159,11 +149,9 @@ export async function recordProbationOutcomeAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(recordProbationOutcomeActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid probation outcome.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid probation outcome.",
+				});
 			}
 			const result = await recordProbationOutcome(
 				withSessionContext(session, correlationId, parsed.data),
@@ -192,11 +180,9 @@ export async function getProbationReviewAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(getProbationReviewActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid probation review lookup.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid probation review lookup.",
+				});
 			}
 			const result = await getProbationReview(
 				withSessionContext(session, correlationId, parsed.data),
@@ -228,11 +214,9 @@ export async function listProbationReviewsByEmploymentAction(
 				input,
 			);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid probation review list request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid probation review list request.",
+				});
 			}
 			const result = await listProbationReviewsByEmployment(
 				withSessionContext(session, correlationId, parsed.data),
@@ -261,11 +245,9 @@ export async function listProbationAssessmentsAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(listProbationAssessmentsActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid probation assessment list request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid probation assessment list request.",
+				});
 			}
 			const result = await listProbationAssessments(
 				withSessionContext(session, correlationId, parsed.data),
@@ -294,11 +276,9 @@ export async function confirmEmploymentAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(confirmEmploymentActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid employment confirmation.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid employment confirmation.",
+				});
 			}
 			const result = await confirmEmployment(
 				withSessionContext(session, correlationId, parsed.data),
@@ -327,11 +307,9 @@ export async function getEmploymentConfirmationAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(getEmploymentConfirmationActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid employment confirmation lookup.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid employment confirmation lookup.",
+				});
 			}
 			const result = await getEmploymentConfirmation(
 				withSessionContext(session, correlationId, parsed.data),
@@ -360,11 +338,9 @@ export async function proposeTerminationAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(proposeTerminationActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid termination proposal.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid termination proposal.",
+				});
 			}
 			const result = await proposeTermination(
 				withSessionContext(session, correlationId, parsed.data),
@@ -393,11 +369,9 @@ export async function approveTerminationAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(approveTerminationActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid termination approval.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid termination approval.",
+				});
 			}
 			const result = await approveTermination(
 				withSessionContext(session, correlationId, parsed.data),
@@ -426,11 +400,9 @@ export async function finalizeTerminationAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(finalizeTerminationActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid termination finalization.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid termination finalization.",
+				});
 			}
 			const result = await finalizeTermination(
 				withSessionContext(session, correlationId, parsed.data),
@@ -457,11 +429,9 @@ export async function getTerminationAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(getTerminationActionSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid termination lookup.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid termination lookup.",
+				});
 			}
 			const result = await getTermination(
 				withSessionContext(session, correlationId, parsed.data),

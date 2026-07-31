@@ -1,7 +1,6 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type { PayrollCommandOptions } from "../command-options";
-import { PAYROLL_ERROR_CONFLICT, payrollErrorDetails } from "../error-codes";
 import {
 	PAYROLL_COMMAND_SETUP_CALENDAR_ARCHIVE,
 	PAYROLL_COMMAND_SETUP_CALENDAR_CREATE,
@@ -48,13 +47,11 @@ export function createPayrollCalendar(
 			}
 			if (existing.data !== null) {
 				if (existing.data.createRequestFingerprint !== fingerprint) {
-					return fail(
-						"CONFLICT",
-						"Idempotency key reused with different payload",
-						payrollErrorDetails(PAYROLL_ERROR_CONFLICT),
-					);
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "Idempotency key reused with different payload",
+					});
 				}
-				return ok(existing.data.calendar);
+				return errorResult.ok(existing.data.calendar);
 			}
 			return store.createCalendar(
 				{

@@ -1,15 +1,11 @@
 "use server";
 
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { type CustomerBalance, getCustomerBalance } from "@afenda/receivables";
 import { z } from "zod";
-
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
 import { createReceivablesCommandOptions } from "@/lib/erp/receivables-command-options";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export interface GetCustomerBalanceActionData {
@@ -33,11 +29,9 @@ export async function getCustomerBalanceAction(input: {
 		execute: async (session) => {
 			const parsed = parseSchema(schema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid customer and optional currency.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid customer and optional currency.",
+				});
 			}
 			const result = await getCustomerBalance(
 				{

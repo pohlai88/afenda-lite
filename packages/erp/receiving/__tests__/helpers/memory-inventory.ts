@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { ok } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 import {
 	INVENTORY_PERMISSION_CODES,
 	type InventoryAuthorizationPort,
@@ -34,12 +34,12 @@ export function createInventoryCommandTestOptions(
 	const ports: MutationPorts = {
 		audit: {
 			record() {
-				return resolveAsync(() => ok({ id: randomUUID() }));
+				return resolveAsync(() => errorResult.ok({ id: randomUUID() }));
 			},
 		},
 		outbox: {
 			append() {
-				return resolveAsync(() => ok({ id: randomUUID() }));
+				return resolveAsync(() => errorResult.ok({ id: randomUUID() }));
 			},
 		},
 	};

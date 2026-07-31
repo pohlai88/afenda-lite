@@ -1,4 +1,4 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	type Item,
 	type RefUom,
@@ -24,7 +24,7 @@ export function createMemoryMasterLookup(
 		getItemById(organizationId, id): Promise<Result<Item | null>> {
 			const row = items.get(id);
 			return Promise.resolve(
-				ok(
+				errorResult.ok(
 					row === undefined || row.organizationId !== organizationId
 						? null
 						: row,
@@ -36,12 +36,12 @@ export function createMemoryMasterLookup(
 			id,
 			_actorUserId,
 		): Promise<Result<RefUom | null>> {
-			return Promise.resolve(ok(uoms.get(id) ?? null));
+			return Promise.resolve(errorResult.ok(uoms.get(id) ?? null));
 		},
 		getWarehouseById(organizationId, id): Promise<Result<Warehouse | null>> {
 			const row = warehouses.get(id);
 			return Promise.resolve(
-				ok(
+				errorResult.ok(
 					row === undefined || row.organizationId !== organizationId
 						? null
 						: row,

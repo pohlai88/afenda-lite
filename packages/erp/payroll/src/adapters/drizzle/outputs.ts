@@ -6,7 +6,7 @@ import {
 	payrollRun,
 	payrollRunEmployee,
 } from "@afenda/db";
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	type PayrollRunId,
@@ -60,9 +60,8 @@ function mapRunEmployeeRow(
 	}
 	const assignmentId =
 		row.assignmentId === null
-			? ok(null)
+			? errorResult.ok(null)
 			: parsePayrollEmployeeAssignmentId(row.assignmentId);
-	// biome-ignore lint/suspicious/noUnnecessaryConditions: Runtime database rows are validated even when Drizzle's static brand says the failure is unreachable.
 	if (!assignmentId.ok) {
 		return assignmentId;
 	}
@@ -73,7 +72,7 @@ function mapRunEmployeeRow(
 			"Persisted payroll snapshot is invalid",
 		);
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		runId: runId.data,
@@ -109,7 +108,7 @@ function mapResultLineRow(
 	if (!runEmployeeId.ok) {
 		return runEmployeeId;
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		runId: runId.data,
@@ -155,7 +154,7 @@ async function assertRunAllowsOutputMutation(input: {
 				"Finalized or reversed payroll runs cannot change calculation outputs",
 			);
 		}
-		return ok({ status: row.status });
+		return errorResult.ok({ status: row.status });
 	} catch (error) {
 		return mapPersistenceFailure(error, "Failed to load payroll run");
 	}
@@ -199,7 +198,7 @@ export const drizzleOutputsMethods: PayrollOutputsStore = {
 				return audit;
 			}
 
-			return ok({ deleted: true });
+			return errorResult.ok({ deleted: true });
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -308,7 +307,7 @@ export const drizzleOutputsMethods: PayrollOutputsStore = {
 				return audit;
 			}
 
-			return ok({ runEmployees, resultLines });
+			return errorResult.ok({ runEmployees, resultLines });
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -336,7 +335,7 @@ export const drizzleOutputsMethods: PayrollOutputsStore = {
 				}
 				runEmployees.push(mapped.data);
 			}
-			return ok(runEmployees);
+			return errorResult.ok(runEmployees);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -364,7 +363,7 @@ export const drizzleOutputsMethods: PayrollOutputsStore = {
 				}
 				resultLines.push(mapped.data);
 			}
-			return ok(resultLines);
+			return errorResult.ok(resultLines);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,

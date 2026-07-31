@@ -1,4 +1,4 @@
-import { fail, ok } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -26,7 +26,7 @@ describe("receivables transaction rollback", () => {
 			authorization,
 			effects: {
 				emit() {
-					return Promise.resolve(ok(undefined));
+					return Promise.resolve(errorResult.ok(undefined));
 				},
 			},
 		};
@@ -79,7 +79,7 @@ describe("receivables transaction rollback", () => {
 				...common,
 				effects: {
 					emit() {
-						return Promise.resolve(fail("INTERNAL_ERROR", "outbox failed"));
+						return Promise.resolve(errorResult.fail("INTERNAL_ERROR"));
 					},
 				},
 			},
@@ -95,6 +95,6 @@ describe("receivables transaction rollback", () => {
 			common,
 		);
 		expect(balance.ok && balance.data).toEqual([]);
-		expect(ok(undefined).ok).toBe(true);
+		expect(errorResult.ok(undefined).ok).toBe(true);
 	});
 });

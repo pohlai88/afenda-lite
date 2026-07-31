@@ -10,8 +10,12 @@ import {
 	or,
 	platformAuditLog,
 } from "@afenda/db";
-import { normalizePostgresUnknown } from "@afenda/errors/adapters/postgres";
-import { fail, failFromAppError, ok, type Result } from "@afenda/errors/result";
+import {
+	errorIngress,
+	errorProject,
+	errorResult,
+	type Result,
+} from "@afenda/errors";
 
 import { serializeAuditMetadata } from "./event-context";
 import { mapAuditLogRow } from "./map-row";
@@ -93,18 +97,17 @@ function mapRows(
 	for (const row of rows) {
 		const mapped = mapAuditLogRow(row);
 		if (!mapped.ok) {
-			return fail(
-				"INTERNAL_ERROR",
-				`audit row mapping failed: ${mapped.reason}`,
-			);
+			return errorResult.fail("INTERNAL_ERROR");
 		}
 		entries.push(mapped.data);
 	}
-	return ok(entries);
+	return errorResult.ok(entries);
 }
 
-function failFromPersistence(error: unknown, fallbackMessage: string) {
-	return failFromAppError(normalizePostgresUnknown(error, fallbackMessage));
+function failFromPersistence(error: unknown, _fallbackMessage: string) {
+	return errorProject.result(
+		errorIngress.postgres(error, { operation: "persistence.postgres" }),
+	);
 }
 
 export class DrizzleAuditStore implements AuditStore {
@@ -139,18 +142,15 @@ export class DrizzleAuditStore implements AuditStore {
 				.returning();
 
 			if (row === undefined) {
-				return fail("INTERNAL_ERROR", "audit write returned no row");
+				return errorResult.fail("INTERNAL_ERROR");
 			}
 
 			const mapped = mapAuditLogRow(row);
 			if (!mapped.ok) {
-				return fail(
-					"INTERNAL_ERROR",
-					`audit write returned unreadable row: ${mapped.reason}`,
-				);
+				return errorResult.fail("INTERNAL_ERROR");
 			}
 
-			return ok(mapped.data);
+			return errorResult.ok(mapped.data);
 		} catch (error) {
 			return failFromPersistence(error, "Failed to write audit entry");
 		}
@@ -183,7 +183,7 @@ export class DrizzleAuditStore implements AuditStore {
 				.from(platformAuditLog)
 				.where(where);
 
-			return ok(Number(totalRow?.value ?? 0));
+			return errorResult.ok(Number(totalRow?.value ?? 0));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to count audit entries");
 		}
@@ -213,7 +213,7 @@ export class DrizzleAuditStore implements AuditStore {
 				lt(platformAuditLog.createdAt, options.olderThan),
 			);
 			if (where === undefined) {
-				return fail("INTERNAL_ERROR", "audit purge where clause is required");
+				return errorResult.fail("INTERNAL_ERROR");
 			}
 
 			const deleted = await db
@@ -221,7 +221,7 @@ export class DrizzleAuditStore implements AuditStore {
 				.where(where)
 				.returning({ id: platformAuditLog.id });
 
-			return ok(deleted.length);
+			return errorResult.ok(deleted.length);
 		} catch (error) {
 			return failFromPersistence(error, "Failed to purge audit entries");
 		}

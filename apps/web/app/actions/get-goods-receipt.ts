@@ -1,15 +1,11 @@
 "use server";
 
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { type GoodsReceipt, getGoodsReceiptById } from "@afenda/receiving";
 import { z } from "zod";
-
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
 import { createReceivingCommandOptions } from "@/lib/erp/receiving-command-options";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export interface GetGoodsReceiptActionData {
@@ -28,11 +24,9 @@ export async function getGoodsReceiptAction(
 		execute: async (session) => {
 			const parsed = parseSchema(getGoodsReceiptSchema, receiptId);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid goods receipt id.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid goods receipt id.",
+				});
 			}
 			const result = await getGoodsReceiptById(
 				{
@@ -47,7 +41,9 @@ export async function getGoodsReceiptAction(
 				return mapped;
 			}
 			if (mapped.data === null) {
-				return actionFail("NOT_FOUND", "Goods receipt not found");
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "Goods receipt not found",
+				});
 			}
 			return { ok: true, data: { receipt: mapped.data } };
 		},

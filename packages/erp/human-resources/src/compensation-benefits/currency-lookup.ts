@@ -1,4 +1,4 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import { createDrizzleMasterDataStore } from "@afenda/master-data/adapters/drizzle";
 
 import type { CurrencyLookupPort } from "../ports";
@@ -18,7 +18,7 @@ export function createMemoryCurrencyLookup(): CurrencyLookupPort {
 	return {
 		exists(currencyCode: string): Promise<Result<boolean>> {
 			return Promise.resolve(
-				ok(MEMORY_CURRENCY_CODES.has(currencyCode.toUpperCase())),
+				errorResult.ok(MEMORY_CURRENCY_CODES.has(currencyCode.toUpperCase())),
 			);
 		},
 	};
@@ -34,7 +34,7 @@ export function createProductionCurrencyLookup(): CurrencyLookupPort {
 			if (!result.ok) {
 				return result;
 			}
-			return ok(result.data !== null);
+			return errorResult.ok(result.data !== null);
 		},
 	};
 }

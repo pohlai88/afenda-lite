@@ -1,10 +1,6 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type { PayrollCommandOptions } from "../command-options";
-import {
-	PAYROLL_ERROR_INVALID_STATE,
-	payrollErrorDetails,
-} from "../error-codes";
 import { PAYROLL_COMMAND_RUN_FINALIZE } from "../module-ids";
 import { finalizePayrollRunInputSchema } from "../schemas/runs";
 import { runPayrollSetupCommand } from "../shared/setup-command";
@@ -39,7 +35,7 @@ export function finalizePayrollRun(
 			const run = loaded.data;
 
 			if (run.status === "finalized") {
-				return ok(run);
+				return errorResult.ok(run);
 			}
 
 			if (run.status !== "calculated") {
@@ -57,11 +53,9 @@ export function finalizePayrollRun(
 				return exceptions;
 			}
 			if (hasBlockingPayrollExceptions(exceptions.data)) {
-				return fail(
-					"CONFLICT",
-					"Blocking payroll exceptions prevent finalization",
-					payrollErrorDetails(PAYROLL_ERROR_INVALID_STATE),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Blocking payroll exceptions prevent finalization",
+				});
 			}
 
 			return transitionPayrollRun(store, ports, {

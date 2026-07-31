@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import { payrollModuleManifest } from "./module.manifest";
 import type { PayrollCommandId, PayrollQueryId } from "./module-ids";
@@ -56,15 +56,11 @@ async function requirePayrollPermission(
 	},
 ): Promise<Result<void>> {
 	if (!authorization) {
-		return fail("UNAUTHORIZED", "Payroll authorization port is required", {
-			permission: input.permission,
-		});
+		return errorResult.fail("UNAUTHORIZED");
 	}
 	const allowed = await authorization.can(input);
 	if (!allowed) {
-		return fail("FORBIDDEN", "Missing required payroll permission", {
-			permission: input.permission,
-		});
+		return errorResult.fail("FORBIDDEN");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }

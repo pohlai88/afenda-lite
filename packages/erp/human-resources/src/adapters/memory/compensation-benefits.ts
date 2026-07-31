@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	HUMAN_RESOURCES_BENEFIT_ENROLLMENT_CHANGED_EVENT,
 	HUMAN_RESOURCES_COMPENSATION_CHANGED_EVENT,
@@ -290,9 +290,9 @@ export function createMemoryCompensationBenefitsMethods(
 		}): Promise<Result<CompensationGrade | null>> {
 			const grade = state.compensationGrades.get(input.gradeId);
 			if (!grade || grade.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...grade });
+			return await errorResult.ok({ ...grade });
 		},
 
 		async findCompensationGradeByCode(input: {
@@ -304,7 +304,7 @@ export function createMemoryCompensationBenefitsMethods(
 					(g) =>
 						g.organizationId === input.organizationId && g.code === input.code,
 				) ?? null;
-			return await ok(grade === null ? null : { ...grade });
+			return await errorResult.ok(grade === null ? null : { ...grade });
 		},
 
 		async createCompensationGrade(
@@ -360,7 +360,7 @@ export function createMemoryCompensationBenefitsMethods(
 				return audit;
 			}
 
-			return ok({ ...grade });
+			return errorResult.ok({ ...grade });
 		},
 
 		async updateCompensationGrade(
@@ -414,7 +414,7 @@ export function createMemoryCompensationBenefitsMethods(
 				return audit;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async archiveCompensationGrade(
@@ -479,7 +479,7 @@ export function createMemoryCompensationBenefitsMethods(
 				return audit;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async listCompensationGrades(input: {
@@ -498,7 +498,7 @@ export function createMemoryCompensationBenefitsMethods(
 			const totalCount = grades.length;
 			const offset = (input.page - 1) * input.pageSize;
 			const paginated = grades.slice(offset, offset + input.pageSize);
-			return await ok({
+			return await errorResult.ok({
 				grades: paginated.map((g) => ({ ...g })),
 				totalCount,
 				page: input.page,
@@ -513,9 +513,9 @@ export function createMemoryCompensationBenefitsMethods(
 		}): Promise<Result<SalaryBand | null>> {
 			const band = state.salaryBands.get(input.salaryBandId);
 			if (!band || band.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...band });
+			return await errorResult.ok({ ...band });
 		},
 
 		async createSalaryBand(
@@ -614,7 +614,7 @@ export function createMemoryCompensationBenefitsMethods(
 				return audit;
 			}
 
-			return ok({ ...band });
+			return errorResult.ok({ ...band });
 		},
 
 		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
@@ -811,7 +811,7 @@ export function createMemoryCompensationBenefitsMethods(
 				return auditSupersede;
 			}
 
-			return ok({
+			return errorResult.ok({
 				superseded: { ...supersededBand },
 				successor: { ...newBand },
 			});
@@ -867,7 +867,7 @@ export function createMemoryCompensationBenefitsMethods(
 				return audit;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async listSalaryBandsByGrade(input: {
@@ -897,7 +897,7 @@ export function createMemoryCompensationBenefitsMethods(
 			const totalCount = bands.length;
 			const offset = (input.page - 1) * input.pageSize;
 			const paginated = bands.slice(offset, offset + input.pageSize);
-			return await ok({
+			return await errorResult.ok({
 				bands: paginated.map((b) => ({ ...b })),
 				totalCount,
 				page: input.page,
@@ -922,7 +922,7 @@ export function createMemoryCompensationBenefitsMethods(
 				records,
 				asOf: input.asOf,
 			});
-			return await ok(selected === null ? null : { ...selected });
+			return await errorResult.ok(selected === null ? null : { ...selected });
 		},
 
 		async getCompensationGradeProgressionRule(input: {
@@ -933,9 +933,9 @@ export function createMemoryCompensationBenefitsMethods(
 				input.progressionRuleId,
 			);
 			if (!rule || rule.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...rule });
+			return await errorResult.ok({ ...rule });
 		},
 
 		async createCompensationGradeProgressionRule(
@@ -1032,7 +1032,7 @@ export function createMemoryCompensationBenefitsMethods(
 				return audit;
 			}
 
-			return ok({ ...rule });
+			return errorResult.ok({ ...rule });
 		},
 
 		async archiveCompensationGradeProgressionRule(
@@ -1084,7 +1084,7 @@ export function createMemoryCompensationBenefitsMethods(
 				return audit;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async listCompensationGradeProgressionRulesFromGrade(input: {
@@ -1115,7 +1115,7 @@ export function createMemoryCompensationBenefitsMethods(
 			const totalCount = rules.length;
 			const offset = (input.page - 1) * input.pageSize;
 			const paginated = rules.slice(offset, offset + input.pageSize);
-			return await ok({
+			return await errorResult.ok({
 				rules: paginated.map((rule) => ({ ...rule })),
 				totalCount,
 				page: input.page,
@@ -1138,7 +1138,7 @@ export function createMemoryCompensationBenefitsMethods(
 			if (!listed.ok) {
 				return listed;
 			}
-			return ok(listed.data.rules);
+			return errorResult.ok(listed.data.rules);
 		},
 
 		// Employee Compensation
@@ -1148,9 +1148,9 @@ export function createMemoryCompensationBenefitsMethods(
 		}): Promise<Result<EmployeeCompensation | null>> {
 			const comp = state.employeeCompensations.get(input.compensationId);
 			if (!comp || comp.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...comp });
+			return await errorResult.ok({ ...comp });
 		},
 
 		async findEmployeeCompensationByIdempotencyKey(input: {
@@ -1159,7 +1159,7 @@ export function createMemoryCompensationBenefitsMethods(
 		}): Promise<Result<EmployeeCompensation | null>> {
 			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
 			const comp = state.compensationIdempotencyByKey.get(key);
-			return await ok(comp === undefined ? null : { ...comp });
+			return await errorResult.ok(comp === undefined ? null : { ...comp });
 		},
 
 		async createEmployeeCompensation(record, ports, meta) {
@@ -1265,7 +1265,7 @@ export function createMemoryCompensationBenefitsMethods(
 			const totalCount = compensations.length;
 			const offset = (input.page - 1) * input.pageSize;
 			const paginated = compensations.slice(offset, offset + input.pageSize);
-			return await ok({
+			return await errorResult.ok({
 				compensations: paginated.map((c) => ({ ...c })),
 				totalCount,
 				page: input.page,
@@ -1284,7 +1284,7 @@ export function createMemoryCompensationBenefitsMethods(
 						c.employmentId === input.employmentId &&
 						isEmployeeCompensationActive(c.status),
 				) ?? null;
-			return await ok(comp === null ? null : { ...comp });
+			return await errorResult.ok(comp === null ? null : { ...comp });
 		},
 
 		async findEmployeeCompensationByEmploymentAsOf(input) {
@@ -1292,7 +1292,7 @@ export function createMemoryCompensationBenefitsMethods(
 				state,
 				input,
 			);
-			return await ok(selected === null ? null : { ...selected });
+			return await errorResult.ok(selected === null ? null : { ...selected });
 		},
 
 		// --- Compensation Review ---
@@ -1303,9 +1303,9 @@ export function createMemoryCompensationBenefitsMethods(
 		}): Promise<Result<CompensationReview | null>> {
 			const review = state.compensationReviews.get(input.reviewId) ?? null;
 			if (review && review.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok(review === null ? null : { ...review });
+			return await errorResult.ok(review === null ? null : { ...review });
 		},
 
 		async findCompensationReviewByIdempotencyKey(input: {
@@ -1314,7 +1314,7 @@ export function createMemoryCompensationBenefitsMethods(
 		}): Promise<Result<CompensationReview | null>> {
 			const key = `${input.organizationId}:${input.idempotencyKey}`;
 			const review = state.reviewIdempotencyByKey.get(key) ?? null;
-			return await ok(review === null ? null : { ...review });
+			return await errorResult.ok(review === null ? null : { ...review });
 		},
 
 		async createCompensationReviewDraft(
@@ -1336,7 +1336,7 @@ export function createMemoryCompensationBenefitsMethods(
 				existing &&
 				existing.fingerprint === record.createRequestFingerprint
 			) {
-				return ok({ ...existing });
+				return errorResult.ok({ ...existing });
 			}
 			if (existing) {
 				return conflict("Idempotency key already used with different data");
@@ -1421,7 +1421,7 @@ export function createMemoryCompensationBenefitsMethods(
 				return audit;
 			}
 
-			return ok({ ...review });
+			return errorResult.ok({ ...review });
 		},
 
 		async recordCompensationRecommendation(input, ports, meta) {
@@ -1623,7 +1623,7 @@ export function createMemoryCompensationBenefitsMethods(
 				return linked;
 			}
 
-			return ok({ ...newComp });
+			return errorResult.ok({ ...newComp });
 		},
 
 		async listCompensationReviewsByEmployee(input: {
@@ -1645,7 +1645,7 @@ export function createMemoryCompensationBenefitsMethods(
 			const totalCount = reviews.length;
 			const offset = (input.page - 1) * input.pageSize;
 			const paginated = reviews.slice(offset, offset + input.pageSize);
-			return await ok({
+			return await errorResult.ok({
 				reviews: paginated.map((r) => ({ ...r })),
 				totalCount,
 				page: input.page,
@@ -1662,9 +1662,9 @@ export function createMemoryCompensationBenefitsMethods(
 			const proposal =
 				state.compensationProposals.get(input.proposalId) ?? null;
 			if (proposal && proposal.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok(proposal === null ? null : { ...proposal });
+			return await errorResult.ok(proposal === null ? null : { ...proposal });
 		},
 
 		async createCompensationProposal(
@@ -1731,7 +1731,7 @@ export function createMemoryCompensationBenefitsMethods(
 				return audit;
 			}
 
-			return ok({ ...proposal });
+			return errorResult.ok({ ...proposal });
 		},
 
 		async amendCompensationProposal(
@@ -1822,7 +1822,7 @@ export function createMemoryCompensationBenefitsMethods(
 				return audit;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async approveCompensationProposal(
@@ -1910,7 +1910,7 @@ export function createMemoryCompensationBenefitsMethods(
 				return outbox;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async listCompensationProposals(input: {
@@ -1935,7 +1935,7 @@ export function createMemoryCompensationBenefitsMethods(
 			const totalCount = proposals.length;
 			const offset = (input.page - 1) * input.pageSize;
 			const paginated = proposals.slice(offset, offset + input.pageSize);
-			return await ok({
+			return await errorResult.ok({
 				proposals: paginated.map((proposal) => ({ ...proposal })),
 				totalCount,
 				page: input.page,
@@ -1951,9 +1951,9 @@ export function createMemoryCompensationBenefitsMethods(
 		}): Promise<Result<BenefitPlan | null>> {
 			const plan = state.benefitPlans.get(input.planId) ?? null;
 			if (plan && plan.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok(plan === null ? null : { ...plan });
+			return await errorResult.ok(plan === null ? null : { ...plan });
 		},
 
 		async findBenefitPlanByCode(input: {
@@ -1965,7 +1965,7 @@ export function createMemoryCompensationBenefitsMethods(
 					(p) =>
 						p.organizationId === input.organizationId && p.code === input.code,
 				) ?? null;
-			return await ok(plan === null ? null : { ...plan });
+			return await errorResult.ok(plan === null ? null : { ...plan });
 		},
 
 		async createBenefitPlan(
@@ -2022,7 +2022,7 @@ export function createMemoryCompensationBenefitsMethods(
 				return audit;
 			}
 
-			return ok({ ...plan });
+			return errorResult.ok({ ...plan });
 		},
 
 		async updateBenefitPlan(
@@ -2088,7 +2088,7 @@ export function createMemoryCompensationBenefitsMethods(
 				return audit;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async archiveBenefitPlan(
@@ -2160,7 +2160,7 @@ export function createMemoryCompensationBenefitsMethods(
 				return audit;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async listBenefitPlans(input: {
@@ -2175,7 +2175,7 @@ export function createMemoryCompensationBenefitsMethods(
 			const totalCount = plans.length;
 			const offset = (input.page - 1) * input.pageSize;
 			const paginated = plans.slice(offset, offset + input.pageSize);
-			return await ok({
+			return await errorResult.ok({
 				plans: paginated.map((p) => ({ ...p })),
 				totalCount,
 				page: input.page,
@@ -2191,7 +2191,9 @@ export function createMemoryCompensationBenefitsMethods(
 				state.benefitEligibility.get(
 					benefitEligibilityMapKey(input.organizationId, input.planId),
 				) ?? null;
-			return await ok(eligibility === null ? null : { ...eligibility });
+			return await errorResult.ok(
+				eligibility === null ? null : { ...eligibility },
+			);
 		},
 
 		async setBenefitPlanEligibility(
@@ -2253,7 +2255,7 @@ export function createMemoryCompensationBenefitsMethods(
 				return audit;
 			}
 
-			return ok({ ...eligibility });
+			return errorResult.ok({ ...eligibility });
 		},
 
 		// --- Benefit Enrollment ---
@@ -2265,9 +2267,11 @@ export function createMemoryCompensationBenefitsMethods(
 			const enrollment =
 				state.benefitEnrollments.get(input.enrollmentId) ?? null;
 			if (enrollment && enrollment.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok(enrollment === null ? null : { ...enrollment });
+			return await errorResult.ok(
+				enrollment === null ? null : { ...enrollment },
+			);
 		},
 
 		async findBenefitEnrollmentByIdempotencyKey(input: {
@@ -2276,7 +2280,9 @@ export function createMemoryCompensationBenefitsMethods(
 		}): Promise<Result<BenefitEnrollment | null>> {
 			const key = `${input.organizationId}:${input.idempotencyKey}`;
 			const enrollment = state.enrollmentIdempotencyByKey.get(key) ?? null;
-			return await ok(enrollment === null ? null : { ...enrollment });
+			return await errorResult.ok(
+				enrollment === null ? null : { ...enrollment },
+			);
 		},
 
 		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
@@ -2305,7 +2311,7 @@ export function createMemoryCompensationBenefitsMethods(
 				existing &&
 				existing.fingerprint === record.createRequestFingerprint
 			) {
-				return ok({ ...existing });
+				return errorResult.ok({ ...existing });
 			}
 			if (existing) {
 				return conflict("Idempotency key already used with different data");
@@ -2457,7 +2463,7 @@ export function createMemoryCompensationBenefitsMethods(
 				return outbox;
 			}
 
-			return ok({ ...enrollment });
+			return errorResult.ok({ ...enrollment });
 		},
 
 		async waiveBenefit(
@@ -2555,7 +2561,7 @@ export function createMemoryCompensationBenefitsMethods(
 				return outbox;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async endBenefitEnrollment(
@@ -2651,7 +2657,7 @@ export function createMemoryCompensationBenefitsMethods(
 				return outbox;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async cancelBenefitEnrollment(
@@ -2737,7 +2743,7 @@ export function createMemoryCompensationBenefitsMethods(
 				return outbox;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async listBenefitEnrollmentsByEmployee(input: {
@@ -2757,7 +2763,7 @@ export function createMemoryCompensationBenefitsMethods(
 			const totalCount = enrollments.length;
 			const offset = (input.page - 1) * input.pageSize;
 			const paginated = enrollments.slice(offset, offset + input.pageSize);
-			return await ok({
+			return await errorResult.ok({
 				enrollments: paginated.map((e) => ({ ...e })),
 				totalCount,
 				page: input.page,
@@ -2773,9 +2779,9 @@ export function createMemoryCompensationBenefitsMethods(
 				input.dependentId,
 			);
 			if (!dependent || dependent.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...dependent });
+			return await errorResult.ok({ ...dependent });
 		},
 
 		async listBenefitEnrollmentDependentsByEnrollment(input: {
@@ -2790,7 +2796,9 @@ export function createMemoryCompensationBenefitsMethods(
 					dependent.enrollmentId === input.enrollmentId,
 			);
 			dependents.sort((a, b) => a.effectiveFrom.localeCompare(b.effectiveFrom));
-			return await ok(dependents.map((dependent) => ({ ...dependent })));
+			return await errorResult.ok(
+				dependents.map((dependent) => ({ ...dependent })),
+			);
 		},
 
 		async addBenefitEnrollmentDependent(
@@ -2872,7 +2880,7 @@ export function createMemoryCompensationBenefitsMethods(
 				return audit;
 			}
 
-			return ok({ ...dependent });
+			return errorResult.ok({ ...dependent });
 		},
 
 		async endBenefitEnrollmentDependent(
@@ -2943,7 +2951,7 @@ export function createMemoryCompensationBenefitsMethods(
 				return audit;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		// --- Handoff ---
@@ -2979,7 +2987,7 @@ export function createMemoryCompensationBenefitsMethods(
 			}
 
 			if (!activeCompensation) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
 
 			const activeBenefitEnrollments = Array.from(
@@ -3000,7 +3008,7 @@ export function createMemoryCompensationBenefitsMethods(
 				})),
 			};
 
-			return await ok(handoff);
+			return await errorResult.ok(handoff);
 		},
 
 		// Learning Course methods

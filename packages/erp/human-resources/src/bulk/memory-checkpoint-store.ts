@@ -1,4 +1,4 @@
-import { fail, ok } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 import { renderBulkErrorFile } from "./error-file";
 import type {
 	BulkAuditEvent,
@@ -24,7 +24,7 @@ export function createMemoryBulkCheckpointPort<
 	return {
 		load(input) {
 			return runSynchronousMemoryOperation(() =>
-				ok(
+				errorResult.ok(
 					values.get(`${input.organizationId}:${input.idempotencyKey}`) ?? null,
 				),
 			);
@@ -34,10 +34,14 @@ export function createMemoryBulkCheckpointPort<
 				const key = `${input.checkpoint.organizationId}:${input.checkpoint.idempotencyKey}`;
 				const currentVersion = values.get(key)?.version ?? null;
 				if (currentVersion !== input.expectedVersion) {
-					return fail("CONFLICT", "Bulk checkpoint version changed");
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+					});
 				}
 				if (input.checkpoint.version !== (currentVersion ?? 0) + 1) {
-					return fail("CONFLICT", "Bulk checkpoint version is not sequential");
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+					});
 				}
 				values.set(key, input.checkpoint);
 				auditEvents.set(key, structuredClone(input.checkpoint.auditTrail));
@@ -51,12 +55,12 @@ export function createMemoryBulkCheckpointPort<
 						content: errorFile,
 					});
 				}
-				return ok(input.checkpoint);
+				return errorResult.ok(input.checkpoint);
 			});
 		},
 		listAuditEvents(input) {
 			return runSynchronousMemoryOperation(() =>
-				ok(
+				errorResult.ok(
 					structuredClone(
 						auditEvents.get(
 							`${input.organizationId}:${input.idempotencyKey}`,
@@ -70,7 +74,7 @@ export function createMemoryBulkCheckpointPort<
 				const artifact = errorArtifacts.get(
 					`${input.organizationId}:${input.idempotencyKey}`,
 				);
-				return ok(artifact ? structuredClone(artifact) : null);
+				return errorResult.ok(artifact ? structuredClone(artifact) : null);
 			});
 		},
 	};

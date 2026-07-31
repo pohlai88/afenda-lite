@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	type HumanResourcesCommandOptions,
@@ -84,13 +84,14 @@ export async function createTimesheet(
 			}
 			if (existing.data !== null) {
 				if (existing.data.createRequestFingerprint !== fingerprint) {
-					return fail(
-						"CONFLICT",
-						"Idempotency key reused with different payload",
-						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-					);
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+						internalContext: humanResourcesErrorDetails(
+							HUMAN_RESOURCES_ERROR_CONFLICT,
+						),
+					});
 				}
-				return ok(existing.data.timesheet);
+				return errorResult.ok(existing.data.timesheet);
 			}
 			return store.createTimesheet(
 				{
@@ -258,11 +259,13 @@ export async function submitTimesheet(
 				return timesheet;
 			}
 			if (timesheet.data === null) {
-				return fail("NOT_FOUND", "Timesheet not found");
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+				});
 			}
 			const policy =
 				timesheet.data.employmentId === null
-					? ok(null)
+					? errorResult.ok(null)
 					: await store.resolveTimePolicy({
 							organizationId: data.organizationId,
 							employmentId: timesheet.data.employmentId,
@@ -316,11 +319,11 @@ export async function approveTimesheet(
 				return authority;
 			}
 			if (authority.data === null) {
-				return fail(
-					"FORBIDDEN",
-					"Actor does not hold the required approval authority",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
-				);
+				return errorResult.fail("FORBIDDEN", {
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_FORBIDDEN,
+					),
+				});
 			}
 			return store.approveTimesheet(
 				{

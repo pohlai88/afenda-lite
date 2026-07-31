@@ -1,5 +1,6 @@
 "use server";
 
+import type { Result as ActionResult } from "@afenda/errors";
 import type {
 	EmployeeCase,
 	EmployeeCaseAction,
@@ -58,13 +59,11 @@ import {
 	resolveEmployeeCaseAppealInputSchema,
 	updateEmployeeCaseClassificationInputSchema,
 } from "@afenda/human-resources/schemas";
-
 import {
 	invokeHrPackage,
 	runHrComplianceHumanResourcesAction as runHrHumanResourcesAction,
 } from "@/app/actions/hr-action-runner";
 import { hrActionSchema } from "@/app/actions/hr-mutation-context";
-import type { ActionResult } from "@/modules/platform/schemas/action-result";
 
 const CASE_OPEN = "human-resources.employee-case.open" as const;
 const CASE_ASSIGNED_READ =

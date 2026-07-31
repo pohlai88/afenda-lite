@@ -19,7 +19,7 @@ import {
 	ne,
 	runNeonHttpTransaction,
 } from "@afenda/db";
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_EXPIRED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_NEARING_EXPIRY_EVENT,
@@ -304,15 +304,15 @@ function mapDocumentRequirement(
 	}
 	const status = documentRequirementStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail("INTERNAL_ERROR", "Invalid document requirement status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 	const applicability = documentRequirementApplicabilitySchema.safeParse(
 		row.applicabilityJson,
 	);
 	if (!applicability.success) {
-		return fail("INTERNAL_ERROR", "Invalid document requirement applicability");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		code: row.code,
@@ -374,12 +374,9 @@ function mapEmployeeDocument(
 		row.verificationStatus,
 	);
 	if (!verificationStatus.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid employee document verification status",
-		);
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		employeeId: employeeId.data,
@@ -447,9 +444,9 @@ function mapWorkEligibility(
 	}
 	const status = workEligibilityStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail("INTERNAL_ERROR", "Invalid work eligibility status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		employeeId: employeeId.data,
@@ -520,9 +517,9 @@ function mapPolicyAcknowledgement(
 		row.requirementStatus,
 	);
 	if (!requirementStatus.success) {
-		return fail("INTERNAL_ERROR", "Invalid policy acknowledgement status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		employeeId: employeeId.data,
@@ -583,7 +580,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapDocumentRequirement(row);
 		} catch (error) {
@@ -608,7 +605,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapDocumentRequirement(row);
 		} catch (error) {
@@ -1026,7 +1023,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			const totalCount = requirements.length;
 			const offset = (input.page - 1) * input.pageSize;
 			const paginated = requirements.slice(offset, offset + input.pageSize);
-			return ok({
+			return errorResult.ok({
 				requirements: paginated,
 				totalCount,
 				page: input.page,
@@ -1054,7 +1051,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapEmployeeDocument(row);
 		} catch (error) {
@@ -1076,7 +1073,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const mapped = mapEmployeeDocument(row);
 			if (!mapped.ok) {
@@ -1086,9 +1083,9 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 				row.createIdempotencyKey === null ||
 				row.createRequestFingerprint === null
 			) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
-			return ok({
+			return errorResult.ok({
 				document: mapped.data,
 				createRequestFingerprint: row.createRequestFingerprint,
 			} satisfies IdempotentEmployeeDocumentRecord);
@@ -1115,7 +1112,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			) {
 				return conflict("Idempotency key reused with different payload");
 			}
-			return ok(replay.data.document);
+			return errorResult.ok(replay.data.document);
 		}
 
 		const employee = await this.getEmployeeById({
@@ -1316,7 +1313,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 					) {
 						return conflict("Idempotency key reused with different payload");
 					}
-					return ok(retry.data.document);
+					return errorResult.ok(retry.data.document);
 				}
 			}
 			return mapPersistenceFailure(
@@ -1937,7 +1934,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			documents.sort((a, b) => b.issuedOn.localeCompare(a.issuedOn));
 			const totalCount = documents.length;
 			const offset = (input.page - 1) * input.pageSize;
-			return ok({
+			return errorResult.ok({
 				documents: documents.slice(offset, offset + input.pageSize),
 				totalCount,
 				page: input.page,
@@ -2010,7 +2007,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			missing.sort((a, b) => a.code.localeCompare(b.code));
 			const totalCount = missing.length;
 			const offset = (input.page - 1) * input.pageSize;
-			return ok({
+			return errorResult.ok({
 				requirements: missing.slice(offset, offset + input.pageSize),
 				totalCount,
 				page: input.page,
@@ -2056,7 +2053,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			});
 			const totalCount = documents.length;
 			const offset = (input.page - 1) * input.pageSize;
-			return ok({
+			return errorResult.ok({
 				documents: documents.slice(offset, offset + input.pageSize),
 				totalCount,
 				page: input.page,
@@ -2084,7 +2081,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapWorkEligibility(row);
 		} catch (error) {
@@ -2108,7 +2105,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapWorkEligibility(row);
 		} catch (error) {
@@ -2133,7 +2130,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const mapped = mapWorkEligibility(row);
 			if (!mapped.ok) {
@@ -2143,9 +2140,9 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 				row.createIdempotencyKey === null ||
 				row.createRequestFingerprint === null
 			) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
-			return ok({
+			return errorResult.ok({
 				eligibility: mapped.data,
 				createRequestFingerprint: row.createRequestFingerprint,
 			} satisfies IdempotentWorkEligibilityRecord);
@@ -2172,7 +2169,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			) {
 				return conflict("Idempotency key reused with different payload");
 			}
-			return ok(replay.data.eligibility);
+			return errorResult.ok(replay.data.eligibility);
 		}
 
 		const employee = await this.getEmployeeById({
@@ -2288,7 +2285,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 					) {
 						return conflict("Idempotency key reused with different payload");
 					}
-					return ok(retry.data.eligibility);
+					return errorResult.ok(retry.data.eligibility);
 				}
 			}
 			return mapPersistenceFailure(error, "Failed to record work eligibility");
@@ -2805,7 +2802,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			});
 			const totalCount = eligibilities.length;
 			const offset = (input.page - 1) * input.pageSize;
-			return ok({
+			return errorResult.ok({
 				eligibilities: eligibilities.slice(offset, offset + input.pageSize),
 				totalCount,
 				page: input.page,
@@ -2833,7 +2830,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapPolicyAcknowledgement(row);
 		} catch (error) {
@@ -2861,7 +2858,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const mapped = mapPolicyAcknowledgement(row);
 			if (!mapped.ok) {
@@ -2871,9 +2868,9 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 				row.createIdempotencyKey === null ||
 				row.createRequestFingerprint === null
 			) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
-			return ok({
+			return errorResult.ok({
 				acknowledgement: mapped.data,
 				createRequestFingerprint: row.createRequestFingerprint,
 			} satisfies IdempotentPolicyAcknowledgementRecord);
@@ -2900,7 +2897,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			) {
 				return conflict("Idempotency key reused with different payload");
 			}
-			return ok(replay.data.acknowledgement);
+			return errorResult.ok(replay.data.acknowledgement);
 		}
 
 		const employee = await this.getEmployeeById({
@@ -3043,7 +3040,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 					) {
 						return conflict("Idempotency key reused with different payload");
 					}
-					return ok(retry.data.acknowledgement);
+					return errorResult.ok(retry.data.acknowledgement);
 				}
 			}
 			if (isPostgresUniqueViolation(error)) {
@@ -3437,7 +3434,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapPolicyAcknowledgement(row);
 		} catch (error) {
@@ -3476,7 +3473,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			);
 			const totalCount = acknowledgements.length;
 			const offset = (input.page - 1) * input.pageSize;
-			return ok({
+			return errorResult.ok({
 				acknowledgements: acknowledgements.slice(
 					offset,
 					offset + input.pageSize,
@@ -3526,7 +3523,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			});
 			const totalCount = acknowledgements.length;
 			const offset = (input.page - 1) * input.pageSize;
-			return ok({
+			return errorResult.ok({
 				acknowledgements: acknowledgements.slice(
 					offset,
 					offset + input.pageSize,
@@ -3625,7 +3622,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			);
 		}
 
-		return ok({
+		return errorResult.ok({
 			organizationId: input.organizationId,
 			employeeId: input.employeeId,
 			missingRequiredDocumentCount: missing.data.totalCount,

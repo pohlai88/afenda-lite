@@ -1,4 +1,4 @@
-import { fail, ok } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 import { describe, expect, it, vi } from "vitest";
 import {
 	createHumanResourcesAuditIntegritySeal,
@@ -38,7 +38,7 @@ function exportPorts(allowed = true): HumanResourcesBulkExportPorts {
 	return {
 		authorize: vi.fn(async () => allowed),
 		recordPrivacyEvidence: vi.fn(async () =>
-			ok({ evidenceId: "evidence-security" }),
+			errorResult.ok({ evidenceId: "evidence-security" }),
 		),
 	};
 }
@@ -51,7 +51,7 @@ describe("Phase 13.3 HR security verification", () => {
 			definition,
 			{
 				list: vi.fn(async () =>
-					ok([
+					errorResult.ok([
 						{
 							organizationId: "org-security-b",
 							recordId: "employee-foreign",
@@ -72,7 +72,7 @@ describe("Phase 13.3 HR security verification", () => {
 	});
 
 	it("rejects sensitive-field probing before reading the export source", async () => {
-		const source = { list: vi.fn(async () => ok([])) };
+		const source = { list: vi.fn(async () => errorResult.ok([])) };
 		const result = await runHumanResourcesBulkExport(
 			{ ...request, requestedFields: ["taxIdentifier-secret-probe"] },
 			definition,
@@ -87,7 +87,7 @@ describe("Phase 13.3 HR security verification", () => {
 
 	it("prevents privilege escalation by binding permission to the export definition", async () => {
 		const ports = exportPorts(true);
-		const source = { list: vi.fn(async () => ok([])) };
+		const source = { list: vi.fn(async () => errorResult.ok([])) };
 		const result = await runHumanResourcesBulkExport(
 			{
 				...request,
@@ -105,7 +105,7 @@ describe("Phase 13.3 HR security verification", () => {
 
 	it("fails bulk export closed when authorization is denied", async () => {
 		const ports = exportPorts(false);
-		const source = { list: vi.fn(async () => ok([])) };
+		const source = { list: vi.fn(async () => errorResult.ok([])) };
 		const result = await runHumanResourcesBulkExport(
 			request,
 			definition,
@@ -156,7 +156,7 @@ describe("Phase 13.3 HR security verification", () => {
 			},
 		);
 
-		expect(result).toEqual(fail("INTERNAL_ERROR", "audit port failed"));
+		expect(result).toEqual(errorResult.fail("INTERNAL_ERROR"));
 		const persisted = await store.listCompensationGrades({
 			organizationId: "org-security-a",
 			page: 1,

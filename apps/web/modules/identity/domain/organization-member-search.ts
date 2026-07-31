@@ -3,7 +3,12 @@
  * Neon Auth remains membership SSOT; index rows are derived.
  */
 
-import { failFromUnknown, ok, type Result } from "@afenda/errors/result";
+import {
+	errorIngress,
+	errorProject,
+	errorResult,
+	type Result,
+} from "@afenda/errors";
 import {
 	deleteSearchDocument,
 	listSearchDocumentIds,
@@ -62,9 +67,8 @@ export async function syncOrganizationMemberSearchIndex(
 	try {
 		users = await listOrganizationUsers(orgId);
 	} catch (error) {
-		return failFromUnknown(
-			error,
-			"Failed to list organization users for search sync",
+		return errorProject.result(
+			errorIngress.unknown(error, { operation: "errors.consumer.unknown" }),
 		);
 	}
 
@@ -112,7 +116,7 @@ export async function syncOrganizationMemberSearchIndex(
 		}
 	}
 
-	return ok({ upserted: users.length, pruned });
+	return errorResult.ok({ upserted: users.length, pruned });
 }
 
 /** Org-scoped FTS over indexed members. */
@@ -134,5 +138,5 @@ export async function searchOrganizationMembers(
 	if (!hits.ok) {
 		return hits;
 	}
-	return ok(hits.data.map(toSearchHit));
+	return errorResult.ok(hits.data.map(toSearchHit));
 }

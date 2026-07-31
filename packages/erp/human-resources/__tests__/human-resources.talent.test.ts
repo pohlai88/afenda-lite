@@ -1703,7 +1703,7 @@ describe("human-resources talent (memory)", () => {
 			expect(humanResourcesCodeFromResult(stale)).toBe(
 				HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
 			);
-			expect(stale.message).toContain("stale");
+			expect(stale.code).toBe("BAD_REQUEST");
 		});
 
 		async function seedSuccessionPlan(

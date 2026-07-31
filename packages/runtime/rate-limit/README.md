@@ -26,7 +26,7 @@ if (!result.ok) {
 
 Successful and `rate_limited` results include `quota: { limit, remaining, resetEpochMs }` for `X-RateLimit-*` attach via `@afenda/http` `applyRateLimitHeaders`. `unavailable` has no quota.
 
-**Living consumers:** `@afenda/auth` (`auth_bff_post` on BFF POSTs — stamps RateLimit headers on Response); `apps/web` Path A sign-in Action (`auth_sign_in` keyed by email). Map `AppError` to product `ActionResult` / HTTP at the adapter — do not invent `{ success, data }` envelopes.
+**Living consumers:** `@afenda/auth` (`auth_bff_post` on BFF POSTs — stamps RateLimit headers on Response); `apps/web` Path A sign-in Action (`auth_sign_in` keyed by email). Project the opaque failure through root `@afenda/errors` capabilities at the adapter — do not invent `{ success, data }` envelopes.
 
 ## Store
 

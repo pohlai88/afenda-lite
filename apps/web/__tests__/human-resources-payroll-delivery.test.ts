@@ -1,4 +1,4 @@
-import { ok } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 import {
 	type ApprovedPayrollHandoff,
 	HANDOFF_PAYROLL_CONTRACT_VERSION,
@@ -51,7 +51,7 @@ function eventResult(
 		ReturnType<typeof createPayrollDeliveryEventProducer>["publish"]
 	>[0],
 ) {
-	return ok({
+	return errorResult.ok({
 		id: "event-1",
 		type: "platform.human-resources.payroll-delivery.requested.v1" as const,
 		sourceModule: "platform" as const,
@@ -106,11 +106,7 @@ describe("HR payroll delivery production composition", () => {
 		const telemetry: Array<{ level: string; event: string; code: string }> = [];
 		const producer = createPayrollDeliveryEventProducer(
 			{
-				publish: async () => ({
-					ok: false,
-					code: "SERVICE_UNAVAILABLE",
-					message: "upstream payload contained employee@example.com",
-				}),
+				publish: async () => errorResult.fail("SERVICE_UNAVAILABLE"),
 			},
 			"operator-1",
 			createProductionHrObservabilityPorts(

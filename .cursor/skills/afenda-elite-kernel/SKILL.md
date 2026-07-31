@@ -1,6 +1,6 @@
 ---
 name: afenda-elite-kernel
-description: Deterministically scaffold, apply, implement, upgrade, verify, reopen, and readiness-seal reusable Afenda package kernels, including the protected @afenda/errors cross-boundary error kernel. Use when creating a new core package capability, applying an established kernel contract to another target, extending an existing package with new behavior, upgrading its public contract or internals, integrating @afenda/errors at a consumer boundary, or producing repeatable readiness evidence before declaring that kernel sealed.
+description: Deterministically discover, scaffold, apply, implement, upgrade, verify, reopen, and readiness-seal reusable Afenda package kernels, including package-band inventory and the protected @afenda/errors root-capability contract. Use when inventorying a package band such as packages/foundation, creating or extending a core package capability, upgrading its public contract or internals, applying an unlocked @afenda/errors consumer boundary, or producing repeatable readiness evidence.
 ---
 
 # Afenda Elite Kernel
@@ -53,7 +53,15 @@ Run the read-only inspector from the repository root:
 node .cursor/skills/afenda-elite-kernel/scripts/inspect-target.mjs <target>
 ```
 
-Record `contentDigest`, public exports, scripts, dependencies, source files, tests, and working-tree state. Re-run after implementation and at seal.
+For a package target, record `contentDigest`, public exports, scripts,
+dependencies, source files, tests, and working-tree state. For a category target
+such as `packages/foundation`, use `childPackages` to compare its immediate
+packages without treating the category directory as a package or semantic
+owner.
+
+Inventory may cover a category. Implementation must select exactly one child
+package and one capability before editing. Re-run the selected package snapshot
+after implementation and at seal.
 
 ### 2. Classify
 
@@ -129,4 +137,4 @@ Remaining conditions: none | <blocking condition>
 - [references/lifecycle.md](references/lifecycle.md) — modes, transitions, and required outputs.
 - [references/seal-contract.md](references/seal-contract.md) — readiness gates and seal record schema.
 - [references/errors-kernel.md](references/errors-kernel.md) — protected error-kernel contract, consumer application, upgrade rules, and focused gates.
-- `scripts/inspect-target.mjs` — stable, read-only target inventory and content digest.
+- `scripts/inspect-target.mjs` — stable target or immediate package-band inventory, content digests, package metadata, and working-tree evidence.

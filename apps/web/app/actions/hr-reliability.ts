@@ -3,8 +3,8 @@
 import { createHash } from "node:crypto";
 
 import { createAuditRecorder } from "@afenda/audit";
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { z } from "zod";
-
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runHrIntegrationOperatorPermissionAction as runOperatorPermissionAction } from "@/app/actions/run-hr-operator-permission-action";
 import {
@@ -12,8 +12,7 @@ import {
 	checkpointProductionConnectorCursor,
 	replayProductionReliabilityDeadLetter,
 } from "@/modules/platform/domain/human-resources-reliability-worker";
-import type { ActionResult } from "@/modules/platform/schemas/action-result";
-import { actionFail } from "@/modules/platform/schemas/action-result";
+
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 const replaySchema = z.object({ deadLetterId: z.string().uuid() }).strict();
@@ -65,11 +64,9 @@ export async function replayHumanResourcesReliabilityDeadLetterAction(input: {
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(replaySchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid dead-letter id.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid dead-letter id.",
+				});
 			}
 			const result = await replayProductionReliabilityDeadLetter({
 				organizationId: session.orgId,
@@ -115,11 +112,9 @@ export async function repairHumanResourcesConnectorCursorAction(input: {
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(cursorSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid connector cursor.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid connector cursor.",
+				});
 			}
 			const result = await checkpointProductionConnectorCursor({
 				organizationId: session.orgId,
@@ -159,11 +154,9 @@ export async function acknowledgeHumanResourcesReliabilityWorkAction(input: {
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(acknowledgementSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid acknowledgement.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid acknowledgement.",
+				});
 			}
 			const result = await acknowledgeProductionReliabilityWork({
 				organizationId: session.orgId,

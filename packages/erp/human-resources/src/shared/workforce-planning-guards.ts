@@ -1,4 +1,4 @@
-import { fail, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
@@ -24,13 +24,12 @@ export function assertHeadcountPlanStatusTransition(
 	to: HeadcountPlanStatus,
 ): Result<void> {
 	if (!PLAN_TRANSITIONS[from].includes(to)) {
-		return fail(
-			"BAD_REQUEST",
-			`Cannot transition headcount plan from ${from} to ${to}.`,
-			humanResourcesErrorDetails(
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "The request is invalid",
+			internalContext: humanResourcesErrorDetails(
 				HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
 			),
-		);
+		});
 	}
 	return { ok: true, data: undefined };
 }
@@ -40,11 +39,12 @@ export function assertValidHeadcountPeriod(
 	periodEnd: string,
 ): Result<void> {
 	if (periodEnd < periodStart) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Plan period end must be on or after period start.",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
 	return { ok: true, data: undefined };
 }
@@ -55,25 +55,28 @@ export function assertNonNegativeCapacity(input: {
 }): Result<void> {
 	const fte = Number(input.plannedFte);
 	if (!Number.isFinite(fte) || fte < 0) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Planned FTE cannot be negative.",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
 	if (input.plannedHeadcount < 0) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Planned headcount cannot be negative.",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
 	if (fte === 0 && input.plannedHeadcount === 0) {
-		return fail(
-			"VALIDATION_ERROR",
-			"At least one of planned FTE or planned headcount must be positive.",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
 	return { ok: true, data: undefined };
 }
@@ -87,18 +90,20 @@ export function assertReservationWithinAvailability(input: {
 	const availFte = Number(input.availableFte);
 	const reserveFte = Number(input.reservedFte);
 	if (reserveFte > availFte + 1e-9) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Reservation exceeds available FTE capacity.",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
 	if (input.reservedHeadcount > input.availableHeadcount) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Reservation exceeds available headcount capacity.",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
 	return { ok: true, data: undefined };
 }

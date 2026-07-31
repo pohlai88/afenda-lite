@@ -1,5 +1,6 @@
 "use client";
 
+import type { Result as ActionResult } from "@afenda/errors";
 import {
 	Alert,
 	AlertDescription,
@@ -12,7 +13,6 @@ import {
 } from "@afenda/ui-system";
 import type { ComponentProps } from "react";
 import { useActionState } from "react";
-
 import {
 	type AddSalesInvoiceLineActionState,
 	addSalesInvoiceLineAction,
@@ -37,7 +37,6 @@ import {
 	type PostSalesInvoiceActionState,
 	postSalesInvoiceAction,
 } from "@/app/actions/post-sales-invoice";
-import type { ActionResult } from "@/modules/platform/schemas/action-result";
 
 interface Field {
 	label: string;

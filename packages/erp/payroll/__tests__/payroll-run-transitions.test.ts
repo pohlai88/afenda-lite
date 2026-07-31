@@ -54,7 +54,7 @@ describe("payroll run transitions", () => {
 				if (result.ok) {
 					continue;
 				}
-				expect(result.details?.payrollCode).toBe("payroll.invalid_state");
+				expect(result.code).toBe("CONFLICT");
 			}
 		}
 	});

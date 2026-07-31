@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
@@ -31,14 +31,15 @@ export function assertNoEmploymentContractOverlap(input: {
 				endsOnB: contract.endsOn,
 			})
 		) {
-			return fail(
-				"CONFLICT",
-				"Contract date range overlaps an existing active contract for this employment",
-				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "The request conflicts with current state",
+				internalContext: humanResourcesErrorDetails(
+					HUMAN_RESOURCES_ERROR_CONFLICT,
+				),
+			});
 		}
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertContractWithinEmployment(input: {
@@ -48,42 +49,46 @@ export function assertContractWithinEmployment(input: {
 	employmentEndsOn: string | null;
 }): Result<void> {
 	if (input.contractStartsOn < input.employmentStartsOn) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Contract start date precedes employment start date",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
 	if (input.employmentEndsOn !== null) {
 		if (input.contractEndsOn === null) {
-			return fail(
-				"VALIDATION_ERROR",
-				"Open-ended contract exceeds employment tenure",
-				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-			);
+			return errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "The submitted data is invalid",
+				internalContext: humanResourcesErrorDetails(
+					HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+				),
+			});
 		}
 		if (input.contractEndsOn > input.employmentEndsOn) {
-			return fail(
-				"VALIDATION_ERROR",
-				"Contract end date exceeds employment end date",
-				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-			);
+			return errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "The submitted data is invalid",
+				internalContext: humanResourcesErrorDetails(
+					HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+				),
+			});
 		}
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertEmploymentContractMutable(input: {
 	lineageStatus: EmploymentContractLineageStatus;
 }): Result<void> {
 	if (input.lineageStatus === "superseded") {
-		return fail(
-			"CONFLICT",
-			"Superseded contracts cannot be modified",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "The request conflicts with current state",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_CONFLICT,
+			),
+		});
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function compareEmploymentContractsByLineage(

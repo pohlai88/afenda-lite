@@ -1,6 +1,11 @@
 "use server";
 
 import { getSession } from "@afenda/auth";
+import {
+	type ResultFailure as ActionFailure,
+	type Result as ActionResult,
+	errorResult,
+} from "@afenda/errors";
 import { createCorrelationId } from "@afenda/http";
 import {
 	createItemVariant,
@@ -13,12 +18,6 @@ import { mapPackageResult } from "@/app/actions/map-package-result";
 import { forbidUnlessPermission } from "@/app/actions/permission-gate";
 import { createMasterDataAuthorizationPort } from "@/lib/erp/master-data-authorization-port";
 import { logProductEvent } from "@/modules/platform/observability/product-log";
-import {
-	type ActionFailure,
-	type ActionResult,
-	actionFail,
-	actionFailInternal,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export interface CreateItemVariantActionData {
@@ -55,18 +54,16 @@ function parseAttributeValues(
 		}
 		const parsedId = attributeIdSchema.safeParse(raw);
 		if (!parsedId.success) {
-			return actionFail(
-				"VALIDATION_ERROR",
-				"One or more attribute ids are invalid.",
-			);
+			return errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "One or more attribute ids are invalid.",
+			});
 		}
 		attributeIds.push(parsedId.data);
 	}
 	if (attributeIds.length === 0) {
-		return actionFail(
-			"VALIDATION_ERROR",
-			"Select a template with at least one attribute value.",
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "Select a template with at least one attribute value.",
+		});
 	}
 
 	const values: AttributeValueInput[] = [];
@@ -84,27 +81,26 @@ function parseAttributeValues(
 		const hasOption = optionId !== undefined;
 		const hasText = valueText !== undefined;
 		if (hasOption === hasText) {
-			return actionFail(
-				"VALIDATION_ERROR",
-				"Each template attribute needs exactly one of option or text value.",
-			);
+			return errorResult.fail("VALIDATION_ERROR", {
+				publicMessage:
+					"Each template attribute needs exactly one of option or text value.",
+			});
 		}
 		if (optionId !== undefined) {
 			const optionParsed = attributeIdSchema.safeParse(optionId);
 			if (!optionParsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"One or more option ids are invalid.",
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "One or more option ids are invalid.",
+				});
 			}
 			values.push({ attributeId, optionId: optionParsed.data });
 			continue;
 		}
 		if (valueText === undefined) {
-			return actionFail(
-				"VALIDATION_ERROR",
-				"Each template attribute needs exactly one of option or text value.",
-			);
+			return errorResult.fail("VALIDATION_ERROR", {
+				publicMessage:
+					"Each template attribute needs exactly one of option or text value.",
+			});
 		}
 		values.push({ attributeId, valueText });
 	}
@@ -131,11 +127,9 @@ export async function createItemVariantAction(
 		itemGroupId: formData.get("itemGroupId"),
 	});
 	if (!parsed.success) {
-		return actionFail(
-			"VALIDATION_ERROR",
-			"Enter a valid variant code, template, and item group.",
-			parsed.details,
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "Enter a valid variant code, template, and item group.",
+		});
 	}
 
 	const attributeValues = parseAttributeValues(formData);
@@ -184,9 +178,6 @@ export async function createItemVariantAction(
 			path: "createItemVariantAction",
 			code: "INTERNAL_ERROR",
 		});
-		return actionFailInternal(
-			"Could not create item variant. Try again or contact an admin.",
-			correlationId,
-		);
+		return errorResult.fail("INTERNAL_ERROR", { correlationId });
 	}
 }

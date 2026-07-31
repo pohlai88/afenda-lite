@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type { HumanResourcesEmployeeId } from "../brands";
 import {
@@ -30,15 +30,16 @@ import {
 } from "./leave-status";
 
 function cannotTransition(
-	entity: string,
-	current: string,
-	next: string,
+	_entity: string,
+	_current: string,
+	_next: string,
 ): Result<never> {
-	return fail(
-		"BAD_REQUEST",
-		`Cannot transition ${entity} from '${current}' to '${next}'`,
-		humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION),
-	);
+	return errorResult.fail("BAD_REQUEST", {
+		publicMessage: "The request is invalid",
+		internalContext: humanResourcesErrorDetails(
+			HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+		),
+	});
 }
 
 export function assertLeavePolicyStatusTransition(
@@ -48,7 +49,7 @@ export function assertLeavePolicyStatusTransition(
 	if (!canTransitionLeavePolicyStatus(current, next)) {
 		return cannotTransition("leave policy", current, next);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertLeaveRequestStatusTransition(
@@ -58,7 +59,7 @@ export function assertLeaveRequestStatusTransition(
 	if (!canTransitionLeaveRequestStatus(current, next)) {
 		return cannotTransition("leave request", current, next);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertLeaveEntitlementStatusTransition(
@@ -68,7 +69,7 @@ export function assertLeaveEntitlementStatusTransition(
 	if (!canTransitionLeaveEntitlementStatus(current, next)) {
 		return cannotTransition("leave entitlement", current, next);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertLeavePolicyEditable(
@@ -77,7 +78,7 @@ export function assertLeavePolicyEditable(
 	if (!isLeavePolicyEditable(status)) {
 		return invalidState("Leave policy must be in draft status");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertLeavePolicyPublished(
@@ -86,7 +87,7 @@ export function assertLeavePolicyPublished(
 	if (!isLeavePolicyPublished(status)) {
 		return invalidState("Leave policy must be published");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertLeaveEntitlementActive(
@@ -95,7 +96,7 @@ export function assertLeaveEntitlementActive(
 	if (!isLeaveEntitlementActive(status)) {
 		return invalidState("Leave entitlement must be active");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertEmploymentActiveForLeave(input: {
@@ -109,7 +110,7 @@ export function assertEmploymentActiveForLeave(input: {
 	if (input.endsOn !== null && input.endsOn < input.asOfDate) {
 		return invalidState("Employment has ended");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertNoSelfApproval(input: {
@@ -121,13 +122,13 @@ export function assertNoSelfApproval(input: {
 		!input.allowSelfApproval &&
 		input.employeeUserId === input.approverUserId
 	) {
-		return fail(
-			"FORBIDDEN",
-			"Self-approval is not allowed for this leave policy",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("FORBIDDEN", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertSufficientLeaveBalance(input: {
@@ -136,12 +137,12 @@ export function assertSufficientLeaveBalance(input: {
 	allowsNegativeBalance: boolean;
 }): Result<void> {
 	if (input.allowsNegativeBalance) {
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	}
 	if (compareLeaveQuantity(input.balance, input.requestedQuantity) < 0) {
 		return invalidInput("Insufficient leave balance");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertLeaveAccrualAllowed(input: {
@@ -166,7 +167,7 @@ export function assertLeaveAccrualAllowed(input: {
 			"Accrual quantity must match the policy accrual quantity per period",
 		);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertLeaveCarryForwardAllowed(input: {
@@ -191,7 +192,7 @@ export function assertLeaveCarryForwardAllowed(input: {
 			"Carried quantity exceeds policy carry-forward maximum",
 		);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertLeaveAdjustmentBalanceAllowed(input: {
@@ -249,7 +250,7 @@ export function assertNoLeaveOverlap(
 			}
 		}
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertApprovalDecisionMatchesRequestTransition(input: {
@@ -265,7 +266,7 @@ export function assertApprovalDecisionMatchesRequestTransition(input: {
 	if (expected[input.decision] !== input.nextStatus) {
 		return invalidInput("Approval decision does not match request transition");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertApproverIsPrimaryManager(input: {
@@ -273,20 +274,20 @@ export function assertApproverIsPrimaryManager(input: {
 	primaryManagerEmployeeId: HumanResourcesEmployeeId | null;
 }): Result<void> {
 	if (input.primaryManagerEmployeeId === null) {
-		return fail(
-			"FORBIDDEN",
-			"No primary manager is assigned for this employee",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
-		);
+		return errorResult.fail("FORBIDDEN", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_FORBIDDEN,
+			),
+		});
 	}
 	if (input.approverEmployeeId !== input.primaryManagerEmployeeId) {
-		return fail(
-			"FORBIDDEN",
-			"Approver is not the employee's primary manager",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
-		);
+		return errorResult.fail("FORBIDDEN", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_FORBIDDEN,
+			),
+		});
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertLeaveRequestAmendable(
@@ -295,5 +296,5 @@ export function assertLeaveRequestAmendable(
 	if (status !== "draft" && status !== "returned") {
 		return invalidState("Leave request must be in draft or returned status");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }

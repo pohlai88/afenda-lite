@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_NOT_FOUND,
@@ -112,11 +112,12 @@ export function assignInterviewInterviewer(
 				return interview;
 			}
 			if (interview.data === null) {
-				return fail(
-					"NOT_FOUND",
-					"Interview not found",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_NOT_FOUND,
+					),
+				});
 			}
 
 			const assignable = assertInterviewInterviewerAssignable(
@@ -190,13 +191,14 @@ export function getInterview(
 				return interview;
 			}
 			if (interview.data === null) {
-				return fail(
-					"NOT_FOUND",
-					"Interview not found",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_NOT_FOUND,
+					),
+				});
 			}
-			return ok(interview.data);
+			return errorResult.ok(interview.data);
 		},
 	});
 }
@@ -236,11 +238,12 @@ export function getInterviewEvaluation(
 				return evaluation;
 			}
 			if (evaluation.data === null) {
-				return fail(
-					"NOT_FOUND",
-					"Interview evaluation not found",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_NOT_FOUND,
+					),
+				});
 			}
 
 			const canReadConfidential = await actorHoldsAnyPermission(
@@ -259,7 +262,7 @@ export function getInterviewEvaluation(
 				[HUMAN_RESOURCES_PERMISSION_INTERVIEW_RECORD],
 			);
 
-			return ok(
+			return errorResult.ok(
 				projectInterviewEvaluationForReader(
 					evaluation.data,
 					canReadConfidential,

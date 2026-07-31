@@ -1,6 +1,6 @@
 // biome-ignore-all lint/style/noNestedTernary: Resolution decision timestamps mirror the three-state decision model.
 // biome-ignore-all lint/suspicious/useAwait: Command wrappers expose one asynchronous boundary for delegated resolution transitions.
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS,
@@ -11,7 +11,6 @@ import {
 	type DurableLegalCompanyCommandDependencies,
 	runDurableCompanyCommand,
 } from "../company/commands/durable-command";
-import { corporateAdministrationErrorDetails } from "../error-codes";
 import type { MeetingStore } from "../meetings/store";
 import { parseCorporateAdministrationInput } from "../parse-input";
 import { assertResolutionCanFollowVote, calculateVoteOutcome } from "./rules";
@@ -199,13 +198,10 @@ export async function recordWrittenResolution(
 		return outcome;
 	}
 	if (outcome.data.outcome !== "adopted") {
-		return fail(
-			"CONFLICT",
-			"Corporate Administration written resolution threshold was not met.",
-			corporateAdministrationErrorDetails("CORPORATE_ADMINISTRATION_CONFLICT", {
-				field: "votesFor",
-			}),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage:
+				"Corporate Administration written resolution threshold was not met.",
+		});
 	}
 	const source = await validateSource(
 		dependencies,
@@ -547,14 +543,10 @@ async function recordVoteResolutionParsed(input: {
 				? input.parsed.rejectedAt
 				: undefined;
 	if (decidedAt === undefined) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Corporate Administration resolution decision time is required.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_VALIDATION_FAILED",
-				{ field: input.decidedAtField },
-			),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage:
+				"Corporate Administration resolution decision time is required.",
+		});
 	}
 	const chronology = assertResolutionCanFollowVote({
 		vote: voteData,
@@ -714,16 +706,11 @@ async function validateSource(
 		return result;
 	}
 	if (result.data === null || !result.data.active) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Corporate Administration source document is invalid.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_REFERENCE_INVALID",
-				{ field: "sourceDocumentId" },
-			),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "Corporate Administration source document is invalid.",
+		});
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 function authorize(
@@ -737,25 +724,19 @@ function authorize(
 	});
 }
 
-function notFound(entityType: string): Result<never> {
-	return fail(
-		"NOT_FOUND",
-		"Corporate Administration record was not found.",
-		corporateAdministrationErrorDetails("CORPORATE_ADMINISTRATION_NOT_FOUND", {
-			entityType,
-		}),
-	);
+function notFound(_entityType: string): Result<never> {
+	return errorResult.fail("NOT_FOUND", {
+		publicMessage: "Corporate Administration record was not found.",
+	});
 }
 
-function stale(expectedVersion: number, actualVersion: number): Result<never> {
-	return fail(
-		"CONFLICT",
-		"Corporate Administration record version is stale.",
-		corporateAdministrationErrorDetails(
-			"CORPORATE_ADMINISTRATION_STALE_VERSION",
-			{ expectedVersion, actualVersion },
-		),
-	);
+function stale(
+	_expectedVersion: number,
+	_actualVersion: number,
+): Result<never> {
+	return errorResult.fail("CONFLICT", {
+		publicMessage: "Corporate Administration record version is stale.",
+	});
 }
 
 function serializeVote(result: MeetingVote) {

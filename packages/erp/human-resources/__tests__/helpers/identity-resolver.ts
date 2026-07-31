@@ -1,4 +1,4 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type { HumanResourcesEmployeeId } from "../../src/brands";
 import type {
@@ -75,16 +75,16 @@ export function createMappingIdentityResolver(
 		async resolveEmployeeForActor(input) {
 			const employeeId = mappings[input.actorUserId];
 			if (!employeeId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
 			const asOf = input.asOf ?? new Date().toISOString().slice(0, 10);
 			if (effectiveFrom > asOf) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
 			if (effectiveUntil !== null && effectiveUntil < asOf) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({
+			return await errorResult.ok({
 				employeeId,
 				relationshipType: "self",
 				effectiveFrom,
@@ -92,7 +92,7 @@ export function createMappingIdentityResolver(
 			});
 		},
 		async resolveManagerEmployeesForActor(input) {
-			return await ok(managerReports[input.actorUserId] ?? []);
+			return await errorResult.ok(managerReports[input.actorUserId] ?? []);
 		},
 	};
 }

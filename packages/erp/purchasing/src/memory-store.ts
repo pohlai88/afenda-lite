@@ -1,19 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { fail, ok, type Result } from "@afenda/errors/result";
-
-import {
-	PURCHASING_ERROR_CODE_CONFLICT,
-	PURCHASING_ERROR_ORDER_ALREADY_CANCELLED,
-	PURCHASING_ERROR_ORDER_ALREADY_CLOSED,
-	PURCHASING_ERROR_ORDER_ALREADY_POSTED,
-	PURCHASING_ERROR_ORDER_EMPTY_LINES,
-	PURCHASING_ERROR_ORDER_NOT_DRAFT,
-	PURCHASING_ERROR_ORDER_NOT_FOUND,
-	PURCHASING_ERROR_ORDER_NOT_POSTED,
-	PURCHASING_ERROR_ORDER_VERSION_CONFLICT,
-	purchasingErrorDetails,
-} from "./error-codes";
+import { errorResult, type Result } from "@afenda/errors";
 import type { MutationPorts } from "./ports";
 import { resolveAsync } from "./resolve-async";
 import type {
@@ -53,17 +40,15 @@ export class MemoryPurchasingStore implements PurchasingStore {
 				existing.organizationId === record.organizationId &&
 				existing.createIdempotencyKey === record.createIdempotencyKey
 			) {
-				return ok(cloneOrder(existing));
+				return errorResult.ok(cloneOrder(existing));
 			}
 			if (
 				existing.organizationId === record.organizationId &&
 				existing.normalizedCode === record.normalizedCode
 			) {
-				return fail(
-					"CONFLICT",
-					"Purchase order code already exists",
-					purchasingErrorDetails(PURCHASING_ERROR_CODE_CONFLICT),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Purchase order code already exists",
+				});
 			}
 		}
 		const now = new Date();
@@ -141,7 +126,7 @@ export class MemoryPurchasingStore implements PurchasingStore {
 			this.orders.delete(order.id);
 			return outbox;
 		}
-		return ok(cloneOrder(order));
+		return errorResult.ok(cloneOrder(order));
 	}
 
 	async addLine(
@@ -151,25 +136,22 @@ export class MemoryPurchasingStore implements PurchasingStore {
 	): Promise<Result<PurchaseOrderLine>> {
 		const order = this.orders.get(record.orderId);
 		if (order === undefined || order.organizationId !== record.organizationId) {
-			return fail(
-				"NOT_FOUND",
-				"Purchase order not found",
-				purchasingErrorDetails(PURCHASING_ERROR_ORDER_NOT_FOUND),
-			);
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Purchase order not found",
+			});
 		}
 		const replay = order.lines.find(
 			(existingLine) =>
 				existingLine.lineIdempotencyKey === record.lineIdempotencyKey,
 		);
 		if (replay !== undefined) {
-			return ok({ ...replay });
+			return errorResult.ok({ ...replay });
 		}
 		if (order.status !== "draft") {
-			return fail(
-				"CONFLICT",
-				"Cannot add lines to a posted, cancelled, or closed order",
-				purchasingErrorDetails(PURCHASING_ERROR_ORDER_NOT_DRAFT),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage:
+					"Cannot add lines to a posted, cancelled, or closed order",
+			});
 		}
 		const now = new Date();
 		const line: PurchaseOrderLine = {
@@ -247,7 +229,7 @@ export class MemoryPurchasingStore implements PurchasingStore {
 			order.version -= 1;
 			return outbox;
 		}
-		return ok({ ...line });
+		return errorResult.ok({ ...line });
 	}
 
 	async postOrder(
@@ -257,42 +239,32 @@ export class MemoryPurchasingStore implements PurchasingStore {
 	): Promise<Result<PurchaseOrder>> {
 		const order = this.orders.get(record.orderId);
 		if (order === undefined || order.organizationId !== record.organizationId) {
-			return fail(
-				"NOT_FOUND",
-				"Purchase order not found",
-				purchasingErrorDetails(PURCHASING_ERROR_ORDER_NOT_FOUND),
-			);
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Purchase order not found",
+			});
 		}
 		if (order.status === "posted") {
 			if (order.postIdempotencyKey === record.postIdempotencyKey) {
-				return ok(cloneOrder(order));
+				return errorResult.ok(cloneOrder(order));
 			}
-			return fail(
-				"CONFLICT",
-				"Purchase order is already posted",
-				purchasingErrorDetails(PURCHASING_ERROR_ORDER_ALREADY_POSTED),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Purchase order is already posted",
+			});
 		}
 		if (order.status !== "draft") {
-			return fail(
-				"CONFLICT",
-				"Purchase order cannot be posted",
-				purchasingErrorDetails(PURCHASING_ERROR_ORDER_NOT_DRAFT),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Purchase order cannot be posted",
+			});
 		}
 		if (order.version !== record.expectedVersion) {
-			return fail(
-				"CONFLICT",
-				"Purchase order version conflict",
-				purchasingErrorDetails(PURCHASING_ERROR_ORDER_VERSION_CONFLICT),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Purchase order version conflict",
+			});
 		}
 		if (order.lines.length === 0) {
-			return fail(
-				"CONFLICT",
-				"Cannot post purchase order without lines",
-				purchasingErrorDetails(PURCHASING_ERROR_ORDER_EMPTY_LINES),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Cannot post purchase order without lines",
+			});
 		}
 		const now = new Date();
 		const previous = cloneOrder(order);
@@ -368,7 +340,7 @@ export class MemoryPurchasingStore implements PurchasingStore {
 			Object.assign(order, previous);
 			return outbox;
 		}
-		return ok(cloneOrder(order));
+		return errorResult.ok(cloneOrder(order));
 	}
 
 	async cancelOrder(
@@ -378,35 +350,27 @@ export class MemoryPurchasingStore implements PurchasingStore {
 	): Promise<Result<PurchaseOrder>> {
 		const order = this.orders.get(record.orderId);
 		if (order === undefined || order.organizationId !== record.organizationId) {
-			return fail(
-				"NOT_FOUND",
-				"Purchase order not found",
-				purchasingErrorDetails(PURCHASING_ERROR_ORDER_NOT_FOUND),
-			);
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Purchase order not found",
+			});
 		}
 		if (order.status === "cancelled") {
 			if (order.cancelIdempotencyKey === record.cancelIdempotencyKey) {
-				return ok(cloneOrder(order));
+				return errorResult.ok(cloneOrder(order));
 			}
-			return fail(
-				"CONFLICT",
-				"Purchase order is already cancelled",
-				purchasingErrorDetails(PURCHASING_ERROR_ORDER_ALREADY_CANCELLED),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Purchase order is already cancelled",
+			});
 		}
 		if (order.status !== "draft") {
-			return fail(
-				"CONFLICT",
-				"Only draft purchase orders can be cancelled",
-				purchasingErrorDetails(PURCHASING_ERROR_ORDER_NOT_DRAFT),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Only draft purchase orders can be cancelled",
+			});
 		}
 		if (order.version !== record.expectedVersion) {
-			return fail(
-				"CONFLICT",
-				"Purchase order version conflict",
-				purchasingErrorDetails(PURCHASING_ERROR_ORDER_VERSION_CONFLICT),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Purchase order version conflict",
+			});
 		}
 		const now = new Date();
 		const previous = cloneOrder(order);
@@ -458,7 +422,7 @@ export class MemoryPurchasingStore implements PurchasingStore {
 			Object.assign(order, previous);
 			return outbox;
 		}
-		return ok(cloneOrder(order));
+		return errorResult.ok(cloneOrder(order));
 	}
 
 	async closeOrder(
@@ -468,35 +432,27 @@ export class MemoryPurchasingStore implements PurchasingStore {
 	): Promise<Result<PurchaseOrder>> {
 		const order = this.orders.get(record.orderId);
 		if (order === undefined || order.organizationId !== record.organizationId) {
-			return fail(
-				"NOT_FOUND",
-				"Purchase order not found",
-				purchasingErrorDetails(PURCHASING_ERROR_ORDER_NOT_FOUND),
-			);
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Purchase order not found",
+			});
 		}
 		if (order.status === "closed") {
 			if (order.closeIdempotencyKey === record.closeIdempotencyKey) {
-				return ok(cloneOrder(order));
+				return errorResult.ok(cloneOrder(order));
 			}
-			return fail(
-				"CONFLICT",
-				"Purchase order is already closed",
-				purchasingErrorDetails(PURCHASING_ERROR_ORDER_ALREADY_CLOSED),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Purchase order is already closed",
+			});
 		}
 		if (order.status !== "posted") {
-			return fail(
-				"CONFLICT",
-				"Only posted purchase orders can be closed",
-				purchasingErrorDetails(PURCHASING_ERROR_ORDER_NOT_POSTED),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Only posted purchase orders can be closed",
+			});
 		}
 		if (order.version !== record.expectedVersion) {
-			return fail(
-				"CONFLICT",
-				"Purchase order version conflict",
-				purchasingErrorDetails(PURCHASING_ERROR_ORDER_VERSION_CONFLICT),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Purchase order version conflict",
+			});
 		}
 		const now = new Date();
 		const previous = cloneOrder(order);
@@ -548,7 +504,7 @@ export class MemoryPurchasingStore implements PurchasingStore {
 			Object.assign(order, previous);
 			return outbox;
 		}
-		return ok(cloneOrder(order));
+		return errorResult.ok(cloneOrder(order));
 	}
 
 	getOrderById(
@@ -558,9 +514,9 @@ export class MemoryPurchasingStore implements PurchasingStore {
 		return resolveAsync(() => {
 			const order = this.orders.get(id);
 			if (order === undefined || order.organizationId !== organizationId) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
-			return ok(cloneOrder(order));
+			return errorResult.ok(cloneOrder(order));
 		});
 	}
 
@@ -574,10 +530,10 @@ export class MemoryPurchasingStore implements PurchasingStore {
 					order.organizationId === organizationId &&
 					order.createIdempotencyKey === createIdempotencyKey
 				) {
-					return ok(cloneOrder(order));
+					return errorResult.ok(cloneOrder(order));
 				}
 			}
-			return ok(null);
+			return errorResult.ok(null);
 		});
 	}
 
@@ -591,7 +547,7 @@ export class MemoryPurchasingStore implements PurchasingStore {
 				)
 				.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
 				.map(cloneOrder);
-			return ok(paginate(rows, filter.page, filter.pageSize));
+			return errorResult.ok(paginate(rows, filter.page, filter.pageSize));
 		});
 	}
 }

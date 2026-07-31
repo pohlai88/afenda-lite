@@ -10,7 +10,7 @@ import {
 	lte,
 	or,
 } from "@afenda/db";
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	HUMAN_RESOURCES_ERROR_NOT_FOUND,
 	humanResourcesErrorDetails,
@@ -43,11 +43,12 @@ export function createDrizzleAssignmentContextQuery(): AssignmentContextQueryPor
 				)
 				.limit(1);
 			if (employmentRows.length === 0) {
-				return fail(
-					"NOT_FOUND",
-					"Employment not found for assignment context",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_NOT_FOUND,
+					),
+				});
 			}
 
 			const workAssignmentRows = await db
@@ -70,7 +71,7 @@ export function createDrizzleAssignmentContextQuery(): AssignmentContextQueryPor
 					),
 				);
 			if (workAssignmentRows.length === 0) {
-				return ok({
+				return errorResult.ok({
 					employmentId: input.employmentId,
 					employeeId: input.employeeId,
 					departmentId: null,
@@ -83,7 +84,7 @@ export function createDrizzleAssignmentContextQuery(): AssignmentContextQueryPor
 			}
 			const [assignment] = workAssignmentRows;
 			if (assignment === undefined) {
-				return ok({
+				return errorResult.ok({
 					employmentId: input.employmentId,
 					employeeId: input.employeeId,
 					departmentId: null,
@@ -107,7 +108,7 @@ export function createDrizzleAssignmentContextQuery(): AssignmentContextQueryPor
 				departmentId = positionRows[0]?.departmentId ?? null;
 			}
 
-			return ok({
+			return errorResult.ok({
 				employmentId: input.employmentId,
 				employeeId: input.employeeId,
 				departmentId,

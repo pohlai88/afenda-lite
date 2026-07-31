@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	HUMAN_RESOURCES_ERROR_STALE_VERSION,
@@ -12,14 +12,15 @@ import {
 export function assertExpectedVersion(
 	currentVersion: number,
 	expectedVersion: number,
-	message = "Resource version is stale",
+	_message = "Resource version is stale",
 ): Result<void> {
 	if (currentVersion !== expectedVersion) {
-		return fail(
-			"CONFLICT",
-			message,
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_STALE_VERSION),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "The request conflicts with current state",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_STALE_VERSION,
+			),
+		});
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }

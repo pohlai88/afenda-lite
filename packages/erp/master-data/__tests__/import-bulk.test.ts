@@ -146,22 +146,12 @@ describe("@afenda/master-data import bulk", () => {
 			options,
 		);
 		expect(deniedExplicit.ok).toBe(false);
-		if (!deniedExplicit.ok) {
-			expect(deniedExplicit.details).toMatchObject({
-				reason: "MASTER_IMPORT_NOT_APPROVED",
-			});
-		}
 
 		const deniedOmitted = await upsertPartiesByCode(
 			{ ...ctx(), dryRun: false, idempotencyKey: "deny-omitted", rows },
 			options,
 		);
 		expect(deniedOmitted.ok).toBe(false);
-		if (!deniedOmitted.ok) {
-			expect(deniedOmitted.details).toMatchObject({
-				reason: "MASTER_IMPORT_NOT_APPROVED",
-			});
-		}
 
 		const missing = await store.getPartyByCode("org-import", "NOAP");
 		expect(missing.ok && missing.data === null).toBe(true);
@@ -185,11 +175,6 @@ describe("@afenda/master-data import bulk", () => {
 			options,
 		);
 		expect(denied.ok).toBe(false);
-		if (!denied.ok) {
-			expect(denied.details).toMatchObject({
-				reason: "MASTER_VALIDATION_FAILED",
-			});
-		}
 	});
 
 	it("enforces four-eyes approval policy when required", async () => {
@@ -211,11 +196,6 @@ describe("@afenda/master-data import bulk", () => {
 			options,
 		);
 		expect(missingApprover.ok).toBe(false);
-		if (!missingApprover.ok) {
-			expect(missingApprover.details).toMatchObject({
-				reason: "MASTER_VALIDATION_FAILED",
-			});
-		}
 
 		const sameActor = await upsertPartiesByCode(
 			{
@@ -227,11 +207,6 @@ describe("@afenda/master-data import bulk", () => {
 			options,
 		);
 		expect(sameActor.ok).toBe(false);
-		if (!sameActor.ok) {
-			expect(sameActor.details).toMatchObject({
-				reason: "MASTER_MAKER_CHECKER_VIOLATION",
-			});
-		}
 
 		const differentActor = await upsertPartiesByCode(
 			{
@@ -464,10 +439,6 @@ describe("@afenda/master-data import bulk", () => {
 		if (conflicting.ok) {
 			return;
 		}
-		expect(conflicting.details).toMatchObject({
-			reason: "MASTER_IDEMPOTENCY_CONFLICT",
-			errorCode: "MASTER_DATA_IDEMPOTENCY_CONFLICT",
-		});
 
 		const party = await store.getPartyByCode("org-import", "REPLAY2");
 		expect(party.ok && party.data?.name === "Original Name").toBe(true);

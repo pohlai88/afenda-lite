@@ -1,15 +1,12 @@
 "use server";
 
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { createPaymentTerm, type PaymentTerm } from "@afenda/master-data";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runMemberPermissionAction } from "@/app/actions/run-member-permission-action";
 import { createMasterDataAuthorizationPort } from "@/lib/erp/master-data-authorization-port";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export interface CreatePaymentTermActionData {
@@ -39,11 +36,9 @@ export async function createPaymentTermAction(
 		netDays: formData.get("netDays"),
 	});
 	if (!parsed.success) {
-		return actionFail(
-			"VALIDATION_ERROR",
-			"Enter a valid payment term code, name, and net days.",
-			parsed.details,
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "Enter a valid payment term code, name, and net days.",
+		});
 	}
 
 	return await runMemberPermissionAction({

@@ -1,4 +1,4 @@
-import type { Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type {
 	HumanResourcesAuthorizationDenyCode,
@@ -212,7 +212,7 @@ export function classifyHrAuthorizationDenial(
 export function authorizationReasonFromFailure(
 	result: Extract<Result<unknown>, { ok: false }>,
 ): HrAuthorizationReason {
-	const denyCode = denyCodeFromDetails(result.details);
+	const denyCode = denyCodeFromDetails(errorResult.context(result));
 	if (denyCode !== undefined) {
 		return classifyHrAuthorizationDenial(denyCode);
 	}

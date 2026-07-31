@@ -10,7 +10,7 @@ import {
 	hrBenefitEnrollmentDependent,
 	runNeonHttpTransaction,
 } from "@afenda/db";
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import { HUMAN_RESOURCES_BENEFIT_ENROLLMENT_CHANGED_EVENT } from "@afenda/events/schemas";
 
 import {
@@ -61,16 +61,13 @@ export function parseBenefitEnrollmentContributionFrequency(
 	value: string | null,
 ): Result<BenefitEnrollment["contributionFrequency"]> {
 	if (value === null) {
-		return ok(null);
+		return errorResult.ok(null);
 	}
 	const parsed = payFrequencySchema.safeParse(value);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid benefit enrollment contribution frequency",
-		);
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export interface BenefitEnrollmentSqlRow {
@@ -117,7 +114,7 @@ export function mapBenefitEnrollmentSql(
 	}
 	const status = benefitEnrollmentStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail("INTERNAL_ERROR", "Invalid benefit enrollment status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 	const contributionFrequency = parseBenefitEnrollmentContributionFrequency(
 		row.contribution_frequency,
@@ -125,7 +122,7 @@ export function mapBenefitEnrollmentSql(
 	if (!contributionFrequency.ok) {
 		return contributionFrequency;
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organization_id,
 		employeeId: employeeId.data,
@@ -170,7 +167,7 @@ export function mapBenefitEnrollmentFromDbRow(
 	}
 	const status = benefitEnrollmentStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail("INTERNAL_ERROR", "Invalid benefit enrollment status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 	const contributionFrequency = parseBenefitEnrollmentContributionFrequency(
 		row.contributionFrequency,
@@ -178,7 +175,7 @@ export function mapBenefitEnrollmentFromDbRow(
 	if (!contributionFrequency.ok) {
 		return contributionFrequency;
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		employeeId: employeeId.data,
@@ -249,14 +246,11 @@ function mapBenefitPlanEligibility(
 	for (const status of statuses) {
 		const parsed = employmentStatusSchema.safeParse(status);
 		if (!parsed.success) {
-			return fail(
-				"INTERNAL_ERROR",
-				"Invalid benefit eligibility employment status",
-			);
+			return errorResult.fail("INTERNAL_ERROR");
 		}
 		allowedEmploymentStatuses.push(parsed.data);
 	}
-	return ok({
+	return errorResult.ok({
 		id: row.id,
 		organizationId: row.organization_id,
 		planId: planId.data,
@@ -286,9 +280,9 @@ function mapBenefitEnrollmentDependent(
 		row.relationship,
 	);
 	if (!relationship.success) {
-		return fail("INTERNAL_ERROR", "Invalid benefit dependent relationship");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organization_id,
 		enrollmentId: enrollmentId.data,
@@ -326,7 +320,7 @@ export async function drizzleGetBenefitPlanEligibility(input: {
 			.limit(1);
 		const [row] = rows;
 		if (!row) {
-			return ok(null);
+			return errorResult.ok(null);
 		}
 		return mapBenefitPlanEligibility({
 			id: row.id,
@@ -470,7 +464,7 @@ export async function drizzleSetBenefitPlanEligibility(
 		]);
 		const [row] = rows;
 		if (!row) {
-			return fail("INTERNAL_ERROR", "Failed to set benefit plan eligibility");
+			return errorResult.fail("INTERNAL_ERROR");
 		}
 		return mapBenefitPlanEligibility(row);
 	} catch (error) {
@@ -647,7 +641,7 @@ export async function drizzleGetBenefitEnrollmentDependent(input: {
 			.limit(1);
 		const [row] = rows;
 		if (!row) {
-			return ok(null);
+			return errorResult.ok(null);
 		}
 		return mapBenefitEnrollmentDependent({
 			id: row.id,
@@ -707,7 +701,7 @@ export async function drizzleListBenefitEnrollmentDependentsByEnrollment(input: 
 			dependents.push(mapped.data);
 		}
 		dependents.sort((a, b) => a.effectiveFrom.localeCompare(b.effectiveFrom));
-		return ok(dependents);
+		return errorResult.ok(dependents);
 	} catch (error) {
 		return mapPersistenceFailure(
 			error,
@@ -835,10 +829,7 @@ export async function drizzleAddBenefitEnrollmentDependent(
 		]);
 		const [row] = rows;
 		if (!row) {
-			return fail(
-				"INTERNAL_ERROR",
-				"Failed to add benefit enrollment dependent",
-			);
+			return errorResult.fail("INTERNAL_ERROR");
 		}
 		return mapBenefitEnrollmentDependent(row);
 	} catch (error) {
@@ -1054,7 +1045,7 @@ export async function assertDrizzleBenefitEnrollmentPreconditions(
 		}
 	}
 
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function isBenefitEnrollmentStatusOpen(

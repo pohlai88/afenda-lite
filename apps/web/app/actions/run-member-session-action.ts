@@ -1,11 +1,7 @@
 import { getSession, type Session } from "@afenda/auth";
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { createCorrelationId } from "@afenda/http";
-
 import { logProductEvent } from "@/modules/platform/observability/product-log";
-import {
-	type ActionResult,
-	actionFailInternal,
-} from "@/modules/platform/schemas/action-result";
 
 /**
  * Shared session + correlation + internal-error envelope for member-scoped
@@ -34,6 +30,6 @@ export async function runMemberSessionAction<T>(input: {
 			path: input.path,
 			code: "INTERNAL_ERROR",
 		});
-		return actionFailInternal(input.safeMessage, correlationId);
+		return errorResult.fail("INTERNAL_ERROR", { correlationId });
 	}
 }

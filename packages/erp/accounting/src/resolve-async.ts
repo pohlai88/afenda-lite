@@ -1,4 +1,4 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 export function resolveOperation<T>(
 	operation: () => Result<T>,
@@ -16,7 +16,7 @@ export async function collectSequentially<T, U>(
 ): Promise<Result<U[]>> {
 	const [item, ...remaining] = items;
 	if (item === undefined) {
-		return ok([]);
+		return errorResult.ok([]);
 	}
 	const current = await operation(item);
 	if (!current.ok) {
@@ -26,5 +26,5 @@ export async function collectSequentially<T, U>(
 	if (!rest.ok) {
 		return rest;
 	}
-	return ok([current.data, ...rest.data]);
+	return errorResult.ok([current.data, ...rest.data]);
 }

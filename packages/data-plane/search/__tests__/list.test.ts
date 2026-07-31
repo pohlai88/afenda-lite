@@ -59,7 +59,7 @@ describe("@afenda/search listDocumentIds", () => {
 		const listed = await listSearchDocumentIds({ entity: "member" }, store);
 		expect(listed.ok).toBe(false);
 		if (!listed.ok) {
-			expect(listed.code).toBe("BAD_REQUEST");
+			expect(listed.code).toBe("VALIDATION_ERROR");
 		}
 	});
 });

@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { fail, ok } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 import { resolveAsync } from "../../resolve-async";
 import type { OrganizationDimension } from "./organization-dimension";
 import type { OrganizationDimensionStore } from "./organization-dimension-store";
@@ -43,18 +43,16 @@ export function createMemoryOrganizationDimensionStore(): MemoryOrganizationDime
 						parent === undefined ||
 						parent.organizationId !== record.organizationId
 					) {
-						return fail(
-							"BAD_REQUEST",
-							"Organization dimension parent does not exist in organization",
-							{ reason: "MASTER_CROSS_ORG_REFERENCE" },
-						);
+						return errorResult.fail("BAD_REQUEST", {
+							publicMessage:
+								"Organization dimension parent does not exist in organization",
+						});
 					}
 					if (parent.status !== "active") {
-						return fail(
-							"CONFLICT",
-							"Inactive organization dimension parents cannot receive new children",
-							{ reason: "MASTER_INVALID_STATE" },
-						);
+						return errorResult.fail("CONFLICT", {
+							publicMessage:
+								"Inactive organization dimension parents cannot receive new children",
+						});
 					}
 				}
 				const conflict = [...records.values()].some(
@@ -65,11 +63,10 @@ export function createMemoryOrganizationDimensionStore(): MemoryOrganizationDime
 						overlaps(existing, record),
 				);
 				if (conflict) {
-					return fail(
-						"CONFLICT",
-						"Organization dimension overlaps an effective version",
-						{ reason: "MASTER_EFFECTIVE_RANGE_OVERLAP" },
-					);
+					return errorResult.fail("CONFLICT", {
+						publicMessage:
+							"Organization dimension overlaps an effective version",
+					});
 				}
 				const created: StoredOrganizationDimension = {
 					id: randomUUID(),
@@ -90,7 +87,7 @@ export function createMemoryOrganizationDimensionStore(): MemoryOrganizationDime
 					updatedAt: new Date(),
 				};
 				records.set(created.id, created);
-				return ok(clone(created));
+				return errorResult.ok(clone(created));
 			});
 		},
 		update(record) {
@@ -100,8 +97,8 @@ export function createMemoryOrganizationDimensionStore(): MemoryOrganizationDime
 					current === undefined ||
 					current.organizationId !== record.organizationId
 				) {
-					return fail("NOT_FOUND", "Organization dimension not found", {
-						reason: "MASTER_NOT_FOUND",
+					return errorResult.fail("NOT_FOUND", {
+						publicMessage: "Organization dimension not found",
 					});
 				}
 				const stateValidation = validateUpdateState(current, record);
@@ -120,7 +117,7 @@ export function createMemoryOrganizationDimensionStore(): MemoryOrganizationDime
 					current.parentId = record.parentId ?? null;
 				}
 				applyOrganizationDimensionUpdate(current, record);
-				return ok(clone(current));
+				return errorResult.ok(clone(current));
 			});
 		},
 		transition(input) {
@@ -130,21 +127,20 @@ export function createMemoryOrganizationDimensionStore(): MemoryOrganizationDime
 					current === undefined ||
 					current.organizationId !== input.organizationId
 				) {
-					return fail("NOT_FOUND", "Organization dimension not found", {
-						reason: "MASTER_NOT_FOUND",
+					return errorResult.fail("NOT_FOUND", {
+						publicMessage: "Organization dimension not found",
 					});
 				}
 				if (current.version !== input.expectedVersion) {
-					return fail("CONFLICT", "Organization dimension version conflict", {
-						reason: "MASTER_VERSION_CONFLICT",
-						expectedVersion: input.expectedVersion,
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "Organization dimension version conflict",
 					});
 				}
 				current.status = input.status;
 				current.version += 1;
 				current.updatedBy = input.updatedBy;
 				current.updatedAt = new Date();
-				return ok(clone(current));
+				return errorResult.ok(clone(current));
 			});
 		},
 		getById(input) {
@@ -154,9 +150,9 @@ export function createMemoryOrganizationDimensionStore(): MemoryOrganizationDime
 					current === undefined ||
 					current.organizationId !== input.organizationId
 				) {
-					return ok(null);
+					return errorResult.ok(null);
 				}
-				return ok(clone(current));
+				return errorResult.ok(clone(current));
 			});
 		},
 		getByCode(input) {
@@ -168,12 +164,13 @@ export function createMemoryOrganizationDimensionStore(): MemoryOrganizationDime
 						record.normalizedKey === input.normalizedKey,
 				);
 				if (matches.length > 1) {
-					return fail("CONFLICT", "Organization dimension code is ambiguous", {
-						reason: "MASTER_DIMENSION_AMBIGUOUS",
-						kind: input.kind,
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "Organization dimension code is ambiguous",
 					});
 				}
-				return ok(matches[0] === undefined ? null : clone(matches[0]));
+				return errorResult.ok(
+					matches[0] === undefined ? null : clone(matches[0]),
+				);
 			});
 		},
 		list(input) {
@@ -201,7 +198,7 @@ export function createMemoryOrganizationDimensionStore(): MemoryOrganizationDime
 						return left.effectiveFrom.localeCompare(right.effectiveFrom);
 					});
 				const offset = (input.page - 1) * input.pageSize;
-				return ok({
+				return errorResult.ok({
 					items: rows.slice(offset, offset + input.pageSize).map(clone),
 					total: rows.length,
 				});
@@ -209,7 +206,7 @@ export function createMemoryOrganizationDimensionStore(): MemoryOrganizationDime
 		},
 		findEffective(input) {
 			return resolveAsync(() =>
-				ok(
+				errorResult.ok(
 					[...records.values()]
 						.filter(
 							(record) =>
@@ -226,7 +223,7 @@ export function createMemoryOrganizationDimensionStore(): MemoryOrganizationDime
 		},
 		findEffectiveById(input) {
 			return resolveAsync(() =>
-				ok(
+				errorResult.ok(
 					[...records.values()]
 						.filter(
 							(record) =>
@@ -255,17 +252,16 @@ function validateUpdateState(
 	record: UpdateRecord,
 ) {
 	if (current.version !== record.expectedVersion) {
-		return fail("CONFLICT", "Organization dimension version conflict", {
-			reason: "MASTER_VERSION_CONFLICT",
-			expectedVersion: record.expectedVersion,
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Organization dimension version conflict",
 		});
 	}
 	if (current.status === "archived") {
-		return fail("CONFLICT", "Archived organization dimension cannot change", {
-			reason: "MASTER_INVALID_STATE",
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Archived organization dimension cannot change",
 		});
 	}
-	return ok(true);
+	return errorResult.ok(true);
 }
 
 function applyOrganizationDimensionUpdate(
@@ -289,11 +285,11 @@ function canReparent(
 	parentId: string | null,
 ) {
 	if (parentId === null) {
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	}
 	if (parentId === current.id) {
-		return fail("CONFLICT", "Organization dimension cannot parent itself", {
-			reason: "MASTER_INVALID_STATE",
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Organization dimension cannot parent itself",
 		});
 	}
 	const parent = records.get(parentId);
@@ -301,27 +297,25 @@ function canReparent(
 		parent === undefined ||
 		parent.organizationId !== current.organizationId
 	) {
-		return fail(
-			"BAD_REQUEST",
-			"Organization dimension parent does not exist in organization",
-			{ reason: "MASTER_CROSS_ORG_REFERENCE" },
-		);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage:
+				"Organization dimension parent does not exist in organization",
+		});
 	}
 	if (parent.status !== "active") {
-		return fail(
-			"CONFLICT",
-			"Inactive organization dimension parents cannot receive children",
-			{ reason: "MASTER_INVALID_STATE" },
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage:
+				"Inactive organization dimension parents cannot receive children",
+		});
 	}
 	let next: string | null = parent.parentId;
 	while (next !== null) {
 		if (next === current.id) {
-			return fail("CONFLICT", "Organization dimension parent cycle detected", {
-				reason: "MASTER_INVALID_STATE",
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Organization dimension parent cycle detected",
 			});
 		}
 		next = records.get(next)?.parentId ?? null;
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }

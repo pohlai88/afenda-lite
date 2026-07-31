@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	itemIdSchema,
 	partyIdSchema,
@@ -100,10 +100,8 @@ export const listSalesOrdersInputSchema = salesQueryContextSchema
 	})
 	.transform((value) => ({ ...value, pageSize: value.pageSize ?? 25 }));
 
-function requireMaster<T>(value: T | undefined, name: string): Result<T> {
-	return value
-		? { ok: true, data: value }
-		: fail("INTERNAL_ERROR", `${name} port is required`);
+function requireMaster<T>(value: T | undefined, _name: string): Result<T> {
+	return value ? { ok: true, data: value } : errorResult.fail("INTERNAL_ERROR");
 }
 
 export async function createDraftSalesOrder(
@@ -112,11 +110,9 @@ export async function createDraftSalesOrder(
 ): Promise<Result<SalesOrder>> {
 	const parsed = createSalesOrderInputSchema.safeParse(input);
 	if (!parsed.success) {
-		return fail(
-			"BAD_REQUEST",
-			"Enter a valid sales order",
-			parsed.error.flatten(),
-		);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Enter a valid sales order",
+		});
 	}
 	const deps = resolveSalesDeps(options);
 	const auth = await requireSalesCommandPermission(deps.authorization, {
@@ -185,11 +181,9 @@ export async function addSalesOrderLine(
 ): Promise<Result<SalesOrderLine>> {
 	const parsed = addSalesOrderLineInputSchema.safeParse(input);
 	if (!parsed.success) {
-		return fail(
-			"BAD_REQUEST",
-			"Enter a valid sales-order line",
-			parsed.error.flatten(),
-		);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Enter a valid sales-order line",
+		});
 	}
 	const deps = resolveSalesDeps(options);
 	const auth = await requireSalesCommandPermission(deps.authorization, {
@@ -261,11 +255,9 @@ async function transitionOrder(
 ): Promise<Result<SalesOrder>> {
 	const parsed = orderTransitionInputSchema.safeParse(input);
 	if (!parsed.success) {
-		return fail(
-			"BAD_REQUEST",
-			"Enter a valid sales-order transition",
-			parsed.error.flatten(),
-		);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Enter a valid sales-order transition",
+		});
 	}
 	const deps = resolveSalesDeps(options);
 	const auth = await requireSalesCommandPermission(deps.authorization, {
@@ -315,12 +307,11 @@ type SalesDeps = ReturnType<typeof resolveSalesDeps>;
 
 function validateOrderPostingState(order: SalesOrder): Result<true> {
 	if (!(order.status === "approved" || order.status === "confirmed")) {
-		return fail("CONFLICT", "Sales order requires approval before release", {
-			reason: "SALES_INVALID_STATE",
-			status: order.status,
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Sales order requires approval before release",
 		});
 	}
-	return ok(true);
+	return errorResult.ok(true);
 }
 
 async function checkOrderCredit(
@@ -328,7 +319,7 @@ async function checkOrderCredit(
 	order: SalesOrder,
 ): Promise<Result<string | undefined>> {
 	if (deps.credit === undefined) {
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	}
 	const creditResult = await deps.credit.check({
 		organizationId: order.organizationId,
@@ -340,12 +331,11 @@ async function checkOrderCredit(
 		return creditResult;
 	}
 	if (!creditResult.data.approved) {
-		return fail("CONFLICT", "Sales order failed credit approval", {
-			reason: "SALES_INTEGRATION_REJECTED",
-			reference: creditResult.data.reference,
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Sales order failed credit approval",
 		});
 	}
-	return ok(creditResult.data.reference);
+	return errorResult.ok(creditResult.data.reference);
 }
 
 async function checkOrderAvailability(
@@ -354,7 +344,7 @@ async function checkOrderAvailability(
 	lines: readonly SalesOrderLine[],
 ): Promise<Result<string | undefined>> {
 	if (deps.availability === undefined) {
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	}
 	const availabilityResult = await deps.availability.check({
 		organizationId: order.organizationId,
@@ -368,12 +358,11 @@ async function checkOrderAvailability(
 		return availabilityResult;
 	}
 	if (!availabilityResult.data.available) {
-		return fail("CONFLICT", "Sales order has unavailable quantities", {
-			reason: "SALES_INTEGRATION_REJECTED",
-			shortages: availabilityResult.data.shortages,
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Sales order has unavailable quantities",
 		});
 	}
-	return ok(availabilityResult.data.reference);
+	return errorResult.ok(availabilityResult.data.reference);
 }
 
 async function calculateOrderTax(
@@ -383,7 +372,7 @@ async function calculateOrderTax(
 	taxTotal: SalesOrder["taxTotal"],
 ): Promise<Result<SalesOrder["taxTotal"]>> {
 	if (deps.tax === undefined) {
-		return ok(taxTotal);
+		return errorResult.ok(taxTotal);
 	}
 	const tax = await deps.tax.calculate({
 		organizationId: order.organizationId,
@@ -395,7 +384,7 @@ async function calculateOrderTax(
 			netAmount: line.lineAmount,
 		})),
 	});
-	return tax.ok ? ok(tax.data.totalTax) : tax;
+	return tax.ok ? errorResult.ok(tax.data.totalTax) : tax;
 }
 
 export async function postSalesOrder(
@@ -404,11 +393,9 @@ export async function postSalesOrder(
 ): Promise<Result<SalesOrder>> {
 	const parsed = postSalesOrderInputSchema.safeParse(input);
 	if (!parsed.success) {
-		return fail(
-			"BAD_REQUEST",
-			"Enter a valid sales-order release",
-			parsed.error.flatten(),
-		);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Enter a valid sales-order release",
+		});
 	}
 	const deps = resolveSalesDeps(options);
 	const auth = await requireSalesCommandPermission(deps.authorization, {
@@ -427,8 +414,8 @@ export async function postSalesOrder(
 		return current;
 	}
 	if (!current.data) {
-		return fail("NOT_FOUND", "Sales order not found", {
-			reason: "SALES_NOT_FOUND",
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Sales order not found",
 		});
 	}
 	const stateValidation = validateOrderPostingState(current.data);
@@ -443,8 +430,8 @@ export async function postSalesOrder(
 		return lines;
 	}
 	if (lines.data.length === 0) {
-		return fail("CONFLICT", "Sales order requires at least one line", {
-			reason: "SALES_INVALID_STATE",
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Sales order requires at least one line",
 		});
 	}
 	const holds = await deps.store.listOpenHolds({
@@ -455,9 +442,8 @@ export async function postSalesOrder(
 		return holds;
 	}
 	if (holds.data.length > 0) {
-		return fail("CONFLICT", "Sales order has blocking holds", {
-			reason: "SALES_BLOCKING_HOLD",
-			holds: holds.data.map((hold) => hold.kind),
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Sales order has blocking holds",
 		});
 	}
 	const credit = await checkOrderCredit(deps, current.data);
@@ -508,11 +494,9 @@ export async function recordSalesOrderFulfillment(
 ) {
 	const parsed = recordSalesFulfillmentInputSchema.safeParse(input);
 	if (!parsed.success) {
-		return fail(
-			"BAD_REQUEST",
-			"Enter valid fulfillment progress",
-			parsed.error.flatten(),
-		);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Enter valid fulfillment progress",
+		});
 	}
 	const deps = resolveSalesDeps(options);
 	const auth = await requireSalesCommandPermission(deps.authorization, {
@@ -540,11 +524,9 @@ export async function getSalesOrderById(
 ) {
 	const parsed = getSalesOrderInputSchema.safeParse(input);
 	if (!parsed.success) {
-		return fail(
-			"BAD_REQUEST",
-			"Enter a valid sales-order ID",
-			parsed.error.flatten(),
-		);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Enter a valid sales-order ID",
+		});
 	}
 	const deps = resolveSalesDeps(options);
 	const auth = await requireSalesQueryPermission(deps.authorization, {
@@ -566,11 +548,9 @@ export async function listSalesOrders(
 ) {
 	const parsed = listSalesOrdersInputSchema.safeParse(input);
 	if (!parsed.success) {
-		return fail(
-			"BAD_REQUEST",
-			"Enter valid sales-order filters",
-			parsed.error.flatten(),
-		);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Enter valid sales-order filters",
+		});
 	}
 	const deps = resolveSalesDeps(options);
 	const auth = await requireSalesQueryPermission(deps.authorization, {
@@ -604,9 +584,8 @@ export async function getFulfillableSalesOrder(
 			order.data.status,
 		)
 	) {
-		return fail("CONFLICT", "Sales order is not released for fulfillment", {
-			reason: "SALES_INVALID_STATE",
-			status: order.data.status,
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Sales order is not released for fulfillment",
 		});
 	}
 	const deps = resolveSalesDeps(options);

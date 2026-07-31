@@ -23,7 +23,7 @@ import {
 	runNeonHttpTransaction,
 	sql,
 } from "@afenda/db";
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	type HumanResourcesApplicationId,
 	type HumanResourcesCandidateId,
@@ -229,7 +229,7 @@ function mapNullableDepartmentId(
 	value: string | null,
 ): Result<HumanResourcesDepartmentId | null> {
 	if (value === null) {
-		return ok(null);
+		return errorResult.ok(null);
 	}
 	return parseHumanResourcesDepartmentId(value);
 }
@@ -238,7 +238,7 @@ function mapNullableJobId(
 	value: string | null,
 ): Result<HumanResourcesJobId | null> {
 	if (value === null) {
-		return ok(null);
+		return errorResult.ok(null);
 	}
 	return parseHumanResourcesJobId(value);
 }
@@ -247,7 +247,7 @@ function mapNullablePositionId(
 	value: string | null,
 ): Result<HumanResourcesPositionId | null> {
 	if (value === null) {
-		return ok(null);
+		return errorResult.ok(null);
 	}
 	return parseHumanResourcesPositionId(value);
 }
@@ -256,7 +256,7 @@ function mapNullableEmployeeId(
 	value: string | null,
 ): Result<HumanResourcesEmployeeId | null> {
 	if (value === null) {
-		return ok(null);
+		return errorResult.ok(null);
 	}
 	return parseHumanResourcesEmployeeId(value);
 }
@@ -318,13 +318,13 @@ function mapRequisitionFields(input: {
 	}
 	const status = requisitionStatusSchema.safeParse(input.status);
 	if (!status.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid requisition status in persistence",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: input.organizationId,
 		code: input.code,
@@ -412,17 +412,17 @@ function parsePersistedCandidateConsentSource(
 	value: string | null,
 ): Result<CandidateConsentSource | null> {
 	if (value === null) {
-		return ok(null);
+		return errorResult.ok(null);
 	}
 	const parsed = candidateConsentSourceSchema.safeParse(value);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid candidate consent source in persistence",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 function mapCandidateFields(input: {
@@ -449,11 +449,11 @@ function mapCandidateFields(input: {
 	}
 	const status = candidateStatusSchema.safeParse(input.status);
 	if (!status.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid candidate status in persistence",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
 	const consentSource = parsePersistedCandidateConsentSource(
 		input.consentSource,
@@ -461,7 +461,7 @@ function mapCandidateFields(input: {
 	if (!consentSource.ok) {
 		return consentSource;
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: input.organizationId,
 		displayName: input.displayName,
@@ -562,13 +562,13 @@ function mapApplicationFields(input: {
 	}
 	const status = applicationStatusSchema.safeParse(input.status);
 	if (!status.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid application status in persistence",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: input.organizationId,
 		candidateId: candidateId.data,
@@ -632,21 +632,21 @@ function mapApplicationStatusHistorySqlRow(
 	}
 	const statusParse = applicationStatusSchema.safeParse(row.to_status);
 	if (!statusParse.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid application status history row",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
 	let fromStatus: ApplicationStatus | null = null;
 	if (row.from_status !== null) {
 		const parsed = applicationStatusSchema.safeParse(row.from_status);
 		if (!parsed.success) {
-			return fail(
-				"INTERNAL_ERROR",
-				"Invalid application status history row",
-				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-			);
+			return errorResult.fail("INTERNAL_ERROR", {
+				internalContext: humanResourcesErrorDetails(
+					HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+				),
+			});
 		}
 		fromStatus = parsed.data;
 	}
@@ -655,13 +655,13 @@ function mapApplicationStatusHistorySqlRow(
 			? row.change_kind
 			: null;
 	if (changeKind === null) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid application status history row",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
-	return ok({
+	return errorResult.ok({
 		id: row.id,
 		organizationId: row.organization_id,
 		applicationId: applicationId.data,
@@ -752,13 +752,13 @@ function mapInterviewFields(input: {
 	}
 	const status = interviewStatusSchema.safeParse(input.status);
 	if (!status.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid interview status in persistence",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: input.organizationId,
 		applicationId: applicationId.data,
@@ -826,13 +826,13 @@ function parsePersistedInterviewScorecard(
 ): Result<InterviewEvaluation["scorecard"]> {
 	const parsed = interviewScorecardSchema.safeParse(value);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid interview scorecard in persistence",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 function mapInterviewEvaluationSqlRow(
@@ -848,17 +848,17 @@ function mapInterviewEvaluationSqlRow(
 	}
 	const result = interviewEvaluationResultSchema.safeParse(row.result);
 	if (!result.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid interview evaluation result in persistence",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
 	const scorecard = parsePersistedInterviewScorecard(row.scorecard_json);
 	if (!scorecard.ok) {
 		return scorecard;
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organization_id,
 		interviewId: interviewId.data,
@@ -888,17 +888,17 @@ function mapInterviewEvaluation(
 	}
 	const result = interviewEvaluationResultSchema.safeParse(row.result);
 	if (!result.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid interview evaluation result in persistence",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
 	const scorecard = parsePersistedInterviewScorecard(row.scorecardJson);
 	if (!scorecard.ok) {
 		return scorecard;
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		interviewId: interviewId.data,
@@ -969,13 +969,13 @@ function mapOfferFields(input: {
 	}
 	const status = offerStatusSchema.safeParse(input.status);
 	if (!status.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid offer status in persistence",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: input.organizationId,
 		applicationId: applicationId.data,
@@ -1211,7 +1211,7 @@ async function validateRequisitionReferences(
 			);
 		}
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
@@ -1233,13 +1233,13 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 				.limit(1);
 			const [row] = result;
 			if (row === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const mapped = mapRequisition(row);
 			if (!mapped.ok) {
 				return mapped;
 			}
-			return ok({
+			return errorResult.ok({
 				requisition: mapped.data,
 				createRequestFingerprint: row.createRequestFingerprint,
 			});
@@ -1268,7 +1268,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 				.limit(1);
 			const [row] = result;
 			if (row === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapRequisition(row);
 		} catch (error) {
@@ -1293,7 +1293,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 				.limit(1);
 			const [row] = result;
 			if (row === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapRequisition(row);
 		} catch (error) {
@@ -1314,7 +1314,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			return existingByKey;
 		}
 		if (existingByKey.data !== null) {
-			return ok(existingByKey.data.requisition);
+			return errorResult.ok(existingByKey.data.requisition);
 		}
 
 		const existingByCode = await this.findRequisitionByCode({
@@ -1325,11 +1325,12 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			return existingByCode;
 		}
 		if (existingByCode.data !== null) {
-			return fail(
-				"CONFLICT",
-				"Requisition with this code already exists",
-				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_DUPLICATE),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "The request conflicts with current state",
+				internalContext: humanResourcesErrorDetails(
+					HUMAN_RESOURCES_ERROR_DUPLICATE,
+				),
+			});
 		}
 
 		const refs = await validateRequisitionReferences(this, {
@@ -1396,7 +1397,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			]);
 			const [row] = rows;
 			if (!row) {
-				return fail("INTERNAL_ERROR", "Requisition create returned no row");
+				return errorResult.fail("INTERNAL_ERROR");
 			}
 			return mapRequisitionSqlRow(row);
 		} catch (error) {
@@ -1409,15 +1410,16 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 					return existing;
 				}
 				if (existing.data !== null) {
-					return ok(existing.data.requisition);
+					return errorResult.ok(existing.data.requisition);
 				}
 			}
 			if (isPostgresUniqueConstraint(error, HR_REGEX_2)) {
-				return fail(
-					"CONFLICT",
-					"Requisition with this code already exists",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_DUPLICATE),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_DUPLICATE,
+					),
+				});
 			}
 			return mapPersistenceFailure(error, "Failed to create requisition");
 		}
@@ -1927,7 +1929,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 					requisitions.push(mapped.data);
 				}
 			}
-			return ok({
+			return errorResult.ok({
 				requisitions,
 				totalCount: countRows[0]?.count ?? 0,
 				page: input.page,
@@ -1955,13 +1957,13 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 				.limit(1);
 			const [row] = result;
 			if (row === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const mapped = mapCandidate(row);
 			if (!mapped.ok) {
 				return mapped;
 			}
-			return ok({
+			return errorResult.ok({
 				candidate: mapped.data,
 				createRequestFingerprint: row.createRequestFingerprint,
 			});
@@ -1990,7 +1992,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 				.limit(1);
 			const [row] = result;
 			if (row === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapCandidate(row);
 		} catch (error) {
@@ -2015,7 +2017,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 				.limit(1);
 			const [row] = result;
 			if (row === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapCandidate(row);
 		} catch (error) {
@@ -2039,7 +2041,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			return existingByKey;
 		}
 		if (existingByKey.data !== null) {
-			return ok(existingByKey.data.candidate);
+			return errorResult.ok(existingByKey.data.candidate);
 		}
 
 		const existingByEmail = await this.findCandidateByNormalizedEmail({
@@ -2050,11 +2052,12 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			return existingByEmail;
 		}
 		if (existingByEmail.data !== null) {
-			return fail(
-				"CONFLICT",
-				"Candidate with this email already exists",
-				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_DUPLICATE),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "The request conflicts with current state",
+				internalContext: humanResourcesErrorDetails(
+					HUMAN_RESOURCES_ERROR_DUPLICATE,
+				),
+			});
 		}
 
 		const entityId = randomUUID();
@@ -2142,7 +2145,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			]);
 			const [row] = rows;
 			if (!row) {
-				return fail("INTERNAL_ERROR", "Candidate create returned no row");
+				return errorResult.fail("INTERNAL_ERROR");
 			}
 			return mapCandidateSqlRow(row);
 		} catch (error) {
@@ -2155,15 +2158,16 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 					return existing;
 				}
 				if (existing.data !== null) {
-					return ok(existing.data.candidate);
+					return errorResult.ok(existing.data.candidate);
 				}
 			}
 			if (isPostgresUniqueConstraint(error, HR_REGEX_4)) {
-				return fail(
-					"CONFLICT",
-					"Candidate with this email already exists",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_DUPLICATE),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_DUPLICATE,
+					),
+				});
 			}
 			return mapPersistenceFailure(error, "Failed to create candidate");
 		}
@@ -2766,7 +2770,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 					candidates.push(mapped.data);
 				}
 			}
-			return ok({
+			return errorResult.ok({
 				candidates,
 				totalCount: countRows[0]?.count ?? 0,
 				page: input.page,
@@ -2812,7 +2816,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			} else if (emailMatch !== undefined) {
 				conditions.push(emailMatch);
 			} else if (nameMatch === undefined) {
-				return ok([]);
+				return errorResult.ok([]);
 			} else {
 				conditions.push(nameMatch);
 			}
@@ -2852,7 +2856,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 					email: mapped.data.email,
 				});
 			}
-			return ok(results);
+			return errorResult.ok(results);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -2878,7 +2882,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 				.limit(1);
 			const [row] = result;
 			if (row === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapApplication(row);
 		} catch (error) {
@@ -2906,7 +2910,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 				.limit(1);
 			const [row] = result;
 			if (row === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapApplication(row);
 		} catch (error) {
@@ -3361,7 +3365,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 				}
 				history.push(mapped.data);
 			}
-			return ok(history);
+			return errorResult.ok(history);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -3391,11 +3395,11 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 				})
 				.returning();
 			if (!row) {
-				return fail(
-					"INTERNAL_ERROR",
-					"Failed to append application status history",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-				);
+				return errorResult.fail("INTERNAL_ERROR", {
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+					),
+				});
 			}
 			return mapApplicationStatusHistory(row);
 		} catch (error) {
@@ -3452,7 +3456,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 					applications.push(mapped.data);
 				}
 			}
-			return ok({
+			return errorResult.ok({
 				applications,
 				totalCount: countRows[0]?.count ?? 0,
 				page: input.page,
@@ -3480,7 +3484,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 				.limit(1);
 			const [row] = result;
 			if (row === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapInterview(row);
 		} catch (error) {
@@ -3872,7 +3876,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 					interviews.push(mapped.data);
 				}
 			}
-			return ok({
+			return errorResult.ok({
 				interviews,
 				totalCount: countRows[0]?.count ?? 0,
 				page: input.page,
@@ -3900,7 +3904,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 				.limit(1);
 			const [row] = result;
 			if (row === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapInterviewEvaluation(row);
 		} catch (error) {
@@ -4118,7 +4122,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 				.limit(1);
 			const [row] = result;
 			if (row === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapOffer(row);
 		} catch (error) {
@@ -4144,7 +4148,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 				.limit(1);
 			const [row] = result;
 			if (row === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapOffer(row);
 		} catch (error) {
@@ -4169,7 +4173,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 				.limit(1);
 			const [offerRow] = result;
 			if (offerRow === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const mappedOffer = mapOffer(offerRow);
 			if (!mappedOffer.ok) {
@@ -4183,11 +4187,13 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 				return application;
 			}
 			if (application.data === null) {
-				return fail("NOT_FOUND", "Application for accepted offer not found");
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+				});
 			}
 			const acceptedAt =
 				mappedOffer.data.respondedAt ?? mappedOffer.data.updatedAt;
-			return ok({
+			return errorResult.ok({
 				handoff: buildOfferAcceptanceHandoff({
 					organizationId: input.organizationId,
 					offer: mappedOffer.data,
@@ -4780,7 +4786,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			return existingByKey;
 		}
 		if (existingByKey.data !== null) {
-			return ok({
+			return errorResult.ok({
 				...existingByKey.data.handoff,
 				correlationId: meta.correlationId,
 			});
@@ -5007,7 +5013,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 					return idempotent;
 				}
 				if (idempotent.data !== null) {
-					return ok({
+					return errorResult.ok({
 						...idempotent.data.handoff,
 						correlationId: meta.correlationId,
 					});
@@ -5042,7 +5048,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			}
 
 			const acceptedAt = mappedOffer.data.respondedAt ?? new Date();
-			return ok(
+			return errorResult.ok(
 				buildOfferAcceptanceHandoff({
 					organizationId: input.organizationId,
 					offer: mappedOffer.data,
@@ -5072,7 +5078,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 					return idempotent;
 				}
 				if (idempotent.data !== null) {
-					return ok({
+					return errorResult.ok({
 						...idempotent.data.handoff,
 						correlationId: meta.correlationId,
 					});
@@ -5122,7 +5128,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 					offers.push(mapped.data);
 				}
 			}
-			return ok({
+			return errorResult.ok({
 				offers,
 				totalCount: countRows[0]?.count ?? 0,
 				page: input.page,

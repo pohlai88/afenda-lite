@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	HUMAN_RESOURCES_ERROR_FORBIDDEN,
 	HUMAN_RESOURCES_ERROR_UNAUTHORIZED,
@@ -66,23 +66,23 @@ export async function requireHumanResourcesPermission(
 	},
 ): Promise<Result<void>> {
 	if (!authorization) {
-		return fail(
-			"UNAUTHORIZED",
-			"Human Resources authorization port is required",
-			{
+		return errorResult.fail("UNAUTHORIZED", {
+			internalContext: {
 				...humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_UNAUTHORIZED),
 				permission: input.permission,
 			},
-		);
+		});
 	}
 	const allowed = await authorization.can(input);
 	if (!allowed) {
-		return fail("FORBIDDEN", "Missing required human resources permission", {
-			...humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
-			permission: input.permission,
+		return errorResult.fail("FORBIDDEN", {
+			internalContext: {
+				...humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
+				permission: input.permission,
+			},
 		});
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export async function requireHumanResourcesResourceAwarePermission(
@@ -98,14 +98,12 @@ export async function requireHumanResourcesResourceAwarePermission(
 	}>
 > {
 	if (!resourceAwareAuthorization) {
-		return fail(
-			"UNAUTHORIZED",
-			"Human Resources resource-aware authorization port is required",
-			{
+		return errorResult.fail("UNAUTHORIZED", {
+			internalContext: {
 				...humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_UNAUTHORIZED),
 				permission: input.permission,
 			},
-		);
+		});
 	}
 
 	const result = await resourceAwareAuthorization.canWithContext(input);
@@ -114,11 +112,13 @@ export async function requireHumanResourcesResourceAwarePermission(
 	}
 
 	if (!result.data.allowed) {
-		return fail("FORBIDDEN", result.data.reason || "Access denied", {
-			...humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
-			permission: input.permission,
+		return errorResult.fail("FORBIDDEN", {
+			internalContext: {
+				...humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
+				permission: input.permission,
+			},
 		});
 	}
 
-	return ok(result.data);
+	return errorResult.ok(result.data);
 }

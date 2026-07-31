@@ -7,9 +7,7 @@ import {
 	caStatutoryOffice,
 	eq,
 } from "@afenda/db";
-import { fail, ok, type Result } from "@afenda/errors/result";
-
-import { corporateAdministrationErrorDetails } from "../../error-codes";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	legalCompanyIdSchema,
 	officerAppointmentIdSchema,
@@ -95,7 +93,7 @@ class DrizzleCorporateAdministrationOfficerStore implements OfficerStore {
 		if (!listed.ok) {
 			return listed;
 		}
-		return ok(
+		return errorResult.ok(
 			listed.data.filter(
 				(row) =>
 					(input.jurisdictionCode === undefined ||
@@ -140,7 +138,7 @@ class DrizzleCorporateAdministrationOfficerStore implements OfficerStore {
 				const sql = asSql(database);
 				return sql`INSERT INTO ca_statutory_office (id, organization_id, legal_company_id, office_type_code, jurisdiction_code, display_name, description, required, minimum_holders, maximum_holders, vacancy_grace_days, protected_role, effective_from, effective_to, status, retirement_reason, recorded_at, recorded_by, source_document_id, version, created_at, updated_at) VALUES (${id}, ${input.organizationId}, ${input.legalCompanyId}, ${input.officeTypeCode}, ${input.jurisdictionCode}, ${input.displayName}, ${input.description}, ${input.required}, ${input.minimumHolders}, ${input.maximumHolders}, ${input.vacancyGraceDays}, ${input.protectedRole}, ${input.effectiveFrom}, NULL, 'active', NULL, ${now}, ${input.recordedBy}, ${input.sourceDocumentId}, 1, ${now}, ${now})`;
 			});
-			return ok(row);
+			return errorResult.ok(row);
 		}
 		return this.#write(async () => {
 			await this.#database.insert(caStatutoryOffice).values({
@@ -260,7 +258,7 @@ class DrizzleCorporateAdministrationOfficerStore implements OfficerStore {
 				const sql = asSql(database);
 				return sql`INSERT INTO ca_officer_appointment (id, organization_id, legal_company_id, statutory_office_id, officer_party_id, appointment_method, appointing_authority_type, appointing_authority_id, consent_document_id, source_document_id, effective_from, effective_to, status, end_reason, recorded_at, recorded_by, version, created_at, updated_at) VALUES (${id}, ${input.organizationId}, ${input.legalCompanyId}, ${input.statutoryOfficeId}, ${input.officerPartyId}, ${input.appointmentMethod}, ${input.appointingAuthorityType}, ${input.appointingAuthorityId}, ${input.consentDocumentId}, ${input.sourceDocumentId}, ${input.effectiveFrom}, ${input.effectiveTo}, 'active', NULL, ${now}, ${input.recordedBy}, 1, ${now}, ${now})`;
 			});
-			return ok(row);
+			return errorResult.ok(row);
 		}
 		return this.#write(async () => {
 			await this.#database.insert(caOfficerAppointment).values(values);
@@ -301,7 +299,7 @@ class DrizzleCorporateAdministrationOfficerStore implements OfficerStore {
 				const sql = asSql(database);
 				return sql`UPDATE ca_officer_appointment SET appointment_method = ${input.appointmentMethod}, appointing_authority_type = ${input.appointingAuthorityType}, appointing_authority_id = ${input.appointingAuthorityId}, consent_document_id = ${input.consentDocumentId}, source_document_id = ${input.sourceDocumentId}, effective_from = ${input.effectiveFrom}, effective_to = ${input.effectiveTo}, recorded_at = ${now}, recorded_by = ${input.recordedBy}, version = version + 1, updated_at = ${now} WHERE organization_id = ${input.organizationId} AND id = ${input.officerAppointmentId} AND version = ${input.expectedVersion}`;
 			});
-			return ok(updated);
+			return errorResult.ok(updated);
 		}
 		return this.#write(async () => {
 			await this.#database
@@ -360,7 +358,7 @@ class DrizzleCorporateAdministrationOfficerStore implements OfficerStore {
 				const sql = asSql(database);
 				return sql`UPDATE ca_officer_appointment SET effective_to = ${input.endedOn}, status = ${input.status}, end_reason = ${input.reason}, source_document_id = ${input.sourceDocumentId}, recorded_at = ${now}, recorded_by = ${input.recordedBy}, version = version + 1, updated_at = ${now} WHERE organization_id = ${input.organizationId} AND id = ${input.officerAppointmentId} AND version = ${input.expectedVersion}`;
 			});
-			return ok(updated);
+			return errorResult.ok(updated);
 		}
 		return this.#write(async () => {
 			await this.#database
@@ -415,7 +413,7 @@ class DrizzleCorporateAdministrationOfficerStore implements OfficerStore {
 				const sql = asSql(database);
 				return sql`INSERT INTO ca_officer_qualification (id, organization_id, legal_company_id, officer_appointment_id, qualification_type_code, issuer, reference_number, valid_from, valid_to, verification_status, verified_at, recorded_at, recorded_by, source_document_id, version, created_at, updated_at) VALUES (${id}, ${input.organizationId}, ${input.legalCompanyId}, ${input.officerAppointmentId}, ${input.qualificationTypeCode}, ${input.issuer}, ${input.referenceNumber}, ${input.validFrom}, ${input.validTo}, ${input.verificationStatus}, ${input.verifiedAt}, ${now}, ${input.recordedBy}, ${input.sourceDocumentId}, 1, ${now}, ${now})`;
 			});
-			return ok(row);
+			return errorResult.ok(row);
 		}
 		return this.#write(async () => {
 			await this.#database.insert(caOfficerQualification).values({
@@ -464,7 +462,7 @@ class DrizzleCorporateAdministrationOfficerStore implements OfficerStore {
 
 	async #read<T>(work: () => Promise<T>): Promise<Result<T>> {
 		try {
-			return ok(await work());
+			return errorResult.ok(await work());
 		} catch (error) {
 			const translated =
 				translateCorporateAdministrationInfrastructureError(error);
@@ -633,20 +631,16 @@ function asSql(
 }
 
 function notFound(): Result<never> {
-	return fail(
-		"NOT_FOUND",
-		"Corporate Administration record was not found.",
-		corporateAdministrationErrorDetails("CORPORATE_ADMINISTRATION_NOT_FOUND"),
-	);
+	return errorResult.fail("NOT_FOUND", {
+		publicMessage: "Corporate Administration record was not found.",
+	});
 }
 
-function stale(expectedVersion: number, actualVersion: number): Result<never> {
-	return fail(
-		"CONFLICT",
-		"Corporate Administration record version is stale.",
-		corporateAdministrationErrorDetails(
-			"CORPORATE_ADMINISTRATION_STALE_VERSION",
-			{ expectedVersion, actualVersion },
-		),
-	);
+function stale(
+	_expectedVersion: number,
+	_actualVersion: number,
+): Result<never> {
+	return errorResult.fail("CONFLICT", {
+		publicMessage: "Corporate Administration record version is stale.",
+	});
 }

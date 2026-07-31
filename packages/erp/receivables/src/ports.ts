@@ -1,4 +1,4 @@
-import type { Result } from "@afenda/errors/result";
+import type { Result } from "@afenda/errors";
 import type { ReceivablesEventType } from "@afenda/events/schemas";
 
 export interface ReceivablesEvent {

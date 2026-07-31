@@ -1,4 +1,4 @@
-import { fail, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import { resolveSearchStore } from "./resolve-store";
 import {
@@ -16,8 +16,8 @@ export function upsertSearchDocument(
 	const parsed = searchUpsertInputSchema.safeParse(input);
 	if (!parsed.success) {
 		return Promise.resolve(
-			fail("BAD_REQUEST", "Invalid search upsert input", {
-				fieldErrors: parsed.error.flatten().fieldErrors,
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Invalid search upsert input",
 			}),
 		);
 	}
@@ -31,8 +31,8 @@ export function upsertSearchDocuments(
 	const parsed = searchUpsertBatchSchema.safeParse(input);
 	if (!parsed.success) {
 		return Promise.resolve(
-			fail("BAD_REQUEST", "Invalid search upsert batch input", {
-				fieldErrors: parsed.error.flatten().fieldErrors,
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Invalid search upsert batch input",
 			}),
 		);
 	}
@@ -46,8 +46,8 @@ export function deleteSearchDocument(
 	const parsed = searchDeleteInputSchema.safeParse(input);
 	if (!parsed.success) {
 		return Promise.resolve(
-			fail("BAD_REQUEST", "Invalid search delete input", {
-				fieldErrors: parsed.error.flatten().fieldErrors,
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Invalid search delete input",
 			}),
 		);
 	}

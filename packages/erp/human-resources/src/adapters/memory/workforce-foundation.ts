@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	HUMAN_RESOURCES_PERSON_CHANGED_EVENT,
 	HUMAN_RESOURCES_PERSON_CONTACT_ADDED_EVENT,
@@ -278,7 +278,7 @@ export function createMemoryWorkforceFoundationMethods(input: {
 			return outbox;
 		}
 
-		return ok(cloneWorker(updated));
+		return errorResult.ok(cloneWorker(updated));
 	}
 
 	async function assertEmployeeLinkForWorkerMemory(
@@ -294,11 +294,12 @@ export function createMemoryWorkforceFoundationMethods(input: {
 			employee === undefined ||
 			employee.organizationId !== inputValue14.organizationId
 		) {
-			return fail(
-				"NOT_FOUND",
-				"Employee not found",
-				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-			);
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "The requested resource was not found",
+				internalContext: humanResourcesErrorDetails(
+					HUMAN_RESOURCES_ERROR_NOT_FOUND,
+				),
+			});
 		}
 
 		const employeeWorker = await findWorkerByEmployeeId({
@@ -313,14 +314,15 @@ export function createMemoryWorkforceFoundationMethods(input: {
 			(inputValue14.excludingWorkerId === undefined ||
 				employeeWorker.data.id !== inputValue14.excludingWorkerId)
 		) {
-			return fail(
-				"CONFLICT",
-				"Employee is already linked to a worker",
-				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "The request conflicts with current state",
+				internalContext: humanResourcesErrorDetails(
+					HUMAN_RESOURCES_ERROR_CONFLICT,
+				),
+			});
 		}
 
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	}
 
 	return {
@@ -330,9 +332,9 @@ export function createMemoryWorkforceFoundationMethods(input: {
 				person === undefined ||
 				person.organizationId !== query.organizationId
 			) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok(clonePerson(person));
+			return await errorResult.ok(clonePerson(person));
 		},
 
 		async findPersonAsOf(query): Promise<Result<PersonIdentityAtAsOf | null>> {
@@ -341,7 +343,7 @@ export function createMemoryWorkforceFoundationMethods(input: {
 				person === undefined ||
 				person.organizationId !== query.organizationId
 			) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
 
 			const versions = listPersonIdentityVersionsForPerson(
@@ -355,17 +357,18 @@ export function createMemoryWorkforceFoundationMethods(input: {
 				asOf: query.asOf,
 			});
 			if (!resolution.ok) {
-				return await fail(
-					"CONFLICT",
-					`Person identity lineage is invalid: ${resolution.reason}`,
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-				);
+				return await errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_CONFLICT,
+					),
+				});
 			}
 			if (resolution.record === null) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
 
-			return await ok({
+			return await errorResult.ok({
 				personId: query.personId,
 				organizationId: query.organizationId,
 				legalName: resolution.record.legalName,
@@ -382,9 +385,9 @@ export function createMemoryWorkforceFoundationMethods(input: {
 				person === undefined ||
 				person.organizationId !== query.organizationId
 			) {
-				return await ok([]);
+				return await errorResult.ok([]);
 			}
-			return await ok(
+			return await errorResult.ok(
 				listPersonIdentityVersionsForPerson(
 					state,
 					query.organizationId,
@@ -398,9 +401,9 @@ export function createMemoryWorkforceFoundationMethods(input: {
 				idempotencyMapKey(query.organizationId, query.idempotencyKey),
 			);
 			if (record === undefined) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({
+			return await errorResult.ok({
 				person: clonePerson(record.person),
 				createRequestFingerprint: record.createRequestFingerprint,
 			});
@@ -415,7 +418,7 @@ export function createMemoryWorkforceFoundationMethods(input: {
 				return existing;
 			}
 			if (existing.data !== null) {
-				return ok(clonePerson(existing.data.person));
+				return errorResult.ok(clonePerson(existing.data.person));
 			}
 
 			const idResult = parseHumanResourcesPersonId(randomUUID());
@@ -506,7 +509,7 @@ export function createMemoryWorkforceFoundationMethods(input: {
 				return outbox;
 			}
 
-			return ok(clonePerson(person));
+			return errorResult.ok(clonePerson(person));
 		},
 
 		async updatePersonName(inputValue13, ports, meta) {
@@ -515,11 +518,12 @@ export function createMemoryWorkforceFoundationMethods(input: {
 				person === undefined ||
 				person.organizationId !== inputValue13.organizationId
 			) {
-				return fail(
-					"NOT_FOUND",
-					"Person not found",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_NOT_FOUND,
+					),
+				});
 			}
 
 			const versionCheck = assertExpectedVersion(
@@ -536,11 +540,11 @@ export function createMemoryWorkforceFoundationMethods(input: {
 				inputValue13.personId,
 			);
 			if (openSegment === null) {
-				return fail(
-					"INTERNAL_ERROR",
-					"Person identity lineage is missing an open segment",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-				);
+				return errorResult.fail("INTERNAL_ERROR", {
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_CONFLICT,
+					),
+				});
 			}
 
 			const mutableCheck = assertLineageSegmentMutable(openSegment);
@@ -557,11 +561,12 @@ export function createMemoryWorkforceFoundationMethods(input: {
 			}
 
 			if (openSegment.legalName === inputValue13.legalName) {
-				return fail(
-					"CONFLICT",
-					"Person identity correction must change legal name",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_CONFLICT,
+					),
+				});
 			}
 
 			const now = new Date();
@@ -645,7 +650,7 @@ export function createMemoryWorkforceFoundationMethods(input: {
 				return outbox;
 			}
 
-			return ok(clonePerson(updatedPerson));
+			return errorResult.ok(clonePerson(updatedPerson));
 		},
 
 		async updatePersonPreferredName(inputValue12, ports, meta) {
@@ -654,11 +659,12 @@ export function createMemoryWorkforceFoundationMethods(input: {
 				person === undefined ||
 				person.organizationId !== inputValue12.organizationId
 			) {
-				return fail(
-					"NOT_FOUND",
-					"Person not found",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_NOT_FOUND,
+					),
+				});
 			}
 			const versionCheck = assertExpectedVersion(
 				person.version,
@@ -668,7 +674,7 @@ export function createMemoryWorkforceFoundationMethods(input: {
 				return versionCheck;
 			}
 			if (person.preferredName === inputValue12.preferredName) {
-				return ok(clonePerson(person));
+				return errorResult.ok(clonePerson(person));
 			}
 			const previous = clonePerson(person);
 			const now = new Date();
@@ -716,7 +722,7 @@ export function createMemoryWorkforceFoundationMethods(input: {
 				state.persons.set(previous.id, previous);
 				return outbox;
 			}
-			return ok(clonePerson(updated));
+			return errorResult.ok(clonePerson(updated));
 		},
 
 		async setPersonPrivacyClassification(inputValue11, ports, meta) {
@@ -725,11 +731,12 @@ export function createMemoryWorkforceFoundationMethods(input: {
 				person === undefined ||
 				person.organizationId !== inputValue11.organizationId
 			) {
-				return fail(
-					"NOT_FOUND",
-					"Person not found",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_NOT_FOUND,
+					),
+				});
 			}
 			const versionCheck = assertExpectedVersion(
 				person.version,
@@ -739,7 +746,7 @@ export function createMemoryWorkforceFoundationMethods(input: {
 				return versionCheck;
 			}
 			if (person.privacyClassification === inputValue11.privacyClassification) {
-				return ok(clonePerson(person));
+				return errorResult.ok(clonePerson(person));
 			}
 			const previous = clonePerson(person);
 			const now = new Date();
@@ -787,7 +794,7 @@ export function createMemoryWorkforceFoundationMethods(input: {
 				state.persons.set(previous.id, previous);
 				return outbox;
 			}
-			return ok(clonePerson(updated));
+			return errorResult.ok(clonePerson(updated));
 		},
 
 		async findPersonContactByIdempotencyKey(inputValue10) {
@@ -798,9 +805,9 @@ export function createMemoryWorkforceFoundationMethods(input: {
 				),
 			);
 			if (existing === undefined) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({
+			return await errorResult.ok({
 				contact: clonePersonContact(existing.contact),
 				createRequestFingerprint: existing.createRequestFingerprint,
 			});
@@ -812,11 +819,12 @@ export function createMemoryWorkforceFoundationMethods(input: {
 				person === undefined ||
 				person.organizationId !== record.organizationId
 			) {
-				return fail(
-					"NOT_FOUND",
-					"Person not found",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_NOT_FOUND,
+					),
+				});
 			}
 			if (record.isPrimary) {
 				for (const contact of state.personContacts.values()) {
@@ -827,11 +835,12 @@ export function createMemoryWorkforceFoundationMethods(input: {
 						contact.status === "active" &&
 						contact.isPrimary
 					) {
-						return fail(
-							"CONFLICT",
-							"Person already has a primary contact for this type",
-							humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-						);
+						return errorResult.fail("CONFLICT", {
+							publicMessage: "The request conflicts with current state",
+							internalContext: humanResourcesErrorDetails(
+								HUMAN_RESOURCES_ERROR_CONFLICT,
+							),
+						});
 					}
 				}
 			}
@@ -895,7 +904,7 @@ export function createMemoryWorkforceFoundationMethods(input: {
 				);
 				return outbox;
 			}
-			return ok(clonePersonContact(contact));
+			return errorResult.ok(clonePersonContact(contact));
 		},
 
 		async updatePersonContact(inputValue9, ports, meta) {
@@ -906,11 +915,12 @@ export function createMemoryWorkforceFoundationMethods(input: {
 				contact.personId !== inputValue9.personId ||
 				contact.status !== "active"
 			) {
-				return fail(
-					"NOT_FOUND",
-					"Person contact not found",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_NOT_FOUND,
+					),
+				});
 			}
 			const versionCheck = assertExpectedVersion(
 				contact.version,
@@ -929,11 +939,12 @@ export function createMemoryWorkforceFoundationMethods(input: {
 						row.isPrimary &&
 						row.id !== contact.id
 					) {
-						return fail(
-							"CONFLICT",
-							"Person already has a primary contact for this type",
-							humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-						);
+						return errorResult.fail("CONFLICT", {
+							publicMessage: "The request conflicts with current state",
+							internalContext: humanResourcesErrorDetails(
+								HUMAN_RESOURCES_ERROR_CONFLICT,
+							),
+						});
 					}
 				}
 			}
@@ -979,7 +990,7 @@ export function createMemoryWorkforceFoundationMethods(input: {
 				state.personContacts.set(previous.id, previous);
 				return outbox;
 			}
-			return ok(clonePersonContact(updated));
+			return errorResult.ok(clonePersonContact(updated));
 		},
 
 		async retirePersonContact(inputValue8, ports, meta) {
@@ -990,11 +1001,12 @@ export function createMemoryWorkforceFoundationMethods(input: {
 				contact.personId !== inputValue8.personId ||
 				contact.status !== "active"
 			) {
-				return fail(
-					"NOT_FOUND",
-					"Person contact not found",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_NOT_FOUND,
+					),
+				});
 			}
 			const versionCheck = assertExpectedVersion(
 				contact.version,
@@ -1044,7 +1056,7 @@ export function createMemoryWorkforceFoundationMethods(input: {
 				state.personContacts.set(previous.id, previous);
 				return outbox;
 			}
-			return ok(clonePersonContact(updated));
+			return errorResult.ok(clonePersonContact(updated));
 		},
 
 		async listPersonContacts(inputValue7) {
@@ -1053,13 +1065,14 @@ export function createMemoryWorkforceFoundationMethods(input: {
 				person === undefined ||
 				person.organizationId !== inputValue7.organizationId
 			) {
-				return await fail(
-					"NOT_FOUND",
-					"Person not found",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-				);
+				return await errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_NOT_FOUND,
+					),
+				});
 			}
-			return await ok(
+			return await errorResult.ok(
 				Array.from(state.personContacts.values())
 					.filter(
 						(contact) =>
@@ -1078,9 +1091,9 @@ export function createMemoryWorkforceFoundationMethods(input: {
 				),
 			);
 			if (existing === undefined) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({
+			return await errorResult.ok({
 				identifier: clonePersonIdentifier(existing.identifier),
 				createRequestFingerprint: existing.createRequestFingerprint,
 			});
@@ -1092,11 +1105,12 @@ export function createMemoryWorkforceFoundationMethods(input: {
 				person === undefined ||
 				person.organizationId !== record.organizationId
 			) {
-				return fail(
-					"NOT_FOUND",
-					"Person not found",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_NOT_FOUND,
+					),
+				});
 			}
 			for (const identifier of state.personIdentifiers.values()) {
 				if (
@@ -1106,11 +1120,12 @@ export function createMemoryWorkforceFoundationMethods(input: {
 					identifier.status === "active" &&
 					identifier.effectiveTo === null
 				) {
-					return fail(
-						"CONFLICT",
-						"Person identifier already exists for this organization",
-						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-					);
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+						internalContext: humanResourcesErrorDetails(
+							HUMAN_RESOURCES_ERROR_CONFLICT,
+						),
+					});
 				}
 			}
 			const now = new Date();
@@ -1175,7 +1190,7 @@ export function createMemoryWorkforceFoundationMethods(input: {
 				);
 				return outbox;
 			}
-			return ok(clonePersonIdentifier(identifier));
+			return errorResult.ok(clonePersonIdentifier(identifier));
 		},
 
 		async retirePersonIdentifier(inputValue5, ports, meta) {
@@ -1186,11 +1201,12 @@ export function createMemoryWorkforceFoundationMethods(input: {
 				identifier.personId !== inputValue5.personId ||
 				identifier.status !== "active"
 			) {
-				return fail(
-					"NOT_FOUND",
-					"Person identifier not found",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_NOT_FOUND,
+					),
+				});
 			}
 			const versionCheck = assertExpectedVersion(
 				identifier.version,
@@ -1200,10 +1216,9 @@ export function createMemoryWorkforceFoundationMethods(input: {
 				return versionCheck;
 			}
 			if (inputValue5.effectiveTo < identifier.effectiveFrom) {
-				return fail(
-					"VALIDATION_ERROR",
-					"Effective end date must be on or after effective start date",
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "The submitted data is invalid",
+				});
 			}
 			const previous = clonePersonIdentifier(identifier);
 			const now = new Date();
@@ -1246,7 +1261,7 @@ export function createMemoryWorkforceFoundationMethods(input: {
 				state.personIdentifiers.set(previous.id, previous);
 				return outbox;
 			}
-			return ok(clonePersonIdentifier(updated));
+			return errorResult.ok(clonePersonIdentifier(updated));
 		},
 
 		async listPersonIdentifiers(inputValue4) {
@@ -1255,13 +1270,14 @@ export function createMemoryWorkforceFoundationMethods(input: {
 				person === undefined ||
 				person.organizationId !== inputValue4.organizationId
 			) {
-				return await fail(
-					"NOT_FOUND",
-					"Person not found",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-				);
+				return await errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_NOT_FOUND,
+					),
+				});
 			}
-			return await ok(
+			return await errorResult.ok(
 				Array.from(state.personIdentifiers.values())
 					.filter(
 						(identifier) =>
@@ -1279,11 +1295,12 @@ export function createMemoryWorkforceFoundationMethods(input: {
 				person === undefined ||
 				person.organizationId !== inputValue3.organizationId
 			) {
-				return await fail(
-					"NOT_FOUND",
-					"Person not found",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-				);
+				return await errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_NOT_FOUND,
+					),
+				});
 			}
 			const matches = new Map<
 				HumanResourcesPersonId,
@@ -1361,7 +1378,7 @@ export function createMemoryWorkforceFoundationMethods(input: {
 					preferredName: matched.preferredName,
 				});
 			}
-			return await ok(candidates);
+			return await errorResult.ok(candidates);
 		},
 
 		async getWorkerById(query) {
@@ -1370,9 +1387,9 @@ export function createMemoryWorkforceFoundationMethods(input: {
 				worker === undefined ||
 				worker.organizationId !== query.organizationId
 			) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok(cloneWorker(worker));
+			return await errorResult.ok(cloneWorker(worker));
 		},
 
 		async findWorkerAsOf(
@@ -1383,7 +1400,7 @@ export function createMemoryWorkforceFoundationMethods(input: {
 				worker === undefined ||
 				worker.organizationId !== query.organizationId
 			) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
 
 			const versions = listWorkerClassificationVersionsForWorker(
@@ -1397,17 +1414,18 @@ export function createMemoryWorkforceFoundationMethods(input: {
 				asOf: query.asOf,
 			});
 			if (!resolution.ok) {
-				return await fail(
-					"CONFLICT",
-					`Worker classification lineage is invalid: ${resolution.reason}`,
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-				);
+				return await errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_CONFLICT,
+					),
+				});
 			}
 			if (resolution.record === null) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
 
-			return await ok({
+			return await errorResult.ok({
 				workerId: query.workerId,
 				organizationId: query.organizationId,
 				personId: worker.personId,
@@ -1427,9 +1445,9 @@ export function createMemoryWorkforceFoundationMethods(input: {
 				worker === undefined ||
 				worker.organizationId !== query.organizationId
 			) {
-				return await ok([]);
+				return await errorResult.ok([]);
 			}
-			return await ok(
+			return await errorResult.ok(
 				listWorkerClassificationVersionsForWorker(
 					state,
 					query.organizationId,
@@ -1446,14 +1464,14 @@ export function createMemoryWorkforceFoundationMethods(input: {
 						worker.organizationId === query.organizationId &&
 						worker.personId === query.personId
 					) {
-						return sequentialReturn(await ok(cloneWorker(worker)));
+						return sequentialReturn(await errorResult.ok(cloneWorker(worker)));
 					}
 				},
 			);
 			if (sequentialOutcome2.kind === "return") {
 				return sequentialOutcome2.value;
 			}
-			return await ok(null);
+			return await errorResult.ok(null);
 		},
 
 		async findWorkerByEmployeeId(query) {
@@ -1466,7 +1484,7 @@ export function createMemoryWorkforceFoundationMethods(input: {
 						worker.employeeId === query.employeeId
 					) {
 						return sequentialReturn(
-							await ok(cloneWorker(worker) as EmployeeWorker),
+							await errorResult.ok(cloneWorker(worker) as EmployeeWorker),
 						);
 					}
 				},
@@ -1474,7 +1492,7 @@ export function createMemoryWorkforceFoundationMethods(input: {
 			if (sequentialOutcome1.kind === "return") {
 				return sequentialOutcome1.value;
 			}
-			return await ok(null);
+			return await errorResult.ok(null);
 		},
 
 		async findWorkerByIdempotencyKey(query) {
@@ -1482,9 +1500,9 @@ export function createMemoryWorkforceFoundationMethods(input: {
 				idempotencyMapKey(query.organizationId, query.idempotencyKey),
 			);
 			if (record === undefined) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({
+			return await errorResult.ok({
 				worker: cloneWorker(record.worker),
 				createRequestFingerprint: record.createRequestFingerprint,
 			});
@@ -1500,7 +1518,7 @@ export function createMemoryWorkforceFoundationMethods(input: {
 				return existing;
 			}
 			if (existing.data !== null) {
-				return ok(cloneWorker(existing.data.worker));
+				return errorResult.ok(cloneWorker(existing.data.worker));
 			}
 
 			const person = state.persons.get(record.personId);
@@ -1508,11 +1526,12 @@ export function createMemoryWorkforceFoundationMethods(input: {
 				person === undefined ||
 				person.organizationId !== record.organizationId
 			) {
-				return fail(
-					"NOT_FOUND",
-					"Person not found",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_NOT_FOUND,
+					),
+				});
 			}
 
 			const personWorker = await this.findWorkerByPersonId({
@@ -1523,11 +1542,12 @@ export function createMemoryWorkforceFoundationMethods(input: {
 				return personWorker;
 			}
 			if (personWorker.data !== null) {
-				return fail(
-					"CONFLICT",
-					"Person is already linked to a worker",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_CONFLICT,
+					),
+				});
 			}
 
 			if (record.workerType === "employee" && record.employeeId !== null) {
@@ -1655,7 +1675,7 @@ export function createMemoryWorkforceFoundationMethods(input: {
 				return outbox;
 			}
 
-			return ok(cloneWorker(worker));
+			return errorResult.ok(cloneWorker(worker));
 		},
 
 		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
@@ -1665,11 +1685,12 @@ export function createMemoryWorkforceFoundationMethods(input: {
 				worker === undefined ||
 				worker.organizationId !== inputValue2.organizationId
 			) {
-				return fail(
-					"NOT_FOUND",
-					"Worker not found",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_NOT_FOUND,
+					),
+				});
 			}
 
 			const versionCheck = assertExpectedVersion(
@@ -1686,11 +1707,11 @@ export function createMemoryWorkforceFoundationMethods(input: {
 				inputValue2.workerId,
 			);
 			if (openSegment === null) {
-				return fail(
-					"INTERNAL_ERROR",
-					"Worker classification lineage is missing an open segment",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-				);
+				return errorResult.fail("INTERNAL_ERROR", {
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_CONFLICT,
+					),
+				});
 			}
 
 			const mutableCheck = assertLineageSegmentMutable(openSegment);
@@ -1730,11 +1751,12 @@ export function createMemoryWorkforceFoundationMethods(input: {
 				openSegment.workerType === nextWorkerType &&
 				openSegment.employeeId === nextEmployeeId
 			) {
-				return fail(
-					"CONFLICT",
-					"Worker type change must alter classification",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_CONFLICT,
+					),
+				});
 			}
 
 			const now = new Date();
@@ -1811,11 +1833,12 @@ export function createMemoryWorkforceFoundationMethods(input: {
 				worker === undefined ||
 				worker.organizationId !== inputValue.organizationId
 			) {
-				return await fail(
-					"NOT_FOUND",
-					"Worker not found",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-				);
+				return await errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_NOT_FOUND,
+					),
+				});
 			}
 
 			const versionCheck = assertExpectedVersion(
@@ -1832,11 +1855,11 @@ export function createMemoryWorkforceFoundationMethods(input: {
 				inputValue.workerId,
 			);
 			if (openSegment === null) {
-				return await fail(
-					"INTERNAL_ERROR",
-					"Worker classification lineage is missing an open segment",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-				);
+				return await errorResult.fail("INTERNAL_ERROR", {
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_CONFLICT,
+					),
+				});
 			}
 
 			const mutableCheck = assertLineageSegmentMutable(openSegment);
@@ -1853,11 +1876,12 @@ export function createMemoryWorkforceFoundationMethods(input: {
 			}
 
 			if (openSegment.workerStatus === inputValue.status) {
-				return await fail(
-					"CONFLICT",
-					"Worker status change must alter classification",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-				);
+				return await errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_CONFLICT,
+					),
+				});
 			}
 
 			const now = new Date();

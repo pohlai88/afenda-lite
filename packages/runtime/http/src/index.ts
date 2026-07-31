@@ -22,10 +22,6 @@ export {
 	RATE_LIMIT_RESET_HEADER,
 } from "./rate-limit-headers";
 export {
-	applyRetryAfterHeader,
-	RETRY_AFTER_HEADER,
-} from "./retry-after-header";
-export {
 	applyServerTimingHeader,
 	SERVER_TIMING_HEADER,
 } from "./server-timing";

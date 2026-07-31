@@ -1,4 +1,4 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import { normalizeSearchText } from "../core-organization-masters/normalized-code";
 import { extensionValidationFailure } from "./extension-errors";
@@ -43,7 +43,7 @@ export function normalizeItemAlias(
 		return normalized;
 	}
 
-	return ok({
+	return errorResult.ok({
 		aliasValue: normalized.data.text,
 		normalizedValue: normalized.data.normalizedText,
 	});
@@ -69,5 +69,5 @@ export function normalizeItemAliasSource(rawSource: string): Result<string> {
 			"source",
 		);
 	}
-	return ok(source);
+	return errorResult.ok(source);
 }

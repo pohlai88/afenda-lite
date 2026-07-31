@@ -1,6 +1,7 @@
 "use server";
 
 import { getSession } from "@afenda/auth";
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { createCorrelationId } from "@afenda/http";
 import {
 	IMPORT_MODES,
@@ -13,11 +14,6 @@ import { mapPackageResult } from "@/app/actions/map-package-result";
 import { forbidUnlessPermission } from "@/app/actions/permission-gate";
 import { createMasterDataAuthorizationPort } from "@/lib/erp/master-data-authorization-port";
 import { logProductEvent } from "@/modules/platform/observability/product-log";
-import {
-	type ActionResult,
-	actionFail,
-	actionFailInternal,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export type ValidateMasterDataImportActionData = ImportReconciliationReport;
@@ -48,11 +44,9 @@ export async function validateMasterDataImportAction(
 
 	const parsed = parseSchema(validateImportSchema, input);
 	if (!parsed.success) {
-		return actionFail(
-			"VALIDATION_ERROR",
-			"Provide a valid party import batch (max 100 rows).",
-			parsed.details,
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "Provide a valid party import batch (max 100 rows).",
+		});
 	}
 
 	const permissionDenied = await forbidUnlessPermission(
@@ -86,9 +80,6 @@ export async function validateMasterDataImportAction(
 			path: "validateMasterDataImportAction",
 			code: "INTERNAL_ERROR",
 		});
-		return actionFailInternal(
-			"Could not validate master-data import. Try again or contact an admin.",
-			correlationId,
-		);
+		return errorResult.fail("INTERNAL_ERROR", { correlationId });
 	}
 }

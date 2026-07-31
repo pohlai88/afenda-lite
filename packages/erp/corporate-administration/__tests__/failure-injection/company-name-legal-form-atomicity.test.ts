@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-
 import {
 	addCompanyName,
 	type CompanyLegalFormStore,
@@ -18,7 +17,6 @@ import {
 type CompanyHistoryStore = LegalCompanyStore &
 	CompanyNameStore &
 	CompanyLegalFormStore;
-
 function createHistoryDependencies(input: {
 	audits: unknown[];
 	events: unknown[];
@@ -31,7 +29,6 @@ function createHistoryDependencies(input: {
 		legalFormStore: store,
 	};
 }
-
 describe("company name and legal-form atomicity evidence", () => {
 	it("redacts source documents, approval details and protected party data from audit/event snapshots", async () => {
 		const audits: unknown[] = [];
@@ -39,7 +36,6 @@ describe("company name and legal-form atomicity evidence", () => {
 		const dependencies = createHistoryDependencies({ audits, events });
 		const organizationId = uniqueCaOrganizationId("name-redaction");
 		const options = caCommandOptions({ organizationId });
-
 		const registered = await registerLegalCompanyDraft(
 			caDraftInput({
 				companyCode: "af-redact",
@@ -49,7 +45,6 @@ describe("company name and legal-form atomicity evidence", () => {
 			dependencies,
 		);
 		expectOk(registered);
-
 		const added = await addCompanyName(
 			{
 				legalCompanyId: registered.data.legalCompanyId,
@@ -69,7 +64,6 @@ describe("company name and legal-form atomicity evidence", () => {
 			dependencies,
 		);
 		expectOk(added);
-
 		const snapshot = JSON.stringify({ audits, events });
 		expect(snapshot).toContain(
 			"corporate_administration.legal_company.name_added.v1",

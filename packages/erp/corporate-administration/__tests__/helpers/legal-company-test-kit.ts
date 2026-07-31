@@ -30,7 +30,7 @@ import {
 	runNeonHttpTransaction,
 	sql,
 } from "@afenda/db";
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import { createFixedCorporateAdministrationClock } from "./fixed-clock";
 import { createInlineCorporateAdministrationTransactionPort } from "./inline-transaction";
 import { createMemoryCorporateAdministrationAuditFactPort } from "./memory-audit";
@@ -92,7 +92,7 @@ export function caRulePort(input?: {
 }): CompanyJurisdictionRulePort {
 	return {
 		listEntityTypeRules: async () =>
-			ok([
+			errorResult.ok([
 				{
 					jurisdictionCountryCode: "MY",
 					entityTypes: input?.entityTypes ?? [
@@ -111,7 +111,7 @@ export function caPartyPort(input?: {
 }): CompanyPartyReferencePort {
 	return {
 		getOrganizationParty: async (request) =>
-			ok({
+			errorResult.ok({
 				partyId: request.partyId,
 				kind: input?.kind ?? "organization",
 				active: input?.active ?? true,
@@ -127,22 +127,22 @@ export function caReferenceDataPort(input?: {
 }): CompanyReferenceDataPort {
 	return {
 		validateLanguage: async (request) =>
-			ok({
+			errorResult.ok({
 				languageCode: request.languageCode,
 				active: input?.languageActive ?? true,
 			}),
 		resolveLanguage: async (request) =>
-			ok({
+			errorResult.ok({
 				code: request.languageCode,
 				active: input?.languageActive ?? true,
 			}),
 		validateSourceDocument: async (request) =>
-			ok({
+			errorResult.ok({
 				sourceDocumentId: request.sourceDocumentId,
 				active: input?.sourceDocumentActive ?? true,
 			}),
 		resolveLegalForm: async (request) =>
-			ok({
+			errorResult.ok({
 				code: request.legalFormCode,
 				active: input?.legalFormActive ?? true,
 				jurisdictionCode: request.jurisdictionCode,
@@ -150,25 +150,25 @@ export function caReferenceDataPort(input?: {
 				effectiveDate: request.effectiveDate,
 			}),
 		validateLegalFormCompatibility: async () =>
-			ok({
+			errorResult.ok({
 				compatible: input?.compatible ?? true,
 				active: true,
 			}),
 		resolveCountry: async (request) =>
-			ok({
+			errorResult.ok({
 				code: request.countryCode,
 				active: true,
 				effectiveDate: request.effectiveDate,
 			}),
 		resolveCurrency: async (request) =>
-			ok({
+			errorResult.ok({
 				code: request.currencyCode,
 				currencyCode: request.currencyCode,
 				active: true,
 				effectiveDate: request.effectiveDate,
 			}),
 		resolveIdentifierAuthority: async (request) =>
-			ok({
+			errorResult.ok({
 				code: request.authorityCode,
 				active: true,
 				jurisdictionCode: request.jurisdictionCode,
@@ -179,7 +179,7 @@ export function caReferenceDataPort(input?: {
 				removePresentationSeparators: true,
 			}),
 		resolveActivityClassification: async (request) =>
-			ok({
+			errorResult.ok({
 				code: request.activityCode,
 				active: true,
 				classificationSystem: request.classificationSystem,
@@ -189,18 +189,18 @@ export function caReferenceDataPort(input?: {
 				requiresRegulator: false,
 			}),
 		resolveRegulator: async (request) =>
-			ok({
+			errorResult.ok({
 				code: request.regulatorCode,
 				active: true,
 				displayName: request.regulatorCode,
 			}),
 		resolveRegisteredActivity: async (request) =>
-			ok({
+			errorResult.ok({
 				code: request.activityCode,
 				active: true,
 			}),
 		listLegalFormCompatibilityRules: async () =>
-			ok([
+			errorResult.ok([
 				{
 					jurisdictionCode: "MY",
 					legalFormCodes: ["private_limited_company"],

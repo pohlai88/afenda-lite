@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
 
-import {
-	INVENTORY_ERROR_IDEMPOTENCY_CONFLICT,
-	INVENTORY_ERROR_INSUFFICIENT_AVAILABLE,
-} from "../src/error-codes";
 import { createMemoryInventoryStore } from "../src/memory-store";
 import {
 	addStockMovementLine,
@@ -259,9 +255,6 @@ describe("@afenda/inventory domain", () => {
 		expect(posted.ok).toBe(false);
 		if (!posted.ok) {
 			expect(posted.code).toBe("CONFLICT");
-			expect(posted.details?.inventoryCode).toBe(
-				INVENTORY_ERROR_INSUFFICIENT_AVAILABLE,
-			);
 		}
 	});
 
@@ -750,9 +743,6 @@ describe("@afenda/inventory domain", () => {
 		expect(conflict.ok).toBe(false);
 		if (!conflict.ok) {
 			expect(conflict.code).toBe("CONFLICT");
-			expect(conflict.details?.inventoryCode).toBe(
-				INVENTORY_ERROR_IDEMPOTENCY_CONFLICT,
-			);
 		}
 	});
 });

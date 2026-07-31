@@ -23,7 +23,7 @@ import {
 	or,
 	runNeonHttpTransaction,
 } from "@afenda/db";
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	HUMAN_RESOURCES_BENEFIT_ENROLLMENT_CHANGED_EVENT,
 	HUMAN_RESOURCES_COMPENSATION_CHANGED_EVENT,
@@ -236,7 +236,7 @@ async function assertDrizzleReviewCycleOpen(
 	if (!open.ok) {
 		return open;
 	}
-	return ok(true);
+	return errorResult.ok(true);
 }
 
 async function assertDrizzleReviewBudget(
@@ -264,7 +264,7 @@ async function assertDrizzleReviewBudget(
 				if (!active.ok) {
 					return active;
 				}
-				return ok(active.data?.baseAmount ?? null);
+				return errorResult.ok(active.data?.baseAmount ?? null);
 			},
 		},
 		review,
@@ -540,9 +540,9 @@ function mapCompensationGrade(
 	}
 	const status = compensationGradeStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail("INTERNAL_ERROR", "Invalid compensation grade status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		code: row.code,
@@ -569,7 +569,7 @@ function mapSalaryBand(
 	}
 	const status = salaryBandStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail("INTERNAL_ERROR", "Invalid salary band status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 	let supersedesSalaryBandId = null as SalaryBand["supersedesSalaryBandId"];
 	if (
@@ -582,7 +582,7 @@ function mapSalaryBand(
 		}
 		supersedesSalaryBandId = parsed.data;
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		gradeId: gradeId.data,
@@ -654,16 +654,13 @@ function mapEmployeeCompensation(
 	}
 	const payFrequency = payFrequencySchema.safeParse(row.payFrequency);
 	if (!payFrequency.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid employee compensation pay frequency",
-		);
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 	const status = employeeCompensationStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail("INTERNAL_ERROR", "Invalid employee compensation status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		employeeId: employeeId.data,
@@ -740,9 +737,9 @@ export function mapCompensationReviewFromDbRow(
 	}
 	const status = compensationReviewStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail("INTERNAL_ERROR", "Invalid compensation review status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		cycleId: cycleId.data,
@@ -776,9 +773,9 @@ function mapBenefitPlan(
 	}
 	const status = benefitPlanStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail("INTERNAL_ERROR", "Invalid benefit plan status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		code: row.code,
@@ -850,9 +847,9 @@ function mapCompensationGradeProgressionRule(
 		row.status,
 	);
 	if (!status.success) {
-		return fail("INTERNAL_ERROR", "Invalid progression rule status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		fromGradeId: fromGradeId.data,
@@ -951,9 +948,9 @@ function mapCompensationProposal(
 	}
 	const status = compensationProposalStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail("INTERNAL_ERROR", "Invalid compensation proposal status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		applicationId: applicationId.data,
@@ -1053,7 +1050,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapCompensationGrade(row);
 		} catch (error) {
@@ -1075,7 +1072,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapCompensationGrade(row);
 		} catch (error) {
@@ -1399,7 +1396,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			const totalCount = grades.length;
 			const offset = (input.page - 1) * input.pageSize;
 			const paginated = grades.slice(offset, offset + input.pageSize);
-			return ok({
+			return errorResult.ok({
 				grades: paginated,
 				totalCount,
 				page: input.page,
@@ -1424,7 +1421,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapSalaryBand(row);
 		} catch (error) {
@@ -1441,11 +1438,12 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			return grade;
 		}
 		if (grade.data === null) {
-			return fail(
-				"NOT_FOUND",
-				"Compensation grade not found or cross-org reference",
-				{ code: HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE },
-			);
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "The requested resource was not found",
+				internalContext: {
+					code: HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+				},
+			});
 		}
 		if (!isCompensationGradeActive(grade.data.status)) {
 			return invalidState("Grade must be active");
@@ -1560,11 +1558,12 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			return grade;
 		}
 		if (grade.data === null) {
-			return fail(
-				"NOT_FOUND",
-				"Compensation grade not found or cross-org reference",
-				{ code: HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE },
-			);
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "The requested resource was not found",
+				internalContext: {
+					code: HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+				},
+			});
 		}
 
 		const moneyCheck = compareMoneyOrder(
@@ -1797,7 +1796,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 				return successor;
 			}
 
-			return ok({
+			return errorResult.ok({
 				superseded: superseded.data,
 				successor: successor.data,
 			});
@@ -1928,7 +1927,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			const totalCount = bands.length;
 			const offset = (input.page - 1) * input.pageSize;
 			const paginated = bands.slice(offset, offset + input.pageSize);
-			return ok({
+			return errorResult.ok({
 				bands: paginated,
 				totalCount,
 				page: input.page,
@@ -1967,7 +1966,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 				records,
 				asOf: input.asOf,
 			});
-			return ok(selected);
+			return errorResult.ok(selected);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -1993,7 +1992,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapCompensationGradeProgressionRule(row);
 		} catch (error) {
@@ -2249,7 +2248,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			const totalCount = rules.length;
 			const offset = (input.page - 1) * input.pageSize;
 			const paginated = rules.slice(offset, offset + input.pageSize);
-			return ok({
+			return errorResult.ok({
 				rules: paginated,
 				totalCount,
 				page: input.page,
@@ -2271,7 +2270,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 		if (!listed.ok) {
 			return listed;
 		}
-		return ok(listed.data.rules);
+		return errorResult.ok(listed.data.rules);
 	},
 
 	async getEmployeeCompensation(input) {
@@ -2288,7 +2287,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapEmployeeCompensation(row);
 		} catch (error) {
@@ -2316,7 +2315,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapEmployeeCompensation(row);
 		} catch (error) {
@@ -2336,7 +2335,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			return existing;
 		}
 		if (existing.data !== null) {
-			return ok(existing.data);
+			return errorResult.ok(existing.data);
 		}
 
 		const employment = await this.getEmploymentById({
@@ -2347,18 +2346,20 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			return employment;
 		}
 		if (employment.data === null) {
-			return fail("NOT_FOUND", "Employment not found or cross-org reference", {
-				code: HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "The requested resource was not found",
+				internalContext: {
+					code: HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+				},
 			});
 		}
 		if (employment.data.employeeId !== record.employeeId) {
-			return fail(
-				"NOT_FOUND",
-				"Employee does not match employment assignment scope",
-				{
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "The requested resource was not found",
+				internalContext: {
 					code: HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 				},
-			);
+			});
 		}
 
 		const id = randomUUID();
@@ -2488,7 +2489,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 					return replay;
 				}
 				if (replay.data !== null) {
-					return ok(replay.data);
+					return errorResult.ok(replay.data);
 				}
 			}
 			return mapPersistenceFailure(
@@ -2698,7 +2699,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			const totalCount = compensations.length;
 			const offset = (input.page - 1) * input.pageSize;
 			const paginated = compensations.slice(offset, offset + input.pageSize);
-			return ok({
+			return errorResult.ok({
 				compensations: paginated,
 				totalCount,
 				page: input.page,
@@ -2727,7 +2728,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapEmployeeCompensation(row);
 		} catch (error) {
@@ -2764,7 +2765,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 				records,
 				asOf: input.asOf,
 			});
-			return ok(selected);
+			return errorResult.ok(selected);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -2787,7 +2788,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapCompensationReviewFromDbRow(row);
 		} catch (error) {
@@ -2809,7 +2810,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapCompensationReviewFromDbRow(row);
 		} catch (error) {
@@ -2831,7 +2832,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 		}
 		if (existing.data !== null) {
 			if (existing.data.fingerprint === record.createRequestFingerprint) {
-				return ok(existing.data);
+				return errorResult.ok(existing.data);
 			}
 			return conflict("Idempotency key already used with different data");
 		}
@@ -2844,8 +2845,11 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			return employee;
 		}
 		if (employee.data === null) {
-			return fail("NOT_FOUND", "Employee not found or cross-org reference", {
-				code: HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "The requested resource was not found",
+				internalContext: {
+					code: HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+				},
 			});
 		}
 
@@ -2857,8 +2861,11 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			return employment;
 		}
 		if (employment.data === null) {
-			return fail("NOT_FOUND", "Employment not found or cross-org reference", {
-				code: HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "The requested resource was not found",
+				internalContext: {
+					code: HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+				},
 			});
 		}
 
@@ -2952,7 +2959,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 				}
 				if (replay.data !== null) {
 					if (replay.data.fingerprint === record.createRequestFingerprint) {
-						return ok(replay.data);
+						return errorResult.ok(replay.data);
 					}
 					return conflict("Idempotency key already used with different data");
 				}
@@ -3250,8 +3257,11 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			return employment;
 		}
 		if (employment.data === null) {
-			return fail("NOT_FOUND", "Employment not found or cross-org reference", {
-				code: HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "The requested resource was not found",
+				internalContext: {
+					code: HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+				},
 			});
 		}
 
@@ -3503,7 +3513,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 					return replay;
 				}
 				if (replay.data !== null) {
-					return ok(replay.data);
+					return errorResult.ok(replay.data);
 				}
 			}
 			return mapPersistenceFailure(
@@ -3536,7 +3546,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			const totalCount = reviews.length;
 			const offset = (input.page - 1) * input.pageSize;
 			const paginated = reviews.slice(offset, offset + input.pageSize);
-			return ok({
+			return errorResult.ok({
 				reviews: paginated,
 				totalCount,
 				page: input.page,
@@ -3564,7 +3574,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapCompensationProposal(row);
 		} catch (error) {
@@ -3587,8 +3597,11 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			return notFound("Application not found");
 		}
 		if (application.data.organizationId !== record.organizationId) {
-			return fail("NOT_FOUND", "Application not found or cross-org reference", {
-				code: HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "The requested resource was not found",
+				internalContext: {
+					code: HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+				},
 			});
 		}
 
@@ -3955,7 +3968,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			const totalCount = proposals.length;
 			const offset = (input.page - 1) * input.pageSize;
 			proposals = proposals.slice(offset, offset + input.pageSize);
-			return ok({
+			return errorResult.ok({
 				proposals,
 				totalCount,
 				page: input.page,
@@ -3983,7 +3996,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapBenefitPlan(row);
 		} catch (error) {
@@ -4005,7 +4018,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapBenefitPlan(row);
 		} catch (error) {
@@ -4323,7 +4336,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			const totalCount = plans.length;
 			const offset = (input.page - 1) * input.pageSize;
 			const paginated = plans.slice(offset, offset + input.pageSize);
-			return ok({
+			return errorResult.ok({
 				plans: paginated,
 				totalCount,
 				page: input.page,
@@ -4356,7 +4369,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapBenefitEnrollmentFromDbRow(row);
 		} catch (error) {
@@ -4378,7 +4391,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapBenefitEnrollmentFromDbRow(row);
 		} catch (error) {
@@ -4400,7 +4413,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 		}
 		if (existing.data !== null) {
 			if (existing.data.fingerprint === record.createRequestFingerprint) {
-				return ok(existing.data);
+				return errorResult.ok(existing.data);
 			}
 			return conflict("Idempotency key already used with different data");
 		}
@@ -4438,8 +4451,11 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			return employee;
 		}
 		if (employee.data === null) {
-			return fail("NOT_FOUND", "Employee not found or cross-org reference", {
-				code: HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "The requested resource was not found",
+				internalContext: {
+					code: HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+				},
 			});
 		}
 
@@ -4562,7 +4578,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 				}
 				if (replay.data !== null) {
 					if (replay.data.fingerprint === record.createRequestFingerprint) {
-						return ok(replay.data);
+						return errorResult.ok(replay.data);
 					}
 					return conflict("Idempotency key already used with different data");
 				}
@@ -4850,7 +4866,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			const totalCount = enrollments.length;
 			const offset = (input.page - 1) * input.pageSize;
 			const paginated = enrollments.slice(offset, offset + input.pageSize);
-			return ok({
+			return errorResult.ok({
 				enrollments: paginated,
 				totalCount,
 				page: input.page,
@@ -4870,8 +4886,11 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			return employee;
 		}
 		if (employee.data === null) {
-			return fail("NOT_FOUND", "Employee not found or cross-org reference", {
-				code: HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "The requested resource was not found",
+				internalContext: {
+					code: HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+				},
 			});
 		}
 
@@ -4938,10 +4957,10 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 			};
 
 			if (!activeCompensation) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 
-			return ok(handoff);
+			return errorResult.ok(handoff);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,

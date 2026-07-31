@@ -32,10 +32,12 @@ import {
 	tenantEntityPredicate,
 } from "@afenda/db";
 import {
-	hasPostgresSqlState,
-	normalizePostgresUnknown,
-} from "@afenda/errors/adapters/postgres";
-import { fail, failFromAppError, ok, type Result } from "@afenda/errors/result";
+	errorIngress,
+	errorProject,
+	errorResult,
+	type Result,
+} from "@afenda/errors";
+
 import type {
 	ItemGroupLifecycleEventSuffix,
 	PartyLifecycleEventSuffix,
@@ -174,7 +176,6 @@ import {
 	drizzleTransitionItemWithVariantSideEffect,
 	drizzleUpdateItemTemplate,
 } from "./capabilities/extensions/adapters/drizzle/variant-mutations";
-import type { MasterFailureDetails } from "./contracts/reasons";
 import type { MutationPorts } from "./ports";
 import type {
 	Item,
@@ -242,8 +243,10 @@ function importRowAppliedQuery(
 	`;
 }
 
-function failFromPersistence(error: unknown, fallbackMessage: string) {
-	return failFromAppError(normalizePostgresUnknown(error, fallbackMessage));
+function failFromPersistence(error: unknown, _fallbackMessage: string) {
+	return errorProject.result(
+		errorIngress.postgres(error, { operation: "persistence.postgres" }),
+	);
 }
 
 const CORE_MASTER_AUDIT_SOURCE = "master-data.drizzle-store";
@@ -308,27 +311,27 @@ function prepareDerivedCoreMasterAudit(
 }
 
 function taxRegistrationOverlapConflict(): Result<never> {
-	return fail("CONFLICT", "Active tax registration validity ranges overlap", {
-		reason: "MASTER_VALIDITY_OVERLAP",
-	} satisfies MasterFailureDetails);
+	return errorResult.fail("CONFLICT", {
+		publicMessage: "Active tax registration validity ranges overlap",
+	});
 }
 
-function taxRegistrationValidityFailure(message: string): Result<never> {
-	return fail("BAD_REQUEST", message, {
-		reason: "MASTER_VALIDATION_FAILED",
-	} satisfies MasterFailureDetails);
+function taxRegistrationValidityFailure(_message: string): Result<never> {
+	return errorResult.fail("BAD_REQUEST", {
+		publicMessage: "The request is invalid",
+	});
 }
 
-function codeConflict(message: string): Result<never> {
-	return fail("CONFLICT", message, {
-		reason: "MASTER_CODE_CONFLICT",
-	} satisfies MasterFailureDetails);
+function _codeConflict(_message: string): Result<never> {
+	return errorResult.fail("CONFLICT", {
+		publicMessage: "The request conflicts with current state",
+	});
 }
 
-function versionConflict(message: string): Result<never> {
-	return fail("CONFLICT", message, {
-		reason: "MASTER_VERSION_CONFLICT",
-	} satisfies MasterFailureDetails);
+function versionConflict(_message: string): Result<never> {
+	return errorResult.fail("CONFLICT", {
+		publicMessage: "The request conflicts with current state",
+	});
 }
 
 function resolveWarehouseUpdateState(
@@ -427,22 +430,22 @@ function resolveItemUpdateState(record: ItemUpdateRecord, existing: Item) {
 	};
 }
 
-function notFound(message: string): Result<never> {
-	return fail("NOT_FOUND", message, {
-		reason: "MASTER_NOT_FOUND",
-	} satisfies MasterFailureDetails);
+function notFound(_message: string): Result<never> {
+	return errorResult.fail("NOT_FOUND", {
+		publicMessage: "The requested resource was not found",
+	});
 }
 
-function validationFailed(message: string): Result<never> {
-	return fail("BAD_REQUEST", message, {
-		reason: "MASTER_VALIDATION_FAILED",
-	} satisfies MasterFailureDetails);
+function validationFailed(_message: string): Result<never> {
+	return errorResult.fail("BAD_REQUEST", {
+		publicMessage: "The request is invalid",
+	});
 }
 
-function invalidState(message: string): Result<never> {
-	return fail("CONFLICT", message, {
-		reason: "MASTER_INVALID_STATE",
-	} satisfies MasterFailureDetails);
+function invalidState(_message: string): Result<never> {
+	return errorResult.fail("CONFLICT", {
+		publicMessage: "The request conflicts with current state",
+	});
 }
 
 interface PartySqlRow {
@@ -623,12 +626,9 @@ function eventPayloadJson(
 
 function mapWriteError(
 	error: unknown,
-	uniqueMessage: string,
+	_uniqueMessage: string,
 	fallbackMessage: string,
 ): Result<never> {
-	if (hasPostgresSqlState(error, "23505")) {
-		return codeConflict(uniqueMessage);
-	}
 	return failFromPersistence(error, fallbackMessage);
 }
 
@@ -935,7 +935,7 @@ function assertItemGroupParent(
 	parentId: string | null,
 ): Promise<Result<true>> {
 	if (parentId === null) {
-		return Promise.resolve(ok(true));
+		return Promise.resolve(errorResult.ok(true));
 	}
 	if (selfId !== null && parentId === selfId) {
 		return Promise.resolve(validationFailed("Item group cannot parent itself"));
@@ -976,7 +976,9 @@ function assertItemGroupParent(
 		) {
 			return invalidState("Item group parent must be active");
 		}
-		return row.parentId === null ? ok(true) : inspectParent(row.parentId, seen);
+		return row.parentId === null
+			? errorResult.ok(true)
+			: inspectParent(row.parentId, seen);
 	};
 	return inspectParent(parentId, new Set<string>());
 }
@@ -988,7 +990,7 @@ function assertWarehouseParent(
 	childLocationType: WarehouseLocationType,
 ): Promise<Result<true>> {
 	if (parentId === null) {
-		return Promise.resolve(ok(true));
+		return Promise.resolve(errorResult.ok(true));
 	}
 	if (selfId !== null && parentId === selfId) {
 		return Promise.resolve(validationFailed("Warehouse cannot parent itself"));
@@ -1030,7 +1032,9 @@ function assertWarehouseParent(
 				);
 			}
 		}
-		return row.parentId === null ? ok(true) : inspectParent(row.parentId, seen);
+		return row.parentId === null
+			? errorResult.ok(true)
+			: inspectParent(row.parentId, seen);
 	};
 	return inspectParent(parentId, new Set<string>());
 }
@@ -1104,7 +1108,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 				.from(refCountry)
 				.where(eq(refCountry.code, code.trim().toUpperCase()))
 				.limit(1);
-			return ok(row === undefined ? null : mapRefCountry(row));
+			return errorResult.ok(row === undefined ? null : mapRefCountry(row));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to load ref country");
 		}
@@ -1117,7 +1121,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 				.from(refCountry)
 				.where(eq(refCountry.id, id))
 				.limit(1);
-			return ok(row === undefined ? null : mapRefCountry(row));
+			return errorResult.ok(row === undefined ? null : mapRefCountry(row));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to load ref country");
 		}
@@ -1132,7 +1136,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 				.from(refCurrency)
 				.where(eq(refCurrency.code, code.trim().toUpperCase()))
 				.limit(1);
-			return ok(row === undefined ? null : mapRefCurrency(row));
+			return errorResult.ok(row === undefined ? null : mapRefCurrency(row));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to load ref currency");
 		}
@@ -1145,7 +1149,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 				.from(refCurrency)
 				.where(eq(refCurrency.id, id))
 				.limit(1);
-			return ok(row === undefined ? null : mapRefCurrency(row));
+			return errorResult.ok(row === undefined ? null : mapRefCurrency(row));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to load ref currency");
 		}
@@ -1160,7 +1164,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 				.from(refLanguage)
 				.where(eq(refLanguage.code, code.trim().toLowerCase()))
 				.limit(1);
-			return ok(row === undefined ? null : mapRefLanguage(row));
+			return errorResult.ok(row === undefined ? null : mapRefLanguage(row));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to load ref language");
 		}
@@ -1175,7 +1179,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 				.from(refTimeZone)
 				.where(eq(refTimeZone.ianaName, ianaName.trim()))
 				.limit(1);
-			return ok(row === undefined ? null : mapRefTimeZone(row));
+			return errorResult.ok(row === undefined ? null : mapRefTimeZone(row));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to load ref time zone");
 		}
@@ -1190,7 +1194,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 				.from(refUomDimension)
 				.where(eq(refUomDimension.code, code.trim().toLowerCase()))
 				.limit(1);
-			return ok(row === undefined ? null : mapRefUomDimension(row));
+			return errorResult.ok(row === undefined ? null : mapRefUomDimension(row));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to load ref UoM dimension");
 		}
@@ -1203,7 +1207,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 				.from(refUom)
 				.where(eq(refUom.id, id))
 				.limit(1);
-			return ok(row === undefined ? null : mapRefUom(row));
+			return errorResult.ok(row === undefined ? null : mapRefUom(row));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to load ref UoM");
 		}
@@ -1216,7 +1220,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 				.from(refUom)
 				.where(eq(refUom.code, code.trim().toUpperCase()))
 				.limit(1);
-			return ok(row === undefined ? null : mapRefUom(row));
+			return errorResult.ok(row === undefined ? null : mapRefUom(row));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to load ref UoM by code");
 		}
@@ -1225,7 +1229,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 	async listRefUoms(): Promise<Result<RefUom[]>> {
 		try {
 			const rows = await db.select().from(refUom).orderBy(asc(refUom.code));
-			return ok(rows.map(mapRefUom));
+			return errorResult.ok(rows.map(mapRefUom));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to list ref UoMs");
 		}
@@ -1243,7 +1247,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					and(eq(mdParty.id, id), eq(mdParty.organizationId, organizationId)),
 				)
 				.limit(1);
-			return ok(row === undefined ? null : mapParty(row));
+			return errorResult.ok(row === undefined ? null : mapParty(row));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to load party");
 		}
@@ -1266,7 +1270,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					),
 				)
 				.limit(1);
-			return ok(row === undefined ? null : mapParty(row));
+			return errorResult.ok(row === undefined ? null : mapParty(row));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to load party by code");
 		}
@@ -1288,7 +1292,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 				.orderBy(asc(mdParty.normalizedCode), asc(mdParty.id))
 				.limit(filter.pageSize)
 				.offset((filter.page - 1) * filter.pageSize);
-			return ok(rows.map(mapParty));
+			return errorResult.ok(rows.map(mapParty));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to list parties");
 		}
@@ -1321,7 +1325,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 				.orderBy(asc(mdParty.normalizedCode), asc(mdParty.id))
 				.limit(filter.pageSize)
 				.offset((filter.page - 1) * filter.pageSize);
-			return ok(rows.map(mapParty));
+			return errorResult.ok(rows.map(mapParty));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to list parties by role");
 		}
@@ -1360,7 +1364,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 				)
 				.orderBy(asc(mdParty.normalizedCode), asc(mdParty.id))
 				.limit(1);
-			return ok(row === undefined ? null : mapParty(row.party));
+			return errorResult.ok(row === undefined ? null : mapParty(row.party));
 		} catch (error) {
 			return failFromPersistence(
 				error,
@@ -1389,7 +1393,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 				.orderBy(asc(mdParty.normalizedCode), asc(mdParty.id))
 				.limit(filter.pageSize)
 				.offset((filter.page - 1) * filter.pageSize);
-			return ok(rows.map(mapParty));
+			return errorResult.ok(rows.map(mapParty));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to search parties");
 		}
@@ -1570,9 +1574,9 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			]);
 			const [row] = rows;
 			if (row === undefined) {
-				return fail("INTERNAL_ERROR", "Party create returned no row");
+				return errorResult.fail("INTERNAL_ERROR");
 			}
-			return ok(mapPartySqlRow(row));
+			return errorResult.ok(mapPartySqlRow(row));
 		} catch (error) {
 			return mapWriteError(
 				error,
@@ -1707,7 +1711,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			if (row === undefined) {
 				return versionConflict("Party version conflict");
 			}
-			return ok(mapPartySqlRow(row));
+			return errorResult.ok(mapPartySqlRow(row));
 		} catch (error) {
 			return mapWriteError(
 				error,
@@ -2051,7 +2055,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			if (row === undefined) {
 				return versionConflict("Party version conflict");
 			}
-			return ok(mapPartySqlRow(row));
+			return errorResult.ok(mapPartySqlRow(row));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to transition party");
 		}
@@ -2081,14 +2085,14 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		const source = sourceResult.data;
 		const target = targetResult.data;
 		if (source.mergedIntoId !== null || target.mergedIntoId !== null) {
-			return fail("CONFLICT", "Party already merged", {
-				reason: "MASTER_INVALID_STATE",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Party already merged",
+			});
 		}
 		if (source.partyKind !== target.partyKind) {
-			return fail("CONFLICT", "Incompatible party kinds for merge", {
-				reason: "MASTER_INVALID_STATE",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Incompatible party kinds for merge",
+			});
 		}
 
 		const decide = <T>(
@@ -2444,7 +2448,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 				retiredAt: new Date(),
 				retiredBy: record.actorUserId,
 			};
-			return ok({
+			return errorResult.ok({
 				survivor: mapPartySqlRow(survivorRow),
 				merged: mergedParty,
 			});
@@ -2468,7 +2472,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					),
 				)
 				.limit(1);
-			return ok(row === undefined ? null : mapItemGroup(row));
+			return errorResult.ok(row === undefined ? null : mapItemGroup(row));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to load item group");
 		}
@@ -2490,7 +2494,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					),
 				)
 				.limit(1);
-			return ok(row === undefined ? null : mapItemGroup(row));
+			return errorResult.ok(row === undefined ? null : mapItemGroup(row));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to load item group by code");
 		}
@@ -2514,7 +2518,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 				.orderBy(asc(mdItemGroup.normalizedCode), asc(mdItemGroup.id))
 				.limit(filter.pageSize)
 				.offset((filter.page - 1) * filter.pageSize);
-			return ok(rows.map(mapItemGroup));
+			return errorResult.ok(rows.map(mapItemGroup));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to list item groups");
 		}
@@ -2630,7 +2634,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			if (row === undefined) {
 				return invalidState("Item group parent must be active");
 			}
-			return ok(mapItemGroupSqlRow(row));
+			return errorResult.ok(mapItemGroupSqlRow(row));
 		} catch (error) {
 			return mapWriteError(
 				error,
@@ -2783,7 +2787,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			if (row === undefined) {
 				return versionConflict("Item group version conflict");
 			}
-			return ok(mapItemGroupSqlRow(row));
+			return errorResult.ok(mapItemGroupSqlRow(row));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to update item group");
 		}
@@ -2946,7 +2950,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			if (row === undefined) {
 				return versionConflict("Item group version conflict");
 			}
-			return ok(mapItemGroupSqlRow(row));
+			return errorResult.ok(mapItemGroupSqlRow(row));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to transition item group");
 		}
@@ -2964,7 +2968,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					and(eq(mdItem.id, id), eq(mdItem.organizationId, organizationId)),
 				)
 				.limit(1);
-			return ok(row === undefined ? null : mapItem(row));
+			return errorResult.ok(row === undefined ? null : mapItem(row));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to load item");
 		}
@@ -2986,7 +2990,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					),
 				)
 				.limit(1);
-			return ok(row === undefined ? null : mapItem(row));
+			return errorResult.ok(row === undefined ? null : mapItem(row));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to load item by code");
 		}
@@ -3011,7 +3015,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 				.orderBy(asc(mdItem.normalizedCode), asc(mdItem.id))
 				.limit(filter.pageSize)
 				.offset((filter.page - 1) * filter.pageSize);
-			return ok(rows.map(mapItem));
+			return errorResult.ok(rows.map(mapItem));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to list items");
 		}
@@ -3181,7 +3185,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					"Item requires an active item group and active platform UoM",
 				);
 			}
-			return ok(mapItemSqlRow(row));
+			return errorResult.ok(mapItemSqlRow(row));
 		} catch (error) {
 			return mapWriteError(
 				error,
@@ -3404,7 +3408,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			if (row === undefined) {
 				return versionConflict("Item version conflict");
 			}
-			return ok(mapItemSqlRow(row));
+			return errorResult.ok(mapItemSqlRow(row));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to update item");
 		}
@@ -3427,7 +3431,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					),
 				)
 				.limit(1);
-			return ok(row === undefined ? null : mapWarehouse(row));
+			return errorResult.ok(row === undefined ? null : mapWarehouse(row));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to load warehouse");
 		}
@@ -3449,7 +3453,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					),
 				)
 				.limit(1);
-			return ok(row === undefined ? null : mapWarehouse(row));
+			return errorResult.ok(row === undefined ? null : mapWarehouse(row));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to load warehouse by code");
 		}
@@ -3473,7 +3477,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 				.orderBy(asc(mdWarehouse.normalizedCode), asc(mdWarehouse.id))
 				.limit(filter.pageSize)
 				.offset((filter.page - 1) * filter.pageSize);
-			return ok(rows.map(mapWarehouse));
+			return errorResult.ok(rows.map(mapWarehouse));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to list warehouses");
 		}
@@ -3614,7 +3618,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			if (row === undefined) {
 				return invalidState("Warehouse parent is not usable or compatible");
 			}
-			return ok(mapWarehouseSqlRow(row));
+			return errorResult.ok(mapWarehouseSqlRow(row));
 		} catch (error) {
 			return mapWriteError(
 				error,
@@ -3807,7 +3811,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			if (row === undefined) {
 				return versionConflict("Warehouse version conflict");
 			}
-			return ok(mapWarehouseSqlRow(row));
+			return errorResult.ok(mapWarehouseSqlRow(row));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to update warehouse");
 		}
@@ -3956,7 +3960,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			if (row === undefined) {
 				return versionConflict("Warehouse version conflict");
 			}
-			return ok(mapWarehouseSqlRow(row));
+			return errorResult.ok(mapWarehouseSqlRow(row));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to move warehouse");
 		}
@@ -4114,7 +4118,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			if (row === undefined) {
 				return versionConflict("Warehouse version conflict");
 			}
-			return ok(mapWarehouseSqlRow(row));
+			return errorResult.ok(mapWarehouseSqlRow(row));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to transition warehouse");
 		}
@@ -4135,7 +4139,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					),
 				)
 				.limit(1);
-			return ok(row === undefined ? null : mapPaymentTerm(row));
+			return errorResult.ok(row === undefined ? null : mapPaymentTerm(row));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to load payment term");
 		}
@@ -4157,7 +4161,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					),
 				)
 				.limit(1);
-			return ok(row === undefined ? null : mapPaymentTerm(row));
+			return errorResult.ok(row === undefined ? null : mapPaymentTerm(row));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to load payment term by code");
 		}
@@ -4183,7 +4187,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 				.orderBy(asc(mdPaymentTerm.normalizedCode), asc(mdPaymentTerm.id))
 				.limit(filter.pageSize)
 				.offset((filter.page - 1) * filter.pageSize);
-			return ok(rows.map(mapPaymentTerm));
+			return errorResult.ok(rows.map(mapPaymentTerm));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to list payment terms");
 		}
@@ -4293,7 +4297,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					`netDays must be between 0 and ${MAX_PAYMENT_TERM_NET_DAYS}`,
 				);
 			}
-			return ok(mapPaymentTermSqlRow(row));
+			return errorResult.ok(mapPaymentTermSqlRow(row));
 		} catch (error) {
 			return mapWriteError(
 				error,
@@ -4440,7 +4444,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			if (row === undefined) {
 				return versionConflict("Payment term version conflict");
 			}
-			return ok(mapPaymentTermSqlRow(row));
+			return errorResult.ok(mapPaymentTermSqlRow(row));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to update payment term");
 		}
@@ -4571,7 +4575,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			if (row === undefined) {
 				return versionConflict("Payment term version conflict");
 			}
-			return ok(mapPaymentTermSqlRow(row));
+			return errorResult.ok(mapPaymentTermSqlRow(row));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to transition payment term");
 		}
@@ -4592,7 +4596,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					),
 				)
 				.limit(1);
-			return ok(row === undefined ? null : mapTaxRegistration(row));
+			return errorResult.ok(row === undefined ? null : mapTaxRegistration(row));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to load tax registration");
 		}
@@ -4626,7 +4630,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 				)
 				.limit(filter.pageSize)
 				.offset((filter.page - 1) * filter.pageSize);
-			return ok(rows.map(mapTaxRegistration));
+			return errorResult.ok(rows.map(mapTaxRegistration));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to list tax registrations");
 		}
@@ -4671,7 +4675,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					),
 				)
 				.limit(1);
-			return ok(row === undefined ? null : mapTaxRegistration(row));
+			return errorResult.ok(row === undefined ? null : mapTaxRegistration(row));
 		} catch (error) {
 			return failFromPersistence(
 				error,
@@ -4790,7 +4794,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					"Party or active jurisdiction country is unavailable",
 				);
 			}
-			return ok(mapTaxRegistrationSqlRow(row));
+			return errorResult.ok(mapTaxRegistrationSqlRow(row));
 		} catch (error) {
 			return mapWriteError(
 				error,
@@ -4978,11 +4982,8 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			if (row === undefined) {
 				return versionConflict("Tax registration version conflict");
 			}
-			return ok(mapTaxRegistrationSqlRow(row));
+			return errorResult.ok(mapTaxRegistrationSqlRow(row));
 		} catch (error) {
-			if (hasPostgresSqlState(error, "40001")) {
-				return taxRegistrationOverlapConflict();
-			}
 			return failFromPersistence(error, "Failed to update tax registration");
 		}
 	}
@@ -5013,7 +5014,9 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		if (!overlap.ok) {
 			return overlap;
 		}
-		return overlap.data === null ? ok(true) : taxRegistrationOverlapConflict();
+		return overlap.data === null
+			? errorResult.ok(true)
+			: taxRegistrationOverlapConflict();
 	}
 
 	async transitionTaxRegistration(
@@ -5202,11 +5205,8 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			if (row === undefined) {
 				return versionConflict("Tax registration version conflict");
 			}
-			return ok(mapTaxRegistrationSqlRow(row));
+			return errorResult.ok(mapTaxRegistrationSqlRow(row));
 		} catch (error) {
-			if (hasPostgresSqlState(error, "40001")) {
-				return taxRegistrationOverlapConflict();
-			}
 			return failFromPersistence(
 				error,
 				"Failed to transition tax registration",
@@ -5236,7 +5236,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			if (row.version !== expectedVersion) {
 				return versionConflict("Party version conflict");
 			}
-			return ok(mapParty(row));
+			return errorResult.ok(mapParty(row));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to load party for mutation");
 		}
@@ -5264,7 +5264,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			if (row.version !== expectedVersion) {
 				return versionConflict("Item group version conflict");
 			}
-			return ok(mapItemGroup(row));
+			return errorResult.ok(mapItemGroup(row));
 		} catch (error) {
 			return failFromPersistence(
 				error,
@@ -5295,7 +5295,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			if (row.version !== expectedVersion) {
 				return versionConflict("Item version conflict");
 			}
-			return ok(mapItem(row));
+			return errorResult.ok(mapItem(row));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to load item for mutation");
 		}
@@ -5323,7 +5323,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			if (row.version !== expectedVersion) {
 				return versionConflict("Warehouse version conflict");
 			}
-			return ok(mapWarehouse(row));
+			return errorResult.ok(mapWarehouse(row));
 		} catch (error) {
 			return failFromPersistence(
 				error,
@@ -5357,7 +5357,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			if (row.version !== expectedVersion) {
 				return versionConflict("Payment term version conflict");
 			}
-			return ok(mapPaymentTerm(row));
+			return errorResult.ok(mapPaymentTerm(row));
 		} catch (error) {
 			return failFromPersistence(
 				error,
@@ -5391,7 +5391,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			if (row.version !== expectedVersion) {
 				return versionConflict("Tax registration version conflict");
 			}
-			return ok(mapTaxRegistration(row));
+			return errorResult.ok(mapTaxRegistration(row));
 		} catch (error) {
 			return failFromPersistence(
 				error,
@@ -5479,9 +5479,9 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 				)
 				.limit(1);
 			if (row === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
-			return ok(mapImportBatchRow(row));
+			return errorResult.ok(mapImportBatchRow(row));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to load import batch");
 		}
@@ -5538,9 +5538,9 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 				return batch;
 			}
 			if (batch.data === null) {
-				return fail("INTERNAL_ERROR", "Import batch claim returned no row");
+				return errorResult.fail("INTERNAL_ERROR");
 			}
-			return ok({
+			return errorResult.ok({
 				kind: claimed ? "claimed" : "existing",
 				batch: batch.data,
 			});
@@ -5576,7 +5576,10 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 				)
 				.returning();
 			if (row !== undefined) {
-				return ok({ kind: "acquired", batch: mapImportBatchRow(row) });
+				return errorResult.ok({
+					kind: "acquired",
+					batch: mapImportBatchRow(row),
+				});
 			}
 			const current = await this.getImportBatchById(
 				record.organizationId,
@@ -5588,7 +5591,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			if (current.data === null) {
 				return notFound("Import batch not found");
 			}
-			return ok({
+			return errorResult.ok({
 				kind: current.data.status === "applied" ? "completed" : "busy",
 				batch: current.data,
 			});
@@ -5612,7 +5615,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					),
 				)
 				.orderBy(asc(mdImportBatchRow.sourceRowNumber));
-			return ok(rows.map(mapImportBatchRowRecord));
+			return errorResult.ok(rows.map(mapImportBatchRowRecord));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to list import batch rows");
 		}
@@ -5684,7 +5687,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			if (completed.data === null) {
 				return notFound("Import batch not found");
 			}
-			return ok(completed.data);
+			return errorResult.ok(completed.data);
 		} catch (error) {
 			return failFromPersistence(error, "Failed to complete import batch");
 		}
@@ -5708,7 +5711,7 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					),
 				)
 				.limit(1);
-			return ok(row === undefined ? null : mapImportBatchRow(row));
+			return errorResult.ok(row === undefined ? null : mapImportBatchRow(row));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to load import batch");
 		}

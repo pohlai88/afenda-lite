@@ -1,4 +1,4 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type { PayrollCommandOptions } from "../command-options";
 import { PAYROLL_COMMAND_RUN_CALCULATE } from "../module-ids";
@@ -39,11 +39,11 @@ export function calculatePayrollRun(
 			let run = loaded.data;
 
 			if (run.status === "calculated") {
-				return ok(run);
+				return errorResult.ok(run);
 			}
 			if (run.status === "finalized" || run.status === "reversed") {
 				const blocked = assertPayrollRunTransition(run.status, "calculated");
-				return blocked.ok ? ok(run) : blocked;
+				return blocked.ok ? errorResult.ok(run) : blocked;
 			}
 
 			if (run.status === "draft" || run.status === "failed") {
@@ -68,7 +68,7 @@ export function calculatePayrollRun(
 				}
 			} else {
 				const blocked = assertPayrollRunTransition(run.status, "calculated");
-				return blocked.ok ? ok(run) : blocked;
+				return blocked.ok ? errorResult.ok(run) : blocked;
 			}
 
 			const clearedExceptions = await store.deleteExceptionsForRun(

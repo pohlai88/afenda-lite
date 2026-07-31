@@ -10,7 +10,7 @@ import {
 	type NeonHttpSql,
 	runNeonHttpTransaction,
 } from "@afenda/db";
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import { z } from "zod";
 
 import { renderBulkErrorFile } from "../../bulk/error-file";
@@ -111,8 +111,8 @@ async function loadAuditTrail(input: {
 			.orderBy(asc(hrBulkImportAudit.sequence));
 		const parsed = z.array(auditEventSchema).safeParse(rows);
 		return parsed.success
-			? ok(parsed.data)
-			: fail("INTERNAL_ERROR", "Bulk checkpoint audit trail is invalid");
+			? errorResult.ok(parsed.data)
+			: errorResult.fail("INTERNAL_ERROR");
 	} catch (error) {
 		return mapPersistenceFailure(error, "Failed to load bulk audit trail");
 	}
@@ -133,8 +133,8 @@ async function mapCheckpointRow<Output>(
 		auditTrail: auditTrail.data,
 	});
 	return parsed.success
-		? ok(parsed.data as BulkCheckpoint<Output>)
-		: fail("INTERNAL_ERROR", "Bulk checkpoint payload is invalid");
+		? errorResult.ok(parsed.data as BulkCheckpoint<Output>)
+		: errorResult.fail("INTERNAL_ERROR");
 }
 
 async function findRow(input: {
@@ -161,7 +161,7 @@ export function createDrizzleBulkCheckpointPort<
 		async load(input) {
 			try {
 				const row = await findRow(input);
-				return row ? mapCheckpointRow<Output>(row) : ok(null);
+				return row ? mapCheckpointRow<Output>(row) : errorResult.ok(null);
 			} catch (error) {
 				return mapPersistenceFailure(error, "Failed to load bulk checkpoint");
 			}
@@ -169,7 +169,9 @@ export function createDrizzleBulkCheckpointPort<
 		async save(input) {
 			const { checkpoint, expectedVersion } = input;
 			if (checkpoint.version !== (expectedVersion ?? 0) + 1) {
-				return fail("CONFLICT", "Bulk checkpoint version is not sequential");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+				});
 			}
 			const auditJson = JSON.stringify(checkpoint.auditTrail);
 			const rowsJson = JSON.stringify(checkpoint.rows);
@@ -246,15 +248,19 @@ export function createDrizzleBulkCheckpointPort<
 					statement(sqlTag),
 				]);
 				if (!saved[0]) {
-					return fail("CONFLICT", "Bulk checkpoint version changed");
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+					});
 				}
 				const row = await findRow(checkpoint);
 				return row
 					? mapCheckpointRow<Output>(row)
-					: fail("INTERNAL_ERROR", "Bulk checkpoint readback failed");
+					: errorResult.fail("INTERNAL_ERROR");
 			} catch (error) {
 				return isPostgresUniqueViolation(error)
-					? fail("CONFLICT", "Bulk checkpoint already exists")
+					? errorResult.fail("CONFLICT", {
+							publicMessage: "The request conflicts with current state",
+						})
 					: mapPersistenceFailure(error, "Failed to save bulk checkpoint");
 			}
 		},
@@ -266,7 +272,7 @@ export function createDrizzleBulkCheckpointPort<
 							organizationId: input.organizationId,
 							checkpointId: row.id,
 						})
-					: ok([]);
+					: errorResult.ok([]);
 			} catch (error) {
 				return mapPersistenceFailure(error, "Failed to list bulk audit events");
 			}
@@ -275,7 +281,7 @@ export function createDrizzleBulkCheckpointPort<
 			try {
 				const checkpoint = await findRow(input);
 				if (!checkpoint) {
-					return ok(null);
+					return errorResult.ok(null);
 				}
 				const rows = await db
 					.select()
@@ -293,7 +299,7 @@ export function createDrizzleBulkCheckpointPort<
 					.limit(1);
 				const [artifact] = rows;
 				if (!artifact) {
-					return ok(null);
+					return errorResult.ok(null);
 				}
 				const result: BulkErrorArtifact = {
 					organizationId: artifact.organizationId,
@@ -302,7 +308,7 @@ export function createDrizzleBulkCheckpointPort<
 					contentType: "text/csv",
 					content: artifact.content,
 				};
-				return ok(result);
+				return errorResult.ok(result);
 			} catch (error) {
 				return mapPersistenceFailure(
 					error,

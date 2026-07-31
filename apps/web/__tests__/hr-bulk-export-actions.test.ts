@@ -1,4 +1,4 @@
-import { ok } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 import {
 	type HumanResourcesReportingSourcePort,
 	runHumanResourcesBulkExport,
@@ -142,7 +142,7 @@ describe("HR bulk export composition", () => {
 	it("rejects fields outside the definition before reading or recording evidence", async () => {
 		const reporting: HumanResourcesReportingSourcePort = {
 			listFacts: vi.fn(async () =>
-				ok({ entries: [], total: 0, page: 1, pageSize: 200 }),
+				errorResult.ok({ entries: [], total: 0, page: 1, pageSize: 200 }),
 			),
 		};
 		const source = createHumanResourcesBulkExportSource("compensation", {
@@ -150,7 +150,7 @@ describe("HR bulk export composition", () => {
 		});
 		const authorize = vi.fn(async () => true);
 		const recordPrivacyEvidence = vi.fn(async () =>
-			ok({ evidenceId: "should-not-exist" }),
+			errorResult.ok({ evidenceId: "should-not-exist" }),
 		);
 
 		const result = await runHumanResourcesBulkExport(
@@ -167,10 +167,9 @@ describe("HR bulk export composition", () => {
 			{ authorize, recordPrivacyEvidence },
 		);
 
-		expect(result).toEqual({
+		expect(result).toMatchObject({
 			ok: false,
 			code: "FORBIDDEN",
-			message: "Export contains a field outside its projection",
 		});
 		expect(reporting.listFacts).not.toHaveBeenCalled();
 		expect(authorize).not.toHaveBeenCalled();
@@ -179,7 +178,7 @@ describe("HR bulk export composition", () => {
 
 	it("records platform privacy evidence without exported row values", async () => {
 		const auditRecord = vi.fn(async () =>
-			ok({
+			errorResult.ok({
 				id: "audit-1",
 				organizationId: operatorSession.orgId,
 				actorUserId: operatorSession.userId,
@@ -192,6 +191,7 @@ describe("HR bulk export composition", () => {
 				oldValue: null,
 				newValue: null,
 				metadata: null,
+				eventContext: null,
 				ipAddress: null,
 				userAgent: null,
 				createdAt: new Date("2026-07-28T00:00:00.000Z"),

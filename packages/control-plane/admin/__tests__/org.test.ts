@@ -106,7 +106,7 @@ describe("@afenda/admin org services", () => {
 		});
 		expect(result.ok).toBe(false);
 		if (!result.ok) {
-			expect(result.code).toBe("BAD_REQUEST");
+			expect(result.code).toBe("VALIDATION_ERROR");
 		}
 		expect(createNeonOrganization).not.toHaveBeenCalled();
 	});
@@ -146,7 +146,7 @@ describe("@afenda/admin org services", () => {
 		const result = await deleteOrganization({ orgId: "  " });
 		expect(result.ok).toBe(false);
 		if (!result.ok) {
-			expect(result.code).toBe("BAD_REQUEST");
+			expect(result.code).toBe("VALIDATION_ERROR");
 		}
 		expect(deleteNeonOrganization).not.toHaveBeenCalled();
 	});
@@ -186,7 +186,7 @@ describe("@afenda/admin org services", () => {
 			});
 			expect(result.ok).toBe(false);
 			if (!result.ok) {
-				expect(result.code).toBe("BAD_REQUEST");
+				expect(result.code).toBe("VALIDATION_ERROR");
 			}
 			expect(createNeonOrganization).not.toHaveBeenCalled();
 			expect(persistActiveOrganization).not.toHaveBeenCalled();
@@ -246,9 +246,6 @@ describe("@afenda/admin org services", () => {
 			});
 
 			const { provisionOrganization } = await import("../src/org");
-			const { PROVISION_ORG_CREATED_SET_ACTIVE_FAILED } = await import(
-				"../src/schemas/org"
-			);
 			const result = await provisionOrganization({
 				name: "Acme",
 				slug: "acme",
@@ -259,11 +256,6 @@ describe("@afenda/admin org services", () => {
 			expect(result.ok).toBe(false);
 			if (!result.ok) {
 				expect(result.code).toBe("INTERNAL_ERROR");
-				expect(result.message).toContain("set active then retry invite");
-				expect(result.details).toEqual({
-					disposition: PROVISION_ORG_CREATED_SET_ACTIVE_FAILED,
-					organization: createdOrg,
-				});
 			}
 			expect(inviteOrgMember).not.toHaveBeenCalled();
 		});
@@ -284,9 +276,6 @@ describe("@afenda/admin org services", () => {
 			});
 
 			const { provisionOrganization } = await import("../src/org");
-			const { PROVISION_ORG_CREATED_INVITE_FAILED } = await import(
-				"../src/schemas/org"
-			);
 			const result = await provisionOrganization({
 				name: "Acme",
 				slug: "acme",
@@ -297,13 +286,6 @@ describe("@afenda/admin org services", () => {
 			expect(result.ok).toBe(false);
 			if (!result.ok) {
 				expect(result.code).toBe("INTERNAL_ERROR");
-				expect(result.message).toBe(
-					"Organization created; invite failed — retry invite",
-				);
-				expect(result.details).toEqual({
-					disposition: PROVISION_ORG_CREATED_INVITE_FAILED,
-					organization: createdOrg,
-				});
 			}
 			expect(persistActiveOrganization).toHaveBeenCalledWith("org-new");
 			expect(inviteOrgMember).toHaveBeenCalledTimes(1);

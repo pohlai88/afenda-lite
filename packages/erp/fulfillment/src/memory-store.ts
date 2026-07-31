@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	FULFILLMENT_DELIVERY_CANCELLED_EVENT,
 	FULFILLMENT_DELIVERY_CLOSED_EVENT,
@@ -100,13 +100,13 @@ export class MemoryFulfillmentStore implements FulfillmentStore {
 					value.normalizedCode === record.normalizedCode &&
 					value.code === record.code
 				) {
-					return ok(cloneDelivery(value));
+					return errorResult.ok(cloneDelivery(value));
 				}
 				// Same key different code → CONFLICT
-				return fail(
-					"CONFLICT",
-					"Create idempotency key already used with different code",
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage:
+						"Create idempotency key already used with different code",
+				});
 			}
 		}
 		// Check for duplicate code
@@ -115,7 +115,9 @@ export class MemoryFulfillmentStore implements FulfillmentStore {
 				value.organizationId === record.organizationId &&
 				value.normalizedCode === record.normalizedCode
 			) {
-				return fail("CONFLICT", "Delivery code already exists");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Delivery code already exists",
+				});
 			}
 		}
 		const now = new Date();
@@ -173,7 +175,7 @@ export class MemoryFulfillmentStore implements FulfillmentStore {
 			this.deliveries.delete(value.id);
 			return outbox;
 		}
-		return ok(cloneDelivery(value));
+		return errorResult.ok(cloneDelivery(value));
 	}
 
 	async addLine(
@@ -183,19 +185,25 @@ export class MemoryFulfillmentStore implements FulfillmentStore {
 	): Promise<Result<DeliveryLine>> {
 		const value = this.deliveries.get(record.deliveryId);
 		if (value === undefined || value.organizationId !== record.organizationId) {
-			return fail("NOT_FOUND", "Delivery not found");
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Delivery not found",
+			});
 		}
 		// Idempotency: if line with same lineIdempotencyKey on delivery → return that line
 		for (const existing of value.lines) {
 			if (existing.lineIdempotencyKey === record.idempotencyKey) {
-				return ok({ ...existing });
+				return errorResult.ok({ ...existing });
 			}
 		}
 		if (value.status !== "draft") {
-			return fail("CONFLICT", "Cannot add lines outside draft");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Cannot add lines outside draft",
+			});
 		}
 		if (value.version !== record.expectedVersion) {
-			return fail("CONFLICT", "Delivery version conflict");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Delivery version conflict",
+			});
 		}
 		const previous = cloneDelivery(value);
 		const now = new Date();
@@ -240,7 +248,7 @@ export class MemoryFulfillmentStore implements FulfillmentStore {
 			this.deliveries.set(value.id, previous);
 			return audit;
 		}
-		return ok({ ...line });
+		return errorResult.ok({ ...line });
 	}
 
 	async startPicking(
@@ -250,11 +258,13 @@ export class MemoryFulfillmentStore implements FulfillmentStore {
 	): Promise<Result<Delivery>> {
 		const value = this.deliveries.get(record.deliveryId);
 		if (value === undefined || value.organizationId !== record.organizationId) {
-			return fail("NOT_FOUND", "Delivery not found");
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Delivery not found",
+			});
 		}
 		// Idempotency: if pickStartIdempotencyKey matches → return delivery
 		if (value.pickStartIdempotencyKey === record.idempotencyKey) {
-			return ok(cloneDelivery(value));
+			return errorResult.ok(cloneDelivery(value));
 		}
 		// Already picking with different key → CONFLICT
 		if (
@@ -262,16 +272,20 @@ export class MemoryFulfillmentStore implements FulfillmentStore {
 			value.pickStartIdempotencyKey !== null &&
 			value.pickStartIdempotencyKey !== record.idempotencyKey
 		) {
-			return fail(
-				"CONFLICT",
-				"Delivery is already picking with different idempotency key",
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage:
+					"Delivery is already picking with different idempotency key",
+			});
 		}
 		if (value.status !== "draft" || value.lines.length === 0) {
-			return fail("CONFLICT", "Picking requires a draft delivery with lines");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Picking requires a draft delivery with lines",
+			});
 		}
 		if (value.version !== record.expectedVersion) {
-			return fail("CONFLICT", "Delivery version conflict");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Delivery version conflict",
+			});
 		}
 		const previous = cloneDelivery(value);
 		value.status = "picking";
@@ -290,7 +304,7 @@ export class MemoryFulfillmentStore implements FulfillmentStore {
 			this.deliveries.set(value.id, previous);
 			return audit;
 		}
-		return ok(cloneDelivery(value));
+		return errorResult.ok(cloneDelivery(value));
 	}
 
 	async confirmPick(
@@ -300,23 +314,31 @@ export class MemoryFulfillmentStore implements FulfillmentStore {
 	): Promise<Result<DeliveryPick>> {
 		const value = this.deliveries.get(record.deliveryId);
 		if (value === undefined || value.organizationId !== record.organizationId) {
-			return fail("NOT_FOUND", "Delivery not found");
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Delivery not found",
+			});
 		}
 		// Idempotency: if pick with same pickIdempotencyKey → return that pick
 		for (const existing of value.picks) {
 			if (existing.pickIdempotencyKey === record.idempotencyKey) {
-				return ok({ ...existing });
+				return errorResult.ok({ ...existing });
 			}
 		}
 		if (value.status !== "picking") {
-			return fail("CONFLICT", "Pick confirmation requires picking status");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Pick confirmation requires picking status",
+			});
 		}
 		if (value.version !== record.expectedVersion) {
-			return fail("CONFLICT", "Delivery version conflict");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Delivery version conflict",
+			});
 		}
 		const line = value.lines.find((row) => row.id === record.deliveryLineId);
 		if (line === undefined) {
-			return fail("NOT_FOUND", "Delivery line not found");
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Delivery line not found",
+			});
 		}
 		const picked = value.picks
 			.filter((row) => row.deliveryLineId === line.id)
@@ -325,7 +347,9 @@ export class MemoryFulfillmentStore implements FulfillmentStore {
 			picked + Number(record.quantityPicked) >
 			Number(line.quantityToDeliver)
 		) {
-			return fail("CONFLICT", "Picked quantity exceeds quantity to deliver");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Picked quantity exceeds quantity to deliver",
+			});
 		}
 		const previous = cloneDelivery(value);
 		const now = new Date();
@@ -387,7 +411,7 @@ export class MemoryFulfillmentStore implements FulfillmentStore {
 			this.deliveries.set(value.id, previous);
 			return outbox;
 		}
-		return ok({ ...pick });
+		return errorResult.ok({ ...pick });
 	}
 
 	async confirmPack(
@@ -397,20 +421,26 @@ export class MemoryFulfillmentStore implements FulfillmentStore {
 	): Promise<Result<DeliveryPack>> {
 		const value = this.deliveries.get(record.deliveryId);
 		if (value === undefined || value.organizationId !== record.organizationId) {
-			return fail("NOT_FOUND", "Delivery not found");
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Delivery not found",
+			});
 		}
 		// Idempotency: if packIdempotencyKey matches → return last pack
 		if (value.packIdempotencyKey === record.idempotencyKey) {
 			const lastPack = value.packs.at(-1);
 			if (lastPack) {
-				return ok({ ...lastPack });
+				return errorResult.ok({ ...lastPack });
 			}
 		}
 		if (value.status !== "picking" || value.picks.length === 0) {
-			return fail("CONFLICT", "Packing requires at least one confirmed pick");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Packing requires at least one confirmed pick",
+			});
 		}
 		if (value.version !== record.expectedVersion) {
-			return fail("CONFLICT", "Delivery version conflict");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Delivery version conflict",
+			});
 		}
 		// Pack gate F4: for each line, sum(picks) >= quantityToDeliver
 		for (const line of value.lines) {
@@ -418,10 +448,9 @@ export class MemoryFulfillmentStore implements FulfillmentStore {
 				.filter((row) => row.deliveryLineId === line.id)
 				.reduce((sum, row) => sum + Number(row.quantityPicked), 0);
 			if (picked < Number(line.quantityToDeliver)) {
-				return fail(
-					"CONFLICT",
-					`Line ${line.lineNo} has not been fully picked (${picked} < ${line.quantityToDeliver})`,
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+				});
 			}
 		}
 		const previous = cloneDelivery(value);
@@ -474,7 +503,7 @@ export class MemoryFulfillmentStore implements FulfillmentStore {
 			this.deliveries.set(value.id, previous);
 			return outbox;
 		}
-		return ok({ ...pack });
+		return errorResult.ok({ ...pack });
 	}
 
 	async postDelivery(
@@ -484,17 +513,23 @@ export class MemoryFulfillmentStore implements FulfillmentStore {
 	): Promise<Result<Delivery>> {
 		const value = this.deliveries.get(record.deliveryId);
 		if (value === undefined || value.organizationId !== record.organizationId) {
-			return fail("NOT_FOUND", "Delivery not found");
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Delivery not found",
+			});
 		}
 		// Idempotency: if postIdempotencyKey matches → return delivery
 		if (value.postIdempotencyKey === record.idempotencyKey) {
-			return ok(cloneDelivery(value));
+			return errorResult.ok(cloneDelivery(value));
 		}
 		if (value.status !== "packed") {
-			return fail("CONFLICT", "Delivery must be packed");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Delivery must be packed",
+			});
 		}
 		if (value.version !== record.expectedVersion) {
-			return fail("CONFLICT", "Delivery version conflict");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Delivery version conflict",
+			});
 		}
 		const previous = cloneDelivery(value);
 		const now = new Date();
@@ -527,7 +562,7 @@ export class MemoryFulfillmentStore implements FulfillmentStore {
 			this.deliveries.set(value.id, previous);
 			return outbox;
 		}
-		return ok(cloneDelivery(value));
+		return errorResult.ok(cloneDelivery(value));
 	}
 
 	async recordProofOfDelivery(
@@ -537,27 +572,35 @@ export class MemoryFulfillmentStore implements FulfillmentStore {
 	): Promise<Result<ProofOfDelivery>> {
 		const value = this.deliveries.get(record.deliveryId);
 		if (value === undefined || value.organizationId !== record.organizationId) {
-			return fail("NOT_FOUND", "Delivery not found");
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Delivery not found",
+			});
 		}
 		// Idempotency: if podIdempotencyKey matches → return existing POD
 		if (
 			value.podIdempotencyKey === record.idempotencyKey &&
 			value.proofOfDelivery
 		) {
-			return ok({ ...value.proofOfDelivery });
+			return errorResult.ok({ ...value.proofOfDelivery });
 		}
 		// If POD exists with different key → CONFLICT
 		if (
 			value.proofOfDelivery !== null &&
 			value.podIdempotencyKey !== record.idempotencyKey
 		) {
-			return fail("CONFLICT", "Proof of delivery already exists");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Proof of delivery already exists",
+			});
 		}
 		if (value.status !== "posted") {
-			return fail("CONFLICT", "Proof of delivery requires posted status");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Proof of delivery requires posted status",
+			});
 		}
 		if (value.version !== record.expectedVersion) {
-			return fail("CONFLICT", "Delivery version conflict");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Delivery version conflict",
+			});
 		}
 		const previous = cloneDelivery(value);
 		const proof: ProofOfDelivery = {
@@ -628,7 +671,7 @@ export class MemoryFulfillmentStore implements FulfillmentStore {
 				return completed;
 			}
 		}
-		return ok({ ...proof });
+		return errorResult.ok({ ...proof });
 	}
 
 	async cancelDelivery(
@@ -638,17 +681,23 @@ export class MemoryFulfillmentStore implements FulfillmentStore {
 	): Promise<Result<Delivery>> {
 		const value = this.deliveries.get(record.deliveryId);
 		if (value === undefined || value.organizationId !== record.organizationId) {
-			return fail("NOT_FOUND", "Delivery not found");
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Delivery not found",
+			});
 		}
 		// Idempotency: if cancelIdempotencyKey matches → return delivery
 		if (value.cancelIdempotencyKey === record.idempotencyKey) {
-			return ok(cloneDelivery(value));
+			return errorResult.ok(cloneDelivery(value));
 		}
 		if (!["draft", "picking", "packed"].includes(value.status)) {
-			return fail("CONFLICT", "Delivery cannot be cancelled after posting");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Delivery cannot be cancelled after posting",
+			});
 		}
 		if (value.version !== record.expectedVersion) {
-			return fail("CONFLICT", "Delivery version conflict");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Delivery version conflict",
+			});
 		}
 		const previous = cloneDelivery(value);
 		const oldStatus = value.status;
@@ -682,7 +731,7 @@ export class MemoryFulfillmentStore implements FulfillmentStore {
 			this.deliveries.set(value.id, previous);
 			return outbox;
 		}
-		return ok(cloneDelivery(value));
+		return errorResult.ok(cloneDelivery(value));
 	}
 
 	async closeDelivery(
@@ -692,17 +741,23 @@ export class MemoryFulfillmentStore implements FulfillmentStore {
 	): Promise<Result<Delivery>> {
 		const value = this.deliveries.get(record.deliveryId);
 		if (value === undefined || value.organizationId !== record.organizationId) {
-			return fail("NOT_FOUND", "Delivery not found");
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Delivery not found",
+			});
 		}
 		// Idempotency: if closeIdempotencyKey matches → return delivery
 		if (value.closeIdempotencyKey === record.idempotencyKey) {
-			return ok(cloneDelivery(value));
+			return errorResult.ok(cloneDelivery(value));
 		}
 		if (value.status !== "delivered") {
-			return fail("CONFLICT", "Delivery must be delivered");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Delivery must be delivered",
+			});
 		}
 		if (value.version !== record.expectedVersion) {
-			return fail("CONFLICT", "Delivery version conflict");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Delivery version conflict",
+			});
 		}
 		const previous = cloneDelivery(value);
 		const now = new Date();
@@ -735,7 +790,7 @@ export class MemoryFulfillmentStore implements FulfillmentStore {
 			this.deliveries.set(value.id, previous);
 			return outbox;
 		}
-		return ok(cloneDelivery(value));
+		return errorResult.ok(cloneDelivery(value));
 	}
 
 	getDeliveryById(
@@ -744,7 +799,7 @@ export class MemoryFulfillmentStore implements FulfillmentStore {
 	): Promise<Result<Delivery | null>> {
 		const value = this.deliveries.get(id);
 		return Promise.resolve(
-			ok(
+			errorResult.ok(
 				value === undefined || value.organizationId !== organizationId
 					? null
 					: cloneDelivery(value),
@@ -787,7 +842,9 @@ export class MemoryFulfillmentStore implements FulfillmentStore {
 			return b.id.localeCompare(a.id);
 		});
 		return Promise.resolve(
-			ok(items.slice(start, start + filter.pageSize).map(cloneDelivery)),
+			errorResult.ok(
+				items.slice(start, start + filter.pageSize).map(cloneDelivery),
+			),
 		);
 	}
 
@@ -809,7 +866,7 @@ export class MemoryFulfillmentStore implements FulfillmentStore {
 				}
 			}
 		}
-		return Promise.resolve(ok(String(sum)));
+		return Promise.resolve(errorResult.ok(String(sum)));
 	}
 }
 

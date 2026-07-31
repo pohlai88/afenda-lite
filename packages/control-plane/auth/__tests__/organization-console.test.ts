@@ -1,4 +1,4 @@
-import { DEFAULT_INTERNAL_MESSAGE } from "@afenda/errors";
+import { errorResult } from "@afenda/errors";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
@@ -78,11 +78,9 @@ describe("organization console (Neon Auth)", () => {
 			const { listMemberOrganizations } = await import(
 				"../src/organization-console"
 			);
-			await expect(listMemberOrganizations()).resolves.toEqual({
-				code: "FORBIDDEN",
-				message: "Not authorized for this organization action",
-				ok: false,
-			});
+			await expect(listMemberOrganizations()).resolves.toEqual(
+				errorResult.fail("FORBIDDEN"),
+			);
 		});
 	});
 
@@ -93,18 +91,18 @@ describe("organization console (Neon Auth)", () => {
 			);
 			await expect(
 				createOrganization({ name: "  ", slug: "ok" }),
-			).resolves.toEqual({
-				code: "BAD_REQUEST",
-				message: "Organization name is required",
-				ok: false,
-			});
+			).resolves.toEqual(
+				errorResult.fail("BAD_REQUEST", {
+					publicMessage: "Organization name is required",
+				}),
+			);
 			await expect(
 				createOrganization({ name: "Ok", slug: "  " }),
-			).resolves.toEqual({
-				code: "BAD_REQUEST",
-				message: "Organization slug is required",
-				ok: false,
-			});
+			).resolves.toEqual(
+				errorResult.fail("BAD_REQUEST", {
+					publicMessage: "Organization slug is required",
+				}),
+			);
 			expect(organizationCreate).not.toHaveBeenCalled();
 		});
 
@@ -142,11 +140,11 @@ describe("organization console (Neon Auth)", () => {
 			);
 			await expect(
 				createOrganization({ name: "Dup", slug: "dup" }),
-			).resolves.toEqual({
-				code: "CONFLICT",
-				message: "Organization already exists",
-				ok: false,
-			});
+			).resolves.toEqual(
+				errorResult.fail("CONFLICT", {
+					publicMessage: "Organization already exists",
+				}),
+			);
 		});
 
 		it("returns INTERNAL_ERROR when Neon omits organization id", async () => {
@@ -159,11 +157,7 @@ describe("organization console (Neon Auth)", () => {
 			);
 			await expect(
 				createOrganization({ name: "No Id", slug: "no-id" }),
-			).resolves.toEqual({
-				code: "INTERNAL_ERROR",
-				message: DEFAULT_INTERNAL_MESSAGE,
-				ok: false,
-			});
+			).resolves.toEqual(errorResult.fail("INTERNAL_ERROR"));
 		});
 	});
 
@@ -172,11 +166,11 @@ describe("organization console (Neon Auth)", () => {
 			const { persistActiveOrganization } = await import(
 				"../src/organization-console"
 			);
-			await expect(persistActiveOrganization("  ")).resolves.toEqual({
-				code: "BAD_REQUEST",
-				message: "Active organization id is required",
-				ok: false,
-			});
+			await expect(persistActiveOrganization("  ")).resolves.toEqual(
+				errorResult.fail("BAD_REQUEST", {
+					publicMessage: "Active organization id is required",
+				}),
+			);
 			expect(organizationSetActive).not.toHaveBeenCalled();
 		});
 
@@ -202,11 +196,9 @@ describe("organization console (Neon Auth)", () => {
 			const { persistActiveOrganization } = await import(
 				"../src/organization-console"
 			);
-			await expect(persistActiveOrganization("org-1")).resolves.toEqual({
-				code: "INTERNAL_ERROR",
-				message: DEFAULT_INTERNAL_MESSAGE,
-				ok: false,
-			});
+			await expect(persistActiveOrganization("org-1")).resolves.toEqual(
+				errorResult.fail("INTERNAL_ERROR"),
+			);
 		});
 	});
 
@@ -215,11 +207,11 @@ describe("organization console (Neon Auth)", () => {
 			const { deleteOrganization } = await import(
 				"../src/organization-console"
 			);
-			await expect(deleteOrganization("  ")).resolves.toEqual({
-				code: "BAD_REQUEST",
-				message: "Organization id is required",
-				ok: false,
-			});
+			await expect(deleteOrganization("  ")).resolves.toEqual(
+				errorResult.fail("BAD_REQUEST", {
+					publicMessage: "Organization id is required",
+				}),
+			);
 			expect(organizationDelete).not.toHaveBeenCalled();
 		});
 
@@ -231,11 +223,9 @@ describe("organization console (Neon Auth)", () => {
 			const { deleteOrganization } = await import(
 				"../src/organization-console"
 			);
-			await expect(deleteOrganization("org-1")).resolves.toEqual({
-				code: "FORBIDDEN",
-				message: "Organization is not in the session memberships",
-				ok: false,
-			});
+			await expect(deleteOrganization("org-1")).resolves.toEqual(
+				errorResult.fail("FORBIDDEN"),
+			);
 			expect(organizationDelete).not.toHaveBeenCalled();
 		});
 
@@ -269,11 +259,9 @@ describe("organization console (Neon Auth)", () => {
 			const { deleteOrganization } = await import(
 				"../src/organization-console"
 			);
-			await expect(deleteOrganization("org-1")).resolves.toEqual({
-				code: "FORBIDDEN",
-				message: "Not authorized for this organization action",
-				ok: false,
-			});
+			await expect(deleteOrganization("org-1")).resolves.toEqual(
+				errorResult.fail("FORBIDDEN"),
+			);
 		});
 	});
 });

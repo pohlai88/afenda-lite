@@ -1,6 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
-
-import type { MasterFailureDetails } from "../../contracts/reasons";
+import { errorResult, type Result } from "@afenda/errors";
 import type { ExternalIdCaseSensitivity } from "../../types";
 import { normalizeExternalIdValue } from "../core-organization-masters/normalized-code";
 
@@ -23,7 +21,7 @@ export type NormalizedPartyExternalId = NormalizedExternalId;
 
 export function normalizeExternalIdQualifier(
 	value: string,
-	field: "sourceSystem" | "externalIdType",
+	_field: "sourceSystem" | "externalIdType",
 ): Result<string> {
 	const normalized = value.normalize("NFC").trim().toLowerCase();
 
@@ -32,18 +30,12 @@ export function normalizeExternalIdQualifier(
 		normalized.length > MAX_EXTERNAL_ID_QUALIFIER_LENGTH ||
 		!EXTERNAL_ID_QUALIFIER_RE.test(normalized)
 	) {
-		return fail(
-			"BAD_REQUEST",
-			`${field} must be a valid external-ID qualifier code`,
-			{
-				reason: "MASTER_VALIDATION_FAILED",
-				field,
-				maxLength: MAX_EXTERNAL_ID_QUALIFIER_LENGTH,
-			} satisfies MasterFailureDetails,
-		);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "The request is invalid",
+		});
 	}
 
-	return ok(normalized);
+	return errorResult.ok(normalized);
 }
 
 /** @deprecated Use normalizeExternalId. */
@@ -92,7 +84,7 @@ export function normalizeExternalId(input: {
 		return externalValue;
 	}
 
-	return ok({
+	return errorResult.ok({
 		sourceSystem: sourceSystem.data,
 		externalIdType: externalIdType.data,
 		externalValue: externalValue.data.value,

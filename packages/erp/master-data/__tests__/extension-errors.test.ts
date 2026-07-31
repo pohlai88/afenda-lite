@@ -16,11 +16,6 @@ describe("extension error helpers", () => {
 		expect(result).toMatchObject({
 			ok: false,
 			code: "BAD_REQUEST",
-			message: "Alias is required",
-			details: {
-				reason: "MASTER_VALIDATION_FAILED",
-				field: "aliasValue",
-			},
 		});
 	});
 
@@ -30,11 +25,6 @@ describe("extension error helpers", () => {
 		expect(result).toMatchObject({
 			ok: false,
 			code: "NOT_FOUND",
-			message: "party not found",
-			details: {
-				reason: "MASTER_NOT_FOUND",
-				parentType: "party",
-			},
 		});
 	});
 
@@ -44,12 +34,6 @@ describe("extension error helpers", () => {
 		expect(result).toMatchObject({
 			ok: false,
 			code: "CONFLICT",
-			message: "item cannot accept new extensions",
-			details: {
-				reason: "MASTER_INVALID_STATE",
-				parentType: "item",
-				status: "retired",
-			},
 		});
 	});
 });

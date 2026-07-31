@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	type DomainEvent,
 	HUMAN_RESOURCES_EMPLOYEE_TERMINATED_EVENT,
@@ -261,33 +261,31 @@ function recipientFromEvent(
 ): Result<string> {
 	const candidate = event.metadata?.recipientUserId;
 	if (candidate === undefined) {
-		return ok(fallback);
+		return errorResult.ok(fallback);
 	}
 	if (typeof candidate !== "string" || candidate.trim().length === 0) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Human Resources event recipient metadata is invalid",
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+		});
 	}
-	return ok(candidate.trim());
+	return errorResult.ok(candidate.trim());
 }
 
 function dueOnFromEvent(event: DomainEvent): Result<string | null> {
 	const candidate = event.metadata?.dueOn;
 	if (candidate === undefined) {
-		return ok(null);
+		return errorResult.ok(null);
 	}
 	if (
 		typeof candidate !== "string" ||
 		!ISO_DATE_PATTERN.test(candidate) ||
 		Number.isNaN(Date.parse(`${candidate}T00:00:00.000Z`))
 	) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Human Resources work-item due date metadata is invalid",
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+		});
 	}
-	return ok(candidate);
+	return errorResult.ok(candidate);
 }
 
 export function projectHumanResourcesPlatformFacts(
@@ -295,26 +293,26 @@ export function projectHumanResourcesPlatformFacts(
 ): Result<HumanResourcesPlatformFacts> {
 	const eventType = event.type;
 	if (!isHumanResourcesEventType(eventType)) {
-		return fail("VALIDATION_ERROR", "Event is not a Human Resources event");
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+		});
 	}
 	const parsed = humanResourcesEntityPayloadSchema.safeParse(event.payload);
 	if (!parsed.success) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Human Resources event payload is invalid",
-			{
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+			internalContext: {
 				fieldErrors: parsed.error.flatten().fieldErrors,
 			},
-		);
+		});
 	}
 	if (
 		parsed.data.organizationId !== event.organizationId ||
 		parsed.data.correlationId !== event.correlationId
 	) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Human Resources event envelope does not match its payload",
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+		});
 	}
 
 	const workflowDefinition = WORKFLOW_TRANSITIONS[eventType];
@@ -367,7 +365,7 @@ export function projectHumanResourcesPlatformFacts(
 		});
 	}
 
-	return ok({
+	return errorResult.ok({
 		workflow:
 			workflowDefinition === undefined
 				? null

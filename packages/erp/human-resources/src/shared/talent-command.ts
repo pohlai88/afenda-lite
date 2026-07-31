@@ -1,4 +1,4 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { z } from "zod";
 import type { HumanResourcesEmployeeId } from "../brands";
 import {
@@ -102,7 +102,7 @@ export async function runTalentCommand<
 		resolveRequestedFields: config.resolveRequestedFields,
 		resolveDeps: (opts) => {
 			const { store, ports } = resolveCommandDeps(opts);
-			return ok({ store, ports });
+			return errorResult.ok({ store, ports });
 		},
 		execute: config.execute,
 	});
@@ -132,7 +132,7 @@ export async function runTalentQuery<
 			resolveDeps: (opts) => {
 				const { store, authorization, identityResolver } =
 					resolveCommandDeps(opts);
-				return ok({ store, authorization, identityResolver });
+				return errorResult.ok({ store, authorization, identityResolver });
 			},
 			execute: config.execute,
 		},

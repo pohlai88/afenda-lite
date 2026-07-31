@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	HUMAN_RESOURCES_CERTIFICATION_EXPIRING_EVENT,
 	HUMAN_RESOURCES_CERTIFICATION_RENEWED_EVENT,
@@ -132,12 +132,12 @@ function resolveLearningAttendanceReplay(
 	expectedFingerprint: string,
 ): Result<LearningAttendance | null> {
 	if (existing === undefined) {
-		return ok(null);
+		return errorResult.ok(null);
 	}
 	if (existing.createRequestFingerprint !== expectedFingerprint) {
 		return conflict("Idempotency key reused with different payload");
 	}
-	return ok({ ...existing.attendance });
+	return errorResult.ok({ ...existing.attendance });
 }
 
 function resolveLearningAttendanceContext(
@@ -164,7 +164,7 @@ function resolveLearningAttendanceContext(
 			HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
 		);
 	}
-	return ok({ assignment, session });
+	return errorResult.ok({ assignment, session });
 }
 
 export type MemoryLearningMethods = Pick<
@@ -263,7 +263,7 @@ export function createMemoryLearningMethods(
 					a.courseId === input.courseId &&
 					isAssignmentActive(a.status),
 			).length;
-			return await ok(count);
+			return await errorResult.ok(count);
 		},
 
 		async getCourseById(input: {
@@ -272,9 +272,9 @@ export function createMemoryLearningMethods(
 		}): Promise<Result<LearningCourse | null>> {
 			const course = state.courses.get(input.courseId);
 			if (!course || course.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...course });
+			return await errorResult.ok({ ...course });
 		},
 
 		async findCourseByIdempotencyKey(input: {
@@ -284,9 +284,9 @@ export function createMemoryLearningMethods(
 			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
 			const record = state.courseIdempotencyByKey.get(key);
 			if (!record) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...record, course: { ...record.course } });
+			return await errorResult.ok({ ...record, course: { ...record.course } });
 		},
 
 		async createCourse(
@@ -299,11 +299,12 @@ export function createMemoryLearningMethods(
 					c.organizationId === record.organizationId && c.code === record.code,
 			);
 			if (existing) {
-				return fail(
-					"CONFLICT",
-					"Course with this code already exists",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_CONFLICT,
+					),
+				});
 			}
 
 			const idResult = parseHumanResourcesCourseId(randomUUID());
@@ -354,7 +355,7 @@ export function createMemoryLearningMethods(
 				return audit;
 			}
 
-			return ok({ ...course });
+			return errorResult.ok({ ...course });
 		},
 
 		async updateCourse(
@@ -416,7 +417,7 @@ export function createMemoryLearningMethods(
 				return audit;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async activateCourse(
@@ -472,7 +473,7 @@ export function createMemoryLearningMethods(
 				return audit;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async archiveCourse(
@@ -539,7 +540,7 @@ export function createMemoryLearningMethods(
 				return audit;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async listCourses(input: {
@@ -564,7 +565,7 @@ export function createMemoryLearningMethods(
 				.slice(start, start + input.pageSize)
 				.map((c) => ({ ...c }));
 
-			return await ok({
+			return await errorResult.ok({
 				courses,
 				totalCount,
 				page: input.page,
@@ -579,9 +580,9 @@ export function createMemoryLearningMethods(
 		}): Promise<Result<LearningSession | null>> {
 			const session = state.sessions.get(input.sessionId);
 			if (!session || session.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...session });
+			return await errorResult.ok({ ...session });
 		},
 
 		async findSessionByIdempotencyKey(input: {
@@ -591,9 +592,12 @@ export function createMemoryLearningMethods(
 			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
 			const record = state.sessionIdempotencyByKey.get(key);
 			if (!record) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...record, session: { ...record.session } });
+			return await errorResult.ok({
+				...record,
+				session: { ...record.session },
+			});
 		},
 
 		async countEnrolledInSession(input: {
@@ -607,7 +611,7 @@ export function createMemoryLearningMethods(
 					a.sessionId === input.sessionId &&
 					a.status === "in_progress",
 			).length;
-			return await ok(count);
+			return await errorResult.ok(count);
 		},
 
 		async createSession(
@@ -697,7 +701,7 @@ export function createMemoryLearningMethods(
 				return audit;
 			}
 
-			return ok({ ...session });
+			return errorResult.ok({ ...session });
 		},
 
 		async startSession(
@@ -759,7 +763,7 @@ export function createMemoryLearningMethods(
 				return audit;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async completeSession(
@@ -821,7 +825,7 @@ export function createMemoryLearningMethods(
 				return audit;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async cancelSession(
@@ -881,7 +885,7 @@ export function createMemoryLearningMethods(
 				return audit;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async assignSessionInstructor(
@@ -938,7 +942,7 @@ export function createMemoryLearningMethods(
 				return audit;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async listSessions(input: {
@@ -969,7 +973,7 @@ export function createMemoryLearningMethods(
 				.slice(start, start + input.pageSize)
 				.map((s) => ({ ...s }));
 
-			return await ok({
+			return await errorResult.ok({
 				sessions,
 				totalCount,
 				page: input.page,
@@ -984,9 +988,9 @@ export function createMemoryLearningMethods(
 		}): Promise<Result<LearningAssignment | null>> {
 			const assignment = state.learningAssignments.get(input.assignmentId);
 			if (!assignment || assignment.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...assignment });
+			return await errorResult.ok({ ...assignment });
 		},
 
 		async findLearningAssignmentByIdempotencyKey(input: {
@@ -996,9 +1000,12 @@ export function createMemoryLearningMethods(
 			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
 			const record = state.assignmentIdempotencyByKey.get(key);
 			if (!record) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...record, assignment: { ...record.assignment } });
+			return await errorResult.ok({
+				...record,
+				assignment: { ...record.assignment },
+			});
 		},
 
 		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
@@ -1128,7 +1135,7 @@ export function createMemoryLearningMethods(
 				return outbox;
 			}
 
-			return ok({ ...assignment });
+			return errorResult.ok({ ...assignment });
 		},
 
 		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
@@ -1223,7 +1230,7 @@ export function createMemoryLearningMethods(
 				return audit;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async waiveLearningAssignment(
@@ -1279,7 +1286,7 @@ export function createMemoryLearningMethods(
 				return audit;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async listLearningAssignments(input: {
@@ -1312,7 +1319,7 @@ export function createMemoryLearningMethods(
 				.slice(start, start + input.pageSize)
 				.map((a) => ({ ...a }));
 
-			return await ok({
+			return await errorResult.ok({
 				assignments,
 				totalCount,
 				page: input.page,
@@ -1327,9 +1334,9 @@ export function createMemoryLearningMethods(
 		}): Promise<Result<LearningCompletion | null>> {
 			const completion = state.completions.get(input.completionId);
 			if (!completion || completion.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...completion });
+			return await errorResult.ok({ ...completion });
 		},
 
 		async findCompletionByIdempotencyKey(input: {
@@ -1339,9 +1346,12 @@ export function createMemoryLearningMethods(
 			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
 			const record = state.completionIdempotencyByKey.get(key);
 			if (!record) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...record, completion: { ...record.completion } });
+			return await errorResult.ok({
+				...record,
+				completion: { ...record.completion },
+			});
 		},
 
 		async findCompletionByAssignmentId(input: {
@@ -1352,15 +1362,15 @@ export function createMemoryLearningMethods(
 				input.assignmentId,
 			);
 			if (!completionId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
 			const completion = state.completions.get(
 				completionId as HumanResourcesCompletionId,
 			);
 			if (!completion || completion.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...completion });
+			return await errorResult.ok({ ...completion });
 		},
 
 		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
@@ -1502,7 +1512,7 @@ export function createMemoryLearningMethods(
 				return outbox;
 			}
 
-			return ok({ ...completion });
+			return errorResult.ok({ ...completion });
 		},
 
 		async listCompletions(input: {
@@ -1533,7 +1543,7 @@ export function createMemoryLearningMethods(
 				.slice(start, start + input.pageSize)
 				.map((c) => ({ ...c }));
 
-			return await ok({
+			return await errorResult.ok({
 				completions,
 				totalCount,
 				page: input.page,
@@ -1547,9 +1557,9 @@ export function createMemoryLearningMethods(
 		}): Promise<Result<LearningAttendance | null>> {
 			const attendance = state.learningAttendance.get(input.attendanceId);
 			if (!attendance || attendance.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...attendance });
+			return await errorResult.ok({ ...attendance });
 		},
 
 		async findLearningAttendanceByIdempotencyKey(input: {
@@ -1559,9 +1569,12 @@ export function createMemoryLearningMethods(
 			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
 			const record = state.attendanceIdempotencyByKey.get(key);
 			if (!record) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...record, attendance: { ...record.attendance } });
+			return await errorResult.ok({
+				...record,
+				attendance: { ...record.attendance },
+			});
 		},
 
 		async findLearningAttendanceByAssignmentAndSession(input: {
@@ -1573,13 +1586,13 @@ export function createMemoryLearningMethods(
 				attendanceAssignmentSessionKey(input.assignmentId, input.sessionId),
 			);
 			if (!attendanceId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
 			const attendance = state.learningAttendance.get(attendanceId);
 			if (!attendance || attendance.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...attendance });
+			return await errorResult.ok({ ...attendance });
 		},
 
 		async recordLearningAttendance(
@@ -1600,7 +1613,7 @@ export function createMemoryLearningMethods(
 				return replay;
 			}
 			if (replay.data !== null) {
-				return ok(replay.data);
+				return errorResult.ok(replay.data);
 			}
 
 			const context = resolveLearningAttendanceContext(state, record);
@@ -1676,7 +1689,7 @@ export function createMemoryLearningMethods(
 				return audit;
 			}
 
-			return ok({ ...attendance });
+			return errorResult.ok({ ...attendance });
 		},
 
 		async listLearningAttendance(input: {
@@ -1705,7 +1718,7 @@ export function createMemoryLearningMethods(
 				.slice(start, start + input.pageSize)
 				.map((a) => ({ ...a }));
 
-			return await ok({
+			return await errorResult.ok({
 				attendanceRecords: attendance,
 				totalCount,
 				page: input.page,
@@ -1723,9 +1736,9 @@ export function createMemoryLearningMethods(
 				!certification ||
 				certification.organizationId !== input.organizationId
 			) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...certification });
+			return await errorResult.ok({ ...certification });
 		},
 
 		async findCertificationByIdempotencyKey(input: {
@@ -1735,9 +1748,9 @@ export function createMemoryLearningMethods(
 			const key = idempotencyMapKey(input.organizationId, input.idempotencyKey);
 			const record = state.certificationIdempotencyByKey.get(key);
 			if (!record) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({
+			return await errorResult.ok({
 				...record,
 				certification: { ...record.certification },
 			});
@@ -1770,7 +1783,7 @@ export function createMemoryLearningMethods(
 				) {
 					return conflict("Idempotency key reused with different payload");
 				}
-				return ok({ ...existing.certification });
+				return errorResult.ok({ ...existing.certification });
 			}
 
 			const employee = core.employees.get(record.employeeId);
@@ -1864,7 +1877,7 @@ export function createMemoryLearningMethods(
 				return audit;
 			}
 
-			return ok({ ...certification });
+			return errorResult.ok({ ...certification });
 		},
 
 		async revokeCertification(
@@ -1934,7 +1947,7 @@ export function createMemoryLearningMethods(
 				return audit;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async expireCertification(
@@ -2020,7 +2033,7 @@ export function createMemoryLearningMethods(
 				return outbox;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
@@ -2054,7 +2067,7 @@ export function createMemoryLearningMethods(
 				) {
 					return conflict("Idempotency key reused with different payload");
 				}
-				return ok({ ...existing.certification });
+				return errorResult.ok({ ...existing.certification });
 			}
 
 			const prior = state.certifications.get(record.certificationId);
@@ -2181,7 +2194,7 @@ export function createMemoryLearningMethods(
 				return outbox;
 			}
 
-			return ok({ ...certification });
+			return errorResult.ok({ ...certification });
 		},
 
 		async listCertifications(input: {
@@ -2214,7 +2227,7 @@ export function createMemoryLearningMethods(
 				.slice(start, start + input.pageSize)
 				.map((c) => ({ ...c }));
 
-			return await ok({
+			return await errorResult.ok({
 				certifications,
 				totalCount,
 				page: input.page,
@@ -2258,7 +2271,7 @@ export function createMemoryLearningMethods(
 				.slice(start, start + input.pageSize)
 				.map((certification) => ({ ...certification }));
 
-			return await ok({
+			return await errorResult.ok({
 				certifications,
 				totalCount,
 				page: input.page,

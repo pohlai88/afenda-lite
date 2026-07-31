@@ -1,4 +1,4 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type {
 	MutationPorts,
@@ -25,7 +25,7 @@ export function createTestPayrollRunCalculator(
 			if (options.failWith) {
 				return options.failWith;
 			}
-			return ok({
+			return errorResult.ok({
 				calculationSnapshotHash:
 					options.snapshotHash ?? `hash-${input.runId}-${input.sequence}`,
 				calculationVersion: PAYROLL_CALCULATION_VERSION,

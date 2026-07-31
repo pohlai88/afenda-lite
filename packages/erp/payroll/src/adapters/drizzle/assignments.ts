@@ -10,7 +10,7 @@ import {
 	payrollRecurringDeduction,
 	payrollRecurringEarning,
 } from "@afenda/db";
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	parsePayrollDeductionRuleId,
@@ -73,7 +73,7 @@ function mapAssignmentRow(
 	if (!payGroupId.ok) {
 		return payGroupId;
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		employeeId: row.employeeId,
@@ -104,7 +104,7 @@ function mapRecurringEarningRow(
 	if (!earningRuleId.ok) {
 		return earningRuleId;
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		employeeId: row.employeeId,
@@ -138,7 +138,7 @@ function mapRecurringDeductionRow(
 	if (!deductionRuleId.ok) {
 		return deductionRuleId;
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		employeeId: row.employeeId,
@@ -168,7 +168,7 @@ function mapEarningRuleRow(
 	if (!payGroupId.ok) {
 		return payGroupId;
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		payGroupId: payGroupId.data,
@@ -201,7 +201,7 @@ function mapDeductionRuleRow(
 	if (!payGroupId.ok) {
 		return payGroupId;
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		payGroupId: payGroupId.data,
@@ -242,13 +242,13 @@ export const drizzleAssignmentsMethods: PayrollAssignmentsStore = {
 				.limit(1);
 			const [row] = rows;
 			if (row === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const mapped = mapAssignmentRow(row);
 			if (!mapped.ok) {
 				return mapped;
 			}
-			return ok({
+			return errorResult.ok({
 				assignment: mapped.data,
 				createRequestFingerprint: row.createRequestFingerprint,
 			});
@@ -282,7 +282,7 @@ export const drizzleAssignmentsMethods: PayrollAssignmentsStore = {
 			return resolved;
 		}
 		if (resolved.data !== "create") {
-			return ok(resolved.data);
+			return errorResult.ok(resolved.data);
 		}
 
 		const assignmentId = parsePayrollEmployeeAssignmentId(randomUUID());
@@ -330,7 +330,7 @@ export const drizzleAssignmentsMethods: PayrollAssignmentsStore = {
 			if (!audit.ok) {
 				return audit;
 			}
-			return ok(mapped.data);
+			return errorResult.ok(mapped.data);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -353,7 +353,7 @@ export const drizzleAssignmentsMethods: PayrollAssignmentsStore = {
 				.limit(1);
 			const [row] = rows;
 			if (row === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapAssignmentRow(row);
 		} catch (error) {
@@ -381,13 +381,13 @@ export const drizzleAssignmentsMethods: PayrollAssignmentsStore = {
 				.limit(1);
 			const [row] = rows;
 			if (row === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const mapped = mapRecurringEarningRow(row);
 			if (!mapped.ok) {
 				return mapped;
 			}
-			return ok({
+			return errorResult.ok({
 				recurringEarning: mapped.data,
 				createRequestFingerprint: row.createRequestFingerprint,
 			});
@@ -421,7 +421,7 @@ export const drizzleAssignmentsMethods: PayrollAssignmentsStore = {
 			return resolved;
 		}
 		if (resolved.data !== "create") {
-			return ok(resolved.data);
+			return errorResult.ok(resolved.data);
 		}
 
 		const recurringEarningId = parsePayrollRecurringEarningId(randomUUID());
@@ -472,7 +472,7 @@ export const drizzleAssignmentsMethods: PayrollAssignmentsStore = {
 			if (!audit.ok) {
 				return audit;
 			}
-			return ok(mapped.data);
+			return errorResult.ok(mapped.data);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -495,7 +495,7 @@ export const drizzleAssignmentsMethods: PayrollAssignmentsStore = {
 				.limit(1);
 			const [row] = rows;
 			if (row === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapRecurringEarningRow(row);
 		} catch (error) {
@@ -523,13 +523,13 @@ export const drizzleAssignmentsMethods: PayrollAssignmentsStore = {
 				.limit(1);
 			const [row] = rows;
 			if (row === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const mapped = mapRecurringDeductionRow(row);
 			if (!mapped.ok) {
 				return mapped;
 			}
-			return ok({
+			return errorResult.ok({
 				recurringDeduction: mapped.data,
 				createRequestFingerprint: row.createRequestFingerprint,
 			});
@@ -563,7 +563,7 @@ export const drizzleAssignmentsMethods: PayrollAssignmentsStore = {
 			return resolved;
 		}
 		if (resolved.data !== "create") {
-			return ok(resolved.data);
+			return errorResult.ok(resolved.data);
 		}
 
 		const recurringDeductionId = parsePayrollRecurringDeductionId(randomUUID());
@@ -614,7 +614,7 @@ export const drizzleAssignmentsMethods: PayrollAssignmentsStore = {
 			if (!audit.ok) {
 				return audit;
 			}
-			return ok(mapped.data);
+			return errorResult.ok(mapped.data);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -637,7 +637,7 @@ export const drizzleAssignmentsMethods: PayrollAssignmentsStore = {
 				.limit(1);
 			const [row] = rows;
 			if (row === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapRecurringDeductionRow(row);
 		} catch (error) {
@@ -681,7 +681,7 @@ export const drizzleAssignmentsMethods: PayrollAssignmentsStore = {
 				}
 				assignments.push(mapped.data);
 			}
-			return ok(assignments);
+			return errorResult.ok(assignments);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -723,7 +723,7 @@ export const drizzleAssignmentsMethods: PayrollAssignmentsStore = {
 				}
 				recurringEarnings.push(mapped.data);
 			}
-			return ok(recurringEarnings);
+			return errorResult.ok(recurringEarnings);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -765,7 +765,7 @@ export const drizzleAssignmentsMethods: PayrollAssignmentsStore = {
 				}
 				recurringDeductions.push(mapped.data);
 			}
-			return ok(recurringDeductions);
+			return errorResult.ok(recurringDeductions);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -793,7 +793,7 @@ export const drizzleAssignmentRuleLookups = {
 				.limit(1);
 			const [row] = rows;
 			if (row === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapEarningRuleRow(row);
 		} catch (error) {
@@ -821,7 +821,7 @@ export const drizzleAssignmentRuleLookups = {
 				.limit(1);
 			const [row] = rows;
 			if (row === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapDeductionRuleRow(row);
 		} catch (error) {

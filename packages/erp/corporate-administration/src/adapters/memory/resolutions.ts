@@ -1,8 +1,6 @@
 // biome-ignore-all lint/suspicious/useAwait: The deterministic memory adapter implements asynchronous resolution ports.
 import { randomUUID } from "node:crypto";
-import { fail, ok } from "@afenda/errors/result";
-
-import { corporateAdministrationErrorDetails } from "../../error-codes";
+import { errorResult } from "@afenda/errors";
 import {
 	meetingVoteIdSchema,
 	resolutionActionIdSchema,
@@ -26,7 +24,7 @@ export function createMemoryCorporateAdministrationResolutionStore(): Resolution
 
 	return {
 		async getMeetingVote(input) {
-			return ok(
+			return errorResult.ok(
 				cloneNullable(
 					votes.get(key(input.organizationId, input.meetingVoteId)),
 				),
@@ -57,17 +55,17 @@ export function createMemoryCorporateAdministrationResolutionStore(): Resolution
 				updatedAt: now,
 			};
 			votes.set(key(input.organizationId, id), row);
-			return ok(clone(row));
+			return errorResult.ok(clone(row));
 		},
 		async getResolution(input) {
-			return ok(
+			return errorResult.ok(
 				cloneNullable(
 					resolutions.get(key(input.organizationId, input.resolutionId)),
 				),
 			);
 		},
 		async listResolutionsAsOf(input) {
-			return ok(
+			return errorResult.ok(
 				[...resolutions.values()]
 					.filter(
 						(row) =>
@@ -114,7 +112,7 @@ export function createMemoryCorporateAdministrationResolutionStore(): Resolution
 				updatedAt: now,
 			};
 			resolutions.set(key(input.organizationId, id), row);
-			return ok(clone(row));
+			return errorResult.ok(clone(row));
 		},
 		async supersedeResolution(input) {
 			const current = resolutions.get(
@@ -139,7 +137,7 @@ export function createMemoryCorporateAdministrationResolutionStore(): Resolution
 				updatedAt: now,
 			};
 			resolutions.set(key(input.organizationId, updated.id), updated);
-			return ok(clone(updated));
+			return errorResult.ok(clone(updated));
 		},
 		async recordMinutesDocument(input) {
 			const current = resolutions.get(
@@ -162,17 +160,17 @@ export function createMemoryCorporateAdministrationResolutionStore(): Resolution
 				updatedAt: now,
 			};
 			resolutions.set(key(input.organizationId, updated.id), updated);
-			return ok(clone(updated));
+			return errorResult.ok(clone(updated));
 		},
 		async getResolutionAction(input) {
-			return ok(
+			return errorResult.ok(
 				cloneNullable(
 					actions.get(key(input.organizationId, input.resolutionActionId)),
 				),
 			);
 		},
 		async listResolutionActions(input) {
-			return ok(
+			return errorResult.ok(
 				[...actions.values()]
 					.filter(
 						(row) =>
@@ -184,7 +182,7 @@ export function createMemoryCorporateAdministrationResolutionStore(): Resolution
 			);
 		},
 		async listOverdueResolutionActions(input) {
-			return ok(
+			return errorResult.ok(
 				[...actions.values()]
 					.filter(
 						(row) =>
@@ -219,7 +217,7 @@ export function createMemoryCorporateAdministrationResolutionStore(): Resolution
 				updatedAt: now,
 			};
 			actions.set(key(input.organizationId, id), row);
-			return ok(clone(row));
+			return errorResult.ok(clone(row));
 		},
 		async completeResolutionAction(input) {
 			const current = actions.get(
@@ -245,7 +243,7 @@ export function createMemoryCorporateAdministrationResolutionStore(): Resolution
 				updatedAt: now,
 			};
 			actions.set(key(input.organizationId, updated.id), updated);
-			return ok(clone(updated));
+			return errorResult.ok(clone(updated));
 		},
 	};
 }
@@ -263,20 +261,13 @@ function cloneNullable<T>(value: T | undefined): T | null {
 }
 
 function notFound() {
-	return fail(
-		"NOT_FOUND",
-		"Corporate Administration record was not found.",
-		corporateAdministrationErrorDetails("CORPORATE_ADMINISTRATION_NOT_FOUND"),
-	);
+	return errorResult.fail("NOT_FOUND", {
+		publicMessage: "Corporate Administration record was not found.",
+	});
 }
 
-function stale(expectedVersion: number, actualVersion: number) {
-	return fail(
-		"CONFLICT",
-		"Corporate Administration record version is stale.",
-		corporateAdministrationErrorDetails(
-			"CORPORATE_ADMINISTRATION_STALE_VERSION",
-			{ expectedVersion, actualVersion },
-		),
-	);
+function stale(_expectedVersion: number, _actualVersion: number) {
+	return errorResult.fail("CONFLICT", {
+		publicMessage: "Corporate Administration record version is stale.",
+	});
 }

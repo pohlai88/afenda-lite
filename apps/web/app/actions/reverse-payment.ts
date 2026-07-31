@@ -1,18 +1,14 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { type Payment, reversePayment } from "@afenda/payments";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
 import { reversePaymentApplications } from "@/lib/erp/payments-application-orchestrator";
 import { createPaymentsCommandOptions } from "@/lib/erp/payments-command-options";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export type ReversePaymentActionState = ActionResult<{
@@ -40,11 +36,10 @@ export async function reversePaymentAction(
 				reason: formData.get("reason"),
 			});
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid payment, expected version, and reversal reason.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage:
+						"Enter a valid payment, expected version, and reversal reason.",
+				});
 			}
 			const mapped = mapPackageResult(
 				await reversePayment(

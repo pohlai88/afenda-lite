@@ -1,4 +1,4 @@
-import { fail, ok } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 import { createEventPublisher } from "@afenda/events";
 
 import type { ReceivablesAuthorizationPort } from "./authorization";
@@ -37,9 +37,7 @@ export function resolveEffects(
 				correlationId: event.correlationId,
 				payload: event.payload,
 			});
-			return result.ok
-				? ok(undefined)
-				: fail(result.code, result.message, result.details);
+			return result.ok ? errorResult.ok(undefined) : result;
 		},
 	};
 }

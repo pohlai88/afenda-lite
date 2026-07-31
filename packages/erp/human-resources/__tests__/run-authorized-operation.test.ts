@@ -1,4 +1,4 @@
-import { fail, ok } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 import { describe, expect, it, vi } from "vitest";
 
 import type { HumanResourcesAuthorizationPort } from "../src/authorization";
@@ -53,7 +53,7 @@ function observabilityHarness(): {
 
 describe("runAuthorizedHumanResourcesOperation", () => {
 	it("denies when the actor lacks the required permission", async () => {
-		const execute = vi.fn(async () => ok({ id: "x" }));
+		const execute = vi.fn(async () => errorResult.ok({ id: "x" }));
 		const result = await runAuthorizedHumanResourcesOperation({
 			operationId: HUMAN_RESOURCES_COMMAND_DEPARTMENT_CREATE,
 			operationKind: "command",
@@ -95,10 +95,10 @@ describe("runAuthorizedHumanResourcesOperation", () => {
 					organizationId: "org-1",
 					kind: "compensation",
 				}),
-			execute: async () => ok({ created: true }),
+			execute: async () => errorResult.ok({ created: true }),
 		});
 
-		expect(result).toEqual(ok({ created: true }));
+		expect(result).toEqual(errorResult.ok({ created: true }));
 		expect(telemetry.recorder.metrics).toEqual(
 			expect.arrayContaining([
 				expect.objectContaining({
@@ -124,7 +124,7 @@ describe("runAuthorizedHumanResourcesOperation", () => {
 				observability: telemetry.ports,
 				authorization: grantingAuthorization(new Set()),
 			},
-			execute: async () => ok({ created: true }),
+			execute: async () => errorResult.ok({ created: true }),
 		});
 
 		expect(result).toMatchObject({ ok: false, code: "FORBIDDEN" });
@@ -177,12 +177,12 @@ describe("runAuthorizedHumanResourcesOperation", () => {
 				resourceId: "leave-1",
 				subjectEmployeeId: "employee-1",
 			}),
-			execute: async () => ok({ id: "leave-1", status: "draft" }),
+			execute: async () => errorResult.ok({ id: "leave-1", status: "draft" }),
 			project,
 		});
 
 		expect(result).toEqual(
-			ok({ id: "leave-1", status: "draft", masked: true }),
+			errorResult.ok({ id: "leave-1", status: "draft", masked: true }),
 		);
 		expect(project).toHaveBeenCalledOnce();
 	});
@@ -209,7 +209,7 @@ describe("runAuthorizedHumanResourcesOperation", () => {
 				),
 			},
 			resolveResource,
-			execute: async () => ok({ ok: true }),
+			execute: async () => errorResult.ok({ ok: true }),
 		});
 
 		expect(resolveResource).toHaveBeenCalledOnce();
@@ -223,7 +223,7 @@ const EMPLOYEE_COMPENSATION_GET =
 describe("runAuthorizedHumanResourcesOperation cross-tenant enforcement", () => {
 	it("denies a cross-tenant resource before execution", async () => {
 		const telemetry = observabilityHarness();
-		const execute = vi.fn(async () => ok({ id: "comp-1" }));
+		const execute = vi.fn(async () => errorResult.ok({ id: "comp-1" }));
 
 		const result = await runAuthorizedHumanResourcesOperation({
 			operationId: EMPLOYEE_COMPENSATION_GET,
@@ -281,10 +281,10 @@ describe("runDomainAuthorizedOperation", () => {
 				),
 			},
 			parityResourceKind: "leave_request",
-			execute: async () => ok({ drafted: true }),
+			execute: async () => errorResult.ok({ drafted: true }),
 		});
 
-		expect(result).toEqual(ok({ drafted: true }));
+		expect(result).toEqual(errorResult.ok({ drafted: true }));
 	});
 });
 
@@ -303,7 +303,7 @@ describe("authorizationDecisionToFailure", () => {
 		expect(result.ok).toBe(false);
 		if (!result.ok) {
 			expect(result.code).toBe("FORBIDDEN");
-			expect(result.details).toMatchObject({
+			expect(errorResult.context(result)).toMatchObject({
 				denyCode: "subject_scope_denied",
 				policyId: "hr.leave",
 				operationId: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_CREATE_DRAFT,
@@ -346,11 +346,14 @@ describe("runAuthorizedHumanResourcesOperation execute failures", () => {
 					new Set([HUMAN_RESOURCES_PERMISSION_ORGANIZATION_MANAGE]),
 				),
 			},
-			execute: async () => fail("CONFLICT", "boom"),
+			execute: async () =>
+				errorResult.fail("CONFLICT", { publicMessage: "boom" }),
 			project,
 		});
 
-		expect(result).toEqual(fail("CONFLICT", "boom"));
+		expect(result).toEqual(
+			errorResult.fail("CONFLICT", { publicMessage: "boom" }),
+		);
 		expect(project).not.toHaveBeenCalled();
 		expect(telemetry.recorder.events).toContainEqual({
 			name: "hr.command.failed",
@@ -386,9 +389,9 @@ describe("runAuthorizedHumanResourcesOperation execute failures", () => {
 					},
 				},
 			},
-			execute: async () => ok({ created: true }),
+			execute: async () => errorResult.ok({ created: true }),
 		});
 
-		expect(result).toEqual(ok({ created: true }));
+		expect(result).toEqual(errorResult.ok({ created: true }));
 	});
 });

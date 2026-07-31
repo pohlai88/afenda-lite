@@ -1,4 +1,4 @@
-import type { Result } from "@afenda/errors/result";
+import type { Result } from "@afenda/errors";
 
 import type { DayPortion, LeaveUnit } from "../shared/leave-status";
 import type { WorkCalendarDateOverrideKind } from "../types";

@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { z } from "zod";
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
@@ -57,11 +57,12 @@ async function validateEmploymentAmendment(
 		return existing;
 	}
 	if (existing.data === null) {
-		return fail(
-			"NOT_FOUND",
-			"Employment not found",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-		);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "The requested resource was not found",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			),
+		});
 	}
 	if (data.status !== undefined) {
 		const transitionCheck = assertEmploymentStatusTransition(
@@ -110,7 +111,11 @@ async function validateEmploymentAmendment(
 						: { requestedEffectiveOn: data.effectiveOn }),
 				})
 			: undefined;
-	return ok({ endsOn: endsOn.data, lifecycleEffectiveOn, startsOn });
+	return errorResult.ok({
+		endsOn: endsOn.data,
+		lifecycleEffectiveOn,
+		startsOn,
+	});
 }
 
 export function createEmployment(
@@ -223,22 +228,22 @@ export function correctEmployment(
 				return existing;
 			}
 			if (existing.data === null) {
-				return fail(
-					"NOT_FOUND",
-					"Employment not found",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_NOT_FOUND,
+					),
+				});
 			}
 
 			const nextStatus = data.status ?? existing.data.status;
 			if (existing.data.status === "terminated" && nextStatus === "active") {
-				return fail(
-					"BAD_REQUEST",
-					"Cannot reopen a terminated employment; create a new employment for rehire",
-					humanResourcesErrorDetails(
+				return errorResult.fail("BAD_REQUEST", {
+					publicMessage: "The request is invalid",
+					internalContext: humanResourcesErrorDetails(
 						HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
 					),
-				);
+				});
 			}
 
 			const startsOn = data.startsOn ?? existing.data.startsOn;
@@ -301,13 +306,14 @@ export function getEmployment(
 				return employment;
 			}
 			if (employment.data === null) {
-				return fail(
-					"NOT_FOUND",
-					"Employment not found",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_NOT_FOUND,
+					),
+				});
 			}
-			return ok(employment.data);
+			return errorResult.ok(employment.data);
 		},
 	});
 }
@@ -350,7 +356,7 @@ export function listEmploymentStatusHistory(
 			if (!history.ok) {
 				return history;
 			}
-			return ok({
+			return errorResult.ok({
 				history: history.data,
 				statusAsOf:
 					data.asOf === undefined

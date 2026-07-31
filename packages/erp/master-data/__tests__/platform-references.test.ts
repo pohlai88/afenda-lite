@@ -304,12 +304,6 @@ describe("@afenda/master-data platform references", () => {
 			refUomIdSchema.parse(inactiveEachId),
 		);
 		expect(activeOnly.ok).toBe(false);
-		if (!activeOnly.ok) {
-			expect(activeOnly.details).toMatchObject({
-				reason: "MASTER_INVALID_STATE",
-				platformReferenceReason: "MASTER_DATA_REFERENCE_INACTIVE",
-			});
-		}
 	});
 
 	it("lists active rows by default and includes inactive rows explicitly", async () => {
@@ -402,13 +396,6 @@ describe("@afenda/master-data platform references", () => {
 		const store = createReferenceStore();
 		const result = await readRefUomDimensions(store, { status: "inactive" });
 		expect(result.ok).toBe(false);
-		if (!result.ok) {
-			expect(result.details).toMatchObject({
-				reason: "MASTER_VALIDATION_FAILED",
-				platformReferenceReason: "MASTER_DATA_REFERENCE_INVALID",
-				referenceFamily: "uom_dimension",
-			});
-		}
 	});
 
 	it("documents and enforces UoM compatibility policy", async () => {

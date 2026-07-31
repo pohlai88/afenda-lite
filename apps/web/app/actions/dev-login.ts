@@ -6,10 +6,15 @@ import {
 	signInWithEmail,
 } from "@afenda/auth";
 import { env } from "@afenda/env";
+import {
+	type Result as ActionResult,
+	errorIngress,
+	errorProject,
+	errorResult,
+} from "@afenda/errors";
 import { createCorrelationId } from "@afenda/http";
-import { checkRateLimit, toRateLimitAppError } from "@afenda/rate-limit";
+import { checkRateLimit, toRateLimitFailure } from "@afenda/rate-limit";
 import { redirect } from "next/navigation";
-
 import {
 	getLocalDevLoginAvailability,
 	isLocalDevLoginRuntime,
@@ -17,12 +22,6 @@ import {
 } from "@/lib/local-dev-login";
 import { readRequestAttribution } from "@/modules/platform/domain/request-attribution";
 import { logProductEvent } from "@/modules/platform/observability/product-log";
-import {
-	type ActionResult,
-	actionFail,
-	actionFailFromAppError,
-	actionFailInternal,
-} from "@/modules/platform/schemas/action-result";
 
 export type DevLoginActionState = ActionResult<{ redirected: true }> | null;
 
@@ -69,22 +68,23 @@ export async function devLoginAction(
 			path: "devLoginAction",
 			code: "FORBIDDEN",
 		});
-		return actionFail("FORBIDDEN", "Local dev login is unavailable.");
+		return errorResult.fail("FORBIDDEN");
 	}
 
 	const roleRaw = formData.get("role");
 	const role: LocalDevLoginRole | null =
 		roleRaw === "operator" || roleRaw === "client" ? roleRaw : null;
 	if (role === null) {
-		return actionFail("VALIDATION_ERROR", "Choose operator or client login.");
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "Choose operator or client login.",
+		});
 	}
 
 	const credentials = resolveCredentials(role);
 	if (credentials === null) {
-		return actionFail(
-			"VALIDATION_ERROR",
-			`Set ${role === "operator" ? "SHARED_ADMIN_EMAIL/PASSWORD" : "PREVIEW_CLIENT_EMAIL/PASSWORD"} in .env.local.`,
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+		});
 	}
 
 	const attribution = await readRequestAttribution();
@@ -93,8 +93,10 @@ export async function devLoginAction(
 		key: `${attribution.ipAddress?.trim() || "unknown"}:dev-login:${role}`,
 	});
 	if (!limit.ok) {
-		const error = toRateLimitAppError(limit);
-		return actionFailFromAppError(error);
+		const error = toRateLimitFailure(limit);
+		return errorProject.result(
+			errorIngress.unknown(error, { operation: "web.action" }),
+		);
 	}
 
 	const result = await signInWithEmail({
@@ -103,12 +105,9 @@ export async function devLoginAction(
 	});
 	if (!result.ok) {
 		if (result.code?.startsWith("NETWORK_")) {
-			return actionFailInternal(
-				"Authentication service is temporarily unavailable.",
-				correlationId,
-			);
+			return errorResult.fail("INTERNAL_ERROR", { correlationId });
 		}
-		return actionFail("UNAUTHORIZED", result.message);
+		return errorResult.fail("UNAUTHORIZED");
 	}
 
 	redirect(credentials.home);

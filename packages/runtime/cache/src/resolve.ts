@@ -3,7 +3,7 @@ import { Redis } from "@upstash/redis";
 
 import { CacheManager } from "./cache-manager";
 import { createUpstashL2Store } from "./l2-upstash";
-import { toCacheAppError } from "./to-app-error";
+import { toCacheFailure } from "./to-failure";
 import type { CreateCacheManagerOptions } from "./types";
 
 export type ResolvedCacheBackend =
@@ -80,7 +80,7 @@ function buildManager(options: CreateCacheManagerOptions = {}): CacheManager {
 	}
 
 	if (options.backend === "upstash" || isProductionWithoutUpstash()) {
-		throw toCacheAppError({
+		throw toCacheFailure({
 			ok: false,
 			reason: "unavailable",
 			service: "upstash_redis",
@@ -149,7 +149,7 @@ export function createCacheManager(
 
 	const resolved = resolveCacheBackend();
 	if (resolved.kind === "unavailable") {
-		throw toCacheAppError({
+		throw toCacheFailure({
 			ok: false,
 			reason: "unavailable",
 			service: resolved.service,

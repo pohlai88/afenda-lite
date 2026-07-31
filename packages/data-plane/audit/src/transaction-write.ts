@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import { z } from "zod";
 
 import { serializeAuditMetadata } from "./event-context";
@@ -63,7 +63,7 @@ function prepareTransactionalAuditInsertValuesUnobserved(
 	}
 
 	const entry = prepared.data;
-	return ok({
+	return errorResult.ok({
 		organizationId: entry.organizationId,
 		actorUserId: entry.actorUserId,
 		correlationId: entry.correlationId,
@@ -107,8 +107,8 @@ export function prepareDerivedEntityAuditInsertValues(
 	return observeSynchronousAuditOperation("transaction_build", () => {
 		const parsed = derivedEntityAuditCommandSchema.safeParse(input);
 		if (!parsed.success) {
-			return fail("BAD_REQUEST", "Invalid audit record input", {
-				fieldErrors: parsed.error.flatten().fieldErrors,
+			return errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Invalid audit record input",
 			});
 		}
 
@@ -121,7 +121,7 @@ export function prepareDerivedEntityAuditInsertValues(
 		}
 
 		const { entityId: _validatedSentinel, ...derivedValues } = prepared.data;
-		return ok(derivedValues);
+		return errorResult.ok(derivedValues);
 	});
 }
 
@@ -150,13 +150,15 @@ function buildTransactionalAuditInsertUnobserved<Query>(
 	const parsedId =
 		options.id === undefined ? undefined : auditIdSchema.safeParse(options.id);
 	if (parsedId !== undefined && !parsedId.success) {
-		return fail("BAD_REQUEST", "Invalid audit record id");
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Invalid audit record id",
+		});
 	}
 
 	const entry = prepared.data;
 
 	if (parsedId === undefined) {
-		return ok(options.sql`
+		return errorResult.ok(options.sql`
 			INSERT INTO platform_audit_log (
 				organization_id, actor_user_id, correlation_id, module, entity,
 				entity_id, action, changes, old_value, new_value, metadata,
@@ -173,7 +175,7 @@ function buildTransactionalAuditInsertUnobserved<Query>(
 		`);
 	}
 
-	return ok(options.sql`
+	return errorResult.ok(options.sql`
 		INSERT INTO platform_audit_log (
 			id, organization_id, actor_user_id, correlation_id, module, entity,
 			entity_id, action, changes, old_value, new_value, metadata,

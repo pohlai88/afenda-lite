@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	type ApprovedPayrollHandoff,
 	HANDOFF_PAYROLL_CONTRACT_VERSION,
@@ -84,7 +84,7 @@ function reliabilityPorts(
 			execute() {
 				return Promise.resolve(
 					outcomes.shift() ??
-						ok({ kind: "acknowledged", receiptId: "recovered" }),
+						errorResult.ok({ kind: "acknowledged", receiptId: "recovered" }),
 				);
 			},
 		},
@@ -113,7 +113,9 @@ async function executeClaimedReliabilityWork(
 		ports.store,
 	);
 	if (!claimed.ok || claimed.data.length !== 1) {
-		return fail("CONFLICT", "Recovery work was not due");
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "The request conflicts with current state",
+		});
 	}
 	return executeReliabilityWork(
 		{
@@ -153,8 +155,8 @@ export function createHrLocalRecoveryDrills(): readonly LocalRecoveryDrill[] {
 			expectedControl: "terminal dead letter is atomically recorded",
 			async execute() {
 				const ports = reliabilityPorts([
-					fail("INTERNAL_ERROR", "injected transport failure"),
-					fail("INTERNAL_ERROR", "injected transport failure"),
+					errorResult.fail("INTERNAL_ERROR"),
+					errorResult.fail("INTERNAL_ERROR"),
 				]);
 				const created = await registerReliabilityWork(
 					{
@@ -226,8 +228,8 @@ export function createHrLocalRecoveryDrills(): readonly LocalRecoveryDrill[] {
 							attempts += 1;
 							return Promise.resolve(
 								attempts === 1
-									? fail("INTERNAL_ERROR", "injected producer outage")
-									: ok({ receiptId: "receipt-recovered" }),
+									? errorResult.fail("INTERNAL_ERROR")
+									: errorResult.ok({ receiptId: "receipt-recovered" }),
 							);
 						},
 					},
@@ -388,7 +390,9 @@ export function createHrLocalRecoveryDrills(): readonly LocalRecoveryDrill[] {
 					producer: {
 						publish() {
 							producerCalls += 1;
-							return Promise.resolve(ok({ receiptId: "unexpected" }));
+							return Promise.resolve(
+								errorResult.ok({ receiptId: "unexpected" }),
+							);
 						},
 					},
 				};

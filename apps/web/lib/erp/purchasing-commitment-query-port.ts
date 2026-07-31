@@ -10,15 +10,22 @@ import {
 	supplierInvoice,
 	supplierInvoiceLine,
 } from "@afenda/db";
-import { normalizePostgresUnknown } from "@afenda/errors/adapters/postgres";
-import { failFromAppError, ok, type Result } from "@afenda/errors/result";
+import {
+	errorIngress,
+	errorProject,
+	errorResult,
+	type Result,
+} from "@afenda/errors";
+
 import type {
 	PurchaseOrderCommitmentQueryPort,
 	PurchaseOrderCommitmentStatus,
 } from "@afenda/purchasing";
 
-function failFromPersistence(error: unknown, fallbackMessage: string) {
-	return failFromAppError(normalizePostgresUnknown(error, fallbackMessage));
+function failFromPersistence(error: unknown, _fallbackMessage: string) {
+	return errorProject.result(
+		errorIngress.postgres(error, { operation: "persistence.postgres" }),
+	);
 }
 
 /**
@@ -102,7 +109,7 @@ export function createPurchasingCommitmentQueryPort(): PurchaseOrderCommitmentQu
 					invoicedQuantity = invoicedRow?.invoicedQuantity ?? "0";
 				}
 
-				return ok({
+				return errorResult.ok({
 					orderedQuantity: orderedRow?.orderedQuantity ?? "0",
 					receivedQuantity,
 					invoicedQuantity,

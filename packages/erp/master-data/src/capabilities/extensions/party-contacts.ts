@@ -1,5 +1,5 @@
 /** Party-contact commands and queries. */
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	requireMasterCommandPermission,
@@ -194,7 +194,7 @@ function projectPartyContactResult(
 	if (!result.ok) {
 		return result;
 	}
-	return ok(toPartyContactProjection(result.data));
+	return errorResult.ok(toPartyContactProjection(result.data));
 }
 
 export async function listPartyContacts(
@@ -229,7 +229,7 @@ export async function listPartyContacts(
 	if (!result.ok) {
 		return result;
 	}
-	return ok(result.data.map(toPartyContactProjection));
+	return errorResult.ok(result.data.map(toPartyContactProjection));
 }
 
 export async function getPrimaryPartyContact(
@@ -265,9 +265,9 @@ export async function getPrimaryPartyContact(
 		return result;
 	}
 	if (result.data === null) {
-		return ok(null);
+		return errorResult.ok(null);
 	}
-	return ok(toPartyContactProjection(result.data));
+	return errorResult.ok(toPartyContactProjection(result.data));
 }
 
 export async function listSensitivePartyContacts(
@@ -302,7 +302,7 @@ export async function listSensitivePartyContacts(
 	if (!result.ok) {
 		return result;
 	}
-	return ok(result.data.map(toSensitivePartyContactProjection));
+	return errorResult.ok(result.data.map(toSensitivePartyContactProjection));
 }
 
 export async function getSensitivePrimaryPartyContact(
@@ -338,7 +338,7 @@ export async function getSensitivePrimaryPartyContact(
 		return result;
 	}
 	if (result.data === null) {
-		return ok(null);
+		return errorResult.ok(null);
 	}
-	return ok(toSensitivePartyContactProjection(result.data));
+	return errorResult.ok(toSensitivePartyContactProjection(result.data));
 }

@@ -1,4 +1,4 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { CompensationProposalStatus } from "./compensation-status";
 import {
 	alreadyInStatus,
@@ -29,7 +29,7 @@ export function assertCompensationProposalStatusTransition(
 	if (!canTransitionCompensationProposalStatus(current, next)) {
 		return cannotTransition("compensation proposal", current, next);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertCompensationProposalAmendable(
@@ -40,7 +40,7 @@ export function assertCompensationProposalAmendable(
 			"Compensation proposal can only be amended while draft",
 		);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertCompensationProposalApproved(
@@ -49,5 +49,5 @@ export function assertCompensationProposalApproved(
 	if (status !== "approved") {
 		return invalidState("Compensation proposal must be approved");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }

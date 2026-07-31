@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type {
 	PayablesStore,
@@ -44,7 +44,7 @@ async function runSequentially<T>(
 ): Promise<Result<void>> {
 	const [item, ...remaining] = items;
 	if (item === undefined) {
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	}
 	const current = await operation(item);
 	if (!current.ok) {
@@ -95,8 +95,10 @@ export class MemoryPayablesStore implements PayablesStore {
 	): Result<SupplierInvoice> {
 		const invoice = this.invoices.get(invoiceId);
 		return invoice === undefined || invoice.organizationId !== organizationId
-			? fail("NOT_FOUND", "Supplier invoice not found")
-			: ok(invoice);
+			? errorResult.fail("NOT_FOUND", {
+					publicMessage: "Supplier invoice not found",
+				})
+			: errorResult.ok(invoice);
 	}
 
 	private newInvoice(
@@ -107,11 +109,13 @@ export class MemoryPayablesStore implements PayablesStore {
 				invoice.organizationId === record.organizationId &&
 				invoice.normalizedCode === record.normalizedCode
 			) {
-				return fail("CONFLICT", "Supplier invoice code already exists");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Supplier invoice code already exists",
+				});
 			}
 		}
 		const now = new Date();
-		return ok({
+		return errorResult.ok({
 			cancelledAt: null,
 			cancelledBy: null,
 			code: record.code,
@@ -167,7 +171,7 @@ export class MemoryPayablesStore implements PayablesStore {
 			this.invoices.delete(created.data.id);
 			return emitted;
 		}
-		return ok(cloneInvoice(created.data));
+		return errorResult.ok(cloneInvoice(created.data));
 	}
 
 	addLine(
@@ -180,7 +184,9 @@ export class MemoryPayablesStore implements PayablesStore {
 		const invoice = found.data;
 		if (invoice.status !== "draft") {
 			return resolveResult(
-				fail("CONFLICT", "Lines can only be added to draft supplier documents"),
+				errorResult.fail("CONFLICT", {
+					publicMessage: "Lines can only be added to draft supplier documents",
+				}),
 			);
 		}
 		const now = new Date();
@@ -204,7 +210,7 @@ export class MemoryPayablesStore implements PayablesStore {
 		invoice.version += 1;
 		invoice.updatedBy = record.actorUserId;
 		invoice.updatedAt = now;
-		return resolveResult(ok({ ...line }));
+		return resolveResult(errorResult.ok({ ...line }));
 	}
 
 	async matchInvoice(
@@ -216,16 +222,19 @@ export class MemoryPayablesStore implements PayablesStore {
 		}
 		const invoice = found.data;
 		if (invoice.status !== "draft" || invoice.documentType !== "invoice") {
-			return fail("CONFLICT", "Only draft supplier invoices can be matched");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Only draft supplier invoices can be matched",
+			});
 		}
 		if (invoice.version !== record.expectedVersion) {
-			return fail("CONFLICT", "Supplier invoice version conflict");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Supplier invoice version conflict",
+			});
 		}
 		if (invoice.lines.length === 0 || decimal(invoice.totalAmount) <= 0n) {
-			return fail(
-				"CONFLICT",
-				"Cannot match an invoice without a positive total",
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Cannot match an invoice without a positive total",
+			});
 		}
 		const previous = cloneInvoice(invoice);
 		const now = new Date();
@@ -252,7 +261,7 @@ export class MemoryPayablesStore implements PayablesStore {
 			invoice.version += 1;
 		}
 		if (record.matchStatus === "exception") {
-			return ok(cloneInvoice(invoice));
+			return errorResult.ok(cloneInvoice(invoice));
 		}
 		const emitted = await record.effects.emit({
 			actorUserId: record.actorUserId,
@@ -273,7 +282,7 @@ export class MemoryPayablesStore implements PayablesStore {
 			this.invoices.set(invoice.id, previous);
 			return emitted;
 		}
-		return ok(cloneInvoice(invoice));
+		return errorResult.ok(cloneInvoice(invoice));
 	}
 
 	async postInvoice(
@@ -285,13 +294,14 @@ export class MemoryPayablesStore implements PayablesStore {
 		}
 		const invoice = found.data;
 		if (invoice.status !== "matched" || invoice.documentType !== "invoice") {
-			return fail(
-				"CONFLICT",
-				"Supplier invoice must be matched before posting",
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Supplier invoice must be matched before posting",
+			});
 		}
 		if (invoice.version !== record.expectedVersion) {
-			return fail("CONFLICT", "Supplier invoice version conflict");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Supplier invoice version conflict",
+			});
 		}
 		const previous = cloneInvoice(invoice);
 		const previousBalances = new Map(this.balances);
@@ -327,7 +337,7 @@ export class MemoryPayablesStore implements PayablesStore {
 			}
 			return emitted;
 		}
-		return ok(cloneInvoice(invoice));
+		return errorResult.ok(cloneInvoice(invoice));
 	}
 
 	createCredit(
@@ -338,7 +348,7 @@ export class MemoryPayablesStore implements PayablesStore {
 			return resolveResult(created);
 		}
 		this.invoices.set(created.data.id, created.data);
-		return resolveResult(ok(cloneInvoice(created.data)));
+		return resolveResult(errorResult.ok(cloneInvoice(created.data)));
 	}
 
 	addCreditLine(
@@ -356,13 +366,17 @@ export class MemoryPayablesStore implements PayablesStore {
 		}
 		const invoice = found.data;
 		if (invoice.documentType !== "credit_note" || invoice.status !== "draft") {
-			return fail("CONFLICT", "Only draft supplier credit notes can be posted");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Only draft supplier credit notes can be posted",
+			});
 		}
 		if (
 			invoice.version !== record.expectedVersion ||
 			decimal(invoice.totalAmount) <= 0n
 		) {
-			return fail("CONFLICT", "Supplier credit note post conflict");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Supplier credit note post conflict",
+			});
 		}
 		const previousBalances = new Map(this.balances);
 		const now = new Date();
@@ -401,7 +415,7 @@ export class MemoryPayablesStore implements PayablesStore {
 			}
 			return emitted;
 		}
-		return ok(cloneInvoice(invoice));
+		return errorResult.ok(cloneInvoice(invoice));
 	}
 
 	async applyPayment(
@@ -414,16 +428,15 @@ export class MemoryPayablesStore implements PayablesStore {
 		const invoice = found.data;
 		const amount = decimal(record.amount);
 		if (invoice.status !== "posted" || invoice.documentType !== "invoice") {
-			return fail(
-				"CONFLICT",
-				"Payment application requires a posted supplier invoice",
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Payment application requires a posted supplier invoice",
+			});
 		}
 		if (amount <= 0n || amount > decimal(invoice.openAmount)) {
-			return fail(
-				"CONFLICT",
-				"Payment application exceeds supplier invoice open amount",
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage:
+					"Payment application exceeds supplier invoice open amount",
+			});
 		}
 		const replay = [...this.allocations.values()].find(
 			(candidateAllocation) =>
@@ -431,7 +444,7 @@ export class MemoryPayablesStore implements PayablesStore {
 				candidateAllocation.applyIdempotencyKey === record.idempotencyKey,
 		);
 		if (replay !== undefined) {
-			return ok({ ...replay });
+			return errorResult.ok({ ...replay });
 		}
 		const previous = cloneInvoice(invoice);
 		const previousBalances = new Map(this.balances);
@@ -481,7 +494,7 @@ export class MemoryPayablesStore implements PayablesStore {
 			}
 			return emitted;
 		}
-		return ok({ ...allocation });
+		return errorResult.ok({ ...allocation });
 	}
 
 	applyCredit(
@@ -512,10 +525,10 @@ export class MemoryPayablesStore implements PayablesStore {
 			invoice.currencyCode !== credit.currencyCode
 		) {
 			return resolveResult(
-				fail(
-					"CONFLICT",
-					"Supplier credit application requires matching posted documents",
-				),
+				errorResult.fail("CONFLICT", {
+					publicMessage:
+						"Supplier credit application requires matching posted documents",
+				}),
 			);
 		}
 		const replay = [...this.allocations.values()].find(
@@ -524,7 +537,7 @@ export class MemoryPayablesStore implements PayablesStore {
 				candidateAllocation.applyIdempotencyKey === record.idempotencyKey,
 		);
 		if (replay !== undefined) {
-			return resolveResult(ok({ ...replay }));
+			return resolveResult(errorResult.ok({ ...replay }));
 		}
 		const amount = decimal(record.amount);
 		if (
@@ -533,7 +546,9 @@ export class MemoryPayablesStore implements PayablesStore {
 			amount > decimal(credit.openAmount)
 		) {
 			return resolveResult(
-				fail("CONFLICT", "Supplier credit application exceeds an open amount"),
+				errorResult.fail("CONFLICT", {
+					publicMessage: "Supplier credit application exceeds an open amount",
+				}),
 			);
 		}
 		const now = new Date();
@@ -563,7 +578,7 @@ export class MemoryPayablesStore implements PayablesStore {
 		credit.updatedBy = record.actorUserId;
 		this.allocations.set(allocation.id, allocation);
 		this.adjustBalance(invoice, -amount);
-		return resolveResult(ok({ ...allocation }));
+		return resolveResult(errorResult.ok({ ...allocation }));
 	}
 
 	async reversePaymentApplication(
@@ -586,9 +601,7 @@ export class MemoryPayablesStore implements PayablesStore {
 				allocation.invoiceId,
 			);
 			if (!found.ok) {
-				return resolveResult(
-					fail("INTERNAL_ERROR", "Supplier allocation invoice is missing"),
-				);
+				return resolveResult(errorResult.fail("INTERNAL_ERROR"));
 			}
 			const invoice = found.data;
 			invoices.set(invoice.id, cloneInvoice(invoice));
@@ -630,7 +643,7 @@ export class MemoryPayablesStore implements PayablesStore {
 			}
 			return reversed;
 		}
-		return ok(allocations.map((allocation) => ({ ...allocation })));
+		return errorResult.ok(allocations.map((allocation) => ({ ...allocation })));
 	}
 
 	async cancel(
@@ -642,16 +655,20 @@ export class MemoryPayablesStore implements PayablesStore {
 		}
 		const invoice = found.data;
 		if (invoice.status === "cancelled") {
-			return fail("CONFLICT", "Supplier invoice is already cancelled");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Supplier invoice is already cancelled",
+			});
 		}
 		if (invoice.version !== record.expectedVersion) {
-			return fail("CONFLICT", "Supplier invoice version conflict");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Supplier invoice version conflict",
+			});
 		}
 		if (invoice.status !== "draft" && invoice.status !== "matched") {
-			return fail(
-				"CONFLICT",
-				"Only draft or matched supplier invoices may be cancelled",
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage:
+					"Only draft or matched supplier invoices may be cancelled",
+			});
 		}
 		const previous = cloneInvoice(invoice);
 		const now = new Date();
@@ -681,7 +698,7 @@ export class MemoryPayablesStore implements PayablesStore {
 			this.invoices.set(invoice.id, previous);
 			return emitted;
 		}
-		return ok(cloneInvoice(invoice));
+		return errorResult.ok(cloneInvoice(invoice));
 	}
 
 	getById(
@@ -690,7 +707,7 @@ export class MemoryPayablesStore implements PayablesStore {
 	): Promise<Result<SupplierInvoice | null>> {
 		const invoice = this.invoices.get(id);
 		return resolveResult(
-			ok(
+			errorResult.ok(
 				invoice !== undefined && invoice.organizationId === organizationId
 					? cloneInvoice(invoice)
 					: null,
@@ -703,7 +720,7 @@ export class MemoryPayablesStore implements PayablesStore {
 	): Promise<Result<SupplierInvoice[]>> {
 		const start = (filter.page - 1) * filter.pageSize;
 		return resolveResult(
-			ok(
+			errorResult.ok(
 				[...this.invoices.values()]
 					.filter((row) => row.organizationId === filter.organizationId)
 					.filter(
@@ -742,7 +759,7 @@ export class MemoryPayablesStore implements PayablesStore {
 		currencyCode?: string,
 	): Promise<Result<SupplierBalance[]>> {
 		return resolveResult(
-			ok(
+			errorResult.ok(
 				[...this.balances.values()]
 					.filter((row) => row.organizationId === organizationId)
 					.filter((row) => row.supplierId === supplierId)

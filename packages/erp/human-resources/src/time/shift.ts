@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
@@ -66,13 +66,14 @@ export async function createShift(
 			}
 			if (existing.data !== null) {
 				if (existing.data.createRequestFingerprint !== fingerprint) {
-					return fail(
-						"CONFLICT",
-						"Idempotency key reused with different payload",
-						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-					);
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+						internalContext: humanResourcesErrorDetails(
+							HUMAN_RESOURCES_ERROR_CONFLICT,
+						),
+					});
 				}
-				return ok(existing.data.shift);
+				return errorResult.ok(existing.data.shift);
 			}
 			return store.createShift(
 				{
@@ -212,11 +213,12 @@ export async function supersedeShift(
 			}
 			if (replay.data !== null) {
 				if (replay.data.createRequestFingerprint !== fingerprint) {
-					return fail(
-						"CONFLICT",
-						"Idempotency key reused with different payload",
-						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-					);
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+						internalContext: humanResourcesErrorDetails(
+							HUMAN_RESOURCES_ERROR_CONFLICT,
+						),
+					});
 				}
 				if (replay.data.shift.supersedesShiftId !== data.shiftId) {
 					return invalidInput("Stored successor has no matching predecessor");
@@ -231,7 +233,7 @@ export async function supersedeShift(
 				if (superseded.data === null) {
 					return invalidInput("Stored predecessor was not found");
 				}
-				return ok({
+				return errorResult.ok({
 					superseded: superseded.data,
 					successor: replay.data.shift,
 				});

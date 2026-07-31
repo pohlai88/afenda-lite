@@ -8,7 +8,7 @@ import {
 	hrReliabilityDeadLetter,
 	hrReliabilityWorkItem,
 } from "@afenda/db";
-import { fail, ok } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 import { describe, expect, it } from "vitest";
 import { createDrizzleBulkCheckpointPort } from "../src/adapters/drizzle/bulk-checkpoint";
 import { createDrizzleReliabilityStore } from "../src/adapters/drizzle/reliability";
@@ -113,7 +113,10 @@ async function exerciseReliability(
 		store,
 		clock: { now: () => new Date(now) },
 		executor: {
-			execute: async () => fail("VALIDATION_ERROR", "Permanent rejection"),
+			execute: async () =>
+				errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Permanent rejection",
+				}),
 		},
 		failureClassifier: { isRetryable: () => false },
 	};
@@ -248,7 +251,7 @@ function assertBulk(result: Awaited<ReturnType<typeof exerciseBulk>>) {
 	if (result.artifact.ok) {
 		assert.include(result.artifact.data?.content, "REJECTED");
 	}
-	assert.deepEqual(result.wrongTenant, ok(null));
+	assert.deepEqual(result.wrongTenant, errorResult.ok(null));
 }
 
 function assertReliability(
@@ -269,7 +272,7 @@ function assertReliability(
 	assert.deepEqual(result.replayAgain, result.replay);
 	assert.deepInclude(result.cursor, { ok: true, data: { version: 1 } });
 	assert.deepInclude(result.staleCursor, { ok: false, code: "CONFLICT" });
-	assert.deepEqual(result.wrongTenant, ok(null));
+	assert.deepEqual(result.wrongTenant, errorResult.ok(null));
 }
 
 describe("HR bulk and reliability store parity", () => {

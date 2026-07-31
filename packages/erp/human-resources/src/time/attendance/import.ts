@@ -1,4 +1,4 @@
-import { fail, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type { HumanResourcesCommandOptions } from "../../command-options";
 import { requireAttendanceSource } from "../../command-options";
@@ -115,11 +115,12 @@ export async function importAttendanceEvents(
 				for (const event of fetched.data.events) {
 					const parsed = attendanceImportEventRowSchema.safeParse(event);
 					if (!parsed.success) {
-						return fail(
-							"VALIDATION_ERROR",
-							"Attendance source returned invalid event rows",
-							humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-						);
+						return errorResult.fail("VALIDATION_ERROR", {
+							publicMessage: "The submitted data is invalid",
+							internalContext: humanResourcesErrorDetails(
+								HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+							),
+						});
 					}
 					parsedRows.push(parsed.data);
 				}
@@ -127,11 +128,12 @@ export async function importAttendanceEvents(
 					parsedRows.length === 0 &&
 					(sourceRejectedRows === undefined || sourceRejectedRows.length === 0)
 				) {
-					return fail(
-						"VALIDATION_ERROR",
-						"Attendance source returned no events",
-						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-					);
+					return errorResult.fail("VALIDATION_ERROR", {
+						publicMessage: "The submitted data is invalid",
+						internalContext: humanResourcesErrorDetails(
+							HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+						),
+					});
 				}
 				rawEvents = parsedRows;
 				({ nextCursor } = fetched.data);

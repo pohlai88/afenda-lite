@@ -1,4 +1,4 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type {
 	Item,
 	Party,
@@ -41,9 +41,9 @@ export function createMemoryMasterLookup(
 			return resolveAsync(() => {
 				const row = parties.get(id);
 				if (row === undefined || row.organizationId !== organizationId) {
-					return ok(null);
+					return errorResult.ok(null);
 				}
-				return ok(row);
+				return errorResult.ok(row);
 			});
 		},
 		getItemById(
@@ -54,9 +54,9 @@ export function createMemoryMasterLookup(
 			return resolveAsync(() => {
 				const row = items.get(id);
 				if (row === undefined || row.organizationId !== organizationId) {
-					return ok(null);
+					return errorResult.ok(null);
 				}
-				return ok(row);
+				return errorResult.ok(row);
 			});
 		},
 		getPaymentTermById(
@@ -67,9 +67,9 @@ export function createMemoryMasterLookup(
 			return resolveAsync(() => {
 				const row = terms.get(id);
 				if (row === undefined || row.organizationId !== organizationId) {
-					return ok(null);
+					return errorResult.ok(null);
 				}
-				return ok(row);
+				return errorResult.ok(row);
 			});
 		},
 		getRefUomById(
@@ -77,7 +77,7 @@ export function createMemoryMasterLookup(
 			id: string,
 			_actorUserId: string,
 		): Promise<Result<RefUom | null>> {
-			return resolveAsync(() => ok(uoms.get(id) ?? null));
+			return resolveAsync(() => errorResult.ok(uoms.get(id) ?? null));
 		},
 		hasActiveSupplierRole(
 			organizationId: string,
@@ -87,9 +87,9 @@ export function createMemoryMasterLookup(
 			return resolveAsync(() => {
 				const party = parties.get(partyId);
 				if (party === undefined || party.organizationId !== organizationId) {
-					return ok(false);
+					return errorResult.ok(false);
 				}
-				return ok(supplierPartyIds.has(partyId));
+				return errorResult.ok(supplierPartyIds.has(partyId));
 			});
 		},
 		getWarehouseById(
@@ -100,9 +100,9 @@ export function createMemoryMasterLookup(
 			return resolveAsync(() => {
 				const row = warehouses.get(id);
 				if (row === undefined || row.organizationId !== organizationId) {
-					return ok(null);
+					return errorResult.ok(null);
 				}
-				return ok(row);
+				return errorResult.ok(row);
 			});
 		},
 	};

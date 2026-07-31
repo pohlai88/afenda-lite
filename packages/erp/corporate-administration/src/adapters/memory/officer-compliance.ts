@@ -1,8 +1,6 @@
 // biome-ignore-all lint/suspicious/useAwait: The deterministic memory adapter implements asynchronous officer-compliance ports.
 import { randomUUID } from "node:crypto";
-import { fail, ok } from "@afenda/errors/result";
-
-import { corporateAdministrationErrorDetails } from "../../error-codes";
+import { errorResult } from "@afenda/errors";
 import {
 	officerConflictDisclosureIdSchema,
 	officerDeclarationIdSchema,
@@ -27,7 +25,7 @@ export function createMemoryCorporateAdministrationOfficerComplianceStore(): Off
 
 	return {
 		async getOfficerDeclaration(input) {
-			return ok(
+			return errorResult.ok(
 				cloneNullable(
 					declarations.get(
 						key(input.organizationId, input.officerDeclarationId),
@@ -36,7 +34,7 @@ export function createMemoryCorporateAdministrationOfficerComplianceStore(): Off
 			);
 		},
 		async listOfficerDeclarations(input) {
-			return ok(
+			return errorResult.ok(
 				[...declarations.values()]
 					.filter(
 						(row) =>
@@ -50,7 +48,7 @@ export function createMemoryCorporateAdministrationOfficerComplianceStore(): Off
 			);
 		},
 		async listExpiringDeclarations(input) {
-			return ok(
+			return errorResult.ok(
 				[...declarations.values()]
 					.filter(
 						(row) =>
@@ -94,7 +92,7 @@ export function createMemoryCorporateAdministrationOfficerComplianceStore(): Off
 				updatedAt: now,
 			};
 			declarations.set(key(input.organizationId, id), row);
-			return ok(clone(row));
+			return errorResult.ok(clone(row));
 		},
 		async supersedeOfficerDeclaration(input) {
 			const current = declarations.get(
@@ -119,10 +117,10 @@ export function createMemoryCorporateAdministrationOfficerComplianceStore(): Off
 				updatedAt: now,
 			};
 			declarations.set(key(input.organizationId, updated.id), updated);
-			return ok(clone(updated));
+			return errorResult.ok(clone(updated));
 		},
 		async getOfficerDisqualification(input) {
-			return ok(
+			return errorResult.ok(
 				cloneNullable(
 					disqualifications.get(
 						key(input.organizationId, input.officerDisqualificationId),
@@ -131,7 +129,7 @@ export function createMemoryCorporateAdministrationOfficerComplianceStore(): Off
 			);
 		},
 		async listOfficerDisqualifications(input) {
-			return ok(
+			return errorResult.ok(
 				[...disqualifications.values()]
 					.filter(
 						(row) =>
@@ -142,7 +140,7 @@ export function createMemoryCorporateAdministrationOfficerComplianceStore(): Off
 			);
 		},
 		async listActiveDisqualifications(input) {
-			return ok(
+			return errorResult.ok(
 				[...disqualifications.values()]
 					.filter(
 						(row) =>
@@ -180,7 +178,7 @@ export function createMemoryCorporateAdministrationOfficerComplianceStore(): Off
 				updatedAt: now,
 			};
 			disqualifications.set(key(input.organizationId, id), row);
-			return ok(clone(row));
+			return errorResult.ok(clone(row));
 		},
 		async endOfficerDisqualification(input) {
 			const current = disqualifications.get(
@@ -205,17 +203,17 @@ export function createMemoryCorporateAdministrationOfficerComplianceStore(): Off
 				updatedAt: now,
 			};
 			disqualifications.set(key(input.organizationId, updated.id), updated);
-			return ok(clone(updated));
+			return errorResult.ok(clone(updated));
 		},
 		async getConflictDisclosure(input) {
-			return ok(
+			return errorResult.ok(
 				cloneNullable(
 					conflicts.get(key(input.organizationId, input.conflictDisclosureId)),
 				),
 			);
 		},
 		async listConflictsForMatter(input) {
-			return ok(
+			return errorResult.ok(
 				[...conflicts.values()]
 					.filter(
 						(row) =>
@@ -255,7 +253,7 @@ export function createMemoryCorporateAdministrationOfficerComplianceStore(): Off
 				updatedAt: now,
 			};
 			conflicts.set(key(input.organizationId, id), row);
-			return ok(clone(row));
+			return errorResult.ok(clone(row));
 		},
 		async recordRecusal(input) {
 			const current = conflicts.get(
@@ -280,7 +278,7 @@ export function createMemoryCorporateAdministrationOfficerComplianceStore(): Off
 				updatedAt: now,
 			};
 			conflicts.set(key(input.organizationId, updated.id), updated);
-			return ok(clone(updated));
+			return errorResult.ok(clone(updated));
 		},
 	};
 }
@@ -298,20 +296,13 @@ function cloneNullable<T>(value: T | undefined): T | null {
 }
 
 function notFound() {
-	return fail(
-		"NOT_FOUND",
-		"Corporate Administration record was not found.",
-		corporateAdministrationErrorDetails("CORPORATE_ADMINISTRATION_NOT_FOUND"),
-	);
+	return errorResult.fail("NOT_FOUND", {
+		publicMessage: "Corporate Administration record was not found.",
+	});
 }
 
-function stale(expectedVersion: number, actualVersion: number) {
-	return fail(
-		"CONFLICT",
-		"Corporate Administration record version is stale.",
-		corporateAdministrationErrorDetails(
-			"CORPORATE_ADMINISTRATION_STALE_VERSION",
-			{ expectedVersion, actualVersion },
-		),
-	);
+function stale(_expectedVersion: number, _actualVersion: number) {
+	return errorResult.fail("CONFLICT", {
+		publicMessage: "Corporate Administration record version is stale.",
+	});
 }

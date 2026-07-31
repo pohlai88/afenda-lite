@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { HumanResourcesEventType } from "@afenda/events";
 import {
 	HUMAN_RESOURCES_TIME_ATTENDANCE_CORRECTED_EVENT,
@@ -449,7 +449,7 @@ function buildShiftAssignmentSegments(
 			updatedAt: now,
 		});
 	}
-	return ok(segments);
+	return errorResult.ok(segments);
 }
 
 function setShiftAssignmentSegments(
@@ -511,10 +511,10 @@ function memoryExceptionDetectionHost(
 				existing === undefined ||
 				existing.organizationId !== input.organizationId
 			) {
-				return await ok(undefined);
+				return await errorResult.ok(undefined);
 			}
 			state.attendanceExceptions.delete(input.exceptionId);
-			return await ok(undefined);
+			return await errorResult.ok(undefined);
 		},
 	};
 }
@@ -528,7 +528,7 @@ export function createMemoryTimeMethods(
 			const record = state.workCalendarIdempotencyByKey.get(
 				idempotencyMapKey(input.organizationId, input.idempotencyKey),
 			);
-			return await ok(
+			return await errorResult.ok(
 				record ? { ...record, calendar: { ...record.calendar } } : null,
 			);
 		},
@@ -541,11 +541,12 @@ export function createMemoryTimeMethods(
 					calendarValue.effectiveFrom === input.effectiveFrom,
 			);
 			if (duplicate) {
-				return fail(
-					"CONFLICT",
-					"Work calendar with this code already exists",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_CONFLICT,
+					),
+				});
 			}
 			const idResult = parseHumanResourcesWorkCalendarId(randomUUID());
 			if (!idResult.ok) {
@@ -590,7 +591,7 @@ export function createMemoryTimeMethods(
 				state.workCalendarIdempotencyByKey.delete(key);
 				return recorded;
 			}
-			return ok({ ...calendar });
+			return errorResult.ok({ ...calendar });
 		},
 
 		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
@@ -700,7 +701,7 @@ export function createMemoryTimeMethods(
 				}
 				return recorded;
 			}
-			return ok({
+			return errorResult.ok({
 				superseded: { ...predecessor },
 				successor: { ...successor },
 			});
@@ -759,7 +760,7 @@ export function createMemoryTimeMethods(
 				state.workCalendars.set(calendar.id, calendar);
 				return recorded;
 			}
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async archiveWorkCalendar(input, ports) {
@@ -794,15 +795,15 @@ export function createMemoryTimeMethods(
 				state.workCalendars.set(calendar.id, previous);
 				return recorded;
 			}
-			return ok({ ...calendar });
+			return errorResult.ok({ ...calendar });
 		},
 
 		async getWorkCalendar(input) {
 			const calendar = state.workCalendars.get(input.calendarId);
 			if (!calendar || calendar.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...calendar });
+			return await errorResult.ok({ ...calendar });
 		},
 
 		async listWorkCalendars(input) {
@@ -813,7 +814,7 @@ export function createMemoryTimeMethods(
 						(input.status === undefined || calendar.status === input.status),
 				)
 				.sort((a, b) => a.code.localeCompare(b.code));
-			return await ok(
+			return await errorResult.ok(
 				paginate(rows, input.page, input.pageSize).map((row) => ({ ...row })),
 			);
 		},
@@ -871,7 +872,7 @@ export function createMemoryTimeMethods(
 				state.workCalendarHolidays.delete(holiday.id);
 				return recorded;
 			}
-			return ok({ ...holiday });
+			return errorResult.ok({ ...holiday });
 		},
 
 		async removeWorkCalendarHoliday(input, ports) {
@@ -892,7 +893,7 @@ export function createMemoryTimeMethods(
 				state.workCalendarHolidays.set(holiday.id, holiday);
 				return recorded;
 			}
-			return ok(undefined);
+			return errorResult.ok(undefined);
 		},
 
 		async listWorkCalendarHolidays(input) {
@@ -906,7 +907,7 @@ export function createMemoryTimeMethods(
 						(input.toDate === undefined || holiday.holidayDate <= input.toDate),
 				)
 				.sort((a, b) => a.holidayDate.localeCompare(b.holidayDate));
-			return await ok(rows.map((row) => ({ ...row })));
+			return await errorResult.ok(rows.map((row) => ({ ...row })));
 		},
 
 		async assignEmploymentCalendar(
@@ -953,7 +954,7 @@ export function createMemoryTimeMethods(
 				state.employmentCalendarAssignments.delete(assignment.id);
 				return recorded;
 			}
-			return ok({ ...assignment });
+			return errorResult.ok({ ...assignment });
 		},
 
 		async endEmploymentCalendarAssignment(input, ports) {
@@ -993,7 +994,7 @@ export function createMemoryTimeMethods(
 				state.employmentCalendarAssignments.set(assignment.id, previous);
 				return recorded;
 			}
-			return ok({ ...assignment });
+			return errorResult.ok({ ...assignment });
 		},
 
 		async resolveEmploymentCalendar(input) {
@@ -1010,11 +1011,11 @@ export function createMemoryTimeMethods(
 				.sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom));
 			const [match] = matches;
 			if (!match) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
 			const assignedCalendar = state.workCalendars.get(match.calendarId);
 			if (!assignedCalendar) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
 			const effectiveCalendar = selectEffectiveLineageRecord({
 				assignedId: assignedCalendar.id,
@@ -1028,7 +1029,7 @@ export function createMemoryTimeMethods(
 				isEligible: (calendar) =>
 					calendar.status === "active" || calendar.status === "superseded",
 			});
-			return await ok(
+			return await errorResult.ok(
 				effectiveCalendar
 					? { ...match, calendarId: effectiveCalendar.id }
 					: null,
@@ -1045,7 +1046,7 @@ export function createMemoryTimeMethods(
 					(assignment.effectiveTo === null ||
 						assignment.effectiveTo >= input.asOf),
 			);
-			return await ok(rows.map((row) => ({ ...row })));
+			return await errorResult.ok(rows.map((row) => ({ ...row })));
 		},
 
 		async assignWorkCalendarScope(input, ports) {
@@ -1101,7 +1102,7 @@ export function createMemoryTimeMethods(
 				state.workCalendarScopeAssignments.delete(assignment.id);
 				return recorded;
 			}
-			return ok({ ...assignment });
+			return errorResult.ok({ ...assignment });
 		},
 
 		async endWorkCalendarScopeAssignment(input, ports) {
@@ -1141,14 +1142,14 @@ export function createMemoryTimeMethods(
 				state.workCalendarScopeAssignments.set(assignment.id, previous);
 				return recorded;
 			}
-			return ok({ ...assignment });
+			return errorResult.ok({ ...assignment });
 		},
 
 		async findTimePolicyByIdempotencyKey(input) {
 			const record = state.timePolicyIdempotencyByKey.get(
 				idempotencyMapKey(input.organizationId, input.idempotencyKey),
 			);
-			return await ok(
+			return await errorResult.ok(
 				record ? { ...record, policy: { ...record.policy } } : null,
 			);
 		},
@@ -1206,7 +1207,7 @@ export function createMemoryTimeMethods(
 				state.timePolicyIdempotencyByKey.delete(key);
 				return recorded;
 			}
-			return ok({ ...policy });
+			return errorResult.ok({ ...policy });
 		},
 
 		async supersedeTimePolicy(input, ports) {
@@ -1283,7 +1284,7 @@ export function createMemoryTimeMethods(
 				state.timePolicyIdempotencyByKey.delete(key);
 				return recorded;
 			}
-			return ok({
+			return errorResult.ok({
 				superseded: { ...predecessor },
 				successor: { ...successor },
 			});
@@ -1321,7 +1322,7 @@ export function createMemoryTimeMethods(
 				state.timePolicies.set(policy.id, previous);
 				return recorded;
 			}
-			return ok({ ...policy });
+			return errorResult.ok({ ...policy });
 		},
 
 		async assignTimePolicy(input, ports) {
@@ -1379,15 +1380,15 @@ export function createMemoryTimeMethods(
 				state.timePolicyAssignments.delete(assignment.id);
 				return recorded;
 			}
-			return ok({ ...assignment });
+			return errorResult.ok({ ...assignment });
 		},
 
 		async getTimePolicy(input) {
 			const policy = state.timePolicies.get(input.policyId);
 			if (!policy || policy.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...policy });
+			return await errorResult.ok({ ...policy });
 		},
 
 		async resolveTimePolicy(input) {
@@ -1402,11 +1403,11 @@ export function createMemoryTimeMethods(
 				)
 				.sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom));
 			if (assignment === undefined) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
 			const assignedPolicy = state.timePolicies.get(assignment.policyId);
 			if (assignedPolicy === undefined) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
 			const policy = selectEffectiveLineageRecord({
 				assignedId: assignedPolicy.id,
@@ -1420,7 +1421,7 @@ export function createMemoryTimeMethods(
 				isEligible: (candidate) =>
 					candidate.status === "active" || candidate.status === "superseded",
 			});
-			return await ok(policy === null ? null : { ...policy });
+			return await errorResult.ok(policy === null ? null : { ...policy });
 		},
 
 		async assignTimeApprovalAuthority(input, ports) {
@@ -1470,7 +1471,7 @@ export function createMemoryTimeMethods(
 				state.timeApprovalAuthorityAssignments.delete(assignment.id);
 				return recorded;
 			}
-			return ok({ ...assignment });
+			return errorResult.ok({ ...assignment });
 		},
 
 		async endTimeApprovalAuthorityAssignment(input, ports) {
@@ -1510,7 +1511,7 @@ export function createMemoryTimeMethods(
 				state.timeApprovalAuthorityAssignments.set(assignment.id, previous);
 				return recorded;
 			}
-			return ok({ ...assignment });
+			return errorResult.ok({ ...assignment });
 		},
 
 		async resolveTimeApprovalAuthority(input) {
@@ -1529,14 +1530,16 @@ export function createMemoryTimeMethods(
 				.sort((left, right) =>
 					right.effectiveFrom.localeCompare(left.effectiveFrom),
 				);
-			return await ok(assignment === undefined ? null : { ...assignment });
+			return await errorResult.ok(
+				assignment === undefined ? null : { ...assignment },
+			);
 		},
 
 		async findShiftByIdempotencyKey(input) {
 			const record = state.shiftIdempotencyByKey.get(
 				idempotencyMapKey(input.organizationId, input.idempotencyKey),
 			);
-			return await ok(
+			return await errorResult.ok(
 				record ? { ...record, shift: { ...record.shift } } : null,
 			);
 		},
@@ -1595,7 +1598,7 @@ export function createMemoryTimeMethods(
 				state.shiftIdempotencyByKey.delete(key);
 				return recorded;
 			}
-			return ok({ ...shift });
+			return errorResult.ok({ ...shift });
 		},
 
 		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
@@ -1712,7 +1715,7 @@ export function createMemoryTimeMethods(
 				}
 				return recorded;
 			}
-			return ok({
+			return errorResult.ok({
 				superseded: { ...predecessor },
 				successor: { ...successor },
 			});
@@ -1787,7 +1790,7 @@ export function createMemoryTimeMethods(
 				state.shifts.set(shift.id, previous);
 				return recorded;
 			}
-			return ok({ ...shift });
+			return errorResult.ok({ ...shift });
 		},
 
 		async activateShift(input, ports) {
@@ -1823,7 +1826,7 @@ export function createMemoryTimeMethods(
 				state.shifts.set(shift.id, previous);
 				return recorded;
 			}
-			return ok({ ...shift });
+			return errorResult.ok({ ...shift });
 		},
 
 		async deactivateShift(input, ports) {
@@ -1859,15 +1862,15 @@ export function createMemoryTimeMethods(
 				state.shifts.set(shift.id, previous);
 				return recorded;
 			}
-			return ok({ ...shift });
+			return errorResult.ok({ ...shift });
 		},
 
 		async getShift(input) {
 			const shift = state.shifts.get(input.shiftId);
 			if (!shift || shift.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...shift });
+			return await errorResult.ok({ ...shift });
 		},
 
 		async listShifts(input) {
@@ -1878,7 +1881,7 @@ export function createMemoryTimeMethods(
 						(input.status === undefined || shift.status === input.status),
 				)
 				.sort((a, b) => a.code.localeCompare(b.code));
-			return await ok(
+			return await errorResult.ok(
 				paginate(rows, input.page, input.pageSize).map((row) => ({ ...row })),
 			);
 		},
@@ -1918,7 +1921,7 @@ export function createMemoryTimeMethods(
 				state.shiftBreaks.delete(breakRow.id);
 				return recorded;
 			}
-			return ok({ ...breakRow });
+			return errorResult.ok({ ...breakRow });
 		},
 
 		async removeShiftBreak(input, ports) {
@@ -1939,7 +1942,7 @@ export function createMemoryTimeMethods(
 				state.shiftBreaks.set(breakRow.id, breakRow);
 				return recorded;
 			}
-			return ok(undefined);
+			return errorResult.ok(undefined);
 		},
 
 		async listShiftBreaks(input) {
@@ -1950,14 +1953,14 @@ export function createMemoryTimeMethods(
 						row.shiftId === input.shiftId,
 				)
 				.sort((a, b) => a.breakOrder - b.breakOrder);
-			return await ok(rows.map((row) => ({ ...row })));
+			return await errorResult.ok(rows.map((row) => ({ ...row })));
 		},
 
 		async findShiftAssignmentByIdempotencyKey(input) {
 			const record = state.shiftAssignmentIdempotencyByKey.get(
 				idempotencyMapKey(input.organizationId, input.idempotencyKey),
 			);
-			return await ok(
+			return await errorResult.ok(
 				record ? { ...record, assignment: { ...record.assignment } } : null,
 			);
 		},
@@ -2034,7 +2037,7 @@ export function createMemoryTimeMethods(
 				state.shiftAssignmentIdempotencyByKey.delete(key);
 				return recorded;
 			}
-			return ok({ ...assignment });
+			return errorResult.ok({ ...assignment });
 		},
 
 		async publishShiftAssignment(input, ports) {
@@ -2173,15 +2176,15 @@ export function createMemoryTimeMethods(
 				state.shiftAssignments.set(assignment.id, previous);
 				return recorded;
 			}
-			return ok({ ...assignment });
+			return errorResult.ok({ ...assignment });
 		},
 
 		async getShiftAssignment(input) {
 			const assignment = state.shiftAssignments.get(input.assignmentId);
 			if (!assignment || assignment.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...assignment });
+			return await errorResult.ok({ ...assignment });
 		},
 
 		async listShiftAssignments(input) {
@@ -2203,7 +2206,7 @@ export function createMemoryTimeMethods(
 							assignment.publicationStatus === input.publicationStatus),
 				)
 				.sort((a, b) => a.scheduledDate.localeCompare(b.scheduledDate));
-			return await ok(
+			return await errorResult.ok(
 				paginate(rows, input.page, input.pageSize).map((row) => ({ ...row })),
 			);
 		},
@@ -2211,7 +2214,7 @@ export function createMemoryTimeMethods(
 		async listShiftAssignmentSegments(input) {
 			const assignment = state.shiftAssignments.get(input.assignmentId);
 			if (!assignment || assignment.organizationId !== input.organizationId) {
-				return await ok([]);
+				return await errorResult.ok([]);
 			}
 			const segments = Array.from(state.shiftAssignmentSegments.values())
 				.filter(
@@ -2221,7 +2224,7 @@ export function createMemoryTimeMethods(
 				)
 				.sort((a, b) => a.segmentOrder - b.segmentOrder)
 				.map((segment) => ({ ...segment }));
-			return await ok(segments);
+			return await errorResult.ok(segments);
 		},
 
 		async getScheduledShiftForEmployeeDate(input) {
@@ -2243,7 +2246,7 @@ export function createMemoryTimeMethods(
 				(a, b) => rank[b.publicationStatus] - rank[a.publicationStatus],
 			);
 			const [match] = rows;
-			return await ok(match ? { ...match } : null);
+			return await errorResult.ok(match ? { ...match } : null);
 		},
 
 		async listLocationSchedule(input) {
@@ -2272,14 +2275,14 @@ export function createMemoryTimeMethods(
 						assignment.endsAt,
 					),
 			);
-			return await ok(rows.map((row) => ({ ...row })));
+			return await errorResult.ok(rows.map((row) => ({ ...row })));
 		},
 
 		async findAttendanceEventByIdempotencyKey(input) {
 			const record = state.attendanceEventIdempotencyByKey.get(
 				idempotencyMapKey(input.organizationId, input.idempotencyKey),
 			);
-			return await ok(
+			return await errorResult.ok(
 				record ? { ...record, event: { ...record.event } } : null,
 			);
 		},
@@ -2292,7 +2295,7 @@ export function createMemoryTimeMethods(
 					input.sourceReference,
 				),
 			);
-			return await ok(
+			return await errorResult.ok(
 				record ? { ...record, event: { ...record.event } } : null,
 			);
 		},
@@ -2301,7 +2304,7 @@ export function createMemoryTimeMethods(
 			const record = state.attendanceImportBatches.get(
 				idempotencyMapKey(input.organizationId, input.idempotencyKey),
 			);
-			return await ok(
+			return await errorResult.ok(
 				record
 					? {
 							result: { ...record.result },
@@ -2325,13 +2328,14 @@ export function createMemoryTimeMethods(
 					existingBatch.data.createRequestFingerprint !==
 					input.createRequestFingerprint
 				) {
-					return fail(
-						"CONFLICT",
-						"Idempotency key reused with different payload",
-						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-					);
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+						internalContext: humanResourcesErrorDetails(
+							HUMAN_RESOURCES_ERROR_CONFLICT,
+						),
+					});
 				}
-				return ok({ ...existingBatch.data.result });
+				return errorResult.ok({ ...existingBatch.data.result });
 			}
 
 			const importBatchId = randomUUID();
@@ -2605,7 +2609,7 @@ export function createMemoryTimeMethods(
 				state.attendanceImportBatches.delete(batchKey);
 				return audited;
 			}
-			return ok(result);
+			return errorResult.ok(result);
 		},
 
 		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
@@ -2701,7 +2705,7 @@ export function createMemoryTimeMethods(
 				}
 				return outbox;
 			}
-			return ok({ ...event });
+			return errorResult.ok({ ...event });
 		},
 
 		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
@@ -2800,7 +2804,7 @@ export function createMemoryTimeMethods(
 				}
 				state.attendanceEvents.set(event.id, corrected);
 				state.attendanceAdjustments.push(adjustment);
-				return ok({ ...corrected });
+				return errorResult.ok({ ...corrected });
 			} finally {
 				release();
 				if (state.attendanceCorrectionTails.get(input.eventId) === tail) {
@@ -2842,19 +2846,19 @@ export function createMemoryTimeMethods(
 				state.attendanceEvents.set(event.id, previous);
 				return recorded;
 			}
-			return ok({ ...event });
+			return errorResult.ok({ ...event });
 		},
 
 		async getAttendanceEvent(input) {
 			const event = state.attendanceEvents.get(input.eventId);
 			if (!event || event.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...event });
+			return await errorResult.ok({ ...event });
 		},
 
 		async listAttendanceAdjustments(input) {
-			return await ok(
+			return await errorResult.ok(
 				state.attendanceAdjustments
 					.filter(
 						(adjustment) =>
@@ -2887,7 +2891,7 @@ export function createMemoryTimeMethods(
 							event.eventType === input.eventType),
 				),
 			);
-			return await ok(
+			return await errorResult.ok(
 				paginate(rows, input.page, input.pageSize).map((row) => ({ ...row })),
 			);
 		},
@@ -2896,7 +2900,7 @@ export function createMemoryTimeMethods(
 			const record = state.attendanceSessionIdempotencyByKey.get(
 				idempotencyMapKey(input.organizationId, input.idempotencyKey),
 			);
-			return await ok(
+			return await errorResult.ok(
 				record ? { ...record, session: { ...record.session } } : null,
 			);
 		},
@@ -2993,7 +2997,7 @@ export function createMemoryTimeMethods(
 					}
 					return detected;
 				}
-				return ok({ ...existing });
+				return errorResult.ok({ ...existing });
 			}
 
 			const idResult = parseHumanResourcesAttendanceSessionId(randomUUID());
@@ -3060,15 +3064,15 @@ export function createMemoryTimeMethods(
 				state.attendanceSessionIdempotencyByKey.delete(key);
 				return detected;
 			}
-			return ok({ ...session });
+			return errorResult.ok({ ...session });
 		},
 
 		async getAttendanceSession(input) {
 			const session = state.attendanceSessions.get(input.sessionId);
 			if (!session || session.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...session });
+			return await errorResult.ok({ ...session });
 		},
 
 		async approveAttendanceBreakWaiver(input, ports) {
@@ -3158,11 +3162,11 @@ export function createMemoryTimeMethods(
 				state.attendanceBreakWaiverDecisions.delete(decision.id);
 				return recorded;
 			}
-			return ok({ ...decision });
+			return errorResult.ok({ ...decision });
 		},
 
 		async listAttendanceBreakWaiverDecisions(input) {
-			return await ok(
+			return await errorResult.ok(
 				Array.from(state.attendanceBreakWaiverDecisions.values())
 					.filter(
 						(decision) =>
@@ -3190,7 +3194,7 @@ export function createMemoryTimeMethods(
 							session.localWorkDate <= input.toDate),
 				)
 				.sort((a, b) => a.localWorkDate.localeCompare(b.localWorkDate));
-			return await ok(
+			return await errorResult.ok(
 				paginate(rows, input.page, input.pageSize).map((row) => ({ ...row })),
 			);
 		},
@@ -3211,7 +3215,7 @@ export function createMemoryTimeMethods(
 							(b.finalClockOutAt?.getTime() ?? 0) -
 							(a.finalClockOutAt?.getTime() ?? 0),
 					)[0] ?? null;
-			return await ok(previous === null ? null : { ...previous });
+			return await errorResult.ok(previous === null ? null : { ...previous });
 		},
 
 		async createAttendanceException(
@@ -3269,7 +3273,7 @@ export function createMemoryTimeMethods(
 				state.attendanceExceptions.delete(exception.id);
 				return outbox;
 			}
-			return ok({ ...exception });
+			return errorResult.ok({ ...exception });
 		},
 
 		async reviewAttendanceException(input, ports) {
@@ -3297,9 +3301,9 @@ export function createMemoryTimeMethods(
 		async getAttendanceException(input) {
 			const exception = state.attendanceExceptions.get(input.exceptionId);
 			if (!exception || exception.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...exception });
+			return await errorResult.ok({ ...exception });
 		},
 
 		async listAttendanceExceptions(input) {
@@ -3313,7 +3317,7 @@ export function createMemoryTimeMethods(
 							exception.reviewStatus === input.reviewStatus),
 				)
 				.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-			return await ok(
+			return await errorResult.ok(
 				paginate(rows, input.page, input.pageSize).map((row) => ({ ...row })),
 			);
 		},
@@ -3329,7 +3333,7 @@ export function createMemoryTimeMethods(
 							exception.reviewStatus === "in_review"),
 				)
 				.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-			return await ok(
+			return await errorResult.ok(
 				paginate(rows, input.page, input.pageSize).map((row) => ({ ...row })),
 			);
 		},
@@ -3390,7 +3394,7 @@ export function createMemoryTimeMethods(
 				}
 				return true;
 			});
-			return ok({
+			return errorResult.ok({
 				organizationId: input.organizationId,
 				employeeId: input.employeeId,
 				localWorkDate: input.localWorkDate,
@@ -3408,7 +3412,7 @@ export function createMemoryTimeMethods(
 			const record = state.timesheetIdempotencyByKey.get(
 				idempotencyMapKey(input.organizationId, input.idempotencyKey),
 			);
-			return await ok(
+			return await errorResult.ok(
 				record ? { ...record, timesheet: { ...record.timesheet } } : null,
 			);
 		},
@@ -3464,7 +3468,7 @@ export function createMemoryTimeMethods(
 				state.timesheetIdempotencyByKey.delete(key);
 				return recorded;
 			}
-			return ok({ ...timesheet });
+			return errorResult.ok({ ...timesheet });
 		},
 
 		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
@@ -3763,7 +3767,7 @@ export function createMemoryTimeMethods(
 			const entries = Array.from(state.timesheetEntries.values())
 				.filter((entry) => entry.timesheetId === timesheet.id)
 				.map((entry) => ({ ...entry }));
-			return ok({ timesheet: { ...timesheet }, entries });
+			return errorResult.ok({ timesheet: { ...timesheet }, entries });
 		},
 
 		async addTimesheetEntry(input: TimesheetEntryCreateRecord, ports) {
@@ -3822,7 +3826,7 @@ export function createMemoryTimeMethods(
 				state.timesheetEntries.delete(entry.id);
 				return recorded;
 			}
-			return ok({ ...entry });
+			return errorResult.ok({ ...entry });
 		},
 
 		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
@@ -3890,7 +3894,7 @@ export function createMemoryTimeMethods(
 				state.timesheetEntries.set(entry.id, previous);
 				return recorded;
 			}
-			return ok({ ...entry });
+			return errorResult.ok({ ...entry });
 		},
 
 		async removeTimesheetEntry(input, ports) {
@@ -3926,7 +3930,7 @@ export function createMemoryTimeMethods(
 				state.timesheetEntries.set(entry.id, entry);
 				return recorded;
 			}
-			return ok(undefined);
+			return errorResult.ok(undefined);
 		},
 
 		async submitTimesheet(input, ports) {
@@ -4063,10 +4067,10 @@ export function createMemoryTimeMethods(
 				}
 				return event;
 			}
-			return ok({ ...timesheet });
+			return errorResult.ok({ ...timesheet });
 		},
 		async listTimesheetApprovalDecisions(input) {
-			return await ok(
+			return await errorResult.ok(
 				[...state.timesheetApprovalDecisions.values()]
 					.filter(
 						(decision) =>
@@ -4191,15 +4195,15 @@ export function createMemoryTimeMethods(
 				state.timesheetIdempotencyByKey.delete(key);
 				return createdAudit;
 			}
-			return ok({ ...replacement });
+			return errorResult.ok({ ...replacement });
 		},
 
 		async getTimesheet(input) {
 			const timesheet = state.timesheets.get(input.timesheetId);
 			if (!timesheet || timesheet.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...timesheet });
+			return await errorResult.ok({ ...timesheet });
 		},
 
 		async findTimesheetForEmployeePeriod(input) {
@@ -4211,7 +4215,7 @@ export function createMemoryTimeMethods(
 					timesheet.periodEnd === input.periodEnd &&
 					timesheet.status !== "superseded",
 			);
-			return await ok(match ? { ...match } : null);
+			return await errorResult.ok(match ? { ...match } : null);
 		},
 
 		async listTimesheets(input) {
@@ -4226,7 +4230,7 @@ export function createMemoryTimeMethods(
 							timesheet.periodStart === input.periodStart),
 				)
 				.sort((a, b) => b.periodStart.localeCompare(a.periodStart));
-			return await ok(
+			return await errorResult.ok(
 				paginate(rows, input.page, input.pageSize).map((row) => ({ ...row })),
 			);
 		},
@@ -4239,20 +4243,20 @@ export function createMemoryTimeMethods(
 						entry.timesheetId === input.timesheetId,
 				)
 				.sort((a, b) => a.workDate.localeCompare(b.workDate));
-			return await ok(rows.map((row) => ({ ...row })));
+			return await errorResult.ok(rows.map((row) => ({ ...row })));
 		},
 
 		async getTimesheetTotals(input) {
 			const timesheet = state.timesheets.get(input.timesheetId);
 			if (!timesheet || timesheet.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
 			const entries = Array.from(state.timesheetEntries.values()).filter(
 				(entry) =>
 					entry.organizationId === input.organizationId &&
 					entry.timesheetId === input.timesheetId,
 			);
-			return await ok({
+			return await errorResult.ok({
 				timesheetId: timesheet.id,
 				totalRecordedMinutes: timesheet.totalRecordedMinutes,
 				totalApprovedMinutes: timesheet.totalApprovedMinutes,
@@ -4263,10 +4267,10 @@ export function createMemoryTimeMethods(
 		async getApprovedTimeHandoff(input) {
 			const timesheet = state.timesheets.get(input.timesheetId);
 			if (!timesheet || timesheet.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
 			if (timesheet.status !== "approved" && timesheet.status !== "locked") {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
 			const entries = Array.from(state.timesheetEntries.values()).filter(
 				(entry) =>
@@ -4305,14 +4309,14 @@ export function createMemoryTimeMethods(
 				approvedAt: (timesheet.approvedAt ?? timesheet.updatedAt).toISOString(),
 				approvalReference: timesheet.approvedBy ?? timesheet.id,
 			};
-			return await ok(handoff);
+			return await errorResult.ok(handoff);
 		},
 
 		async findOvertimeRequestByIdempotencyKey(input) {
 			const record = state.overtimeRequestIdempotencyByKey.get(
 				idempotencyMapKey(input.organizationId, input.idempotencyKey),
 			);
-			return await ok(
+			return await errorResult.ok(
 				record ? { ...record, request: { ...record.request } } : null,
 			);
 		},
@@ -4363,7 +4367,7 @@ export function createMemoryTimeMethods(
 				state.overtimeRequestIdempotencyByKey.delete(key);
 				return recorded;
 			}
-			return ok({ ...request });
+			return errorResult.ok({ ...request });
 		},
 
 		async approveOvertimeRequest(input, ports) {
@@ -4387,7 +4391,7 @@ export function createMemoryTimeMethods(
 			}
 			if (request.status === "approved") {
 				if (request.approvedMaximumMinutes === input.approvedMaximumMinutes) {
-					return ok({ ...request });
+					return errorResult.ok({ ...request });
 				}
 				return conflict(
 					"Overtime request is already approved with different approved maximum minutes",
@@ -4446,7 +4450,7 @@ export function createMemoryTimeMethods(
 				state.overtimeApprovals.pop();
 				return outbox;
 			}
-			return ok({ ...request });
+			return errorResult.ok({ ...request });
 		},
 
 		async rejectOvertimeRequest(input, ports) {
@@ -4494,7 +4498,7 @@ export function createMemoryTimeMethods(
 				state.overtimeRequests.set(request.id, previous);
 				return recorded;
 			}
-			return ok({ ...request });
+			return errorResult.ok({ ...request });
 		},
 		async verifyOvertimeRequest(input, ports) {
 			const request = state.overtimeRequests.get(input.requestId);
@@ -4546,15 +4550,15 @@ export function createMemoryTimeMethods(
 				state.overtimeApprovals.pop();
 				return recorded;
 			}
-			return ok({ ...request });
+			return errorResult.ok({ ...request });
 		},
 
 		async getOvertimeRequest(input) {
 			const request = state.overtimeRequests.get(input.requestId);
 			if (!request || request.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...request });
+			return await errorResult.ok({ ...request });
 		},
 
 		async listOvertimeRequests(input) {
@@ -4570,7 +4574,7 @@ export function createMemoryTimeMethods(
 					(a, b) =>
 						b.requestedStartsAt.getTime() - a.requestedStartsAt.getTime(),
 				);
-			return await ok(
+			return await errorResult.ok(
 				paginate(rows, input.page, input.pageSize).map((row) => ({ ...row })),
 			);
 		},
@@ -4640,7 +4644,7 @@ async function transitionAssignment(
 			return outbox;
 		}
 	}
-	return ok({ ...assignment });
+	return errorResult.ok({ ...assignment });
 }
 
 async function transitionException(
@@ -4701,7 +4705,7 @@ async function transitionException(
 		state.attendanceExceptions.set(exception.id, previous);
 		return recorded;
 	}
-	return ok({ ...exception });
+	return errorResult.ok({ ...exception });
 }
 
 async function transitionTimesheet(
@@ -4787,7 +4791,7 @@ async function transitionTimesheet(
 	if (sequentialOutcome3.kind === "return") {
 		return sequentialOutcome3.value;
 	}
-	return ok({ ...timesheet });
+	return errorResult.ok({ ...timesheet });
 }
 
 async function transitionOvertime(
@@ -4853,5 +4857,5 @@ async function transitionOvertime(
 		}
 		return recorded;
 	}
-	return ok({ ...request });
+	return errorResult.ok({ ...request });
 }

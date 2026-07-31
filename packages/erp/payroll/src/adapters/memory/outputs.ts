@@ -1,5 +1,5 @@
 // biome-ignore-all lint/suspicious/useAwait: The deterministic memory adapter implements asynchronous payroll output ports.
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type { PayrollRunId } from "../../brands";
 import type { MutationPorts } from "../../ports";
@@ -51,7 +51,7 @@ function assertRunAllowsOutputMutation(
 			"Finalized or reversed payroll runs cannot change calculation outputs",
 		);
 	}
-	return ok(true);
+	return errorResult.ok(true);
 }
 
 export function createMemoryOutputsMethods(input: {
@@ -95,7 +95,7 @@ export function createMemoryOutputsMethods(input: {
 				return audit;
 			}
 
-			return ok({ deleted: true });
+			return errorResult.ok({ deleted: true });
 		},
 
 		async replaceRunCalculationOutputs(replaceInput, ports) {
@@ -177,7 +177,7 @@ export function createMemoryOutputsMethods(input: {
 				return audit;
 			}
 
-			return ok({ runEmployees, resultLines });
+			return errorResult.ok({ runEmployees, resultLines });
 		},
 
 		async listRunEmployeesForRun(listInput) {
@@ -186,7 +186,7 @@ export function createMemoryOutputsMethods(input: {
 					employee.organizationId === listInput.organizationId &&
 					employee.runId === listInput.runId,
 			);
-			return ok(runEmployees.map(cloneRunEmployee));
+			return errorResult.ok(runEmployees.map(cloneRunEmployee));
 		},
 
 		async listResultLinesForRun(listInput) {
@@ -195,7 +195,7 @@ export function createMemoryOutputsMethods(input: {
 					line.organizationId === listInput.organizationId &&
 					line.runId === listInput.runId,
 			);
-			return ok(resultLines.map(cloneResultLine));
+			return errorResult.ok(resultLines.map(cloneResultLine));
 		},
 	};
 }

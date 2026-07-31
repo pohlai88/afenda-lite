@@ -1,6 +1,6 @@
 // biome-ignore-all lint/complexity/noExcessiveCognitiveComplexity: Legal-form supersession coordinates policy, CAS, idempotency, audit, and outbox atomically.
 // biome-ignore-all lint/style/useDestructuring: Explicit predecessor access keeps supersession evidence visible.
-import { fail, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS,
 	type CorporateAdministrationApprovalVerificationDependencies,
@@ -12,7 +12,6 @@ import type {
 	CorporateAdministrationApprovalCommandOptions,
 	CorporateAdministrationCommandOptions,
 } from "../../command-options";
-import { corporateAdministrationErrorDetails } from "../../error-codes";
 import { parseCorporateAdministrationInput } from "../../parse-input";
 import { validateLegalFormSupersession } from "../rules";
 import {
@@ -101,24 +100,14 @@ export async function supersedeCompanyLegalForm(
 		return sourceDocument;
 	}
 	if (sourceDocument.data === null) {
-		return fail(
-			"NOT_FOUND",
-			"Corporate Administration source document was not found.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_REFERENCE_INVALID",
-				{ field: "sourceDocumentId" },
-			),
-		);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Corporate Administration source document was not found.",
+		});
 	}
 	if (!sourceDocument.data.active) {
-		return fail(
-			"CONFLICT",
-			"Corporate Administration source document is inactive.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_REFERENCE_INACTIVE",
-				{ field: "sourceDocumentId" },
-			),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Corporate Administration source document is inactive.",
+		});
 	}
 	const sourceDocumentId = sourceDocument.data.sourceDocumentId;
 
@@ -151,14 +140,10 @@ export async function supersedeCompanyLegalForm(
 		jurisdictionProfile.jurisdictionCountryCode !==
 			parsed.data.replacement.jurisdictionCode
 	) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Corporate Administration jurisdiction profile is required for the legal form jurisdiction.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_REFERENCE_INVALID",
-				{ field: "jurisdictionCode" },
-			),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage:
+				"Corporate Administration jurisdiction profile is required for the legal form jurisdiction.",
+		});
 	}
 	const legalForm = await dependencies.referenceData.resolveLegalForm({
 		organizationId: options.organizationId,
@@ -170,24 +155,14 @@ export async function supersedeCompanyLegalForm(
 		return legalForm;
 	}
 	if (legalForm.data === null) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Corporate Administration legal form is not configured.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_REFERENCE_INVALID",
-				{ field: "legalFormCode" },
-			),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "Corporate Administration legal form is not configured.",
+		});
 	}
 	if (!legalForm.data.active) {
-		return fail(
-			"CONFLICT",
-			"Corporate Administration legal form is inactive.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_REFERENCE_INACTIVE",
-				{ field: "legalFormCode" },
-			),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Corporate Administration legal form is inactive.",
+		});
 	}
 
 	const compatible =
@@ -202,23 +177,16 @@ export async function supersedeCompanyLegalForm(
 		return compatible;
 	}
 	if (!compatible.data.active) {
-		return fail(
-			"CONFLICT",
-			"Corporate Administration legal-form compatibility rule is inactive.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_REFERENCE_INACTIVE",
-				{ field: "legalFormCode" },
-			),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage:
+				"Corporate Administration legal-form compatibility rule is inactive.",
+		});
 	}
 	if (!compatible.data.compatible) {
-		return fail(
-			"CONFLICT",
-			"Corporate Administration legal form is not compatible with the entity type.",
-			corporateAdministrationErrorDetails("CORPORATE_ADMINISTRATION_CONFLICT", {
-				field: "legalFormCode",
-			}),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage:
+				"Corporate Administration legal form is not compatible with the entity type.",
+		});
 	}
 
 	const overlap =
@@ -235,14 +203,10 @@ export async function supersedeCompanyLegalForm(
 		return overlap;
 	}
 	if (overlap.data !== null) {
-		return fail(
-			"CONFLICT",
-			"Corporate Administration legal form overlaps an existing legal form.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_EFFECTIVE_RANGE_OVERLAP",
-				{ field: "effectivePeriod" },
-			),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage:
+				"Corporate Administration legal form overlaps an existing legal form.",
+		});
 	}
 	const effectivePeriod = {
 		from: parsed.data.replacement.effectiveFrom,

@@ -1,6 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
-
-import { corporateAdministrationErrorDetails } from "../error-codes";
+import { errorResult, type Result } from "@afenda/errors";
 import type { GovernanceMembership } from "../governance/types";
 import type { CanonicalDate } from "../kernel/dates";
 import type {
@@ -72,26 +70,17 @@ export function calculateMeetingQuorum(input: {
 	const hasQuorum = presentMemberCount >= input.requiredPresentCount;
 	const noQuorumReason = input.noQuorumReason ?? null;
 	if (!hasQuorum && noQuorumReason === null) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Corporate Administration no-quorum reason is required.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_VALIDATION_FAILED",
-				{ field: "noQuorumReason" },
-			),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "Corporate Administration no-quorum reason is required.",
+		});
 	}
 	if (input.requiredPresentCount > eligibleMemberships.length) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Corporate Administration quorum requirement exceeds eligible membership.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_VALIDATION_FAILED",
-				{ field: "requiredPresentCount" },
-			),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage:
+				"Corporate Administration quorum requirement exceeds eligible membership.",
+		});
 	}
-	return ok({
+	return errorResult.ok({
 		ruleSnapshot: {
 			ruleCode: input.ruleCode,
 			asOfDate: datePart(input.meeting.scheduledStartAt),
@@ -112,24 +101,16 @@ export function canCloseMeeting(input: {
 	quorumResult: MeetingQuorumResult | null;
 }): Result<void> {
 	if (input.meeting.status !== "open" && input.meeting.status !== "adjourned") {
-		return fail(
-			"CONFLICT",
-			"Corporate Administration meeting cannot be closed from its current state.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_INVALID_TRANSITION",
-				{ field: "status" },
-			),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage:
+				"Corporate Administration meeting cannot be closed from its current state.",
+		});
 	}
 	if (input.quorumResult === null) {
-		return fail(
-			"CONFLICT",
-			"Corporate Administration meeting requires quorum evidence before close.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_INVALID_TRANSITION",
-				{ field: "quorumResult" },
-			),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage:
+				"Corporate Administration meeting requires quorum evidence before close.",
+		});
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }

@@ -1,5 +1,5 @@
 import { env } from "@afenda/env";
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import { headers } from "next/headers";
 
 import { failFromInviteHttpStatus } from "./auth-failure";
@@ -74,15 +74,14 @@ export async function inviteOrgMember(
 	const session = await getSession();
 
 	if (session.orgId !== input.orgId) {
-		return fail(
-			"FORBIDDEN",
-			"Invitation refuses an organization other than the active session org",
-		);
+		return errorResult.fail("FORBIDDEN");
 	}
 
 	const email = normalizeInviteEmail(input.email);
 	if (email.length === 0) {
-		return fail("BAD_REQUEST", "Invitation requires a non-empty email");
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Invitation requires a non-empty email",
+		});
 	}
 
 	const baseUrl = env.NEON_AUTH_BASE_URL;
@@ -124,5 +123,8 @@ export async function inviteOrgMember(
 		parsed = null;
 	}
 
-	return ok({ data: parsed, invitationId: extractInvitationId(parsed) });
+	return errorResult.ok({
+		data: parsed,
+		invitationId: extractInvitationId(parsed),
+	});
 }

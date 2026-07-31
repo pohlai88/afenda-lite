@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import { and, db, eq, payrollPeriod, payrollVariableInput } from "@afenda/db";
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	parsePayrollEarningRuleId,
@@ -70,7 +70,7 @@ function mapVariableInputRow(
 	if (!earningRuleId.ok) {
 		return earningRuleId;
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		employeeId: row.employeeId,
@@ -101,7 +101,7 @@ function mapIdempotentVariableInputRow(
 	if (!mapped.ok) {
 		return mapped;
 	}
-	return ok({
+	return errorResult.ok({
 		variableInput: mapped.data,
 		sourceRequestFingerprint: row.sourceRequestFingerprint,
 		createRequestFingerprint: row.createRequestFingerprint,
@@ -119,7 +119,7 @@ function mapPeriodRow(
 	if (!payGroupId.ok) {
 		return payGroupId;
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		payGroupId: payGroupId.data,
@@ -151,7 +151,7 @@ export const drizzleInputsMethods: PayrollInputsStore = {
 				.limit(1);
 			const [row] = rows;
 			if (row === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapIdempotentVariableInputRow(row);
 		} catch (error) {
@@ -176,7 +176,7 @@ export const drizzleInputsMethods: PayrollInputsStore = {
 				.limit(1);
 			const [row] = rows;
 			if (row === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapIdempotentVariableInputRow(row);
 		} catch (error) {
@@ -210,7 +210,7 @@ export const drizzleInputsMethods: PayrollInputsStore = {
 			return sourceReplay;
 		}
 		if (sourceReplay.data !== "create") {
-			return ok(sourceReplay.data);
+			return errorResult.ok(sourceReplay.data);
 		}
 
 		const byIdempotency = await this.findVariableInputByIdempotencyKey({
@@ -235,7 +235,7 @@ export const drizzleInputsMethods: PayrollInputsStore = {
 			return idempotencyReplay;
 		}
 		if (idempotencyReplay.data !== "create") {
-			return ok(idempotencyReplay.data);
+			return errorResult.ok(idempotencyReplay.data);
 		}
 
 		const variableInputId = parsePayrollVariableInputId(randomUUID());
@@ -292,7 +292,7 @@ export const drizzleInputsMethods: PayrollInputsStore = {
 			if (!audit.ok) {
 				return audit;
 			}
-			return ok(mapped.data);
+			return errorResult.ok(mapped.data);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -315,7 +315,7 @@ export const drizzleInputsMethods: PayrollInputsStore = {
 				.limit(1);
 			const [row] = rows;
 			if (row === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapVariableInputRow(row);
 		} catch (error) {
@@ -348,7 +348,7 @@ export const drizzleInputsMethods: PayrollInputsStore = {
 				}
 				variableInputs.push(mapped.data);
 			}
-			return ok(variableInputs);
+			return errorResult.ok(variableInputs);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -376,7 +376,7 @@ export const drizzleInputPeriodLookup = {
 				.limit(1);
 			const [row] = rows;
 			if (row === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapPeriodRow(row);
 		} catch (error) {

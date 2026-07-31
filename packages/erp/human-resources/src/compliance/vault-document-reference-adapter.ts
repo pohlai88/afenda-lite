@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
@@ -79,45 +79,50 @@ function parseVaultReference(reference: string): Result<{
 }> {
 	const trimmed = reference.trim();
 	if (trimmed.length === 0) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Document reference is required.",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
 	const lower = trimmed.toLowerCase();
 	if (lower.startsWith("data:")) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Embedded document content is not allowed.",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
 	if (!lower.startsWith("vault://")) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Document reference must use the vault:// scheme.",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
 
 	let url: URL;
 	try {
 		url = new URL(trimmed);
 	} catch {
-		return fail(
-			"VALIDATION_ERROR",
-			"Document reference is malformed.",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
 
 	if (url.protocol !== "vault:") {
-		return fail(
-			"VALIDATION_ERROR",
-			"Document reference must use the vault:// scheme.",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
 
 	// URL parser: vault://organizations/org/kind/id → host=organizations, pathname=/org/kind/id
@@ -131,11 +136,12 @@ function parseVaultReference(reference: string): Result<{
 
 	const match = VAULT_PATH_PATTERN.exec(pathFromHost);
 	if (match === null) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Document reference must match vault://organizations/{organizationId}/{documentKind}/{documentId}.",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
 
 	const organizationId = decodeURIComponent(match[1] ?? "");
@@ -151,23 +157,25 @@ function parseVaultReference(reference: string): Result<{
 			isSafePathSegment(documentId)
 		)
 	) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Document reference path segments must be non-empty.",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
 
 	if (!isDocumentKind(kindRaw)) {
-		return fail(
-			"VALIDATION_ERROR",
-			`Document kind "${kindRaw}" is not supported.`,
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
 
 	const { version, checksum } = parseQuery(query);
-	return ok({
+	return errorResult.ok({
 		organizationId,
 		documentKind: kindRaw,
 		documentId,
@@ -195,33 +203,36 @@ export function createVaultDocumentReferenceAdapter(
 			}
 
 			if (parsed.data.organizationId !== input.organizationId) {
-				return fail(
-					"VALIDATION_ERROR",
-					"Document reference organization does not match the command organization.",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "The submitted data is invalid",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+					),
+				});
 			}
 
 			if (
 				input.allowedKinds !== undefined &&
 				!input.allowedKinds.includes(parsed.data.documentKind)
 			) {
-				return fail(
-					"VALIDATION_ERROR",
-					`Document kind "${parsed.data.documentKind}" is not allowed for this command.`,
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "The submitted data is invalid",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+					),
+				});
 			}
 
 			if (
 				input.requireImmutableVersion === true &&
 				parsed.data.version === null
 			) {
-				return fail(
-					"VALIDATION_ERROR",
-					"An immutable document version is required.",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "The submitted data is invalid",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+					),
+				});
 			}
 
 			const reference = normalizeCanonicalReference({
@@ -251,7 +262,7 @@ export function createVaultDocumentReferenceAdapter(
 				}
 			}
 
-			return ok(validated);
+			return errorResult.ok(validated);
 		},
 	};
 }

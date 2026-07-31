@@ -15,9 +15,19 @@ import {
 	deletePayrollConstraintOrg,
 	isPayrollFoundationMigrationApplied,
 	type PayrollConstraintSeed,
-	postgresSqlState,
 	seedPayrollConstraintChain,
 } from "./helpers/payroll-constraint-live";
+
+function hasDatabaseErrorCode(error: unknown, expected: string): boolean {
+	if (typeof error !== "object" || error === null) {
+		return false;
+	}
+	const candidate = Reflect.get(error, "code");
+	if (candidate === expected) {
+		return true;
+	}
+	return hasDatabaseErrorCode(Reflect.get(error, "cause"), expected);
+}
 
 const baselineMigrationPath = fileURLToPath(
 	new URL(
@@ -246,8 +256,8 @@ describe.skipIf(!payrollFoundationReady)(
 					createdBy: actorUserId,
 					updatedBy: actorUserId,
 				}),
-			).rejects.toSatisfy(
-				(error: unknown) => postgresSqlState(error) === "23514",
+			).rejects.toSatisfy((error: unknown) =>
+				hasDatabaseErrorCode(error, "23514"),
 			);
 		});
 
@@ -267,8 +277,8 @@ describe.skipIf(!payrollFoundationReady)(
 					createdBy: actorUserId,
 					updatedBy: actorUserId,
 				}),
-			).rejects.toSatisfy(
-				(error: unknown) => postgresSqlState(error) === "23514",
+			).rejects.toSatisfy((error: unknown) =>
+				hasDatabaseErrorCode(error, "23514"),
 			);
 		});
 
@@ -284,8 +294,8 @@ describe.skipIf(!payrollFoundationReady)(
 					employeeRef: null,
 					createdBy: actorUserId,
 				}),
-			).rejects.toSatisfy(
-				(error: unknown) => postgresSqlState(error) === "23514",
+			).rejects.toSatisfy((error: unknown) =>
+				hasDatabaseErrorCode(error, "23514"),
 			);
 		});
 
@@ -308,8 +318,8 @@ describe.skipIf(!payrollFoundationReady)(
 					createdBy: actorUserId,
 					updatedBy: actorUserId,
 				}),
-			).rejects.toSatisfy(
-				(error: unknown) => postgresSqlState(error) === "23505",
+			).rejects.toSatisfy((error: unknown) =>
+				hasDatabaseErrorCode(error, "23505"),
 			);
 		});
 
@@ -329,8 +339,8 @@ describe.skipIf(!payrollFoundationReady)(
 					createdBy: actorUserId,
 					updatedBy: actorUserId,
 				}),
-			).rejects.toSatisfy(
-				(error: unknown) => postgresSqlState(error) === "23505",
+			).rejects.toSatisfy((error: unknown) =>
+				hasDatabaseErrorCode(error, "23505"),
 			);
 		});
 
@@ -346,8 +356,8 @@ describe.skipIf(!payrollFoundationReady)(
 					employeeRef: null,
 					createdBy: actorUserId,
 				}),
-			).rejects.toSatisfy(
-				(error: unknown) => postgresSqlState(error) === "23503",
+			).rejects.toSatisfy((error: unknown) =>
+				hasDatabaseErrorCode(error, "23503"),
 			);
 		});
 
@@ -367,8 +377,8 @@ describe.skipIf(!payrollFoundationReady)(
 					createdBy: actorUserId,
 					updatedBy: actorUserId,
 				}),
-			).rejects.toSatisfy(
-				(error: unknown) => postgresSqlState(error) === "23503",
+			).rejects.toSatisfy((error: unknown) =>
+				hasDatabaseErrorCode(error, "23503"),
 			);
 		});
 	},

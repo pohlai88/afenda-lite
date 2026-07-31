@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	lifecycleInvalidExpectedVersion,
@@ -35,7 +35,7 @@ export function assertLifecycleExpectedVersion(
 		});
 	}
 
-	return ok(true);
+	return errorResult.ok(true);
 }
 
 export function nextLifecycleVersion(currentVersion: number): number {
@@ -63,10 +63,8 @@ export async function resolveTenantScopedCasMiss(input: {
 		return current;
 	}
 	if (current.data === null) {
-		return fail("NOT_FOUND", input.notFoundMessage, {
-			reason: "MASTER_NOT_FOUND",
-			entityType: input.entityType,
-			entityId: input.entityId,
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "The requested resource was not found",
 		});
 	}
 	if (current.data.version !== input.expectedVersion) {
@@ -77,10 +75,7 @@ export async function resolveTenantScopedCasMiss(input: {
 			actualVersion: current.data.version,
 		});
 	}
-	return fail("CONFLICT", input.unchangedMissMessage, {
-		reason: "MASTER_INVALID_STATE",
-		entityType: input.entityType,
-		entityId: input.entityId,
-		expectedVersion: input.expectedVersion,
+	return errorResult.fail("CONFLICT", {
+		publicMessage: "The request conflicts with current state",
 	});
 }

@@ -39,11 +39,11 @@ import {
 	tenantEntityPredicate,
 } from "@afenda/db";
 import {
-	hasPostgresSqlState,
-	normalizePostgresUnknown,
-} from "@afenda/errors/adapters/postgres";
-import { fail, failFromAppError, ok, type Result } from "@afenda/errors/result";
-import type { MasterFailureDetails } from "../../../../contracts/reasons";
+	errorIngress,
+	errorProject,
+	errorResult,
+	type Result,
+} from "@afenda/errors";
 import type { MutationPorts } from "../../../../ports";
 import type {
 	Item,
@@ -89,20 +89,17 @@ import type {
 	ListItemVariantsFilter,
 } from "../../template-store";
 
-function failFromPersistence(error: unknown, fallbackMessage: string) {
-	return failFromAppError(normalizePostgresUnknown(error, fallbackMessage));
+function failFromPersistence(error: unknown, _fallbackMessage: string) {
+	return errorProject.result(
+		errorIngress.postgres(error, { operation: "persistence.postgres" }),
+	);
 }
 
 function mapWriteError(
 	error: unknown,
-	uniqueMessage: string,
+	_uniqueMessage: string,
 	fallbackMessage: string,
 ): Result<never> {
-	if (hasPostgresSqlState(error, "23505")) {
-		return fail("CONFLICT", uniqueMessage, {
-			reason: "MASTER_CODE_CONFLICT",
-		} satisfies MasterFailureDetails);
-	}
 	return failFromPersistence(error, fallbackMessage);
 }
 
@@ -219,7 +216,7 @@ function prepareCreateItemVariantAudits(input: {
 		const value = input.record.attributeValues[index];
 		const valueId = input.valueIds[index];
 		if (value === undefined || valueId === undefined) {
-			return fail("INTERNAL_ERROR", "Item variant audit identity mismatch");
+			return errorResult.fail("INTERNAL_ERROR");
 		}
 		const preparedValueAudit = prepareVariantAudit({
 			...common,
@@ -238,7 +235,7 @@ function prepareCreateItemVariantAudits(input: {
 		valueAudits.push(preparedValueAudit.data);
 	}
 
-	return ok({
+	return errorResult.ok({
 		itemAudit: preparedItemAudit.data,
 		valueAudits,
 		variantAudit: preparedVariantAudit.data,
@@ -534,7 +531,7 @@ async function loadVariantValues(
 	variantIds: string[],
 ): Promise<Result<Map<string, ItemVariantAttributeValue[]>>> {
 	if (variantIds.length === 0) {
-		return ok(new Map());
+		return errorResult.ok(new Map());
 	}
 	try {
 		const rows = await db
@@ -585,7 +582,7 @@ async function loadVariantValues(
 			list.push(mapped);
 			byVariant.set(mapped.variantId, list);
 		}
-		return ok(byVariant);
+		return errorResult.ok(byVariant);
 	} catch (error) {
 		return failFromPersistence(
 			error,
@@ -609,7 +606,7 @@ export async function drizzleGetItemTemplateById(
 				),
 			)
 			.limit(1);
-		return ok(row === undefined ? null : mapItemTemplate(row));
+		return errorResult.ok(row === undefined ? null : mapItemTemplate(row));
 	} catch (error) {
 		return failFromPersistence(error, "Failed to load item template");
 	}
@@ -631,7 +628,7 @@ export async function drizzleGetItemTemplateByCode(
 				),
 			)
 			.limit(1);
-		return ok(row === undefined ? null : mapItemTemplate(row));
+		return errorResult.ok(row === undefined ? null : mapItemTemplate(row));
 	} catch (error) {
 		return failFromPersistence(error, "Failed to load item template by code");
 	}
@@ -654,7 +651,7 @@ export async function drizzleListItemTemplates(
 			.orderBy(asc(mdItemTemplate.normalizedCode), asc(mdItemTemplate.id))
 			.limit(filter.pageSize)
 			.offset((filter.page - 1) * filter.pageSize);
-		return ok(rows.map(mapItemTemplate));
+		return errorResult.ok(rows.map(mapItemTemplate));
 	} catch (error) {
 		return failFromPersistence(error, "Failed to list item templates");
 	}
@@ -735,9 +732,9 @@ export async function drizzleCreateItemTemplate(
 		]);
 		const [row] = rows;
 		if (row === undefined) {
-			return fail("INTERNAL_ERROR", "Item template create returned no row");
+			return errorResult.fail("INTERNAL_ERROR");
 		}
-		return ok(mapItemTemplateFromSql(row));
+		return errorResult.ok(mapItemTemplateFromSql(row));
 	} catch (error) {
 		return mapWriteError(
 			error,
@@ -764,9 +761,9 @@ export async function drizzleUpdateItemTemplate(
 			)
 			.limit(1);
 		if (existing === undefined) {
-			return fail("NOT_FOUND", "Item template not found", {
-				reason: "MASTER_NOT_FOUND",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Item template not found",
+			});
 		}
 		const version = assertExpectedVersion(existing, record.expectedVersion);
 		if (!version.ok) {
@@ -843,11 +840,11 @@ export async function drizzleUpdateItemTemplate(
 		]);
 		const [row] = rows;
 		if (row === undefined) {
-			return fail("CONFLICT", "Item template version conflict", {
-				reason: "MASTER_VERSION_CONFLICT",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Item template version conflict",
+			});
 		}
-		return ok(mapItemTemplateFromSql(row));
+		return errorResult.ok(mapItemTemplateFromSql(row));
 	} catch (error) {
 		return mapWriteError(
 			error,
@@ -880,9 +877,9 @@ export async function drizzleTransitionItemTemplate(
 			)
 			.limit(1);
 		if (existing === undefined) {
-			return fail("NOT_FOUND", "Item template not found", {
-				reason: "MASTER_NOT_FOUND",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Item template not found",
+			});
 		}
 		const version = assertExpectedVersion(existing, record.expectedVersion);
 		if (!version.ok) {
@@ -1025,9 +1022,9 @@ export async function drizzleTransitionItemTemplate(
 				)
 				.limit(1);
 			if (current !== undefined && current.version !== record.expectedVersion) {
-				return fail("CONFLICT", "Item template version conflict", {
-					reason: "MASTER_VERSION_CONFLICT",
-				} satisfies MasterFailureDetails);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Item template version conflict",
+				});
 			}
 			if (record.toStatus === "retired") {
 				const [liveVariant] = await db
@@ -1042,16 +1039,16 @@ export async function drizzleTransitionItemTemplate(
 					)
 					.limit(1);
 				if (liveVariant !== undefined) {
-					return fail("CONFLICT", "Item template has live variants", {
-						reason: "MASTER_DEPENDENCY_BLOCKED",
-					} satisfies MasterFailureDetails);
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "Item template has live variants",
+					});
 				}
 			}
-			return fail("CONFLICT", "Item template transition precondition failed", {
-				reason: "MASTER_INVALID_STATE",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Item template transition precondition failed",
+			});
 		}
-		return ok(mapItemTemplateFromSql(row));
+		return errorResult.ok(mapItemTemplateFromSql(row));
 	} catch (error) {
 		return mapWriteError(
 			error,
@@ -1080,7 +1077,7 @@ export async function drizzleListItemTemplateAttributes(
 				asc(mdItemTemplateAttribute.normalizedCode),
 				asc(mdItemTemplateAttribute.id),
 			);
-		return ok(rows.map(mapItemTemplateAttribute));
+		return errorResult.ok(rows.map(mapItemTemplateAttribute));
 	} catch (error) {
 		return failFromPersistence(
 			error,
@@ -1118,9 +1115,9 @@ export async function drizzleGetItemTemplateAttributeContextById(
 			)
 			.limit(1);
 		if (row === undefined) {
-			return ok(null);
+			return errorResult.ok(null);
 		}
-		return ok({
+		return errorResult.ok({
 			attribute: mapItemTemplateAttribute(row.attribute),
 			template: mapItemTemplate(row.template),
 		});
@@ -1151,7 +1148,7 @@ export async function drizzleListItemTemplateAttributeOptions(
 				asc(mdItemTemplateAttributeOption.normalizedCode),
 				asc(mdItemTemplateAttributeOption.id),
 			);
-		return ok(rows.map(mapItemTemplateAttributeOption));
+		return errorResult.ok(rows.map(mapItemTemplateAttributeOption));
 	} catch (error) {
 		return failFromPersistence(
 			error,
@@ -1175,7 +1172,7 @@ export async function drizzleListItemTemplateAttributeOptionsByTemplate(
 				),
 			);
 		if (attributes.length === 0) {
-			return ok([]);
+			return errorResult.ok([]);
 		}
 		const rows = await db
 			.select()
@@ -1194,7 +1191,7 @@ export async function drizzleListItemTemplateAttributeOptionsByTemplate(
 				asc(mdItemTemplateAttributeOption.normalizedCode),
 				asc(mdItemTemplateAttributeOption.id),
 			);
-		return ok(rows.map(mapItemTemplateAttributeOption));
+		return errorResult.ok(rows.map(mapItemTemplateAttributeOption));
 	} catch (error) {
 		return failFromPersistence(
 			error,
@@ -1220,22 +1217,14 @@ export async function drizzleAddItemTemplateAttribute(
 			)
 			.limit(1);
 		if (template === undefined) {
-			return fail("NOT_FOUND", "Item template not found", {
-				reason: "MASTER_NOT_FOUND",
-				field: "templateId",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Item template not found",
+			});
 		}
 		if (template.status !== "draft") {
-			return fail(
-				"CONFLICT",
-				"Template attributes can only be added while draft",
-				{
-					reason: "MASTER_INVALID_STATE",
-					field: "templateId",
-					actualStatus: template.status,
-					requiredStatus: "draft",
-				} satisfies MasterFailureDetails,
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Template attributes can only be added while draft",
+			});
 		}
 	} catch (error) {
 		return failFromPersistence(error, "Failed to validate item template");
@@ -1334,17 +1323,11 @@ export async function drizzleAddItemTemplateAttribute(
 		]);
 		const [row] = rows;
 		if (row === undefined) {
-			return fail(
-				"CONFLICT",
-				"Template attributes can only be added while draft",
-				{
-					reason: "MASTER_INVALID_STATE",
-					field: "templateId",
-					requiredStatus: "draft",
-				} satisfies MasterFailureDetails,
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Template attributes can only be added while draft",
+			});
 		}
-		return ok(mapItemTemplateAttributeFromSql(row));
+		return errorResult.ok(mapItemTemplateAttributeFromSql(row));
 	} catch (error) {
 		return mapWriteError(
 			error,
@@ -1371,23 +1354,18 @@ export async function drizzleAddItemTemplateAttributeOption(
 			)
 			.limit(1);
 		if (attribute === undefined) {
-			return fail("NOT_FOUND", "Item template attribute not found", {
-				reason: "MASTER_NOT_FOUND",
-				field: "attributeId",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Item template attribute not found",
+			});
 		}
 		if (
 			attribute.dataType !== "single_option" &&
 			attribute.dataType !== "multiple_option"
 		) {
-			return fail(
-				"CONFLICT",
-				"Options can only be added to option-compatible attributes",
-				{
-					reason: "MASTER_INVALID_STATE",
-					field: "attributeId",
-				} satisfies MasterFailureDetails,
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage:
+					"Options can only be added to option-compatible attributes",
+			});
 		}
 		const [template] = await db
 			.select()
@@ -1400,21 +1378,15 @@ export async function drizzleAddItemTemplateAttributeOption(
 			)
 			.limit(1);
 		if (template === undefined) {
-			return fail("NOT_FOUND", "Item template not found", {
-				reason: "MASTER_NOT_FOUND",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Item template not found",
+			});
 		}
 		if (template.status !== "draft") {
-			return fail(
-				"CONFLICT",
-				"Template attribute options can only be added while draft",
-				{
-					reason: "MASTER_INVALID_STATE",
-					field: "attributeId",
-					actualStatus: template.status,
-					requiredStatus: "draft",
-				} satisfies MasterFailureDetails,
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage:
+					"Template attribute options can only be added while draft",
+			});
 		}
 	} catch (error) {
 		return failFromPersistence(
@@ -1514,13 +1486,11 @@ export async function drizzleAddItemTemplateAttributeOption(
 		]);
 		const [row] = rows;
 		if (row === undefined) {
-			return fail("CONFLICT", "Template attribute option precondition failed", {
-				reason: "MASTER_INVALID_STATE",
-				field: "attributeId",
-				requiredStatus: "draft",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Template attribute option precondition failed",
+			});
 		}
-		return ok(mapItemTemplateAttributeOptionFromSql(row));
+		return errorResult.ok(mapItemTemplateAttributeOptionFromSql(row));
 	} catch (error) {
 		return mapWriteError(
 			error,
@@ -1546,7 +1516,7 @@ export async function drizzleGetItemVariantById(
 			)
 			.limit(1);
 		if (variant === undefined) {
-			return ok(null);
+			return errorResult.ok(null);
 		}
 		const [itemRow] = await db
 			.select()
@@ -1559,13 +1529,13 @@ export async function drizzleGetItemVariantById(
 			)
 			.limit(1);
 		if (itemRow === undefined) {
-			return fail("INTERNAL_ERROR", "Item variant item row missing");
+			return errorResult.fail("INTERNAL_ERROR");
 		}
 		const valuesResult = await loadVariantValues(organizationId, [variant.id]);
 		if (!valuesResult.ok) {
 			return valuesResult;
 		}
-		return ok(
+		return errorResult.ok(
 			mapItemVariantMembership(
 				variant,
 				mapItem(itemRow),
@@ -1614,7 +1584,7 @@ export async function drizzleListItemVariantsByTemplate(
 		if (!valuesResult.ok) {
 			return valuesResult;
 		}
-		return ok(
+		return errorResult.ok(
 			rows.map((row) =>
 				mapItemVariantMembership(
 					row.variant,
@@ -1640,18 +1610,14 @@ export async function drizzleCreateItemVariant(
 			.where(eq(refUom.id, record.baseUomId))
 			.limit(1);
 		if (uom === undefined) {
-			return fail("BAD_REQUEST", "baseUomId is not a known platform UoM", {
-				reason: "MASTER_VALIDATION_FAILED",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage: "baseUomId is not a known platform UoM",
+			});
 		}
 		if (!uom.active) {
-			return fail(
-				"BAD_REQUEST",
-				"baseUomId must reference an active platform UoM",
-				{
-					reason: "MASTER_VALIDATION_FAILED",
-				} satisfies MasterFailureDetails,
-			);
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage: "baseUomId must reference an active platform UoM",
+			});
 		}
 		const [group] = await db
 			.select()
@@ -1664,9 +1630,9 @@ export async function drizzleCreateItemVariant(
 			)
 			.limit(1);
 		if (group === undefined) {
-			return fail("NOT_FOUND", "Item group not found", {
-				reason: "MASTER_NOT_FOUND",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Item group not found",
+			});
 		}
 		const [template] = await db
 			.select()
@@ -1679,9 +1645,9 @@ export async function drizzleCreateItemVariant(
 			)
 			.limit(1);
 		if (template === undefined) {
-			return fail("NOT_FOUND", "Item template not found", {
-				reason: "MASTER_NOT_FOUND",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Item template not found",
+			});
 		}
 	} catch (error) {
 		return failFromPersistence(error, "Failed to validate item variant create");
@@ -2049,19 +2015,16 @@ export async function drizzleCreateItemVariant(
 		const [itemRow] = itemRows;
 		const [variantRow] = variantRows;
 		if (itemRow === undefined || variantRow === undefined) {
-			return fail("CONFLICT", "Item variant create precondition failed", {
-				reason: "MASTER_INVALID_STATE",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Item variant create precondition failed",
+			});
 		}
 		const values: ItemVariantAttributeValue[] = [];
 		for (let index = 0; index < record.attributeValues.length; index += 1) {
 			const valueRows = results[index + 2];
 			const valueRow = valueRows?.[0];
 			if (valueRow === undefined) {
-				return fail(
-					"INTERNAL_ERROR",
-					"Item variant attribute value create returned no row",
-				);
+				return errorResult.fail("INTERNAL_ERROR");
 			}
 			values.push(
 				mapItemVariantAttributeValueFromSql(
@@ -2071,7 +2034,7 @@ export async function drizzleCreateItemVariant(
 			);
 		}
 		const item = mapItemFromSql(itemRow);
-		return ok({
+		return errorResult.ok({
 			id: variantRow.id as string,
 			organizationId: variantRow.organization_id as string,
 			itemId: variantRow.item_id as string,
@@ -2146,7 +2109,7 @@ export async function drizzleRetireItemVariantMembership(
 					SELECT variant_retired.* FROM variant_retired
 				`,
 		]);
-		return ok({ retired: rows[0] !== undefined });
+		return errorResult.ok({ retired: rows[0] !== undefined });
 	} catch (error) {
 		return failFromPersistence(
 			error,
@@ -2180,14 +2143,12 @@ export async function drizzleTransitionItemWithVariantSideEffect(
 			)
 			.limit(1);
 		if (existing === undefined) {
-			return fail("NOT_FOUND", "Item not found", {
-				reason: "MASTER_NOT_FOUND",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("NOT_FOUND", { publicMessage: "Item not found" });
 		}
 		if (existing.version !== record.expectedVersion) {
-			return fail("CONFLICT", "Item version conflict", {
-				reason: "MASTER_VERSION_CONFLICT",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Item version conflict",
+			});
 		}
 		const currentStatus = mapItem(existing).status;
 		const lifecycle =
@@ -2493,11 +2454,11 @@ export async function drizzleTransitionItemWithVariantSideEffect(
 		);
 		const [row] = rows;
 		if (row === undefined) {
-			return fail("CONFLICT", "Item version conflict", {
-				reason: "MASTER_VERSION_CONFLICT",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Item version conflict",
+			});
 		}
-		return ok(mapItemFromSql(row));
+		return errorResult.ok(mapItemFromSql(row));
 	} catch (error) {
 		return failFromPersistence(error, "Failed to transition item");
 	}
@@ -2537,6 +2498,6 @@ export async function drizzleRetireItemVariant(
 		return variant;
 	}
 	return variant.data === null
-		? fail("INTERNAL_ERROR", "Item variant missing after retire")
-		: ok(variant.data);
+		? errorResult.fail("INTERNAL_ERROR")
+		: errorResult.ok(variant.data);
 }

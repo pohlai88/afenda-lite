@@ -16,7 +16,7 @@ import {
 	hrEmployeeCaseEvent,
 	runNeonHttpTransaction,
 } from "@afenda/db";
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	HUMAN_RESOURCES_EMPLOYEE_CASE_ACTION_APPROVED_EVENT,
 	HUMAN_RESOURCES_EMPLOYEE_CASE_APPEAL_RESOLVED_EVENT,
@@ -296,7 +296,7 @@ function parseParticipants(raw: unknown): Result<EmployeeCaseParticipant[]> {
 			addedAt: record.addedAt,
 		});
 	}
-	return ok(participants);
+	return errorResult.ok(participants);
 }
 
 function parseConflictedIds(raw: unknown): string[] {
@@ -342,7 +342,7 @@ function mapCase(row: CaseRow): Result<EmployeeCase> {
 	if (interimParsed !== null && !interimParsed.success) {
 		return invalidState("Invalid interim status");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		employeeId: employeeId.data,
@@ -438,7 +438,7 @@ function mapEvent(row: EventRow): Result<EmployeeCaseEvent> {
 		row.payloadJson === null || typeof row.payloadJson !== "object"
 			? null
 			: { ...(row.payloadJson as Record<string, unknown>) };
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		caseId: caseId.data,
@@ -486,7 +486,7 @@ function mapAction(row: ActionRow): Result<EmployeeCaseAction> {
 	if (!status.success) {
 		return invalidState("Invalid case action status");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		caseId: caseId.data,
@@ -538,7 +538,7 @@ function mapAppeal(row: AppealRow): Result<EmployeeCaseAppeal> {
 	if (!status.success) {
 		return invalidState("Invalid case appeal status");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		caseId: caseId.data,
@@ -607,7 +607,7 @@ async function fetchCaseById(input: {
 			.limit(1);
 		const [row] = rows;
 		if (!row) {
-			return ok(null);
+			return errorResult.ok(null);
 		}
 		return mapCase(row);
 	} catch (error) {
@@ -626,7 +626,7 @@ async function fetchCaseInOrg(input: {
 	if (loaded.data === null) {
 		return notFound("Case not found", HUMAN_RESOURCES_ERROR_NOT_FOUND);
 	}
-	return ok(loaded.data);
+	return errorResult.ok(loaded.data);
 }
 
 async function fetchCaseWithAccess(input: {
@@ -745,7 +745,7 @@ async function listCasesForOrg(
 			}
 			cases.push(mapped.data);
 		}
-		return ok(cases);
+		return errorResult.ok(cases);
 	} catch (error) {
 		return mapPersistenceFailure(error, "Failed to list employee cases");
 	}
@@ -767,13 +767,13 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const mapped = mapCase(row);
 			if (!mapped.ok) {
 				return mapped;
 			}
-			return ok({
+			return errorResult.ok({
 				caseId: mapped.data.id,
 				createRequestFingerprint: row.createRequestFingerprint,
 				case: mapped.data,
@@ -802,7 +802,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			) {
 				return idempotencyConflict();
 			}
-			return ok(existing.data.case);
+			return errorResult.ok(existing.data.case);
 		}
 		const employee = await this.getEmployeeById({
 			organizationId: record.organizationId,
@@ -966,7 +966,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 						replay.data.createRequestFingerprint ===
 						record.createRequestFingerprint
 					) {
-						return ok(replay.data.case);
+						return errorResult.ok(replay.data.case);
 					}
 					return idempotencyConflict();
 				}
@@ -986,11 +986,11 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 		});
 		if (!loaded.ok) {
 			if (loaded.code === "NOT_FOUND") {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return loaded;
 		}
-		return ok(loaded.data);
+		return errorResult.ok(loaded.data);
 	},
 
 	async listEmployeeCases(input) {
@@ -1004,7 +1004,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			}
 			return true;
 		});
-		return ok(filtered);
+		return errorResult.ok(filtered);
 	},
 
 	async listCasesAssignedToActor(input) {
@@ -1015,7 +1015,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 		const filtered = loaded.data.filter(
 			(caseRecord) => caseRecord.ownerActorUserId === input.ownerActorUserId,
 		);
-		return ok(filtered);
+		return errorResult.ok(filtered);
 	},
 
 	async listOpenEmployeeRelationsCases(input) {
@@ -1026,7 +1026,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 		const filtered = loaded.data.filter(
 			(caseRecord) => caseRecord.status !== "closed",
 		);
-		return ok(filtered);
+		return errorResult.ok(filtered);
 	},
 
 	async getEmployeeRelationsHistoryByEmployee(input) {
@@ -1037,7 +1037,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 		const filtered = loaded.data.filter(
 			(caseRecord) => caseRecord.employeeId === input.employeeId,
 		);
-		return ok(filtered);
+		return errorResult.ok(filtered);
 	},
 
 	async updateEmployeeCaseClassification(input, _ports, meta) {
@@ -2044,13 +2044,13 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const mapped = mapAction(row);
 			if (!mapped.ok) {
 				return mapped;
 			}
-			return ok({
+			return errorResult.ok({
 				actionId: mapped.data.id,
 				createRequestFingerprint: row.createRequestFingerprint,
 				action: mapped.data,
@@ -2079,7 +2079,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			) {
 				return idempotencyConflict();
 			}
-			return ok(existing.data.action);
+			return errorResult.ok(existing.data.action);
 		}
 		const loaded = await fetchCaseInOrg({
 			organizationId: record.organizationId,
@@ -2228,7 +2228,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 						replay.data.createRequestFingerprint ===
 						record.createRequestFingerprint
 					) {
-						return ok(replay.data.action);
+						return errorResult.ok(replay.data.action);
 					}
 					return idempotencyConflict();
 				}
@@ -2423,13 +2423,13 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const mapped = mapAppeal(row);
 			if (!mapped.ok) {
 				return mapped;
 			}
-			return ok({
+			return errorResult.ok({
 				appealId: mapped.data.id,
 				createRequestFingerprint: row.createRequestFingerprint,
 				appeal: mapped.data,
@@ -2458,7 +2458,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			) {
 				return idempotencyConflict();
 			}
-			return ok(existing.data.appeal);
+			return errorResult.ok(existing.data.appeal);
 		}
 		const loaded = await fetchCaseInOrg({
 			organizationId: record.organizationId,
@@ -2634,7 +2634,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 						replay.data.createRequestFingerprint ===
 						record.createRequestFingerprint
 					) {
-						return ok(replay.data.appeal);
+						return errorResult.ok(replay.data.appeal);
 					}
 					return idempotencyConflict();
 				}
@@ -3111,7 +3111,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 				caseId: input.caseId,
 				events,
 			};
-			return ok(timeline);
+			return errorResult.ok(timeline);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -3186,7 +3186,7 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 								employmentId: loaded.data.employmentId,
 							},
 			};
-			return ok(outcome);
+			return errorResult.ok(outcome);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,

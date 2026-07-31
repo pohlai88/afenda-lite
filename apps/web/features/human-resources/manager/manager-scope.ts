@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { HumanResourcesEmployeeId } from "@afenda/human-resources/brands";
 
 import { createHumanResourcesIdentityResolverPort } from "@/lib/erp/human-resources-identity-resolver-port";
@@ -39,13 +39,10 @@ export async function resolveManagerScope(
 		return directReports;
 	}
 	if (identity.data === null) {
-		return fail(
-			"FORBIDDEN",
-			"Your account is not linked to an active employee record.",
-		);
+		return errorResult.fail("FORBIDDEN");
 	}
 
-	return ok({
+	return errorResult.ok({
 		managerEmployeeId: identity.data.employeeId,
 		employeeIds: [...new Set(directReports.data)],
 		asOf,

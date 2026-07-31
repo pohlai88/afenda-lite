@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { ApprovedPayrollHandoff } from "@afenda/events/schemas";
 import {
 	approvedPayrollHandoffSchema,
@@ -46,13 +46,14 @@ function mapBenefitComponent(
 ): Result<ApprovedPayrollHandoff["components"][number]> {
 	const currencyCode = enrollment.contributionCurrencyCode;
 	if (!currencyCode) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Benefit enrollment contribution currency is required",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
-	return ok({
+	return errorResult.ok({
 		code: `benefit-${enrollment.planId}`,
 		kind,
 		amount,
@@ -106,7 +107,7 @@ function buildComponents(
 		}
 	}
 
-	return ok(components);
+	return errorResult.ok(components);
 }
 
 function mapLeaveFacts(
@@ -177,14 +178,15 @@ function resolveApprovalEvidence(input: {
 		? toIsoDateTime(input.compensation.approvedAt)
 		: input.timeHandoff?.approvedAt;
 	if (!approvedAt) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Approved compensation or time handoff timestamp is required",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
 
-	return ok({
+	return errorResult.ok({
 		approvedAt,
 		...(input.compensation.approvedBy
 			? { approvedBy: input.compensation.approvedBy }
@@ -201,11 +203,12 @@ export function mapApprovedPayrollHandoff(
 ): Result<ApprovedPayrollHandoff> {
 	const compensation = input.compensationHandoff.activeCompensation;
 	if (!compensation) {
-		return fail(
-			"NOT_FOUND",
-			"No active approved compensation for payroll handoff",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-		);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "The requested resource was not found",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			),
+		});
 	}
 
 	const builtComponents = buildComponents(
@@ -275,12 +278,13 @@ export function mapApprovedPayrollHandoff(
 
 	const parsed = approvedPayrollHandoffSchema.safeParse(handoff);
 	if (!parsed.success) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Mapped payroll handoff failed contract validation",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
 
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }

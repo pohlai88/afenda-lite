@@ -1,10 +1,5 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import { z } from "zod";
-
-import {
-	PAYROLL_ERROR_PERSISTENCE_FAILURE,
-	payrollErrorDetails,
-} from "./error-codes";
 
 export const payrollCalendarIdSchema = z
 	.string()
@@ -111,37 +106,25 @@ export type PayrollStatutoryResultId = z.infer<
 export function parsePayrollCalendarId(id: string): Result<PayrollCalendarId> {
 	const parsed = payrollCalendarIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid payroll calendar identifier",
-			payrollErrorDetails(PAYROLL_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parsePayrollPayGroupId(id: string): Result<PayrollPayGroupId> {
 	const parsed = payrollPayGroupIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid payroll pay group identifier",
-			payrollErrorDetails(PAYROLL_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parsePayrollPeriodId(id: string): Result<PayrollPeriodId> {
 	const parsed = payrollPeriodIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid payroll period identifier",
-			payrollErrorDetails(PAYROLL_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parsePayrollEarningRuleId(
@@ -149,13 +132,9 @@ export function parsePayrollEarningRuleId(
 ): Result<PayrollEarningRuleId> {
 	const parsed = payrollEarningRuleIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid payroll earning rule identifier",
-			payrollErrorDetails(PAYROLL_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parsePayrollDeductionRuleId(
@@ -163,13 +142,9 @@ export function parsePayrollDeductionRuleId(
 ): Result<PayrollDeductionRuleId> {
 	const parsed = payrollDeductionRuleIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid payroll deduction rule identifier",
-			payrollErrorDetails(PAYROLL_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parsePayrollStatutoryRuleId(
@@ -177,25 +152,17 @@ export function parsePayrollStatutoryRuleId(
 ): Result<PayrollStatutoryRuleId> {
 	const parsed = payrollStatutoryRuleIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid payroll statutory rule identifier",
-			payrollErrorDetails(PAYROLL_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parsePayrollRunId(id: string): Result<PayrollRunId> {
 	const parsed = payrollRunIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid payroll run identifier",
-			payrollErrorDetails(PAYROLL_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parsePayrollExceptionId(
@@ -203,13 +170,9 @@ export function parsePayrollExceptionId(
 ): Result<PayrollExceptionId> {
 	const parsed = payrollExceptionIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid payroll exception identifier",
-			payrollErrorDetails(PAYROLL_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parsePayrollEmployeeAssignmentId(
@@ -217,13 +180,9 @@ export function parsePayrollEmployeeAssignmentId(
 ): Result<PayrollEmployeeAssignmentId> {
 	const parsed = payrollEmployeeAssignmentIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid payroll employee assignment identifier",
-			payrollErrorDetails(PAYROLL_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parsePayrollRecurringEarningId(
@@ -231,13 +190,9 @@ export function parsePayrollRecurringEarningId(
 ): Result<PayrollRecurringEarningId> {
 	const parsed = payrollRecurringEarningIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid payroll recurring earning identifier",
-			payrollErrorDetails(PAYROLL_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parsePayrollRecurringDeductionId(
@@ -245,13 +200,9 @@ export function parsePayrollRecurringDeductionId(
 ): Result<PayrollRecurringDeductionId> {
 	const parsed = payrollRecurringDeductionIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid payroll recurring deduction identifier",
-			payrollErrorDetails(PAYROLL_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parsePayrollVariableInputId(
@@ -259,13 +210,9 @@ export function parsePayrollVariableInputId(
 ): Result<PayrollVariableInputId> {
 	const parsed = payrollVariableInputIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid payroll variable input identifier",
-			payrollErrorDetails(PAYROLL_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parsePayrollRunEmployeeId(
@@ -273,13 +220,9 @@ export function parsePayrollRunEmployeeId(
 ): Result<PayrollRunEmployeeId> {
 	const parsed = payrollRunEmployeeIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid payroll run employee identifier",
-			payrollErrorDetails(PAYROLL_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parsePayrollResultLineId(
@@ -287,13 +230,9 @@ export function parsePayrollResultLineId(
 ): Result<PayrollResultLineId> {
 	const parsed = payrollResultLineIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid payroll result line identifier",
-			payrollErrorDetails(PAYROLL_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parsePayrollStatutoryResultId(
@@ -301,11 +240,7 @@ export function parsePayrollStatutoryResultId(
 ): Result<PayrollStatutoryResultId> {
 	const parsed = payrollStatutoryResultIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid payroll statutory result identifier",
-			payrollErrorDetails(PAYROLL_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }

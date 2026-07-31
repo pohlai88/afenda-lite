@@ -1,4 +1,4 @@
-import { fail, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import { resolveSearchStore } from "./resolve-store";
 import { searchListIdsInputSchema } from "./schemas";
@@ -15,8 +15,8 @@ export function listSearchDocumentIds(
 	const parsed = searchListIdsInputSchema.safeParse(input);
 	if (!parsed.success) {
 		return Promise.resolve(
-			fail("BAD_REQUEST", "Invalid search list-ids input", {
-				fieldErrors: parsed.error.flatten().fieldErrors,
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Invalid search list-ids input",
 			}),
 		);
 	}

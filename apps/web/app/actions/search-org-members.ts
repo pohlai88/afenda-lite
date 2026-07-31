@@ -1,8 +1,8 @@
 "use server";
 
 import { requireRole } from "@afenda/auth";
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { createCorrelationId } from "@afenda/http";
-
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { forbidUnlessPermission } from "@/app/actions/permission-gate";
 import {
@@ -11,11 +11,6 @@ import {
 } from "@/modules/identity/domain/organization-member-search";
 import { searchOrgMembersQuerySchema } from "@/modules/identity/schemas/search-org-members";
 import { logProductEvent } from "@/modules/platform/observability/product-log";
-import {
-	type ActionResult,
-	actionFail,
-	actionFailInternal,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export interface SearchOrgMembersActionData {
@@ -34,11 +29,9 @@ export async function searchOrgMembersAction(
 
 	const parsed = parseSchema(searchOrgMembersQuerySchema, input);
 	if (!parsed.success) {
-		return actionFail(
-			"VALIDATION_ERROR",
-			"Enter a non-empty search query.",
-			parsed.details,
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "Enter a non-empty search query.",
+		});
 	}
 
 	const permissionDenied = await forbidUnlessPermission(
@@ -70,9 +63,6 @@ export async function searchOrgMembersAction(
 			path: "searchOrgMembersAction",
 			code: "INTERNAL_ERROR",
 		});
-		return actionFailInternal(
-			"Could not search organization members. Try again or contact an admin.",
-			correlationId,
-		);
+		return errorResult.fail("INTERNAL_ERROR", { correlationId });
 	}
 }

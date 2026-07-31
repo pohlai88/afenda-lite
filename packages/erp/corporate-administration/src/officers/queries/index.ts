@@ -1,11 +1,10 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	CORPORATE_ADMINISTRATION_QUERY_PERMISSIONS,
 	requireCorporateAdministrationPermission,
 } from "../../authorization";
 import type { CorporateAdministrationQueryOptions } from "../../command-options";
-import { corporateAdministrationErrorDetails } from "../../error-codes";
 import { parseCorporateAdministrationInput } from "../../parse-input";
 import { calculateOfficerVacancyStatus } from "../rules";
 import {
@@ -100,7 +99,7 @@ export async function getOfficerAppointment(
 	}
 	return result.data === null
 		? notFound("officerAppointment")
-		: ok(result.data);
+		: errorResult.ok(result.data);
 }
 
 export async function getOfficerVacancyStatus(
@@ -136,7 +135,7 @@ export async function getOfficerVacancyStatus(
 	if (!appointments.ok) {
 		return appointments;
 	}
-	return ok(
+	return errorResult.ok(
 		calculateOfficerVacancyStatus({
 			office: office.data,
 			activeAppointments: appointments.data,
@@ -156,12 +155,8 @@ function authorize(
 	});
 }
 
-function notFound(entityType: string): Result<never> {
-	return fail(
-		"NOT_FOUND",
-		"Corporate Administration record was not found.",
-		corporateAdministrationErrorDetails("CORPORATE_ADMINISTRATION_NOT_FOUND", {
-			entityType,
-		}),
-	);
+function notFound(_entityType: string): Result<never> {
+	return errorResult.fail("NOT_FOUND", {
+		publicMessage: "Corporate Administration record was not found.",
+	});
 }

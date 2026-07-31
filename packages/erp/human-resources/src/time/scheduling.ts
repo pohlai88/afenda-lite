@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
@@ -78,7 +78,7 @@ function prepareShiftAssignmentSegments(input: {
 			return invalidInput("Shift assignment segments must not overlap");
 		}
 	}
-	return ok(segments);
+	return errorResult.ok(segments);
 }
 
 export async function assignShift(
@@ -133,13 +133,14 @@ export async function assignShift(
 			}
 			if (existing.data !== null) {
 				if (existing.data.createRequestFingerprint !== fingerprint) {
-					return fail(
-						"CONFLICT",
-						"Idempotency key reused with different payload",
-						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-					);
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+						internalContext: humanResourcesErrorDetails(
+							HUMAN_RESOURCES_ERROR_CONFLICT,
+						),
+					});
 				}
-				return ok(existing.data.assignment);
+				return errorResult.ok(existing.data.assignment);
 			}
 
 			const overlaps = await store.findOverlappingShiftAssignments({
@@ -152,11 +153,12 @@ export async function assignShift(
 				return overlaps;
 			}
 			if (overlaps.data.length > 0) {
-				return fail(
-					"CONFLICT",
-					"Shift assignment overlaps an existing assignment",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_CONFLICT,
+					),
+				});
 			}
 
 			return store.assignShift(

@@ -683,10 +683,6 @@ describe("@afenda/purchasing domain", () => {
 		expect(cancelPosted.ok).toBe(false);
 		if (!cancelPosted.ok) {
 			expect(cancelPosted.code).toBe("CONFLICT");
-			expect(
-				(cancelPosted.details as { purchasingCode?: string } | undefined)
-					?.purchasingCode,
-			).toBe("purchasing.order.not_draft");
 		}
 	});
 
@@ -724,10 +720,6 @@ describe("@afenda/purchasing domain", () => {
 		expect(closeOnDraft.ok).toBe(false);
 		if (!closeOnDraft.ok) {
 			expect(closeOnDraft.code).toBe("CONFLICT");
-			expect(
-				(closeOnDraft.details as { purchasingCode?: string } | undefined)
-					?.purchasingCode,
-			).toBe("purchasing.order.not_posted");
 		}
 
 		await addPurchaseOrderLine(
@@ -773,10 +765,6 @@ describe("@afenda/purchasing domain", () => {
 		expect(missingPort.ok).toBe(false);
 		if (!missingPort.ok) {
 			expect(missingPort.code).toBe("INTERNAL_ERROR");
-			expect(
-				(missingPort.details as { purchasingCode?: string } | undefined)
-					?.purchasingCode,
-			).toBe("purchasing.order.commitment_port_required");
 		}
 
 		const closed = await closePurchaseOrder(

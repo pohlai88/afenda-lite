@@ -1,8 +1,6 @@
 // biome-ignore-all lint/style/useDestructuring: Explicit first-issue access keeps optional validation state visible.
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { z } from "zod";
-
-import { corporateAdministrationErrorDetails } from "./error-codes";
 import { normalizeSafeFieldPath } from "./internal/safe-field-path";
 
 function omitUndefinedObjectFields<TValue>(value: TValue): TValue {
@@ -41,21 +39,16 @@ export function parseCorporateAdministrationInput<TSchema extends z.ZodType>(
 	const parsed = schema.safeParse(input);
 
 	if (parsed.success) {
-		return ok(omitUndefinedObjectFields(parsed.data));
+		return errorResult.ok(omitUndefinedObjectFields(parsed.data));
 	}
 
 	const firstIssue = parsed.error.issues[0];
-	const field =
+	const _field =
 		firstIssue === undefined
 			? undefined
 			: normalizeSafeFieldPath(firstIssue.path);
 
-	return fail(
-		"VALIDATION_ERROR",
-		"Corporate Administration input is invalid",
-		corporateAdministrationErrorDetails(
-			"CORPORATE_ADMINISTRATION_VALIDATION_FAILED",
-			field === undefined ? {} : { field },
-		),
-	);
+	return errorResult.fail("VALIDATION_ERROR", {
+		publicMessage: "Corporate Administration input is invalid",
+	});
 }

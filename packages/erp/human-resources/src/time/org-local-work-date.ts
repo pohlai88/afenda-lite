@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type { HumanResourcesWorkCalendarId } from "../brands";
 import {
@@ -60,13 +60,14 @@ async function loadActiveCalendarTimezone(input: {
 		return calendar;
 	}
 	if (calendar.data === null || !lineageEligibleWorkCalendar(calendar.data)) {
-		return fail(
-			"NOT_FOUND",
-			"Work calendar not found.",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-		);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "The requested resource was not found",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			),
+		});
 	}
-	return ok({ timezone: calendar.data.timezone });
+	return errorResult.ok({ timezone: calendar.data.timezone });
 }
 
 /**
@@ -140,5 +141,5 @@ export async function resolveEmploymentOrganizationLocalWorkDate(
 		workDate = civilDateInTimeZone(input.instant, timezone);
 	}
 
-	return ok({ workDate, timezone });
+	return errorResult.ok({ workDate, timezone });
 }

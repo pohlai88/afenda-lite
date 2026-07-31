@@ -1,7 +1,20 @@
+import { errorResult } from "@afenda/errors";
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+	return typeof value === "object" && value !== null;
+}
+
+export function humanResourcesContextFromResult(
+	result: unknown,
+): Record<string, unknown> | undefined {
+	const context = errorResult.context(result);
+	return isRecord(context) ? context : undefined;
+}
+
 export function humanResourcesCodeFromResult(result: {
 	details?: unknown;
 }): string | undefined {
-	const { details } = result;
+	const details = humanResourcesContextFromResult(result);
 	if (typeof details !== "object" || details === null) {
 		return;
 	}

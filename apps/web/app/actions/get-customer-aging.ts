@@ -1,15 +1,11 @@
 "use server";
 
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { type CustomerAging, getCustomerAging } from "@afenda/receivables";
 import { z } from "zod";
-
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
 import { createReceivablesCommandOptions } from "@/lib/erp/receivables-command-options";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export interface GetCustomerAgingActionData {
@@ -38,11 +34,9 @@ export async function getCustomerAgingAction(input: {
 		execute: async (session) => {
 			const parsed = parseSchema(schema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid customer, currency, and as-of date.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid customer, currency, and as-of date.",
+				});
 			}
 			const mapped = mapPackageResult(
 				await getCustomerAging(

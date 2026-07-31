@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { HumanResourcesEmployeeId } from "../brands";
 import {
 	HUMAN_RESOURCES_ERROR_FORBIDDEN,
@@ -65,11 +65,11 @@ export async function evaluateCaseReadAccess(
 	const { employeeCase } = input;
 
 	if (employeeCase.organizationId !== input.organizationId) {
-		return fail(
-			"FORBIDDEN",
-			"No access to this employee relations case",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
-		);
+		return errorResult.fail("FORBIDDEN", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_FORBIDDEN,
+			),
+		});
 	}
 
 	const adminPermissions = [
@@ -84,7 +84,7 @@ export async function evaluateCaseReadAccess(
 		0,
 	);
 	if (hasAdmin) {
-		return ok({
+		return errorResult.ok({
 			allowed: true,
 			projectedFields: INVESTIGATOR_FIELDS,
 			employeeCase,
@@ -99,7 +99,7 @@ export async function evaluateCaseReadAccess(
 			permission: HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CASE_EXCEPTIONAL_ADMIN,
 		});
 		if (hasLegalHold) {
-			return ok({
+			return errorResult.ok({
 				allowed: true,
 				projectedFields: INVESTIGATOR_FIELDS,
 				employeeCase,
@@ -121,7 +121,7 @@ export async function evaluateCaseReadAccess(
 			employeeId: input.actorEmployeeId,
 		});
 		if (isInvestigator.ok && isInvestigator.data) {
-			return ok({
+			return errorResult.ok({
 				allowed: true,
 				projectedFields: INVESTIGATOR_FIELDS,
 				employeeCase,
@@ -138,18 +138,18 @@ export async function evaluateCaseReadAccess(
 
 	if (participantAccess.ok && participantAccess.data) {
 		if (input.accessType === "read") {
-			return ok({
+			return errorResult.ok({
 				allowed: true,
 				projectedFields: PARTICIPANT_FIELDS,
 				employeeCase,
 				reason: "Case participant",
 			});
 		}
-		return fail(
-			"FORBIDDEN",
-			"Participants can only read case information",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
-		);
+		return errorResult.fail("FORBIDDEN", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_FORBIDDEN,
+			),
+		});
 	}
 
 	const managerAccess = await checkManagerCaseAccess(store, {
@@ -160,25 +160,25 @@ export async function evaluateCaseReadAccess(
 
 	if (managerAccess.ok && managerAccess.data) {
 		if (input.accessType === "read") {
-			return ok({
+			return errorResult.ok({
 				allowed: true,
 				projectedFields: BASIC_FIELDS,
 				employeeCase,
 				reason: "Manager of case participant",
 			});
 		}
-		return fail(
-			"FORBIDDEN",
-			"Managers can only read basic case information",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
-		);
+		return errorResult.fail("FORBIDDEN", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_FORBIDDEN,
+			),
+		});
 	}
 
-	return fail(
-		"FORBIDDEN",
-		"No access to this employee relations case",
-		humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
-	);
+	return errorResult.fail("FORBIDDEN", {
+		internalContext: humanResourcesErrorDetails(
+			HUMAN_RESOURCES_ERROR_FORBIDDEN,
+		),
+	});
 }
 
 async function checkCaseInvestigatorAccess(
@@ -194,9 +194,9 @@ async function checkCaseInvestigatorAccess(
 		userId: input.employeeCase.ownerActorUserId,
 	});
 	if (!(ownerMapping.ok && ownerMapping.data)) {
-		return ok(false);
+		return errorResult.ok(false);
 	}
-	return ok(ownerMapping.data.employeeId === input.employeeId);
+	return errorResult.ok(ownerMapping.data.employeeId === input.employeeId);
 }
 
 async function checkCaseParticipantAccess(
@@ -210,7 +210,7 @@ async function checkCaseParticipantAccess(
 	const { employeeCase } = input;
 
 	if (employeeCase.employeeId === input.employeeId) {
-		return ok(true);
+		return errorResult.ok(true);
 	}
 
 	if (employeeCase.subjectActorUserId) {
@@ -223,7 +223,7 @@ async function checkCaseParticipantAccess(
 			subjectMapping.data &&
 			subjectMapping.data.employeeId === input.employeeId
 		) {
-			return ok(true);
+			return errorResult.ok(true);
 		}
 	}
 
@@ -236,7 +236,7 @@ async function checkCaseParticipantAccess(
 		);
 	}
 
-	return ok(false);
+	return errorResult.ok(false);
 }
 
 async function checkParticipantEmployeeAtIndex(
@@ -247,7 +247,7 @@ async function checkParticipantEmployeeAtIndex(
 ): Promise<Result<boolean>> {
 	const participant = participants[index];
 	if (participant === undefined) {
-		return ok(false);
+		return errorResult.ok(false);
 	}
 	if (participant.actorUserId) {
 		const mapping = await store.getUserEmployeeMapping({
@@ -259,7 +259,7 @@ async function checkParticipantEmployeeAtIndex(
 			mapping.data &&
 			mapping.data.employeeId === input.employeeId
 		) {
-			return ok(true);
+			return errorResult.ok(true);
 		}
 	}
 	return checkParticipantEmployeeAtIndex(store, input, participants, index + 1);
@@ -286,7 +286,7 @@ async function checkManagerCaseAccess(
 		isPrimaryManager.ok &&
 		isPrimaryManager.data === input.managerEmployeeId
 	) {
-		return ok(true);
+		return errorResult.ok(true);
 	}
 
 	if (Array.isArray(employeeCase.participants)) {
@@ -299,7 +299,7 @@ async function checkManagerCaseAccess(
 		);
 	}
 
-	return ok(false);
+	return errorResult.ok(false);
 }
 
 async function checkParticipantManagerAtIndex(
@@ -314,7 +314,7 @@ async function checkParticipantManagerAtIndex(
 ): Promise<Result<boolean>> {
 	const participant = participants[index];
 	if (participant === undefined) {
-		return ok(false);
+		return errorResult.ok(false);
 	}
 	if (participant.actorUserId) {
 		const mapping = await store.getUserEmployeeMapping({
@@ -329,7 +329,7 @@ async function checkParticipantManagerAtIndex(
 				asOf,
 			});
 			if (manager.ok && manager.data === input.managerEmployeeId) {
-				return ok(true);
+				return errorResult.ok(true);
 			}
 		}
 	}

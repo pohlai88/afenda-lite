@@ -1,4 +1,4 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	parseHumanResourcesEmployeeId,
@@ -44,7 +44,7 @@ export function createStoreAssignmentContextQuery(input: {
 			}
 
 			if (assignment.data === null) {
-				return ok({
+				return errorResult.ok({
 					employmentId: query.employmentId,
 					employeeId: query.employeeId,
 					departmentId: null,
@@ -62,7 +62,7 @@ export function createStoreAssignmentContextQuery(input: {
 			}
 
 			const dimensions = assignment.data.organizationDimensions;
-			return ok({
+			return errorResult.ok({
 				employmentId: query.employmentId,
 				employeeId: query.employeeId,
 				departmentId: position.data?.departmentId ?? null,

@@ -1,4 +1,4 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { HumanResourcesEmployeeId } from "@afenda/human-resources/brands";
 import { listHumanResourcesSubjectInventoryRecords } from "@afenda/human-resources/privacy/subject-data-collector";
 import { resolveHumanResourcesStore } from "@afenda/human-resources/resolve-store";
@@ -25,7 +25,7 @@ export function createHumanResourcesSubjectInventory(): PrivacySubjectInventoryP
 	return {
 		async listSubjectRecords(input) {
 			if (input.moduleId !== "human-resources") {
-				return await ok([]);
+				return await errorResult.ok([]);
 			}
 			return await listHumanResourcesSubjectRecords({
 				organizationId: input.organizationId,
@@ -43,7 +43,7 @@ export function createModuleSubjectInventory(
 	}
 	return {
 		async listSubjectRecords() {
-			return await ok([]);
+			return await errorResult.ok([]);
 		},
 	};
 }

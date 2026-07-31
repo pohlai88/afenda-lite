@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -22,7 +22,7 @@ const ORGANIZATION_ID = "org-reliability";
 
 function createHarness(
 	outcomes: Result<ReliabilityExecutionOutcome>[] = [
-		ok({ kind: "acknowledged", receiptId: "receipt-1" }),
+		errorResult.ok({ kind: "acknowledged", receiptId: "receipt-1" }),
 	],
 ) {
 	let now = new Date("2026-01-01T00:00:00.000Z");
@@ -35,7 +35,10 @@ function createHarness(
 			async execute() {
 				executions += 1;
 				return await (outcomes.shift() ??
-					ok({ kind: "acknowledged", receiptId: "receipt-replay" }));
+					errorResult.ok({
+						kind: "acknowledged",
+						receiptId: "receipt-replay",
+					}));
 			},
 		},
 		failureClassifier: {
@@ -92,7 +95,9 @@ async function claimAndExecute(
 	}
 	const item = claimed.data.find((candidate) => candidate.id === workItemId);
 	if (item === undefined) {
-		return fail("CONFLICT", "Reliability work was not due");
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Reliability work was not due",
+		});
 	}
 	return executeReliabilityWork(
 		{
@@ -120,8 +125,8 @@ describe("HR integration reliability kernel", () => {
 
 	it("retries only when due, then replays terminal success idempotently", async () => {
 		const harness = createHarness([
-			fail("INTERNAL_ERROR", "connector timeout"),
-			ok({ kind: "acknowledged", receiptId: "receipt-recovered" }),
+			errorResult.fail("INTERNAL_ERROR"),
+			errorResult.ok({ kind: "acknowledged", receiptId: "receipt-recovered" }),
 		]);
 		const created = await register(harness.ports);
 		if (!created.ok) {
@@ -182,7 +187,9 @@ describe("HR integration reliability kernel", () => {
 
 	it("atomically dead-letters permanent failure and creates one replay", async () => {
 		const harness = createHarness([
-			fail("VALIDATION_ERROR", "remote contract rejected payload"),
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "remote contract rejected payload",
+			}),
 		]);
 		const created = await register(harness.ports);
 		if (!created.ok) {
@@ -248,9 +255,7 @@ describe("HR integration reliability kernel", () => {
 			commitAttempt(input) {
 				if (rejectFirstCommit) {
 					rejectFirstCommit = false;
-					return Promise.resolve(
-						fail("INTERNAL_ERROR", "simulated transaction commit failure"),
-					);
+					return Promise.resolve(errorResult.fail("INTERNAL_ERROR"));
 				}
 				return durableStore.commitAttempt(input);
 			},
@@ -265,7 +270,7 @@ describe("HR integration reliability kernel", () => {
 					const key = `${item.id}:${item.requestFingerprint}`;
 					const receiptId = externalReceipts.get(key) ?? "receipt-deduplicated";
 					externalReceipts.set(key, receiptId);
-					return await ok({ kind: "acknowledged", receiptId });
+					return await errorResult.ok({ kind: "acknowledged", receiptId });
 				},
 			},
 			failureClassifier: { isRetryable: () => true },
@@ -305,7 +310,7 @@ describe("HR integration reliability kernel", () => {
 	it("holds accepted work until a matching acknowledgement arrives", async () => {
 		const deadline = new Date("2026-01-01T01:00:00.000Z");
 		const harness = createHarness([
-			ok({
+			errorResult.ok({
 				kind: "accepted",
 				receiptId: "receipt-async",
 				acknowledgementDeadlineAt: deadline,
@@ -380,12 +385,12 @@ describe("HR integration reliability kernel", () => {
 
 	it("reclaims work whose acknowledgement deadline expired", async () => {
 		const harness = createHarness([
-			ok({
+			errorResult.ok({
 				kind: "accepted",
 				receiptId: "receipt-expiring",
 				acknowledgementDeadlineAt: new Date("2026-01-01T00:01:00.000Z"),
 			}),
-			ok({ kind: "acknowledged", receiptId: "receipt-reissued" }),
+			errorResult.ok({ kind: "acknowledged", receiptId: "receipt-reissued" }),
 		]);
 		const created = await register(harness.ports, "idem-expiring");
 		if (!created.ok) {
@@ -408,7 +413,7 @@ describe("HR integration reliability kernel", () => {
 
 	it("rejects accepted outcomes without future acknowledgement evidence", async () => {
 		const harness = createHarness([
-			ok({
+			errorResult.ok({
 				kind: "accepted",
 				receiptId: "receipt-invalid-deadline",
 				acknowledgementDeadlineAt: new Date("2026-01-01T00:00:00.000Z"),
@@ -491,7 +496,7 @@ describe("HR integration reliability kernel", () => {
 				},
 				harness.ports.store,
 			),
-		).toEqual(ok(null));
+		).toEqual(errorResult.ok(null));
 		const first = await checkpointConnectorCursor(
 			{
 				organizationId: ORGANIZATION_ID,

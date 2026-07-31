@@ -1,7 +1,5 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import { z } from "zod";
-
-import { corporateAdministrationErrorDetails } from "./error-codes";
 import type { CommandFingerprint, OrganizationId } from "./kernel/brands";
 import {
 	assertCanonicalJsonValue,
@@ -69,27 +67,17 @@ export function createCorporateAdministrationCommandFingerprint<
 	}
 
 	if (!commandIdentitySchema.safeParse(input.commandId).success) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Corporate Administration command identity is invalid",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_VALIDATION_FAILED",
-				{ field: "commandId" },
-			),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "Corporate Administration command identity is invalid",
+		});
 	}
 
 	try {
 		assertCanonicalJsonValue(parsedInput.data);
 	} catch {
-		return fail(
-			"VALIDATION_ERROR",
-			"Corporate Administration command input is not canonical",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_VALIDATION_FAILED",
-				{ field: "input" },
-			),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "Corporate Administration command input is not canonical",
+		});
 	}
 
 	const envelope: CorporateAdministrationCommandFingerprintEnvelope<TCommandId> =
@@ -106,5 +94,5 @@ export function createCorporateAdministrationCommandFingerprint<
 			fingerprint: createCanonicalFingerprint(envelope),
 		});
 
-	return ok(identity);
+	return errorResult.ok(identity);
 }

@@ -1,4 +1,4 @@
-import { fail, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import { resolveSearchStore } from "./resolve-store";
 import { searchQueryOptionsSchema } from "./schemas";
@@ -15,8 +15,8 @@ export function searchDocuments(
 	const parsed = searchQueryOptionsSchema.safeParse(input);
 	if (!parsed.success) {
 		return Promise.resolve(
-			fail("BAD_REQUEST", "Invalid search query input", {
-				fieldErrors: parsed.error.flatten().fieldErrors,
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Invalid search query input",
 			}),
 		);
 	}

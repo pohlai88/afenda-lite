@@ -29,9 +29,7 @@ describe("Corporate Administration jurisdiction profile form feedback", () => {
 					ok: false,
 					code: "CONFLICT",
 					message: "Corporate Administration legal company version is stale.",
-					details: {
-						reason: "CORPORATE_ADMINISTRATION_STALE_VERSION",
-					},
+					messageKey: "errors.conflict",
 				},
 			}),
 		);
@@ -51,9 +49,7 @@ describe("Corporate Administration jurisdiction profile form feedback", () => {
 					code: "CONFLICT",
 					message:
 						"Corporate Administration jurisdiction profile overlaps an existing profile.",
-					details: {
-						reason: "CORPORATE_ADMINISTRATION_EFFECTIVE_RANGE_OVERLAP",
-					},
+					messageKey: "errors.conflict",
 				},
 			}),
 		);

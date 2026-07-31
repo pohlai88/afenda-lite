@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import { z } from "zod";
 
 import {
@@ -598,13 +598,13 @@ export function parseHumanResourcesPersonId(
 ): Result<HumanResourcesPersonId> {
 	const parsed = humanResourcesPersonIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid person identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesWorkerId(
@@ -612,13 +612,13 @@ export function parseHumanResourcesWorkerId(
 ): Result<HumanResourcesWorkerId> {
 	const parsed = humanResourcesWorkerIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid worker identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesEmployeeId(
@@ -626,13 +626,13 @@ export function parseHumanResourcesEmployeeId(
 ): Result<HumanResourcesEmployeeId> {
 	const parsed = humanResourcesEmployeeIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid employee identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesEmploymentId(
@@ -640,13 +640,13 @@ export function parseHumanResourcesEmploymentId(
 ): Result<HumanResourcesEmploymentId> {
 	const parsed = humanResourcesEmploymentIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid employment identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesEmploymentContractId(
@@ -654,13 +654,13 @@ export function parseHumanResourcesEmploymentContractId(
 ): Result<HumanResourcesEmploymentContractId> {
 	const parsed = humanResourcesEmploymentContractIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid employment contract identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesPositionId(
@@ -668,13 +668,13 @@ export function parseHumanResourcesPositionId(
 ): Result<HumanResourcesPositionId> {
 	const parsed = humanResourcesPositionIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid position identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesAssignmentId(
@@ -682,13 +682,13 @@ export function parseHumanResourcesAssignmentId(
 ): Result<HumanResourcesAssignmentId> {
 	const parsed = humanResourcesAssignmentIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid assignment identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesDepartmentId(
@@ -696,13 +696,13 @@ export function parseHumanResourcesDepartmentId(
 ): Result<HumanResourcesDepartmentId> {
 	const parsed = humanResourcesDepartmentIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid department identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesJobId(
@@ -710,13 +710,13 @@ export function parseHumanResourcesJobId(
 ): Result<HumanResourcesJobId> {
 	const parsed = humanResourcesJobIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid job identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesReportingLineId(
@@ -724,13 +724,13 @@ export function parseHumanResourcesReportingLineId(
 ): Result<HumanResourcesReportingLineId> {
 	const parsed = humanResourcesReportingLineIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid reporting line identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesRequisitionId(
@@ -738,13 +738,13 @@ export function parseHumanResourcesRequisitionId(
 ): Result<HumanResourcesRequisitionId> {
 	const parsed = humanResourcesRequisitionIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid requisition identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesCandidateId(
@@ -752,13 +752,13 @@ export function parseHumanResourcesCandidateId(
 ): Result<HumanResourcesCandidateId> {
 	const parsed = humanResourcesCandidateIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid candidate identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesApplicationId(
@@ -766,13 +766,13 @@ export function parseHumanResourcesApplicationId(
 ): Result<HumanResourcesApplicationId> {
 	const parsed = humanResourcesApplicationIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid application identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesInterviewId(
@@ -780,13 +780,13 @@ export function parseHumanResourcesInterviewId(
 ): Result<HumanResourcesInterviewId> {
 	const parsed = humanResourcesInterviewIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid interview identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesInterviewEvaluationId(
@@ -794,13 +794,13 @@ export function parseHumanResourcesInterviewEvaluationId(
 ): Result<HumanResourcesInterviewEvaluationId> {
 	const parsed = humanResourcesInterviewEvaluationIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid interview evaluation identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesOfferId(
@@ -808,13 +808,13 @@ export function parseHumanResourcesOfferId(
 ): Result<HumanResourcesOfferId> {
 	const parsed = humanResourcesOfferIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid offer identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesHireAttemptId(
@@ -822,13 +822,13 @@ export function parseHumanResourcesHireAttemptId(
 ): Result<HumanResourcesHireAttemptId> {
 	const parsed = humanResourcesHireAttemptIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid hire attempt identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesOnboardingCaseId(
@@ -836,13 +836,13 @@ export function parseHumanResourcesOnboardingCaseId(
 ): Result<HumanResourcesOnboardingCaseId> {
 	const parsed = humanResourcesOnboardingCaseIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid onboarding case identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesOnboardingTaskId(
@@ -850,13 +850,13 @@ export function parseHumanResourcesOnboardingTaskId(
 ): Result<HumanResourcesOnboardingTaskId> {
 	const parsed = humanResourcesOnboardingTaskIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid onboarding task identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesProbationReviewId(
@@ -864,13 +864,13 @@ export function parseHumanResourcesProbationReviewId(
 ): Result<HumanResourcesProbationReviewId> {
 	const parsed = humanResourcesProbationReviewIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid probation review identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesProbationAssessmentId(
@@ -878,13 +878,13 @@ export function parseHumanResourcesProbationAssessmentId(
 ): Result<HumanResourcesProbationAssessmentId> {
 	const parsed = humanResourcesProbationAssessmentIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid probation assessment identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesEmploymentConfirmationId(
@@ -892,13 +892,13 @@ export function parseHumanResourcesEmploymentConfirmationId(
 ): Result<HumanResourcesEmploymentConfirmationId> {
 	const parsed = humanResourcesEmploymentConfirmationIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid employment confirmation identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesEmploymentMovementId(
@@ -906,13 +906,13 @@ export function parseHumanResourcesEmploymentMovementId(
 ): Result<HumanResourcesEmploymentMovementId> {
 	const parsed = humanResourcesEmploymentMovementIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid employment movement identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesTerminationId(
@@ -920,13 +920,13 @@ export function parseHumanResourcesTerminationId(
 ): Result<HumanResourcesTerminationId> {
 	const parsed = humanResourcesTerminationIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid termination identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesOffboardingCaseId(
@@ -934,13 +934,13 @@ export function parseHumanResourcesOffboardingCaseId(
 ): Result<HumanResourcesOffboardingCaseId> {
 	const parsed = humanResourcesOffboardingCaseIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid offboarding case identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesOffboardingTaskId(
@@ -948,13 +948,13 @@ export function parseHumanResourcesOffboardingTaskId(
 ): Result<HumanResourcesOffboardingTaskId> {
 	const parsed = humanResourcesOffboardingTaskIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid offboarding task identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesExitInterviewId(
@@ -962,13 +962,13 @@ export function parseHumanResourcesExitInterviewId(
 ): Result<HumanResourcesExitInterviewId> {
 	const parsed = humanResourcesExitInterviewIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid exit interview identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesClearanceId(
@@ -976,13 +976,13 @@ export function parseHumanResourcesClearanceId(
 ): Result<HumanResourcesClearanceId> {
 	const parsed = humanResourcesClearanceIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid clearance identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesOffboardingAccessRevocationId(
@@ -991,13 +991,13 @@ export function parseHumanResourcesOffboardingAccessRevocationId(
 	const parsed =
 		humanResourcesOffboardingAccessRevocationIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid offboarding access revocation identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesOffboardingPayrollHandoffId(
@@ -1005,13 +1005,13 @@ export function parseHumanResourcesOffboardingPayrollHandoffId(
 ): Result<HumanResourcesOffboardingPayrollHandoffId> {
 	const parsed = humanResourcesOffboardingPayrollHandoffIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid offboarding payroll handoff identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesOnboardingOrientationId(
@@ -1019,13 +1019,13 @@ export function parseHumanResourcesOnboardingOrientationId(
 ): Result<HumanResourcesOnboardingOrientationId> {
 	const parsed = humanResourcesOnboardingOrientationIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid onboarding orientation identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesOnboardingEquipmentHandoffId(
@@ -1033,13 +1033,13 @@ export function parseHumanResourcesOnboardingEquipmentHandoffId(
 ): Result<HumanResourcesOnboardingEquipmentHandoffId> {
 	const parsed = humanResourcesOnboardingEquipmentHandoffIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid onboarding equipment handoff identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesOnboardingAccessHandoffId(
@@ -1047,13 +1047,13 @@ export function parseHumanResourcesOnboardingAccessHandoffId(
 ): Result<HumanResourcesOnboardingAccessHandoffId> {
 	const parsed = humanResourcesOnboardingAccessHandoffIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid onboarding access handoff identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesCompensationGradeId(
@@ -1061,13 +1061,13 @@ export function parseHumanResourcesCompensationGradeId(
 ): Result<HumanResourcesCompensationGradeId> {
 	const parsed = humanResourcesCompensationGradeIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid compensation grade identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesSalaryBandId(
@@ -1075,13 +1075,13 @@ export function parseHumanResourcesSalaryBandId(
 ): Result<HumanResourcesSalaryBandId> {
 	const parsed = humanResourcesSalaryBandIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid salary band identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesCompensationGradeProgressionRuleId(
@@ -1090,13 +1090,13 @@ export function parseHumanResourcesCompensationGradeProgressionRuleId(
 	const parsed =
 		humanResourcesCompensationGradeProgressionRuleIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid compensation grade progression rule identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesEmployeeCompensationId(
@@ -1104,13 +1104,13 @@ export function parseHumanResourcesEmployeeCompensationId(
 ): Result<HumanResourcesEmployeeCompensationId> {
 	const parsed = humanResourcesEmployeeCompensationIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid employee compensation identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesCompensationProposalId(
@@ -1118,13 +1118,13 @@ export function parseHumanResourcesCompensationProposalId(
 ): Result<HumanResourcesCompensationProposalId> {
 	const parsed = humanResourcesCompensationProposalIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid compensation proposal identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesCompensationReviewId(
@@ -1132,13 +1132,13 @@ export function parseHumanResourcesCompensationReviewId(
 ): Result<HumanResourcesCompensationReviewId> {
 	const parsed = humanResourcesCompensationReviewIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid compensation review identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesCompensationReviewCycleId(
@@ -1146,13 +1146,13 @@ export function parseHumanResourcesCompensationReviewCycleId(
 ): Result<HumanResourcesCompensationReviewCycleId> {
 	const parsed = humanResourcesCompensationReviewCycleIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid compensation review cycle identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesBenefitPlanId(
@@ -1160,13 +1160,13 @@ export function parseHumanResourcesBenefitPlanId(
 ): Result<HumanResourcesBenefitPlanId> {
 	const parsed = humanResourcesBenefitPlanIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid benefit plan identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesBenefitEnrollmentId(
@@ -1174,13 +1174,13 @@ export function parseHumanResourcesBenefitEnrollmentId(
 ): Result<HumanResourcesBenefitEnrollmentId> {
 	const parsed = humanResourcesBenefitEnrollmentIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid benefit enrollment identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesBenefitEnrollmentDependentId(
@@ -1188,13 +1188,13 @@ export function parseHumanResourcesBenefitEnrollmentDependentId(
 ): Result<HumanResourcesBenefitEnrollmentDependentId> {
 	const parsed = humanResourcesBenefitEnrollmentDependentIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid benefit enrollment dependent identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesCourseId(
@@ -1202,13 +1202,13 @@ export function parseHumanResourcesCourseId(
 ): Result<HumanResourcesCourseId> {
 	const parsed = humanResourcesCourseIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid course identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesSessionId(
@@ -1216,13 +1216,13 @@ export function parseHumanResourcesSessionId(
 ): Result<HumanResourcesSessionId> {
 	const parsed = humanResourcesSessionIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid session identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesLearningAssignmentId(
@@ -1230,13 +1230,13 @@ export function parseHumanResourcesLearningAssignmentId(
 ): Result<HumanResourcesLearningAssignmentId> {
 	const parsed = humanResourcesLearningAssignmentIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid learning assignment identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesCompletionId(
@@ -1244,13 +1244,13 @@ export function parseHumanResourcesCompletionId(
 ): Result<HumanResourcesCompletionId> {
 	const parsed = humanResourcesCompletionIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid completion identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesCertificationId(
@@ -1258,13 +1258,13 @@ export function parseHumanResourcesCertificationId(
 ): Result<HumanResourcesCertificationId> {
 	const parsed = humanResourcesCertificationIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid certification identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesLearningAttendanceId(
@@ -1272,13 +1272,13 @@ export function parseHumanResourcesLearningAttendanceId(
 ): Result<HumanResourcesLearningAttendanceId> {
 	const parsed = humanResourcesLearningAttendanceIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid learning attendance identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesLeavePolicyId(
@@ -1286,13 +1286,13 @@ export function parseHumanResourcesLeavePolicyId(
 ): Result<HumanResourcesLeavePolicyId> {
 	const parsed = humanResourcesLeavePolicyIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid leave policy identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesLeaveEntitlementId(
@@ -1300,13 +1300,13 @@ export function parseHumanResourcesLeaveEntitlementId(
 ): Result<HumanResourcesLeaveEntitlementId> {
 	const parsed = humanResourcesLeaveEntitlementIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid leave entitlement identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesLeaveAdjustmentId(
@@ -1314,13 +1314,13 @@ export function parseHumanResourcesLeaveAdjustmentId(
 ): Result<HumanResourcesLeaveAdjustmentId> {
 	const parsed = humanResourcesLeaveAdjustmentIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid leave adjustment identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesLeaveRequestId(
@@ -1328,13 +1328,13 @@ export function parseHumanResourcesLeaveRequestId(
 ): Result<HumanResourcesLeaveRequestId> {
 	const parsed = humanResourcesLeaveRequestIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid leave request identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesLeaveRequestSegmentId(
@@ -1342,13 +1342,13 @@ export function parseHumanResourcesLeaveRequestSegmentId(
 ): Result<HumanResourcesLeaveRequestSegmentId> {
 	const parsed = humanResourcesLeaveRequestSegmentIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid leave request segment identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesLeaveApprovalDecisionId(
@@ -1356,13 +1356,13 @@ export function parseHumanResourcesLeaveApprovalDecisionId(
 ): Result<HumanResourcesLeaveApprovalDecisionId> {
 	const parsed = humanResourcesLeaveApprovalDecisionIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid leave approval decision identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesPerformanceCycleId(
@@ -1370,13 +1370,13 @@ export function parseHumanResourcesPerformanceCycleId(
 ): Result<HumanResourcesPerformanceCycleId> {
 	const parsed = humanResourcesPerformanceCycleIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid performance cycle identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesGoalId(
@@ -1384,13 +1384,13 @@ export function parseHumanResourcesGoalId(
 ): Result<HumanResourcesGoalId> {
 	const parsed = humanResourcesGoalIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid performance goal identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesReviewId(
@@ -1398,13 +1398,13 @@ export function parseHumanResourcesReviewId(
 ): Result<HumanResourcesReviewId> {
 	const parsed = humanResourcesReviewIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid performance review identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesPerformanceCycleParticipantId(
@@ -1413,13 +1413,13 @@ export function parseHumanResourcesPerformanceCycleParticipantId(
 	const parsed =
 		humanResourcesPerformanceCycleParticipantIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid performance cycle participant identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesReviewParticipantId(
@@ -1427,13 +1427,13 @@ export function parseHumanResourcesReviewParticipantId(
 ): Result<HumanResourcesReviewParticipantId> {
 	const parsed = humanResourcesReviewParticipantIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid performance review participant identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesAssessmentId(
@@ -1441,13 +1441,13 @@ export function parseHumanResourcesAssessmentId(
 ): Result<HumanResourcesAssessmentId> {
 	const parsed = humanResourcesAssessmentIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid performance assessment identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesGoalProgressId(
@@ -1455,13 +1455,13 @@ export function parseHumanResourcesGoalProgressId(
 ): Result<HumanResourcesGoalProgressId> {
 	const parsed = humanResourcesGoalProgressIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid goal progress identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesImprovementCheckpointId(
@@ -1469,13 +1469,13 @@ export function parseHumanResourcesImprovementCheckpointId(
 ): Result<HumanResourcesImprovementCheckpointId> {
 	const parsed = humanResourcesImprovementCheckpointIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid improvement checkpoint identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesImprovementPlanId(
@@ -1483,13 +1483,13 @@ export function parseHumanResourcesImprovementPlanId(
 ): Result<HumanResourcesImprovementPlanId> {
 	const parsed = humanResourcesImprovementPlanIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid improvement plan identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesPerformanceGoalId(
@@ -1497,13 +1497,13 @@ export function parseHumanResourcesPerformanceGoalId(
 ): Result<HumanResourcesPerformanceGoalId> {
 	const parsed = humanResourcesPerformanceGoalIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid performance goal identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesPerformanceReviewId(
@@ -1511,13 +1511,13 @@ export function parseHumanResourcesPerformanceReviewId(
 ): Result<HumanResourcesPerformanceReviewId> {
 	const parsed = humanResourcesPerformanceReviewIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid performance review identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesPerformanceImprovementPlanId(
@@ -1525,13 +1525,13 @@ export function parseHumanResourcesPerformanceImprovementPlanId(
 ): Result<HumanResourcesPerformanceImprovementPlanId> {
 	const parsed = humanResourcesPerformanceImprovementPlanIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid improvement plan identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export const humanResourcesEmployeeCaseIdSchema = z
@@ -1571,13 +1571,13 @@ export function parseHumanResourcesEmployeeCaseId(
 ): Result<HumanResourcesEmployeeCaseId> {
 	const parsed = humanResourcesEmployeeCaseIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid employee case identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesEmployeeCaseEventId(
@@ -1585,13 +1585,13 @@ export function parseHumanResourcesEmployeeCaseEventId(
 ): Result<HumanResourcesEmployeeCaseEventId> {
 	const parsed = humanResourcesEmployeeCaseEventIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid employee case event identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesEmployeeCaseActionId(
@@ -1599,13 +1599,13 @@ export function parseHumanResourcesEmployeeCaseActionId(
 ): Result<HumanResourcesEmployeeCaseActionId> {
 	const parsed = humanResourcesEmployeeCaseActionIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid employee case action identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesEmployeeCaseAppealId(
@@ -1613,13 +1613,13 @@ export function parseHumanResourcesEmployeeCaseAppealId(
 ): Result<HumanResourcesEmployeeCaseAppealId> {
 	const parsed = humanResourcesEmployeeCaseAppealIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid employee case appeal identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesHeadcountPlanId(
@@ -1627,13 +1627,13 @@ export function parseHumanResourcesHeadcountPlanId(
 ): Result<HumanResourcesHeadcountPlanId> {
 	const parsed = humanResourcesHeadcountPlanIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid headcount plan identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesHeadcountPlanLineId(
@@ -1641,13 +1641,13 @@ export function parseHumanResourcesHeadcountPlanLineId(
 ): Result<HumanResourcesHeadcountPlanLineId> {
 	const parsed = humanResourcesHeadcountPlanLineIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid headcount plan line identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesHeadcountReservationId(
@@ -1655,13 +1655,13 @@ export function parseHumanResourcesHeadcountReservationId(
 ): Result<HumanResourcesHeadcountReservationId> {
 	const parsed = humanResourcesHeadcountReservationIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid headcount reservation identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesDocumentRequirementId(
@@ -1669,13 +1669,13 @@ export function parseHumanResourcesDocumentRequirementId(
 ): Result<HumanResourcesDocumentRequirementId> {
 	const parsed = humanResourcesDocumentRequirementIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid document requirement identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesEmployeeDocumentId(
@@ -1683,13 +1683,13 @@ export function parseHumanResourcesEmployeeDocumentId(
 ): Result<HumanResourcesEmployeeDocumentId> {
 	const parsed = humanResourcesEmployeeDocumentIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid employee document identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesWorkEligibilityId(
@@ -1697,13 +1697,13 @@ export function parseHumanResourcesWorkEligibilityId(
 ): Result<HumanResourcesWorkEligibilityId> {
 	const parsed = humanResourcesWorkEligibilityIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid work eligibility identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesPolicyAcknowledgementId(
@@ -1711,13 +1711,13 @@ export function parseHumanResourcesPolicyAcknowledgementId(
 ): Result<HumanResourcesPolicyAcknowledgementId> {
 	const parsed = humanResourcesPolicyAcknowledgementIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid policy acknowledgement identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export const humanResourcesCompetencyIdSchema = z
@@ -1992,13 +1992,13 @@ export function parseHumanResourcesCompetencyId(
 ): Result<HumanResourcesCompetencyId> {
 	const parsed = humanResourcesCompetencyIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid competency identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesJobCompetencyId(
@@ -2006,13 +2006,13 @@ export function parseHumanResourcesJobCompetencyId(
 ): Result<HumanResourcesJobCompetencyId> {
 	const parsed = humanResourcesJobCompetencyIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid job competency identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesCompetencyAssessmentId(
@@ -2020,13 +2020,13 @@ export function parseHumanResourcesCompetencyAssessmentId(
 ): Result<HumanResourcesCompetencyAssessmentId> {
 	const parsed = humanResourcesCompetencyAssessmentIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid competency assessment identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesTalentProfileId(
@@ -2034,13 +2034,13 @@ export function parseHumanResourcesTalentProfileId(
 ): Result<HumanResourcesTalentProfileId> {
 	const parsed = humanResourcesTalentProfileIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid talent profile identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesTalentProfileAssessmentId(
@@ -2048,13 +2048,13 @@ export function parseHumanResourcesTalentProfileAssessmentId(
 ): Result<HumanResourcesTalentProfileAssessmentId> {
 	const parsed = humanResourcesTalentProfileAssessmentIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid talent profile assessment identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesTalentPoolId(
@@ -2062,13 +2062,13 @@ export function parseHumanResourcesTalentPoolId(
 ): Result<HumanResourcesTalentPoolId> {
 	const parsed = humanResourcesTalentPoolIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid talent pool identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesTalentPoolMemberId(
@@ -2076,13 +2076,13 @@ export function parseHumanResourcesTalentPoolMemberId(
 ): Result<HumanResourcesTalentPoolMemberId> {
 	const parsed = humanResourcesTalentPoolMemberIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid talent pool member identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesTalentProfileMobilityId(
@@ -2090,13 +2090,13 @@ export function parseHumanResourcesTalentProfileMobilityId(
 ): Result<HumanResourcesTalentProfileMobilityId> {
 	const parsed = humanResourcesTalentProfileMobilityIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid talent profile mobility identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesTalentCriticalRoleReadinessId(
@@ -2105,13 +2105,13 @@ export function parseHumanResourcesTalentCriticalRoleReadinessId(
 	const parsed =
 		humanResourcesTalentCriticalRoleReadinessIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid talent critical role readiness identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesCareerPlanId(
@@ -2119,13 +2119,13 @@ export function parseHumanResourcesCareerPlanId(
 ): Result<HumanResourcesCareerPlanId> {
 	const parsed = humanResourcesCareerPlanIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid career plan identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesCareerPlanActionId(
@@ -2133,13 +2133,13 @@ export function parseHumanResourcesCareerPlanActionId(
 ): Result<HumanResourcesCareerPlanActionId> {
 	const parsed = humanResourcesCareerPlanActionIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid career plan action identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesSuccessionPlanId(
@@ -2147,13 +2147,13 @@ export function parseHumanResourcesSuccessionPlanId(
 ): Result<HumanResourcesSuccessionPlanId> {
 	const parsed = humanResourcesSuccessionPlanIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid succession plan identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesSuccessionCandidateId(
@@ -2161,13 +2161,13 @@ export function parseHumanResourcesSuccessionCandidateId(
 ): Result<HumanResourcesSuccessionCandidateId> {
 	const parsed = humanResourcesSuccessionCandidateIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid succession candidate identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesShiftId(
@@ -2175,13 +2175,13 @@ export function parseHumanResourcesShiftId(
 ): Result<HumanResourcesShiftId> {
 	const parsed = humanResourcesShiftIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid shift identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesAttendanceEventId(
@@ -2189,13 +2189,13 @@ export function parseHumanResourcesAttendanceEventId(
 ): Result<HumanResourcesAttendanceEventId> {
 	const parsed = humanResourcesAttendanceEventIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid attendance event identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesAttendanceAdjustmentId(
@@ -2203,13 +2203,13 @@ export function parseHumanResourcesAttendanceAdjustmentId(
 ): Result<HumanResourcesAttendanceAdjustmentId> {
 	const parsed = humanResourcesAttendanceAdjustmentIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid attendance adjustment identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesAttendanceRecordId(
@@ -2217,13 +2217,13 @@ export function parseHumanResourcesAttendanceRecordId(
 ): Result<HumanResourcesAttendanceRecordId> {
 	const parsed = humanResourcesAttendanceRecordIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid attendance record identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesTimesheetId(
@@ -2231,13 +2231,13 @@ export function parseHumanResourcesTimesheetId(
 ): Result<HumanResourcesTimesheetId> {
 	const parsed = humanResourcesTimesheetIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid timesheet identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesWorkCalendarId(
@@ -2245,13 +2245,13 @@ export function parseHumanResourcesWorkCalendarId(
 ): Result<HumanResourcesWorkCalendarId> {
 	const parsed = humanResourcesWorkCalendarIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid work calendar identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesWorkCalendarHolidayId(
@@ -2259,13 +2259,13 @@ export function parseHumanResourcesWorkCalendarHolidayId(
 ): Result<HumanResourcesWorkCalendarHolidayId> {
 	const parsed = humanResourcesWorkCalendarHolidayIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid work calendar holiday identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesEmploymentCalendarAssignmentId(
@@ -2274,13 +2274,13 @@ export function parseHumanResourcesEmploymentCalendarAssignmentId(
 	const parsed =
 		humanResourcesEmploymentCalendarAssignmentIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid employment calendar assignment identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesWorkCalendarScopeAssignmentId(
@@ -2289,13 +2289,13 @@ export function parseHumanResourcesWorkCalendarScopeAssignmentId(
 	const parsed =
 		humanResourcesWorkCalendarScopeAssignmentIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid work calendar scope assignment identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesShiftBreakId(
@@ -2303,13 +2303,13 @@ export function parseHumanResourcesShiftBreakId(
 ): Result<HumanResourcesShiftBreakId> {
 	const parsed = humanResourcesShiftBreakIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid shift break identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesTimePolicyId(
@@ -2317,13 +2317,13 @@ export function parseHumanResourcesTimePolicyId(
 ): Result<HumanResourcesTimePolicyId> {
 	const parsed = humanResourcesTimePolicyIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid time policy identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesTimePolicyAssignmentId(
@@ -2331,13 +2331,13 @@ export function parseHumanResourcesTimePolicyAssignmentId(
 ): Result<HumanResourcesTimePolicyAssignmentId> {
 	const parsed = humanResourcesTimePolicyAssignmentIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid time policy assignment identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesTimeApprovalAuthorityAssignmentId(
@@ -2346,13 +2346,13 @@ export function parseHumanResourcesTimeApprovalAuthorityAssignmentId(
 	const parsed =
 		humanResourcesTimeApprovalAuthorityAssignmentIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid time approval authority assignment identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesAttendanceBreakWaiverDecisionId(
@@ -2361,13 +2361,13 @@ export function parseHumanResourcesAttendanceBreakWaiverDecisionId(
 	const parsed =
 		humanResourcesAttendanceBreakWaiverDecisionIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid attendance break waiver decision identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesTimesheetApprovalDecisionId(
@@ -2375,13 +2375,13 @@ export function parseHumanResourcesTimesheetApprovalDecisionId(
 ): Result<HumanResourcesTimesheetApprovalDecisionId> {
 	const parsed = humanResourcesTimesheetApprovalDecisionIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid timesheet approval decision identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesShiftAssignmentId(
@@ -2389,13 +2389,13 @@ export function parseHumanResourcesShiftAssignmentId(
 ): Result<HumanResourcesShiftAssignmentId> {
 	const parsed = humanResourcesShiftAssignmentIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid shift assignment identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesShiftAssignmentSegmentId(
@@ -2403,13 +2403,13 @@ export function parseHumanResourcesShiftAssignmentSegmentId(
 ): Result<HumanResourcesShiftAssignmentSegmentId> {
 	const parsed = humanResourcesShiftAssignmentSegmentIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid shift assignment segment identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesAttendanceSessionId(
@@ -2417,13 +2417,13 @@ export function parseHumanResourcesAttendanceSessionId(
 ): Result<HumanResourcesAttendanceSessionId> {
 	const parsed = humanResourcesAttendanceSessionIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid attendance session identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesAttendanceExceptionId(
@@ -2431,13 +2431,13 @@ export function parseHumanResourcesAttendanceExceptionId(
 ): Result<HumanResourcesAttendanceExceptionId> {
 	const parsed = humanResourcesAttendanceExceptionIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid attendance exception identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesTimesheetEntryId(
@@ -2445,13 +2445,13 @@ export function parseHumanResourcesTimesheetEntryId(
 ): Result<HumanResourcesTimesheetEntryId> {
 	const parsed = humanResourcesTimesheetEntryIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid timesheet entry identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 export function parseHumanResourcesOvertimeRequestId(
@@ -2459,11 +2459,11 @@ export function parseHumanResourcesOvertimeRequestId(
 ): Result<HumanResourcesOvertimeRequestId> {
 	const parsed = humanResourcesOvertimeRequestIdSchema.safeParse(id);
 	if (!parsed.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid overtime request identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE),
-		);
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }

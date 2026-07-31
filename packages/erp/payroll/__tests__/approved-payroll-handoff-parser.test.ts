@@ -161,7 +161,7 @@ describe("approved payroll handoff parser (Slice 8.8)", () => {
 		if (result.ok) {
 			return;
 		}
-		expect(result.code).toBe("BAD_REQUEST");
+		expect(result.code).toBe("VALIDATION_ERROR");
 	});
 
 	it("P10: rejects malformed decimal amount", () => {

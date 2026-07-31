@@ -2,9 +2,7 @@
 // biome-ignore-all lint/style/useDestructuring: Explicit record access keeps establishment identity visible.
 // biome-ignore-all lint/suspicious/noShadow: Domain-local callbacks intentionally mirror establishment records.
 import { randomUUID } from "node:crypto";
-import { fail, ok } from "@afenda/errors/result";
-
-import { corporateAdministrationErrorDetails } from "../../error-codes";
+import { errorResult } from "@afenda/errors";
 import {
 	matchesEstablishmentAsOf,
 	resolveEstablishmentStatusAsOf,
@@ -32,7 +30,7 @@ export function createMemoryCorporateAdministrationEstablishmentStore(): Establi
 
 	return {
 		async getLegalEstablishment(input) {
-			return ok(
+			return errorResult.ok(
 				cloneNullable(
 					establishments.get(
 						key(input.organizationId, input.legalEstablishmentId),
@@ -77,10 +75,10 @@ export function createMemoryCorporateAdministrationEstablishmentStore(): Establi
 						left.id.localeCompare(right.id),
 				)
 				.map(clone);
-			return ok(result);
+			return errorResult.ok(result);
 		},
 		async listEstablishmentStatusHistory(input) {
-			return ok(
+			return errorResult.ok(
 				[...statuses.values()]
 					.filter(
 						(row) =>
@@ -141,7 +139,7 @@ export function createMemoryCorporateAdministrationEstablishmentStore(): Establi
 			};
 			establishments.set(key(input.organizationId, id), row);
 			statuses.set(key(input.organizationId, status.id), status);
-			return ok(clone(row));
+			return errorResult.ok(clone(row));
 		},
 		async updateLegalEstablishment(input) {
 			const current = establishments.get(
@@ -161,7 +159,7 @@ export function createMemoryCorporateAdministrationEstablishmentStore(): Establi
 				version: current.version + 1,
 			};
 			establishments.set(key(input.organizationId, current.id), updated);
-			return ok(clone(updated));
+			return errorResult.ok(clone(updated));
 		},
 		async transitionLegalEstablishment(input) {
 			const current = establishments.get(
@@ -212,7 +210,7 @@ export function createMemoryCorporateAdministrationEstablishmentStore(): Establi
 				version: current.version + 1,
 			};
 			establishments.set(key(input.organizationId, current.id), updated);
-			return ok(clone(updated));
+			return errorResult.ok(clone(updated));
 		},
 		async findRegisteredAddressAsOf(input) {
 			const row = [...addresses.values()]
@@ -230,10 +228,10 @@ export function createMemoryCorporateAdministrationEstablishmentStore(): Establi
 						right.effectiveFrom.localeCompare(left.effectiveFrom) ||
 						right.recordedAt.getTime() - left.recordedAt.getTime(),
 				)[0];
-			return ok(row === undefined ? null : clone(row));
+			return errorResult.ok(row === undefined ? null : clone(row));
 		},
 		async listRegisteredAddresses(input) {
-			return ok(
+			return errorResult.ok(
 				[...addresses.values()]
 					.filter((item) => addressScopeMatches(item, input))
 					.map(clone),
@@ -256,15 +254,15 @@ export function createMemoryCorporateAdministrationEstablishmentStore(): Establi
 				version: 1,
 			};
 			addresses.set(key(input.organizationId, id), row);
-			return ok(clone(row));
+			return errorResult.ok(clone(row));
 		},
 		async getPremise(input) {
-			return ok(
+			return errorResult.ok(
 				cloneNullable(premises.get(key(input.organizationId, input.premiseId))),
 			);
 		},
 		async listPremisesAsOf(input) {
-			return ok(
+			return errorResult.ok(
 				[...premises.values()]
 					.filter(
 						(row) =>
@@ -309,7 +307,7 @@ export function createMemoryCorporateAdministrationEstablishmentStore(): Establi
 				version: 1,
 			};
 			premises.set(key(input.organizationId, id), row);
-			return ok(clone(row));
+			return errorResult.ok(clone(row));
 		},
 		async endPremise(input) {
 			const current = premises.get(key(input.organizationId, input.premiseId));
@@ -326,7 +324,7 @@ export function createMemoryCorporateAdministrationEstablishmentStore(): Establi
 				version: current.version + 1,
 			};
 			premises.set(key(input.organizationId, current.id), updated);
-			return ok(clone(updated));
+			return errorResult.ok(clone(updated));
 		},
 	};
 }
@@ -360,31 +358,21 @@ function cloneNullable<T>(value: T | undefined): T | null {
 	return value === undefined ? null : clone(value);
 }
 
-function conflict(field: string) {
-	return fail(
-		"CONFLICT",
-		"Corporate Administration establishment conflicts with existing history.",
-		corporateAdministrationErrorDetails("CORPORATE_ADMINISTRATION_CONFLICT", {
-			field,
-		}),
-	);
+function conflict(_field: string) {
+	return errorResult.fail("CONFLICT", {
+		publicMessage:
+			"Corporate Administration establishment conflicts with existing history.",
+	});
 }
 
 function notFound() {
-	return fail(
-		"NOT_FOUND",
-		"Corporate Administration record was not found.",
-		corporateAdministrationErrorDetails("CORPORATE_ADMINISTRATION_NOT_FOUND"),
-	);
+	return errorResult.fail("NOT_FOUND", {
+		publicMessage: "Corporate Administration record was not found.",
+	});
 }
 
-function stale(expectedVersion: number, actualVersion: number) {
-	return fail(
-		"CONFLICT",
-		"Corporate Administration record version is stale.",
-		corporateAdministrationErrorDetails(
-			"CORPORATE_ADMINISTRATION_STALE_VERSION",
-			{ expectedVersion, actualVersion },
-		),
-	);
+function stale(_expectedVersion: number, _actualVersion: number) {
+	return errorResult.fail("CONFLICT", {
+		publicMessage: "Corporate Administration record version is stale.",
+	});
 }

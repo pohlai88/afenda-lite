@@ -1,4 +1,4 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 export const APPROVED_APPLY_REVALIDATION_REQUIREMENTS = [
 	"current_record_version",
@@ -26,7 +26,7 @@ export function approvedApplyAttemptGate(
 	approvalSource: ApprovedApplyAttemptGate["approvalSource"],
 	revalidatedBy: ApprovedApplyAttemptGate["revalidatedBy"],
 ): Result<ApprovedApplyAttemptGate> {
-	return ok({
+	return errorResult.ok({
 		approvalSource,
 		revalidatedBy,
 		requirements: APPROVED_APPLY_REVALIDATION_REQUIREMENTS,

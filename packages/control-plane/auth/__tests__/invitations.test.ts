@@ -1,3 +1,4 @@
+import { errorResult } from "@afenda/errors";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const headersMock = vi.fn();
@@ -45,12 +46,7 @@ describe("inviteOrgMember (I1.3)", () => {
 				orgId: "org-other",
 				role: "client",
 			}),
-		).resolves.toEqual({
-			code: "FORBIDDEN",
-			message:
-				"Invitation refuses an organization other than the active session org",
-			ok: false,
-		});
+		).resolves.toEqual(errorResult.fail("FORBIDDEN"));
 		expect(fetchMock).not.toHaveBeenCalled();
 	});
 
@@ -99,11 +95,7 @@ describe("inviteOrgMember (I1.3)", () => {
 			orgId: "org-1",
 			role: "client",
 		});
-		expect(result).toEqual({
-			code: "FORBIDDEN",
-			message: "Invitation is not permitted for this session",
-			ok: false,
-		});
+		expect(result).toEqual(errorResult.fail("FORBIDDEN"));
 		expect(JSON.stringify(result)).not.toContain("xyz");
 	});
 

@@ -1,9 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
-
-import {
-	PAYROLL_ERROR_INVALID_STATE,
-	payrollErrorDetails,
-} from "../error-codes";
+import { errorResult, type Result } from "@afenda/errors";
 import type { PayrollRunStatus } from "../types";
 
 const ALLOWED_TRANSITIONS: Readonly<
@@ -30,14 +25,12 @@ export function isPayrollRunTransitionAllowed(
 export function assertPayrollRunTransition(
 	from: PayrollRunStatus,
 	to: PayrollRunStatus,
-	message = `Invalid payroll run transition from ${from} to ${to}`,
+	_message = `Invalid payroll run transition from ${from} to ${to}`,
 ): Result<void> {
 	if (isPayrollRunTransitionAllowed(from, to)) {
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	}
-	return fail(
-		"CONFLICT",
-		message,
-		payrollErrorDetails(PAYROLL_ERROR_INVALID_STATE),
-	);
+	return errorResult.fail("CONFLICT", {
+		publicMessage: "The request conflicts with current state",
+	});
 }

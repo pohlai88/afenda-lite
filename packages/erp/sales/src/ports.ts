@@ -1,4 +1,4 @@
-import type { Result } from "@afenda/errors/result";
+import type { Result } from "@afenda/errors";
 import type { ItemId, PartyId, PaymentTermId } from "@afenda/master-data";
 import type {
 	PriceBookId,

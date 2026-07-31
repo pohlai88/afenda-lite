@@ -1,4 +1,4 @@
-import type { Result } from "@afenda/errors/result";
+import type { Result } from "@afenda/errors";
 import type { CorporateAdministrationApprovalVerificationDependencies } from "../authorization";
 import type { CorporateAdministrationCommandOptions } from "../command-options";
 import type { LegalCompanyStore } from "../company/store";

@@ -10,7 +10,7 @@ import {
 	payrollPeriod,
 	payrollStatutoryRule,
 } from "@afenda/db";
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	type PayrollCalendarId,
@@ -23,10 +23,6 @@ import {
 	parsePayrollPeriodId,
 	parsePayrollStatutoryRuleId,
 } from "../../brands";
-import {
-	PAYROLL_ERROR_EFFECTIVE_RANGE_OVERLAP,
-	payrollErrorDetails,
-} from "../../error-codes";
 import type { MutationPorts } from "../../ports";
 import { payrollJsonObjectSchema } from "../../schemas/common";
 import { assertExpectedVersion } from "../../shared/concurrency";
@@ -95,7 +91,7 @@ function mapCalendarRow(
 	if (!id.ok) {
 		return id;
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		code: row.code,
@@ -123,7 +119,7 @@ function mapPayGroupRow(
 	if (!calendarId.ok) {
 		return calendarId;
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		calendarId: calendarId.data,
@@ -150,7 +146,7 @@ function mapPeriodRow(
 	if (!payGroupId.ok) {
 		return payGroupId;
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		payGroupId: payGroupId.data,
@@ -177,7 +173,7 @@ function mapEarningRuleRow(
 	if (!payGroupId.ok) {
 		return payGroupId;
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		payGroupId: payGroupId.data,
@@ -210,7 +206,7 @@ function mapDeductionRuleRow(
 	if (!payGroupId.ok) {
 		return payGroupId;
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		payGroupId: payGroupId.data,
@@ -251,7 +247,7 @@ function mapStatutoryRuleRow(
 			"Persisted payroll statutory rule configuration is invalid",
 		);
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		payGroupId: payGroupId.data,
@@ -292,7 +288,7 @@ async function resolveIdempotentCreate<
 		if (existing.data.createRequestFingerprint !== recordFingerprint) {
 			return mapConflict("Idempotency key conflict");
 		}
-		return ok(existing.data.entity);
+		return errorResult.ok(existing.data.entity);
 	}
 
 	const inserted = await insert();
@@ -417,13 +413,13 @@ const drizzleSetupCore = {
 				.limit(1);
 			const [row] = rows;
 			if (row === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const mapped = mapCalendarRow(row);
 			if (!mapped.ok) {
 				return mapped;
 			}
-			return ok({
+			return errorResult.ok({
 				calendar: mapped.data,
 				createRequestFingerprint: row.createRequestFingerprint,
 			});
@@ -454,7 +450,7 @@ const drizzleSetupCore = {
 			) {
 				return mapConflict("Idempotency key conflict");
 			}
-			return ok(existing.data.calendar);
+			return errorResult.ok(existing.data.calendar);
 		}
 
 		const calendarId = parsePayrollCalendarId(randomUUID());
@@ -523,7 +519,7 @@ const drizzleSetupCore = {
 					) {
 						return mapConflict("Idempotency key conflict");
 					}
-					return ok(replay.data.calendar);
+					return errorResult.ok(replay.data.calendar);
 				}
 			}
 			return mapPersistenceFailure(error, "Failed to create payroll calendar");
@@ -547,7 +543,7 @@ const drizzleSetupCore = {
 				.limit(1);
 			const [row] = rows;
 			if (row === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapCalendarRow(row);
 		} catch (error) {
@@ -647,13 +643,13 @@ const drizzleSetupCore = {
 						.limit(1);
 					const [row] = rows;
 					if (row === undefined) {
-						return ok(null);
+						return errorResult.ok(null);
 					}
 					const mapped = mapPayGroupRow(row);
 					if (!mapped.ok) {
 						return mapped;
 					}
-					return ok({
+					return errorResult.ok({
 						entity: mapped.data,
 						createRequestFingerprint: row.createRequestFingerprint,
 					});
@@ -727,7 +723,7 @@ const drizzleSetupCore = {
 						return audit;
 					}
 
-					return ok(row);
+					return errorResult.ok(row);
 				} catch (error) {
 					if (isCreateIdempotencyUniqueViolation(error)) {
 						const rows = await db
@@ -750,7 +746,7 @@ const drizzleSetupCore = {
 							) {
 								return mapConflict("Idempotency key conflict");
 							}
-							return ok(row);
+							return errorResult.ok(row);
 						}
 					}
 					return mapPersistenceFailure(
@@ -779,7 +775,7 @@ const drizzleSetupCore = {
 				.limit(1);
 			const [row] = rows;
 			if (row === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapPayGroupRow(row);
 		} catch (error) {
@@ -811,7 +807,7 @@ const drizzleSetupCore = {
 				}
 				groups.push(mapped.data);
 			}
-			return ok(groups);
+			return errorResult.ok(groups);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to list payroll pay groups");
 		}
@@ -836,13 +832,13 @@ const drizzleSetupCore = {
 						.limit(1);
 					const [row] = rows;
 					if (row === undefined) {
-						return ok(null);
+						return errorResult.ok(null);
 					}
 					const mapped = mapPeriodRow(row);
 					if (!mapped.ok) {
 						return mapped;
 					}
-					return ok({
+					return errorResult.ok({
 						entity: mapped.data,
 						createRequestFingerprint: row.createRequestFingerprint,
 					});
@@ -916,7 +912,7 @@ const drizzleSetupCore = {
 						return audit;
 					}
 
-					return ok(row);
+					return errorResult.ok(row);
 				} catch (error) {
 					if (isCreateIdempotencyUniqueViolation(error)) {
 						const rows = await db
@@ -936,7 +932,7 @@ const drizzleSetupCore = {
 							) {
 								return mapConflict("Idempotency key conflict");
 							}
-							return ok(row);
+							return errorResult.ok(row);
 						}
 					}
 					return mapPersistenceFailure(
@@ -965,7 +961,7 @@ const drizzleSetupCore = {
 				.limit(1);
 			const [row] = rows;
 			if (row === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapPeriodRow(row);
 		} catch (error) {
@@ -1002,7 +998,7 @@ const drizzleSetupCore = {
 				}
 				periods.push(mapped.data);
 			}
-			return ok(periods);
+			return errorResult.ok(periods);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -1033,13 +1029,13 @@ const drizzleSetupCore = {
 						.limit(1);
 					const [row] = rows;
 					if (row === undefined) {
-						return ok(null);
+						return errorResult.ok(null);
 					}
 					const mapped = mapEarningRuleRow(row);
 					if (!mapped.ok) {
 						return mapped;
 					}
-					return ok({
+					return errorResult.ok({
 						entity: mapped.data,
 						createRequestFingerprint: row.createRequestFingerprint,
 					});
@@ -1078,11 +1074,10 @@ const drizzleSetupCore = {
 							),
 						);
 					if (hasActiveRuleOverlap(activeRows, record)) {
-						return fail(
-							"CONFLICT",
-							"Overlapping effective range for active earning rule",
-							payrollErrorDetails(PAYROLL_ERROR_EFFECTIVE_RANGE_OVERLAP),
-						);
+						return errorResult.fail("CONFLICT", {
+							publicMessage:
+								"Overlapping effective range for active earning rule",
+						});
 					}
 
 					const ruleId = parsePayrollEarningRuleId(randomUUID());
@@ -1138,7 +1133,7 @@ const drizzleSetupCore = {
 						return audit;
 					}
 
-					return ok(row);
+					return errorResult.ok(row);
 				} catch (error) {
 					if (isCreateIdempotencyUniqueViolation(error)) {
 						const rows = await db
@@ -1161,7 +1156,7 @@ const drizzleSetupCore = {
 							) {
 								return mapConflict("Idempotency key conflict");
 							}
-							return ok(row);
+							return errorResult.ok(row);
 						}
 					}
 					return mapPersistenceFailure(
@@ -1195,13 +1190,13 @@ const drizzleSetupCore = {
 						.limit(1);
 					const [row] = rows;
 					if (row === undefined) {
-						return ok(null);
+						return errorResult.ok(null);
 					}
 					const mapped = mapDeductionRuleRow(row);
 					if (!mapped.ok) {
 						return mapped;
 					}
-					return ok({
+					return errorResult.ok({
 						entity: mapped.data,
 						createRequestFingerprint: row.createRequestFingerprint,
 					});
@@ -1240,11 +1235,10 @@ const drizzleSetupCore = {
 							),
 						);
 					if (hasActiveRuleOverlap(activeRows, record)) {
-						return fail(
-							"CONFLICT",
-							"Overlapping effective range for active deduction rule",
-							payrollErrorDetails(PAYROLL_ERROR_EFFECTIVE_RANGE_OVERLAP),
-						);
+						return errorResult.fail("CONFLICT", {
+							publicMessage:
+								"Overlapping effective range for active deduction rule",
+						});
 					}
 
 					const ruleId = parsePayrollDeductionRuleId(randomUUID());
@@ -1301,7 +1295,7 @@ const drizzleSetupCore = {
 						return audit;
 					}
 
-					return ok(row);
+					return errorResult.ok(row);
 				} catch (error) {
 					if (isCreateIdempotencyUniqueViolation(error)) {
 						const rows = await db
@@ -1327,7 +1321,7 @@ const drizzleSetupCore = {
 							) {
 								return mapConflict("Idempotency key conflict");
 							}
-							return ok(row);
+							return errorResult.ok(row);
 						}
 					}
 					return mapPersistenceFailure(
@@ -1361,13 +1355,13 @@ const drizzleSetupCore = {
 						.limit(1);
 					const [row] = rows;
 					if (row === undefined) {
-						return ok(null);
+						return errorResult.ok(null);
 					}
 					const mapped = mapStatutoryRuleRow(row);
 					if (!mapped.ok) {
 						return mapped;
 					}
-					return ok({
+					return errorResult.ok({
 						entity: mapped.data,
 						createRequestFingerprint: row.createRequestFingerprint,
 					});
@@ -1406,11 +1400,10 @@ const drizzleSetupCore = {
 							),
 						);
 					if (hasActiveRuleOverlap(activeRows, record)) {
-						return fail(
-							"CONFLICT",
-							"Overlapping effective range for active statutory rule",
-							payrollErrorDetails(PAYROLL_ERROR_EFFECTIVE_RANGE_OVERLAP),
-						);
+						return errorResult.fail("CONFLICT", {
+							publicMessage:
+								"Overlapping effective range for active statutory rule",
+						});
 					}
 
 					const ruleId = parsePayrollStatutoryRuleId(randomUUID());
@@ -1464,7 +1457,7 @@ const drizzleSetupCore = {
 						return audit;
 					}
 
-					return ok(row);
+					return errorResult.ok(row);
 				} catch (error) {
 					if (isCreateIdempotencyUniqueViolation(error)) {
 						const rows = await db
@@ -1490,7 +1483,7 @@ const drizzleSetupCore = {
 							) {
 								return mapConflict("Idempotency key conflict");
 							}
-							return ok(row);
+							return errorResult.ok(row);
 						}
 					}
 					return mapPersistenceFailure(
@@ -1522,7 +1515,7 @@ const drizzleSetupCore = {
 				);
 			const selected = selectRuleAtEffectiveDate(rows, input.effectiveDate);
 			if (selected === null) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapEarningRuleRow(selected);
 		} catch (error) {
@@ -1553,7 +1546,7 @@ const drizzleSetupCore = {
 				);
 			const selected = selectRuleAtEffectiveDate(rows, input.effectiveDate);
 			if (selected === null) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapDeductionRuleRow(selected);
 		} catch (error) {
@@ -1584,7 +1577,7 @@ const drizzleSetupCore = {
 				);
 			const selected = selectRuleAtEffectiveDate(rows, input.effectiveDate);
 			if (selected === null) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapStatutoryRuleRow(selected);
 		} catch (error) {
@@ -1620,7 +1613,7 @@ const drizzleSetupCore = {
 				}
 				rules.push(mapped.data);
 			}
-			return ok(rules);
+			return errorResult.ok(rules);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -1654,7 +1647,7 @@ const drizzleSetupCore = {
 				}
 				rules.push(mapped.data);
 			}
-			return ok(rules);
+			return errorResult.ok(rules);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -1688,7 +1681,7 @@ const drizzleSetupCore = {
 				}
 				rules.push(mapped.data);
 			}
-			return ok(rules);
+			return errorResult.ok(rules);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,

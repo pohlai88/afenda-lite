@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import { describe, expect, it } from "vitest";
 
 import { createDraftDelivery, listDeliveries } from "../src/delivery";
@@ -27,14 +27,12 @@ describe("@afenda/fulfillment transactions", () => {
 		const ports: MutationPorts = {
 			audit: {
 				record() {
-					return Promise.resolve(ok({ id: "audit-1" }));
+					return Promise.resolve(errorResult.ok({ id: "audit-1" }));
 				},
 			},
 			outbox: {
 				append(_input: OutboxFactInput): Promise<Result<{ id: string }>> {
-					return Promise.resolve(
-						fail("INTERNAL_ERROR", "forced outbox failure"),
-					);
+					return Promise.resolve(errorResult.fail("INTERNAL_ERROR"));
 				},
 			},
 		};

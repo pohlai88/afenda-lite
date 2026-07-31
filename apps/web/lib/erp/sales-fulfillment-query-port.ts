@@ -1,4 +1,4 @@
-import { ok } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 import type { SalesFulfillmentQueryPort } from "@afenda/fulfillment";
 import { getFulfillableSalesOrder } from "@afenda/sales";
 
@@ -21,10 +21,10 @@ export function createSalesFulfillmentQueryPort(): SalesFulfillmentQueryPort {
 				return result;
 			}
 			if (!result.data) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const { order, lines } = result.data;
-			return ok({
+			return errorResult.ok({
 				status: order.status,
 				version: order.version,
 				customerPartyId: order.customer.partyId,

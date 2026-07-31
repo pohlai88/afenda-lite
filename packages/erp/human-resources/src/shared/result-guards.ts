@@ -1,4 +1,4 @@
-import type { Result, ResultFailure } from "@afenda/errors/result";
+import type { Result, ResultFailure } from "@afenda/errors";
 
 export function isResultFailure<Value>(
 	result: Result<Value>,

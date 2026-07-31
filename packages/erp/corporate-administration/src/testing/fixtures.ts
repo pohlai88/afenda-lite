@@ -1,4 +1,4 @@
-import { ok } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 import type { JurisdictionEntityTypeRule } from "../company/rules";
 import type {
 	CompanyPartyReferencePort,
@@ -31,14 +31,14 @@ export const corporateAdministrationJurisdictionRulesFixture = [
 export function createCorporateAdministrationRuleFixturePort() {
 	return {
 		listEntityTypeRules: async () =>
-			ok(corporateAdministrationJurisdictionRulesFixture),
+			errorResult.ok(corporateAdministrationJurisdictionRulesFixture),
 	};
 }
 
 export function createCorporateAdministrationPartyFixturePort(): CompanyPartyReferencePort {
 	return {
 		getOrganizationParty: async (input) =>
-			ok({
+			errorResult.ok({
 				partyId: input.partyId,
 				kind: "organization",
 				active: true,
@@ -49,13 +49,16 @@ export function createCorporateAdministrationPartyFixturePort(): CompanyPartyRef
 export function createCorporateAdministrationReferenceDataFixturePort(): CompanyReferenceDataPort {
 	return {
 		validateLanguage: async (input) =>
-			ok({ languageCode: input.languageCode, active: true }),
+			errorResult.ok({ languageCode: input.languageCode, active: true }),
 		resolveLanguage: async (input) =>
-			ok({ code: input.languageCode, active: true }),
+			errorResult.ok({ code: input.languageCode, active: true }),
 		validateSourceDocument: async (input) =>
-			ok({ sourceDocumentId: input.sourceDocumentId, active: true }),
+			errorResult.ok({
+				sourceDocumentId: input.sourceDocumentId,
+				active: true,
+			}),
 		resolveLegalForm: async (input) =>
-			ok({
+			errorResult.ok({
 				code: input.legalFormCode,
 				active: true,
 				jurisdictionCode: input.jurisdictionCode,
@@ -63,22 +66,22 @@ export function createCorporateAdministrationReferenceDataFixturePort(): Company
 				effectiveDate: input.effectiveDate,
 			}),
 		validateLegalFormCompatibility: async () =>
-			ok({ compatible: true, active: true }),
+			errorResult.ok({ compatible: true, active: true }),
 		resolveCountry: async (input) =>
-			ok({
+			errorResult.ok({
 				code: input.countryCode,
 				active: true,
 				effectiveDate: input.effectiveDate,
 			}),
 		resolveCurrency: async (input) =>
-			ok({
+			errorResult.ok({
 				code: input.currencyCode,
 				currencyCode: input.currencyCode,
 				active: true,
 				effectiveDate: input.effectiveDate,
 			}),
 		resolveIdentifierAuthority: async (input) =>
-			ok({
+			errorResult.ok({
 				code: input.authorityCode,
 				active: true,
 				jurisdictionCode: input.jurisdictionCode,
@@ -89,7 +92,7 @@ export function createCorporateAdministrationReferenceDataFixturePort(): Company
 				removePresentationSeparators: true,
 			}),
 		resolveActivityClassification: async (input) =>
-			ok({
+			errorResult.ok({
 				code: input.activityCode,
 				active: true,
 				classificationSystem: input.classificationSystem,
@@ -99,15 +102,15 @@ export function createCorporateAdministrationReferenceDataFixturePort(): Company
 				requiresRegulator: false,
 			}),
 		resolveRegulator: async (input) =>
-			ok({
+			errorResult.ok({
 				code: input.regulatorCode,
 				active: true,
 				displayName: input.regulatorCode,
 			}),
 		resolveRegisteredActivity: async (input) =>
-			ok({ code: input.activityCode, active: true }),
+			errorResult.ok({ code: input.activityCode, active: true }),
 		listLegalFormCompatibilityRules: async () =>
-			ok([
+			errorResult.ok([
 				{
 					jurisdictionCode: "MY",
 					legalFormCodes: ["private_limited_company"],

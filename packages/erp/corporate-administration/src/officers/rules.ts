@@ -1,6 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
-
-import { corporateAdministrationErrorDetails } from "../error-codes";
+import { errorResult, type Result } from "@afenda/errors";
 import type { CanonicalDate } from "../kernel/dates";
 import {
 	effectiveRangesOverlap,
@@ -69,16 +67,12 @@ export function assertAppointmentWithinOffice(input: {
 			(input.appointment.effectiveTo === null ||
 				input.appointment.effectiveTo > input.office.effectiveTo))
 	) {
-		return fail(
-			"CONFLICT",
-			"Officer appointment must stay within the statutory office term.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_CHRONOLOGY_INVALID",
-				{ field: "appointmentTerm" },
-			),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage:
+				"Officer appointment must stay within the statutory office term.",
+		});
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertNoOfficerAppointmentConflict(input: {
@@ -119,7 +113,7 @@ export function assertNoOfficerAppointmentConflict(input: {
 	) {
 		return conflict("maximumHolders");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function calculateOfficerVacancyStatus(input: {
@@ -158,15 +152,10 @@ export function assertOfficerQualificationCurrent(input: {
 	asOf: CanonicalDate;
 }): Result<void> {
 	return officerQualificationMatchesAsOf(input.qualification, input.asOf)
-		? ok(undefined)
-		: fail(
-				"CONFLICT",
-				"Officer qualification is not verified and current.",
-				corporateAdministrationErrorDetails(
-					"CORPORATE_ADMINISTRATION_CONFLICT",
-					{ field: "qualification" },
-				),
-			);
+		? errorResult.ok(undefined)
+		: errorResult.fail("CONFLICT", {
+				publicMessage: "Officer qualification is not verified and current.",
+			});
 }
 
 function addDays(value: CanonicalDate, days: number): CanonicalDate {
@@ -175,12 +164,9 @@ function addDays(value: CanonicalDate, days: number): CanonicalDate {
 	return date.toISOString().slice(0, 10) as CanonicalDate;
 }
 
-function conflict(field: string): Result<never> {
-	return fail(
-		"CONFLICT",
-		"Officer appointment conflicts with existing statutory office history.",
-		corporateAdministrationErrorDetails("CORPORATE_ADMINISTRATION_CONFLICT", {
-			field,
-		}),
-	);
+function conflict(_field: string): Result<never> {
+	return errorResult.fail("CONFLICT", {
+		publicMessage:
+			"Officer appointment conflicts with existing statutory office history.",
+	});
 }

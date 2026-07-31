@@ -1,4 +1,4 @@
-import { fail, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS,
 	type CorporateAdministrationApprovalVerificationDependencies,
@@ -10,7 +10,6 @@ import type {
 	CorporateAdministrationApprovalCommandOptions,
 	CorporateAdministrationCommandOptions,
 } from "../../command-options";
-import { corporateAdministrationErrorDetails } from "../../error-codes";
 import { toCanonicalInstant } from "../../kernel/dates";
 import { parseCorporateAdministrationInput } from "../../parse-input";
 import {
@@ -102,14 +101,10 @@ export async function retireCompanyIdentifier(
 	}
 	const retiredAtDate = parsed.data.retiredAt.slice(0, 10);
 	if (retiredAtDate < activeIdentifier.data.effectiveFrom) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Corporate Administration identifier retirement date cannot be before the identifier effective start.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_VALIDATION_FAILED",
-				{ field: "retiredAt" },
-			),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage:
+				"Corporate Administration identifier retirement date cannot be before the identifier effective start.",
+		});
 	}
 
 	const occurredAt = toCanonicalInstant(dependencies.runtime.clock.now());
@@ -162,5 +157,5 @@ function asIdentifierFailure(
 	if (result.ok) {
 		throw new TypeError("Expected Corporate Administration failure Result");
 	}
-	return fail(result.code, result.message, result.details);
+	return result;
 }

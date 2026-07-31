@@ -1,5 +1,5 @@
-import type { Result } from "@afenda/errors/result";
-import { fail } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
+
 import type {
 	HumanResourcesOrganizationDimensionKind,
 	HumanResourcesOrganizationDimensionSnapshot,
@@ -23,18 +23,10 @@ function requireHumanResourcesDimension(
 ): Result<HumanResourcesOrganizationDimensionSnapshot> {
 	const dimension = dimensions[kind];
 	if (dimension === undefined) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Master Data did not return required HR organization dimension.",
-			{ kind },
-		);
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 	if (dimension.kind !== kind) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Master Data returned a mismatched HR organization dimension.",
-			{ actualKind: dimension.kind, expectedKind: kind },
-		);
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 	return {
 		ok: true,

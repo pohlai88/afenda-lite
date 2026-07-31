@@ -17,8 +17,13 @@ import {
 	or,
 	runNeonHttpTransaction,
 } from "@afenda/db";
-import { normalizePostgresUnknown } from "@afenda/errors/adapters/postgres";
-import { fail, failFromAppError, ok, type Result } from "@afenda/errors/result";
+import {
+	errorIngress,
+	errorProject,
+	errorResult,
+	type Result,
+} from "@afenda/errors";
+
 import { z } from "zod";
 
 import {
@@ -52,8 +57,10 @@ import type {
 const ORGANIZATION_DIMENSION_AUDIT_SOURCE =
 	"master-data.organization-dimension-drizzle";
 
-function failFromPersistence(error: unknown, fallbackMessage: string) {
-	return failFromAppError(normalizePostgresUnknown(error, fallbackMessage));
+function failFromPersistence(error: unknown, _fallbackMessage: string) {
+	return errorProject.result(
+		errorIngress.postgres(error, { operation: "persistence.postgres" }),
+	);
 }
 
 // 1. Constants and domain types
@@ -319,7 +326,7 @@ async function loadOrganizationDimensionVersion(
 				),
 			)
 			.limit(1);
-		return ok(row ?? null);
+		return errorResult.ok(row ?? null);
 	} catch (error) {
 		return failFromPersistence(
 			error,
@@ -343,7 +350,7 @@ async function loadOrganizationDimensionForAudit(input: {
 				),
 			)
 			.limit(1);
-		return ok(row === undefined ? null : mapDimension(row));
+		return errorResult.ok(row === undefined ? null : mapDimension(row));
 	} catch (error) {
 		return failFromPersistence(
 			error,
@@ -421,7 +428,7 @@ async function prepareCreateOrganizationDimensionAudits(input: {
 		return preparedCreateAudit;
 	}
 	if (input.record.supersedesId === null) {
-		return ok({
+		return errorResult.ok({
 			createAudit: preparedCreateAudit.data,
 			predecessorAudit: null,
 		});
@@ -438,18 +445,10 @@ async function prepareCreateOrganizationDimensionAudits(input: {
 		predecessor.data === null ||
 		predecessor.data.version !== input.record.supersedesExpectedVersion
 	) {
-		return fail(
-			"CONFLICT",
-			"Organization dimension could not supersede the selected revision",
-			{
-				reason: "MASTER_VERSION_CONFLICT",
-				supersedesId: input.record.supersedesId,
-				expectedVersion: input.record.supersedesExpectedVersion,
-				kind: input.record.kind,
-				key: input.record.key,
-				effectiveFrom: input.record.effectiveFrom,
-			},
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage:
+				"Organization dimension could not supersede the selected revision",
+		});
 	}
 	const predecessorEffectiveTo = previousIsoDate(input.record.effectiveFrom);
 	const preparedPredecessorAudit = prepareTransactionalAuditInsertValues({
@@ -491,7 +490,7 @@ async function prepareCreateOrganizationDimensionAudits(input: {
 	if (!preparedPredecessorAudit.ok) {
 		return preparedPredecessorAudit;
 	}
-	return ok({
+	return errorResult.ok({
 		createAudit: preparedCreateAudit.data,
 		predecessorAudit: preparedPredecessorAudit.data,
 	});
@@ -759,26 +758,17 @@ export function createDrizzleOrganizationDimensionStore(): OrganizationDimension
 				const [row] = rows;
 				if (!row) {
 					if (record.supersedesId) {
-						return fail(
-							"CONFLICT",
-							"Organization dimension could not supersede the selected revision",
-							{
-								reason: "MASTER_VERSION_CONFLICT",
-								supersedesId: record.supersedesId,
-								expectedVersion: record.supersedesExpectedVersion,
-								kind: record.kind,
-								key: record.key,
-								effectiveFrom: record.effectiveFrom,
-							},
-						);
+						return errorResult.fail("CONFLICT", {
+							publicMessage:
+								"Organization dimension could not supersede the selected revision",
+						});
 					}
-					return fail(
-						"CONFLICT",
-						"Organization dimension overlaps an effective version",
-						{ reason: "MASTER_EFFECTIVE_RANGE_OVERLAP" },
-					);
+					return errorResult.fail("CONFLICT", {
+						publicMessage:
+							"Organization dimension overlaps an effective version",
+					});
 				}
-				return ok(mapDimension(row));
+				return errorResult.ok(mapDimension(row));
 			} catch (error) {
 				return failFromPersistence(
 					error,
@@ -922,7 +912,7 @@ export function createDrizzleOrganizationDimensionStore(): OrganizationDimension
 							"Organization dimension update did not satisfy mutation guards",
 					});
 				}
-				return ok(mapDimension(row));
+				return errorResult.ok(mapDimension(row));
 			} catch (error) {
 				return failFromPersistence(
 					error,
@@ -1074,7 +1064,7 @@ export function createDrizzleOrganizationDimensionStore(): OrganizationDimension
 							"Organization dimension transition did not satisfy mutation guards",
 					});
 				}
-				return ok(mapDimension(row));
+				return errorResult.ok(mapDimension(row));
 			} catch (error) {
 				return failFromPersistence(
 					error,
@@ -1094,7 +1084,7 @@ export function createDrizzleOrganizationDimensionStore(): OrganizationDimension
 						),
 					)
 					.limit(1);
-				return ok(row === undefined ? null : mapDimension(row));
+				return errorResult.ok(row === undefined ? null : mapDimension(row));
 			} catch (error) {
 				return failFromPersistence(
 					error,
@@ -1120,13 +1110,12 @@ export function createDrizzleOrganizationDimensionStore(): OrganizationDimension
 					)
 					.limit(2);
 				if (rows.length > 1) {
-					return fail("CONFLICT", "Organization dimension code is ambiguous", {
-						reason: "MASTER_DIMENSION_AMBIGUOUS",
-						kind: input.kind,
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "Organization dimension code is ambiguous",
 					});
 				}
 				const [row] = rows;
-				return ok(row === undefined ? null : mapDimension(row));
+				return errorResult.ok(row === undefined ? null : mapDimension(row));
 			} catch (error) {
 				return failFromPersistence(
 					error,
@@ -1164,7 +1153,10 @@ export function createDrizzleOrganizationDimensionStore(): OrganizationDimension
 					)
 					.limit(input.pageSize)
 					.offset(offset);
-				return ok({ items: rows.map(mapDimension), total: rows.length });
+				return errorResult.ok({
+					items: rows.map(mapDimension),
+					total: rows.length,
+				});
 			} catch (error) {
 				return failFromPersistence(
 					error,
@@ -1193,7 +1185,7 @@ export function createDrizzleOrganizationDimensionStore(): OrganizationDimension
 						asc(mdOrganizationDimension.effectiveFrom),
 						asc(mdOrganizationDimension.id),
 					);
-				return ok(rows.map(mapDimension));
+				return errorResult.ok(rows.map(mapDimension));
 			} catch (error) {
 				return failFromPersistence(
 					error,
@@ -1222,7 +1214,7 @@ export function createDrizzleOrganizationDimensionStore(): OrganizationDimension
 						asc(mdOrganizationDimension.effectiveFrom),
 						asc(mdOrganizationDimension.id),
 					);
-				return ok(rows.map(mapDimension));
+				return errorResult.ok(rows.map(mapDimension));
 			} catch (error) {
 				return failFromPersistence(
 					error,
@@ -1256,7 +1248,7 @@ function toDimensionReference(
 
 function resolveUniqueEffectiveMatch(
 	matches: readonly OrganizationDimension[],
-	context: {
+	_context: {
 		kind: OrganizationDimensionKind;
 		asOf: string;
 		id?: string | undefined;
@@ -1264,29 +1256,21 @@ function resolveUniqueEffectiveMatch(
 	},
 ): Result<OrganizationDimensionReference | null> {
 	if (matches.length === 0) {
-		return ok(null);
+		return errorResult.ok(null);
 	}
 
 	if (matches.length > 1) {
-		return fail("CONFLICT", "Organization dimension is ambiguous", {
-			reason: "MASTER_DIMENSION_AMBIGUOUS",
-			kind: context.kind,
-			asOf: context.asOf,
-			...(context.id ? { id: context.id } : {}),
-			...(context.key ? { key: context.key } : {}),
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Organization dimension is ambiguous",
 		});
 	}
 
 	const [match] = matches;
 	if (!match) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Resolved organization dimension is unexpectedly missing",
-			{ reason: "MASTER_NOT_FOUND", kind: context.kind, asOf: context.asOf },
-		);
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 
-	return ok(toDimensionReference(match));
+	return errorResult.ok(toDimensionReference(match));
 }
 
 async function resolveRequiredEffectiveDimension(
@@ -1318,15 +1302,12 @@ async function resolveRequiredEffectiveDimension(
 		return unique;
 	}
 	if (!unique.data) {
-		return fail("NOT_FOUND", "Organization dimension is not effective", {
-			reason: "MASTER_DIMENSION_NOT_EFFECTIVE",
-			kind: input.kind,
-			key: input.key,
-			asOf: input.asOf,
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Organization dimension is not effective",
 		});
 	}
 
-	return ok(unique.data);
+	return errorResult.ok(unique.data);
 }
 
 async function resolveSingleEffectiveDimension(
@@ -1384,8 +1365,8 @@ export async function createOrganizationDimension(
 ): Promise<Result<OrganizationDimension>> {
 	const parsed = createOrganizationDimensionInputSchema.safeParse(input);
 	if (!parsed.success) {
-		return fail("BAD_REQUEST", "Invalid organization dimension create input", {
-			issues: parsed.error.issues,
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Invalid organization dimension create input",
 		});
 	}
 	const authorized = await requireMasterCommandPermission(
@@ -1427,8 +1408,8 @@ export async function updateOrganizationDimension(
 ): Promise<Result<OrganizationDimension>> {
 	const parsed = updateOrganizationDimensionInputSchema.safeParse(input);
 	if (!parsed.success) {
-		return fail("BAD_REQUEST", "Invalid organization dimension update input", {
-			issues: parsed.error.issues,
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Invalid organization dimension update input",
 		});
 	}
 	const authorized = await requireMasterCommandPermission(
@@ -1466,11 +1447,9 @@ async function transitionOrganizationDimension(
 ): Promise<Result<OrganizationDimension>> {
 	const parsed = organizationDimensionLifecycleInputSchema.safeParse(input);
 	if (!parsed.success) {
-		return fail(
-			"BAD_REQUEST",
-			"Invalid organization dimension lifecycle input",
-			{ issues: parsed.error.issues },
-		);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Invalid organization dimension lifecycle input",
+		});
 	}
 	const authorized = await requireMasterCommandPermission(
 		options.authorization,
@@ -1541,8 +1520,8 @@ export async function resolveOrganizationDimensionsAsOf(
 > {
 	const parsed = resolveOrganizationDimensionsAsOfInputSchema.safeParse(input);
 	if (!parsed.success) {
-		return fail("BAD_REQUEST", "Invalid organization dimension resolve input", {
-			issues: parsed.error.issues,
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Invalid organization dimension resolve input",
 		});
 	}
 	const authorized = await requireMasterQueryPermission(options.authorization, {
@@ -1604,7 +1583,7 @@ export async function resolveOrganizationDimensionsAsOf(
 		return project;
 	}
 
-	return ok({
+	return errorResult.ok({
 		legal_entity: legalEntity.data,
 		business_unit: businessUnit.data,
 		location: location.data,
@@ -1619,8 +1598,8 @@ export async function getOrganizationDimensionEffective(
 ): Promise<Result<OrganizationDimensionReference | null>> {
 	const parsed = getOrganizationDimensionEffectiveInputSchema.safeParse(input);
 	if (!parsed.success) {
-		return fail("BAD_REQUEST", "Invalid organization dimension lookup input", {
-			issues: parsed.error.issues,
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Invalid organization dimension lookup input",
 		});
 	}
 	const authorized = await requireMasterQueryPermission(options.authorization, {
@@ -1646,8 +1625,8 @@ export async function getOrganizationDimensionById(
 ): Promise<Result<OrganizationDimension | null>> {
 	const parsed = getOrganizationDimensionByIdInputSchema.safeParse(input);
 	if (!parsed.success) {
-		return fail("BAD_REQUEST", "Invalid organization dimension get input", {
-			issues: parsed.error.issues,
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Invalid organization dimension get input",
 		});
 	}
 	const authorized = await requireMasterQueryPermission(options.authorization, {
@@ -1670,11 +1649,9 @@ export async function getOrganizationDimensionByCode(
 ): Promise<Result<OrganizationDimension | null>> {
 	const parsed = getOrganizationDimensionByCodeInputSchema.safeParse(input);
 	if (!parsed.success) {
-		return fail(
-			"BAD_REQUEST",
-			"Invalid organization dimension get-by-code input",
-			{ issues: parsed.error.issues },
-		);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Invalid organization dimension get-by-code input",
+		});
 	}
 	const authorized = await requireMasterQueryPermission(options.authorization, {
 		organizationId: parsed.data.organizationId,
@@ -1701,8 +1678,8 @@ export async function listOrganizationDimensions(
 ): Promise<Result<{ items: OrganizationDimension[]; total: number }>> {
 	const parsed = listOrganizationDimensionsInputSchema.safeParse(input);
 	if (!parsed.success) {
-		return fail("BAD_REQUEST", "Invalid organization dimension list input", {
-			issues: parsed.error.issues,
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Invalid organization dimension list input",
 		});
 	}
 	const authorized = await requireMasterQueryPermission(options.authorization, {

@@ -1,5 +1,6 @@
 "use client";
 
+import type { Result as ActionResult } from "@afenda/errors";
 import {
 	Alert,
 	AlertDescription,
@@ -12,7 +13,6 @@ import {
 } from "@afenda/ui-system";
 import type { ComponentProps } from "react";
 import { useActionState } from "react";
-
 import { addSupplierCreditNoteLineAction } from "@/app/actions/add-supplier-credit-note-line";
 import { addSupplierInvoiceLineAction } from "@/app/actions/add-supplier-invoice-line";
 import { applySupplierCreditAction } from "@/app/actions/apply-supplier-credit";
@@ -25,7 +25,6 @@ import { matchSupplierInvoiceAction } from "@/app/actions/match-supplier-invoice
 import { postSupplierCreditNoteAction } from "@/app/actions/post-supplier-credit-note";
 import { postSupplierInvoiceAction } from "@/app/actions/post-supplier-invoice";
 import { reverseSupplierPaymentApplicationAction } from "@/app/actions/reverse-supplier-payment-application";
-import type { ActionResult } from "@/modules/platform/schemas/action-result";
 
 interface Field {
 	label: string;

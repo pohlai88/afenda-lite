@@ -1,6 +1,7 @@
 "use server";
 
 import { getSession } from "@afenda/auth";
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { createCorrelationId } from "@afenda/http";
 import { listPartyRoles, type PartyRole } from "@afenda/master-data";
 import { z } from "zod";
@@ -8,11 +9,6 @@ import { mapPackageResult } from "@/app/actions/map-package-result";
 import { forbidUnlessPermission } from "@/app/actions/permission-gate";
 import { createMasterDataAuthorizationPort } from "@/lib/erp/master-data-authorization-port";
 import { logProductEvent } from "@/modules/platform/observability/product-log";
-import {
-	type ActionResult,
-	actionFail,
-	actionFailInternal,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export interface ListPartyRolesActionData {
@@ -36,11 +32,9 @@ export async function listPartyRolesAction(
 
 	const parsed = parseSchema(listPartyRolesQuerySchema, input);
 	if (!parsed.success) {
-		return actionFail(
-			"VALIDATION_ERROR",
-			"Provide a valid party id.",
-			parsed.details,
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "Provide a valid party id.",
+		});
 	}
 
 	const permissionDenied = await forbidUnlessPermission(
@@ -77,9 +71,6 @@ export async function listPartyRolesAction(
 			path: "listPartyRolesAction",
 			code: "INTERNAL_ERROR",
 		});
-		return actionFailInternal(
-			"Could not list party roles. Try again or contact an admin.",
-			correlationId,
-		);
+		return errorResult.fail("INTERNAL_ERROR", { correlationId });
 	}
 }

@@ -1,15 +1,11 @@
 "use server";
 
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { getSupplierBalance, type SupplierBalance } from "@afenda/payables";
 import { z } from "zod";
-
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
 import { createPayablesCommandOptions } from "@/lib/erp/payables-command-options";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 const schema = z.object({
@@ -29,11 +25,9 @@ export async function getSupplierBalanceAction(input: {
 		execute: async (session) => {
 			const parsed = parseSchema(schema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid supplier and optional currency.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid supplier and optional currency.",
+				});
 			}
 			const mapped = mapPackageResult(
 				await getSupplierBalance(

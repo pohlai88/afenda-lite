@@ -86,17 +86,14 @@ Every PR that changes a shared concept must state:
 - superseded surfaces deleted in the same cutover.
 
 **Errors mission:** the proposed final-cutover contract lives in
-[`packages/foundation/errors/PR.md`](packages/foundation/errors/PR.md). Until it
-is implemented and verified, existing imports remain living code; do not claim
-the proposed root capabilities are already available. Consumer migration cannot
-begin until canonical-only construction, separate public/internal inputs,
-per-code retry, the single bundle-proven capability style, `Result<T, C>`,
-`messageKey`, per-code details, and AST interpretation rules are frozen. The
-close condition is not “all migrated files compile.” It is: one canonical error
-definition changes once, all consumers receive the intended behavior, and
-AST-based enforcement rejects supported, mechanically identifiable forms of
-redistributed interpretation; review policy prohibits equivalent disguised
-implementations.
+[`packages/foundation/errors/CONTRACT.md`](packages/foundation/errors/CONTRACT.md). The final
+consumer surface is the package root with named capabilities: no subpaths,
+`AppError`, manual serialization, or consumer-owned code-to-status, retry, or
+wording maps. Existing imports remain living code during Lane 1; do not migrate
+them or claim the proposed capabilities are complete until its allowed/rejected
+contract fixtures pass and the contract status explicitly unlocks consumer migration.
+Do not refresh package protection until the complete repository cutover is
+green.
 
 ### Skill router (short)
 
@@ -225,7 +222,7 @@ export async function ExamplePanel({ title, message }: { title: string; message:
 ### ERP port (inject at composition root — no peer ERP imports)
 
 ```ts
-import type { Result } from "@afenda/errors/result";
+import type { Result } from "@afenda/errors";
 
 export type AuditFactPort = {
 	record(input: {
@@ -296,7 +293,7 @@ Skip the plan only for single-file trivial edits the user already named.
 |----------|-----|
 | Invented APIs / imports that do not exist on disk | Read the living file or package `exports` first |
 | Re-implementing a helper that already lives in `@afenda/*` or `apps/web/modules` | Grep / package README before writing |
-| `{ success, data }` or non-`ok` Action envelopes | Use `ActionResult` / `@afenda/errors/result` |
+| `{ success, data }` or non-`ok` Action envelopes | Use `ActionResult` / root `@afenda/errors` |
 | Deep import `@afenda/*/src/...` or relative `../../packages/` | Package name or declared `exports` only |
 | UI import bypass of `@afenda/ui-system` | Flat barrel only (ADR-010 / ui-compose) |
 | Raw `process.env` for product config | `import { env } from "@afenda/env"` |

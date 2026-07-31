@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	type ApprovedPayrollHandoff,
 	approvedPayrollHandoffSchema,
@@ -25,12 +25,11 @@ function resolveMaxAttempts(value: number | undefined): Result<number> {
 		maxAttempts < 1 ||
 		maxAttempts > MAX_MAX_ATTEMPTS
 	) {
-		return fail(
-			"VALIDATION_ERROR",
-			`Payroll delivery max attempts must be between 1 and ${MAX_MAX_ATTEMPTS}`,
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+		});
 	}
-	return ok(maxAttempts);
+	return errorResult.ok(maxAttempts);
 }
 
 function canonicalize(value: unknown): unknown {
@@ -60,15 +59,21 @@ function validateBoundary(input: {
 }): Result<ApprovedPayrollHandoff> {
 	const parsed = approvedPayrollHandoffSchema.safeParse(input.payload);
 	if (!parsed.success) {
-		return fail("VALIDATION_ERROR", "Invalid approved payroll handoff payload");
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+		});
 	}
 	if (parsed.data.organizationId !== input.organizationId) {
-		return fail("VALIDATION_ERROR", "Payroll handoff organization mismatch");
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+		});
 	}
 	if (parsed.data.approvalEvidence.correlationId !== input.correlationId) {
-		return fail("VALIDATION_ERROR", "Payroll handoff correlation mismatch");
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 async function requireDelivery(
@@ -80,12 +85,16 @@ async function requireDelivery(
 		return found;
 	}
 	if (!found.data) {
-		return fail("NOT_FOUND", "Payroll delivery not found");
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "The requested resource was not found",
+		});
 	}
 	if (found.data.correlationId !== input.correlationId) {
-		return fail("NOT_FOUND", "Payroll delivery not found");
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "The requested resource was not found",
+		});
 	}
-	return ok(found.data);
+	return errorResult.ok(found.data);
 }
 
 export async function queuePayrollDelivery(
@@ -122,8 +131,10 @@ export async function queuePayrollDelivery(
 	}
 	if (replay.data) {
 		return replay.data.requestFingerprint === requestFingerprint
-			? ok(replay.data)
-			: fail("CONFLICT", "Payroll delivery idempotency conflict");
+			? errorResult.ok(replay.data)
+			: errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+				});
 	}
 
 	let superseded: PayrollDeliveryRecord | null = null;
@@ -137,13 +148,19 @@ export async function queuePayrollDelivery(
 			return source;
 		}
 		if (source.data.status !== "correction_required") {
-			return fail("CONFLICT", "Payroll delivery does not require correction");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "The request conflicts with current state",
+			});
 		}
 		if (source.data.supersededByDeliveryId) {
-			return fail("CONFLICT", "Payroll delivery correction already exists");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "The request conflicts with current state",
+			});
 		}
 		if (source.data.payloadHash === payloadHash) {
-			return fail("CONFLICT", "Corrected payroll payload must change");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "The request conflicts with current state",
+			});
 		}
 		superseded = source.data;
 	}
@@ -203,10 +220,12 @@ export async function deliverPayrollHandoff(
 	}
 	const current = found.data;
 	if (current.status !== "pending") {
-		return ok(current);
+		return errorResult.ok(current);
 	}
 	if (current.attemptCount >= current.maxAttempts) {
-		return fail("CONFLICT", "Payroll delivery attempt limit reached");
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "The request conflicts with current state",
+		});
 	}
 	const attempt = current.attemptCount + 1;
 	const published = await ports.producer.publish({
@@ -266,19 +285,20 @@ export async function recordPayrollDeliveryFeedback(
 	}
 	const current = found.data;
 	if (current.status === input.status) {
-		return ok(current);
+		return errorResult.ok(current);
 	}
 	if (
 		isPayrollDeliveryTerminal(current.status) ||
 		current.status !== "delivered"
 	) {
-		return fail("CONFLICT", "Payroll delivery cannot accept feedback");
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "The request conflicts with current state",
+		});
 	}
 	if (input.status !== "acknowledged" && !input.reason?.trim()) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Payroll delivery feedback reason is required",
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+		});
 	}
 	const now = ports.clock.now();
 	return ports.store.update({

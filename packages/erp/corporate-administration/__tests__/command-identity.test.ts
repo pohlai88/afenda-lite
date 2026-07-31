@@ -16,7 +16,6 @@ describe("Corporate Administration command identity", () => {
 			nested: z.object({ left: z.number(), right: z.number() }),
 		})
 		.strict();
-
 	function fingerprint(
 		input: unknown,
 		organizationId = "org_1",
@@ -33,7 +32,6 @@ describe("Corporate Administration command identity", () => {
 		}
 		return result.data;
 	}
-
 	it("binds normalized organization, command identity, and parsed input", () => {
 		const first = fingerprint({
 			code: " ca-01 ",
@@ -47,7 +45,6 @@ describe("Corporate Administration command identity", () => {
 			amount: "10.50",
 			code: "CA-01",
 		});
-
 		expect(first.fingerprint).toBe(reordered.fingerprint);
 		expect(first.envelope).toEqual({
 			namespace: "corporate-administration",
@@ -61,7 +58,6 @@ describe("Corporate Administration command identity", () => {
 			},
 		});
 	});
-
 	it("changes for array order, organization, or command identity", () => {
 		const base = {
 			code: "CA-01",
@@ -80,7 +76,6 @@ describe("Corporate Administration command identity", () => {
 				.fingerprint,
 		);
 	});
-
 	it("excludes delivery metadata from the fingerprint envelope", () => {
 		const result = fingerprint({
 			code: "CA-01",
@@ -88,7 +83,6 @@ describe("Corporate Administration command identity", () => {
 			lines: [],
 			nested: { left: 1, right: 2 },
 		});
-
 		expect(Object.keys(result.envelope).sort()).toEqual([
 			"commandId",
 			"input",
@@ -99,7 +93,6 @@ describe("Corporate Administration command identity", () => {
 			/correlation|causation|request|actor|authorization|clock/i,
 		);
 	});
-
 	it("fingerprints optional object fields by omission instead of undefined", () => {
 		const optionalSchema = z
 			.object({
@@ -111,7 +104,6 @@ describe("Corporate Administration command identity", () => {
 				}),
 			})
 			.strict();
-
 		const omitted = createCorporateAdministrationCommandFingerprint({
 			schema: optionalSchema,
 			organizationId: organizationIdSchema.parse("org_1"),
@@ -131,20 +123,17 @@ describe("Corporate Administration command identity", () => {
 				nested: { label: "kept", note: undefined },
 			},
 		});
-
 		expect(omitted.ok).toBe(true);
 		expect(explicitUndefined.ok).toBe(true);
 		if (!(omitted.ok && explicitUndefined.ok)) {
 			return;
 		}
-
 		expect(explicitUndefined.data.envelope.input).toEqual({
 			code: "CA-01",
 			nested: { label: "kept" },
 		});
 		expect(explicitUndefined.data.fingerprint).toBe(omitted.data.fingerprint);
 	});
-
 	it("returns validation failures before fingerprinting and never throws on non-canonical output", () => {
 		const invalid = createCorporateAdministrationCommandFingerprint({
 			schema: commandSchema,
@@ -156,7 +145,6 @@ describe("Corporate Administration command identity", () => {
 			ok: false,
 			code: "VALIDATION_ERROR",
 		});
-
 		const unsupportedSchema = z.string().transform(() => new Date());
 		const nonCanonical = createCorporateAdministrationCommandFingerprint({
 			schema: unsupportedSchema,
@@ -167,10 +155,8 @@ describe("Corporate Administration command identity", () => {
 		expect(nonCanonical).toMatchObject({
 			ok: false,
 			code: "VALIDATION_ERROR",
-			details: { field: "input" },
 		});
 	});
-
 	it("rejects command IDs outside the Corporate Administration namespace", () => {
 		const result = createCorporateAdministrationCommandFingerprint({
 			schema: commandSchema,
@@ -186,10 +172,8 @@ describe("Corporate Administration command identity", () => {
 		expect(result).toMatchObject({
 			ok: false,
 			code: "VALIDATION_ERROR",
-			details: { field: "commandId" },
 		});
 	});
-
 	it("rejects surrounding command-ID whitespace", () => {
 		const result = createCorporateAdministrationCommandFingerprint({
 			schema: commandSchema,

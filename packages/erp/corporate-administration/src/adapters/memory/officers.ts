@@ -1,9 +1,7 @@
 // biome-ignore-all lint/suspicious/useAwait: The deterministic memory adapter implements asynchronous officer ports.
 // biome-ignore-all lint/suspicious/noShadow: Domain-local callbacks intentionally mirror officer records.
 import { randomUUID } from "node:crypto";
-import { fail, ok } from "@afenda/errors/result";
-
-import { corporateAdministrationErrorDetails } from "../../error-codes";
+import { errorResult } from "@afenda/errors";
 import {
 	officerAppointmentIdSchema,
 	officerQualificationIdSchema,
@@ -27,14 +25,14 @@ export function createMemoryCorporateAdministrationOfficerStore(): OfficerStore 
 
 	return {
 		async getStatutoryOffice(input) {
-			return ok(
+			return errorResult.ok(
 				cloneNullable(
 					offices.get(key(input.organizationId, input.statutoryOfficeId)),
 				),
 			);
 		},
 		async listStatutoryOffices(input) {
-			return ok(
+			return errorResult.ok(
 				[...offices.values()]
 					.filter(
 						(row) =>
@@ -48,7 +46,7 @@ export function createMemoryCorporateAdministrationOfficerStore(): OfficerStore 
 			);
 		},
 		async listRequiredStatutoryOffices(input) {
-			return ok(
+			return errorResult.ok(
 				[...offices.values()]
 					.filter(
 						(row) =>
@@ -107,10 +105,10 @@ export function createMemoryCorporateAdministrationOfficerStore(): OfficerStore 
 				updatedAt: now,
 			};
 			offices.set(key(input.organizationId, id), row);
-			return ok(clone(row));
+			return errorResult.ok(clone(row));
 		},
 		async getOfficerAppointment(input) {
-			return ok(
+			return errorResult.ok(
 				cloneNullable(
 					appointments.get(
 						key(input.organizationId, input.officerAppointmentId),
@@ -119,7 +117,7 @@ export function createMemoryCorporateAdministrationOfficerStore(): OfficerStore 
 			);
 		},
 		async listOfficerAppointments(input) {
-			return ok(
+			return errorResult.ok(
 				[...appointments.values()]
 					.filter(
 						(row) =>
@@ -130,7 +128,7 @@ export function createMemoryCorporateAdministrationOfficerStore(): OfficerStore 
 			);
 		},
 		async listOfficersAsOf(input) {
-			return ok(
+			return errorResult.ok(
 				[...appointments.values()]
 					.filter(
 						(row) =>
@@ -176,7 +174,7 @@ export function createMemoryCorporateAdministrationOfficerStore(): OfficerStore 
 				updatedAt: now,
 			};
 			appointments.set(key(input.organizationId, id), row);
-			return ok(clone(row));
+			return errorResult.ok(clone(row));
 		},
 		async amendOfficerAppointment(input) {
 			const current = appointments.get(
@@ -204,7 +202,7 @@ export function createMemoryCorporateAdministrationOfficerStore(): OfficerStore 
 				updatedAt: now,
 			};
 			appointments.set(key(input.organizationId, updated.id), updated);
-			return ok(clone(updated));
+			return errorResult.ok(clone(updated));
 		},
 		async endOfficerAppointment(input) {
 			const current = appointments.get(
@@ -229,7 +227,7 @@ export function createMemoryCorporateAdministrationOfficerStore(): OfficerStore 
 				updatedAt: now,
 			};
 			appointments.set(key(input.organizationId, updated.id), updated);
-			return ok(clone(updated));
+			return errorResult.ok(clone(updated));
 		},
 		async recordOfficerQualification(input) {
 			const id = officerQualificationIdSchema.parse(randomUUID());
@@ -254,10 +252,10 @@ export function createMemoryCorporateAdministrationOfficerStore(): OfficerStore 
 				updatedAt: now,
 			};
 			qualifications.set(key(input.organizationId, id), row);
-			return ok(clone(row));
+			return errorResult.ok(clone(row));
 		},
 		async listOfficerQualifications(input) {
-			return ok(
+			return errorResult.ok(
 				[...qualifications.values()]
 					.filter(
 						(row) =>
@@ -283,31 +281,21 @@ function cloneNullable<T>(value: T | undefined): T | null {
 	return value === undefined ? null : clone(value);
 }
 
-function conflict(field: string) {
-	return fail(
-		"CONFLICT",
-		"Corporate Administration officer record conflicts with existing history.",
-		corporateAdministrationErrorDetails("CORPORATE_ADMINISTRATION_CONFLICT", {
-			field,
-		}),
-	);
+function conflict(_field: string) {
+	return errorResult.fail("CONFLICT", {
+		publicMessage:
+			"Corporate Administration officer record conflicts with existing history.",
+	});
 }
 
 function notFound() {
-	return fail(
-		"NOT_FOUND",
-		"Corporate Administration record was not found.",
-		corporateAdministrationErrorDetails("CORPORATE_ADMINISTRATION_NOT_FOUND"),
-	);
+	return errorResult.fail("NOT_FOUND", {
+		publicMessage: "Corporate Administration record was not found.",
+	});
 }
 
-function stale(expectedVersion: number, actualVersion: number) {
-	return fail(
-		"CONFLICT",
-		"Corporate Administration record version is stale.",
-		corporateAdministrationErrorDetails(
-			"CORPORATE_ADMINISTRATION_STALE_VERSION",
-			{ expectedVersion, actualVersion },
-		),
-	);
+function stale(_expectedVersion: number, _actualVersion: number) {
+	return errorResult.fail("CONFLICT", {
+		publicMessage: "Corporate Administration record version is stale.",
+	});
 }

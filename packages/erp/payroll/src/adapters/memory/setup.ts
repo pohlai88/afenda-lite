@@ -1,6 +1,6 @@
 // biome-ignore-all lint/suspicious/useAwait: The deterministic memory adapter implements asynchronous payroll setup ports.
 import { randomUUID } from "node:crypto";
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	type PayrollCalendarId,
@@ -13,10 +13,6 @@ import {
 	parsePayrollPeriodId,
 	parsePayrollStatutoryRuleId,
 } from "../../brands";
-import {
-	PAYROLL_ERROR_EFFECTIVE_RANGE_OVERLAP,
-	payrollErrorDetails,
-} from "../../error-codes";
 import type { MutationPorts } from "../../ports";
 import { assertExpectedVersion } from "../../shared/concurrency";
 import {
@@ -100,12 +96,12 @@ function resolveIdempotentReplay<TEntity>(
 	clone: (entity: TEntity) => TEntity,
 ): Result<TEntity | null> {
 	if (existing === undefined) {
-		return ok(null);
+		return errorResult.ok(null);
 	}
 	if (existing.createRequestFingerprint !== createRequestFingerprint) {
 		return mapConflict("Idempotency key conflict");
 	}
-	return ok(clone(existing.entity));
+	return errorResult.ok(clone(existing.entity));
 }
 
 function hasActiveRuleOverlap<
@@ -245,9 +241,9 @@ export function createMemorySetupMethods(
 				idempotencyMapKey(input.organizationId, input.idempotencyKey),
 			);
 			if (record === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
-			return ok({
+			return errorResult.ok({
 				calendar: cloneCalendar(record.calendar),
 				createRequestFingerprint: record.createRequestFingerprint,
 			});
@@ -271,7 +267,7 @@ export function createMemorySetupMethods(
 				) {
 					return mapConflict("Idempotency key conflict");
 				}
-				return ok(cloneCalendar(existing.data.calendar));
+				return errorResult.ok(cloneCalendar(existing.data.calendar));
 			}
 
 			const idResult = parsePayrollCalendarId(randomUUID());
@@ -321,7 +317,7 @@ export function createMemorySetupMethods(
 				return audit;
 			}
 
-			return ok(cloneCalendar(calendar));
+			return errorResult.ok(cloneCalendar(calendar));
 		},
 
 		async getCalendar(input: {
@@ -333,9 +329,9 @@ export function createMemorySetupMethods(
 				calendar === undefined ||
 				calendar.organizationId !== input.organizationId
 			) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
-			return ok(cloneCalendar(calendar));
+			return errorResult.ok(cloneCalendar(calendar));
 		},
 
 		async updateCalendar(
@@ -387,7 +383,7 @@ export function createMemorySetupMethods(
 				return audit;
 			}
 
-			return ok(cloneCalendar(updated));
+			return errorResult.ok(cloneCalendar(updated));
 		},
 
 		async createPayGroup(
@@ -405,7 +401,7 @@ export function createMemorySetupMethods(
 				return replay;
 			}
 			if (replay.data !== null) {
-				return ok(replay.data);
+				return errorResult.ok(replay.data);
 			}
 
 			const calendar = state.calendars.get(record.calendarId);
@@ -462,7 +458,7 @@ export function createMemorySetupMethods(
 				return audit;
 			}
 
-			return ok(clonePayGroup(payGroup));
+			return errorResult.ok(clonePayGroup(payGroup));
 		},
 
 		async getPayGroup(input: {
@@ -474,9 +470,9 @@ export function createMemorySetupMethods(
 				payGroup === undefined ||
 				payGroup.organizationId !== input.organizationId
 			) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
-			return ok(clonePayGroup(payGroup));
+			return errorResult.ok(clonePayGroup(payGroup));
 		},
 
 		async listPayGroups(input: {
@@ -492,7 +488,7 @@ export function createMemorySetupMethods(
 				}
 				return true;
 			});
-			return ok(groups.map(clonePayGroup));
+			return errorResult.ok(groups.map(clonePayGroup));
 		},
 
 		async createPeriod(
@@ -510,7 +506,7 @@ export function createMemorySetupMethods(
 				return replay;
 			}
 			if (replay.data !== null) {
-				return ok(replay.data);
+				return errorResult.ok(replay.data);
 			}
 
 			const payGroup = state.payGroups.get(record.payGroupId);
@@ -567,7 +563,7 @@ export function createMemorySetupMethods(
 				return audit;
 			}
 
-			return ok(clonePeriod(period));
+			return errorResult.ok(clonePeriod(period));
 		},
 
 		async getPeriod(input: {
@@ -579,9 +575,9 @@ export function createMemorySetupMethods(
 				period === undefined ||
 				period.organizationId !== input.organizationId
 			) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
-			return ok(clonePeriod(period));
+			return errorResult.ok(clonePeriod(period));
 		},
 
 		async listPeriodsForPayGroup(input: {
@@ -601,7 +597,7 @@ export function createMemorySetupMethods(
 				}
 				return true;
 			});
-			return ok(periods.map(clonePeriod));
+			return errorResult.ok(periods.map(clonePeriod));
 		},
 
 		async createEarningRule(
@@ -619,7 +615,7 @@ export function createMemorySetupMethods(
 				return replay;
 			}
 			if (replay.data !== null) {
-				return ok(replay.data);
+				return errorResult.ok(replay.data);
 			}
 
 			const payGroup = state.payGroups.get(record.payGroupId);
@@ -631,11 +627,9 @@ export function createMemorySetupMethods(
 			}
 
 			if (hasActiveRuleOverlap(state.earningRules.values(), record)) {
-				return fail(
-					"CONFLICT",
-					"Overlapping effective range for active earning rule",
-					payrollErrorDetails(PAYROLL_ERROR_EFFECTIVE_RANGE_OVERLAP),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Overlapping effective range for active earning rule",
+				});
 			}
 
 			const idResult = parsePayrollEarningRuleId(randomUUID());
@@ -690,7 +684,7 @@ export function createMemorySetupMethods(
 				return audit;
 			}
 
-			return ok(cloneEarningRule(rule));
+			return errorResult.ok(cloneEarningRule(rule));
 		},
 
 		async createDeductionRule(
@@ -708,7 +702,7 @@ export function createMemorySetupMethods(
 				return replay;
 			}
 			if (replay.data !== null) {
-				return ok(replay.data);
+				return errorResult.ok(replay.data);
 			}
 
 			const payGroup = state.payGroups.get(record.payGroupId);
@@ -720,11 +714,10 @@ export function createMemorySetupMethods(
 			}
 
 			if (hasActiveRuleOverlap(state.deductionRules.values(), record)) {
-				return fail(
-					"CONFLICT",
-					"Overlapping effective range for active deduction rule",
-					payrollErrorDetails(PAYROLL_ERROR_EFFECTIVE_RANGE_OVERLAP),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage:
+						"Overlapping effective range for active deduction rule",
+				});
 			}
 
 			const idResult = parsePayrollDeductionRuleId(randomUUID());
@@ -780,7 +773,7 @@ export function createMemorySetupMethods(
 				return audit;
 			}
 
-			return ok(cloneDeductionRule(rule));
+			return errorResult.ok(cloneDeductionRule(rule));
 		},
 
 		async createStatutoryRule(
@@ -798,7 +791,7 @@ export function createMemorySetupMethods(
 				return replay;
 			}
 			if (replay.data !== null) {
-				return ok(replay.data);
+				return errorResult.ok(replay.data);
 			}
 
 			const payGroup = state.payGroups.get(record.payGroupId);
@@ -810,11 +803,10 @@ export function createMemorySetupMethods(
 			}
 
 			if (hasActiveRuleOverlap(state.statutoryRules.values(), record)) {
-				return fail(
-					"CONFLICT",
-					"Overlapping effective range for active statutory rule",
-					payrollErrorDetails(PAYROLL_ERROR_EFFECTIVE_RANGE_OVERLAP),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage:
+						"Overlapping effective range for active statutory rule",
+				});
 			}
 
 			const idResult = parsePayrollStatutoryRuleId(randomUUID());
@@ -867,7 +859,7 @@ export function createMemorySetupMethods(
 				return audit;
 			}
 
-			return ok(cloneStatutoryRule(rule));
+			return errorResult.ok(cloneStatutoryRule(rule));
 		},
 
 		async getEarningRuleAtEffectiveDate(input: {
@@ -880,7 +872,7 @@ export function createMemorySetupMethods(
 				state.earningRules.values(),
 				input,
 			);
-			return ok(rule === null ? null : cloneEarningRule(rule));
+			return errorResult.ok(rule === null ? null : cloneEarningRule(rule));
 		},
 
 		async getDeductionRuleAtEffectiveDate(input: {
@@ -893,7 +885,7 @@ export function createMemorySetupMethods(
 				state.deductionRules.values(),
 				input,
 			);
-			return ok(rule === null ? null : cloneDeductionRule(rule));
+			return errorResult.ok(rule === null ? null : cloneDeductionRule(rule));
 		},
 
 		async getStatutoryRuleAtEffectiveDate(input: {
@@ -906,7 +898,7 @@ export function createMemorySetupMethods(
 				state.statutoryRules.values(),
 				input,
 			);
-			return ok(rule === null ? null : cloneStatutoryRule(rule));
+			return errorResult.ok(rule === null ? null : cloneStatutoryRule(rule));
 		},
 
 		async listActiveEarningRulesForPayGroup(input: {
@@ -918,7 +910,7 @@ export function createMemorySetupMethods(
 				state.earningRules.values(),
 				input,
 			).map(cloneEarningRule);
-			return ok(rules);
+			return errorResult.ok(rules);
 		},
 
 		async listActiveDeductionRulesForPayGroup(input: {
@@ -930,7 +922,7 @@ export function createMemorySetupMethods(
 				state.deductionRules.values(),
 				input,
 			).map(cloneDeductionRule);
-			return ok(rules);
+			return errorResult.ok(rules);
 		},
 
 		async listActiveStatutoryRulesForPayGroup(input: {
@@ -942,7 +934,7 @@ export function createMemorySetupMethods(
 				state.statutoryRules.values(),
 				input,
 			).map(cloneStatutoryRule);
-			return ok(rules);
+			return errorResult.ok(rules);
 		},
 	};
 

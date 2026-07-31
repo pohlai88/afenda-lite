@@ -1,4 +1,4 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import { lifecycleMergeCycle } from "./lifecycle-errors";
 
@@ -40,7 +40,7 @@ async function resolveCanonicalStep(
 		return current;
 	}
 	if (current.data === null || current.data.mergedIntoId === null) {
-		return ok({
+		return errorResult.ok({
 			requestedId,
 			canonicalId: current.data?.id ?? currentId,
 			hops,
@@ -73,6 +73,9 @@ export async function resolveCanonicalIdentity(
 ): Promise<Result<{ id: string; hops: number }>> {
 	const resolved = await resolveCanonicalIdentityWithLineage(id, load, maxHops);
 	return resolved.ok
-		? ok({ id: resolved.data.canonicalId, hops: resolved.data.hops })
+		? errorResult.ok({
+				id: resolved.data.canonicalId,
+				hops: resolved.data.hops,
+			})
 		: resolved;
 }

@@ -1,6 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
-
-import { corporateAdministrationErrorDetails } from "./error-codes";
+import { errorResult, type Result } from "@afenda/errors";
 import type {
 	ApprovalDecisionId,
 	ApprovalRequestId,
@@ -197,7 +195,7 @@ export async function requireCorporateAdministrationPermission(
 		return forbidden(input.permission);
 	}
 
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export async function requireCorporateAdministrationApprovalIfConfigured(
@@ -211,20 +209,13 @@ export async function requireCorporateAdministrationApprovalIfConfigured(
 	}>,
 ): Promise<Result<void>> {
 	if (dependencies.approvalDecisions === undefined) {
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	}
 	if (
 		input.approvalRequestId === undefined ||
 		input.approvalDecisionId === undefined
 	) {
-		return fail(
-			"FORBIDDEN",
-			"Corporate Administration approval is required",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_APPROVAL_REQUIRED",
-				{ field: "approvalDecisionId" },
-			),
-		);
+		return errorResult.fail("FORBIDDEN");
 	}
 	const decision = await dependencies.approvalDecisions.verify({
 		organizationId: input.organizationId,
@@ -243,36 +234,16 @@ export async function requireCorporateAdministrationApprovalIfConfigured(
 		decision.data.commandFingerprint !== input.commandFingerprint ||
 		!decision.data.approved
 	) {
-		return fail(
-			"FORBIDDEN",
-			"Corporate Administration approval decision is invalid",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_APPROVAL_INVALID",
-				{ field: "approvalDecisionId" },
-			),
-		);
+		return errorResult.fail("FORBIDDEN");
 	}
 	if (decision.data.approverUserId === input.actorUserId) {
-		return fail(
-			"FORBIDDEN",
-			"Corporate Administration requester cannot approve their own change",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_SEGREGATION_OF_DUTIES",
-				{ field: "approvalDecisionId" },
-			),
-		);
+		return errorResult.fail("FORBIDDEN");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 function forbidden(
-	permission: CorporateAdministrationPermission,
+	_permission: CorporateAdministrationPermission,
 ): Result<void> {
-	return fail(
-		"FORBIDDEN",
-		"Corporate Administration permission is required",
-		corporateAdministrationErrorDetails("CORPORATE_ADMINISTRATION_FORBIDDEN", {
-			permission,
-		}),
-	);
+	return errorResult.fail("FORBIDDEN");
 }

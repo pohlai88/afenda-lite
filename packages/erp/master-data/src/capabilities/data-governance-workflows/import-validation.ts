@@ -30,7 +30,7 @@
  *
  * Warnings require acknowledgement or review according to policy.
  */
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	type ImportValidationFailureFinding,
@@ -136,7 +136,7 @@ export function assertImportValidationAllowsApproval(input: {
 		});
 	}
 
-	return ok(true);
+	return errorResult.ok(true);
 }
 
 export function assertImportValidationAllowsApplication(input: {
@@ -157,7 +157,7 @@ export function assertNoImportValidationErrors(
 	});
 
 	if (summary.errorCount === 0) {
-		return ok(true);
+		return errorResult.ok(true);
 	}
 
 	return importValidationFailed({

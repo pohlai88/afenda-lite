@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { ok } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 
 import type {
 	HumanResourcesOrganizationDimensions,
@@ -29,7 +29,7 @@ export function createMemoryOrganizationDimensionDirectory(): OrganizationDimens
 				};
 			};
 			return Promise.resolve(
-				ok({
+				errorResult.ok({
 					legal_entity: dimension("legal_entity"),
 					business_unit: dimension("business_unit"),
 					location: dimension("location"),

@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { HumanResourcesCommandOptions } from "../command-options";
 import { resolveAssignmentContext } from "../command-options";
 import {
@@ -116,13 +116,14 @@ export async function createOvertimeRequest(
 			}
 			if (existing.data !== null) {
 				if (existing.data.createRequestFingerprint !== fingerprint) {
-					return fail(
-						"CONFLICT",
-						"Idempotency key reused with different payload",
-						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-					);
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+						internalContext: humanResourcesErrorDetails(
+							HUMAN_RESOURCES_ERROR_CONFLICT,
+						),
+					});
 				}
-				return ok(existing.data.request);
+				return errorResult.ok(existing.data.request);
 			}
 			return store.createOvertimeRequest(
 				{
@@ -166,11 +167,12 @@ export async function approveOvertimeRequest(
 				return notFound("Overtime request not found");
 			}
 			if (existing.data.employmentId === null) {
-				return fail(
-					"VALIDATION_ERROR",
-					"Overtime request has no employment context",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "The submitted data is invalid",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+					),
+				});
 			}
 			const orgLocal = await resolveOvertimeOrganizationLocalWorkDate(
 				{
@@ -195,11 +197,11 @@ export async function approveOvertimeRequest(
 				return resolvedAssignment;
 			}
 			if (resolvedAssignment.data === null) {
-				return fail(
-					"FORBIDDEN",
-					"Actor does not hold the required approval authority",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
-				);
+				return errorResult.fail("FORBIDDEN", {
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_FORBIDDEN,
+					),
+				});
 			}
 			return store.approveOvertimeRequest(
 				{

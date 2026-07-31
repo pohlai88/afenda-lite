@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	assignmentBulkRowSchema,
 	attendanceBulkRowSchema,
@@ -43,14 +43,14 @@ function parseRows<Row>(
 	for (const row of rows) {
 		const payload = schema.safeParse(row.payload);
 		if (!payload.success) {
-			return fail("INTERNAL_ERROR", "Persisted bulk import payload is invalid");
+			return errorResult.fail("INTERNAL_ERROR");
 		}
 		parsed.push({
 			sourceReference: row.sourceReference,
 			payload: payload.data,
 		});
 	}
-	return ok(parsed);
+	return errorResult.ok(parsed);
 }
 
 async function runImport(
@@ -168,20 +168,24 @@ export async function processHumanResourcesBulkImportJob(
 		return found;
 	}
 	if (!found.data) {
-		return fail("NOT_FOUND", "Bulk import job not found");
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Bulk import job not found",
+		});
 	}
 	const job = found.data;
 	if (
 		job.status === "completed" ||
 		job.status === "completed_with_rejections"
 	) {
-		return ok({
+		return errorResult.ok({
 			kind: "acknowledged",
 			receiptId: `bulk-import:${job.id}:${job.version}`,
 		});
 	}
 	if (job.payloadPurgedAt !== null) {
-		return fail("CONFLICT", "Bulk import payload has expired");
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Bulk import payload has expired",
+		});
 	}
 	const allowed = await createHumanResourcesAuthorizationPort().can({
 		organizationId: job.organizationId,
@@ -189,7 +193,7 @@ export async function processHumanResourcesBulkImportJob(
 		permission: job.requiredPermission,
 	});
 	if (!allowed) {
-		return fail("FORBIDDEN", "Bulk import permission was revoked");
+		return errorResult.fail("FORBIDDEN");
 	}
 	const loadedRows = await jobs.listImportRows({
 		organizationId: job.organizationId,
@@ -202,7 +206,7 @@ export async function processHumanResourcesBulkImportJob(
 		loadedRows.data.length !== job.rowCount ||
 		loadedRows.data.some((row) => row.payload === null)
 	) {
-		return fail("INTERNAL_ERROR", "Bulk import source rows are incomplete");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 	const result = await runImport(job, loadedRows.data);
 	if (!result.ok) {
@@ -226,9 +230,7 @@ export async function processHumanResourcesBulkImportJob(
 			successorWorkItem: null,
 			cleanupWorkItem: null,
 		});
-		return committed.ok
-			? fail("SERVICE_UNAVAILABLE", "Bulk import row execution requires retry")
-			: committed;
+		return committed.ok ? errorResult.fail("SERVICE_UNAVAILABLE") : committed;
 	}
 	const terminal =
 		result.data.status === "completed" ||
@@ -277,7 +279,7 @@ export async function processHumanResourcesBulkImportJob(
 		cleanupWorkItem: cleanup,
 	});
 	return committed.ok
-		? ok({
+		? errorResult.ok({
 				kind: "acknowledged",
 				receiptId: `bulk-import:${job.id}:${committed.data.version}`,
 			})
@@ -296,11 +298,13 @@ export async function processHumanResourcesBulkExportJob(
 		return found;
 	}
 	if (!found.data) {
-		return fail("NOT_FOUND", "Bulk export job not found");
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Bulk export job not found",
+		});
 	}
 	const job = found.data;
 	if (job.status === "completed") {
-		return ok({
+		return errorResult.ok({
 			kind: "acknowledged",
 			receiptId: `bulk-export:${job.id}:${job.version}`,
 		});
@@ -311,7 +315,7 @@ export async function processHumanResourcesBulkExportJob(
 		permission: job.requiredPermission,
 	});
 	if (!allowed) {
-		return fail("FORBIDDEN", "Bulk export permission was revoked");
+		return errorResult.fail("FORBIDDEN");
 	}
 	const exported = await runHumanResourcesBulkExportWorker({
 		organizationId: job.organizationId,
@@ -368,7 +372,7 @@ export async function processHumanResourcesBulkExportJob(
 		cleanupWorkItem: cleanup,
 	});
 	return committed.ok
-		? ok({
+		? errorResult.ok({
 				kind: "acknowledged",
 				receiptId: `bulk-export:${job.id}:${committed.data.version}`,
 			})
@@ -393,7 +397,7 @@ export async function purgeHumanResourcesBulkJob(
 					now,
 				});
 	return purged.ok
-		? ok({
+		? errorResult.ok({
 				kind: "acknowledged",
 				receiptId: `bulk-purge:${item.targetId}:${purged.data.version}`,
 			})

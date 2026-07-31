@@ -1,5 +1,8 @@
-import type { ErrorCode } from "@afenda/errors";
-import { fail, ok, type Result } from "@afenda/errors/result";
+import {
+	type CanonicalErrorCode,
+	errorResult,
+	type Result,
+} from "@afenda/errors";
 
 import {
 	HUMAN_RESOURCES_ERROR_DEPENDENCY_UNAVAILABLE,
@@ -26,14 +29,14 @@ const DEFAULT_RETRY = {
 	backoffMs: 0,
 } as const;
 
-const RETRYABLE_PULL_CODES = new Set<ErrorCode>([
+const RETRYABLE_PULL_CODES = new Set<CanonicalErrorCode>([
 	"INTERNAL_ERROR",
 	"SERVICE_UNAVAILABLE",
 ]);
 
 function isRetryablePullFailure(result: {
 	ok: false;
-	code: ErrorCode;
+	code: CanonicalErrorCode;
 }): boolean {
 	return RETRYABLE_PULL_CODES.has(result.code);
 }
@@ -101,13 +104,11 @@ async function pullWithRetry(input: {
 				return pulled;
 			}
 		} catch {
-			lastFailure = fail(
-				"SERVICE_UNAVAILABLE",
-				"Attendance connector request failed.",
-				humanResourcesErrorDetails(
+			lastFailure = errorResult.fail("SERVICE_UNAVAILABLE", {
+				internalContext: humanResourcesErrorDetails(
 					HUMAN_RESOURCES_ERROR_DEPENDENCY_UNAVAILABLE,
 				),
-			);
+			});
 			if (attempt === input.retry.maxAttempts) {
 				await observeAttendanceConnectorHealth(
 					"unavailable",
@@ -122,35 +123,35 @@ async function pullWithRetry(input: {
 
 	return (
 		lastFailure ??
-		fail(
-			"SERVICE_UNAVAILABLE",
-			"Attendance connector request failed.",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_DEPENDENCY_UNAVAILABLE),
-		)
+		errorResult.fail("SERVICE_UNAVAILABLE", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_DEPENDENCY_UNAVAILABLE,
+			),
+		})
 	);
 }
 
 function requireOrganizationId(organizationId: string): Result<void> {
 	if (organizationId.trim().length === 0) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Organization id is required for attendance connector pulls.",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 function failClosedAttendanceSource(): AttendanceSourcePort {
 	const unavailable = (): Promise<Result<never>> =>
 		Promise.resolve(
-			fail(
-				"CONFLICT",
-				"Pass inline import events or configure an attendance connector.",
-				humanResourcesErrorDetails(
+			errorResult.fail("CONFLICT", {
+				publicMessage: "The request conflicts with current state",
+				internalContext: humanResourcesErrorDetails(
 					HUMAN_RESOURCES_ERROR_DEPENDENCY_UNAVAILABLE,
 				),
-			),
+			}),
 		);
 
 	return {
@@ -212,7 +213,7 @@ async function pullNormalizedBatch(input: {
 		...(boundCursor === undefined ? {} : { nextCursor: boundCursor }),
 	});
 
-	return ok({
+	return errorResult.ok({
 		batch: {
 			events: artifacts.batch.events,
 			...(artifacts.batch.nextCursor === undefined
@@ -251,14 +252,14 @@ function createConfiguredAttendanceSource(input: {
 			if (!resolved.ok) {
 				return resolved;
 			}
-			return ok(resolved.data.batch);
+			return errorResult.ok(resolved.data.batch);
 		},
 		async previewEvents(fetchInput) {
 			const resolved = await resolve(fetchInput);
 			if (!resolved.ok) {
 				return resolved;
 			}
-			return ok(resolved.data.preview);
+			return errorResult.ok(resolved.data.preview);
 		},
 	};
 }

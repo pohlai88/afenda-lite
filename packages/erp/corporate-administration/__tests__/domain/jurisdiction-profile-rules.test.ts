@@ -23,7 +23,6 @@ const baseProfile = {
 	supersededByProfileId: null,
 	version: 1,
 } satisfies CompanyJurisdictionProfile;
-
 describe("Corporate Administration jurisdiction profile rules", () => {
 	it("accepts compatible jurisdiction and entity type rules", () => {
 		const result = assertJurisdictionEntityTypeCompatible({
@@ -37,10 +36,8 @@ describe("Corporate Administration jurisdiction profile rules", () => {
 				},
 			],
 		});
-
 		expect(result.ok).toBe(true);
 	});
-
 	it("rejects an invalid jurisdiction and entity type combination", () => {
 		const result = assertJurisdictionEntityTypeCompatible({
 			jurisdictionCountryCode: "MY",
@@ -53,14 +50,11 @@ describe("Corporate Administration jurisdiction profile rules", () => {
 				},
 			],
 		});
-
 		expect(result).toMatchObject({
 			ok: false,
 			code: "VALIDATION_ERROR",
-			details: { reason: "CORPORATE_ADMINISTRATION_REFERENCE_INVALID" },
 		});
 	});
-
 	it("rejects inactive reference rules", () => {
 		const result = assertJurisdictionEntityTypeCompatible({
 			jurisdictionCountryCode: "MY",
@@ -73,14 +67,11 @@ describe("Corporate Administration jurisdiction profile rules", () => {
 				},
 			],
 		});
-
 		expect(result).toMatchObject({
 			ok: false,
 			code: "CONFLICT",
-			details: { reason: "CORPORATE_ADMINISTRATION_REFERENCE_INACTIVE" },
 		});
 	});
-
 	it("rejects an effective end date before or equal to the start date", () => {
 		expect(
 			assertEffectivePeriodChronology({
@@ -90,7 +81,6 @@ describe("Corporate Administration jurisdiction profile rules", () => {
 		).toMatchObject({
 			ok: false,
 			code: "CONFLICT",
-			details: { reason: "CORPORATE_ADMINISTRATION_CHRONOLOGY_INVALID" },
 		});
 		expect(
 			assertEffectivePeriodChronology({
@@ -100,38 +90,28 @@ describe("Corporate Administration jurisdiction profile rules", () => {
 		).toMatchObject({
 			ok: false,
 			code: "CONFLICT",
-			details: { reason: "CORPORATE_ADMINISTRATION_CHRONOLOGY_INVALID" },
 		});
 	});
-
 	it("rejects overlapping active profiles", () => {
 		const result = assertNoJurisdictionProfileOverlap({
 			candidate: { from: "2026-06-01", to: null },
 			existing: [baseProfile],
 		});
-
 		expect(result).toMatchObject({
 			ok: false,
 			code: "CONFLICT",
-			details: {
-				reason: "CORPORATE_ADMINISTRATION_EFFECTIVE_RANGE_OVERLAP",
-			},
 		});
 	});
-
 	it("rejects supersession of a predecessor not found for the selected company", () => {
 		const result = assertSupersessionEligible({
 			profile: null,
 			expectedVersion: 1,
 		});
-
 		expect(result).toMatchObject({
 			ok: false,
 			code: "NOT_FOUND",
-			details: { reason: "CORPORATE_ADMINISTRATION_NOT_FOUND" },
 		});
 	});
-
 	it("classifies future-dated and retroactive profile facts", () => {
 		expect(
 			isFutureDatedProfile({

@@ -1,4 +1,4 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { SalesFulfillmentQueryPort } from "../../src/ports";
 
 export function createMemorySalesFulfillmentQueryPort(
@@ -53,9 +53,9 @@ export function createMemorySalesFulfillmentQueryPort(
 		> {
 			const order = orders.get(input.salesOrderId);
 			if (!order || order.organizationId !== input.organizationId) {
-				return Promise.resolve(ok(null));
+				return Promise.resolve(errorResult.ok(null));
 			}
-			return Promise.resolve(ok(order));
+			return Promise.resolve(errorResult.ok(order));
 		},
 	};
 }

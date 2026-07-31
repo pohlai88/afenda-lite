@@ -1,19 +1,15 @@
 "use server";
 
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import {
 	applyCustomerReceipt,
 	type CustomerAllocation,
 } from "@afenda/receivables";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
 import { createReceivablesCommandOptions } from "@/lib/erp/receivables-command-options";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export interface ApplyCustomerReceiptActionData {
@@ -52,11 +48,10 @@ export async function applyCustomerReceiptAction(
 				idempotencyKey: formData.get("idempotencyKey"),
 			});
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid payment, instruction, sales invoice, amount, version, and idempotency key.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage:
+						"Enter a valid payment, instruction, sales invoice, amount, version, and idempotency key.",
+				});
 			}
 			const mapped = mapPackageResult(
 				await applyCustomerReceipt(

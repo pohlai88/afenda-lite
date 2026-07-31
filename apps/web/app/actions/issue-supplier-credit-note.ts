@@ -1,5 +1,6 @@
 "use server";
 
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import {
 	issueSupplierCreditNote,
 	type SupplierInvoice,
@@ -9,10 +10,6 @@ import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
 import { createPayablesCommandOptions } from "@/lib/erp/payables-command-options";
 import { revalidatePayablesPaths } from "@/lib/erp/revalidate-payables-paths";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export type IssueSupplierCreditNoteActionState = ActionResult<{
@@ -51,11 +48,10 @@ export async function issueSupplierCreditNoteAction(
 				description: formData.get("description") || undefined,
 			});
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid credit note, supplier, item, currency, and amount.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage:
+						"Enter a valid credit note, supplier, item, currency, and amount.",
+				});
 			}
 			const mapped = mapPackageResult(
 				await issueSupplierCreditNote(

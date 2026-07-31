@@ -1,4 +1,4 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	deleteSearchDocument,
 	listSearchDocumentIds,
@@ -151,7 +151,7 @@ export async function projectMasterRoot(
 		if (!deleted.ok) {
 			return deleted;
 		}
-		return ok({ projected: false });
+		return errorResult.ok({ projected: false });
 	}
 
 	const upserted = await upsertSearchDocument(
@@ -161,7 +161,7 @@ export async function projectMasterRoot(
 	if (!upserted.ok) {
 		return upserted;
 	}
-	return ok({ projected: true });
+	return errorResult.ok({ projected: true });
 }
 
 /**
@@ -242,7 +242,7 @@ async function rebuildOneEntity(
 		return failedDelete;
 	}
 
-	return ok({ upserted: live.length, pruned });
+	return errorResult.ok({ upserted: live.length, pruned });
 }
 
 async function listSearchRoots(
@@ -269,7 +269,7 @@ async function listSearchRoots(
 				...page,
 				status: "all",
 			});
-			return listed.ok ? ok(listed.data.items) : listed;
+			return listed.ok ? errorResult.ok(listed.data.items) : listed;
 		}
 		case MASTER_SEARCH_ENTITY.paymentTerm:
 			return store.listPaymentTerms(page);
@@ -342,7 +342,7 @@ export async function rebuildMasterDataSearchIndex(
 		return failedRebuild;
 	}
 
-	return ok({ upserted, pruned, entities });
+	return errorResult.ok({ upserted, pruned, entities });
 }
 
 export async function searchMasterDataDocuments(
@@ -388,7 +388,7 @@ export async function searchMasterDataDocuments(
 	if (!result.ok) {
 		return result;
 	}
-	return ok(
+	return errorResult.ok(
 		result.data.map((hit) => ({
 			documentId: hit.documentId,
 			entity: hit.entity,

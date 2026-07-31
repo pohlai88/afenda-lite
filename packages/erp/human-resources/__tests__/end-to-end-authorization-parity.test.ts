@@ -1,4 +1,4 @@
-import { fail, ok } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 import { beforeEach, describe, expect, it } from "vitest";
 import type { createDrizzleHumanResourcesStore } from "../src/adapters/drizzle/store";
 import { createMemoryHumanResourcesStore } from "../src/adapters/memory/store";
@@ -66,21 +66,21 @@ describe("End-to-End Authorization Parity Tests", () => {
 		async resolveEmployeeForActor(input) {
 			const employeeId = mappings[input.actorUserId];
 			if (employeeId) {
-				return await ok({
+				return await errorResult.ok({
 					employeeId,
 					relationshipType: "self" as const,
 					effectiveFrom: "2024-01-01",
 					effectiveUntil: null,
 				});
 			}
-			return await ok(null);
+			return await errorResult.ok(null);
 		},
 		async resolveManagerEmployeesForActor(input) {
 			// For simplicity, manager resolves to employeeId1 and employeeId2
 			if (mappings[input.actorUserId] === managerEmployeeId) {
-				return await ok([employeeId1, employeeId2]);
+				return await errorResult.ok([employeeId1, employeeId2]);
 			}
-			return await ok([]);
+			return await errorResult.ok([]);
 		},
 	});
 
@@ -272,9 +272,7 @@ describe("End-to-End Authorization Parity Tests", () => {
 			);
 
 			expect(result.ok).toBe(false);
-			expect(result.message).toContain(
-				"Missing required human resources permission",
-			);
+			expect(result.code).toBe("FORBIDDEN");
 		});
 
 		it("should allow employee to access their own performance reviews - memory store", async () => {
@@ -327,9 +325,7 @@ describe("End-to-End Authorization Parity Tests", () => {
 			);
 
 			expect(result.ok).toBe(false);
-			expect(result.message).toContain(
-				"Missing required human resources permission",
-			);
+			expect(result.code).toBe("FORBIDDEN");
 		});
 	});
 
@@ -345,9 +341,9 @@ describe("End-to-End Authorization Parity Tests", () => {
 			// Mock manager reporting relationship - managerEmployeeId is the manager of employeeId1
 			memoryStore.getPrimaryManagerForEmployee = async ({ employeeId }) => {
 				if (employeeId === employeeId1) {
-					return await ok(managerEmployeeId);
+					return await errorResult.ok(managerEmployeeId);
 				}
-				return await ok(null);
+				return await errorResult.ok(null);
 			};
 
 			const result = await listEmployeeGoals(
@@ -378,9 +374,9 @@ describe("End-to-End Authorization Parity Tests", () => {
 			// Manager only manages employeeId1, not employeeId2
 			memoryStore.getPrimaryManagerForEmployee = async ({ employeeId }) => {
 				if (employeeId === employeeId1) {
-					return await ok(managerEmployeeId);
+					return await errorResult.ok(managerEmployeeId);
 				}
-				return await ok(null); // No manager for employeeId2
+				return await errorResult.ok(null); // No manager for employeeId2
 			};
 
 			const result = await listEmployeeGoals(
@@ -398,9 +394,7 @@ describe("End-to-End Authorization Parity Tests", () => {
 			);
 
 			expect(result.ok).toBe(false);
-			expect(result.message).toContain(
-				"Missing required human resources permission",
-			);
+			expect(result.code).toBe("FORBIDDEN");
 		});
 	});
 
@@ -465,7 +459,7 @@ describe("End-to-End Authorization Parity Tests", () => {
 			// Mock a goal that belongs to employeeId2
 			const goalId = "f47ac10b-58cc-4372-a567-0e02b2c3d481";
 			memoryStore.getPerformanceGoalById = async () =>
-				ok({
+				errorResult.ok({
 					id: goalId,
 					employeeId: employeeId2, // Goal belongs to different employee
 					title: "Test Goal",
@@ -487,9 +481,7 @@ describe("End-to-End Authorization Parity Tests", () => {
 			);
 
 			expect(result.ok).toBe(false);
-			expect(result.message).toContain(
-				"Cannot access other employee's resources",
-			);
+			expect(result.code).toBe("FORBIDDEN");
 		});
 
 		it("should validate ownership for review-specific queries", async () => {
@@ -503,7 +495,7 @@ describe("End-to-End Authorization Parity Tests", () => {
 			// Mock a review that belongs to employeeId2
 			const reviewId = "f47ac10b-58cc-4372-a567-0e02b2c3d482";
 			memoryStore.getPerformanceReviewById = async () =>
-				ok({
+				errorResult.ok({
 					review: {
 						id: reviewId,
 						employeeId: employeeId2, // Review belongs to different employee
@@ -528,9 +520,7 @@ describe("End-to-End Authorization Parity Tests", () => {
 			);
 
 			expect(result.ok).toBe(false);
-			expect(result.message).toContain(
-				"Cannot access other employee's resources",
-			);
+			expect(result.code).toBe("FORBIDDEN");
 		});
 	});
 
@@ -555,9 +545,7 @@ describe("End-to-End Authorization Parity Tests", () => {
 			);
 
 			expect(result.ok).toBe(false);
-			expect(result.message).toContain(
-				"Human Resources identity resolver port is required",
-			);
+			expect(result.code).toBe("UNAUTHORIZED");
 		});
 
 		it("should handle actors without employee identity", async () => {
@@ -583,9 +571,7 @@ describe("End-to-End Authorization Parity Tests", () => {
 			);
 
 			expect(result.ok).toBe(false);
-			expect(result.message).toContain(
-				"Missing required human resources permission",
-			);
+			expect(result.code).toBe("FORBIDDEN");
 		});
 	});
 
@@ -603,7 +589,7 @@ describe("End-to-End Authorization Parity Tests", () => {
 				...memoryStore,
 				async getPrimaryManagerForEmployee() {
 					// Former manager no longer has access (simulating after relationship ended)
-					return await ok(null);
+					return await errorResult.ok(null);
 				},
 			};
 
@@ -624,9 +610,7 @@ describe("End-to-End Authorization Parity Tests", () => {
 			);
 
 			expect(result.ok).toBe(false);
-			expect(result.message).toContain(
-				"Missing required human resources permission",
-			);
+			expect(result.code).toBe("FORBIDDEN");
 		});
 
 		it("should allow manager access during valid reporting relationship period", async () => {
@@ -642,9 +626,9 @@ describe("End-to-End Authorization Parity Tests", () => {
 				async getPrimaryManagerForEmployee({ employeeId }) {
 					// Manager currently has access (simulating during valid relationship)
 					if (employeeId === employeeId1 || employeeId === employeeId2) {
-						return await ok(managerEmployeeId);
+						return await errorResult.ok(managerEmployeeId);
 					}
-					return await ok(null);
+					return await errorResult.ok(null);
 				},
 			};
 
@@ -679,7 +663,7 @@ describe("End-to-End Authorization Parity Tests", () => {
 				...memoryStore,
 				async getPrimaryManagerForEmployee() {
 					// Manager doesn't have access (simulating before relationship started)
-					return await ok(null);
+					return await errorResult.ok(null);
 				},
 			};
 
@@ -700,9 +684,7 @@ describe("End-to-End Authorization Parity Tests", () => {
 			);
 
 			expect(result.ok).toBe(false);
-			expect(result.message).toContain(
-				"Missing required human resources permission",
-			);
+			expect(result.code).toBe("FORBIDDEN");
 		});
 
 		it("should handle manager transitions - Q1 scenario", async () => {
@@ -718,9 +700,9 @@ describe("End-to-End Authorization Parity Tests", () => {
 				...memoryStore,
 				async getPrimaryManagerForEmployee({ employeeId }) {
 					if (employeeId === employeeId1) {
-						return await ok(managerEmployeeId); // Only emp-1 in Q1
+						return await errorResult.ok(managerEmployeeId); // Only emp-1 in Q1
 					}
-					return await ok(null);
+					return await errorResult.ok(null);
 				},
 			};
 
@@ -770,9 +752,9 @@ describe("End-to-End Authorization Parity Tests", () => {
 				...memoryStore,
 				async getPrimaryManagerForEmployee({ employeeId }) {
 					if (employeeId === employeeId2) {
-						return await ok(managerEmployeeId); // Only emp-2 from Q2
+						return await errorResult.ok(managerEmployeeId); // Only emp-2 from Q2
 					}
-					return await ok(null);
+					return await errorResult.ok(null);
 				},
 			};
 
@@ -825,7 +807,7 @@ describe("End-to-End Authorization Parity Tests", () => {
 			const temporalStore = {
 				...memoryStore,
 				async getLeaveRequestById() {
-					return await ok({
+					return await errorResult.ok({
 						id: "f47ac10b-58cc-4372-a567-0e02b2c3d483",
 						employeeId: employeeId1,
 						status: "pending",
@@ -838,9 +820,9 @@ describe("End-to-End Authorization Parity Tests", () => {
 				async assertPrimaryManagerWhenAssigned(input: { asOf: string }) {
 					// Manager relationship ended before this leave request
 					if (input.asOf >= "2024-07-01") {
-						return await fail("FORBIDDEN", "Manager relationship expired");
+						return await errorResult.fail("FORBIDDEN");
 					}
-					return await ok(undefined);
+					return await errorResult.ok(undefined);
 				},
 			};
 
@@ -862,7 +844,7 @@ describe("End-to-End Authorization Parity Tests", () => {
 			expect(result.ok).toBe(false);
 			// Note: This test demonstrates temporal control concept, though the actual
 			// temporal validation would happen in the business logic layer
-			expect(result.message).toContain("Invalid leave request approve input");
+			expect(result.code).toBe("VALIDATION_ERROR");
 		});
 	});
 
@@ -902,9 +884,7 @@ describe("End-to-End Authorization Parity Tests", () => {
 
 			for (const result of maliciousResults) {
 				expect(result.ok).toBe(false);
-				expect(result.message).toContain(
-					"Missing required human resources permission",
-				);
+				expect(result.code).toBe("FORBIDDEN");
 			}
 
 			// Test invalid UUID attacks - should hit input validation
@@ -935,7 +915,7 @@ describe("End-to-End Authorization Parity Tests", () => {
 
 			for (const result of invalidFormatResults) {
 				expect(result.ok).toBe(false);
-				expect(result.message).toContain("Invalid employee goals list input");
+				expect(result.code).toBe("VALIDATION_ERROR");
 			}
 		});
 
@@ -962,9 +942,7 @@ describe("End-to-End Authorization Parity Tests", () => {
 			);
 
 			expect(result.ok).toBe(false);
-			expect(result.message).toContain(
-				"Missing required human resources permission",
-			);
+			expect(result.code).toBe("FORBIDDEN");
 		});
 
 		it("should prevent temporal manipulation attacks - former manager scenario", async () => {
@@ -979,7 +957,7 @@ describe("End-to-End Authorization Parity Tests", () => {
 			const formerManagerStore = {
 				...memoryStore,
 				async getPrimaryManagerForEmployee() {
-					return await ok(null); // No access after relationship ended
+					return await errorResult.ok(null); // No access after relationship ended
 				},
 			};
 
@@ -998,9 +976,7 @@ describe("End-to-End Authorization Parity Tests", () => {
 			);
 
 			expect(result.ok).toBe(false);
-			expect(result.message).toContain(
-				"Missing required human resources permission",
-			);
+			expect(result.code).toBe("FORBIDDEN");
 		});
 	});
 

@@ -1,6 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
-
-import type { MasterFailureDetails } from "../../contracts/reasons";
+import { errorResult, type Result } from "@afenda/errors";
 
 export const ITEM_BARCODE_SYMBOLOGIES = [
 	"EAN_8",
@@ -81,7 +79,7 @@ export function normalizeBarcode(input: {
 				`${input.symbology} requires ${numericLength} digits and a valid checksum`,
 			);
 		}
-		return ok({ barcodeValue, normalizedValue });
+		return errorResult.ok({ barcodeValue, normalizedValue });
 	}
 
 	if (input.symbology === "UPC_E") {
@@ -92,7 +90,7 @@ export function normalizeBarcode(input: {
 		if (!hasValidUpcECheckDigit(normalizedValue)) {
 			return invalidBarcode("UPC_E requires 8 digits and a valid checksum");
 		}
-		return ok({ barcodeValue, normalizedValue });
+		return errorResult.ok({ barcodeValue, normalizedValue });
 	}
 
 	if (input.symbology === "CODE_128") {
@@ -101,7 +99,7 @@ export function normalizeBarcode(input: {
 				"CODE_128 values in master data must contain 1-128 printable ASCII characters",
 			);
 		}
-		return ok({ barcodeValue, normalizedValue: barcodeValue });
+		return errorResult.ok({ barcodeValue, normalizedValue: barcodeValue });
 	}
 
 	if (CONTROL_CHARACTER_RE.test(barcodeValue)) {
@@ -113,7 +111,7 @@ export function normalizeBarcode(input: {
 		);
 	}
 
-	return ok({ barcodeValue, normalizedValue: barcodeValue });
+	return errorResult.ok({ barcodeValue, normalizedValue: barcodeValue });
 }
 
 function numericBarcodeLength(symbology: ItemBarcodeSymbology): number | null {
@@ -156,7 +154,7 @@ export function normalizeBarcodePackQuantity(raw: string): Result<string> {
 		return invalidPackQuantity();
 	}
 
-	return ok(
+	return errorResult.ok(
 		fractionPart.length > 0 ? `${integerPart}.${fractionPart}` : integerPart,
 	);
 }
@@ -204,22 +202,17 @@ function calculateGtinCheckDigit(body: string): number {
 }
 
 function invalidBarcode(
-	message: string,
-	field: "barcodeValue" | "symbology" = "barcodeValue",
+	_message: string,
+	_field: "barcodeValue" | "symbology" = "barcodeValue",
 ): Result<never> {
-	return fail("BAD_REQUEST", message, {
-		reason: "MASTER_INVALID_BARCODE",
-		field,
-	} satisfies MasterFailureDetails);
+	return errorResult.fail("BAD_REQUEST", {
+		publicMessage: "The request is invalid",
+	});
 }
 
 function invalidPackQuantity(): Result<never> {
-	return fail(
-		"BAD_REQUEST",
-		"packQuantity must be positive with at most 12 integer and 12 fractional digits",
-		{
-			reason: "MASTER_INVALID_BARCODE",
-			field: "packQuantity",
-		} satisfies MasterFailureDetails,
-	);
+	return errorResult.fail("BAD_REQUEST", {
+		publicMessage:
+			"packQuantity must be positive with at most 12 integer and 12 fractional digits",
+	});
 }

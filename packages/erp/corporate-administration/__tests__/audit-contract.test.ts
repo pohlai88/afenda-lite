@@ -4,7 +4,7 @@ import {
 	corporateAdministrationModuleManifest,
 } from "@afenda/corporate-administration";
 import { createDrizzleCorporateAdministrationAuditFactPort } from "@afenda/corporate-administration/adapters/drizzle";
-import { fail, ok } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 import { describe, expect, it, vi } from "vitest";
 import { createMemoryCorporateAdministrationAuditFactPort } from "./helpers/memory-audit";
 
@@ -29,12 +29,10 @@ describe("Corporate Administration audit fact contract", () => {
 				retry: false,
 			},
 		} satisfies CorporateAdministrationAuditFactInput;
-
 		await expect(audit.record(fact)).resolves.toEqual({
 			ok: true,
 			data: { id: "audit_1" },
 		});
-
 		expect(onRecord).toHaveBeenCalledWith(fact);
 		expect(
 			corporateAdministrationModuleManifest.persistence.mutationTables,
@@ -98,7 +96,6 @@ describe("Corporate Administration audit fact contract", () => {
 			"corporate_administration.resolution.action_completed.v1",
 		]);
 	});
-
 	it("rejects snapshots, payloads, secrets, and unbounded metadata", () => {
 		const base = {
 			organizationId: "org_1",
@@ -110,7 +107,6 @@ describe("Corporate Administration audit fact contract", () => {
 			occurredAt: "2026-07-26T10:00:00.000Z",
 			outcome: "SUCCESS",
 		} as const;
-
 		for (const safeMetadata of [
 			{ payload: "raw" },
 			{ before: "snapshot" },
@@ -128,18 +124,13 @@ describe("Corporate Administration audit fact contract", () => {
 			).toBe(false);
 		}
 	});
-
 	it("does not expose shared audit adapter failure details", async () => {
 		const audit = createDrizzleCorporateAdministrationAuditFactPort({
 			createAuditId: () => "audit_1",
 			store: {
-				write: async () =>
-					fail("INTERNAL_ERROR", "raw database failure", {
-						query: "insert into platform_audit_log",
-					}),
+				write: async () => errorResult.fail("INTERNAL_ERROR"),
 			},
 		});
-
 		const result = await audit.record({
 			organizationId: "org_1",
 			actorUserId: "user_1",
@@ -150,19 +141,16 @@ describe("Corporate Administration audit fact contract", () => {
 			occurredAt: "2026-07-26T10:00:00.000Z",
 			outcome: "FAILURE",
 		});
-
 		expect(result).toMatchObject({ ok: false, code: "INTERNAL_ERROR" });
 		expect(JSON.stringify(result)).not.toContain("insert into");
 		expect(JSON.stringify(result)).not.toContain("raw database failure");
 	});
-
 	it("does not let safe metadata overwrite authoritative audit facts", async () => {
-		const write = vi.fn(async () => ok({ id: "audit_1" }));
+		const write = vi.fn(async () => errorResult.ok({ id: "audit_1" }));
 		const audit = createDrizzleCorporateAdministrationAuditFactPort({
 			createAuditId: () => "audit_1",
 			store: { write },
 		});
-
 		await expect(
 			audit.record({
 				organizationId: "org_1",
@@ -179,8 +167,7 @@ describe("Corporate Administration audit fact contract", () => {
 					source: "ca-0.4",
 				},
 			}),
-		).resolves.toEqual(ok({ id: "audit_1" }));
-
+		).resolves.toEqual(errorResult.ok({ id: "audit_1" }));
 		expect(write).toHaveBeenCalledWith(
 			expect.objectContaining({
 				metadata: {
@@ -197,16 +184,14 @@ describe("Corporate Administration audit fact contract", () => {
 			}),
 		);
 	});
-
 	it("uses the active CA transaction context for audit persistence", async () => {
 		const auditId = "11111111-1111-4111-8111-111111111111";
-		const write = vi.fn(async () => ok({ id: "audit_immediate" }));
+		const write = vi.fn(async () => errorResult.ok({ id: "audit_immediate" }));
 		const statements: unknown[] = [];
 		const audit = createDrizzleCorporateAdministrationAuditFactPort({
 			createAuditId: () => auditId,
 			store: { write },
 		});
-
 		const result = await audit.record(
 			{
 				organizationId: "org_1",
@@ -225,11 +210,9 @@ describe("Corporate Administration audit fact contract", () => {
 				},
 			},
 		);
-
-		expect(result).toEqual(ok({ id: auditId }));
+		expect(result).toEqual(errorResult.ok({ id: auditId }));
 		expect(write).not.toHaveBeenCalled();
 		expect(statements).toHaveLength(1);
-
 		const [enqueuedStatement] = statements;
 		if (typeof enqueuedStatement !== "function") {
 			throw new Error("expected an audit transaction statement");

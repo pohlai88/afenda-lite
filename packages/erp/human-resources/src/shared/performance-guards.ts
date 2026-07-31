@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	HUMAN_RESOURCES_ERROR_FORBIDDEN,
@@ -24,24 +24,26 @@ import type {
 	PerformanceWeightingModel,
 } from "./performance-status";
 
-function alreadyInStatus(entity: string, status: string): Result<never> {
-	return fail(
-		"BAD_REQUEST",
-		`${entity} is already in status '${status}'`,
-		humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION),
-	);
+function alreadyInStatus(_entity: string, _status: string): Result<never> {
+	return errorResult.fail("BAD_REQUEST", {
+		publicMessage: "The request is invalid",
+		internalContext: humanResourcesErrorDetails(
+			HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+		),
+	});
 }
 
 function cannotTransition(
-	entity: string,
-	current: string,
-	next: string,
+	_entity: string,
+	_current: string,
+	_next: string,
 ): Result<never> {
-	return fail(
-		"BAD_REQUEST",
-		`Cannot transition ${entity} from '${current}' to '${next}'`,
-		humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION),
-	);
+	return errorResult.fail("BAD_REQUEST", {
+		publicMessage: "The request is invalid",
+		internalContext: humanResourcesErrorDetails(
+			HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+		),
+	});
 }
 
 export function assertValidCyclePeriod(input: {
@@ -51,7 +53,7 @@ export function assertValidCyclePeriod(input: {
 	if (input.periodEnd < input.periodStart) {
 		return invalidInput("Cycle period end must be on or after period start");
 	}
-	return ok(true);
+	return errorResult.ok(true);
 }
 
 export function canTransitionCycleStatus(
@@ -93,7 +95,7 @@ export function assertReviewPeriodsWithinCycle(input: {
 			);
 		}
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertReviewPeriodsNonOverlapping(
@@ -120,7 +122,7 @@ export function assertReviewPeriodsNonOverlapping(
 			}
 		}
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 const REQUIRED_PUBLISH_REVIEW_PERIOD_KINDS = [
@@ -155,7 +157,7 @@ export function assertCyclePublishReady(input: {
 			);
 		}
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertCycleStatusTransition(
@@ -168,7 +170,7 @@ export function assertCycleStatusTransition(
 	if (!canTransitionCycleStatus(current, next)) {
 		return cannotTransition("performance cycle", current, next);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function canTransitionGoalStatus(
@@ -200,7 +202,7 @@ export function assertGoalStatusTransition(
 	if (!canTransitionGoalStatus(current, next)) {
 		return cannotTransition("performance goal", current, next);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertGoalEditable(
@@ -215,7 +217,7 @@ export function assertGoalEditable(
 		}
 		return invalidState("Goal can only be edited while draft or rejected");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 function isPerformanceGoalEditable(
@@ -260,7 +262,7 @@ export function assertReviewStatusTransition(
 	if (!canTransitionReviewStatus(current, next)) {
 		return cannotTransition("performance review", current, next);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertReviewNotFinalized(
@@ -269,7 +271,7 @@ export function assertReviewNotFinalized(
 	if (status === "finalized") {
 		return invalidState("Finalized performance reviews are immutable");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function canTransitionImprovementPlanStatus(
@@ -303,7 +305,7 @@ export function assertImprovementPlanStatusTransition(
 	if (!canTransitionImprovementPlanStatus(current, next)) {
 		return cannotTransition("improvement plan", current, next);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertGoalDatesWithinCycle(input: {
@@ -314,7 +316,7 @@ export function assertGoalDatesWithinCycle(input: {
 	exceptionOutsideCycle: boolean;
 }): Result<void> {
 	if (input.exceptionOutsideCycle) {
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	}
 	if (
 		input.goalPeriodStart < input.cyclePeriodStart ||
@@ -324,19 +326,20 @@ export function assertGoalDatesWithinCycle(input: {
 			"Goal period must fall within the performance cycle unless an approved exception is set",
 		);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertGoalWeightsSumTo100(weights: string[]): Result<void> {
 	const total = weights.reduce((sum, weight) => sum + Number(weight), 0);
 	if (!Number.isFinite(total) || Math.abs(total - 100) > 0.0001) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Approved goal weights must sum to 100 for percent100 weighting model",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertGoalWeightForModel(input: {
@@ -344,24 +347,26 @@ export function assertGoalWeightForModel(input: {
 	weightingModel: PerformanceWeightingModel;
 }): Result<void> {
 	if (input.weightingModel !== "percent100") {
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	}
 	if (input.weight === null || input.weight.trim() === "") {
-		return fail(
-			"VALIDATION_ERROR",
-			"Goal weight is required when the cycle uses percent100 weighting",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
 	const numeric = Number(input.weight);
 	if (!Number.isFinite(numeric) || numeric < 0 || numeric > 100) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Goal weight must be a finite value between 0 and 100",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertGoalAlignment(input: {
@@ -379,7 +384,7 @@ export function assertGoalAlignment(input: {
 	) => { id: string; alignedToGoalId: string | null } | null;
 }): Result<void> {
 	if (input.alignedToGoalId === null) {
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	}
 	if (input.alignedToGoalId === input.goalId) {
 		return invalidInput("A goal cannot be aligned to itself");
@@ -408,7 +413,7 @@ export function assertGoalAlignment(input: {
 		}
 		cursor = ancestor.alignedToGoalId;
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertEmployeeGoalActor(input: {
@@ -420,13 +425,13 @@ export function assertEmployeeGoalActor(input: {
 		return invalidState("This operation requires an employee-proposed goal");
 	}
 	if (input.goalEmployeeId !== input.actorEmployeeId) {
-		return fail(
-			"FORBIDDEN",
-			"Actor does not own this performance goal",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
-		);
+		return errorResult.fail("FORBIDDEN", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_FORBIDDEN,
+			),
+		});
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertManagerAssignedGoalMutation(input: {
@@ -435,7 +440,7 @@ export function assertManagerAssignedGoalMutation(input: {
 	if (input.goalKind === "manager") {
 		return invalidState("Manager-assigned goals must be changed by a manager");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertCheckpointOutcomeTransition(
@@ -450,7 +455,7 @@ export function assertCheckpointOutcomeTransition(
 			"Checkpoint outcome must be met or missed when recording",
 		);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertImprovementPlanMilestones(input: {
@@ -479,7 +484,7 @@ export function assertImprovementPlanMilestones(input: {
 			);
 		}
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertNoPendingCheckpoints(
@@ -490,7 +495,7 @@ export function assertNoPendingCheckpoints(
 			"All improvement plan milestones must be reviewed before closing the plan",
 		);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertImprovementPlanExtension(input: {
@@ -502,7 +507,7 @@ export function assertImprovementPlanExtension(input: {
 		input.nextDueDate === undefined ||
 		input.nextDueDate <= input.currentDueDate
 	) {
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	}
 	if (
 		input.extensionReason === undefined ||
@@ -510,7 +515,7 @@ export function assertImprovementPlanExtension(input: {
 	) {
 		return invalidInput("Extending an improvement plan requires a reason");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertAllDelegatedAssessmentsSubmitted(input: {
@@ -521,7 +526,7 @@ export function assertAllDelegatedAssessmentsSubmitted(input: {
 		(participant) => participant.role === "delegated",
 	);
 	if (delegatedParticipants.length === 0) {
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	}
 	for (const participant of delegatedParticipants) {
 		const assessment = input.assessments.find(
@@ -533,7 +538,7 @@ export function assertAllDelegatedAssessmentsSubmitted(input: {
 			);
 		}
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertPriorDelegatedAssessmentsSubmitted(input: {
@@ -557,7 +562,7 @@ export function assertPriorDelegatedAssessmentsSubmitted(input: {
 			);
 		}
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function nextDelegatedSequenceNumber(

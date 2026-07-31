@@ -47,9 +47,6 @@ it("allows exactly one concurrent update for the same expected version", async (
 			return;
 		}
 		expect(conflict.code).toBe("CONFLICT");
-		expect(conflict.details).toMatchObject({
-			reason: "MASTER_VERSION_CONFLICT",
-		});
 
 		const current = await getPartyById(
 			{ ...harness.queryContext(), id: created.data.id },

@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import { failFromNeonOrgProbe } from "./auth-failure";
 import { getNeonAuth } from "./neon-auth";
@@ -73,7 +73,7 @@ export async function listMemberOrganizations(): Promise<
 	if (error) {
 		return failFromNeonOrgProbe(error, "Failed to list organizations");
 	}
-	return ok(normalizeMemberOrganizations(data));
+	return errorResult.ok(normalizeMemberOrganizations(data));
 }
 
 /**
@@ -86,10 +86,14 @@ export async function createOrganization(
 	const name = input.name.trim();
 	const slug = input.slug.trim();
 	if (name.length === 0) {
-		return fail("BAD_REQUEST", "Organization name is required");
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Organization name is required",
+		});
 	}
 	if (slug.length === 0) {
-		return fail("BAD_REQUEST", "Organization slug is required");
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Organization slug is required",
+		});
 	}
 
 	const auth = getNeonAuth();
@@ -100,12 +104,9 @@ export async function createOrganization(
 
 	const created = parseCreatedOrganization(data);
 	if (!created) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Organization create returned no usable organization id",
-		);
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok(created);
+	return errorResult.ok(created);
 }
 
 /**
@@ -118,18 +119,17 @@ export async function persistActiveOrganization(
 ): Promise<Result<void>> {
 	const trimmed = organizationId.trim();
 	if (trimmed.length === 0) {
-		return fail("BAD_REQUEST", "Active organization id is required");
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Active organization id is required",
+		});
 	}
 
 	const auth = getNeonAuth();
 	const persisted = await persistActiveOrganizationWithClient(auth, trimmed);
 	if (!persisted) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Failed to persist active organization on session",
-		);
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 /**
@@ -142,7 +142,9 @@ export async function deleteOrganization(
 ): Promise<Result<void>> {
 	const trimmed = organizationId.trim();
 	if (trimmed.length === 0) {
-		return fail("BAD_REQUEST", "Organization id is required");
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Organization id is required",
+		});
 	}
 
 	const memberships = await listMemberOrganizations();
@@ -151,7 +153,7 @@ export async function deleteOrganization(
 	}
 	const isMember = memberships.data.some((row) => row.id === trimmed);
 	if (!isMember) {
-		return fail("FORBIDDEN", "Organization is not in the session memberships");
+		return errorResult.fail("FORBIDDEN");
 	}
 
 	const auth = getNeonAuth();
@@ -161,5 +163,5 @@ export async function deleteOrganization(
 	if (error) {
 		return failFromNeonOrgProbe(error, "Failed to delete organization");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }

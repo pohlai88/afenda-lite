@@ -1,15 +1,12 @@
 "use server";
 
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { createItem, ITEM_TYPES, type Item } from "@afenda/master-data";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runMemberPermissionAction } from "@/app/actions/run-member-permission-action";
 import { createMasterDataAuthorizationPort } from "@/lib/erp/master-data-authorization-port";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export interface CreateItemActionData {
@@ -37,11 +34,9 @@ export async function createItemAction(
 		itemGroupId: formData.get("itemGroupId"),
 	});
 	if (!parsed.success) {
-		return actionFail(
-			"VALIDATION_ERROR",
-			"Enter a valid item code, name, type, UoM, and group.",
-			parsed.details,
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "Enter a valid item code, name, type, UoM, and group.",
+		});
 	}
 	return await runMemberPermissionAction({
 		path: "createItemAction",

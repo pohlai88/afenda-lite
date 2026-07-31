@@ -1,4 +1,4 @@
-import { fail } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 import { z } from "zod";
 import {
 	requireSalesCommandPermission,
@@ -54,11 +54,9 @@ export async function createReturnAuthorization(
 ) {
 	const parsed = createReturnAuthorizationInputSchema.safeParse(input);
 	if (!parsed.success) {
-		return fail(
-			"BAD_REQUEST",
-			"Enter a valid return authorization",
-			parsed.error.flatten(),
-		);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Enter a valid return authorization",
+		});
 	}
 	const deps = resolveSalesDeps(options);
 	const auth = await requireSalesCommandPermission(deps.authorization, {
@@ -95,11 +93,9 @@ export async function addReturnAuthorizationLine(
 ) {
 	const parsed = addReturnAuthorizationLineInputSchema.safeParse(input);
 	if (!parsed.success) {
-		return fail(
-			"BAD_REQUEST",
-			"Enter a valid return line",
-			parsed.error.flatten(),
-		);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Enter a valid return line",
+		});
 	}
 	const deps = resolveSalesDeps(options);
 	const auth = await requireSalesCommandPermission(deps.authorization, {
@@ -127,11 +123,9 @@ export async function getReturnAuthorization(
 ) {
 	const parsed = getReturnAuthorizationInputSchema.safeParse(input);
 	if (!parsed.success) {
-		return fail(
-			"BAD_REQUEST",
-			"Enter a valid return-authorization ID",
-			parsed.error.flatten(),
-		);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Enter a valid return-authorization ID",
+		});
 	}
 	const deps = resolveSalesDeps(options);
 	const auth = await requireSalesQueryPermission(deps.authorization, {
@@ -154,11 +148,9 @@ export async function listReturnAuthorizations(
 ) {
 	const parsed = listReturnAuthorizationsInputSchema.safeParse(input);
 	if (!parsed.success) {
-		return fail(
-			"BAD_REQUEST",
-			"Enter valid return-authorization filters",
-			parsed.error.flatten(),
-		);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Enter valid return-authorization filters",
+		});
 	}
 	const deps = resolveSalesDeps(options);
 	const auth = await requireSalesQueryPermission(deps.authorization, {
@@ -184,11 +176,9 @@ async function transition(
 ) {
 	const parsed = returnTransitionInputSchema.safeParse(input);
 	if (!parsed.success) {
-		return fail(
-			"BAD_REQUEST",
-			"Enter a valid return transition",
-			parsed.error.flatten(),
-		);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Enter a valid return transition",
+		});
 	}
 	const deps = resolveSalesDeps(options);
 	const auth = await requireSalesCommandPermission(deps.authorization, {

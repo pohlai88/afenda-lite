@@ -1,6 +1,6 @@
 // biome-ignore-all lint/performance/noAwaitInLoops: Payment instructions mutate a shared balance and ledger in declared order.
 // biome-ignore-all lint/style/noNestedTernary: Exhaustive status and tri-state view mappings remain explicit at their use sites.
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	applySupplierPayment,
 	reverseSupplierPaymentApplication,
@@ -52,10 +52,10 @@ export async function applyPaymentInstructionsAfterPost(
 							},
 							createPayablesCommandOptions(input.actorUserId),
 						)
-					: fail(
-							"BAD_REQUEST",
-							"Unsupported payment application target (v1 invoice-only)",
-						);
+					: errorResult.fail("BAD_REQUEST", {
+							publicMessage:
+								"Unsupported payment application target (v1 invoice-only)",
+						});
 
 		const instructionResult = application.ok
 			? await markApplicationInstructionApplied(
@@ -80,7 +80,7 @@ export async function applyPaymentInstructionsAfterPost(
 			return instructionResult;
 		}
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 async function applyCustomerReceiptForInstruction(
@@ -100,7 +100,9 @@ async function applyCustomerReceiptForInstruction(
 		return invoice;
 	}
 	if (invoice.data === null) {
-		return fail("NOT_FOUND", "Sales invoice not found");
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Sales invoice not found",
+		});
 	}
 
 	return applyCustomerReceipt(
@@ -152,7 +154,9 @@ export async function reversePaymentApplications(
 		return payment;
 	}
 	if (payment.data === null) {
-		return fail("NOT_FOUND", "Payment not found");
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Payment not found",
+		});
 	}
 	for (const instruction of payment.data.applicationInstructions) {
 		if (instruction.status !== "pending" && instruction.status !== "applied") {
@@ -171,5 +175,5 @@ export async function reversePaymentApplications(
 			return marked;
 		}
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }

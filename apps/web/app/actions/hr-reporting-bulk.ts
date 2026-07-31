@@ -1,6 +1,10 @@
 "use server";
 
-import type { Result } from "@afenda/errors/result";
+import {
+	type Result as ActionResult,
+	errorResult,
+	type Result,
+} from "@afenda/errors";
 import {
 	assignmentBulkRowSchema,
 	attendanceBulkRowSchema,
@@ -40,10 +44,7 @@ import {
 	classifyHrFailure,
 	createProductionHrObservabilityPorts,
 } from "@/modules/platform/observability/human-resources-observability";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
+
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 const isoDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
@@ -172,11 +173,9 @@ async function runBulkAction<
 					{ stage: "parse", reason: "validation" },
 					createProductionHrObservabilityPorts(),
 				);
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid Human Resources bulk request.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid Human Resources bulk request.",
+				});
 			}
 			const request = toBulkRequest(parsed.data);
 			if (parsed.data.mode === "commit") {
@@ -230,11 +229,9 @@ export async function buildHumanResourcesReportingSnapshotAction(
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(reportingInputSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid Human Resources reporting window.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid Human Resources reporting window.",
+				});
 			}
 			const result = await buildHumanResourcesReportingSnapshotWorker({
 				...parsed.data,
@@ -341,11 +338,9 @@ export async function loadHumanResourcesBulkStatusAction(input: {
 		execute: async (session) => {
 			const parsed = parseSchema(bulkRecoveryInputSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid bulk key.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid bulk key.",
+				});
 			}
 			return mapPackageResult(
 				await loadHumanResourcesBulkStatusWorker({
@@ -367,11 +362,9 @@ export async function loadHumanResourcesBulkErrorArtifactAction(input: {
 		execute: async (session) => {
 			const parsed = parseSchema(bulkRecoveryInputSchema, input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					"Enter a valid bulk key.",
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid bulk key.",
+				});
 			}
 			const mapped = mapPackageResult(
 				await loadHumanResourcesBulkErrorArtifactWorker({

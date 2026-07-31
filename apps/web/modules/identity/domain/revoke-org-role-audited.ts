@@ -11,8 +11,8 @@ import {
 	platformRoleAssignment,
 	runNeonHttpTransaction,
 } from "@afenda/db";
-import { AppError } from "@afenda/errors";
-import { fail } from "@afenda/errors/result";
+import { errorIngress, errorResult } from "@afenda/errors";
+
 import type {
 	RevokeOrgRoleInput,
 	RevokeOrgRoleResult,
@@ -114,10 +114,9 @@ export async function revokeOrgRoleWithAudit(
 		.limit(1);
 
 	if (!active) {
-		return fail(
-			"NOT_FOUND",
-			"Active assignment not found for this organization.",
-		);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Active assignment not found for this organization.",
+		});
 	}
 
 	const oldValueJson = JSON.stringify({
@@ -179,18 +178,14 @@ export async function revokeOrgRoleWithAudit(
 
 	const [row] = rows;
 	if (!row) {
-		return fail(
-			"NOT_FOUND",
-			"Active assignment not found for this organization.",
-		);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Active assignment not found for this organization.",
+		});
 	}
 
 	if (row.organization_id !== orgId) {
-		throw new AppError({
-			code: "INTERNAL_ERROR",
-			message:
-				"revokeOrgRoleWithAudit: assignment organization_id mismatch after commit",
-			isOperational: false,
+		throw errorIngress.code("INTERNAL_ERROR", {
+			operation: "identity.role.revoke",
 		});
 	}
 

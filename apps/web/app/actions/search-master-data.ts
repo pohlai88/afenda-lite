@@ -1,6 +1,7 @@
 "use server";
 
 import { getSession } from "@afenda/auth";
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { createCorrelationId } from "@afenda/http";
 import {
 	MASTER_SEARCH_ENTITY_VALUES,
@@ -12,11 +13,6 @@ import { mapPackageResult } from "@/app/actions/map-package-result";
 import { forbidUnlessPermission } from "@/app/actions/permission-gate";
 import { createMasterDataAuthorizationPort } from "@/lib/erp/master-data-authorization-port";
 import { logProductEvent } from "@/modules/platform/observability/product-log";
-import {
-	type ActionResult,
-	actionFail,
-	actionFailInternal,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export interface SearchMasterDataHit {
@@ -48,11 +44,9 @@ export async function searchMasterDataAction(
 
 	const parsed = parseSchema(searchMasterDataQuerySchema, input);
 	if (!parsed.success) {
-		return actionFail(
-			"VALIDATION_ERROR",
-			"Enter a non-empty master-data search query.",
-			parsed.details,
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "Enter a non-empty master-data search query.",
+		});
 	}
 
 	const permissionDenied = await forbidUnlessPermission(
@@ -89,9 +83,6 @@ export async function searchMasterDataAction(
 			path: "searchMasterDataAction",
 			code: "INTERNAL_ERROR",
 		});
-		return actionFailInternal(
-			"Could not search master data. Try again or contact an admin.",
-			correlationId,
-		);
+		return errorResult.fail("INTERNAL_ERROR", { correlationId });
 	}
 }

@@ -1,6 +1,7 @@
 "use server";
 
 import { requireRole } from "@afenda/auth";
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { createCorrelationId } from "@afenda/http";
 import { revalidatePath } from "next/cache";
 import { forbidUnlessPermission } from "@/app/actions/permission-gate";
@@ -10,12 +11,6 @@ import { recordOrgRoleAssignedEvent } from "@/modules/identity/domain/record-org
 import { assignOrgRoleCommandSchema } from "@/modules/identity/schemas/assign-org-role";
 import { readRequestAttribution } from "@/modules/platform/domain/request-attribution";
 import { logProductEvent } from "@/modules/platform/observability/product-log";
-import {
-	type ActionResult,
-	actionFail,
-	actionFailInternal,
-	actionOk,
-} from "@/modules/platform/schemas/action-result";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 export interface AssignOrgRoleActionData {
@@ -49,11 +44,9 @@ export async function assignOrgRoleAction(
 		roleId: formData.get("roleId"),
 	});
 	if (!parsed.success) {
-		return actionFail(
-			"VALIDATION_ERROR",
-			"Select a valid organization member and role.",
-			parsed.details,
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "Select a valid organization member and role.",
+		});
 	}
 
 	const permissionDenied = await forbidUnlessPermission(
@@ -77,17 +70,13 @@ export async function assignOrgRoleAction(
 			path: "assignOrgRoleAction.membership",
 			code: "INTERNAL_ERROR",
 		});
-		return actionFailInternal(
-			"Could not verify organization membership. Try again or contact an admin.",
-			correlationId,
-		);
+		return errorResult.fail("INTERNAL_ERROR", { correlationId });
 	}
 
 	if (!member) {
-		return actionFail(
-			"NOT_FOUND",
-			"That user is not an active member of this organization.",
-		);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "That user is not an active member of this organization.",
+		});
 	}
 
 	let result: Awaited<ReturnType<typeof assignOrgRoleWithAudit>>;
@@ -117,14 +106,11 @@ export async function assignOrgRoleAction(
 			path: "assignOrgRoleAction",
 			code: "INTERNAL_ERROR",
 		});
-		return actionFailInternal(
-			"Role assignment failed. Try again or contact an admin.",
-			correlationId,
-		);
+		return errorResult.fail("INTERNAL_ERROR", { correlationId });
 	}
 
 	if (!result.ok) {
-		return actionFail(result.code, result.message);
+		return result;
 	}
 
 	let notificationId: string | null = null;
@@ -175,7 +161,7 @@ export async function assignOrgRoleAction(
 
 	revalidatePath("/admin");
 
-	return actionOk({
+	return errorResult.ok({
 		assignmentId: result.assignment.id,
 		userId: result.assignment.userId,
 		roleId: result.assignment.roleId,

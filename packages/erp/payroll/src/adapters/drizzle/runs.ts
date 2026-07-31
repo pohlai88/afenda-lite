@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { Change } from "@afenda/audit";
 import { and, db, eq, payrollException, payrollRun } from "@afenda/db";
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	type PayrollRunId,
@@ -81,7 +81,7 @@ function mapRunRow(row: typeof payrollRun.$inferSelect): Result<PayrollRun> {
 	if (!periodId.ok) {
 		return periodId;
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		payGroupId: payGroupId.data,
@@ -116,7 +116,7 @@ function mapExceptionRow(
 	if (!runId.ok) {
 		return runId;
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		runId: runId.data,
@@ -148,13 +148,13 @@ export const drizzleRunsMethods: PayrollRunsStore = {
 				.limit(1);
 			const [row] = rows;
 			if (row === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const mapped = mapRunRow(row);
 			if (!mapped.ok) {
 				return mapped;
 			}
-			return ok({
+			return errorResult.ok({
 				run: mapped.data,
 				createRequestFingerprint: row.createRequestFingerprint,
 			});
@@ -185,7 +185,7 @@ export const drizzleRunsMethods: PayrollRunsStore = {
 			) {
 				return mapConflict("Idempotency key conflict");
 			}
-			return ok(existing.data.run);
+			return errorResult.ok(existing.data.run);
 		}
 
 		const runId = parsePayrollRunId(randomUUID());
@@ -258,7 +258,7 @@ export const drizzleRunsMethods: PayrollRunsStore = {
 					) {
 						return mapConflict("Idempotency key conflict");
 					}
-					return ok(replay.data.run);
+					return errorResult.ok(replay.data.run);
 				}
 			}
 			if (isPayrollRunIdentityUniqueViolation(error)) {
@@ -285,7 +285,7 @@ export const drizzleRunsMethods: PayrollRunsStore = {
 				.limit(1);
 			const [row] = rows;
 			if (row === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapRunRow(row);
 		} catch (error) {
@@ -489,7 +489,7 @@ export const drizzleRunsMethods: PayrollRunsStore = {
 			return run;
 		}
 		if (run.data === null) {
-			return ok([]);
+			return errorResult.ok([]);
 		}
 
 		try {
@@ -510,7 +510,7 @@ export const drizzleRunsMethods: PayrollRunsStore = {
 				}
 				exceptions.push(mapped.data);
 			}
-			return ok(exceptions);
+			return errorResult.ok(exceptions);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -547,7 +547,7 @@ export const drizzleRunsMethods: PayrollRunsStore = {
 					),
 				);
 			if (existing.length === 0) {
-				return ok({ deletedCount: 0 });
+				return errorResult.ok({ deletedCount: 0 });
 			}
 
 			await db
@@ -571,7 +571,7 @@ export const drizzleRunsMethods: PayrollRunsStore = {
 				return audit;
 			}
 
-			return ok({ deletedCount: existing.length });
+			return errorResult.ok({ deletedCount: existing.length });
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,

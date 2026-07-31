@@ -1,12 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { fail, ok, type Result } from "@afenda/errors/result";
-
-import {
-	RECEIVING_ERROR_IDEMPOTENCY_CONFLICT,
-	RECEIVING_ERROR_POSTED_RECEIPT_CANNOT_CANCEL,
-	RECEIVING_ERROR_RECEIPT_ALREADY_REVERSED,
-	receivingErrorDetails,
-} from "./error-codes";
+import { errorResult, type Result } from "@afenda/errors";
 import { assertAcceptedWithinPoCeilings } from "./po-receiving-guard";
 import type { MutationPorts } from "./ports";
 import { resolveAsync } from "./resolve-async";
@@ -69,18 +62,24 @@ function decideMemoryReceiptPost(
 	record: ReceiptPostRecord,
 ): Result<"proceed" | "replay"> {
 	if (receipt.postIdempotencyKey === record.postIdempotencyKey) {
-		return ok("replay");
+		return errorResult.ok("replay");
 	}
 	if (receipt.status !== "draft") {
-		return fail("CONFLICT", "Goods receipt is not in draft status");
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Goods receipt is not in draft status",
+		});
 	}
 	if (receipt.version !== record.expectedVersion) {
-		return fail("CONFLICT", "Goods receipt version conflict");
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Goods receipt version conflict",
+		});
 	}
 	if (receipt.lines.length === 0) {
-		return fail("CONFLICT", "Cannot post goods receipt without lines");
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Cannot post goods receipt without lines",
+		});
 	}
-	return ok("proceed");
+	return errorResult.ok("proceed");
 }
 
 function accumulateAcceptedPoLines(
@@ -146,13 +145,15 @@ export class MemoryReceivingStore implements ReceivingStore {
 				receipt.organizationId === record.organizationId &&
 				receipt.createIdempotencyKey === record.createIdempotencyKey
 			) {
-				return ok(cloneReceipt(receipt));
+				return errorResult.ok(cloneReceipt(receipt));
 			}
 			if (
 				receipt.organizationId === record.organizationId &&
 				receipt.normalizedCode === record.normalizedCode
 			) {
-				return fail("CONFLICT", "Goods receipt code already exists");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Goods receipt code already exists",
+				});
 			}
 		}
 		const now = new Date();
@@ -216,7 +217,7 @@ export class MemoryReceivingStore implements ReceivingStore {
 			this.receipts.delete(receipt.id);
 			return outbox;
 		}
-		return ok(cloneReceipt(receipt));
+		return errorResult.ok(cloneReceipt(receipt));
 	}
 
 	async addLine(
@@ -229,17 +230,21 @@ export class MemoryReceivingStore implements ReceivingStore {
 			receipt === undefined ||
 			receipt.organizationId !== record.organizationId
 		) {
-			return fail("NOT_FOUND", "Goods receipt not found");
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Goods receipt not found",
+			});
 		}
 		const existingLine = receipt.lines.find(
 			(receiptLine) =>
 				receiptLine.lineIdempotencyKey === record.lineIdempotencyKey,
 		);
 		if (existingLine !== undefined) {
-			return ok({ ...existingLine });
+			return errorResult.ok({ ...existingLine });
 		}
 		if (receipt.status !== "draft") {
-			return fail("CONFLICT", "Cannot add lines to a non-draft goods receipt");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Cannot add lines to a non-draft goods receipt",
+			});
 		}
 		const previous = cloneReceipt(receipt);
 		const now = new Date();
@@ -307,14 +312,14 @@ export class MemoryReceivingStore implements ReceivingStore {
 			this.receipts.set(receipt.id, previous);
 			return outbox;
 		}
-		return ok({ ...line });
+		return errorResult.ok({ ...line });
 	}
 
 	private async validateMemoryPoConsumption(
 		record: ReceiptPostRecord,
 	): Promise<Result<true>> {
 		if (record.poConsumptionGuard === undefined) {
-			return ok(true);
+			return errorResult.ok(true);
 		}
 		const lineIds = record.poConsumptionGuard.lines.map(
 			(line) => line.purchaseOrderLineId,
@@ -348,14 +353,16 @@ export class MemoryReceivingStore implements ReceivingStore {
 				receipt === undefined ||
 				receipt.organizationId !== record.organizationId
 			) {
-				return fail("NOT_FOUND", "Goods receipt not found");
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "Goods receipt not found",
+				});
 			}
 			const decision = decideMemoryReceiptPost(receipt, record);
 			if (!decision.ok) {
 				return decision;
 			}
 			if (decision.data === "replay") {
-				return ok(cloneReceipt(receipt));
+				return errorResult.ok(cloneReceipt(receipt));
 			}
 			const consumptionValid = await this.validateMemoryPoConsumption(record);
 			if (!consumptionValid.ok) {
@@ -409,7 +416,7 @@ export class MemoryReceivingStore implements ReceivingStore {
 				this.receipts.set(receipt.id, previous);
 				return outbox;
 			}
-			return ok(cloneReceipt(receipt));
+			return errorResult.ok(cloneReceipt(receipt));
 		};
 		if (record.poConsumptionGuard !== undefined) {
 			return this.withPoPostLock(
@@ -431,23 +438,27 @@ export class MemoryReceivingStore implements ReceivingStore {
 			receipt === undefined ||
 			receipt.organizationId !== record.organizationId
 		) {
-			return fail("NOT_FOUND", "Goods receipt not found");
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Goods receipt not found",
+			});
 		}
 		if (receipt.cancelIdempotencyKey === record.cancelIdempotencyKey) {
-			return ok(cloneReceipt(receipt));
+			return errorResult.ok(cloneReceipt(receipt));
 		}
 		if (receipt.status === "posted") {
-			return fail(
-				"CONFLICT",
-				"Posted goods receipts cannot be cancelled; use reverse",
-				receivingErrorDetails(RECEIVING_ERROR_POSTED_RECEIPT_CANNOT_CANCEL),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Posted goods receipts cannot be cancelled; use reverse",
+			});
 		}
 		if (receipt.status !== "draft") {
-			return fail("CONFLICT", "Goods receipt cannot be cancelled");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Goods receipt cannot be cancelled",
+			});
 		}
 		if (receipt.version !== record.expectedVersion) {
-			return fail("CONFLICT", "Goods receipt version conflict");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Goods receipt version conflict",
+			});
 		}
 		const previous = cloneReceipt(receipt);
 		const now = new Date();
@@ -486,7 +497,7 @@ export class MemoryReceivingStore implements ReceivingStore {
 			this.receipts.set(receipt.id, previous);
 			return outbox;
 		}
-		return ok(cloneReceipt(receipt));
+		return errorResult.ok(cloneReceipt(receipt));
 	}
 
 	async reverseReceipt(
@@ -499,7 +510,7 @@ export class MemoryReceivingStore implements ReceivingStore {
 				existing.organizationId === record.organizationId &&
 				existing.reverseIdempotencyKey === record.reverseIdempotencyKey
 			) {
-				return ok(cloneReceipt(existing));
+				return errorResult.ok(cloneReceipt(existing));
 			}
 		}
 		const original = this.receipts.get(record.originalReceiptId);
@@ -507,20 +518,24 @@ export class MemoryReceivingStore implements ReceivingStore {
 			original === undefined ||
 			original.organizationId !== record.organizationId
 		) {
-			return fail("NOT_FOUND", "Goods receipt not found");
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Goods receipt not found",
+			});
 		}
 		if (original.status !== "posted") {
-			return fail("CONFLICT", "Only posted goods receipts can be reversed");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Only posted goods receipts can be reversed",
+			});
 		}
 		if (original.reversedByReceiptId !== null) {
-			return fail(
-				"CONFLICT",
-				"Goods receipt already reversed",
-				receivingErrorDetails(RECEIVING_ERROR_RECEIPT_ALREADY_REVERSED),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Goods receipt already reversed",
+			});
 		}
 		if (original.version !== record.expectedVersion) {
-			return fail("CONFLICT", "Goods receipt version conflict");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Goods receipt version conflict",
+			});
 		}
 		const previous = cloneReceipt(original);
 		const now = new Date();
@@ -614,7 +629,7 @@ export class MemoryReceivingStore implements ReceivingStore {
 			this.receipts.delete(reverseId);
 			return outbox;
 		}
-		return ok(cloneReceipt(reverseReceipt));
+		return errorResult.ok(cloneReceipt(reverseReceipt));
 	}
 
 	setInventoryApplication(
@@ -626,14 +641,16 @@ export class MemoryReceivingStore implements ReceivingStore {
 				receipt === undefined ||
 				receipt.organizationId !== record.organizationId
 			) {
-				return fail("NOT_FOUND", "Goods receipt not found");
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "Goods receipt not found",
+				});
 			}
 			receipt.inventoryApplicationStatus = record.status;
 			receipt.inventoryMovementId = record.inventoryMovementId;
 			receipt.inventoryApplicationError = record.errorMessage;
 			receipt.updatedBy = record.actorUserId;
 			receipt.updatedAt = new Date();
-			return ok(cloneReceipt(receipt));
+			return errorResult.ok(cloneReceipt(receipt));
 		});
 	}
 
@@ -647,16 +664,20 @@ export class MemoryReceivingStore implements ReceivingStore {
 			receipt === undefined ||
 			receipt.organizationId !== record.organizationId
 		) {
-			return fail("NOT_FOUND", "Goods receipt not found");
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Goods receipt not found",
+			});
 		}
 		const existing = receipt.discrepancies.find(
 			(row) => row.recordIdempotencyKey === record.recordIdempotencyKey,
 		);
 		if (existing !== undefined) {
-			return ok({ ...existing });
+			return errorResult.ok({ ...existing });
 		}
 		if (receipt.status !== "draft" && receipt.status !== "posted") {
-			return fail("CONFLICT", "Discrepancy requires a draft or posted receipt");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Discrepancy requires a draft or posted receipt",
+			});
 		}
 		const previous = cloneReceipt(receipt);
 		const now = new Date();
@@ -721,7 +742,7 @@ export class MemoryReceivingStore implements ReceivingStore {
 			this.receipts.set(receipt.id, previous);
 			return outbox;
 		}
-		return ok({ ...discrepancy });
+		return errorResult.ok({ ...discrepancy });
 	}
 
 	async resolveDiscrepancy(
@@ -734,26 +755,30 @@ export class MemoryReceivingStore implements ReceivingStore {
 			receipt === undefined ||
 			receipt.organizationId !== record.organizationId
 		) {
-			return fail("NOT_FOUND", "Goods receipt not found");
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Goods receipt not found",
+			});
 		}
 		const discrepancy = receipt.discrepancies.find(
 			(row) => row.id === record.discrepancyId,
 		);
 		if (discrepancy === undefined) {
-			return fail("NOT_FOUND", "Receiving discrepancy not found");
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Receiving discrepancy not found",
+			});
 		}
 		if (discrepancy.resolveIdempotencyKey === record.resolveIdempotencyKey) {
-			return ok({ ...discrepancy });
+			return errorResult.ok({ ...discrepancy });
 		}
 		if (discrepancy.status === "resolved") {
-			return fail(
-				"CONFLICT",
-				"Discrepancy already resolved",
-				receivingErrorDetails(RECEIVING_ERROR_IDEMPOTENCY_CONFLICT),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Discrepancy already resolved",
+			});
 		}
 		if (discrepancy.version !== record.expectedVersion) {
-			return fail("CONFLICT", "Discrepancy version conflict");
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Discrepancy version conflict",
+			});
 		}
 		const previous = cloneReceipt(receipt);
 		const now = new Date();
@@ -799,7 +824,7 @@ export class MemoryReceivingStore implements ReceivingStore {
 			this.receipts.set(receipt.id, previous);
 			return outbox;
 		}
-		return ok({ ...discrepancy });
+		return errorResult.ok({ ...discrepancy });
 	}
 
 	sumPostedAcceptedByPoLines(
@@ -822,7 +847,7 @@ export class MemoryReceivingStore implements ReceivingStore {
 					accumulateAcceptedPoLines(totals, receipt.lines);
 				}
 			}
-			return ok(
+			return errorResult.ok(
 				[...totals.entries()].map(
 					([purchaseOrderLineId, acceptedQuantity]) => ({
 						purchaseOrderLineId,
@@ -839,7 +864,7 @@ export class MemoryReceivingStore implements ReceivingStore {
 	): Promise<Result<GoodsReceipt | null>> {
 		return resolveAsync(() => {
 			const receipt = this.receipts.get(id);
-			return ok(
+			return errorResult.ok(
 				receipt === undefined || receipt.organizationId !== organizationId
 					? null
 					: cloneReceipt(receipt),
@@ -857,10 +882,10 @@ export class MemoryReceivingStore implements ReceivingStore {
 					receipt.organizationId === organizationId &&
 					receipt.createIdempotencyKey === idempotencyKey
 				) {
-					return ok(cloneReceipt(receipt));
+					return errorResult.ok(cloneReceipt(receipt));
 				}
 			}
-			return ok(null);
+			return errorResult.ok(null);
 		});
 	}
 
@@ -880,7 +905,7 @@ export class MemoryReceivingStore implements ReceivingStore {
 				.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
 				.slice(start, start + filter.pageSize)
 				.map(cloneReceipt);
-			return ok(rows);
+			return errorResult.ok(rows);
 		});
 	}
 
@@ -900,7 +925,7 @@ export class MemoryReceivingStore implements ReceivingStore {
 				.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
 				.slice(start, start + filter.pageSize)
 				.map(cloneReceipt);
-			return ok(rows);
+			return errorResult.ok(rows);
 		});
 	}
 }

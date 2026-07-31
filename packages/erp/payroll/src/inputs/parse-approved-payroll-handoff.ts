@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	type ApprovedPayrollHandoff,
 	approvedPayrollHandoffSchema,
@@ -12,8 +12,6 @@ import {
 	type HandoffTimeFacts,
 	handoffDecimalScaleMatchesAmount,
 } from "@afenda/events/schemas";
-
-import { PAYROLL_ERROR_VALIDATION, payrollErrorDetails } from "../error-codes";
 import {
 	formatScaledToHandoffAmount,
 	parseDecimalToScaled,
@@ -64,34 +62,28 @@ function parseHandoffAmount(input: {
 	field: string;
 }): Result<{ amount: string; scaled: bigint }> {
 	if (!handoffDecimalScaleMatchesAmount(input.amount, input.decimalScale)) {
-		return fail(
-			"BAD_REQUEST",
-			`${input.field} decimal scale does not match amount.`,
-			payrollErrorDetails(PAYROLL_ERROR_VALIDATION),
-		);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "The request is invalid",
+		});
 	}
 
 	let scaled: bigint;
 	try {
 		scaled = parseDecimalToScaled(input.amount);
 	} catch {
-		return fail(
-			"BAD_REQUEST",
-			`${input.field} is not a valid payroll decimal.`,
-			payrollErrorDetails(PAYROLL_ERROR_VALIDATION),
-		);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "The request is invalid",
+		});
 	}
 
 	const roundTrip = formatScaledToHandoffAmount(scaled, input.decimalScale);
 	if (roundTrip !== input.amount) {
-		return fail(
-			"BAD_REQUEST",
-			`${input.field} does not round-trip through payroll money scale.`,
-			payrollErrorDetails(PAYROLL_ERROR_VALIDATION),
-		);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "The request is invalid",
+		});
 	}
 
-	return ok({ amount: input.amount, scaled });
+	return errorResult.ok({ amount: input.amount, scaled });
 }
 
 function parseComponent(
@@ -106,7 +98,7 @@ function parseComponent(
 		return parsedAmount;
 	}
 
-	return ok({
+	return errorResult.ok({
 		code: component.code,
 		kind: component.kind,
 		amount: parsedAmount.data.amount,
@@ -130,9 +122,8 @@ export function parseApprovedPayrollHandoff(
 ): Result<ApprovedPayrollHandoffParsed> {
 	const parsed = approvedPayrollHandoffSchema.safeParse(input);
 	if (!parsed.success) {
-		return fail("BAD_REQUEST", "Invalid approved payroll handoff input.", {
-			...payrollErrorDetails(PAYROLL_ERROR_VALIDATION),
-			fieldErrors: parsed.error.flatten().fieldErrors,
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "Invalid approved payroll handoff input.",
 		});
 	}
 
@@ -161,7 +152,7 @@ export function parseApprovedPayrollHandoff(
 		mode: handoff.roundingMode,
 	};
 
-	return ok({
+	return errorResult.ok({
 		contractVersion: handoff.contractVersion,
 		organizationId: handoff.organizationId,
 		employeeId: handoff.employeeId,

@@ -1,6 +1,6 @@
 // biome-ignore-all lint/complexity/noExcessiveCognitiveComplexity: Identifier supersession coordinates policy, CAS, idempotency, audit, and outbox atomically.
 // biome-ignore-all lint/style/useDestructuring: Explicit predecessor access keeps supersession evidence visible.
-import { fail, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS,
 	type CorporateAdministrationApprovalVerificationDependencies,
@@ -12,7 +12,6 @@ import type {
 	CorporateAdministrationApprovalCommandOptions,
 	CorporateAdministrationCommandOptions,
 } from "../../command-options";
-import { corporateAdministrationErrorDetails } from "../../error-codes";
 import { parseCorporateAdministrationInput } from "../../parse-input";
 import {
 	assertNonTaxCompanyIdentifierType,
@@ -283,15 +282,12 @@ function serializeIdentifierForReplay(result: CompanyIdentifier): unknown {
 	};
 }
 
-function inactiveReference(field: string, missing: boolean): Result<never> {
-	return fail(
-		missing ? "VALIDATION_ERROR" : "CONFLICT",
-		"Corporate Administration reference is not active.",
-		corporateAdministrationErrorDetails(
-			missing
-				? "CORPORATE_ADMINISTRATION_REFERENCE_INVALID"
-				: "CORPORATE_ADMINISTRATION_REFERENCE_INACTIVE",
-			{ field },
-		),
-	);
+function inactiveReference(_field: string, missing: boolean): Result<never> {
+	return missing
+		? errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Corporate Administration reference is not active.",
+			})
+		: errorResult.fail("CONFLICT", {
+				publicMessage: "Corporate Administration reference is not active.",
+			});
 }

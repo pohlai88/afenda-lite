@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { HumanResourcesEmployeeId } from "../brands";
 import {
 	HUMAN_RESOURCES_ERROR_FORBIDDEN,
@@ -44,11 +44,11 @@ export async function resolveActorEmployeeIdentity(
 	},
 ): Promise<Result<HumanResourcesEmployeeIdentity>> {
 	if (!identityResolver) {
-		return fail(
-			"UNAUTHORIZED",
-			"Human Resources identity resolver port is required",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_UNAUTHORIZED),
-		);
+		return errorResult.fail("UNAUTHORIZED", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_UNAUTHORIZED,
+			),
+		});
 	}
 	const identity = await identityResolver.resolveEmployeeForActor(
 		actorIdentityInput(input),
@@ -57,13 +57,13 @@ export async function resolveActorEmployeeIdentity(
 		return identity;
 	}
 	if (!identity.data) {
-		return fail(
-			"FORBIDDEN",
-			"Actor is not an employee",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
-		);
+		return errorResult.fail("FORBIDDEN", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_FORBIDDEN,
+			),
+		});
 	}
-	return ok(identity.data);
+	return errorResult.ok(identity.data);
 }
 
 export async function requireOwnResourceAccess(
@@ -99,23 +99,23 @@ export async function requireOwnResourceAccess(
 		return identity;
 	}
 	if (!identity.data) {
-		return fail(
-			"FORBIDDEN",
-			"Actor is not an employee",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
-		);
+		return errorResult.fail("FORBIDDEN", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_FORBIDDEN,
+			),
+		});
 	}
 
 	// Verify actor's employee identity matches target
 	if (identity.data.employeeId !== input.targetEmployeeId) {
-		return fail(
-			"FORBIDDEN",
-			"Cannot access other employee's resources",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
-		);
+		return errorResult.fail("FORBIDDEN", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_FORBIDDEN,
+			),
+		});
 	}
 
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export async function requireManagerResourceAccess(
@@ -152,11 +152,11 @@ export async function requireManagerResourceAccess(
 		return identity;
 	}
 	if (!identity.data) {
-		return fail(
-			"FORBIDDEN",
-			"Actor is not an employee",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
-		);
+		return errorResult.fail("FORBIDDEN", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_FORBIDDEN,
+			),
+		});
 	}
 
 	// Check if actor is the primary manager of the target employee
@@ -174,14 +174,14 @@ export async function requireManagerResourceAccess(
 		!primaryManager.data ||
 		primaryManager.data !== identity.data.employeeId
 	) {
-		return fail(
-			"FORBIDDEN",
-			"Actor is not the manager of the target employee",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
-		);
+		return errorResult.fail("FORBIDDEN", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_FORBIDDEN,
+			),
+		});
 	}
 
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export async function requireAdminResourceAccess(

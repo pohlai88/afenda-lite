@@ -1,5 +1,6 @@
 "use client";
 
+import type { Result as ActionResult } from "@afenda/errors";
 import {
 	Alert,
 	AlertDescription,
@@ -12,7 +13,6 @@ import {
 } from "@afenda/ui-system";
 import type { ComponentProps } from "react";
 import { useActionState } from "react";
-
 import { addJournalLineAction } from "@/app/actions/add-journal-line";
 import { closeAccountingPeriodAction } from "@/app/actions/close-accounting-period";
 import { createDraftJournalAction } from "@/app/actions/create-draft-journal";
@@ -21,7 +21,6 @@ import { postJournalAction } from "@/app/actions/post-journal";
 import { reopenAccountingPeriodAction } from "@/app/actions/reopen-accounting-period";
 import { reverseJournalAction } from "@/app/actions/reverse-journal";
 import { softCloseAccountingPeriodAction } from "@/app/actions/soft-close-accounting-period";
-import type { ActionResult } from "@/modules/platform/schemas/action-result";
 
 interface Field {
 	label: string;

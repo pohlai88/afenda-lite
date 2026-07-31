@@ -1,7 +1,7 @@
 // biome-ignore-all lint/suspicious/useAwait: Transaction wrappers expose one asynchronous API for nested and root execution.
 import { AsyncLocalStorage } from "node:async_hooks";
 import type { NeonHttpSql } from "@afenda/db";
-import type { Result } from "@afenda/errors/result";
+import type { Result } from "@afenda/errors";
 
 import type {
 	CorporateAdministrationTransactionContext,

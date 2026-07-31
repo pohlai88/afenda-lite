@@ -13,12 +13,6 @@ export type {
 export { type PayrollRunId, payrollRunIdSchema } from "./brands";
 export type { PayrollCommandOptions } from "./command-options";
 export {
-	PAYROLL_ERROR_CODES,
-	PAYROLL_ERROR_VALIDATION,
-	type PayrollErrorCode,
-	payrollErrorDetails,
-} from "./error-codes";
-export {
 	type ApprovedPayrollHandoffParsed,
 	type ApprovedPayrollHandoffParsedComponent,
 	type ParsedApprovedPayrollHandoffInput,

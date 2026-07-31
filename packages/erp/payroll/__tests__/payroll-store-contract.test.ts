@@ -4,7 +4,6 @@ import {
 	parsePayrollResultLineId,
 	parsePayrollRunEmployeeId,
 } from "../src/brands";
-import { PAYROLL_ERROR_EFFECTIVE_RANGE_OVERLAP } from "../src/error-codes";
 
 import {
 	createPayrollParityHarness,
@@ -178,9 +177,6 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 				return;
 			}
 			expect(overlap.code).toBe("CONFLICT");
-			expect(overlap.details).toEqual({
-				payrollCode: PAYROLL_ERROR_EFFECTIVE_RANGE_OVERLAP,
-			});
 		});
 
 		it("rejects duplicate run identity", async () => {
@@ -280,9 +276,6 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 				return;
 			}
 			expect(overlap.code).toBe("CONFLICT");
-			expect(overlap.details).toEqual({
-				payrollCode: PAYROLL_ERROR_EFFECTIVE_RANGE_OVERLAP,
-			});
 		});
 
 		it("rejects overlapping active statutory rules for the same code", async () => {
@@ -336,9 +329,6 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 				return;
 			}
 			expect(overlap.code).toBe("CONFLICT");
-			expect(overlap.details).toEqual({
-				payrollCode: PAYROLL_ERROR_EFFECTIVE_RANGE_OVERLAP,
-			});
 		});
 
 		it("replays idempotent pay group creates with the same fingerprint", async () => {

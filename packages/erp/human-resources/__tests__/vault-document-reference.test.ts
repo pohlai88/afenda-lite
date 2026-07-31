@@ -1,4 +1,4 @@
-import { fail } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 import { describe, expect, it } from "vitest";
 
 import { createVaultDocumentReferenceAdapter } from "../src/compliance/vault-document-reference-adapter";
@@ -82,7 +82,9 @@ describe("createVaultDocumentReferenceAdapter", () => {
 		const withResolver = createVaultDocumentReferenceAdapter({
 			resolver: {
 				async assertObjectAcceptable() {
-					return await fail("CONFLICT", "Object quarantined");
+					return await errorResult.fail("CONFLICT", {
+						publicMessage: "Object quarantined",
+					});
 				},
 			},
 		});

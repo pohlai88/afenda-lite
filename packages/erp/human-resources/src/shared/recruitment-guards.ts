@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
@@ -14,24 +14,26 @@ import {
 	type RequisitionStatus,
 } from "./recruitment-status";
 
-function alreadyInStatus(entity: string, status: string): Result<never> {
-	return fail(
-		"BAD_REQUEST",
-		`${entity} is already in status '${status}'`,
-		humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION),
-	);
+function alreadyInStatus(_entity: string, _status: string): Result<never> {
+	return errorResult.fail("BAD_REQUEST", {
+		publicMessage: "The request is invalid",
+		internalContext: humanResourcesErrorDetails(
+			HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+		),
+	});
 }
 
 function cannotTransition(
-	entity: string,
-	current: string,
-	next: string,
+	_entity: string,
+	_current: string,
+	_next: string,
 ): Result<never> {
-	return fail(
-		"BAD_REQUEST",
-		`Cannot transition ${entity} from '${current}' to '${next}'`,
-		humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION),
-	);
+	return errorResult.fail("BAD_REQUEST", {
+		publicMessage: "The request is invalid",
+		internalContext: humanResourcesErrorDetails(
+			HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+		),
+	});
 }
 
 export function canTransitionRequisitionStatus(
@@ -78,7 +80,7 @@ export function assertRequisitionStatusTransition(
 	if (!canTransitionRequisitionStatus(current, next)) {
 		return cannotTransition("requisition", current, next);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertRequisitionAmendable(
@@ -87,7 +89,7 @@ export function assertRequisitionAmendable(
 	if (status !== "draft") {
 		return invalidState("Requisition can only be amended while draft");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertRequisitionOpenForApplication(
@@ -96,7 +98,7 @@ export function assertRequisitionOpenForApplication(
 	if (status !== "open") {
 		return invalidState("Requisition must be open to accept applications");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertRequisitionHasHiringManager(input: {
@@ -107,7 +109,7 @@ export function assertRequisitionHasHiringManager(input: {
 			"Requisition requires a hiring manager before this transition",
 		);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertRequisitionHiringManagerAssignable(
@@ -118,7 +120,7 @@ export function assertRequisitionHiringManagerAssignable(
 			"Cannot assign a hiring manager on a terminal requisition",
 		);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertRequisitionAllowsHeadcountReservation(
@@ -129,7 +131,7 @@ export function assertRequisitionAllowsHeadcountReservation(
 			"Headcount can only be reserved for approved or open requisitions",
 		);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function canTransitionCandidateStatus(
@@ -163,7 +165,7 @@ export function assertCandidateNotAnonymized(
 	if (status === "anonymized") {
 		return invalidState("Candidate has been anonymized");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertCandidateAnonymizationEligible(input: {
@@ -190,7 +192,7 @@ export function assertCandidateAnonymizationEligible(input: {
 			"Candidate anonymization requires consent withdrawal or due retention",
 		);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export const ANONYMIZED_CANDIDATE_DISPLAY_NAME =
@@ -210,14 +212,14 @@ export function assertCandidateStatusTransition(
 	if (!canTransitionCandidateStatus(current, next)) {
 		return cannotTransition("candidate", current, next);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertCandidateActive(status: CandidateStatus): Result<void> {
 	if (status !== "active") {
 		return invalidState("Candidate is not active");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 const APPLICATION_STATUS_TRANSITIONS = new Set<string>([
@@ -255,7 +257,7 @@ export function assertApplicationStatusTransition(
 	if (!canTransitionApplicationStatus(current, next)) {
 		return cannotTransition("application", current, next);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertApplicationReopenable(
@@ -266,7 +268,7 @@ export function assertApplicationReopenable(
 			"Application can only be reopened from rejected or withdrawn status",
 		);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertApplicationEligibleForOffer(
@@ -277,7 +279,7 @@ export function assertApplicationEligibleForOffer(
 			"Offer can only be created for applications in review or interviewing",
 		);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertInterviewInterviewerAssignable(
@@ -288,7 +290,7 @@ export function assertInterviewInterviewerAssignable(
 			"Interviewer can only be assigned while interview is scheduled",
 		);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function canTransitionInterviewStatus(
@@ -317,7 +319,7 @@ export function assertInterviewStatusTransition(
 	if (!canTransitionInterviewStatus(current, next)) {
 		return cannotTransition("interview", current, next);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertInterviewSchedulable(
@@ -332,7 +334,7 @@ export function assertInterviewSchedulable(
 			"Interview can only be scheduled for an active application",
 		);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function canTransitionOfferStatus(
@@ -373,14 +375,14 @@ export function assertOfferStatusTransition(
 	if (!canTransitionOfferStatus(current, next)) {
 		return cannotTransition("offer", current, next);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertOfferAmendable(status: OfferStatus): Result<void> {
 	if (status !== "draft") {
 		return invalidState("Offer can only be amended while draft");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertOfferProposalMutable(status: OfferStatus): Result<void> {
@@ -389,7 +391,7 @@ export function assertOfferProposalMutable(status: OfferStatus): Result<void> {
 			"Compensation proposal reference can only change while offer is draft",
 		);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertOfferReadyForApproval(input: {
@@ -400,7 +402,7 @@ export function assertOfferReadyForApproval(input: {
 			"Compensation proposal reference is required before offer approval",
 		);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertOfferAcceptable(input: {
@@ -415,7 +417,7 @@ export function assertOfferAcceptable(input: {
 	if (input.expiresOn < input.asOfDate) {
 		return invalidState("Offer has expired and cannot be accepted");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function normalizeCandidateEmail(email: string): string {

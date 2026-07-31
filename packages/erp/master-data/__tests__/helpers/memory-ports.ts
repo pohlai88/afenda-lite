@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type {
 	AuditFactInput,
@@ -27,7 +27,7 @@ export function createMemoryAuditPort(): AuditFactPort & {
 		record(input: AuditFactInput): Promise<Result<{ id: string }>> {
 			return resolveAsync(() => {
 				calls.push(input);
-				return ok({ id: randomUUID() });
+				return errorResult.ok({ id: randomUUID() });
 			});
 		},
 	};
@@ -47,7 +47,7 @@ export function createMemoryOutboxPort(): OutboxPort & {
 		append(input: OutboxFactInput): Promise<Result<{ id: string }>> {
 			return resolveAsync(() => {
 				calls.push(input);
-				return ok({ id: randomUUID() });
+				return errorResult.ok({ id: randomUUID() });
 			});
 		},
 	};

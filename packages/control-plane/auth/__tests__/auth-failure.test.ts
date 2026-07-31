@@ -1,4 +1,4 @@
-import { DEFAULT_INTERNAL_MESSAGE } from "@afenda/errors";
+import { errorResult } from "@afenda/errors";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -10,22 +10,16 @@ import {
 describe("auth-failure taxonomy", () => {
 	it("classifies Neon org probes without leaking probe text", () => {
 		expect(failFromNeonOrgProbe({ message: "slug taken" }, "fallback")).toEqual(
-			{
-				code: "CONFLICT",
-				message: "Organization already exists",
-				ok: false,
-			},
+			errorResult.fail("CONFLICT", {
+				publicMessage: "Organization already exists",
+			}),
 		);
-		expect(failFromNeonOrgProbe({ message: "not owner" }, "fallback")).toEqual({
-			code: "FORBIDDEN",
-			message: "Not authorized for this organization action",
-			ok: false,
-		});
-		expect(failFromNeonOrgProbe({ message: "boom" }, "safe fallback")).toEqual({
-			code: "INTERNAL_ERROR",
-			message: DEFAULT_INTERNAL_MESSAGE,
-			ok: false,
-		});
+		expect(failFromNeonOrgProbe({ message: "not owner" }, "fallback")).toEqual(
+			errorResult.fail("FORBIDDEN"),
+		);
+		expect(failFromNeonOrgProbe({ message: "boom" }, "safe fallback")).toEqual(
+			errorResult.fail("INTERNAL_ERROR"),
+		);
 	});
 
 	it("fails closed when Neon probe getters throw", () => {
@@ -36,25 +30,21 @@ describe("auth-failure taxonomy", () => {
 		});
 
 		expect(() => failFromNeonOrgProbe(hostile, "safe fallback")).not.toThrow();
-		expect(failFromNeonOrgProbe(hostile, "safe fallback")).toEqual({
-			code: "INTERNAL_ERROR",
-			message: DEFAULT_INTERNAL_MESSAGE,
-			ok: false,
-		});
+		expect(failFromNeonOrgProbe(hostile, "safe fallback")).toEqual(
+			errorResult.fail("INTERNAL_ERROR"),
+		);
 	});
 
 	it("maps invite HTTP status to closed codes", () => {
-		expect(failFromInviteHttpStatus(403)).toEqual({
-			code: "FORBIDDEN",
-			message: "Invitation is not permitted for this session",
-			ok: false,
-		});
+		expect(failFromInviteHttpStatus(403)).toEqual(
+			errorResult.fail("FORBIDDEN"),
+		);
 		expect(failFromInviteHttpStatus(503).code).toBe("SERVICE_UNAVAILABLE");
 		expect(failFromInviteHttpStatus(418).code).toBe("INTERNAL_ERROR");
 	});
 
 	it("authPlainTextFailure uses ErrorCode HTTP status map", () => {
-		const response = authPlainTextFailure("FORBIDDEN", "no org");
+		const response = authPlainTextFailure(errorResult.fail("FORBIDDEN"));
 		expect(response.status).toBe(403);
 	});
 });

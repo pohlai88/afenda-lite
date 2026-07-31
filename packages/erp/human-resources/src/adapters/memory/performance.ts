@@ -2,7 +2,7 @@
  * In-memory performance domain state and methods for composed HumanResourcesStore hosts.
  */
 import { randomUUID } from "node:crypto";
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	HUMAN_RESOURCES_IMPROVEMENT_PLAN_COMPLETED_EVENT,
 	HUMAN_RESOURCES_IMPROVEMENT_PLAN_STARTED_EVENT,
@@ -309,13 +309,14 @@ function cloneCycle(cycle: PerformanceCycle): PerformanceCycle {
 function newBrandId<T extends z.ZodTypeAny>(schema: T): Result<z.infer<T>> {
 	const parsed = schema.safeParse(randomUUID());
 	if (!parsed.success) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Invalid generated identifier",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			),
+		});
 	}
-	return ok(parsed.data);
+	return errorResult.ok(parsed.data);
 }
 
 async function recordAudit(
@@ -378,7 +379,7 @@ function getCycle(
 			HUMAN_RESOURCES_ERROR_NOT_FOUND,
 		);
 	}
-	return ok(cycle);
+	return errorResult.ok(cycle);
 }
 
 function getGoal(
@@ -393,7 +394,7 @@ function getGoal(
 			HUMAN_RESOURCES_ERROR_NOT_FOUND,
 		);
 	}
-	return ok(goal);
+	return errorResult.ok(goal);
 }
 
 function validateApprovedGoalWeightTotal(
@@ -402,7 +403,7 @@ function validateApprovedGoalWeightTotal(
 	cycle: PerformanceCycle,
 ): Result<void> {
 	if (cycle.weightingModel !== "percent100") {
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	}
 	const relatedGoals = Array.from(state.goals.values()).filter(
 		(item) =>
@@ -412,7 +413,7 @@ function validateApprovedGoalWeightTotal(
 			item.id !== goal.id,
 	);
 	if (relatedGoals.some((item) => item.status === "submitted")) {
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	}
 	const weights = [goal, ...relatedGoals]
 		.filter((item) => item.status === "approved" || item.status === "active")
@@ -433,7 +434,7 @@ function getReview(
 			HUMAN_RESOURCES_ERROR_NOT_FOUND,
 		);
 	}
-	return ok(review);
+	return errorResult.ok(review);
 }
 
 function getPlan(
@@ -448,7 +449,7 @@ function getPlan(
 			HUMAN_RESOURCES_ERROR_NOT_FOUND,
 		);
 	}
-	return ok(plan);
+	return errorResult.ok(plan);
 }
 
 function checkpointsForPlan(
@@ -536,7 +537,7 @@ async function assertEmployeeEmployment(
 	if (employment.data.employeeId !== employeeId) {
 		return invalidInput("Employment does not belong to employee");
 	}
-	return ok(true);
+	return errorResult.ok(true);
 }
 
 function redactReviewList(
@@ -565,9 +566,9 @@ function buildPerformanceMemoryMethods(
 		}): Promise<Result<PerformanceCycle | null>> {
 			const cycle = state.cycles.get(input.cycleId);
 			if (!cycle || cycle.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok(cloneCycle(cycle));
+			return await errorResult.ok(cloneCycle(cycle));
 		},
 
 		async findPerformanceCycleByIdempotencyKey(input: {
@@ -578,9 +579,9 @@ function buildPerformanceMemoryMethods(
 				idemKey(input.organizationId, input.idempotencyKey),
 			);
 			if (!record) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({
+			return await errorResult.ok({
 				cycle: cloneCycle(record.cycle),
 				createRequestFingerprint: record.createRequestFingerprint,
 			});
@@ -597,7 +598,7 @@ function buildPerformanceMemoryMethods(
 				existing &&
 				existing.createRequestFingerprint === record.createRequestFingerprint
 			) {
-				return ok(cloneCycle(existing.cycle));
+				return errorResult.ok(cloneCycle(existing.cycle));
 			}
 			if (existing) {
 				return conflict("Idempotency key already used with different data");
@@ -609,11 +610,12 @@ function buildPerformanceMemoryMethods(
 					cycleValue.code === record.code,
 			);
 			if (duplicate) {
-				return fail(
-					"CONFLICT",
-					"Performance cycle with this code already exists",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_CONFLICT,
+					),
+				});
 			}
 
 			const periodCheck = assertValidCyclePeriod({
@@ -666,7 +668,7 @@ function buildPerformanceMemoryMethods(
 				return audit;
 			}
 
-			return ok(cloneCycle(cycle));
+			return errorResult.ok(cloneCycle(cycle));
 		},
 
 		async updatePerformanceCycle(
@@ -743,7 +745,7 @@ function buildPerformanceMemoryMethods(
 				return audit;
 			}
 
-			return ok(cloneCycle(updated));
+			return errorResult.ok(cloneCycle(updated));
 		},
 
 		async publishPerformanceCycle(
@@ -813,7 +815,7 @@ function buildPerformanceMemoryMethods(
 				return audit;
 			}
 
-			return ok(cloneCycle(updated));
+			return errorResult.ok(cloneCycle(updated));
 		},
 
 		async openPerformanceCycle(
@@ -892,7 +894,7 @@ function buildPerformanceMemoryMethods(
 				return outbox;
 			}
 
-			return ok(cloneCycle(updated));
+			return errorResult.ok(cloneCycle(updated));
 		},
 
 		async closePerformanceCycle(
@@ -945,7 +947,7 @@ function buildPerformanceMemoryMethods(
 				return audit;
 			}
 
-			return ok(cloneCycle(updated));
+			return errorResult.ok(cloneCycle(updated));
 		},
 
 		async cancelPerformanceCycle(
@@ -998,7 +1000,7 @@ function buildPerformanceMemoryMethods(
 				return audit;
 			}
 
-			return ok(cloneCycle(updated));
+			return errorResult.ok(cloneCycle(updated));
 		},
 
 		async setPerformanceCycleReviewPeriods(
@@ -1103,7 +1105,7 @@ function buildPerformanceMemoryMethods(
 				return audit;
 			}
 
-			return ok(nextPeriods.map((period) => ({ ...period })));
+			return errorResult.ok(nextPeriods.map((period) => ({ ...period })));
 		},
 
 		async listPerformanceCycleReviewPeriods(input: {
@@ -1114,7 +1116,7 @@ function buildPerformanceMemoryMethods(
 			if (!cycle.ok) {
 				return await cycle;
 			}
-			return await ok(
+			return await errorResult.ok(
 				reviewPeriodsForCycle(state, input.organizationId, input.cycleId).map(
 					(period) => ({ ...period }),
 				),
@@ -1202,7 +1204,7 @@ function buildPerformanceMemoryMethods(
 				return audit;
 			}
 
-			return ok({ ...eligibility });
+			return errorResult.ok({ ...eligibility });
 		},
 
 		async getPerformanceCycleEligibility(input: {
@@ -1218,7 +1220,9 @@ function buildPerformanceMemoryMethods(
 				input.organizationId,
 				input.cycleId,
 			);
-			return await ok(eligibility === null ? null : { ...eligibility });
+			return await errorResult.ok(
+				eligibility === null ? null : { ...eligibility },
+			);
 		},
 
 		async enrollEligibleCycleParticipants(
@@ -1266,7 +1270,7 @@ function buildPerformanceMemoryMethods(
 					return employees;
 				}
 				if (employees.data.employees.length === 0) {
-					return ok(undefined);
+					return errorResult.ok(undefined);
 				}
 
 				const sequentialOuterOutcome1 = await runSequential(
@@ -1345,7 +1349,7 @@ function buildPerformanceMemoryMethods(
 					page * pageSize >= employees.data.totalCount ||
 					employees.data.employees.length < pageSize
 				) {
-					return ok(undefined);
+					return errorResult.ok(undefined);
 				}
 				return enrollPage(page + 1);
 			};
@@ -1354,7 +1358,7 @@ function buildPerformanceMemoryMethods(
 				return enrollment;
 			}
 
-			return ok(enrolled);
+			return errorResult.ok(enrolled);
 		},
 
 		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
@@ -1456,7 +1460,7 @@ function buildPerformanceMemoryMethods(
 					state.cycleParticipants.set(previous.id, previous);
 					return audit;
 				}
-				return ok({ ...updated });
+				return errorResult.ok({ ...updated });
 			}
 
 			const idResult = newBrandId(
@@ -1493,7 +1497,7 @@ function buildPerformanceMemoryMethods(
 				return audit;
 			}
 
-			return ok({ ...participant });
+			return errorResult.ok({ ...participant });
 		},
 
 		async removeCycleParticipant(
@@ -1552,7 +1556,7 @@ function buildPerformanceMemoryMethods(
 				return audit;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async listPerformanceCycles(input: {
@@ -1573,7 +1577,7 @@ function buildPerformanceMemoryMethods(
 			const cycles = filtered
 				.slice(start, start + input.pageSize)
 				.map((cycle) => cloneCycle(cycle));
-			return await ok({
+			return await errorResult.ok({
 				cycles,
 				totalCount,
 				page: input.page,
@@ -1590,7 +1594,7 @@ function buildPerformanceMemoryMethods(
 				input.organizationId,
 				input.cycleId,
 			).map((participant) => ({ ...participant }));
-			return await ok(participants);
+			return await errorResult.ok(participants);
 		},
 
 		async getPerformanceGoalById(input: {
@@ -1599,9 +1603,9 @@ function buildPerformanceMemoryMethods(
 		}): Promise<Result<PerformanceGoal | null>> {
 			const goal = state.goals.get(input.goalId);
 			if (!goal || goal.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...goal });
+			return await errorResult.ok({ ...goal });
 		},
 
 		async findPerformanceGoalByIdempotencyKey(input: {
@@ -1612,9 +1616,9 @@ function buildPerformanceMemoryMethods(
 				idemKey(input.organizationId, input.idempotencyKey),
 			);
 			if (!record) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({
+			return await errorResult.ok({
 				goal: { ...record.goal },
 				createRequestFingerprint: record.createRequestFingerprint,
 			});
@@ -1632,7 +1636,7 @@ function buildPerformanceMemoryMethods(
 				existing &&
 				existing.createRequestFingerprint === record.createRequestFingerprint
 			) {
-				return ok({ ...existing.goal });
+				return errorResult.ok({ ...existing.goal });
 			}
 			if (existing) {
 				return conflict("Idempotency key already used with different data");
@@ -1772,7 +1776,7 @@ function buildPerformanceMemoryMethods(
 				return audit;
 			}
 
-			return ok({ ...goal });
+			return errorResult.ok({ ...goal });
 		},
 
 		async updatePerformanceGoal(
@@ -1854,7 +1858,7 @@ function buildPerformanceMemoryMethods(
 				return audit;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async submitPerformanceGoal(
@@ -1978,7 +1982,7 @@ function buildPerformanceMemoryMethods(
 				return outbox;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async rejectPerformanceGoal(
@@ -2054,7 +2058,7 @@ function buildPerformanceMemoryMethods(
 				return audit;
 			}
 
-			return ok({ ...progress });
+			return errorResult.ok({ ...progress });
 		},
 
 		async activatePerformanceGoal(
@@ -2103,7 +2107,7 @@ function buildPerformanceMemoryMethods(
 
 			const parent =
 				input.alignedToGoalId === null
-					? ok(null)
+					? errorResult.ok(null)
 					: getGoal(state, input.organizationId, input.alignedToGoalId);
 			if (isResultFailure(parent)) {
 				return parent;
@@ -2163,7 +2167,7 @@ function buildPerformanceMemoryMethods(
 				return audit;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async closePerformanceGoal(
@@ -2220,7 +2224,7 @@ function buildPerformanceMemoryMethods(
 				return audit;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async cancelPerformanceGoal(
@@ -2260,7 +2264,7 @@ function buildPerformanceMemoryMethods(
 			const progress = filtered
 				.slice(start, start + input.pageSize)
 				.map((entry) => ({ ...entry }));
-			return await ok({
+			return await errorResult.ok({
 				progress,
 				totalCount,
 				page: input.page,
@@ -2289,7 +2293,7 @@ function buildPerformanceMemoryMethods(
 			const goals = filtered
 				.slice(start, start + input.pageSize)
 				.map((goal) => ({ ...goal }));
-			return await ok({
+			return await errorResult.ok({
 				goals,
 				totalCount,
 				page: input.page,
@@ -2396,11 +2400,11 @@ function buildPerformanceMemoryMethods(
 				)
 			) {
 				state.reviews.delete(review.id);
-				return fail(
-					"INTERNAL_ERROR",
-					"Could not create performance review participants",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-				);
+				return errorResult.fail("INTERNAL_ERROR", {
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_NOT_FOUND,
+					),
+				});
 			}
 
 			const selfParticipant: PerformanceReviewParticipant = {
@@ -2487,7 +2491,7 @@ function buildPerformanceMemoryMethods(
 				return audit;
 			}
 
-			return ok({ ...review });
+			return errorResult.ok({ ...review });
 		},
 
 		async submitSelfAssessment(
@@ -2596,11 +2600,11 @@ function buildPerformanceMemoryMethods(
 			const participantId = newBrandId(humanResourcesReviewParticipantIdSchema);
 			const assessmentId = newBrandId(humanResourcesAssessmentIdSchema);
 			if (!(participantId.ok && assessmentId.ok)) {
-				return fail(
-					"INTERNAL_ERROR",
-					"Could not create delegated reviewer",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-				);
+				return errorResult.fail("INTERNAL_ERROR", {
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_NOT_FOUND,
+					),
+				});
 			}
 
 			const now = new Date();
@@ -2664,7 +2668,7 @@ function buildPerformanceMemoryMethods(
 				return audit;
 			}
 
-			return ok({ ...updatedReview });
+			return errorResult.ok({ ...updatedReview });
 		},
 
 		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
@@ -2788,7 +2792,7 @@ function buildPerformanceMemoryMethods(
 				return audit;
 			}
 
-			return ok({ ...updatedReview });
+			return errorResult.ok({ ...updatedReview });
 		},
 
 		async calibratePerformanceReview(
@@ -2868,7 +2872,7 @@ function buildPerformanceMemoryMethods(
 				return audit;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async returnPerformanceReviewForCorrection(
@@ -2950,7 +2954,7 @@ function buildPerformanceMemoryMethods(
 				return audit;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
@@ -2970,7 +2974,7 @@ function buildPerformanceMemoryMethods(
 			const key = idemKey(input.organizationId, input.finalizeIdempotencyKey);
 			const existing = state.reviewFinalizeIdempotency.get(key);
 			if (existing) {
-				return ok({ ...existing });
+				return errorResult.ok({ ...existing });
 			}
 
 			const current = getReview(state, input.organizationId, input.reviewId);
@@ -3088,7 +3092,7 @@ function buildPerformanceMemoryMethods(
 				return outbox;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async reopenPerformanceReview(
@@ -3163,7 +3167,7 @@ function buildPerformanceMemoryMethods(
 				return outbox;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async getPerformanceReviewById(input: {
@@ -3173,7 +3177,7 @@ function buildPerformanceMemoryMethods(
 		}): Promise<Result<PerformanceReviewDetail | null>> {
 			const review = state.reviews.get(input.reviewId);
 			if (!review || review.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
 			const detail = projectPerformanceReviewDetailForReader(
 				{
@@ -3183,7 +3187,7 @@ function buildPerformanceMemoryMethods(
 				},
 				input.includeConfidential,
 			);
-			return await ok(detail);
+			return await errorResult.ok(detail);
 		},
 
 		async listEmployeePerformanceReviews(input: {
@@ -3206,7 +3210,7 @@ function buildPerformanceMemoryMethods(
 				filtered.slice(start, start + input.pageSize),
 				input.includeConfidential,
 			);
-			return await ok({
+			return await errorResult.ok({
 				reviews,
 				totalCount,
 				page: input.page,
@@ -3239,7 +3243,7 @@ function buildPerformanceMemoryMethods(
 			const reviews = filtered
 				.slice(start, start + input.pageSize)
 				.map((review) => ({ ...review }));
-			return await ok({
+			return await errorResult.ok({
 				reviews,
 				totalCount,
 				page: input.page,
@@ -3253,9 +3257,9 @@ function buildPerformanceMemoryMethods(
 		}): Promise<Result<PerformanceImprovementPlan | null>> {
 			const plan = state.improvementPlans.get(input.planId);
 			if (!plan || plan.organizationId !== input.organizationId) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({ ...plan });
+			return await errorResult.ok({ ...plan });
 		},
 
 		async findImprovementPlanByIdempotencyKey(input: {
@@ -3266,9 +3270,9 @@ function buildPerformanceMemoryMethods(
 				idemKey(input.organizationId, input.idempotencyKey),
 			);
 			if (!record) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({
+			return await errorResult.ok({
 				plan: { ...record.plan },
 				createRequestFingerprint: record.createRequestFingerprint,
 			});
@@ -3286,7 +3290,7 @@ function buildPerformanceMemoryMethods(
 				existing &&
 				existing.createRequestFingerprint === record.createRequestFingerprint
 			) {
-				return ok({ ...existing.plan });
+				return errorResult.ok({ ...existing.plan });
 			}
 			if (existing) {
 				return conflict("Idempotency key already used with different data");
@@ -3397,7 +3401,7 @@ function buildPerformanceMemoryMethods(
 				return audit;
 			}
 
-			return ok({ ...plan });
+			return errorResult.ok({ ...plan });
 		},
 
 		async openImprovementPlan(
@@ -3468,7 +3472,7 @@ function buildPerformanceMemoryMethods(
 				return outbox;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async acknowledgeImprovementPlan(
@@ -3554,7 +3558,7 @@ function buildPerformanceMemoryMethods(
 				return audit;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
@@ -3702,7 +3706,7 @@ function buildPerformanceMemoryMethods(
 				return audit;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async completeImprovementPlan(
@@ -3784,7 +3788,7 @@ function buildPerformanceMemoryMethods(
 				return outbox;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async closeImprovementPlanUnsuccessful(
@@ -3851,7 +3855,7 @@ function buildPerformanceMemoryMethods(
 				return audit;
 			}
 
-			return ok({ ...updated });
+			return errorResult.ok({ ...updated });
 		},
 
 		async cancelImprovementPlan(
@@ -3891,7 +3895,7 @@ function buildPerformanceMemoryMethods(
 			const plans = filtered
 				.slice(start, start + input.pageSize)
 				.map((plan) => ({ ...plan }));
-			return await ok({
+			return await errorResult.ok({
 				plans,
 				totalCount,
 				page: input.page,
@@ -3921,7 +3925,7 @@ function buildPerformanceMemoryMethods(
 				input.organizationId,
 				input.planId,
 			).map((checkpoint) => ({ ...checkpoint }));
-			return ok({
+			return errorResult.ok({
 				checkpoints,
 				totalCount: checkpoints.length,
 			});
@@ -3973,7 +3977,7 @@ function buildPerformanceMemoryMethods(
 				};
 			});
 
-			return await ok({
+			return await errorResult.ok({
 				employeeId: input.employeeId,
 				entries,
 			});
@@ -4037,7 +4041,7 @@ async function transitionGoalStatus(
 		return audit;
 	}
 
-	return ok({ ...updated });
+	return errorResult.ok({ ...updated });
 }
 
 async function transitionReviewStatus(
@@ -4100,7 +4104,7 @@ async function transitionReviewStatus(
 		return audit;
 	}
 
-	return ok({ ...updated });
+	return errorResult.ok({ ...updated });
 }
 
 async function transitionPlanStatus(
@@ -4159,7 +4163,7 @@ async function transitionPlanStatus(
 		return audit;
 	}
 
-	return ok({ ...updated });
+	return errorResult.ok({ ...updated });
 }
 
 async function submitAssessment(
@@ -4266,7 +4270,7 @@ async function submitAssessment(
 		return audit;
 	}
 
-	return ok({ ...updatedReview });
+	return errorResult.ok({ ...updatedReview });
 }
 
 export function createMemoryPerformanceMethods(

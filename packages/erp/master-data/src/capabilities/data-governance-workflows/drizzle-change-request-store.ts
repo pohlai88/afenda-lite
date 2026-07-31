@@ -10,11 +10,11 @@ import {
 	runNeonHttpTransaction,
 } from "@afenda/db";
 import {
-	hasPostgresSqlState,
-	normalizePostgresUnknown,
-} from "@afenda/errors/adapters/postgres";
-import { fail, failFromAppError, ok, type Result } from "@afenda/errors/result";
-import type { MasterFailureDetails } from "../../contracts/reasons";
+	errorIngress,
+	errorProject,
+	errorResult,
+	type Result,
+} from "@afenda/errors";
 import type { MutationPorts } from "../../ports";
 import type {
 	ChangeRequest,
@@ -31,8 +31,10 @@ import type {
 const MASTER_DATA_CHANGE_REQUEST_AUDIT_SOURCE =
 	"master-data.change-request-store";
 
-function failFromPersistence(error: unknown, fallbackMessage: string) {
-	return failFromAppError(normalizePostgresUnknown(error, fallbackMessage));
+function failFromPersistence(error: unknown, _fallbackMessage: string) {
+	return errorProject.result(
+		errorIngress.postgres(error, { operation: "persistence.postgres" }),
+	);
 }
 
 interface ChangeRequestSqlRow {
@@ -127,9 +129,9 @@ export async function drizzleGetChangeRequestById(
 			)
 			.limit(1);
 		if (row === undefined) {
-			return ok(null);
+			return errorResult.ok(null);
 		}
-		return ok(
+		return errorResult.ok(
 			mapChangeRequestSqlRow({
 				id: row.id,
 				organization_id: row.organizationId,
@@ -177,7 +179,7 @@ export async function drizzleListChangeRequests(
 			.orderBy(asc(mdChangeRequest.createdAt), asc(mdChangeRequest.id))
 			.limit(filter.pageSize)
 			.offset((filter.page - 1) * filter.pageSize);
-		return ok(
+		return errorResult.ok(
 			rows.map((row) =>
 				mapChangeRequestSqlRow({
 					id: row.id,
@@ -298,15 +300,10 @@ export async function drizzleCreateChangeRequest(
 		]);
 		const [row] = rows;
 		if (row === undefined) {
-			return fail("INTERNAL_ERROR", "Change request create returned no row");
+			return errorResult.fail("INTERNAL_ERROR");
 		}
-		return ok(mapChangeRequestSqlRow(row));
+		return errorResult.ok(mapChangeRequestSqlRow(row));
 	} catch (error) {
-		if (hasPostgresSqlState(error, "23505")) {
-			return fail("CONFLICT", "Change request code already exists", {
-				reason: "MASTER_CODE_CONFLICT",
-			} satisfies MasterFailureDetails);
-		}
 		return failFromPersistence(error, "Failed to create change request");
 	}
 }
@@ -324,14 +321,14 @@ export async function drizzleTransitionChangeRequest(
 		return existing;
 	}
 	if (existing.data === null) {
-		return fail("NOT_FOUND", "Change request not found", {
-			reason: "MASTER_NOT_FOUND",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Change request not found",
+		});
 	}
 	if (existing.data.version !== record.expectedVersion) {
-		return fail("CONFLICT", "Change request version conflict", {
-			reason: "MASTER_VERSION_CONFLICT",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Change request version conflict",
+		});
 	}
 
 	const nextVersion = existing.data.version + 1;
@@ -432,11 +429,11 @@ export async function drizzleTransitionChangeRequest(
 		]);
 		const [row] = rows;
 		if (row === undefined) {
-			return fail("CONFLICT", "Change request version conflict", {
-				reason: "MASTER_VERSION_CONFLICT",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Change request version conflict",
+			});
 		}
-		return ok(mapChangeRequestSqlRow(row));
+		return errorResult.ok(mapChangeRequestSqlRow(row));
 	} catch (error) {
 		return failFromPersistence(error, "Failed to transition change request");
 	}

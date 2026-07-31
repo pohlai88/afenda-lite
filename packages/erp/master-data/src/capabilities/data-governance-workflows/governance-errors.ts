@@ -1,4 +1,4 @@
-import { fail, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type { MasterFailureDetails } from "../../contracts/reasons";
 import type { ImportFindingSeverity } from "./import-types";
@@ -79,169 +79,115 @@ export type GovernanceFailureDetails = MasterFailureDetails &
 		findings?: readonly ImportValidationFailureFinding[] | undefined;
 	}>;
 
-export function governanceInvalidTransition(input: {
+export function governanceInvalidTransition(_input: {
 	operation: string;
 	currentStatus: string;
 	targetStatus: string;
 }): Result<never> {
-	return fail("CONFLICT", "Governance workflow transition is not allowed", {
-		reason: "MASTER_INVALID_STATE",
-		governanceCode: "MASTER_DATA_GOVERNANCE_INVALID_TRANSITION",
-		operation: input.operation,
-		currentStatus: input.currentStatus,
-		targetStatus: input.targetStatus,
-	} satisfies GovernanceFailureDetails);
+	return errorResult.fail("CONFLICT", {
+		publicMessage: "Governance workflow transition is not allowed",
+	});
 }
 
-export function governanceReasonRequired(input: {
+export function governanceReasonRequired(_input: {
 	operation: string;
 	requiredReason: string;
 }): Result<never> {
-	return fail("BAD_REQUEST", "Governance transition reason is required", {
-		reason: "MASTER_VALIDATION_FAILED",
-		governanceCode: "MASTER_DATA_GOVERNANCE_REASON_REQUIRED",
-		operation: input.operation,
-		requiredReason: input.requiredReason,
-	} satisfies GovernanceFailureDetails);
+	return errorResult.fail("BAD_REQUEST", {
+		publicMessage: "Governance transition reason is required",
+	});
 }
 
-export function governancePermissionRequired(input: {
+export function governancePermissionRequired(_input: {
 	requiredPermission: GovernancePermission;
 	operation?: string | undefined;
 }): Result<never> {
-	return fail("FORBIDDEN", "Missing required governance permission", {
-		reason: "MASTER_PERMISSION_DENIED",
-		governanceCode: "MASTER_DATA_GOVERNANCE_PERMISSION_REQUIRED",
-		requiredPermission: input.requiredPermission,
-		operation: input.operation,
-	} satisfies GovernanceFailureDetails);
+	return errorResult.fail("FORBIDDEN");
 }
 
-export function governanceAuthorizationUnavailable(input: {
+export function governanceAuthorizationUnavailable(_input: {
 	requiredPermission: GovernancePermission;
 	operation?: string | undefined;
 }): Result<never> {
-	return fail(
-		"INTERNAL_ERROR",
-		"Governance authorization service is unavailable",
-		{
-			reason: "MASTER_DEPENDENCY_UNAVAILABLE",
-			governanceCode: "MASTER_DATA_GOVERNANCE_AUTHORIZATION_UNAVAILABLE",
-			requiredPermission: input.requiredPermission,
-			operation: input.operation,
-		} satisfies GovernanceFailureDetails,
-	);
+	return errorResult.fail("INTERNAL_ERROR");
 }
 
-export function governanceActorSegregationViolation(input: {
+export function governanceActorSegregationViolation(_input: {
 	operation: string;
 	fields: readonly string[];
 }): Result<never> {
-	return fail("FORBIDDEN", "Governance actor segregation rule failed", {
-		reason: "MASTER_MAKER_CHECKER_VIOLATION",
-		governanceCode: "MASTER_DATA_GOVERNANCE_ACTOR_SEGREGATION_VIOLATION",
-		operation: input.operation,
-		fields: normalizeStrings(input.fields),
-	} satisfies GovernanceFailureDetails);
+	return errorResult.fail("FORBIDDEN");
 }
 
-export function governanceVersionConflict(input: {
+export function governanceVersionConflict(_input: {
 	operation: string;
 	expectedVersion: number;
 	actualVersion: number;
 	versionKind: GovernanceVersionKind;
 	entityId?: string | undefined;
 }): Result<never> {
-	const governanceCodeByVersionKind = {
+	const _governanceCodeByVersionKind = {
 		proposal: "MASTER_DATA_GOVERNANCE_PROPOSAL_VERSION_CONFLICT",
 		workflow: "MASTER_DATA_GOVERNANCE_WORKFLOW_VERSION_CONFLICT",
 		allowlist: "MASTER_DATA_GOVERNANCE_ALLOWLIST_VERSION_CONFLICT",
 		target: "MASTER_DATA_GOVERNANCE_TARGET_VERSION_CONFLICT",
 	} as const satisfies Record<GovernanceVersionKind, GovernanceFailureCode>;
 
-	return fail("CONFLICT", "Governance version conflict", {
-		reason: "MASTER_VERSION_CONFLICT",
-		governanceCode: governanceCodeByVersionKind[input.versionKind],
-		operation: input.operation,
-		entityId: input.entityId,
-		versionKind: input.versionKind,
-		expectedVersion: input.expectedVersion,
-		actualVersion: input.actualVersion,
-	} satisfies GovernanceFailureDetails);
+	return errorResult.fail("CONFLICT", {
+		publicMessage: "Governance version conflict",
+	});
 }
 
-export function governanceFieldsForbidden(input: {
+export function governanceFieldsForbidden(_input: {
 	policyId: string;
 	fields: readonly string[];
 	operation?: string | undefined;
 }): Result<never> {
-	return fail("BAD_REQUEST", "Governance policy forbids one or more fields", {
-		reason: "MASTER_VALIDATION_FAILED",
-		governanceCode: "MASTER_DATA_GOVERNANCE_FIELD_FORBIDDEN",
-		policyId: input.policyId,
-		operation: input.operation,
-		fields: normalizeStrings(input.fields),
-	} satisfies GovernanceFailureDetails);
+	return errorResult.fail("BAD_REQUEST", {
+		publicMessage: "Governance policy forbids one or more fields",
+	});
 }
 
-export function governancePolicyMismatch(input: {
+export function governancePolicyMismatch(_input: {
 	policyId: string;
 	expected: unknown;
 	actual: unknown;
 	operation?: string | undefined;
 }): Result<never> {
-	return fail("CONFLICT", "Governance policy does not match request context", {
-		reason: "MASTER_INVALID_STATE",
-		governanceCode: "MASTER_DATA_GOVERNANCE_POLICY_MISMATCH",
-		policyId: input.policyId,
-		operation: input.operation,
-		expected: input.expected,
-		actual: input.actual,
-	} satisfies GovernanceFailureDetails);
+	return errorResult.fail("CONFLICT", {
+		publicMessage: "Governance policy does not match request context",
+	});
 }
 
-export function governanceRequestNotApproved(input: {
+export function governanceRequestNotApproved(_input: {
 	operation: string;
 	currentStatus: string;
 	entityId?: string | undefined;
 }): Result<never> {
-	return fail("VALIDATION_ERROR", "Approved governance request is required", {
-		reason: "MASTER_CHANGE_REQUEST_INVALID",
-		governanceCode: "MASTER_DATA_GOVERNANCE_REQUEST_NOT_APPROVED",
-		operation: input.operation,
-		entityId: input.entityId,
-		currentStatus: input.currentStatus,
-		targetStatus: "approved",
-	} satisfies GovernanceFailureDetails);
+	return errorResult.fail("VALIDATION_ERROR", {
+		publicMessage: "Approved governance request is required",
+	});
 }
 
-export function governanceRequestExpired(input: {
+export function governanceRequestExpired(_input: {
 	operation: string;
 	entityId?: string | undefined;
 }): Result<never> {
-	return fail("CONFLICT", "Governance request is expired", {
-		reason: "MASTER_INVALID_STATE",
-		governanceCode: "MASTER_DATA_GOVERNANCE_REQUEST_EXPIRED",
-		operation: input.operation,
-		entityId: input.entityId,
-		currentStatus: "expired",
-	} satisfies GovernanceFailureDetails);
+	return errorResult.fail("CONFLICT", {
+		publicMessage: "Governance request is expired",
+	});
 }
 
-export function governanceDuplicateApply(input: {
+export function governanceDuplicateApply(_input: {
 	operation: string;
 	entityId: string;
 }): Result<never> {
-	return fail("CONFLICT", "Governance operation was already applied", {
-		reason: "MASTER_IDEMPOTENT_REPLAY",
-		governanceCode: "MASTER_DATA_GOVERNANCE_DUPLICATE_APPLY",
-		operation: input.operation,
-		entityId: input.entityId,
-		currentStatus: "applied",
-	} satisfies GovernanceFailureDetails);
+	return errorResult.fail("CONFLICT", {
+		publicMessage: "Governance operation was already applied",
+	});
 }
 
-export function governanceMergeNotAuthorized(input: {
+export function governanceMergeNotAuthorized(_input: {
 	operation: string;
 	organizationId?: string | undefined;
 	requestId?: string | undefined;
@@ -249,36 +195,23 @@ export function governanceMergeNotAuthorized(input: {
 	sourceEntityId: string;
 	targetEntityId: string;
 }): Result<never> {
-	return fail("CONFLICT", "Merge is not authorized by governance policy", {
-		reason: "MASTER_CHANGE_REQUEST_INVALID",
-		governanceCode: "MASTER_DATA_GOVERNANCE_MERGE_NOT_AUTHORIZED",
-		operation: input.operation,
-		organizationId: input.organizationId,
-		requestId: input.requestId,
-		duplicateWarningId: input.duplicateWarningId,
-		sourceEntityId: input.sourceEntityId,
-		targetEntityId: input.targetEntityId,
-	} satisfies GovernanceFailureDetails);
+	return errorResult.fail("CONFLICT", {
+		publicMessage: "Merge is not authorized by governance policy",
+	});
 }
 
-export function governanceDuplicateWarningInvalid(input: {
+export function governanceDuplicateWarningInvalid(_input: {
 	operation: string;
 	validationReason: string;
 	entityId?: string | undefined;
 	fields?: readonly string[] | undefined;
 }): Result<never> {
-	return fail("BAD_REQUEST", "Duplicate warning record is invalid", {
-		reason: "MASTER_VALIDATION_FAILED",
-		governanceCode: "MASTER_DATA_GOVERNANCE_DUPLICATE_WARNING_INVALID",
-		operation: input.operation,
-		entityId: input.entityId,
-		validationReason: input.validationReason,
-		fields:
-			input.fields === undefined ? undefined : normalizeStrings(input.fields),
-	} satisfies GovernanceFailureDetails);
+	return errorResult.fail("BAD_REQUEST", {
+		publicMessage: "Duplicate warning record is invalid",
+	});
 }
 
-export function governanceMergeConflictInvalid(input: {
+export function governanceMergeConflictInvalid(_input: {
 	operation: string;
 	mergeRequestId?: string | undefined;
 	conflictId: string;
@@ -286,32 +219,20 @@ export function governanceMergeConflictInvalid(input: {
 	field: string;
 	validationReason: string;
 }): Result<never> {
-	return fail("BAD_REQUEST", "Merge conflict resolution is invalid", {
-		reason: "MASTER_VALIDATION_FAILED",
-		governanceCode: "MASTER_DATA_GOVERNANCE_MERGE_CONFLICT_INVALID",
-		operation: input.operation,
-		mergeRequestId: input.mergeRequestId,
-		conflictId: input.conflictId,
-		conflictArea: input.area,
-		fields: [input.field],
-		validationReason: input.validationReason,
-	} satisfies GovernanceFailureDetails);
+	return errorResult.fail("BAD_REQUEST", {
+		publicMessage: "Merge conflict resolution is invalid",
+	});
 }
 
-export function governanceMergeConflictUnresolved(input: {
+export function governanceMergeConflictUnresolved(_input: {
 	operation: string;
 	mergeRequestId: string;
 	conflictIds: readonly string[];
 	fields: readonly string[];
 }): Result<never> {
-	return fail("CONFLICT", "Merge contains unresolved governed conflicts", {
-		reason: "MASTER_CHANGE_REQUEST_INVALID",
-		governanceCode: "MASTER_DATA_GOVERNANCE_MERGE_CONFLICT_UNRESOLVED",
-		operation: input.operation,
-		mergeRequestId: input.mergeRequestId,
-		conflictIds: input.conflictIds,
-		fields: normalizeStrings(input.fields),
-	} satisfies GovernanceFailureDetails);
+	return errorResult.fail("CONFLICT", {
+		publicMessage: "Merge contains unresolved governed conflicts",
+	});
 }
 
 export function importValidationFailed(input: {
@@ -325,29 +246,16 @@ export function importValidationFailed(input: {
 	const warningOnly =
 		input.errorCount === 0 && input.warningAcknowledgementRequired === true;
 
-	return fail(
-		warningOnly ? "CONFLICT" : "BAD_REQUEST",
-		warningOnly
-			? "Import warnings require acknowledgement"
-			: "Import validation failed",
-		{
-			reason: warningOnly
-				? "MASTER_CHANGE_REQUEST_INVALID"
-				: "MASTER_VALIDATION_FAILED",
-			governanceCode: warningOnly
-				? "MASTER_DATA_IMPORT_WARNING_ACKNOWLEDGEMENT_REQUIRED"
-				: "MASTER_DATA_IMPORT_VALIDATION_FAILED",
-			operation: input.operation,
-			entityId: input.entityId,
-			errorCount: input.errorCount,
-			warningCount: input.warningCount,
-			warningAcknowledgementRequired: input.warningAcknowledgementRequired,
-			findings: input.findings,
-		} satisfies GovernanceFailureDetails,
-	);
+	return warningOnly
+		? errorResult.fail("CONFLICT", {
+				publicMessage: "The request conflicts with current state",
+			})
+		: errorResult.fail("BAD_REQUEST", {
+				publicMessage: "The request is invalid",
+			});
 }
 
-function normalizeStrings(values: readonly string[]): readonly string[] {
+function _normalizeStrings(values: readonly string[]): readonly string[] {
 	return [
 		...new Set(values.map((value) => value.trim()).filter(Boolean)),
 	].sort();

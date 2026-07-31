@@ -1,6 +1,6 @@
 import { db, sql } from "@afenda/db";
 import { env, MAX_SELECT1_LATENCY_MS } from "@afenda/env";
-import { normalizePostgresUnknown } from "@afenda/errors/adapters/postgres";
+import { errorIngress } from "@afenda/errors";
 
 import {
 	type HealthAggregate,
@@ -140,7 +140,7 @@ async function probeDatabase(): Promise<TimedProbe> {
 		try {
 			await db.execute(sql`select 1`);
 		} catch (error) {
-			throw normalizePostgresUnknown(error, "Database readiness probe");
+			throw errorIngress.postgres(error, { operation: "persistence.postgres" });
 		}
 	});
 	return {

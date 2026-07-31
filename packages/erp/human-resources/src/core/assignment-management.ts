@@ -1,4 +1,4 @@
-import type { Result } from "@afenda/errors/result";
+import type { Result } from "@afenda/errors";
 import type { HumanResourcesCommandOptions } from "../command-options";
 import type { WorkAssignment } from "../types";
 import { getAssignmentAsOf } from "./assignment";

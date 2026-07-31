@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	parseHumanResourcesEmployeeId,
@@ -68,7 +68,9 @@ export function createStoreWorkCalendarLookup(input: {
 				return calendar;
 			}
 			if (calendar.data === null) {
-				return fail("NOT_FOUND", "Work calendar not found");
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+				});
 			}
 
 			const holidayRows = await store.listWorkCalendarHolidays({
@@ -94,10 +96,12 @@ export function createStoreWorkCalendarLookup(input: {
 			const workWeek = calendar.data.workWeek as readonly WorkWeekDayPattern[];
 			const standardHours = Number(calendar.data.standardHoursPerDay);
 			if (!Number.isFinite(standardHours) || standardHours <= 0) {
-				return fail("CONFLICT", "Work calendar standard hours are invalid");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+				});
 			}
 
-			return ok({
+			return errorResult.ok({
 				calendarId: calendar.data.id,
 				calendarVersion: calendar.data.calendarVersion,
 				timezone: calendar.data.timezone,

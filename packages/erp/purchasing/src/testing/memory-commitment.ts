@@ -1,4 +1,4 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type {
 	PurchaseOrderCommitmentQueryPort,
@@ -24,7 +24,7 @@ export function createMemoryCommitmentQueryPort(
 	};
 	return {
 		getCommitmentStatus(): Promise<Result<PurchaseOrderCommitmentStatus>> {
-			return resolveAsync(() => ok(status));
+			return resolveAsync(() => errorResult.ok(status));
 		},
 	};
 }

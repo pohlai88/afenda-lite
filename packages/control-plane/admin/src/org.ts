@@ -6,8 +6,12 @@ import {
 	persistActiveOrganization,
 } from "@afenda/auth";
 import { db, inArray, max, platformRbacAudit } from "@afenda/db";
-import { normalizePostgresUnknown } from "@afenda/errors/adapters/postgres";
-import { fail, failFromAppError, ok, type Result } from "@afenda/errors/result";
+import {
+	errorIngress,
+	errorProject,
+	errorResult,
+	type Result,
+} from "@afenda/errors";
 
 import {
 	type CreatedOrganization,
@@ -18,15 +22,15 @@ import {
 	deleteOrganizationInputSchema,
 	type OrganizationSummary,
 	organizationSummarySchema,
-	PROVISION_ORG_CREATED_INVITE_FAILED,
-	PROVISION_ORG_CREATED_SET_ACTIVE_FAILED,
 	type ProvisionOrganizationResult,
 	provisionOrganizationInputSchema,
 	provisionOrganizationResultSchema,
 } from "./schemas/org";
 
-function failFromPersistence(error: unknown, fallbackMessage: string) {
-	return failFromAppError(normalizePostgresUnknown(error, fallbackMessage));
+function failFromPersistence(error: unknown, _fallbackMessage: string) {
+	return errorProject.result(
+		errorIngress.postgres(error, { operation: "persistence.postgres" }),
+	);
 }
 
 async function loadLastActivityByOrgId(
@@ -76,7 +80,7 @@ export async function listOrganizations(): Promise<
 				lastActivityAt: lastActivityByOrgId.get(row.id) ?? null,
 			}),
 		);
-		return ok(parsed);
+		return errorResult.ok(parsed);
 	} catch (error) {
 		return failFromPersistence(error, "Failed to list organizations");
 	}
@@ -90,8 +94,8 @@ export async function createOrganization(
 ): Promise<Result<CreatedOrganization>> {
 	const parsedInput = createOrganizationInputSchema.safeParse(input);
 	if (!parsedInput.success) {
-		return fail("BAD_REQUEST", "Invalid organization create input", {
-			fieldErrors: parsedInput.error.flatten().fieldErrors,
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "Invalid organization create input",
 		});
 	}
 
@@ -99,7 +103,7 @@ export async function createOrganization(
 	if (!created.ok) {
 		return created;
 	}
-	return ok(createdOrganizationSchema.parse(created.data));
+	return errorResult.ok(createdOrganizationSchema.parse(created.data));
 }
 
 /**
@@ -111,8 +115,8 @@ export async function deleteOrganization(
 ): Promise<Result<DeletedOrganization>> {
 	const parsedInput = deleteOrganizationInputSchema.safeParse(input);
 	if (!parsedInput.success) {
-		return fail("BAD_REQUEST", "Invalid organization delete input", {
-			fieldErrors: parsedInput.error.flatten().fieldErrors,
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "Invalid organization delete input",
 		});
 	}
 
@@ -120,7 +124,9 @@ export async function deleteOrganization(
 	if (!deleted.ok) {
 		return deleted;
 	}
-	return ok(deletedOrganizationSchema.parse({ orgId: parsedInput.data.orgId }));
+	return errorResult.ok(
+		deletedOrganizationSchema.parse({ orgId: parsedInput.data.orgId }),
+	);
 }
 
 /**
@@ -128,16 +134,16 @@ export async function deleteOrganization(
  * No local `user.create`. Invite never runs without a successful active-org persist
  * (`inviteOrgMember` refuses non-active org).
  *
- * On invite (or setActive) failure after create: returns `ok:false` with
- * `details.organization` + disposition — org is left for retry invite (no fake rollback).
+ * A downstream failure is normalized to the canonical error facade. The
+ * organization remains created; recovery is an operational workflow concern.
  */
 export async function provisionOrganization(
 	input: unknown,
 ): Promise<Result<ProvisionOrganizationResult>> {
 	const parsedInput = provisionOrganizationInputSchema.safeParse(input);
 	if (!parsedInput.success) {
-		return fail("BAD_REQUEST", "Invalid organization provision input", {
-			fieldErrors: parsedInput.error.flatten().fieldErrors,
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "Invalid organization provision input",
 		});
 	}
 
@@ -154,14 +160,7 @@ export async function provisionOrganization(
 
 	const persisted = await persistActiveOrganization(organization.id);
 	if (!persisted.ok) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Organization created; active org switch failed — set active then retry invite",
-			{
-				disposition: PROVISION_ORG_CREATED_SET_ACTIVE_FAILED,
-				organization,
-			},
-		);
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 
 	const invited = await inviteOrgMember({
@@ -170,17 +169,10 @@ export async function provisionOrganization(
 		role: command.adminRole,
 	});
 	if (!invited.ok) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Organization created; invite failed — retry invite",
-			{
-				disposition: PROVISION_ORG_CREATED_INVITE_FAILED,
-				organization,
-			},
-		);
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 
-	return ok(
+	return errorResult.ok(
 		provisionOrganizationResultSchema.parse({
 			organization,
 			invitationId: invited.data.invitationId,

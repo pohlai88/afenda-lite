@@ -1,14 +1,13 @@
 "use server";
 
+import type { Result as ActionResult } from "@afenda/errors";
 import {
 	listStockReservations,
 	type StockReservation,
 } from "@afenda/inventory";
-
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
 import { createInventoryCommandOptions } from "@/lib/erp/inventory-command-options";
-import type { ActionResult } from "@/modules/platform/schemas/action-result";
 
 export interface ListStockReservationsActionData {
 	reservations: StockReservation[];

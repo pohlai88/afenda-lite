@@ -21,7 +21,6 @@ import {
 import { createDrizzleCorporateAdministrationEstablishmentStore } from "@afenda/corporate-administration/adapters/drizzle";
 import { db } from "@afenda/db";
 import { describe, expect, it } from "vitest";
-
 import {
 	caCommandOptions,
 	caDraftInput,
@@ -47,7 +46,6 @@ type PhaseOneStore = LegalCompanyStore &
 	CompanyIdentifierStore &
 	CompanyFinancialYearStore &
 	CompanyActivityStore;
-
 function createPhaseOneDependencies() {
 	const dependencies = createDrizzleCompanyDependencies();
 	const store = dependencies.store as PhaseOneStore;
@@ -82,7 +80,6 @@ function createPhaseOneDependencies() {
 		},
 	};
 }
-
 describe.skipIf(!RUN_CORPORATE_ADMINISTRATION_NEON_PARITY)(
 	`company status lifecycle atomicity (${CORPORATE_ADMINISTRATION_NEON_PARITY_SKIP_REASON})`,
 	() => {
@@ -106,7 +103,6 @@ describe.skipIf(!RUN_CORPORATE_ADMINISTRATION_NEON_PARITY)(
 					commandId: "corporate-administration.legal-company.activate",
 					idempotencyKey: "idem-status-atomic-activate",
 				};
-
 				const failed = await activateLegalCompany(
 					{
 						legalCompanyId: seeded.legalCompanyId,
@@ -123,7 +119,6 @@ describe.skipIf(!RUN_CORPORATE_ADMINISTRATION_NEON_PARITY)(
 						},
 					},
 				);
-
 				expect(failed).toMatchObject({
 					ok: false,
 					code: "SERVICE_UNAVAILABLE",
@@ -155,7 +150,6 @@ describe.skipIf(!RUN_CORPORATE_ADMINISTRATION_NEON_PARITY)(
 					ok: true,
 					data: { state: "draft", version: seeded.version },
 				});
-
 				const retried = await activateLegalCompany(
 					{
 						legalCompanyId: seeded.legalCompanyId,
@@ -198,7 +192,6 @@ describe.skipIf(!RUN_CORPORATE_ADMINISTRATION_NEON_PARITY)(
 				);
 			}
 		}, 45_000);
-
 		it("allows only one simultaneous activation for the same expected company version", async () => {
 			const organizationId = `org-ca-status-race-${randomUUID()}`;
 			const dependencies = createPhaseOneDependencies();
@@ -212,7 +205,6 @@ describe.skipIf(!RUN_CORPORATE_ADMINISTRATION_NEON_PARITY)(
 					await countCorporateAdministrationCompanyStatusHistory(
 						organizationId,
 					);
-
 				const attempts = await Promise.all([
 					activateLegalCompany(
 						{
@@ -235,7 +227,6 @@ describe.skipIf(!RUN_CORPORATE_ADMINISTRATION_NEON_PARITY)(
 						dependencies,
 					),
 				]);
-
 				expect(attempts.filter((result) => result.ok)).toHaveLength(1);
 				expect(attempts.filter((result) => !result.ok)).toHaveLength(1);
 				await expect(
@@ -258,7 +249,6 @@ describe.skipIf(!RUN_CORPORATE_ADMINISTRATION_NEON_PARITY)(
 		}, 45_000);
 	},
 );
-
 async function seedCompletePhaseOneCompany(
 	dependencies: ReturnType<typeof createPhaseOneDependencies>,
 	organizationId: string,
@@ -272,7 +262,6 @@ async function seedCompletePhaseOneCompany(
 	expectOk(registered);
 	const legalCompanyId = registered.data.legalCompanyId;
 	let version = registered.data.version;
-
 	const jurisdiction = await setCompanyJurisdictionProfile(
 		caJurisdictionProfileInput({
 			legalCompanyId,
@@ -287,7 +276,6 @@ async function seedCompletePhaseOneCompany(
 		options.organizationId,
 		legalCompanyId,
 	);
-
 	const name = await addCompanyName(
 		{
 			legalCompanyId,
@@ -308,7 +296,6 @@ async function seedCompletePhaseOneCompany(
 		options.organizationId,
 		legalCompanyId,
 	);
-
 	const legalForm = await setCompanyLegalForm(
 		{
 			legalCompanyId,
@@ -329,7 +316,6 @@ async function seedCompletePhaseOneCompany(
 		options.organizationId,
 		legalCompanyId,
 	);
-
 	const identifier = await registerCompanyIdentifier(
 		{
 			legalCompanyId,
@@ -351,7 +337,6 @@ async function seedCompletePhaseOneCompany(
 		options.organizationId,
 		legalCompanyId,
 	);
-
 	const financialYear = await setCompanyFinancialYear(
 		{
 			legalCompanyId,
@@ -372,7 +357,6 @@ async function seedCompletePhaseOneCompany(
 		options.organizationId,
 		legalCompanyId,
 	);
-
 	const activity = await registerCompanyActivity(
 		{
 			legalCompanyId,
@@ -395,7 +379,6 @@ async function seedCompletePhaseOneCompany(
 		options.organizationId,
 		legalCompanyId,
 	);
-
 	const address = await setRegisteredAddress(
 		{
 			legalCompanyId,
@@ -415,10 +398,8 @@ async function seedCompletePhaseOneCompany(
 		options.organizationId,
 		legalCompanyId,
 	);
-
 	return { legalCompanyId, version };
 }
-
 async function reloadCompanyVersion(
 	dependencies: ReturnType<typeof createPhaseOneDependencies>,
 	organizationId: Parameters<
@@ -437,12 +418,22 @@ async function reloadCompanyVersion(
 	}
 	return company.data.version;
 }
-
 function expectOkWithDetails<T>(
 	result:
-		| { ok: true; data: T }
-		| { ok: false; code: string; message: string; details?: unknown },
-): asserts result is { ok: true; data: T } {
+		| {
+				ok: true;
+				data: T;
+		  }
+		| {
+				ok: false;
+				code: string;
+				message: string;
+				details?: unknown;
+		  },
+): asserts result is {
+	ok: true;
+	data: T;
+} {
 	if (!result.ok) {
 		throw new Error(
 			`Expected successful Corporate Administration result: ${JSON.stringify(result)}`,

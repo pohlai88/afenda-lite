@@ -23,7 +23,6 @@ const officerAppointmentId = officerAppointmentIdSchema.parse(
 );
 const actorUserId = userIdSchema.parse("user-ca-2-3");
 const recordedAt = canonicalInstantSchema.parse("2026-04-01T10:00:00.000Z");
-
 describe("CA-2.3 officer compliance contracts and rules", () => {
 	it("keeps sensitive declarations masked or referenced and rejects raw empty details", () => {
 		const parsed = recordOfficerDeclarationInputSchema.safeParse({
@@ -37,7 +36,6 @@ describe("CA-2.3 officer compliance contracts and rules", () => {
 		});
 		expect(parsed.success).toBe(false);
 	});
-
 	it("resolves eligibility from current declarations and active disqualifications", () => {
 		const eligibility = calculateOfficerEligibilityAsOf({
 			officerAppointmentId,
@@ -83,7 +81,6 @@ describe("CA-2.3 officer compliance contracts and rules", () => {
 		expect(blocked.activeDisqualificationCount).toBe(1);
 		expect(blocked.missingDeclarationTypes).toContain("eligibility");
 	});
-
 	it("validates conflict disclosures do not expose raw sensitive payloads", () => {
 		const parsed = conflictDisclosureSchema.safeParse({
 			id: "00000000-0000-4000-8000-000000000237",
@@ -110,7 +107,6 @@ describe("CA-2.3 officer compliance contracts and rules", () => {
 		expect(parsed.success).toBe(false);
 	});
 });
-
 describe("CA-2.3 memory officer compliance store", () => {
 	it("preserves tenant isolation, reminder eligibility, active disqualification and recusal linkage", async () => {
 		const store = createMemoryCorporateAdministrationOfficerComplianceStore();
@@ -132,13 +128,11 @@ describe("CA-2.3 memory officer compliance store", () => {
 		if (!declaration.ok) {
 			return;
 		}
-
 		const crossTenant = await store.getOfficerDeclaration({
 			organizationId: otherOrganizationId,
 			officerDeclarationId: declaration.data.id,
 		});
 		expect(crossTenant).toEqual({ ok: true, data: null });
-
 		const expiring = await store.listExpiringDeclarations({
 			organizationId,
 			legalCompanyId,
@@ -146,7 +140,6 @@ describe("CA-2.3 memory officer compliance store", () => {
 			windowDays: 30,
 		});
 		expect(expiring.ok && expiring.data).toHaveLength(1);
-
 		const disqualification = await store.recordOfficerDisqualification({
 			organizationId,
 			legalCompanyId,
@@ -168,7 +161,6 @@ describe("CA-2.3 memory officer compliance store", () => {
 			officerAppointmentId,
 		});
 		expect(active.ok && active.data).toHaveLength(1);
-
 		const conflict = await store.discloseConflict({
 			organizationId,
 			legalCompanyId,
@@ -207,7 +199,6 @@ describe("CA-2.3 memory officer compliance store", () => {
 		expect(conflicts.ok && conflicts.data[0]?.status).toBe("recused");
 	});
 });
-
 function makeDeclaration(
 	declarationType: "consent" | "eligibility" | "fit_and_proper",
 ) {

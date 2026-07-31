@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
@@ -58,13 +58,14 @@ export function createWorker(
 				if (
 					existingByKey.data.createRequestFingerprint !== requestFingerprint
 				) {
-					return fail(
-						"CONFLICT",
-						"Idempotency key reused with different payload",
-						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-					);
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+						internalContext: humanResourcesErrorDetails(
+							HUMAN_RESOURCES_ERROR_CONFLICT,
+						),
+					});
 				}
-				return ok(existingByKey.data.worker);
+				return errorResult.ok(existingByKey.data.worker);
 			}
 
 			const baseRecord = {
@@ -192,9 +193,11 @@ export function getWorkerById(
 				return result;
 			}
 			if (result.data === null) {
-				return fail("NOT_FOUND", "Worker not found");
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+				});
 			}
-			return ok(result.data);
+			return errorResult.ok(result.data);
 		},
 	});
 }
@@ -217,12 +220,11 @@ export function getWorkerAsOf(
 				return result;
 			}
 			if (result.data === null) {
-				return fail(
-					"NOT_FOUND",
-					"Worker classification not found for as-of date",
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+				});
 			}
-			return ok(result.data);
+			return errorResult.ok(result.data);
 		},
 	});
 }

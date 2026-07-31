@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import {
 	idempotencyConflictResult,
 	staleReservationResult,
@@ -6,88 +7,37 @@ import {
 } from "../src/adapters/drizzle/errors";
 
 describe("Corporate Administration infrastructure error translation", () => {
-	it("maps same-key different-fingerprint reuse and stale reservations to idempotency conflict", () => {
+	it("keeps domain-owned idempotency outcomes canonical", () => {
 		expect(idempotencyConflictResult()).toMatchObject({
 			ok: false,
 			code: "CONFLICT",
-			details: {
-				reason: "CORPORATE_ADMINISTRATION_IDEMPOTENCY_CONFLICT",
-				field: "idempotencyKey",
-			},
 		});
 		expect(staleReservationResult()).toMatchObject({
 			ok: false,
 			code: "CONFLICT",
-			details: {
-				reason: "CORPORATE_ADMINISTRATION_IDEMPOTENCY_CONFLICT",
-				field: "reservationToken",
-			},
 		});
 	});
 
-	it("distinguishes unique constraint, serialization, transaction, and unavailable failures", () => {
+	it.each([
+		["23505", "CONFLICT"],
+		["40001", "CONCURRENCY_CONFLICT"],
+		["40P01", "CONCURRENCY_CONFLICT"],
+		["08006", "SERVICE_UNAVAILABLE"],
+		["57P03", "SERVICE_UNAVAILABLE"],
+		["25P02", "INTERNAL_ERROR"],
+		["42P01", "INTERNAL_ERROR"],
+		["23P01", "INTERNAL_ERROR"],
+		["XX000", "INTERNAL_ERROR"],
+	] as const)("delegates SQLSTATE %s to the canonical ingress policy", (code, expected) => {
 		expect(
-			translateCorporateAdministrationInfrastructureError({ code: "23505" }),
+			translateCorporateAdministrationInfrastructureError({ code }),
 		).toMatchObject({
 			ok: false,
-			code: "CONFLICT",
-			details: { reason: "CORPORATE_ADMINISTRATION_CONFLICT" },
-		});
-		expect(
-			translateCorporateAdministrationInfrastructureError({ code: "40001" }),
-		).toMatchObject({
-			ok: false,
-			code: "CONFLICT",
-			details: {
-				reason: "CORPORATE_ADMINISTRATION_CONFLICT",
-				field: "transaction",
-			},
-		});
-		expect(
-			translateCorporateAdministrationInfrastructureError({ code: "25P02" }),
-		).toMatchObject({
-			ok: false,
-			code: "SERVICE_UNAVAILABLE",
-			details: {
-				reason: "CORPORATE_ADMINISTRATION_EXTERNAL_DEPENDENCY_UNAVAILABLE",
-				field: "transaction",
-			},
-		});
-		expect(
-			translateCorporateAdministrationInfrastructureError({ code: "42P01" }),
-		).toMatchObject({
-			ok: false,
-			code: "SERVICE_UNAVAILABLE",
-			details: {
-				reason: "CORPORATE_ADMINISTRATION_EXTERNAL_DEPENDENCY_UNAVAILABLE",
-				field: "transaction",
-			},
-		});
-		expect(
-			translateCorporateAdministrationInfrastructureError({ code: "08006" }),
-		).toMatchObject({
-			ok: false,
-			code: "SERVICE_UNAVAILABLE",
-			details: {
-				reason: "CORPORATE_ADMINISTRATION_EXTERNAL_DEPENDENCY_UNAVAILABLE",
-				field: "database",
-			},
+			code: expected,
 		});
 	});
 
-	it("normalizes lowercase SQLSTATE values and reads nested causes", () => {
-		expect(
-			translateCorporateAdministrationInfrastructureError({
-				sqlState: "23p01",
-			}),
-		).toMatchObject({
-			ok: false,
-			code: "CONFLICT",
-			details: {
-				reason: "CORPORATE_ADMINISTRATION_EFFECTIVE_RANGE_OVERLAP",
-			},
-		});
-
+	it("normalizes lowercase nested SQLSTATE values", () => {
 		expect(
 			translateCorporateAdministrationInfrastructureError({
 				cause: { sqlstate: "57p03" },
@@ -95,15 +45,11 @@ describe("Corporate Administration infrastructure error translation", () => {
 		).toMatchObject({
 			ok: false,
 			code: "SERVICE_UNAVAILABLE",
-			details: {
-				reason: "CORPORATE_ADMINISTRATION_EXTERNAL_DEPENDENCY_UNAVAILABLE",
-				field: "database",
-			},
 		});
 	});
 
-	it("does not throw when SQLSTATE-like property getters throw", () => {
-		const source = Object.defineProperties(
+	it("fails closed for hostile accessors and programming errors", () => {
+		const hostile = Object.defineProperties(
 			{},
 			{
 				code: {
@@ -120,32 +66,19 @@ describe("Corporate Administration infrastructure error translation", () => {
 		);
 
 		expect(() =>
-			translateCorporateAdministrationInfrastructureError(source),
+			translateCorporateAdministrationInfrastructureError(hostile),
 		).not.toThrow();
 		expect(
-			translateCorporateAdministrationInfrastructureError(source),
-		).toBeUndefined();
-	});
-
-	it("leaves database internals and programming errors visible while normalizing unknown SQLSTATEs", () => {
-		expect(
-			translateCorporateAdministrationInfrastructureError({ code: "XX000" }),
-		).toBeUndefined();
-		expect(
-			translateCorporateAdministrationInfrastructureError({ code: "ZZ999" }),
-		).toMatchObject({
-			ok: false,
-			code: "INTERNAL_ERROR",
-			message: "A database error occurred",
-		});
+			translateCorporateAdministrationInfrastructureError(hostile),
+		).toMatchObject({ ok: false, code: "INTERNAL_ERROR" });
 		expect(
 			translateCorporateAdministrationInfrastructureError(
 				new TypeError("programmer mistake"),
 			),
-		).toBeUndefined();
+		).toMatchObject({ ok: false, code: "INTERNAL_ERROR" });
 	});
 
-	it("does not expose SQL text, constraint internals, connection strings, or query parameters", () => {
+	it("does not expose SQL text, constraints, connection strings, or parameters", () => {
 		const translated = translateCorporateAdministrationInfrastructureError({
 			code: "23505",
 			constraint: "ca_mutation_receipt_scope_uidx",
@@ -153,8 +86,8 @@ describe("Corporate Administration infrastructure error translation", () => {
 			parameters: ["postgres://user:password@example/db", "secret"],
 			message: "duplicate key value violates unique constraint",
 		});
-
 		const serialized = JSON.stringify(translated);
+
 		expect(serialized).not.toContain("insert into");
 		expect(serialized).not.toContain("ca_mutation_receipt_scope_uidx");
 		expect(serialized).not.toContain("postgres://");

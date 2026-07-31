@@ -1,4 +1,4 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	governanceFieldsForbidden,
@@ -91,7 +91,7 @@ export function validateMutableFieldAllowlist(
 			fields: uniqueSorted(issues.map((issue) => issue.field)),
 		});
 	}
-	return ok(true);
+	return errorResult.ok(true);
 }
 
 export function assertMutableFieldsAllowed(input: {
@@ -131,7 +131,7 @@ export function assertMutableFieldsAllowed(input: {
 		});
 	}
 
-	return ok(true);
+	return errorResult.ok(true);
 }
 
 export function inspectMutableFieldAllowlist(

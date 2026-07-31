@@ -7,9 +7,7 @@ import type {
 	CorporateAdministrationIdempotencyReleaseInput,
 } from "@afenda/corporate-administration";
 import { idempotencyReservationTokenSchema } from "@afenda/corporate-administration";
-import { fail, ok, type Result } from "@afenda/errors/result";
-
-import { corporateAdministrationErrorDetails } from "../../src/error-codes";
+import { errorResult, type Result } from "@afenda/errors";
 import type {
 	CommandFingerprint,
 	IdempotencyReservationToken,
@@ -49,13 +47,10 @@ function storageKey(
 }
 
 function conflict(): Result<void> {
-	return fail(
-		"CONFLICT",
-		"Corporate Administration idempotency reservation is not owned by this execution",
-		corporateAdministrationErrorDetails(
-			"CORPORATE_ADMINISTRATION_IDEMPOTENCY_CONFLICT",
-		),
-	);
+	return errorResult.fail("CONFLICT", {
+		publicMessage:
+			"Corporate Administration idempotency reservation is not owned by this execution",
+	});
 }
 
 /**
@@ -79,7 +74,7 @@ export function createMemoryCorporateAdministrationIdempotencyPort(): CorporateA
 			const existing = records.get(key);
 			if (existing !== undefined) {
 				if (existing.fingerprint !== input.fingerprint) {
-					return ok(
+					return errorResult.ok(
 						Object.freeze({
 							status: "conflict",
 							existingFingerprint: existing.fingerprint,
@@ -87,10 +82,10 @@ export function createMemoryCorporateAdministrationIdempotencyPort(): CorporateA
 					);
 				}
 				if (existing.status === "in_progress") {
-					return ok(Object.freeze({ status: "in_progress" }));
+					return errorResult.ok(Object.freeze({ status: "in_progress" }));
 				}
 				if (existing.status === "completed") {
-					return ok(
+					return errorResult.ok(
 						Object.freeze({
 							status: "replay",
 							result: existing.result,
@@ -111,7 +106,7 @@ export function createMemoryCorporateAdministrationIdempotencyPort(): CorporateA
 					reservationToken,
 				}),
 			);
-			return ok(
+			return errorResult.ok(
 				Object.freeze({
 					status: "acquired",
 					reservationToken,
@@ -139,13 +134,10 @@ export function createMemoryCorporateAdministrationIdempotencyPort(): CorporateA
 				if (!(error instanceof TypeError)) {
 					throw error;
 				}
-				return fail(
-					"VALIDATION_ERROR",
-					"Corporate Administration replay result is not canonical JSON",
-					corporateAdministrationErrorDetails(
-						"CORPORATE_ADMINISTRATION_SENSITIVE_DATA_REJECTED",
-					),
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage:
+						"Corporate Administration replay result is not canonical JSON",
+				});
 			}
 
 			records.set(
@@ -156,7 +148,7 @@ export function createMemoryCorporateAdministrationIdempotencyPort(): CorporateA
 					result,
 				}),
 			);
-			return ok(undefined);
+			return errorResult.ok(undefined);
 		},
 
 		async release(
@@ -179,7 +171,7 @@ export function createMemoryCorporateAdministrationIdempotencyPort(): CorporateA
 					fingerprint: existing.fingerprint,
 				}),
 			);
-			return ok(undefined);
+			return errorResult.ok(undefined);
 		},
 	});
 }

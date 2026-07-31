@@ -1,9 +1,12 @@
 import { env, isProductionDeploymentNow } from "@afenda/env";
-import { type AppError, forbidden, internalError } from "@afenda/errors";
-import { projectHttpError } from "@afenda/errors/http";
+import {
+	errorIngress,
+	errorProject,
+	type Failure,
+	type ResultFailure,
+} from "@afenda/errors";
 import {
 	applyRateLimitHeaders,
-	applyRetryAfterHeader,
 	applyServerTimingHeader,
 	type RateLimitHeaderQuota,
 } from "@afenda/http";
@@ -11,7 +14,7 @@ import { createLogger } from "@afenda/logger";
 import {
 	checkRateLimit,
 	type RateLimitQuota,
-	toRateLimitAppError,
+	toRateLimitFailure,
 } from "@afenda/rate-limit";
 
 import { getNeonAuth } from "./neon-auth";
@@ -176,7 +179,9 @@ function forbiddenResponse(
 ): Response {
 	return appErrorResponse({
 		correlationId,
-		error: forbidden("Forbidden."),
+		error: errorIngress.code("FORBIDDEN", {
+			operation: "auth.bff",
+		}),
 		startTimeMs,
 	});
 }
@@ -187,7 +192,10 @@ function safeInternalErrorResponse(
 ): Response {
 	return appErrorResponse({
 		correlationId,
-		error: internalError("An unexpected error occurred"),
+		error: errorIngress.code("INTERNAL_ERROR", {
+			operation: "auth.bff",
+			correlationId,
+		}),
 		startTimeMs,
 	});
 }
@@ -195,17 +203,13 @@ function safeInternalErrorResponse(
 function appErrorResponse(input: {
 	correlationId: string;
 	startTimeMs: number;
-	error: AppError;
+	error: Failure | ResultFailure;
 	quota?: RateLimitQuota;
 }): Response {
-	const projection = projectHttpError(input.error);
-	const headers = new Headers({
-		"content-type": "application/json",
-		[AUTH_BFF_CORRELATION_HEADER]: input.correlationId,
-	});
-	if (projection.retryAfter !== undefined) {
-		applyRetryAfterHeader(headers, projection.retryAfter);
-	}
+	const projection = errorProject.http(input.error);
+	const headers = new Headers(projection.headers);
+	headers.set("content-type", "application/json");
+	headers.set(AUTH_BFF_CORRELATION_HEADER, input.correlationId);
 	if (input.quota !== undefined) {
 		applyRateLimitHeaders(headers, toHeaderQuota(input.quota));
 	}
@@ -252,13 +256,13 @@ function wrapProviderHandler(
 				key: `${clientIpFromRequest(request)}:${pathname}`,
 			});
 			if (!limit.ok) {
-				const error = toRateLimitAppError(limit);
+				const error = toRateLimitFailure(limit);
 				const event =
 					limit.reason === "unavailable"
 						? "auth_bff.rate_limit_unavailable"
 						: "auth_bff.rate_limited";
 				authBffLogger.child({ correlationId }).warn({
-					code: error.code,
+					code: errorProject.result(error).code,
 					event,
 					path: pathname,
 				});

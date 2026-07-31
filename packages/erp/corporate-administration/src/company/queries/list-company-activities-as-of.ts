@@ -1,10 +1,9 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	CORPORATE_ADMINISTRATION_QUERY_PERMISSIONS,
 	requireCorporateAdministrationPermission,
 } from "../../authorization";
 import type { CorporateAdministrationQueryOptions } from "../../command-options";
-import { corporateAdministrationErrorDetails } from "../../error-codes";
 import { toCanonicalInstant } from "../../kernel/dates";
 import { parseCorporateAdministrationInput } from "../../parse-input";
 import { listCompanyActivitiesAsOfInputSchema } from "../schemas";
@@ -45,14 +44,9 @@ export async function listCompanyActivitiesAsOf(
 		return current;
 	}
 	if (current.data === null) {
-		return fail(
-			"NOT_FOUND",
-			"Corporate Administration legal company was not found.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_NOT_FOUND",
-				{ entityType: "legalCompany" },
-			),
-		);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Corporate Administration legal company was not found.",
+		});
 	}
 
 	const activities = await dependencies.activityStore.listCompanyActivitiesAsOf(
@@ -74,7 +68,7 @@ export async function listCompanyActivitiesAsOf(
 	if (!activities.ok) {
 		return activities;
 	}
-	return ok([...activities.data].sort(compareCompanyActivities));
+	return errorResult.ok([...activities.data].sort(compareCompanyActivities));
 }
 
 function compareCompanyActivities(

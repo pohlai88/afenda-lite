@@ -1,4 +1,4 @@
-import type { Result } from "@afenda/errors/result";
+import type { Result } from "@afenda/errors";
 import type { HumanResourcesEmployeeId } from "@afenda/human-resources/brands";
 import type {
 	HumanResourcesEmployeeIdentity,

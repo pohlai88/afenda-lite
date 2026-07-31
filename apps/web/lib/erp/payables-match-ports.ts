@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type {
 	GoodsReceiptMatchBasis,
 	GoodsReceiptMatchQueryPort,
@@ -34,10 +34,10 @@ export function createPurchaseOrderMatchQueryPort(
 				return result;
 			}
 			if (result.data === null) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const order = result.data;
-			return ok({
+			return errorResult.ok({
 				purchaseOrderId: order.id,
 				supplierPartyId: order.partyId,
 				status: order.status,
@@ -76,19 +76,18 @@ export function createGoodsReceiptMatchQueryPort(
 				return result;
 			}
 			if (result.data === null) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const receipt = result.data;
 			if (
 				receipt.sourceType !== "purchase_order" ||
 				receipt.sourceId === null
 			) {
-				return fail(
-					"CONFLICT",
-					"Goods receipt must be sourced from a purchase order",
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Goods receipt must be sourced from a purchase order",
+				});
 			}
-			return ok({
+			return errorResult.ok({
 				goodsReceiptId: receipt.id,
 				purchaseOrderId: receipt.sourceId,
 				status: receipt.status,

@@ -2,7 +2,7 @@ import {
 	type AccountingCommandOptions,
 	createDrizzleAccountingStore,
 } from "@afenda/accounting";
-import { ok } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 
 import { createAccountingAuthorizationPort } from "@/lib/erp/accounting-authorization-port";
 
@@ -12,7 +12,7 @@ export function createAccountingCommandOptions(): AccountingCommandOptions {
 		authorization: createAccountingAuthorizationPort(),
 		effects: {
 			async emit() {
-				return await ok(undefined);
+				return await errorResult.ok(undefined);
 			},
 		},
 	};

@@ -4,9 +4,7 @@ import {
 	type RecordAuditCommand,
 } from "@afenda/audit";
 import type { NeonHttpSql } from "@afenda/db";
-import { fail, ok, type Result } from "@afenda/errors/result";
-
-import { corporateAdministrationErrorDetails } from "../../error-codes";
+import { errorResult, type Result } from "@afenda/errors";
 import type {
 	CorporateAdministrationAuditFactInput,
 	CorporateAdministrationAuditFactPort,
@@ -83,35 +81,22 @@ export function createDrizzleCorporateAdministrationAuditFactPort(
 					}
 					return insert.data;
 				});
-				return ok({ id: auditId });
+				return errorResult.ok({ id: auditId });
 			}
 
 			try {
 				const prepared = prepareAuditWrite(auditInput);
 				if (!prepared.ok) {
-					return fail(
-						"INTERNAL_ERROR",
-						"Corporate Administration produced an invalid audit fact.",
-					);
+					return errorResult.fail("INTERNAL_ERROR");
 				}
 				const result = await dependencies.store.write(prepared.data);
 				if (!result.ok) {
 					if (result.code !== "SERVICE_UNAVAILABLE") {
-						return fail(
-							"INTERNAL_ERROR",
-							"Unexpected Corporate Administration audit persistence failure.",
-						);
+						return errorResult.fail("INTERNAL_ERROR");
 					}
-					return fail(
-						"SERVICE_UNAVAILABLE",
-						"Corporate Administration audit persistence is unavailable.",
-						corporateAdministrationErrorDetails(
-							"CORPORATE_ADMINISTRATION_EXTERNAL_DEPENDENCY_UNAVAILABLE",
-							{ field: "audit" },
-						),
-					);
+					return errorResult.fail("SERVICE_UNAVAILABLE");
 				}
-				return ok({ id: result.data.id });
+				return errorResult.ok({ id: result.data.id });
 			} catch (error) {
 				const translated =
 					translateCorporateAdministrationInfrastructureError(error);

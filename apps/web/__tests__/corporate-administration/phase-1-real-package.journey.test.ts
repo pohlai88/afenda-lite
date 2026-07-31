@@ -45,7 +45,7 @@ import {
 	createMemoryCorporateAdministrationEstablishmentStore,
 	createMemoryCorporateAdministrationLegalCompanyStore,
 } from "@afenda/corporate-administration/testing";
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -452,7 +452,7 @@ function createRealPackageDependencies(): RealPackageDependencies {
 		establishmentStore,
 		jurisdictionRules: {
 			listEntityTypeRules: async (input) =>
-				ok([
+				errorResult.ok([
 					{
 						jurisdictionCountryCode: input.jurisdictionCountryCode,
 						entityTypes: ["draft_legal_company", "private_limited_company"],
@@ -462,7 +462,7 @@ function createRealPackageDependencies(): RealPackageDependencies {
 		},
 		partyReferences: {
 			getOrganizationParty: async (input) =>
-				ok({
+				errorResult.ok({
 					partyId: input.partyId,
 					kind: "organization",
 					active: true,
@@ -471,16 +471,19 @@ function createRealPackageDependencies(): RealPackageDependencies {
 		referenceData,
 		documentObjects: {
 			resolveDocumentObject: async (input) =>
-				ok({ documentObjectRef: input.documentObjectRef, active: true }),
+				errorResult.ok({
+					documentObjectRef: input.documentObjectRef,
+					active: true,
+				}),
 		},
 		taxRegistrations: {
-			getTaxRegistrationById: async () => ok(null),
-			findTaxRegistrationsForParty: async () => ok([]),
-			findPotentialDuplicateTaxRegistration: async () => ok(null),
+			getTaxRegistrationById: async () => errorResult.ok(null),
+			findTaxRegistrationsForParty: async () => errorResult.ok([]),
+			findPotentialDuplicateTaxRegistration: async () => errorResult.ok(null),
 		},
 		addressReferences: {
 			getPartyAddress: async (input) =>
-				ok({
+				errorResult.ok({
 					organizationId: input.organizationId,
 					partyId: input.partyId,
 					active: true,
@@ -506,13 +509,13 @@ function createRealPackageDependencies(): RealPackageDependencies {
 
 function createReferenceData(): CompanyReferenceDataPort {
 	const resolve = (code: string) =>
-		ok({ code, active: true, displayName: code });
+		errorResult.ok({ code, active: true, displayName: code });
 	return {
 		resolveLanguage: async (input) => resolve(input.languageCode),
 		validateLanguage: async (input) =>
-			ok({ languageCode: input.languageCode, active: true }),
+			errorResult.ok({ languageCode: input.languageCode, active: true }),
 		resolveLegalForm: async (input) =>
-			ok({
+			errorResult.ok({
 				code: input.legalFormCode,
 				active: true,
 				displayName: input.legalFormCode,
@@ -521,9 +524,9 @@ function createReferenceData(): CompanyReferenceDataPort {
 				effectiveDate: input.effectiveDate,
 			}),
 		validateLegalFormCompatibility: async () =>
-			ok({ compatible: true, active: true }),
+			errorResult.ok({ compatible: true, active: true }),
 		listLegalFormCompatibilityRules: async (input) =>
-			ok([
+			errorResult.ok([
 				{
 					jurisdictionCode: input.jurisdictionCode,
 					legalFormCodes: ["private_limited_company"],
@@ -532,10 +535,13 @@ function createReferenceData(): CompanyReferenceDataPort {
 				},
 			]),
 		validateSourceDocument: async (input) =>
-			ok({ sourceDocumentId: input.sourceDocumentId, active: true }),
+			errorResult.ok({
+				sourceDocumentId: input.sourceDocumentId,
+				active: true,
+			}),
 		resolveCountry: async (input) => resolve(input.countryCode),
 		resolveCurrency: async (input) =>
-			ok({
+			errorResult.ok({
 				code: input.currencyCode,
 				currencyCode: input.currencyCode,
 				active: true,
@@ -545,7 +551,7 @@ function createReferenceData(): CompanyReferenceDataPort {
 					: { effectiveDate: input.effectiveDate }),
 			}),
 		resolveIdentifierAuthority: async (input) =>
-			ok({
+			errorResult.ok({
 				code: input.authorityCode,
 				active: true,
 				displayName: input.authorityCode,
@@ -557,7 +563,7 @@ function createReferenceData(): CompanyReferenceDataPort {
 				removePresentationSeparators: true,
 			}),
 		resolveActivityClassification: async (input) =>
-			ok({
+			errorResult.ok({
 				code: input.activityCode,
 				active: true,
 				displayName: input.activityCode,
@@ -644,15 +650,18 @@ function createMemoryIdempotencyPort(): CorporateAdministrationIdempotencyPort {
 			const existing = records.get(key);
 			if (existing !== undefined) {
 				if (existing.fingerprint !== input.fingerprint) {
-					return await ok({
+					return await errorResult.ok({
 						status: "conflict",
 						existingFingerprint: existing.fingerprint,
 					});
 				}
 				if (existing.status === "completed") {
-					return await ok({ status: "replay", result: existing.result });
+					return await errorResult.ok({
+						status: "replay",
+						result: existing.result,
+					});
 				}
-				return await ok({ status: "in_progress" });
+				return await errorResult.ok({ status: "in_progress" });
 			}
 			nextReservation += 1;
 			const token = idempotencyReservationTokenSchema.parse(
@@ -663,7 +672,10 @@ function createMemoryIdempotencyPort(): CorporateAdministrationIdempotencyPort {
 				fingerprint: input.fingerprint,
 				token,
 			});
-			return await ok({ status: "acquired", reservationToken: token });
+			return await errorResult.ok({
+				status: "acquired",
+				reservationToken: token,
+			});
 		},
 		async complete(
 			input: CorporateAdministrationIdempotencyCompletionInput,
@@ -673,13 +685,13 @@ function createMemoryIdempotencyPort(): CorporateAdministrationIdempotencyPort {
 				fingerprint: input.fingerprint,
 				result: input.result,
 			});
-			return await ok(undefined);
+			return await errorResult.ok(undefined);
 		},
 		async release(
 			input: CorporateAdministrationIdempotencyReleaseInput,
 		): Promise<Result<void>> {
 			records.delete(idempotencyKey(input));
-			return await ok(undefined);
+			return await errorResult.ok(undefined);
 		},
 	};
 }
@@ -688,7 +700,8 @@ function createMemoryAuditPort(): CorporateAdministrationAuditFactPort {
 	return {
 		record: async (
 			_input: CorporateAdministrationAuditFactInput,
-		): Promise<Result<{ id: string }>> => ok({ id: "audit-ca-real" }),
+		): Promise<Result<{ id: string }>> =>
+			errorResult.ok({ id: "audit-ca-real" }),
 	};
 }
 
@@ -696,7 +709,7 @@ function createMemoryOutboxPort(): CorporateAdministrationOutboxPort {
 	return {
 		append: async (
 			_events: readonly CorporateAdministrationPendingEvent[],
-		): Promise<Result<void>> => ok(undefined),
+		): Promise<Result<void>> => errorResult.ok(undefined),
 	};
 }
 

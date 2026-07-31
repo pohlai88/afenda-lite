@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { ok } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 import {
 	addStockMovementLine,
 	createStockMovement,
@@ -37,12 +37,12 @@ export function createInventoryCommandTestOptions(
 	const ports: MutationPorts = {
 		audit: {
 			record() {
-				return Promise.resolve(ok({ id: randomUUID() }));
+				return Promise.resolve(errorResult.ok({ id: randomUUID() }));
 			},
 		},
 		outbox: {
 			append() {
-				return Promise.resolve(ok({ id: randomUUID() }));
+				return Promise.resolve(errorResult.ok({ id: randomUUID() }));
 			},
 		},
 	};

@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type {
 	HumanResourcesCourseId,
@@ -19,24 +19,26 @@ import {
 	type SessionStatus,
 } from "./learning-status";
 
-function alreadyInStatus(entity: string, status: string): Result<never> {
-	return fail(
-		"BAD_REQUEST",
-		`${entity} is already in status '${status}'`,
-		humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION),
-	);
+function alreadyInStatus(_entity: string, _status: string): Result<never> {
+	return errorResult.fail("BAD_REQUEST", {
+		publicMessage: "The request is invalid",
+		internalContext: humanResourcesErrorDetails(
+			HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+		),
+	});
 }
 
 function cannotTransition(
-	entity: string,
-	current: string,
-	next: string,
+	_entity: string,
+	_current: string,
+	_next: string,
 ): Result<never> {
-	return fail(
-		"BAD_REQUEST",
-		`Cannot transition ${entity} from '${current}' to '${next}'`,
-		humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION),
-	);
+	return errorResult.fail("BAD_REQUEST", {
+		publicMessage: "The request is invalid",
+		internalContext: humanResourcesErrorDetails(
+			HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+		),
+	});
 }
 
 // Course Guards
@@ -45,7 +47,7 @@ export function assertCourseActive(status: CourseStatus): Result<void> {
 	if (status !== "active") {
 		return invalidState("Course must be active");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function canTransitionCourseStatus(
@@ -74,7 +76,7 @@ export function assertCourseStatusTransition(
 	if (!canTransitionCourseStatus(current, next)) {
 		return cannotTransition("course", current, next);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertCourseCanArchive(input: {
@@ -88,7 +90,7 @@ export function assertCourseCanArchive(input: {
 	if (input.hasActiveAssignments) {
 		return invalidState("Cannot archive course with active assignments");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 // Session Guards
@@ -100,7 +102,7 @@ export function assertSessionSchedulable(input: {
 	if (input.scheduledEndsAt <= input.scheduledStartsAt) {
 		return invalidInput("Session end date must be after start date");
 	}
-	return ok(true);
+	return errorResult.ok(true);
 }
 
 export function canTransitionSessionStatus(
@@ -135,14 +137,14 @@ export function assertSessionStatusTransition(
 	if (!canTransitionSessionStatus(current, next)) {
 		return cannotTransition("session", current, next);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertSessionNotTerminal(status: SessionStatus): Result<void> {
 	if (status === "completed" || status === "cancelled") {
 		return invalidState("Cannot modify completed or cancelled session");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertSessionCapacityAvailable(input: {
@@ -155,7 +157,7 @@ export function assertSessionCapacityAvailable(input: {
 	) {
 		return invalidState("Session is at full capacity");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 // Assignment Guards
@@ -166,7 +168,7 @@ export function assertEmploymentActiveForAssignment(
 	if (status !== "active") {
 		return invalidState("Employment must be active to assign learning");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertAssignmentWaivable(
@@ -175,7 +177,7 @@ export function assertAssignmentWaivable(
 	if (isAssignmentTerminal(status)) {
 		return invalidState("Cannot waive a terminal assignment");
 	}
-	return ok(true);
+	return errorResult.ok(true);
 }
 
 export function assertAssignmentEnrollable(input: {
@@ -193,7 +195,7 @@ export function assertAssignmentEnrollable(input: {
 		return courseActive;
 	}
 	if (input.sessionStatus === null) {
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	}
 	const sessionNotTerminal = assertSessionNotTerminal(input.sessionStatus);
 	if (!sessionNotTerminal.ok) {
@@ -240,7 +242,7 @@ export function assertAssignmentStatusTransition(
 	if (!canTransitionAssignmentStatus(current, next)) {
 		return cannotTransition("assignment", current, next);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertAssignmentNotTerminal(
@@ -249,7 +251,7 @@ export function assertAssignmentNotTerminal(
 	if (isAssignmentTerminal(status)) {
 		return invalidState("Cannot modify completed or withdrawn assignment");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 // Completion Guards
@@ -274,7 +276,7 @@ export function assertCompletionRecordable(input: {
 	) {
 		return invalidState("Session must be completed to record completion");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertNoDuplicateCompletion(input: {
@@ -283,7 +285,7 @@ export function assertNoDuplicateCompletion(input: {
 	if (input.hasExistingCompletion) {
 		return conflict("Completion already recorded for this assignment");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 // Certification Guards
@@ -303,7 +305,7 @@ export function assertCertificationIssuable(input: {
 	if (input.expiresOn !== null && input.expiresOn <= input.issuedOn) {
 		return invalidInput("Expiry date must be after issue date");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function canTransitionCertificationStatus(
@@ -329,7 +331,7 @@ export function assertCertificationStatusTransition(
 	if (!canTransitionCertificationStatus(current, next)) {
 		return cannotTransition("certification", current, next);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertCertificationCanRevoke(
@@ -338,7 +340,7 @@ export function assertCertificationCanRevoke(
 	if (status !== "active") {
 		return invalidState("Can only revoke active certifications");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertCertificationCanExpire(
@@ -347,7 +349,7 @@ export function assertCertificationCanExpire(
 	if (status !== "active") {
 		return invalidState("Can only expire active certifications");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 // Learning Attendance Guards
@@ -377,7 +379,7 @@ export function assertLearningAttendanceRecordable(input: {
 	) {
 		return invalidState("Assignment is not enrolled in the requested session");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertNoDuplicateLearningAttendance(input: {
@@ -388,7 +390,7 @@ export function assertNoDuplicateLearningAttendance(input: {
 			"Attendance already recorded for this assignment and session",
 		);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 // Certification Renewal Guards
@@ -415,5 +417,5 @@ export function assertCertificationRenewable(input: {
 	if (input.completionOutcome !== "passed") {
 		return invalidState("Renewal requires a passed completion outcome");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }

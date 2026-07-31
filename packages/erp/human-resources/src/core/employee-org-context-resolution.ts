@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type {
 	HumanResourcesEmployeeId,
@@ -36,25 +36,25 @@ export async function resolveEmployeeOrgContextForEmployment(input: {
 	}
 	if (assignment.data === null) {
 		return input.mode === "soft"
-			? ok(null)
-			: fail(
-					"NOT_FOUND",
-					"No assignment effective on the requested date",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-				);
+			? errorResult.ok(null)
+			: errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_NOT_FOUND,
+					),
+				});
 	}
 
 	const dimensions = assignment.data.organizationDimensions;
 	if (dimensions === null) {
 		return input.mode === "soft"
-			? ok(null)
-			: fail(
-					"CONFLICT",
-					"Assignment has no deterministic organization dimension snapshot",
-					humanResourcesErrorDetails(
+			? errorResult.ok(null)
+			: errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+					internalContext: humanResourcesErrorDetails(
 						HUMAN_RESOURCES_ERROR_NO_DETERMINISTIC_ASSIGNMENT,
 					),
-				);
+				});
 	}
 
 	const position = await input.store.findPositionAsOf({
@@ -66,7 +66,7 @@ export async function resolveEmployeeOrgContextForEmployment(input: {
 		return position;
 	}
 
-	return ok({
+	return errorResult.ok({
 		employmentId: input.employmentId,
 		employeeId: input.employeeId,
 		positionId: assignment.data.positionId,

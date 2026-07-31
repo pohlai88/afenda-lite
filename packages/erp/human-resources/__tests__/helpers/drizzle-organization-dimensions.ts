@@ -1,5 +1,5 @@
 import { and, db, eq, mdOrganizationDimension } from "@afenda/db";
-import { fail, ok } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 
 import type {
 	HumanResourcesOrganizationDimensions,
@@ -55,12 +55,7 @@ export function createDrizzleTestOrganizationDimensionDirectory(): OrganizationD
 						);
 					const [row] = rows;
 					if (row === undefined) {
-						return sequentialReturn(
-							fail(
-								"INTERNAL_ERROR",
-								"Could not seed governed organization dimension",
-							),
-						);
+						return sequentialReturn(errorResult.fail("INTERNAL_ERROR"));
 					}
 					resolved[kind] = {
 						id: row.id,
@@ -73,7 +68,7 @@ export function createDrizzleTestOrganizationDimensionDirectory(): OrganizationD
 			if (sequentialOutcome1.kind === "return") {
 				return sequentialOutcome1.value;
 			}
-			return ok(resolved);
+			return errorResult.ok(resolved);
 		},
 	};
 }

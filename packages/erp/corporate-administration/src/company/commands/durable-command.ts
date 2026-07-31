@@ -1,10 +1,9 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { z } from "zod";
 
 import { createCorporateAdministrationCommandFingerprint } from "../../command-identity";
 import type { CorporateAdministrationCommandOptions } from "../../command-options";
 import { createCorporateAdministrationDomainEventEnvelope } from "../../domain-events";
-import { corporateAdministrationErrorDetails } from "../../error-codes";
 import { eventIdSchema } from "../../kernel/brands";
 import { toImmutableCanonicalJson } from "../../kernel/canonical-json";
 import { toCanonicalInstant } from "../../kernel/dates";
@@ -184,34 +183,19 @@ export async function runDurableCompanyCommand<TResult>(
 	if (reservation.data.status === "replay") {
 		const replay = input.outputSchema.safeParse(reservation.data.result);
 		return replay.success
-			? ok(replay.data)
-			: fail(
-					"SERVICE_UNAVAILABLE",
-					"Corporate Administration idempotency replay is unavailable.",
-					corporateAdministrationErrorDetails(
-						"CORPORATE_ADMINISTRATION_EXTERNAL_DEPENDENCY_UNAVAILABLE",
-						{ field: "idempotency.result" },
-					),
-				);
+			? errorResult.ok(replay.data)
+			: errorResult.fail("SERVICE_UNAVAILABLE");
 	}
 	if (reservation.data.status === "conflict") {
-		return fail(
-			"CONFLICT",
-			"Corporate Administration idempotency key was reused with different input.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_IDEMPOTENCY_CONFLICT",
-				{ field: "idempotencyKey" },
-			),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage:
+				"Corporate Administration idempotency key was reused with different input.",
+		});
 	}
 	if (reservation.data.status === "in_progress") {
-		return fail(
-			"CONFLICT",
-			"Corporate Administration command is already in progress.",
-			corporateAdministrationErrorDetails("CORPORATE_ADMINISTRATION_CONFLICT", {
-				field: "idempotencyKey",
-			}),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Corporate Administration command is already in progress.",
+		});
 	}
 
 	const acquired = reservation.data;
@@ -312,5 +296,5 @@ function asFailure<TResult>(result: Result<unknown>): Result<TResult> {
 	if (result.ok) {
 		throw new TypeError("Expected Corporate Administration failure Result");
 	}
-	return fail(result.code, result.message, result.details);
+	return result;
 }

@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type {
 	HumanResourcesEmployeeId,
@@ -56,7 +56,7 @@ export async function resolveAssignmentContextSnapshots(input: {
 
 	const assignmentContext: AssignmentContextQueryPort = {
 		async resolveAsOf() {
-			return await ok({
+			return await errorResult.ok({
 				employmentId: input.employmentId,
 				employeeId: input.employeeId,
 				departmentId,
@@ -80,23 +80,24 @@ export async function resolveAssignmentContextSnapshots(input: {
 	);
 	if (!calendar.ok) {
 		if (calendar.code === "NOT_FOUND") {
-			return ok({
+			return errorResult.ok({
 				managerEmployeeIdSnapshot: manager.data?.managerEmployeeId ?? null,
 				workCalendarIdSnapshot: null,
 				departmentId,
 			});
 		}
 		if (calendar.code === "CONFLICT") {
-			return fail(
-				"CONFLICT",
-				calendar.message,
-				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "The request conflicts with current state",
+				internalContext: humanResourcesErrorDetails(
+					HUMAN_RESOURCES_ERROR_CONFLICT,
+				),
+			});
 		}
 		return calendar;
 	}
 
-	return ok({
+	return errorResult.ok({
 		managerEmployeeIdSnapshot: manager.data?.managerEmployeeId ?? null,
 		workCalendarIdSnapshot: calendar.data.calendarId,
 		departmentId,

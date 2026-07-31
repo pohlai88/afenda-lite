@@ -1,4 +1,4 @@
-import type { Result } from "@afenda/errors/result";
+import type { Result } from "@afenda/errors";
 
 export type PrivacyModuleId = "human-resources" | (string & {});
 

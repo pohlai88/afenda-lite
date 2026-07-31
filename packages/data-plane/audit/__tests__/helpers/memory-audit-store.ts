@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type { AuditStore } from "../../src/store";
 import type {
@@ -85,7 +85,7 @@ export class MemoryAuditStore implements AuditStore {
 				createdAt: entry.createdAt ?? new Date(),
 			};
 			this.entries.push(created);
-			return ok(created);
+			return errorResult.ok(created);
 		});
 	}
 
@@ -95,7 +95,7 @@ export class MemoryAuditStore implements AuditStore {
 				.filter((entry) => matchesFilter(entry, options))
 				.toSorted(compareNewestFirst);
 			const offset = (options.page - 1) * options.pageSize;
-			return ok(filtered.slice(offset, offset + options.pageSize));
+			return errorResult.ok(filtered.slice(offset, offset + options.pageSize));
 		});
 	}
 
@@ -115,13 +115,15 @@ export class MemoryAuditStore implements AuditStore {
 					);
 				})
 				.toSorted(compareNewestFirst);
-			return ok(filtered.slice(0, options.pageSize + 1));
+			return errorResult.ok(filtered.slice(0, options.pageSize + 1));
 		});
 	}
 
 	count(options: AuditQueryFilter): Promise<Result<number>> {
 		return onPromiseBoundary(() =>
-			ok(this.entries.filter((entry) => matchesFilter(entry, options)).length),
+			errorResult.ok(
+				this.entries.filter((entry) => matchesFilter(entry, options)).length,
+			),
 		);
 	}
 
@@ -135,7 +137,7 @@ export class MemoryAuditStore implements AuditStore {
 			);
 			this.entries.length = 0;
 			this.entries.push(...kept);
-			return ok(before - kept.length);
+			return errorResult.ok(before - kept.length);
 		});
 	}
 

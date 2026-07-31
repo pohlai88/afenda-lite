@@ -1,4 +1,4 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	governanceInvalidTransition,
@@ -248,7 +248,7 @@ export function decideImportBatchTransition(input: {
 			requiredReason: "decision_reason",
 		});
 	}
-	return ok(definition);
+	return errorResult.ok(definition);
 }
 
 export function decideImportTransition(input: {
@@ -269,9 +269,11 @@ export function decideImportRowOperation(input: {
 		case "ambiguous":
 		case "invalid_key":
 		case "not_permitted":
-			return ok("reject");
+			return errorResult.ok("reject");
 		case "no_match":
-			return mode === "update_existing" ? ok("reject") : ok("create");
+			return mode === "update_existing"
+				? errorResult.ok("reject")
+				: errorResult.ok("create");
 		case "matched":
 			if (match.matchedTargetId.trim().length === 0) {
 				return governancePolicyMismatch({
@@ -287,7 +289,9 @@ export function decideImportRowOperation(input: {
 					},
 				});
 			}
-			return mode === "create_only" ? ok("skip") : ok("update");
+			return mode === "create_only"
+				? errorResult.ok("skip")
+				: errorResult.ok("update");
 		default:
 			return assertNever(match);
 	}
@@ -353,7 +357,7 @@ export function validateImportDeterministicMatch(input: {
 		default:
 			return assertNever(match);
 	}
-	return ok(true);
+	return errorResult.ok(true);
 }
 
 export function modePermitsOperation(input: {
@@ -382,7 +386,7 @@ export function assertImportModePermitsOperation(input: {
 	operation: ImportMutationOperation;
 }): Result<true> {
 	if (modePermitsOperation(input)) {
-		return ok(true);
+		return errorResult.ok(true);
 	}
 	return governanceInvalidTransition({
 		operation: `import.row.${input.operation}`,

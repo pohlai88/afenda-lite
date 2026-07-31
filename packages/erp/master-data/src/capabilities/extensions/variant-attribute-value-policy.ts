@@ -1,6 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
-
-import type { MasterFailureDetails } from "../../contracts/reasons";
+import { errorResult, type Result } from "@afenda/errors";
 import type {
 	ItemTemplateAttributeDataType,
 	ItemTemplateAttributeValidationRules,
@@ -44,11 +42,10 @@ const LEADING_DECIMAL_ZERO_RE = /^0+(?=\d)/;
 const TRAILING_DECIMAL_ZERO_RE = /0+$/;
 const LEADING_ZERO_RE = /^0+/;
 
-function validationFailure(message: string): Result<never> {
-	return fail("BAD_REQUEST", message, {
-		reason: "MASTER_VALIDATION_FAILED",
-		field: "attributeValues",
-	} satisfies MasterFailureDetails);
+function validationFailure(_message: string): Result<never> {
+	return errorResult.fail("BAD_REQUEST", {
+		publicMessage: "The request is invalid",
+	});
 }
 
 function populatedRepresentationCount(
@@ -139,7 +136,7 @@ function validateNumericRules(
 	if (scale !== undefined && fractionPart.length > scale) {
 		return validationFailure("Attribute value exceeds its configured scale");
 	}
-	return ok(true);
+	return errorResult.ok(true);
 }
 
 function emptyValue(dataType: ItemTemplateAttributeDataType) {
@@ -225,7 +222,7 @@ function normalizeTextValue(
 			"Text attribute value does not match its configured pattern",
 		);
 	}
-	return ok({
+	return errorResult.ok({
 		...emptyValue("text"),
 		textValue,
 		normalizedValue: textValue
@@ -256,7 +253,7 @@ function normalizeIntegerValue(
 	if (!rules.ok) {
 		return rules;
 	}
-	return ok({
+	return errorResult.ok({
 		...emptyValue("integer"),
 		integerValue: canonical,
 		normalizedValue: canonical,
@@ -278,7 +275,7 @@ function normalizeDecimalValue(
 	if (!rules.ok) {
 		return rules;
 	}
-	return ok({
+	return errorResult.ok({
 		...emptyValue("decimal"),
 		decimalValue,
 		normalizedValue: decimalValue,
@@ -291,7 +288,7 @@ function normalizeBooleanValue(
 	if (input.value.booleanValue === undefined) {
 		return validationFailure("Boolean attribute requires booleanValue");
 	}
-	return ok({
+	return errorResult.ok({
 		...emptyValue("boolean"),
 		booleanValue: input.value.booleanValue,
 		normalizedValue: input.value.booleanValue ? "TRUE" : "FALSE",
@@ -323,7 +320,7 @@ function normalizeDateValue(
 			"Date attribute value exceeds its configured maximum",
 		);
 	}
-	return ok({
+	return errorResult.ok({
 		...emptyValue("date"),
 		dateValue,
 		normalizedValue: dateValue,
@@ -336,7 +333,7 @@ function normalizeSingleOptionValue(
 	if (input.value.optionId === undefined) {
 		return validationFailure("Single-option attribute requires optionId");
 	}
-	return ok({
+	return errorResult.ok({
 		...emptyValue("single_option"),
 		optionId: input.value.optionId,
 		normalizedValue: "",
@@ -362,7 +359,7 @@ function normalizeMultipleOptionValue(
 			"Multiple-option attribute contains duplicate optionIds",
 		);
 	}
-	return ok({
+	return errorResult.ok({
 		...emptyValue("multiple_option"),
 		optionIds: uniqueOptionIds,
 		normalizedValue: "",
@@ -381,7 +378,7 @@ function normalizeReferenceValue(
 			"Reference attribute value must contain 1 to 256 characters",
 		);
 	}
-	return ok({
+	return errorResult.ok({
 		...emptyValue("reference"),
 		referenceValue,
 		normalizedValue: referenceValue.normalize("NFKC").toUpperCase(),

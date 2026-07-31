@@ -1,30 +1,32 @@
-import { API_ERROR_CODES } from "@afenda/errors";
+import type { CanonicalErrorCode, errorProject } from "@afenda/errors";
 import { z } from "@/modules/platform/schemas/openapi-zod";
 
 /**
- * Shared HTTP error vocabulary (API-002 · API-003 · OPEN-001).
- * Codes / HTTP body builders: `@afenda/errors` (+ `/http`).
- * Route Handler failures use bare `APIErrorBody` — never nested under `{ data }`.
- * Deprecated compatibility helpers stay on `@afenda/errors` — do not re-export unused types.
+ * Web validation mirror for the canonical HTTP projection.
+ * Status, retry, wording, and OpenAPI semantics remain owned by @afenda/errors.
  */
+export const WEB_API_ERROR_CODES = [
+	"BAD_REQUEST",
+	"UNAUTHORIZED",
+	"FORBIDDEN",
+	"NOT_FOUND",
+	"CONFLICT",
+	"CONCURRENCY_CONFLICT",
+	"VALIDATION_ERROR",
+	"RATE_LIMITED",
+	"INTERNAL_ERROR",
+	"SERVICE_UNAVAILABLE",
+] as const satisfies readonly CanonicalErrorCode[];
 
-export {
-	API_ERROR_CODES,
-	type ApiErrorCode,
-	asApiErrorCode,
-	isApiErrorCode,
-} from "@afenda/errors";
-export {
-	API_ERROR_HTTP_STATUS,
-	type APIErrorBody,
-	apiErrorBody,
-} from "@afenda/errors/http";
+export type ApiErrorCode = (typeof WEB_API_ERROR_CODES)[number];
+export type APIErrorBody = ReturnType<typeof errorProject.http>["body"];
 
-export const apiErrorCodeSchema = z.enum(API_ERROR_CODES);
+export const apiErrorCodeSchema = z.enum(WEB_API_ERROR_CODES);
 
 export const apiErrorBodySchema = z.object({
 	error: z.object({
 		code: apiErrorCodeSchema,
+		messageKey: z.string().min(1),
 		message: z.string().min(1),
 		details: z.unknown().optional(),
 	}),

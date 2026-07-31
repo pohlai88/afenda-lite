@@ -1,4 +1,4 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import { getPaymentById } from "@afenda/payments";
 import type { PaymentApplicationQueryPort } from "@afenda/receivables";
 
@@ -53,19 +53,19 @@ export function createPaymentApplicationQueryPort(): PaymentApplicationQueryPort
 				return result;
 			}
 			if (result.data === null) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const payment = result.data;
 			const instruction = payment.applicationInstructions.find(
 				(candidate) => candidate.id === input.paymentApplicationInstructionId,
 			);
 			if (instruction === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const remaining =
 				decimal(instruction.intendedAmount) -
 				decimal(instruction.appliedAmount);
-			return ok({
+			return errorResult.ok({
 				paymentStatus: payment.status,
 				instructionStatus: instruction.status,
 				currencyCode: instruction.currencyCode,

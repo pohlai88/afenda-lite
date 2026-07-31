@@ -1,10 +1,8 @@
-import type { Result } from "@afenda/errors/result";
-
 import {
-	type ActionResult,
-	actionFail,
-	actionOk,
-} from "@/modules/platform/schemas/action-result";
+	type Result as ActionResult,
+	errorResult,
+	type Result,
+} from "@afenda/errors";
 
 /**
  * Honest `Result` → `ActionResult` map for Rank-1 package calls
@@ -13,7 +11,7 @@ import {
  */
 export function mapPackageResult<T>(result: Result<T>): ActionResult<T> {
 	if (!result.ok) {
-		return actionFail(result.code, result.message, result.details);
+		return result;
 	}
-	return actionOk(result.data);
+	return errorResult.ok(result.data);
 }

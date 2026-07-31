@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import { createEventDispatcher } from "@afenda/events";
 import {
 	acknowledgeReliabilityWork,
@@ -75,7 +75,10 @@ export function createProductionReliabilityOperationHandlers(): ReliabilityOpera
 				createHumanResourcesCommandOptions(),
 			);
 			return imported.ok
-				? ok({ kind: "acknowledged", receiptId: `attendance:${item.id}` })
+				? errorResult.ok({
+						kind: "acknowledged",
+						receiptId: `attendance:${item.id}`,
+					})
 				: imported;
 		},
 		"payroll.publish-delivery": async (item) => {
@@ -88,18 +91,15 @@ export function createProductionReliabilityOperationHandlers(): ReliabilityOpera
 				return delivered;
 			}
 			if (delivered.data.producerReceiptId === null) {
-				return fail(
-					"INTERNAL_ERROR",
-					"Payroll delivery did not return a receipt",
-				);
+				return errorResult.fail("INTERNAL_ERROR");
 			}
 			if (delivered.data.status === "acknowledged") {
-				return ok({
+				return errorResult.ok({
 					kind: "acknowledged",
 					receiptId: delivered.data.producerReceiptId,
 				});
 			}
-			return ok({
+			return errorResult.ok({
 				kind: "accepted",
 				receiptId: delivered.data.producerReceiptId,
 				acknowledgementDeadlineAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
@@ -113,12 +113,9 @@ export function createProductionReliabilityOperationHandlers(): ReliabilityOpera
 				return dispatched;
 			}
 			if (dispatched.data.failed > 0) {
-				return fail(
-					"SERVICE_UNAVAILABLE",
-					"One or more platform events failed",
-				);
+				return errorResult.fail("SERVICE_UNAVAILABLE");
 			}
-			return ok({
+			return errorResult.ok({
 				kind: "acknowledged",
 				receiptId: `events:${item.id}:${dispatched.data.processed}`,
 			});
@@ -130,7 +127,7 @@ export function createProductionReliabilityOperationHandlers(): ReliabilityOpera
 				correlationId: item.correlationId,
 			});
 			return rebuilt.ok
-				? ok({
+				? errorResult.ok({
 						kind: "acknowledged",
 						receiptId: `search:${item.id}:${rebuilt.data.projected}:${rebuilt.data.pruned}`,
 					})
@@ -146,10 +143,9 @@ export function createReliabilityOperationExecutor(
 		async execute(item) {
 			const handler = handlers[reliabilityOperationKey(item)];
 			if (handler === undefined) {
-				return fail(
-					"VALIDATION_ERROR",
-					"Reliability operation is not composed",
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Reliability operation is not composed",
+				});
 			}
 			return await handler(item);
 		},
@@ -219,7 +215,9 @@ export async function processReliabilityWork(
 		return found;
 	}
 	if (found.data === null) {
-		return fail("NOT_FOUND", "Reliability work item not found");
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Reliability work item not found",
+		});
 	}
 	const result = await executeReliabilityWork(input, ports);
 	const failureCode = result.ok ? result.data.lastErrorCode : result.code;
@@ -353,7 +351,7 @@ export async function runProductionReliabilityScheduler(
 			() => consume(),
 		),
 	);
-	return ok(summary);
+	return errorResult.ok(summary);
 }
 
 export function acknowledgeProductionReliabilityWork(
@@ -381,10 +379,9 @@ export function registerProductionReliabilityWork(
 		] === undefined
 	) {
 		return Promise.resolve(
-			fail(
-				"VALIDATION_ERROR",
-				"Reliability operation is not composed for production",
-			),
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Reliability operation is not composed for production",
+			}),
 		);
 	}
 	return registerReliabilityWork(input, ports);

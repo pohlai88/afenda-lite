@@ -1,4 +1,4 @@
-import { ok } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -23,7 +23,7 @@ describe("accounting authorization", () => {
 			},
 			effects: {
 				emit() {
-					return Promise.resolve(ok(undefined));
+					return Promise.resolve(errorResult.ok(undefined));
 				},
 			},
 		};
@@ -54,7 +54,7 @@ describe("accounting authorization", () => {
 		const store = createMemoryStore();
 		const effects = {
 			emit() {
-				return Promise.resolve(ok(undefined));
+				return Promise.resolve(errorResult.ok(undefined));
 			},
 		};
 		const unauthorized = await getTrialBalance(

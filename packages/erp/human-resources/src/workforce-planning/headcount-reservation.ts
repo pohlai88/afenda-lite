@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { z } from "zod";
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
@@ -63,18 +63,19 @@ async function findReservationReplay(input: {
 		return existingByKey;
 	}
 	if (existingByKey.data === null) {
-		return ok(null);
+		return errorResult.ok(null);
 	}
 	if (
 		existingByKey.data.createRequestFingerprint !== input.requestFingerprint
 	) {
-		return fail(
-			"CONFLICT",
-			"Idempotency key reused with different payload",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "The request conflicts with current state",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_CONFLICT,
+			),
+		});
 	}
-	return ok(existingByKey.data.reservation);
+	return errorResult.ok(existingByKey.data.reservation);
 }
 
 async function loadReservablePlanLine(input: {
@@ -89,11 +90,12 @@ async function loadReservablePlanLine(input: {
 		return line;
 	}
 	if (line.data === null) {
-		return fail(
-			"NOT_FOUND",
-			"Headcount plan line not found",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-		);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "The requested resource was not found",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			),
+		});
 	}
 
 	const plan = await input.store.getHeadcountPlanById({
@@ -104,11 +106,12 @@ async function loadReservablePlanLine(input: {
 		return plan;
 	}
 	if (plan.data === null || plan.data.status !== "approved") {
-		return fail(
-			"BAD_REQUEST",
-			"Headcount reservations require an approved plan line",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-		);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "The request is invalid",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			),
+		});
 	}
 
 	const requisition = await input.store.getRequisitionById({
@@ -119,11 +122,12 @@ async function loadReservablePlanLine(input: {
 		return requisition;
 	}
 	if (requisition.data === null) {
-		return fail(
-			"NOT_FOUND",
-			"Requisition not found",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-		);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "The requested resource was not found",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			),
+		});
 	}
 
 	const statusGate = assertRequisitionAllowsHeadcountReservation(
@@ -132,7 +136,7 @@ async function loadReservablePlanLine(input: {
 	if (!statusGate.ok) {
 		return statusGate;
 	}
-	return ok(line.data);
+	return errorResult.ok(line.data);
 }
 
 async function assertReservationCapacity(input: {
@@ -190,7 +194,7 @@ async function executeReserveHeadcount(
 		return replay;
 	}
 	if (replay.data !== null) {
-		return ok(replay.data);
+		return errorResult.ok(replay.data);
 	}
 
 	const line = await loadReservablePlanLine({ data, store: deps.store });
@@ -304,13 +308,14 @@ export function getHeadcountAvailability(
 				return availability;
 			}
 			if (availability.data === null) {
-				return fail(
-					"NOT_FOUND",
-					"Headcount plan line not found",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_NOT_FOUND,
+					),
+				});
 			}
-			return ok(availability.data);
+			return errorResult.ok(availability.data);
 		},
 	});
 }

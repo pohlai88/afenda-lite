@@ -1,5 +1,5 @@
 import { type AuditRecorder, createAuditRecorder } from "@afenda/audit";
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	decideHumanResourcesSubjectDeletion,
 	executeHumanResourcesDeletionDecision,
@@ -51,9 +51,11 @@ export function resolveHumanResourcesPrivacyProcessorBoundary(input: {
 	organizationId: string;
 }): Result<HumanResourcesPrivacyProcessorBoundary> {
 	if (input.organizationId.trim().length === 0) {
-		return fail("VALIDATION_ERROR", "Organization is required");
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "Organization is required",
+		});
 	}
-	return ok({
+	return errorResult.ok({
 		organizationId: input.organizationId,
 		boundaryVersion: PROCESSOR_BOUNDARY_VERSION,
 		controllerReference: `control://organizations/${input.organizationId}/privacy-controller`,
@@ -95,17 +97,17 @@ function activeLegalHoldsFromCase(
 		[];
 	for (const hold of holds) {
 		if (!hold.classifications.every(isRetentionClassification)) {
-			return fail(
-				"CONFLICT",
-				"Privacy legal hold contains an unsupported classification",
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage:
+					"Privacy legal hold contains an unsupported classification",
+			});
 		}
 		mapped.push({
 			legalHoldId: hold.legalHoldId,
 			classifications: hold.classifications,
 		});
 	}
-	return ok(mapped);
+	return errorResult.ok(mapped);
 }
 
 function createDeletionPort(
@@ -140,21 +142,15 @@ function createDeletionPort(
 				return recorded;
 			}
 			if (recorded.data.organizationId !== evidence.organizationId) {
-				return fail(
-					"INTERNAL_ERROR",
-					"Privacy decision evidence crossed the tenant boundary",
-				);
+				return errorResult.fail("INTERNAL_ERROR");
 			}
-			return ok({
+			return errorResult.ok({
 				evidenceReference: `audit://privacy/${recorded.data.id}`,
 			});
 		},
 		async executeDeletionDecision(input) {
 			if (input.organizationId !== request.organizationId) {
-				return fail(
-					"FORBIDDEN",
-					"Privacy deletion execution crossed the tenant boundary",
-				);
+				return errorResult.fail("FORBIDDEN");
 			}
 			const classifications = input.dispositions.map(
 				(disposition) => disposition.classification,
@@ -171,7 +167,7 @@ function createDeletionPort(
 			if (!executed.ok) {
 				return executed;
 			}
-			return ok({
+			return errorResult.ok({
 				affectedRecordCount: executed.data.anonymizedRecordCount,
 				executionReference: `privacy://organizations/${request.organizationId}/deletion-executions/${encodeURIComponent(input.decisionId)}`,
 			});
@@ -208,7 +204,7 @@ async function evaluateWithComposition(
 		return privacyCase;
 	}
 	if (privacyCase.data.organizationId !== request.organizationId) {
-		return fail("FORBIDDEN", "Privacy case crossed the tenant boundary");
+		return errorResult.fail("FORBIDDEN");
 	}
 	const activeLegalHolds = activeLegalHoldsFromCase(
 		privacyCase.data.activeLegalHolds,
@@ -227,7 +223,7 @@ async function evaluateWithComposition(
 	if (!decision.ok) {
 		return decision;
 	}
-	return ok({ decision: decision.data, port });
+	return errorResult.ok({ decision: decision.data, port });
 }
 
 export async function evaluateHumanResourcesPrivacyDeletion(
@@ -235,7 +231,7 @@ export async function evaluateHumanResourcesPrivacyDeletion(
 	deps: HumanResourcesPrivacyDeletionCompositionDeps = {},
 ): Promise<Result<HumanResourcesDeletionDecision>> {
 	const evaluated = await evaluateWithComposition(request, deps);
-	return evaluated.ok ? ok(evaluated.data.decision) : evaluated;
+	return evaluated.ok ? errorResult.ok(evaluated.data.decision) : evaluated;
 }
 
 export async function executeApprovedHumanResourcesPrivacyDeletion(
@@ -259,5 +255,8 @@ export async function executeApprovedHumanResourcesPrivacyDeletion(
 	if (!executed.ok) {
 		return executed;
 	}
-	return ok({ decision: evaluated.data.decision, ...executed.data });
+	return errorResult.ok({
+		decision: evaluated.data.decision,
+		...executed.data,
+	});
 }

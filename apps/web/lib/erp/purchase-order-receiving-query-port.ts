@@ -9,16 +9,23 @@ import {
 	purchaseOrderLine,
 	sql,
 } from "@afenda/db";
-import { normalizePostgresUnknown } from "@afenda/errors/adapters/postgres";
-import { failFromAppError, ok, type Result } from "@afenda/errors/result";
+import {
+	errorIngress,
+	errorProject,
+	errorResult,
+	type Result,
+} from "@afenda/errors";
+
 import type {
 	PurchaseOrderReceivingQueryPort,
 	PurchaseOrderReceivingSnapshot,
 	PurchaseOrderReceivingStatus,
 } from "@afenda/receiving";
 
-function failFromPersistence(error: unknown, fallbackMessage: string) {
-	return failFromAppError(normalizePostgresUnknown(error, fallbackMessage));
+function failFromPersistence(error: unknown, _fallbackMessage: string) {
+	return errorProject.result(
+		errorIngress.postgres(error, { operation: "persistence.postgres" }),
+	);
 }
 
 function asReceivingStatus(status: string): PurchaseOrderReceivingStatus {
@@ -60,7 +67,7 @@ export function createPurchaseOrderReceivingQueryPort(): PurchaseOrderReceivingQ
 					.limit(1);
 
 				if (order === undefined) {
-					return ok(null);
+					return errorResult.ok(null);
 				}
 
 				const lines = await db
@@ -116,7 +123,7 @@ export function createPurchaseOrderReceivingQueryPort(): PurchaseOrderReceivingQ
 					}
 				}
 
-				return ok({
+				return errorResult.ok({
 					status: asReceivingStatus(order.status),
 					version: order.version,
 					lines: lines.map((line) => {

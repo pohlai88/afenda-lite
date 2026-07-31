@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import { purchasingModuleManifest } from "./module.manifest";
 import type { PurchasingCommandId, PurchasingQueryId } from "./module-ids";
 import type { PURCHASING_PERMISSION_CODES } from "./permissions";
@@ -56,15 +56,11 @@ async function requirePurchasingPermission(
 	},
 ): Promise<Result<void>> {
 	if (!authorization) {
-		return fail("UNAUTHORIZED", "Purchasing authorization port is required", {
-			permission: input.permission,
-		});
+		return errorResult.fail("UNAUTHORIZED");
 	}
 	const allowed = await authorization.can(input);
 	if (!allowed) {
-		return fail("FORBIDDEN", "Missing required purchasing permission", {
-			permission: input.permission,
-		});
+		return errorResult.fail("FORBIDDEN");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }

@@ -1,4 +1,4 @@
-import { forbidden, serviceUnavailable } from "@afenda/errors";
+import { errorIngress } from "@afenda/errors";
 
 import { getNeonAuth } from "./neon-auth";
 import type { NeonOrgRole } from "./roles";
@@ -110,7 +110,9 @@ export function normalizeOrgMembers(data: unknown): OrgMember[] {
 
 function assertActiveSessionOrg(organizationId: string, sessionOrgId: string) {
 	if (sessionOrgId !== organizationId) {
-		throw forbidden("Organization is not in the active session");
+		throw errorIngress.code("FORBIDDEN", {
+			operation: "auth.organization-members",
+		});
 	}
 }
 
@@ -128,7 +130,9 @@ async function fetchOrgMemberPage(
 	});
 
 	if (error) {
-		throw serviceUnavailable("neon-auth");
+		throw errorIngress.code("SERVICE_UNAVAILABLE", {
+			operation: "auth.organization-members",
+		});
 	}
 
 	const members = normalizeOrgMembers(data);
@@ -217,7 +221,9 @@ export async function findOrgMember(
 	});
 
 	if (error) {
-		throw serviceUnavailable("neon-auth");
+		throw errorIngress.code("SERVICE_UNAVAILABLE", {
+			operation: "auth.organization-members",
+		});
 	}
 
 	const members = normalizeOrgMembers(data);

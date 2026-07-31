@@ -1,11 +1,10 @@
-import { fail, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { z } from "zod";
 import {
 	CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS,
 	requireCorporateAdministrationPermission,
 } from "../../authorization";
 import type { CorporateAdministrationCommandOptions } from "../../command-options";
-import { corporateAdministrationErrorDetails } from "../../error-codes";
 import { parseCorporateAdministrationInput } from "../../parse-input";
 import {
 	assertEffectivePeriodChronology,
@@ -67,14 +66,9 @@ export async function supersedeCompanyJurisdictionProfile(
 		return lockedCompany;
 	}
 	if (lockedCompany.data === null) {
-		return fail(
-			"NOT_FOUND",
-			"Corporate Administration legal company was not found.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_NOT_FOUND",
-				{ entityType: "legalCompany" },
-			),
-		);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Corporate Administration legal company was not found.",
+		});
 	}
 
 	const existingProfiles = await dependencies.store.listJurisdictionProfiles({
@@ -123,14 +117,10 @@ export async function supersedeCompanyJurisdictionProfile(
 		return overlap;
 	}
 	if (overlap.data) {
-		return fail(
-			"CONFLICT",
-			"Corporate Administration jurisdiction profile overlaps an existing profile.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_EFFECTIVE_RANGE_OVERLAP",
-				{ field: "effectiveRange" },
-			),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage:
+				"Corporate Administration jurisdiction profile overlaps an existing profile.",
+		});
 	}
 
 	return runDurableCompanyCommand({

@@ -1,5 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
-import type { MasterFailureDetails } from "../../contracts/reasons";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	MAX_PAYMENT_TERM_NET_DAYS,
 	type PaymentTerm,
@@ -34,10 +33,10 @@ export type PaymentTermRule = Pick<
 	| "currencyRestrictionId"
 >;
 
-function validationFailed(message: string): Result<never> {
-	return fail("BAD_REQUEST", message, {
-		reason: "MASTER_VALIDATION_FAILED",
-	} satisfies MasterFailureDetails);
+function validationFailed(_message: string): Result<never> {
+	return errorResult.fail("BAD_REQUEST", {
+		publicMessage: "The request is invalid",
+	});
 }
 
 export function normalizePaymentTermRule(
@@ -59,7 +58,7 @@ export function normalizePaymentTermRule(
 	if (validationReason !== null) {
 		return validationFailed(validationReason);
 	}
-	return ok(rule);
+	return errorResult.ok(rule);
 }
 
 function validatePaymentTermRule(rule: PaymentTermRule): string | null {

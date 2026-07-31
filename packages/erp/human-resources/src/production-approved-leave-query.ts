@@ -1,4 +1,4 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type { HumanResourcesEmployeeId } from "./brands";
 import type { HumanResourcesStore } from "./store";
@@ -31,7 +31,7 @@ async function resolveSegmentCalendar(input: {
 	workDate: string;
 }): Promise<Result<{ timezone: string; standardDayMinutes: number }>> {
 	if (input.lookup === undefined) {
-		return ok({
+		return errorResult.ok({
 			timezone: input.defaultTimezone,
 			standardDayMinutes: DEFAULT_DAY_MINUTES,
 		});
@@ -46,7 +46,7 @@ async function resolveSegmentCalendar(input: {
 	if (!context.ok) {
 		return context;
 	}
-	return ok({
+	return errorResult.ok({
 		timezone: context.data.timezone,
 		standardDayMinutes: dayMinutesFromContext(context.data, input.workDate),
 	});
@@ -78,7 +78,7 @@ async function collectApprovedLeaveFactsForRequest(input: {
 		request.endDate < input.periodStart ||
 		request.startDate > input.periodEnd
 	) {
-		return ok([]);
+		return errorResult.ok([]);
 	}
 
 	const policy = await input.store.getLeavePolicyById({
@@ -86,7 +86,7 @@ async function collectApprovedLeaveFactsForRequest(input: {
 		policyId: request.policyId,
 	});
 	if (!policy.ok || policy.data === null) {
-		return policy.ok ? ok([]) : policy;
+		return policy.ok ? errorResult.ok([]) : policy;
 	}
 
 	const segments = await input.store.listLeaveRequestSegments({
@@ -142,7 +142,7 @@ async function collectApprovedLeaveFactsForRequest(input: {
 		});
 	}
 
-	return ok(facts);
+	return errorResult.ok(facts);
 }
 
 /**
@@ -213,7 +213,7 @@ export function createProductionApprovedLeaveQuery(deps: {
 				}
 				return a.segmentId.localeCompare(b.segmentId);
 			});
-			return ok(facts);
+			return errorResult.ok(facts);
 		},
 	};
 }

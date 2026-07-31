@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { HumanResourcesCandidateId } from "../brands";
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
@@ -81,13 +81,14 @@ export function createCandidate(
 				if (
 					existingByKey.data.createRequestFingerprint !== requestFingerprint
 				) {
-					return fail(
-						"CONFLICT",
-						"Idempotency key reused with different payload",
-						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-					);
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+						internalContext: humanResourcesErrorDetails(
+							HUMAN_RESOURCES_ERROR_CONFLICT,
+						),
+					});
 				}
-				return ok(existingByKey.data.candidate);
+				return errorResult.ok(existingByKey.data.candidate);
 			}
 
 			return store.createCandidate(
@@ -221,11 +222,12 @@ export function changeCandidateRetention(
 				data.retentionUntil <
 					existing.data.consentCapturedAt.toISOString().slice(0, 10)
 			) {
-				return fail(
-					"VALIDATION_ERROR",
-					"Candidate retention date must not precede consent capture",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "The submitted data is invalid",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+					),
+				});
 			}
 
 			return store.changeCandidateRetention(
@@ -309,13 +311,14 @@ export function getCandidate(
 				return candidate;
 			}
 			if (candidate.data === null) {
-				return fail(
-					"NOT_FOUND",
-					"Candidate not found",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_NOT_FOUND,
+					),
+				});
 			}
-			return ok(candidate.data);
+			return errorResult.ok(candidate.data);
 		},
 	});
 }
@@ -370,11 +373,12 @@ async function loadExistingCandidate(
 		return existing;
 	}
 	if (existing.data === null) {
-		return fail(
-			"NOT_FOUND",
-			"Candidate not found",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-		);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "The requested resource was not found",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			),
+		});
 	}
-	return ok(existing.data);
+	return errorResult.ok(existing.data);
 }

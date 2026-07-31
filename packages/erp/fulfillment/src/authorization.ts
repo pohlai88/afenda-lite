@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import { fulfillmentModuleManifest } from "./module.manifest";
 import type { FulfillmentCommandId, FulfillmentQueryId } from "./module-ids";
@@ -23,16 +23,12 @@ async function requirePermission(
 	},
 ): Promise<Result<void>> {
 	if (authorization === undefined) {
-		return fail("UNAUTHORIZED", "Fulfillment authorization port is required", {
-			permission: input.permission,
-		});
+		return errorResult.fail("UNAUTHORIZED");
 	}
 	if (!(await authorization.can(input))) {
-		return fail("FORBIDDEN", "Missing required fulfillment permission", {
-			permission: input.permission,
-		});
+		return errorResult.fail("FORBIDDEN");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function requireFulfillmentCommandPermission(

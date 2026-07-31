@@ -1,4 +1,4 @@
-import { fail, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
@@ -18,11 +18,12 @@ export function assertValidDocumentDateRange(input: {
 	expiresOn: string | null;
 }): Result<void> {
 	if (input.expiresOn !== null && input.expiresOn < input.issuedOn) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Expiry date cannot precede issue date.",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
 	return { ok: true, data: undefined };
 }
@@ -32,11 +33,12 @@ export function assertRejectionReasonProvided(
 ): Result<void> {
 	const trimmed = reason?.trim() ?? "";
 	if (trimmed.length === 0) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Rejection reason is required.",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
 	return { ok: true, data: undefined };
 }
@@ -54,13 +56,12 @@ export function assertDocumentRequirementStatusTransition(
 		retired: [],
 	};
 	if (!allowed[from].includes(to)) {
-		return fail(
-			"CONFLICT",
-			`Cannot transition document requirement from ${from} to ${to}.`,
-			humanResourcesErrorDetails(
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "The request conflicts with current state",
+			internalContext: humanResourcesErrorDetails(
 				HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
 			),
-		);
+		});
 	}
 	return { ok: true, data: undefined };
 }
@@ -80,13 +81,12 @@ export function assertEmployeeDocumentVerificationTransition(
 		expired: [],
 	};
 	if (!allowed[from].includes(to)) {
-		return fail(
-			"CONFLICT",
-			`Cannot transition employee document from ${from} to ${to}.`,
-			humanResourcesErrorDetails(
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "The request conflicts with current state",
+			internalContext: humanResourcesErrorDetails(
 				HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
 			),
-		);
+		});
 	}
 	return { ok: true, data: undefined };
 }
@@ -103,13 +103,12 @@ export function assertWorkEligibilityStatusTransition(
 		closed: [],
 	};
 	if (!allowed[from].includes(to)) {
-		return fail(
-			"CONFLICT",
-			`Cannot transition work eligibility from ${from} to ${to}.`,
-			humanResourcesErrorDetails(
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "The request conflicts with current state",
+			internalContext: humanResourcesErrorDetails(
 				HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
 			),
-		);
+		});
 	}
 	return { ok: true, data: undefined };
 }
@@ -128,13 +127,12 @@ export function assertPolicyAcknowledgementStatusTransition(
 		superseded: [],
 	};
 	if (!allowed[from].includes(to)) {
-		return fail(
-			"CONFLICT",
-			`Cannot transition policy acknowledgement from ${from} to ${to}.`,
-			humanResourcesErrorDetails(
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "The request conflicts with current state",
+			internalContext: humanResourcesErrorDetails(
 				HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
 			),
-		);
+		});
 	}
 	return { ok: true, data: undefined };
 }
@@ -176,13 +174,12 @@ export function assertWorkEligibilityExpiredAsOf(input: {
 	asOf: string;
 }): Result<void> {
 	if (input.expiresOn === null || input.expiresOn >= input.asOf) {
-		return fail(
-			"CONFLICT",
-			"Work eligibility has not expired as of the supplied date.",
-			humanResourcesErrorDetails(
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "The request conflicts with current state",
+			internalContext: humanResourcesErrorDetails(
 				HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
 			),
-		);
+		});
 	}
 	return { ok: true, data: undefined };
 }

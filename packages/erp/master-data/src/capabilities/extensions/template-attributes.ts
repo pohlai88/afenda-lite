@@ -1,6 +1,6 @@
 /** Item template attribute commands and queries. */
 
-import { fail, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	requireMasterCommandPermission,
@@ -10,7 +10,6 @@ import type {
 	MasterCommandOptions,
 	MasterQueryOptions,
 } from "../../command-options";
-import type { MasterFailureDetails } from "../../contracts/reasons";
 import {
 	MASTER_COMMAND_ITEM_TEMPLATE_ATTRIBUTE_CREATE,
 	MASTER_COMMAND_ITEM_TEMPLATE_ATTRIBUTE_CREATE_VARIANT_DEFINING,
@@ -74,22 +73,14 @@ export async function addItemTemplateAttribute(
 		return template;
 	}
 	if (template.data === null) {
-		return fail("NOT_FOUND", "Item template not found", {
-			reason: "MASTER_NOT_FOUND",
-			field: "templateId",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Item template not found",
+		});
 	}
 	if (template.data.status !== "draft") {
-		return fail(
-			"CONFLICT",
-			"Attributes can only be added while the template is draft",
-			{
-				reason: "MASTER_INVALID_STATE",
-				field: "templateId",
-				actualStatus: template.data.status,
-				requiredStatus: "draft",
-			} satisfies MasterFailureDetails,
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Attributes can only be added while the template is draft",
+		});
 	}
 	return store.addItemTemplateAttribute(
 		{

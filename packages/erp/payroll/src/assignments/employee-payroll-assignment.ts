@@ -1,11 +1,6 @@
-import { fail, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type { PayrollCommandOptions } from "../command-options";
-import {
-	PAYROLL_ERROR_INVALID_STATE,
-	PAYROLL_ERROR_NOT_FOUND,
-	payrollErrorDetails,
-} from "../error-codes";
 import {
 	PAYROLL_COMMAND_ASSIGNMENT_CREATE,
 	PAYROLL_QUERY_ASSIGNMENT_GET,
@@ -70,18 +65,14 @@ export function createPayrollEmployeeAssignment(
 				return payGroup;
 			}
 			if (payGroup.data === null) {
-				return fail(
-					"NOT_FOUND",
-					"Pay group not found",
-					payrollErrorDetails(PAYROLL_ERROR_NOT_FOUND),
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "Pay group not found",
+				});
 			}
 			if (payGroup.data.status !== "active") {
-				return fail(
-					"CONFLICT",
-					"Pay group is not active",
-					payrollErrorDetails(PAYROLL_ERROR_INVALID_STATE),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Pay group is not active",
+				});
 			}
 
 			const currency = assertCurrencyAlignment({

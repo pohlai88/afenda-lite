@@ -69,7 +69,6 @@ describe("Human Resources platform facts", () => {
 		expect(result).toMatchObject({
 			ok: false,
 			code: "VALIDATION_ERROR",
-			message: "Event is not a Human Resources event",
 		});
 	});
 

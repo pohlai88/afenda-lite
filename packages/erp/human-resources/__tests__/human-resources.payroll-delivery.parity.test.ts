@@ -1,5 +1,5 @@
 import { db, eq, hrPayrollHandoffDelivery } from "@afenda/db";
-import { ok } from "@afenda/errors/result";
+import { errorResult } from "@afenda/errors";
 import {
 	type ApprovedPayrollHandoff,
 	HANDOFF_PAYROLL_CONTRACT_VERSION,
@@ -63,7 +63,9 @@ async function exercise(store: PayrollDeliveryStorePort) {
 	const ports = {
 		store,
 		clock: { now: () => new Date("2026-07-03T00:00:00.000Z") },
-		producer: { publish: async () => ok({ receiptId: "receipt-1" }) },
+		producer: {
+			publish: async () => errorResult.ok({ receiptId: "receipt-1" }),
+		},
 	};
 	const queued = await queuePayrollDelivery(
 		{
@@ -192,7 +194,7 @@ describe("payroll delivery store parity", () => {
 			ok: true,
 			data: { status: "acknowledged" },
 		});
-		expect(result.wrongTenant).toEqual(ok(null));
+		expect(result.wrongTenant).toEqual(errorResult.ok(null));
 		expect(result.correction).toMatchObject({
 			ok: true,
 			data: { status: "pending", supersedesDeliveryId: expect.any(String) },
@@ -218,7 +220,7 @@ describe("payroll delivery store parity", () => {
 					ok: true,
 					data: { status: "acknowledged" },
 				});
-				expect(result.wrongTenant).toEqual(ok(null));
+				expect(result.wrongTenant).toEqual(errorResult.ok(null));
 				expect(result.correction).toMatchObject({
 					ok: true,
 					data: { status: "pending", supersedesDeliveryId: expect.any(String) },

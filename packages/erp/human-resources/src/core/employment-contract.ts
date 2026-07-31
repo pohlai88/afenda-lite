@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { z } from "zod";
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
@@ -60,13 +60,14 @@ async function loadEmploymentForContract(
 		return employment;
 	}
 	if (employment.data === null) {
-		return fail(
-			"NOT_FOUND",
-			"Employment not found",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-		);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "The requested resource was not found",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			),
+		});
 	}
-	return ok(employment.data);
+	return errorResult.ok(employment.data);
 }
 
 async function validateActiveContractMutationRange(
@@ -126,7 +127,7 @@ async function validateActiveContractMutationRange(
 		return overlapCheck;
 	}
 
-	return ok(employment.data);
+	return errorResult.ok(employment.data);
 }
 
 function resolveEmploymentContractAsOf(
@@ -152,18 +153,20 @@ async function validateContractSupersession(
 		return predecessor;
 	}
 	if (predecessor.data === null) {
-		return fail(
-			"NOT_FOUND",
-			"Employment contract not found",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-		);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "The requested resource was not found",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_NOT_FOUND,
+			),
+		});
 	}
 	if (predecessor.data.lineageStatus !== "active") {
-		return fail(
-			"VALIDATION_ERROR",
-			"Only active contracts can be superseded",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
 	const activePredecessor = predecessor.data;
 	const employment = await loadEmploymentForContract(store, {
@@ -179,11 +182,12 @@ async function validateContractSupersession(
 		return dateCheck;
 	}
 	if (data.startsOn <= activePredecessor.startsOn) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Successor start date must be after the predecessor start date",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
 	}
 	const withinEmployment = assertContractWithinEmployment({
 		contractStartsOn: data.startsOn,
@@ -222,14 +226,19 @@ async function validateContractSupersession(
 			return duplicate;
 		}
 		if (duplicate.data !== null) {
-			return fail(
-				"CONFLICT",
-				"Contract with this reference code already exists",
-				humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "The request conflicts with current state",
+				internalContext: humanResourcesErrorDetails(
+					HUMAN_RESOURCES_ERROR_CONFLICT,
+				),
+			});
 		}
 	}
-	return ok({ endsOn, predecessor: activePredecessor, referenceCode });
+	return errorResult.ok({
+		endsOn,
+		predecessor: activePredecessor,
+		referenceCode,
+	});
 }
 
 export function createEmploymentContract(
@@ -320,11 +329,12 @@ export function correctEmploymentContract(
 				return existing;
 			}
 			if (existing.data === null) {
-				return fail(
-					"NOT_FOUND",
-					"Employment contract not found",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_NOT_FOUND,
+					),
+				});
 			}
 
 			const startsOn = data.startsOn ?? existing.data.startsOn;
@@ -352,11 +362,12 @@ export function correctEmploymentContract(
 					return duplicate;
 				}
 				if (duplicate.data !== null) {
-					return fail(
-						"CONFLICT",
-						"Contract with this reference code already exists",
-						humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_CONFLICT),
-					);
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+						internalContext: humanResourcesErrorDetails(
+							HUMAN_RESOURCES_ERROR_CONFLICT,
+						),
+					});
 				}
 			}
 
@@ -438,11 +449,12 @@ export function endEmploymentContract(
 				return existing;
 			}
 			if (existing.data === null) {
-				return fail(
-					"NOT_FOUND",
-					"Employment contract not found",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_NOT_FOUND,
+					),
+				});
 			}
 
 			const validated = await validateActiveContractMutationRange(store, {
@@ -494,13 +506,14 @@ export function getEmploymentContract(
 				return contract;
 			}
 			if (contract.data === null) {
-				return fail(
-					"NOT_FOUND",
-					"Employment contract not found",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_NOT_FOUND,
+					),
+				});
 			}
-			return ok(contract.data);
+			return errorResult.ok(contract.data);
 		},
 	});
 }

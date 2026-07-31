@@ -20,7 +20,7 @@ import {
 	lte,
 	runNeonHttpTransaction,
 } from "@afenda/db";
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	HUMAN_RESOURCES_CERTIFICATION_EXPIRING_EVENT,
 	HUMAN_RESOURCES_CERTIFICATION_RENEWED_EVENT,
@@ -201,9 +201,9 @@ function mapCourse(
 	}
 	const status = courseStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail("INTERNAL_ERROR", "Invalid course status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		code: row.code,
@@ -232,9 +232,9 @@ function mapSession(
 	}
 	const status = sessionStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail("INTERNAL_ERROR", "Invalid session status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		courseId: courseId.data,
@@ -280,9 +280,9 @@ function mapLearningAssignment(
 	}
 	const status = assignmentStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail("INTERNAL_ERROR", "Invalid learning assignment status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		employeeId: employeeId.data,
@@ -331,9 +331,9 @@ function mapCompletion(
 	}
 	const outcome = completionOutcomeSchema.safeParse(row.outcome);
 	if (!outcome.success) {
-		return fail("INTERNAL_ERROR", "Invalid completion outcome");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		employeeId: employeeId.data,
@@ -373,7 +373,7 @@ function mapCertification(
 	}
 	const status = certificationStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail("INTERNAL_ERROR", "Invalid certification status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 	let renewedFromCertificationId =
 		null as EmployeeCertification["renewedFromCertificationId"];
@@ -386,7 +386,7 @@ function mapCertification(
 		}
 		renewedFromCertificationId = parsed.data;
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		employeeId: employeeId.data,
@@ -430,9 +430,9 @@ function mapLearningAttendance(
 	}
 	const status = learningAttendanceStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail("INTERNAL_ERROR", "Invalid learning attendance status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		sessionId: sessionId.data,
@@ -602,10 +602,10 @@ async function resolveCourseIdempotencyReplay(
 		return existing;
 	}
 	if (existing.data === null) {
-		return ok(null);
+		return errorResult.ok(null);
 	}
 	return existing.data.createRequestFingerprint === input.expectedFingerprint
-		? ok(existing.data.course)
+		? errorResult.ok(existing.data.course)
 		: conflict("Idempotency key already used with different data");
 }
 
@@ -742,7 +742,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapCourse(row);
 		} catch (error) {
@@ -764,7 +764,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const course = mapCourse(row);
 			if (!course.ok) {
@@ -774,9 +774,9 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 				row.createIdempotencyKey === null ||
 				row.createRequestFingerprint === null
 			) {
-				return fail("INTERNAL_ERROR", "Course idempotency metadata is missing");
+				return errorResult.fail("INTERNAL_ERROR");
 			}
-			return ok({
+			return errorResult.ok({
 				course: course.data,
 				createIdempotencyKey: row.createIdempotencyKey,
 				createRequestFingerprint: row.createRequestFingerprint,
@@ -799,7 +799,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			return replay;
 		}
 		if (replay.data !== null) {
-			return ok(replay.data);
+			return errorResult.ok(replay.data);
 		}
 		const id = randomUUID();
 		const brandedId = parseHumanResourcesCourseId(id);
@@ -882,7 +882,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 					return replayAfterConflict;
 				}
 				if (replayAfterConflict.data !== null) {
-					return ok(replayAfterConflict.data);
+					return errorResult.ok(replayAfterConflict.data);
 				}
 			}
 			if (isPostgresUniqueViolation(error)) {
@@ -1218,7 +1218,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 				courses.push(mapped.data);
 			}
 
-			return ok({
+			return errorResult.ok({
 				courses,
 				totalCount,
 				page: input.page,
@@ -1243,7 +1243,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			const count = rows.filter(
 				(a) => a.status === "pending" || a.status === "in_progress",
 			).length;
-			return ok(count);
+			return errorResult.ok(count);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to count active assignments");
 		}
@@ -1263,7 +1263,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapSession(row);
 		} catch (error) {
@@ -1285,7 +1285,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const session = mapSession(row);
 			if (!session.ok) {
@@ -1295,12 +1295,9 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 				row.createIdempotencyKey === null ||
 				row.createRequestFingerprint === null
 			) {
-				return fail(
-					"INTERNAL_ERROR",
-					"Session idempotency metadata is missing",
-				);
+				return errorResult.fail("INTERNAL_ERROR");
 			}
-			return ok({
+			return errorResult.ok({
 				session: session.data,
 				createIdempotencyKey: row.createIdempotencyKey,
 				createRequestFingerprint: row.createRequestFingerprint,
@@ -1327,7 +1324,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 				existing.data.createRequestFingerprint ===
 				record.createRequestFingerprint
 			) {
-				return ok(existing.data.session);
+				return errorResult.ok(existing.data.session);
 			}
 			return conflict("Idempotency key already used with different data");
 		}
@@ -1451,7 +1448,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 						replay.data.createRequestFingerprint ===
 						record.createRequestFingerprint
 					) {
-						return ok(replay.data.session);
+						return errorResult.ok(replay.data.session);
 					}
 					return conflict("Idempotency key already used with different data");
 				}
@@ -1868,7 +1865,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 				sessions.push(mapped.data);
 			}
 
-			return ok({
+			return errorResult.ok({
 				sessions,
 				totalCount,
 				page: input.page,
@@ -1891,7 +1888,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 					),
 				);
 			const count = rows.filter((a) => a.status === "in_progress").length;
-			return ok(count);
+			return errorResult.ok(count);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to count enrolled");
 		}
@@ -1911,7 +1908,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapLearningAssignment(row);
 		} catch (error) {
@@ -1933,7 +1930,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const assignment = mapLearningAssignment(row);
 			if (!assignment.ok) {
@@ -1943,12 +1940,9 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 				row.createIdempotencyKey === null ||
 				row.createRequestFingerprint === null
 			) {
-				return fail(
-					"INTERNAL_ERROR",
-					"Assignment idempotency metadata is missing",
-				);
+				return errorResult.fail("INTERNAL_ERROR");
 			}
-			return ok({
+			return errorResult.ok({
 				assignment: assignment.data,
 				createIdempotencyKey: row.createIdempotencyKey,
 				createRequestFingerprint: row.createRequestFingerprint,
@@ -1975,7 +1969,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 				existing.data.createRequestFingerprint ===
 				record.createRequestFingerprint
 			) {
-				return ok(existing.data.assignment);
+				return errorResult.ok(existing.data.assignment);
 			}
 			return conflict("Idempotency key already used with different data");
 		}
@@ -2164,7 +2158,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 						replay.data.createRequestFingerprint ===
 						record.createRequestFingerprint
 					) {
-						return ok(replay.data.assignment);
+						return errorResult.ok(replay.data.assignment);
 					}
 					return conflict("Idempotency key already used with different data");
 				}
@@ -2482,7 +2476,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 				assignments.push(mapped.data);
 			}
 
-			return ok({
+			return errorResult.ok({
 				assignments,
 				totalCount,
 				page: input.page,
@@ -2510,7 +2504,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapCompletion(row);
 		} catch (error) {
@@ -2532,7 +2526,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const completion = mapCompletion(row);
 			if (!completion.ok) {
@@ -2542,12 +2536,9 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 				row.createIdempotencyKey === null ||
 				row.createRequestFingerprint === null
 			) {
-				return fail(
-					"INTERNAL_ERROR",
-					"Completion idempotency metadata is missing",
-				);
+				return errorResult.fail("INTERNAL_ERROR");
 			}
-			return ok({
+			return errorResult.ok({
 				completion: completion.data,
 				createIdempotencyKey: row.createIdempotencyKey,
 				createRequestFingerprint: row.createRequestFingerprint,
@@ -2574,7 +2565,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapCompletion(row);
 		} catch (error) {
@@ -2599,7 +2590,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 				existingByKey.data.createRequestFingerprint ===
 				record.createRequestFingerprint
 			) {
-				return ok(existingByKey.data.completion);
+				return errorResult.ok(existingByKey.data.completion);
 			}
 			return conflict("Idempotency key already used with different data");
 		}
@@ -2827,7 +2818,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 						replay.data.createRequestFingerprint ===
 						record.createRequestFingerprint
 					) {
-						return ok(replay.data.completion);
+						return errorResult.ok(replay.data.completion);
 					}
 					return conflict("Idempotency key already used with different data");
 				}
@@ -2870,7 +2861,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 				completions.push(mapped.data);
 			}
 
-			return ok({
+			return errorResult.ok({
 				completions,
 				totalCount,
 				page: input.page,
@@ -2895,7 +2886,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapLearningAttendance(row);
 		} catch (error) {
@@ -2917,13 +2908,13 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const mapped = mapLearningAttendance(row);
 			if (!mapped.ok) {
 				return mapped;
 			}
-			return ok({
+			return errorResult.ok({
 				attendance: mapped.data,
 				createIdempotencyKey: input.idempotencyKey,
 				createRequestFingerprint: row.createRequestFingerprint ?? "",
@@ -2951,7 +2942,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapLearningAttendance(row);
 		} catch (error) {
@@ -2976,7 +2967,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 				existing.data.createRequestFingerprint ===
 				record.createRequestFingerprint
 			) {
-				return ok(existing.data.attendance);
+				return errorResult.ok(existing.data.attendance);
 			}
 			return conflict("Idempotency key already used with different data");
 		}
@@ -3160,7 +3151,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 						replay.data.createRequestFingerprint ===
 						record.createRequestFingerprint
 					) {
-						return ok(replay.data.attendance);
+						return errorResult.ok(replay.data.attendance);
 					}
 					return conflict("Idempotency key already used with different data");
 				}
@@ -3210,7 +3201,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 				attendance.push(mapped.data);
 			}
 
-			return ok({
+			return errorResult.ok({
 				attendanceRecords: attendance,
 				totalCount,
 				page: input.page,
@@ -3235,7 +3226,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapCertification(row);
 		} catch (error) {
@@ -3260,7 +3251,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const certification = mapCertification(row);
 			if (!certification.ok) {
@@ -3270,12 +3261,9 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 				row.createIdempotencyKey === null ||
 				row.createRequestFingerprint === null
 			) {
-				return fail(
-					"INTERNAL_ERROR",
-					"Certification idempotency metadata is missing",
-				);
+				return errorResult.fail("INTERNAL_ERROR");
 			}
-			return ok({
+			return errorResult.ok({
 				certification: certification.data,
 				createIdempotencyKey: row.createIdempotencyKey,
 				createRequestFingerprint: row.createRequestFingerprint,
@@ -3302,7 +3290,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 				existing.data.createRequestFingerprint ===
 				record.createRequestFingerprint
 			) {
-				return ok(existing.data.certification);
+				return errorResult.ok(existing.data.certification);
 			}
 			return conflict("Idempotency key already used with different data");
 		}
@@ -3461,7 +3449,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 						replay.data.createRequestFingerprint ===
 						record.createRequestFingerprint
 					) {
-						return ok(replay.data.certification);
+						return errorResult.ok(replay.data.certification);
 					}
 					return conflict("Idempotency key already used with different data");
 				}
@@ -3682,7 +3670,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 				existing.data.createRequestFingerprint ===
 				record.createRequestFingerprint
 			) {
-				return ok(existing.data.certification);
+				return errorResult.ok(existing.data.certification);
 			}
 			return conflict("Idempotency key already used with different data");
 		}
@@ -3872,7 +3860,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 						replay.data.createRequestFingerprint ===
 						record.createRequestFingerprint
 					) {
-						return ok(replay.data.certification);
+						return errorResult.ok(replay.data.certification);
 					}
 					return conflict("Idempotency key already used with different data");
 				}
@@ -3917,7 +3905,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 				certifications.push(mapped.data);
 			}
 
-			return ok({
+			return errorResult.ok({
 				certifications,
 				totalCount,
 				page: input.page,
@@ -3963,7 +3951,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 				certifications.push(mapped.data);
 			}
 
-			return ok({
+			return errorResult.ok({
 				certifications,
 				totalCount,
 				page: input.page,

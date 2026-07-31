@@ -14,7 +14,7 @@ import {
 	runNeonHttpTransaction,
 	sql,
 } from "@afenda/db";
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	HUMAN_RESOURCES_HEADCOUNT_PLAN_APPROVED_EVENT,
 	HUMAN_RESOURCES_HEADCOUNT_RESERVATION_CONSUMED_EVENT,
@@ -199,9 +199,9 @@ function mapHeadcountPlan(
 	}
 	const status = headcountPlanStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail("INTERNAL_ERROR", "Invalid headcount plan status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		code: row.code,
@@ -244,9 +244,9 @@ function mapHeadcountPlanSql(row: HeadcountPlanSqlRow): Result<HeadcountPlan> {
 	}
 	const status = headcountPlanStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail("INTERNAL_ERROR", "Invalid headcount plan status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organization_id,
 		code: row.code,
@@ -313,12 +313,9 @@ function mapHeadcountPlanLine(
 		.nullable()
 		.safeParse(row.employmentType);
 	if (!employmentType.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid headcount plan line employment type",
-		);
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		planId: planId.data,
@@ -378,12 +375,9 @@ function mapHeadcountPlanLineSql(
 		.nullable()
 		.safeParse(row.employment_type);
 	if (!employmentType.success) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Invalid headcount plan line employment type",
-		);
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organization_id,
 		planId: planId.data,
@@ -425,9 +419,9 @@ function mapHeadcountReservation(
 	}
 	const status = headcountReservationStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail("INTERNAL_ERROR", "Invalid headcount reservation status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organizationId,
 		planId: planId.data,
@@ -467,9 +461,9 @@ function mapHeadcountReservationSql(
 	}
 	const status = headcountReservationStatusSchema.safeParse(row.status);
 	if (!status.success) {
-		return fail("INTERNAL_ERROR", "Invalid headcount reservation status");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: id.data,
 		organizationId: row.organization_id,
 		planId: planId.data,
@@ -672,13 +666,13 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const mapped = mapHeadcountPlan(row);
 			if (!mapped.ok) {
 				return mapped;
 			}
-			return ok({
+			return errorResult.ok({
 				plan: mapped.data,
 				createRequestFingerprint: row.createRequestFingerprint,
 			});
@@ -704,7 +698,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapHeadcountPlan(row);
 		} catch (error) {
@@ -729,7 +723,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapHeadcountPlan(row);
 		} catch (error) {
@@ -830,7 +824,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 						existing.data.createRequestFingerprint ===
 						record.createRequestFingerprint
 					) {
-						return ok(existing.data.plan);
+						return errorResult.ok(existing.data.plan);
 					}
 					return conflict("Idempotency key already used with different data");
 				}
@@ -1304,7 +1298,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 						existing.data.createRequestFingerprint ===
 						record.createRequestFingerprint
 					) {
-						return ok(existing.data.plan);
+						return errorResult.ok(existing.data.plan);
 					}
 					return conflict("Idempotency key already used with different data");
 				}
@@ -1351,7 +1345,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 				}
 				plans.push(mapped.data);
 			}
-			return ok({
+			return errorResult.ok({
 				plans,
 				totalCount: countRows[0]?.count ?? 0,
 				page: input.page,
@@ -1376,7 +1370,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapHeadcountPlanLine(row);
 		} catch (error) {
@@ -1404,7 +1398,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 				}
 				lines.push(mapped.data);
 			}
-			return ok(lines);
+			return errorResult.ok(lines);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -1770,7 +1764,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 					entityLabel: "Headcount plan line",
 				});
 			}
-			return ok(undefined);
+			return errorResult.ok(undefined);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -1796,13 +1790,13 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const mapped = mapHeadcountReservation(row);
 			if (!mapped.ok) {
 				return mapped;
 			}
-			return ok({
+			return errorResult.ok({
 				reservation: mapped.data,
 				createRequestFingerprint: row.createRequestFingerprint,
 			});
@@ -1828,7 +1822,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapHeadcountReservation(row);
 		} catch (error) {
@@ -1854,7 +1848,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 				.limit(1);
 			const [row] = rows;
 			if (!row) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			return mapHeadcountReservation(row);
 		} catch (error) {
@@ -1880,7 +1874,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 				existingIdempotent.data.createRequestFingerprint ===
 				record.createRequestFingerprint
 			) {
-				return ok(existingIdempotent.data.reservation);
+				return errorResult.ok(existingIdempotent.data.reservation);
 			}
 			return conflict("Idempotency key already used with different data");
 		}
@@ -2046,7 +2040,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 						replay.data.createRequestFingerprint ===
 						record.createRequestFingerprint
 					) {
-						return ok(replay.data.reservation);
+						return errorResult.ok(replay.data.reservation);
 					}
 					return conflict("Idempotency key already used with different data");
 				}
@@ -2112,7 +2106,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 			if (sequentialOutcome1.kind === "return") {
 				return sequentialOutcome1.value;
 			}
-			return ok(undefined);
+			return errorResult.ok(undefined);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -2130,7 +2124,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 			return active;
 		}
 		if (active.data === null) {
-			return ok(undefined);
+			return errorResult.ok(undefined);
 		}
 		const consumed = await this.consumeHeadcountReservation(
 			{
@@ -2145,7 +2139,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 		if (!consumed.ok) {
 			return consumed;
 		}
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	},
 
 	async listHeadcountReservations(input) {
@@ -2183,7 +2177,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 				}
 				reservations.push(mapped.data);
 			}
-			return ok({
+			return errorResult.ok({
 				reservations,
 				totalCount: countRows[0]?.count ?? 0,
 				page: input.page,
@@ -2216,7 +2210,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 				}
 				reservations.push(mapped.data);
 			}
-			return ok(reservations);
+			return errorResult.ok(reservations);
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,
@@ -2239,7 +2233,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 				.limit(1);
 			const [lineRow] = lineRows;
 			if (!lineRow) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const line = mapHeadcountPlanLine(lineRow);
 			if (!line.ok) {
@@ -2258,7 +2252,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 				line: line.data,
 				reservations: reservations.data,
 			});
-			return ok({
+			return errorResult.ok({
 				planId: line.data.planId,
 				planLineId: line.data.id,
 				lines: [availability],
@@ -2280,7 +2274,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 			return active;
 		}
 		if (active.data === null) {
-			return ok({
+			return errorResult.ok({
 				organizationId: input.organizationId,
 				requisitionId: input.requisitionId,
 				approvedPlan: null,
@@ -2305,7 +2299,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 			return availability;
 		}
 
-		return ok({
+		return errorResult.ok({
 			organizationId: input.organizationId,
 			requisitionId: input.requisitionId,
 			approvedPlan: plan.data,
@@ -2374,7 +2368,11 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 			if (sequentialOutcome2.kind === "return") {
 				return sequentialOutcome2.value;
 			}
-			return ok({ planId: input.planId, asOf, lines: varianceLines });
+			return errorResult.ok({
+				planId: input.planId,
+				asOf,
+				lines: varianceLines,
+			});
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,

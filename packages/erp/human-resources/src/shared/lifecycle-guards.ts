@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
@@ -21,24 +21,26 @@ import type {
 	TerminationStatus,
 } from "./lifecycle-status";
 
-function alreadyInStatus(entity: string, status: string): Result<never> {
-	return fail(
-		"BAD_REQUEST",
-		`${entity} is already in status '${status}'`,
-		humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION),
-	);
+function alreadyInStatus(_entity: string, _status: string): Result<never> {
+	return errorResult.fail("BAD_REQUEST", {
+		publicMessage: "The request is invalid",
+		internalContext: humanResourcesErrorDetails(
+			HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+		),
+	});
 }
 
 function cannotTransition(
-	entity: string,
-	current: string,
-	next: string,
+	_entity: string,
+	_current: string,
+	_next: string,
 ): Result<never> {
-	return fail(
-		"BAD_REQUEST",
-		`Cannot transition ${entity} from '${current}' to '${next}'`,
-		humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION),
-	);
+	return errorResult.fail("BAD_REQUEST", {
+		publicMessage: "The request is invalid",
+		internalContext: humanResourcesErrorDetails(
+			HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+		),
+	});
 }
 
 export function assertEmploymentActiveForOnboarding(
@@ -47,7 +49,7 @@ export function assertEmploymentActiveForOnboarding(
 	if (status !== "active") {
 		return invalidState("Employment must be active to start onboarding");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertOnboardingCaseInProgress(
@@ -56,7 +58,7 @@ export function assertOnboardingCaseInProgress(
 	if (status !== "in_progress") {
 		return invalidState("Onboarding case must be in progress");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function canTransitionLifecycleTaskStatus(
@@ -82,14 +84,14 @@ export function assertLifecycleTaskStatusTransition(
 	if (!canTransitionLifecycleTaskStatus(current, next)) {
 		return cannotTransition("task", current, next);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertProbationOpen(status: ProbationStatus): Result<void> {
 	if (status !== "open") {
 		return invalidState("Probation review must be open");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertProbationDateRange(input: {
@@ -106,7 +108,7 @@ export function assertProbationExtension(input: {
 	if (input.newEndsOn <= input.currentEndsOn) {
 		return invalidInput("Extension end date must be after current end date");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertProbationOutcomeRecordedOn(input: {
@@ -122,7 +124,7 @@ export function assertProbationOutcomeRecordedOn(input: {
 			"Outcome recorded date must fall within the probation period",
 		);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertProbationAssessmentReviewedOn(input: {
@@ -135,7 +137,7 @@ export function assertProbationAssessmentReviewedOn(input: {
 			"Assessment review date must fall within the probation period",
 		);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertConfirmationEffectiveOn(input: {
@@ -150,7 +152,7 @@ export function assertConfirmationEffectiveOn(input: {
 			"Confirmation date must be on or after the latest passed probation outcome",
 		);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertLatestProbationPassed(input: {
@@ -158,7 +160,7 @@ export function assertLatestProbationPassed(input: {
 	latestClosedProbation: { outcome: string | null } | null;
 }): Result<void> {
 	if (!input.hasAnyProbation) {
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	}
 	if (!input.latestClosedProbation) {
 		return invalidState("Probation review is still open");
@@ -166,7 +168,7 @@ export function assertLatestProbationPassed(input: {
 	if (input.latestClosedProbation.outcome !== "passed") {
 		return invalidState("Latest probation review did not pass");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function canTransitionTerminationStatus(
@@ -192,7 +194,7 @@ export function assertTerminationStatusTransition(
 	if (!canTransitionTerminationStatus(current, next)) {
 		return cannotTransition("termination", current, next);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertTerminationApprovable(input: {
@@ -205,7 +207,7 @@ export function assertTerminationApprovable(input: {
 	if (input.approvedAt !== null) {
 		return invalidState("Termination is already approved");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertTerminationFinalizable(input: {
@@ -219,7 +221,7 @@ export function assertTerminationFinalizable(input: {
 	if (input.approvedAt === null || input.approvedBy === null) {
 		return invalidState("Termination must be approved before finalize");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertTerminationEffectiveDate(input: {
@@ -231,7 +233,7 @@ export function assertTerminationEffectiveDate(input: {
 			"Termination effective date cannot be before employment start date",
 		);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertEmploymentForOffboarding(input: {
@@ -247,7 +249,7 @@ export function assertEmploymentForOffboarding(input: {
 			"Employment must be in notice or terminated status, or have a finalized termination",
 		);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertOffboardingCaseInProgress(
@@ -256,7 +258,7 @@ export function assertOffboardingCaseInProgress(
 	if (status !== "in_progress") {
 		return invalidState("Offboarding case must be in progress");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertOffboardingReadyToComplete(input: {
@@ -281,7 +283,7 @@ export function assertOffboardingReadyToComplete(input: {
 	if (input.payrollHandoffStatus !== "ready") {
 		return invalidState("Final payroll handoff must be ready");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function canTransitionOffboardingAccessRevocationStatus(
@@ -307,7 +309,7 @@ export function assertOffboardingAccessRevocationStatusTransition(
 	if (!canTransitionOffboardingAccessRevocationStatus(current, next)) {
 		return cannotTransition("offboarding access revocation", current, next);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function canTransitionOffboardingPayrollHandoffStatus(
@@ -333,7 +335,7 @@ export function assertOffboardingPayrollHandoffStatusTransition(
 	if (!canTransitionOffboardingPayrollHandoffStatus(current, next)) {
 		return cannotTransition("offboarding payroll handoff", current, next);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function canTransitionClearanceStatus(
@@ -359,7 +361,7 @@ export function assertClearanceStatusTransition(
 	if (!canTransitionClearanceStatus(current, next)) {
 		return cannotTransition("clearance", current, next);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertOnboardingReadyToComplete(input: {
@@ -380,7 +382,7 @@ export function assertOnboardingReadyToComplete(input: {
 	if (input.accessHandoffStatus !== "granted") {
 		return invalidState("Access handoff must be completed");
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function canTransitionOnboardingOrientationStatus(
@@ -403,7 +405,7 @@ export function assertOnboardingOrientationStatusTransition(
 	if (!canTransitionOnboardingOrientationStatus(current, next)) {
 		return cannotTransition("onboarding orientation", current, next);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function canTransitionOnboardingEquipmentHandoffStatus(
@@ -426,7 +428,7 @@ export function assertOnboardingEquipmentHandoffStatusTransition(
 	if (!canTransitionOnboardingEquipmentHandoffStatus(current, next)) {
 		return cannotTransition("onboarding equipment handoff", current, next);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function canTransitionOnboardingAccessHandoffStatus(
@@ -449,5 +451,5 @@ export function assertOnboardingAccessHandoffStatusTransition(
 	if (!canTransitionOnboardingAccessHandoffStatus(current, next)) {
 		return cannotTransition("onboarding access handoff", current, next);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }

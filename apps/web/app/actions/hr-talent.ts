@@ -1,6 +1,10 @@
 "use server";
 
-import type { Result } from "@afenda/errors/result";
+import {
+	type Result as ActionResult,
+	errorResult,
+	type Result,
+} from "@afenda/errors";
 import type {
 	CareerPlan,
 	CareerPlanAction,
@@ -139,10 +143,7 @@ import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runHrTalentOperatorPermissionAction as runOperatorPermissionAction } from "@/app/actions/run-hr-operator-permission-action";
 import { createHumanResourcesCommandOptions } from "@/lib/erp/human-resources-command-options";
 import type { ProductPermissionCode } from "@/modules/identity/domain/session-permission";
-import {
-	type ActionResult,
-	actionFail,
-} from "@/modules/platform/schemas/action-result";
+
 import { parseSchema } from "@/modules/platform/schemas/common";
 
 const talentAdminPermission = "human-resources.talent.admin";
@@ -173,11 +174,9 @@ async function runTalentAction<Key extends string, Value>(config: {
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(config.schema, config.input);
 			if (!parsed.success) {
-				return actionFail(
-					"VALIDATION_ERROR",
-					config.validationMessage,
-					parsed.details,
-				);
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "The submitted data is invalid",
+				});
 			}
 			const result = await config.execute(
 				withSessionContext(

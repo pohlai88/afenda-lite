@@ -1,4 +1,4 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import { mapConflict } from "./persistence-errors";
 
@@ -10,12 +10,12 @@ export function resolveSourceIdempotentReplay<TEntity>(input: {
 	requestFingerprint: string;
 }): Result<TEntity | "create"> {
 	if (input.existing === null) {
-		return ok("create");
+		return errorResult.ok("create");
 	}
 	if (input.existing.sourceRequestFingerprint !== input.requestFingerprint) {
 		return mapConflict("External source input payload mismatch");
 	}
-	return ok(input.existing.entity);
+	return errorResult.ok(input.existing.entity);
 }
 
 export function resolveCreateIdempotentReplay<TEntity>(input: {
@@ -26,10 +26,10 @@ export function resolveCreateIdempotentReplay<TEntity>(input: {
 	requestFingerprint: string;
 }): Result<TEntity | "create"> {
 	if (input.existing === null) {
-		return ok("create");
+		return errorResult.ok("create");
 	}
 	if (input.existing.createRequestFingerprint !== input.requestFingerprint) {
 		return mapConflict("Idempotency key conflict");
 	}
-	return ok(input.existing.entity);
+	return errorResult.ok(input.existing.entity);
 }

@@ -10,8 +10,12 @@ import {
 	platformNotification,
 	sql,
 } from "@afenda/db";
-import { normalizePostgresUnknown } from "@afenda/errors/adapters/postgres";
-import { fail, failFromAppError, ok, type Result } from "@afenda/errors/result";
+import {
+	errorIngress,
+	errorProject,
+	errorResult,
+	type Result,
+} from "@afenda/errors";
 
 import { mapNotificationRow } from "./map-row";
 import type { NotificationStore } from "./store";
@@ -50,18 +54,17 @@ function mapRows(
 	for (const row of rows) {
 		const mapped = mapNotificationRow(row);
 		if (!mapped.ok) {
-			return fail(
-				"INTERNAL_ERROR",
-				`notification row mapping failed: ${mapped.reason}`,
-			);
+			return errorResult.fail("INTERNAL_ERROR");
 		}
 		entries.push(mapped.data);
 	}
-	return ok(entries);
+	return errorResult.ok(entries);
 }
 
-function failFromPersistence(error: unknown, fallbackMessage: string) {
-	return failFromAppError(normalizePostgresUnknown(error, fallbackMessage));
+function failFromPersistence(error: unknown, _fallbackMessage: string) {
+	return errorProject.result(
+		errorIngress.postgres(error, { operation: "persistence.postgres" }),
+	);
 }
 
 export class DrizzleNotificationStore implements NotificationStore {
@@ -100,7 +103,7 @@ export class DrizzleNotificationStore implements NotificationStore {
 					entry.deduplicationKey === undefined ||
 					entry.deduplicationKey === null
 				) {
-					return fail("INTERNAL_ERROR", "notification write returned no row");
+					return errorResult.fail("INTERNAL_ERROR");
 				}
 				const [existing] = await db
 					.select()
@@ -115,30 +118,21 @@ export class DrizzleNotificationStore implements NotificationStore {
 					)
 					.limit(1);
 				if (existing === undefined) {
-					return fail(
-						"INTERNAL_ERROR",
-						"notification deduplication lookup returned no row",
-					);
+					return errorResult.fail("INTERNAL_ERROR");
 				}
 				const mappedExisting = mapNotificationRow(existing);
 				if (!mappedExisting.ok) {
-					return fail(
-						"INTERNAL_ERROR",
-						`notification deduplication lookup returned unreadable row: ${mappedExisting.reason}`,
-					);
+					return errorResult.fail("INTERNAL_ERROR");
 				}
-				return ok(mappedExisting.data);
+				return errorResult.ok(mappedExisting.data);
 			}
 
 			const mapped = mapNotificationRow(row);
 			if (!mapped.ok) {
-				return fail(
-					"INTERNAL_ERROR",
-					`notification write returned unreadable row: ${mapped.reason}`,
-				);
+				return errorResult.fail("INTERNAL_ERROR");
 			}
 
-			return ok(mapped.data);
+			return errorResult.ok(mapped.data);
 		} catch (error) {
 			return failFromPersistence(error, "Failed to write notification");
 		}
@@ -157,7 +151,7 @@ export class DrizzleNotificationStore implements NotificationStore {
 			}
 			const where = and(...predicates);
 			if (where === undefined) {
-				return fail("INTERNAL_ERROR", "notification list where clause missing");
+				return errorResult.fail("INTERNAL_ERROR");
 			}
 
 			const offset = (options.page - 1) * options.pageSize;
@@ -184,10 +178,7 @@ export class DrizzleNotificationStore implements NotificationStore {
 				eq(platformNotification.read, false),
 			);
 			if (where === undefined) {
-				return fail(
-					"INTERNAL_ERROR",
-					"notification unread-count where clause missing",
-				);
+				return errorResult.fail("INTERNAL_ERROR");
 			}
 
 			const [row] = await db
@@ -195,7 +186,7 @@ export class DrizzleNotificationStore implements NotificationStore {
 				.from(platformNotification)
 				.where(where);
 
-			return ok(Number(row?.value ?? 0));
+			return errorResult.ok(Number(row?.value ?? 0));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to count unread notifications");
 		}
@@ -214,17 +205,14 @@ export class DrizzleNotificationStore implements NotificationStore {
 				.returning();
 
 			if (row === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 
 			const mapped = mapNotificationRow(row);
 			if (!mapped.ok) {
-				return fail(
-					"INTERNAL_ERROR",
-					`notification markRead returned unreadable row: ${mapped.reason}`,
-				);
+				return errorResult.fail("INTERNAL_ERROR");
 			}
-			return ok(mapped.data);
+			return errorResult.ok(mapped.data);
 		} catch (error) {
 			return failFromPersistence(error, "Failed to mark notification read");
 		}
@@ -239,10 +227,7 @@ export class DrizzleNotificationStore implements NotificationStore {
 				eq(platformNotification.read, false),
 			);
 			if (where === undefined) {
-				return fail(
-					"INTERNAL_ERROR",
-					"notification mark-all-read where clause missing",
-				);
+				return errorResult.fail("INTERNAL_ERROR");
 			}
 
 			const rows = await db
@@ -251,7 +236,7 @@ export class DrizzleNotificationStore implements NotificationStore {
 				.where(where)
 				.returning({ id: platformNotification.id });
 
-			return ok(rows.length);
+			return errorResult.ok(rows.length);
 		} catch (error) {
 			return failFromPersistence(
 				error,
@@ -271,7 +256,7 @@ export class DrizzleNotificationStore implements NotificationStore {
 				)
 				.returning({ id: platformNotification.id });
 
-			return ok({ deleted: rows.length > 0 });
+			return errorResult.ok({ deleted: rows.length > 0 });
 		} catch (error) {
 			return failFromPersistence(error, "Failed to delete notification");
 		}
@@ -302,10 +287,7 @@ export class DrizzleNotificationStore implements NotificationStore {
 					: or(expiredByTtl, expiredByAge);
 
 			if (where === undefined) {
-				return fail(
-					"INTERNAL_ERROR",
-					"notification purge where clause missing",
-				);
+				return errorResult.fail("INTERNAL_ERROR");
 			}
 
 			const rows = await db
@@ -313,7 +295,7 @@ export class DrizzleNotificationStore implements NotificationStore {
 				.where(where)
 				.returning({ id: platformNotification.id });
 
-			return ok(rows.length);
+			return errorResult.ok(rows.length);
 		} catch (error) {
 			return failFromPersistence(
 				error,

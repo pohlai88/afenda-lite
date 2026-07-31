@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	type HumanResourcesApplicationId,
 	type HumanResourcesCandidateId,
@@ -103,7 +103,7 @@ function assertRecruitmentOrgMatch(
 	if (entity.organizationId !== organizationId) {
 		return notFound(`${label} not found`);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 function cloneRequisition(requisition: JobRequisition): JobRequisition {
@@ -201,7 +201,7 @@ async function validateRequisitionReferences(
 			);
 		}
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 function appendApplicationHistoryToState(
@@ -308,7 +308,9 @@ function resolveApplicationReferences(
 	const openRequisition = assertRequisitionOpenForApplication(
 		requisition.status,
 	);
-	return openRequisition.ok ? ok({ candidate, requisition }) : openRequisition;
+	return openRequisition.ok
+		? errorResult.ok({ candidate, requisition })
+		: openRequisition;
 }
 
 export type MemoryRecruitmentMethods = Pick<
@@ -413,9 +415,9 @@ export function createMemoryRecruitmentMethods(
 				idempotencyMapKey(input.organizationId, input.idempotencyKey),
 			);
 			if (record === undefined) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({
+			return await errorResult.ok({
 				requisition: cloneRequisition(record.requisition),
 				createRequestFingerprint: record.createRequestFingerprint,
 			});
@@ -427,7 +429,7 @@ export function createMemoryRecruitmentMethods(
 		}): Promise<Result<JobRequisition | null>> {
 			const requisition = state.requisitions.get(input.requisitionId);
 			if (requisition === undefined) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
 			const orgCheck = assertRecruitmentOrgMatch(
 				requisition,
@@ -437,7 +439,7 @@ export function createMemoryRecruitmentMethods(
 			if (!orgCheck.ok) {
 				return await notFound("Requisition not found");
 			}
-			return await ok(cloneRequisition(requisition));
+			return await errorResult.ok(cloneRequisition(requisition));
 		},
 
 		async findRequisitionByCode(input: {
@@ -451,14 +453,16 @@ export function createMemoryRecruitmentMethods(
 						requisition.organizationId === input.organizationId &&
 						requisition.code === input.code
 					) {
-						return sequentialReturn(await ok(cloneRequisition(requisition)));
+						return sequentialReturn(
+							await errorResult.ok(cloneRequisition(requisition)),
+						);
 					}
 				},
 			);
 			if (sequentialOutcome1.kind === "return") {
 				return sequentialOutcome1.value;
 			}
-			return await ok(null);
+			return await errorResult.ok(null);
 		},
 
 		async createDraftRequisition(
@@ -474,7 +478,7 @@ export function createMemoryRecruitmentMethods(
 				return existingByKey;
 			}
 			if (existingByKey.data !== null) {
-				return ok(cloneRequisition(existingByKey.data.requisition));
+				return errorResult.ok(cloneRequisition(existingByKey.data.requisition));
 			}
 
 			const existingByCode = await this.findRequisitionByCode({
@@ -485,11 +489,12 @@ export function createMemoryRecruitmentMethods(
 				return existingByCode;
 			}
 			if (existingByCode.data !== null) {
-				return fail(
-					"CONFLICT",
-					"Requisition with this code already exists",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_DUPLICATE),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_DUPLICATE,
+					),
+				});
 			}
 
 			const refs = await validateRequisitionReferences.call(this, {
@@ -551,7 +556,7 @@ export function createMemoryRecruitmentMethods(
 				return audit;
 			}
 
-			return ok(cloneRequisition(requisition));
+			return errorResult.ok(cloneRequisition(requisition));
 		},
 
 		async amendRequisition(
@@ -636,7 +641,7 @@ export function createMemoryRecruitmentMethods(
 				return audit;
 			}
 
-			return ok(cloneRequisition(updated));
+			return errorResult.ok(cloneRequisition(updated));
 		},
 
 		async assignHiringManager(
@@ -703,7 +708,7 @@ export function createMemoryRecruitmentMethods(
 				return audit;
 			}
 
-			return ok(cloneRequisition(updated));
+			return errorResult.ok(cloneRequisition(updated));
 		},
 
 		async transitionRequisitionStatus(
@@ -805,7 +810,7 @@ export function createMemoryRecruitmentMethods(
 				}
 			}
 
-			return ok(cloneRequisition(updated));
+			return errorResult.ok(cloneRequisition(updated));
 		},
 
 		async listRequisitions(input: {
@@ -826,7 +831,7 @@ export function createMemoryRecruitmentMethods(
 			const requisitions = filtered
 				.slice(start, start + input.pageSize)
 				.map((r) => cloneRequisition(r));
-			return await ok({
+			return await errorResult.ok({
 				requisitions,
 				totalCount,
 				page: input.page,
@@ -843,9 +848,9 @@ export function createMemoryRecruitmentMethods(
 				idempotencyMapKey(input.organizationId, input.idempotencyKey),
 			);
 			if (record === undefined) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({
+			return await errorResult.ok({
 				candidate: cloneCandidate(record.candidate),
 				createRequestFingerprint: record.createRequestFingerprint,
 			});
@@ -857,7 +862,7 @@ export function createMemoryRecruitmentMethods(
 		}): Promise<Result<Candidate | null>> {
 			const candidate = state.candidates.get(input.candidateId);
 			if (candidate === undefined) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
 			const orgCheck = assertRecruitmentOrgMatch(
 				candidate,
@@ -867,7 +872,7 @@ export function createMemoryRecruitmentMethods(
 			if (!orgCheck.ok) {
 				return await notFound("Candidate not found");
 			}
-			return await ok(cloneCandidate(candidate));
+			return await errorResult.ok(cloneCandidate(candidate));
 		},
 
 		async findCandidateByNormalizedEmail(input: {
@@ -878,15 +883,15 @@ export function createMemoryRecruitmentMethods(
 				`${input.organizationId}:${input.normalizedEmail}`,
 			);
 			if (candidateId === undefined) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
 			const candidate = state.candidates.get(
 				candidateId as HumanResourcesCandidateId,
 			);
 			if (candidate === undefined) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok(cloneCandidate(candidate));
+			return await errorResult.ok(cloneCandidate(candidate));
 		},
 
 		async createCandidate(
@@ -902,7 +907,7 @@ export function createMemoryRecruitmentMethods(
 				return existingByKey;
 			}
 			if (existingByKey.data !== null) {
-				return ok(cloneCandidate(existingByKey.data.candidate));
+				return errorResult.ok(cloneCandidate(existingByKey.data.candidate));
 			}
 
 			const existingByEmail = await this.findCandidateByNormalizedEmail({
@@ -913,11 +918,12 @@ export function createMemoryRecruitmentMethods(
 				return existingByEmail;
 			}
 			if (existingByEmail.data !== null) {
-				return fail(
-					"CONFLICT",
-					"Candidate with this email already exists",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_DUPLICATE),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_DUPLICATE,
+					),
+				});
 			}
 
 			const idResult = parseHumanResourcesCandidateId(randomUUID());
@@ -997,7 +1003,7 @@ export function createMemoryRecruitmentMethods(
 				return outbox;
 			}
 
-			return ok(cloneCandidate(candidate));
+			return errorResult.ok(cloneCandidate(candidate));
 		},
 
 		async updateCandidateProfile(
@@ -1067,7 +1073,7 @@ export function createMemoryRecruitmentMethods(
 				return audit;
 			}
 
-			return ok(cloneCandidate(updated));
+			return errorResult.ok(cloneCandidate(updated));
 		},
 
 		async withdrawCandidateConsent(
@@ -1148,7 +1154,7 @@ export function createMemoryRecruitmentMethods(
 				return outbox;
 			}
 
-			return ok(cloneCandidate(updated));
+			return errorResult.ok(cloneCandidate(updated));
 		},
 
 		async changeCandidateRetention(
@@ -1232,7 +1238,7 @@ export function createMemoryRecruitmentMethods(
 				return outbox;
 			}
 
-			return ok(cloneCandidate(updated));
+			return errorResult.ok(cloneCandidate(updated));
 		},
 
 		async anonymizeCandidate(
@@ -1342,7 +1348,7 @@ export function createMemoryRecruitmentMethods(
 				return outbox;
 			}
 
-			return ok(cloneCandidate(updated));
+			return errorResult.ok(cloneCandidate(updated));
 		},
 
 		async listCandidates(input: {
@@ -1384,7 +1390,7 @@ export function createMemoryRecruitmentMethods(
 			const candidates = filtered
 				.slice(start, start + input.pageSize)
 				.map((c) => cloneCandidate(c));
-			return await ok({
+			return await errorResult.ok({
 				candidates,
 				totalCount,
 				page: input.page,
@@ -1455,7 +1461,7 @@ export function createMemoryRecruitmentMethods(
 				});
 			}
 			results.sort((a, b) => a.displayName.localeCompare(b.displayName));
-			return await ok(results);
+			return await errorResult.ok(results);
 		},
 
 		// Application methods
@@ -1465,7 +1471,7 @@ export function createMemoryRecruitmentMethods(
 		}): Promise<Result<CandidateApplication | null>> {
 			const application = state.applications.get(input.applicationId);
 			if (application === undefined) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
 			const orgCheck = assertRecruitmentOrgMatch(
 				application,
@@ -1475,7 +1481,7 @@ export function createMemoryRecruitmentMethods(
 			if (!orgCheck.ok) {
 				return await notFound("Application not found");
 			}
-			return await ok(cloneApplication(application));
+			return await errorResult.ok(cloneApplication(application));
 		},
 
 		async findActiveApplicationByCandidateRequisition(input: {
@@ -1492,14 +1498,16 @@ export function createMemoryRecruitmentMethods(
 						application.requisitionId === input.requisitionId &&
 						!isApplicationTerminal(application.status)
 					) {
-						return sequentialReturn(await ok(cloneApplication(application)));
+						return sequentialReturn(
+							await errorResult.ok(cloneApplication(application)),
+						);
 					}
 				},
 			);
 			if (sequentialOutcome2.kind === "return") {
 				return sequentialOutcome2.value;
 			}
-			return await ok(null);
+			return await errorResult.ok(null);
 		},
 
 		async createApplication(
@@ -1591,7 +1599,7 @@ export function createMemoryRecruitmentMethods(
 				return outbox;
 			}
 
-			return ok(cloneApplication(application));
+			return errorResult.ok(cloneApplication(application));
 		},
 
 		async transitionApplicationStatus(
@@ -1690,7 +1698,7 @@ export function createMemoryRecruitmentMethods(
 				return outbox;
 			}
 
-			return ok(cloneApplication(updated));
+			return errorResult.ok(cloneApplication(updated));
 		},
 
 		async reopenApplication(
@@ -1775,13 +1783,15 @@ export function createMemoryRecruitmentMethods(
 					(left, right) => left.createdAt.getTime() - right.createdAt.getTime(),
 				)
 				.map((row) => ({ ...row }));
-			return await ok(rows);
+			return await errorResult.ok(rows);
 		},
 
 		async appendApplicationStatusHistory(
 			record: ApplicationStatusHistoryAppendRecord,
 		): Promise<Result<ApplicationStatusHistory>> {
-			return await ok(appendApplicationHistoryToState(state, record));
+			return await errorResult.ok(
+				appendApplicationHistoryToState(state, record),
+			);
 		},
 
 		async listApplications(input: {
@@ -1812,7 +1822,7 @@ export function createMemoryRecruitmentMethods(
 			const applications = filtered
 				.slice(start, start + input.pageSize)
 				.map((a) => cloneApplication(a));
-			return await ok({
+			return await errorResult.ok({
 				applications,
 				totalCount,
 				page: input.page,
@@ -1827,7 +1837,7 @@ export function createMemoryRecruitmentMethods(
 		}): Promise<Result<Interview | null>> {
 			const interview = state.interviews.get(input.interviewId);
 			if (interview === undefined) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
 			const orgCheck = assertRecruitmentOrgMatch(
 				interview,
@@ -1837,7 +1847,7 @@ export function createMemoryRecruitmentMethods(
 			if (!orgCheck.ok) {
 				return await notFound("Interview not found");
 			}
-			return await ok(cloneInterview(interview));
+			return await errorResult.ok(cloneInterview(interview));
 		},
 
 		async scheduleInterview(
@@ -1912,7 +1922,7 @@ export function createMemoryRecruitmentMethods(
 				return outbox;
 			}
 
-			return ok(cloneInterview(interview));
+			return errorResult.ok(cloneInterview(interview));
 		},
 
 		async cancelInterview(
@@ -1979,7 +1989,7 @@ export function createMemoryRecruitmentMethods(
 				return audit;
 			}
 
-			return ok(cloneInterview(updated));
+			return errorResult.ok(cloneInterview(updated));
 		},
 
 		async assignInterviewInterviewer(
@@ -2044,7 +2054,7 @@ export function createMemoryRecruitmentMethods(
 				return audit;
 			}
 
-			return ok(cloneInterview(updated));
+			return errorResult.ok(cloneInterview(updated));
 		},
 
 		async listInterviews(input: {
@@ -2069,7 +2079,7 @@ export function createMemoryRecruitmentMethods(
 			const interviews = filtered
 				.slice(start, start + input.pageSize)
 				.map((i) => cloneInterview(i));
-			return await ok({
+			return await errorResult.ok({
 				interviews,
 				totalCount,
 				page: input.page,
@@ -2086,13 +2096,13 @@ export function createMemoryRecruitmentMethods(
 				input.interviewId,
 			);
 			if (evaluationId === undefined) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
 			const evaluation = state.interviewEvaluations.get(
 				evaluationId as HumanResourcesInterviewEvaluationId,
 			);
 			if (evaluation === undefined) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
 			const orgCheck = assertRecruitmentOrgMatch(
 				evaluation,
@@ -2102,7 +2112,7 @@ export function createMemoryRecruitmentMethods(
 			if (!orgCheck.ok) {
 				return await notFound("Interview evaluation not found");
 			}
-			return await ok(cloneEvaluation(evaluation));
+			return await errorResult.ok(cloneEvaluation(evaluation));
 		},
 
 		async recordInterviewEvaluation(
@@ -2236,7 +2246,7 @@ export function createMemoryRecruitmentMethods(
 				return outbox;
 			}
 
-			return ok(cloneEvaluation(evaluation));
+			return errorResult.ok(cloneEvaluation(evaluation));
 		},
 
 		// Offer methods
@@ -2246,7 +2256,7 @@ export function createMemoryRecruitmentMethods(
 		}): Promise<Result<EmploymentOffer | null>> {
 			const offer = state.offers.get(input.offerId);
 			if (offer === undefined) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
 			const orgCheck = assertRecruitmentOrgMatch(
 				offer,
@@ -2256,7 +2266,7 @@ export function createMemoryRecruitmentMethods(
 			if (!orgCheck.ok) {
 				return await notFound("Offer not found");
 			}
-			return await ok(cloneOffer(offer));
+			return await errorResult.ok(cloneOffer(offer));
 		},
 
 		async findActiveOfferByApplication(input: {
@@ -2271,14 +2281,14 @@ export function createMemoryRecruitmentMethods(
 						offer.applicationId === input.applicationId &&
 						isOfferActive(offer.status)
 					) {
-						return sequentialReturn(await ok(cloneOffer(offer)));
+						return sequentialReturn(await errorResult.ok(cloneOffer(offer)));
 					}
 				},
 			);
 			if (sequentialOutcome3.kind === "return") {
 				return sequentialOutcome3.value;
 			}
-			return await ok(null);
+			return await errorResult.ok(null);
 		},
 
 		async findOfferByAcceptIdempotencyKey(input: {
@@ -2289,9 +2299,9 @@ export function createMemoryRecruitmentMethods(
 				idempotencyMapKey(input.organizationId, input.idempotencyKey),
 			);
 			if (record === undefined) {
-				return await ok(null);
+				return await errorResult.ok(null);
 			}
-			return await ok({
+			return await errorResult.ok({
 				handoff: cloneHandoff(record.handoff),
 				acceptRequestFingerprint: record.acceptRequestFingerprint,
 			});
@@ -2382,7 +2392,7 @@ export function createMemoryRecruitmentMethods(
 				return audit;
 			}
 
-			return ok(cloneOffer(offer));
+			return errorResult.ok(cloneOffer(offer));
 		},
 
 		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
@@ -2481,7 +2491,7 @@ export function createMemoryRecruitmentMethods(
 				return audit;
 			}
 
-			return ok(cloneOffer(updated));
+			return errorResult.ok(cloneOffer(updated));
 		},
 
 		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
@@ -2661,7 +2671,7 @@ export function createMemoryRecruitmentMethods(
 				return outbox;
 			}
 
-			return ok(cloneOffer(updated));
+			return errorResult.ok(cloneOffer(updated));
 		},
 
 		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
@@ -2686,7 +2696,7 @@ export function createMemoryRecruitmentMethods(
 				return existingByKey;
 			}
 			if (existingByKey.data !== null) {
-				return ok(cloneHandoff(existingByKey.data.handoff));
+				return errorResult.ok(cloneHandoff(existingByKey.data.handoff));
 			}
 
 			const offer = state.offers.get(input.offerId);
@@ -2866,7 +2876,7 @@ export function createMemoryRecruitmentMethods(
 				},
 			);
 
-			return ok(cloneHandoff(handoff));
+			return errorResult.ok(cloneHandoff(handoff));
 		},
 
 		async listOffers(input: {
@@ -2893,7 +2903,7 @@ export function createMemoryRecruitmentMethods(
 			const offers = filtered
 				.slice(start, start + input.pageSize)
 				.map((o) => cloneOffer(o));
-			return await ok({
+			return await errorResult.ok({
 				offers,
 				totalCount,
 				page: input.page,

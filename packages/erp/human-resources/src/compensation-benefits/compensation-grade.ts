@@ -1,4 +1,4 @@
-import type { Result } from "@afenda/errors/result";
+import type { Result } from "@afenda/errors";
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_COMMAND_COMPENSATION_GRADE_ARCHIVE,
@@ -107,7 +107,10 @@ export function getCompensationGrade(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompensationGrade>> {
-	return runCompensationQuery(input, options, {
+	return runCompensationQuery<
+		typeof getCompensationGradeInputSchema,
+		CompensationGrade
+	>(input, options, {
 		schema: getCompensationGradeInputSchema,
 		invalidMessage: "Invalid compensation grade get input",
 		query: HUMAN_RESOURCES_QUERY_COMPENSATION_GRADE_GET,

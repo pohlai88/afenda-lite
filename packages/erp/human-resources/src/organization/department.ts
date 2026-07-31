@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_NOT_FOUND,
@@ -163,13 +163,14 @@ export function getDepartment(
 				return department;
 			}
 			if (department.data === null) {
-				return fail(
-					"NOT_FOUND",
-					"Department not found",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_NOT_FOUND,
+					),
+				});
 			}
-			return ok(department.data);
+			return errorResult.ok(department.data);
 		},
 	});
 }
@@ -229,13 +230,14 @@ export function getDepartmentAsOf(
 				return department;
 			}
 			if (department.data === null) {
-				return fail(
-					"NOT_FOUND",
-					"Department not found",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_NOT_FOUND,
+					),
+				});
 			}
-			return ok(department.data);
+			return errorResult.ok(department.data);
 		},
 	});
 }

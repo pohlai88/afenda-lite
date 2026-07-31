@@ -15,7 +15,13 @@ description: "Shared Vitest/Playwright test utilities (dev/test only)"
 | Import path | Export key |
 | --- | --- |
 | `@afenda/testing` | `.` |
+| `@afenda/testing/e2e-database` | `./e2e-database` |
+| `@afenda/testing/lanes` | `./lanes` |
+| `@afenda/testing/playwright` | `./playwright` |
 | `@afenda/testing/require-database-for-ci` | `./require-database-for-ci` |
+| `@afenda/testing/setups/database` | `./setups/database` |
+| `@afenda/testing/setups/required-database` | `./setups/required-database` |
+| `@afenda/testing/vitest` | `./vitest` |
 
 ## Package README
 
@@ -29,6 +35,10 @@ it is not a second testing system.
 | ------- | ---- |
 | `.` | Package barrel, including the testing lane registry |
 | `./require-database-for-ci` | GUIDE-018 I5.5 fail-closed `DATABASE_URL` resolution for DB-backed test suites |
+| `./setups/database` | Shared DB-backed lane setup helper |
+| `./setups/required-database` | Shared fail-closed DB-backed release setup helper |
+| `./vitest` | Vitest config factory consuming package lane policy |
+| `./playwright` | Playwright lane config helper consuming package lane policy |
 
 Repo-root [`testing/`](https://github.com/pohlai88/afenda-lite/blob/main/testing/README.md) retains Vitest/Playwright
 **runner entrypoints**, matrices, and e2e helpers. The lane list and approved

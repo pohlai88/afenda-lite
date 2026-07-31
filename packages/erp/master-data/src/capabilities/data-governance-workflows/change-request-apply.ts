@@ -1,4 +1,4 @@
-import { ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import type { ChangeRequestRecord } from "./change-request-types";
 import {
@@ -64,7 +64,7 @@ export function assertChangeRequestApplyGate(
 			actualVersion: request.mutableFieldAllowlistVersion,
 		});
 	}
-	return ok(true);
+	return errorResult.ok(true);
 }
 
 export function assertChangeRequestTargetVersionGate(
@@ -78,5 +78,5 @@ export function assertChangeRequestTargetVersionGate(
 			actualVersion: input.actualTargetVersion,
 		});
 	}
-	return ok(true);
+	return errorResult.ok(true);
 }

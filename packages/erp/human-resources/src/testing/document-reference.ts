@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
@@ -22,12 +22,13 @@ type DocumentReferenceInput = Parameters<
 	DocumentReferencePort["validateReference"]
 >[0];
 
-function invalidDocumentReference(message: string): Result<never> {
-	return fail(
-		"VALIDATION_ERROR",
-		message,
-		humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_INVALID_INPUT),
-	);
+function invalidDocumentReference(_message: string): Result<never> {
+	return errorResult.fail("VALIDATION_ERROR", {
+		publicMessage: "The submitted data is invalid",
+		internalContext: humanResourcesErrorDetails(
+			HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+		),
+	});
 }
 
 function validateCanonicalDocumentReference(
@@ -58,7 +59,7 @@ function validateCanonicalDocumentReference(
 		);
 	}
 
-	return ok({
+	return errorResult.ok({
 		reference: trimmed,
 		organizationId: input.organizationId,
 		documentKind: kindRaw,

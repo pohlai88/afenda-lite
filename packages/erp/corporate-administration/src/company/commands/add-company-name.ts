@@ -1,4 +1,4 @@
-import { fail, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import {
 	CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS,
 	type CorporateAdministrationApprovalVerificationDependencies,
@@ -10,7 +10,6 @@ import type {
 	CorporateAdministrationApprovalCommandOptions,
 	CorporateAdministrationCommandOptions,
 } from "../../command-options";
-import { corporateAdministrationErrorDetails } from "../../error-codes";
 import { parseCorporateAdministrationInput } from "../../parse-input";
 import { normalizeCompanyName, validateCompanyNameLanguage } from "../rules";
 import { addCompanyNameInputSchema, companyNameSchema } from "../schemas";
@@ -93,24 +92,16 @@ export async function addCompanyName(
 		return languageReference;
 	}
 	if (languageReference.data === null) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Corporate Administration company name language is not configured.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_REFERENCE_INVALID",
-				{ field: "languageCode" },
-			),
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage:
+				"Corporate Administration company name language is not configured.",
+		});
 	}
 	if (!languageReference.data.active) {
-		return fail(
-			"CONFLICT",
-			"Corporate Administration company name language is inactive.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_REFERENCE_INACTIVE",
-				{ field: "languageCode" },
-			),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage:
+				"Corporate Administration company name language is inactive.",
+		});
 	}
 	const sourceDocument = await validateOptionalSourceDocument({
 		sourceDocumentId: parsed.data.sourceDocumentId ?? null,
@@ -130,27 +121,14 @@ export async function addCompanyName(
 		return current;
 	}
 	if (current.data === null) {
-		return fail(
-			"NOT_FOUND",
-			"Corporate Administration legal company was not found.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_NOT_FOUND",
-				{ entityType: "legalCompany" },
-			),
-		);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Corporate Administration legal company was not found.",
+		});
 	}
 	if (current.data.version !== parsed.data.expectedCompanyVersion) {
-		return fail(
-			"CONFLICT",
-			"Corporate Administration legal company version is stale.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_STALE_VERSION",
-				{
-					expectedVersion: parsed.data.expectedCompanyVersion,
-					actualVersion: current.data.version,
-				},
-			),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Corporate Administration legal company version is stale.",
+		});
 	}
 
 	const effectivePeriod = {
@@ -170,14 +148,10 @@ export async function addCompanyName(
 		return overlap;
 	}
 	if (overlap.data !== null) {
-		return fail(
-			"CONFLICT",
-			"Corporate Administration company name overlaps an existing name for the same type and language.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_EFFECTIVE_RANGE_OVERLAP",
-				{ field: "effectivePeriod" },
-			),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage:
+				"Corporate Administration company name overlaps an existing name for the same type and language.",
+		});
 	}
 
 	return runDurableCompanyCommand({
@@ -252,24 +226,14 @@ async function validateOptionalSourceDocument(input: {
 		return source;
 	}
 	if (source.data === null) {
-		return fail(
-			"NOT_FOUND",
-			"Corporate Administration source document was not found.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_REFERENCE_INVALID",
-				{ field: "sourceDocumentId" },
-			),
-		);
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage: "Corporate Administration source document was not found.",
+		});
 	}
 	if (!source.data.active) {
-		return fail(
-			"CONFLICT",
-			"Corporate Administration source document is inactive.",
-			corporateAdministrationErrorDetails(
-				"CORPORATE_ADMINISTRATION_REFERENCE_INACTIVE",
-				{ field: "sourceDocumentId" },
-			),
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Corporate Administration source document is inactive.",
+		});
 	}
 	return { ok: true, data: source.data.sourceDocumentId };
 }

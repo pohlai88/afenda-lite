@@ -1,5 +1,6 @@
 "use client";
 
+import type { Result as ActionResult } from "@afenda/errors";
 import {
 	Alert,
 	AlertDescription,
@@ -18,7 +19,6 @@ import {
 } from "@afenda/ui-system";
 import { type ReactNode, useActionState } from "react";
 import { useFormStatus } from "react-dom";
-
 import {
 	activateLegalEstablishmentFormAction,
 	closeLegalEstablishmentFormAction,
@@ -29,7 +29,6 @@ import {
 	suspendLegalEstablishmentFormAction,
 	updateLegalEstablishmentFormAction,
 } from "@/app/actions/legal-establishment-actions";
-import type { ActionResult } from "@/modules/platform/schemas/action-result";
 
 type MutationState = ActionResult<{ id: string; version: number }> | null;
 

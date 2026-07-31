@@ -36,10 +36,12 @@ import {
 	runNeonHttpTransaction,
 } from "@afenda/db";
 import {
-	hasPostgresSqlState,
-	normalizePostgresUnknown,
-} from "@afenda/errors/adapters/postgres";
-import { fail, failFromAppError, ok, type Result } from "@afenda/errors/result";
+	errorIngress,
+	errorProject,
+	errorResult,
+	type Result,
+} from "@afenda/errors";
+
 import type { MasterFailureDetails } from "../../../../contracts/reasons";
 import type { MutationPorts } from "../../../../ports";
 import type {
@@ -147,21 +149,18 @@ function parsePartyRelationshipType(
 	return null;
 }
 
-function failFromPersistence(error: unknown, fallbackMessage: string) {
-	return failFromAppError(normalizePostgresUnknown(error, fallbackMessage));
+function failFromPersistence(error: unknown, _fallbackMessage: string) {
+	return errorProject.result(
+		errorIngress.postgres(error, { operation: "persistence.postgres" }),
+	);
 }
 
 function mapWriteError(
 	error: unknown,
-	uniqueMessage: string,
+	_uniqueMessage: string,
 	fallbackMessage: string,
-	reason: MasterFailureDetails["reason"] = "MASTER_CODE_CONFLICT",
+	_reason: MasterFailureDetails["reason"] = "MASTER_CODE_CONFLICT",
 ): Result<never> {
-	if (hasPostgresSqlState(error, "23505")) {
-		return fail("CONFLICT", uniqueMessage, {
-			reason,
-		} satisfies MasterFailureDetails);
-	}
 	return failFromPersistence(error, fallbackMessage);
 }
 
@@ -246,20 +245,18 @@ async function requireUsablePartyMutationParent(
 		)
 		.limit(1);
 	if (party === undefined) {
-		return fail("NOT_FOUND", "Party not found", {
-			reason: "MASTER_NOT_FOUND",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("NOT_FOUND", { publicMessage: "Party not found" });
 	}
 	if (
 		party.status === "retired" ||
 		party.retiredAt !== null ||
 		party.mergedIntoId !== null
 	) {
-		return fail("CONFLICT", "Party cannot accept extension mutations", {
-			reason: "MASTER_INVALID_STATE",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Party cannot accept extension mutations",
+		});
 	}
-	return ok(true);
+	return errorResult.ok(true);
 }
 
 async function requireActiveAddressCountry(
@@ -271,18 +268,16 @@ async function requireActiveAddressCountry(
 		.where(eq(refCountry.id, countryId))
 		.limit(1);
 	if (country === undefined) {
-		return fail("BAD_REQUEST", "Referenced country does not exist", {
-			reason: "MASTER_VALIDATION_FAILED",
-			field: "countryId",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Referenced country does not exist",
+		});
 	}
 	if (!country.active) {
-		return fail("CONFLICT", "New active addresses require an active country", {
-			reason: "MASTER_INVALID_STATE",
-			field: "countryId",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "New active addresses require an active country",
+		});
 	}
-	return ok(true);
+	return errorResult.ok(true);
 }
 
 async function requireUsableItemMutationParent(
@@ -297,16 +292,14 @@ async function requireUsableItemMutationParent(
 		)
 		.limit(1);
 	if (item === undefined) {
-		return fail("NOT_FOUND", "Item not found", {
-			reason: "MASTER_NOT_FOUND",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("NOT_FOUND", { publicMessage: "Item not found" });
 	}
 	if (item.status === "retired" || item.retiredAt !== null) {
-		return fail("CONFLICT", "Item cannot accept extension mutations", {
-			reason: "MASTER_INVALID_STATE",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Item cannot accept extension mutations",
+		});
 	}
-	return ok(true);
+	return errorResult.ok(true);
 }
 
 type WithOptionalArchive<
@@ -435,13 +428,9 @@ function mapPartyRelationshipRow(
 	const relationshipType = parsePartyRelationshipType(row.relationshipType);
 	const direction = parsePartyRelationshipDirection(row.direction);
 	if (relationshipType === null || direction === null) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Stored party relationship type is not in the controlled catalog",
-			{ reason: "MASTER_VALIDATION_FAILED" } satisfies MasterFailureDetails,
-		);
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		id: row.id,
 		organizationId: row.organizationId,
 		sourcePartyId: row.sourcePartyId,
@@ -464,7 +453,7 @@ function mapPartyRelationshipRow(
 function mapItemUomRow(
 	row: WithOptionalExtensionLifecycle<typeof mdItemUom.$inferSelect>,
 ): Result<ItemUom> {
-	return ok({
+	return errorResult.ok({
 		id: row.id,
 		organizationId: row.organizationId,
 		itemId: row.itemId,
@@ -605,7 +594,7 @@ export async function drizzleCountActivePartyRoles(
 					isNull(mdPartyRole.archivedAt),
 				),
 			);
-		return ok(rows.length);
+		return errorResult.ok(rows.length);
 	} catch (error) {
 		return failFromPersistence(error, "Failed to count active party roles");
 	}
@@ -627,7 +616,7 @@ export async function drizzleListPartyRoles(
 			.orderBy(asc(mdPartyRole.roleCode), asc(mdPartyRole.id))
 			.limit(filter.pageSize + 1)
 			.offset((filter.page - 1) * filter.pageSize);
-		return ok({
+		return errorResult.ok({
 			items: rows.slice(0, filter.pageSize).map(mapPartyRole),
 			page: filter.page,
 			pageSize: filter.pageSize,
@@ -656,7 +645,7 @@ export async function drizzleListActivePartyRoles(
 			.orderBy(asc(mdPartyRole.roleCode), asc(mdPartyRole.id))
 			.limit(filter.pageSize + 1)
 			.offset((filter.page - 1) * filter.pageSize);
-		return ok({
+		return errorResult.ok({
 			items: rows.slice(0, filter.pageSize).map(mapPartyRole),
 			page: filter.page,
 			pageSize: filter.pageSize,
@@ -684,7 +673,7 @@ export async function drizzleGetPartyRoleById(
 				),
 			)
 			.limit(1);
-		return ok(row === undefined ? null : mapPartyRole(row));
+		return errorResult.ok(row === undefined ? null : mapPartyRole(row));
 	} catch (error) {
 		return failFromPersistence(error, "Failed to get party role");
 	}
@@ -706,7 +695,7 @@ export async function drizzleGetPartyRoleLifecycleContext(
 			)
 			.limit(1);
 		if (roleRow === undefined) {
-			return ok({ role: null, party: null, activeRoleCount: 0 });
+			return errorResult.ok({ role: null, party: null, activeRoleCount: 0 });
 		}
 		const role = mapPartyRole(roleRow);
 		const [partyRow] = await db
@@ -726,7 +715,7 @@ export async function drizzleGetPartyRoleLifecycleContext(
 		if (!activeRoleCount.ok) {
 			return activeRoleCount;
 		}
-		return ok({
+		return errorResult.ok({
 			role,
 			party: partyRow === undefined ? null : mapParty(partyRow),
 			activeRoleCount: activeRoleCount.data,
@@ -816,9 +805,9 @@ export async function drizzleCreatePartyRole(
 		]);
 		const [row] = rows;
 		if (row === undefined) {
-			return fail("INTERNAL_ERROR", "Party role create returned no row");
+			return errorResult.fail("INTERNAL_ERROR");
 		}
-		return ok(
+		return errorResult.ok(
 			mapPartyRole({
 				id: row.id as string,
 				organizationId: row.organization_id as string,
@@ -851,15 +840,11 @@ export async function drizzleCreatePartyRole(
 
 function assertEditablePartyRoleStatus(status: string): Result<true> {
 	if (status !== "draft" && status !== "inactive") {
-		return fail(
-			"CONFLICT",
-			"Only draft or inactive party roles can be updated",
-			{
-				reason: "MASTER_INVALID_STATE",
-			} satisfies MasterFailureDetails,
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Only draft or inactive party roles can be updated",
+		});
 	}
-	return ok(true);
+	return errorResult.ok(true);
 }
 
 export async function drizzleUpdatePartyRole(
@@ -879,9 +864,9 @@ export async function drizzleUpdatePartyRole(
 			)
 			.limit(1);
 		if (existing === undefined) {
-			return fail("NOT_FOUND", "Party role not found", {
-				reason: "MASTER_NOT_FOUND",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Party role not found",
+			});
 		}
 		const version = assertExpectedExtensionVersion(
 			existing,
@@ -912,9 +897,9 @@ export async function drizzleUpdatePartyRole(
 			nextValidTo !== null &&
 			nextValidTo < nextValidFrom
 		) {
-			return fail("BAD_REQUEST", "validTo must not precede validFrom", {
-				reason: "MASTER_VALIDATION_FAILED",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage: "validTo must not precede validFrom",
+			});
 		}
 		const auditId = randomUUID();
 		const eventId = randomUUID();
@@ -987,11 +972,11 @@ export async function drizzleUpdatePartyRole(
 		]);
 		const [row] = rows;
 		if (row === undefined) {
-			return fail("CONFLICT", "Party role update conflict", {
-				reason: "MASTER_VERSION_CONFLICT",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Party role update conflict",
+			});
 		}
-		return ok(
+		return errorResult.ok(
 			mapPartyRole({
 				id: row.id as string,
 				organizationId: row.organization_id as string,
@@ -1040,7 +1025,7 @@ async function validatePartyRoleParentState(
 		return parent;
 	}
 	if (requirement !== "parent_active") {
-		return ok(true);
+		return errorResult.ok(true);
 	}
 	const [party] = await db
 		.select({ status: mdParty.status })
@@ -1053,11 +1038,11 @@ async function validatePartyRoleParentState(
 		)
 		.limit(1);
 	if (party?.status !== "active") {
-		return fail("CONFLICT", "Party must be active for this transition", {
-			reason: "MASTER_INVALID_STATE",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Party must be active for this transition",
+		});
 	}
-	return ok(true);
+	return errorResult.ok(true);
 }
 
 async function protectFinalActivePartyRole(
@@ -1069,7 +1054,7 @@ async function protectFinalActivePartyRole(
 		current.status !== "active" ||
 		current.archivedAt !== null
 	) {
-		return ok(true);
+		return errorResult.ok(true);
 	}
 	const [party] = await db
 		.select({ status: mdParty.status })
@@ -1082,7 +1067,7 @@ async function protectFinalActivePartyRole(
 		)
 		.limit(1);
 	if (party?.status !== "active") {
-		return ok(true);
+		return errorResult.ok(true);
 	}
 	const activeCount = await drizzleCountActivePartyRoles(
 		record.organizationId,
@@ -1092,13 +1077,11 @@ async function protectFinalActivePartyRole(
 		return activeCount;
 	}
 	if (activeCount.data <= 1) {
-		return fail(
-			"CONFLICT",
-			"An active party cannot lose its final active role",
-			{ reason: "MASTER_FINAL_ACTIVE_ROLE" } satisfies MasterFailureDetails,
-		);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "An active party cannot lose its final active role",
+		});
 	}
-	return ok(true);
+	return errorResult.ok(true);
 }
 
 function resolvePartyRoleLifecycleTimestamps(
@@ -1143,9 +1126,9 @@ async function partyRoleMutationConflict(
 			return finalRole;
 		}
 	}
-	return fail("CONFLICT", "Party role version conflict", {
-		reason: "MASTER_VERSION_CONFLICT",
-	} satisfies MasterFailureDetails);
+	return errorResult.fail("CONFLICT", {
+		publicMessage: "Party role version conflict",
+	});
 }
 
 export async function drizzleTransitionPartyRole(
@@ -1171,9 +1154,9 @@ export async function drizzleTransitionPartyRole(
 			)
 			.limit(1);
 		if (existing === undefined) {
-			return fail("NOT_FOUND", "Party role not found", {
-				reason: "MASTER_NOT_FOUND",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Party role not found",
+			});
 		}
 		const version = assertExpectedExtensionVersion(
 			existing,
@@ -1330,7 +1313,7 @@ export async function drizzleTransitionPartyRole(
 		if (row === undefined) {
 			return partyRoleMutationConflict(record);
 		}
-		return ok(
+		return errorResult.ok(
 			mapPartyRole({
 				id: row.id as string,
 				organizationId: row.organization_id as string,
@@ -1550,9 +1533,9 @@ export async function drizzleCreatePartyAddress(
 			if (!activeCountry.ok) {
 				return activeCountry;
 			}
-			return fail("INTERNAL_ERROR", "Party address create returned no row");
+			return errorResult.fail("INTERNAL_ERROR");
 		}
-		return ok(
+		return errorResult.ok(
 			mapPartyAddress({
 				id: row.id as string,
 				organizationId: row.organization_id as string,
@@ -1606,9 +1589,9 @@ async function resolvePartyAddressUpdateConflict(input: {
 	if (!activeCountry.ok) {
 		return activeCountry;
 	}
-	return fail("CONFLICT", "Party address version conflict", {
-		reason: "MASTER_VERSION_CONFLICT",
-	} satisfies MasterFailureDetails);
+	return errorResult.fail("CONFLICT", {
+		publicMessage: "Party address version conflict",
+	});
 }
 
 function resolvePartyAddressUpdateState(
@@ -1628,16 +1611,11 @@ function resolvePartyAddressUpdateState(
 		effectiveTo !== null &&
 		effectiveFrom > effectiveTo
 	) {
-		return fail(
-			"BAD_REQUEST",
-			"effectiveTo must be on or after effectiveFrom",
-			{
-				reason: "MASTER_VALIDATION_FAILED",
-				field: "effectiveTo",
-			} satisfies MasterFailureDetails,
-		);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "effectiveTo must be on or after effectiveFrom",
+		});
 	}
-	return ok({
+	return errorResult.ok({
 		line1: record.line1 ?? existing.line1,
 		addressType: record.addressType ?? existing.addressType,
 		purpose: record.purpose ?? existing.purpose,
@@ -1677,9 +1655,9 @@ export async function drizzleUpdatePartyAddress(
 			)
 			.limit(1);
 		if (existing === undefined) {
-			return fail("NOT_FOUND", "Party address not found", {
-				reason: "MASTER_NOT_FOUND",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Party address not found",
+			});
 		}
 		const version = assertExpectedExtensionVersion(
 			existing,
@@ -1895,7 +1873,7 @@ export async function drizzleUpdatePartyAddress(
 				countryId: nextCountryId,
 			});
 		}
-		return ok(
+		return errorResult.ok(
 			mapPartyAddress({
 				id: row.id as string,
 				organizationId: row.organization_id as string,
@@ -1948,7 +1926,7 @@ export async function drizzleListPartyAddresses(
 			)
 			.limit(filter.pageSize)
 			.offset((filter.page - 1) * filter.pageSize);
-		return ok(rows.map(mapPartyAddress));
+		return errorResult.ok(rows.map(mapPartyAddress));
 	} catch (error) {
 		return failFromPersistence(error, "Failed to list party addresses");
 	}
@@ -1971,7 +1949,7 @@ export async function drizzleGetPartyAddressById(
 				),
 			)
 			.limit(1);
-		return ok(row ? mapPartyAddress(row) : null);
+		return errorResult.ok(row ? mapPartyAddress(row) : null);
 	} catch (error) {
 		return failFromPersistence(error, "Failed to get party address");
 	}
@@ -1997,7 +1975,7 @@ export async function drizzleGetPrimaryPartyAddress(
 				),
 			)
 			.limit(1);
-		return ok(row ? mapPartyAddress(row) : null);
+		return errorResult.ok(row ? mapPartyAddress(row) : null);
 	} catch (error) {
 		return failFromPersistence(error, "Failed to get primary party address");
 	}
@@ -2018,7 +1996,7 @@ export async function drizzleListPartyContacts(
 			)
 			.limit(filter.pageSize)
 			.offset((filter.page - 1) * filter.pageSize);
-		return ok(rows.map(mapPartyContact));
+		return errorResult.ok(rows.map(mapPartyContact));
 	} catch (error) {
 		return failFromPersistence(error, "Failed to list party contacts");
 	}
@@ -2048,7 +2026,7 @@ export async function drizzleGetPrimaryPartyContact(
 				),
 			)
 			.limit(1);
-		return ok(row ? mapPartyContact(row) : null);
+		return errorResult.ok(row ? mapPartyContact(row) : null);
 	} catch (error) {
 		return failFromPersistence(error, "Failed to get primary party contact");
 	}
@@ -2226,9 +2204,9 @@ export async function drizzleCreatePartyContact(
 			if (!parent.ok) {
 				return parent;
 			}
-			return fail("INTERNAL_ERROR", "Party contact create returned no row");
+			return errorResult.fail("INTERNAL_ERROR");
 		}
-		return ok(
+		return errorResult.ok(
 			mapPartyContact({
 				id: row.id as string,
 				organizationId: row.organization_id as string,
@@ -2273,25 +2251,20 @@ function validatePartyContactUpdateInput(
 				record.verifiedAt !== undefined &&
 				record.verifiedAt !== null))
 	) {
-		return fail("BAD_REQUEST", "Invalid party contact verification evidence", {
-			reason: "MASTER_VALIDATION_FAILED",
-			field: "verificationStatus",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Invalid party contact verification evidence",
+		});
 	}
 	if (
 		(record.contactType === undefined) !== (record.value === undefined) ||
 		(record.value === undefined) !== (record.normalizedValue === undefined)
 	) {
-		return fail(
-			"BAD_REQUEST",
-			"Contact type, value, and normalized value must change together",
-			{
-				reason: "MASTER_VALIDATION_FAILED",
-				field: "value",
-			} satisfies MasterFailureDetails,
-		);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage:
+				"Contact type, value, and normalized value must change together",
+		});
 	}
-	return ok(true);
+	return errorResult.ok(true);
 }
 
 function resolvePartyContactUpdateState(
@@ -2311,14 +2284,9 @@ function resolvePartyContactUpdateState(
 		effectiveTo !== null &&
 		effectiveFrom > effectiveTo
 	) {
-		return fail(
-			"BAD_REQUEST",
-			"effectiveTo must be on or after effectiveFrom",
-			{
-				reason: "MASTER_VALIDATION_FAILED",
-				field: "effectiveTo",
-			} satisfies MasterFailureDetails,
-		);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "effectiveTo must be on or after effectiveFrom",
+		});
 	}
 	const contactIdentityChanged =
 		record.value !== undefined || record.contactType !== undefined;
@@ -2331,7 +2299,7 @@ function resolvePartyContactUpdateState(
 	} else if (record.verificationStatus === undefined) {
 		({ verifiedAt } = existing);
 	}
-	return ok({
+	return errorResult.ok({
 		value: record.value ?? existing.value,
 		contactType: record.contactType ?? existing.contactType,
 		normalizedValue: record.normalizedValue ?? existing.normalizedValue,
@@ -2362,9 +2330,9 @@ export async function drizzleUpdatePartyContact(
 			)
 			.limit(1);
 		if (existing === undefined) {
-			return fail("NOT_FOUND", "Party contact not found", {
-				reason: "MASTER_NOT_FOUND",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Party contact not found",
+			});
 		}
 		const version = assertExpectedExtensionVersion(
 			existing,
@@ -2572,11 +2540,11 @@ export async function drizzleUpdatePartyContact(
 			if (!parent.ok) {
 				return parent;
 			}
-			return fail("CONFLICT", "Party contact version conflict", {
-				reason: "MASTER_VERSION_CONFLICT",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Party contact version conflict",
+			});
 		}
-		return ok(
+		return errorResult.ok(
 			mapPartyContact({
 				id: row.id as string,
 				organizationId: row.organization_id as string,
@@ -2771,9 +2739,9 @@ export async function drizzleCreatePartyExternalId(
 		]);
 		const [row] = rows;
 		if (row === undefined) {
-			return fail("INTERNAL_ERROR", "Party external id create returned no row");
+			return errorResult.fail("INTERNAL_ERROR");
 		}
-		return ok(
+		return errorResult.ok(
 			mapPartyExternalIdRow({
 				id: row.id as string,
 				organizationId: row.organization_id as string,
@@ -2825,13 +2793,13 @@ export async function drizzleFindPartyByExternalId(
 			)
 			.limit(2);
 		if (matches.length > 1) {
-			return fail("CONFLICT", "External id resolves to multiple parties", {
-				reason: "MASTER_EXTERNAL_ID_CONFLICT",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "External id resolves to multiple parties",
+			});
 		}
 		const [ext] = matches;
 		if (ext === undefined) {
-			return ok(null);
+			return errorResult.ok(null);
 		}
 		const [party] = await db
 			.select()
@@ -2843,7 +2811,7 @@ export async function drizzleFindPartyByExternalId(
 				),
 			)
 			.limit(1);
-		return ok(party === undefined ? null : mapParty(party));
+		return errorResult.ok(party === undefined ? null : mapParty(party));
 	} catch (error) {
 		return failFromPersistence(error, "Failed to find party by external id");
 	}
@@ -2863,9 +2831,9 @@ export async function drizzleCreatePartyRelationship(
 	meta: { correlationId: string },
 ): Promise<Result<PartyRelationship>> {
 	if (record.sourcePartyId === record.targetPartyId) {
-		return fail("BAD_REQUEST", "Party relationship cannot be reflexive", {
-			reason: "MASTER_VALIDATION_FAILED",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Party relationship cannot be reflexive",
+		});
 	}
 	const id = randomUUID();
 	const auditId = randomUUID();
@@ -2986,14 +2954,11 @@ export async function drizzleCreatePartyRelationship(
 		const [row] = rows;
 		if (row === undefined) {
 			if (record.direction === "hierarchical") {
-				return fail("CONFLICT", "Party relationship would create a cycle", {
-					reason: "MASTER_RELATIONSHIP_CYCLE",
-				} satisfies MasterFailureDetails);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Party relationship would create a cycle",
+				});
 			}
-			return fail(
-				"INTERNAL_ERROR",
-				"Party relationship create returned no row",
-			);
+			return errorResult.fail("INTERNAL_ERROR");
 		}
 		return mapPartyRelationshipRow({
 			id: row.id as string,
@@ -3050,7 +3015,7 @@ export async function drizzleListPartyRelationships(
 			}
 			mapped.push(relationship.data);
 		}
-		return ok({
+		return errorResult.ok({
 			items: mapped,
 			page: filter.page,
 			pageSize: filter.pageSize,
@@ -3086,15 +3051,12 @@ export async function drizzleResolveItemUomCompatibilityContext(
 			)
 			.limit(1);
 		if (row === undefined) {
-			return fail("NOT_FOUND", "Item not found", {
-				reason: "MASTER_NOT_FOUND",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("NOT_FOUND", { publicMessage: "Item not found" });
 		}
 		if (filter.alternateUomId === row.baseUomId) {
-			return fail("BAD_REQUEST", "Item UoM conversion duplicates base UoM", {
-				reason: "MASTER_INVALID_UOM_CONVERSION",
-				field: "alternateUomId",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage: "Item UoM conversion duplicates base UoM",
+			});
 		}
 		const [alternate] = await db
 			.select({
@@ -3107,18 +3069,16 @@ export async function drizzleResolveItemUomCompatibilityContext(
 			.where(eq(refUom.id, filter.alternateUomId))
 			.limit(1);
 		if (alternate === undefined) {
-			return fail("BAD_REQUEST", "UoM not found", {
-				reason: "MASTER_VALIDATION_FAILED",
-				field: "alternateUomId",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage: "UoM not found",
+			});
 		}
 		if (!(row.baseUomActive && alternate.active)) {
-			return fail("BAD_REQUEST", "UoM must be active", {
-				reason: "MASTER_VALIDATION_FAILED",
-				field: "alternateUomId",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage: "UoM must be active",
+			});
 		}
-		return ok({
+		return errorResult.ok({
 			itemId: row.itemId,
 			baseUomId: row.baseUomId,
 			alternateUomId: alternate.id,
@@ -3153,7 +3113,7 @@ export async function drizzleListItemUoms(
 			}
 			mapped.push(item.data);
 		}
-		return ok({
+		return errorResult.ok({
 			items: mapped,
 			page: filter.page,
 			pageSize: filter.pageSize,
@@ -3187,7 +3147,7 @@ async function drizzleGetDefaultItemUom(
 			)
 			.limit(1);
 		if (row === undefined) {
-			return ok(null);
+			return errorResult.ok(null);
 		}
 		return mapItemUomRow(row);
 	} catch (error) {
@@ -3217,11 +3177,11 @@ function assertConsistentDefaultItemUomUsage(
 		(record.isDefaultPurchaseUom && !record.isPurchaseUom) ||
 		(record.isDefaultSalesUom && !record.isSalesUom)
 	) {
-		return fail("BAD_REQUEST", "Default UoM usage is inconsistent", {
-			reason: "MASTER_INVALID_UOM_CONVERSION",
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Default UoM usage is inconsistent",
+		});
 	}
-	return ok(true);
+	return errorResult.ok(true);
 }
 
 async function validateItemUomCreateReferences(
@@ -3239,9 +3199,7 @@ async function validateItemUomCreateReferences(
 			)
 			.limit(1);
 		if (item === undefined) {
-			return fail("NOT_FOUND", "Item not found", {
-				reason: "MASTER_NOT_FOUND",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("NOT_FOUND", { publicMessage: "Item not found" });
 		}
 		const [baseUom] = await db
 			.select()
@@ -3254,20 +3212,19 @@ async function validateItemUomCreateReferences(
 			.where(eq(refUom.id, record.alternateUomId))
 			.limit(1);
 		if (baseUom === undefined || altUom === undefined) {
-			return fail("BAD_REQUEST", "UoM not found", {
-				reason: "MASTER_VALIDATION_FAILED",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage: "UoM not found",
+			});
 		}
 		if (!(baseUom.active && altUom.active)) {
-			return fail("BAD_REQUEST", "UoM must be active", {
-				reason: "MASTER_VALIDATION_FAILED",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage: "UoM must be active",
+			});
 		}
 		if (record.alternateUomId === item.baseUomId) {
-			return fail("BAD_REQUEST", "Item UoM conversion duplicates base UoM", {
-				reason: "MASTER_INVALID_UOM_CONVERSION",
-				field: "alternateUomId",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage: "Item UoM conversion duplicates base UoM",
+			});
 		}
 		const [baseDimension] = await db
 			.select()
@@ -3280,9 +3237,9 @@ async function validateItemUomCreateReferences(
 			.where(eq(refUomDimension.id, altUom.dimensionId))
 			.limit(1);
 		if (baseDimension === undefined || alternateDimension === undefined) {
-			return fail("BAD_REQUEST", "UoM dimension not found", {
-				reason: "MASTER_VALIDATION_FAILED",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage: "UoM dimension not found",
+			});
 		}
 		return assertItemUomCompatibility({
 			baseDimensionCode: baseDimension.code,
@@ -3498,9 +3455,9 @@ export async function drizzleCreateItemUom(
 		]);
 		const [row] = rows;
 		if (row === undefined) {
-			return fail("BAD_REQUEST", "Item UoM conversion is not eligible", {
-				reason: "MASTER_INVALID_UOM_CONVERSION",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage: "Item UoM conversion is not eligible",
+			});
 		}
 		const mapped = mapItemUomRow({
 			id: row.id as string,
@@ -3559,13 +3516,9 @@ export async function drizzleCreateItemBarcode(
 		return packQuantity;
 	}
 	if ((record.uomId === null) !== (packQuantity === null)) {
-		return fail(
-			"BAD_REQUEST",
-			"uomId and packQuantity must be provided together",
-			{
-				reason: "MASTER_INVALID_BARCODE",
-			} satisfies MasterFailureDetails,
-		);
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "uomId and packQuantity must be provided together",
+		});
 	}
 	const id = randomUUID();
 	const auditId = randomUUID();
@@ -3750,11 +3703,11 @@ export async function drizzleCreateItemBarcode(
 			if (!parent.ok) {
 				return parent;
 			}
-			return fail("BAD_REQUEST", "Item barcode packaging UoM is not eligible", {
-				reason: "MASTER_INVALID_BARCODE",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage: "Item barcode packaging UoM is not eligible",
+			});
 		}
-		return ok(
+		return errorResult.ok(
 			mapItemBarcodeRow({
 				id: row.id as string,
 				organizationId: row.organization_id as string,
@@ -3804,14 +3757,13 @@ export async function drizzleFindItemByBarcode(
 			.where(and(...predicates))
 			.limit(2);
 		if (barcodes.length > 1) {
-			return fail("CONFLICT", "Barcode resolves to multiple items", {
-				reason: "MASTER_DUPLICATE",
-				candidateCount: barcodes.length,
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Barcode resolves to multiple items",
+			});
 		}
 		const [barcode] = barcodes;
 		if (barcode === undefined) {
-			return ok(null);
+			return errorResult.ok(null);
 		}
 
 		const [item] = await db
@@ -3824,7 +3776,7 @@ export async function drizzleFindItemByBarcode(
 				),
 			)
 			.limit(1);
-		return ok(item === undefined ? null : mapItem(item));
+		return errorResult.ok(item === undefined ? null : mapItem(item));
 	} catch (error) {
 		return failFromPersistence(error, "Failed to find item by barcode");
 	}
@@ -3987,11 +3939,9 @@ export async function drizzleCreateItemExternalId(
 		]);
 		const [row] = rows;
 		if (row === undefined) {
-			return fail("NOT_FOUND", "Item not found", {
-				reason: "MASTER_NOT_FOUND",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("NOT_FOUND", { publicMessage: "Item not found" });
 		}
-		return ok(
+		return errorResult.ok(
 			mapItemExternalIdRow({
 				id: row.id as string,
 				organizationId: row.organization_id as string,
@@ -4042,14 +3992,13 @@ export async function drizzleFindItemByExternalId(
 			)
 			.limit(2);
 		if (rows.length > 1) {
-			return fail("CONFLICT", "External id resolves to multiple items", {
-				reason: "MASTER_DUPLICATE",
-				candidateCount: rows.length,
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "External id resolves to multiple items",
+			});
 		}
 		const [ext] = rows;
 		if (ext === undefined) {
-			return ok(null);
+			return errorResult.ok(null);
 		}
 		const [item] = await db
 			.select()
@@ -4061,7 +4010,7 @@ export async function drizzleFindItemByExternalId(
 				),
 			)
 			.limit(1);
-		return ok(item === undefined ? null : mapItem(item));
+		return errorResult.ok(item === undefined ? null : mapItem(item));
 	} catch (error) {
 		return failFromPersistence(error, "Failed to find item by external id");
 	}
@@ -4178,11 +4127,11 @@ export async function drizzleCreateItemAlias(
 			if (!parent.ok) {
 				return parent;
 			}
-			return fail("BAD_REQUEST", "Alias language is not active", {
-				reason: "MASTER_VALIDATION_FAILED",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage: "Alias language is not active",
+			});
 		}
-		return ok(
+		return errorResult.ok(
 			mapItemAliasRow({
 				id: row.id as string,
 				organizationId: row.organization_id as string,
@@ -4229,7 +4178,7 @@ export async function drizzleListItemAliases(
 			.orderBy(asc(mdItemAlias.aliasValue), asc(mdItemAlias.id))
 			.limit(filter.pageSize + 1)
 			.offset((filter.page - 1) * filter.pageSize);
-		return ok({
+		return errorResult.ok({
 			items: rows.slice(0, filter.pageSize).map(mapItemAliasRow),
 			page: filter.page,
 			pageSize: filter.pageSize,
@@ -4278,7 +4227,7 @@ export async function drizzleListItemsByAlias(
 			.orderBy(asc(mdItem.code), asc(mdItem.id))
 			.limit(filter.pageSize + 1)
 			.offset((filter.page - 1) * filter.pageSize);
-		return ok({
+		return errorResult.ok({
 			items: rows.slice(0, filter.pageSize).map((row) => mapItem(row.item)),
 			page: filter.page,
 			pageSize: filter.pageSize,
@@ -4301,12 +4250,11 @@ export async function drizzleFindItemByAlias(
 		return matches;
 	}
 	if (matches.data.items.length > 1) {
-		return fail("CONFLICT", "Alias resolves to multiple active items", {
-			reason: "MASTER_DUPLICATE",
-			candidateCount: matches.data.items.length,
-		} satisfies MasterFailureDetails);
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Alias resolves to multiple active items",
+		});
 	}
-	return ok(matches.data.items[0] ?? null);
+	return errorResult.ok(matches.data.items[0] ?? null);
 }
 
 export async function drizzleCreateWarehouseExternalId(
@@ -4403,11 +4351,11 @@ export async function drizzleCreateWarehouseExternalId(
 		]);
 		const [row] = rows;
 		if (row === undefined) {
-			return fail("NOT_FOUND", "Warehouse not found", {
-				reason: "MASTER_NOT_FOUND",
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Warehouse not found",
+			});
 		}
-		return ok(
+		return errorResult.ok(
 			mapWarehouseExternalIdRow({
 				id: row.id as string,
 				organizationId: row.organization_id as string,
@@ -4459,14 +4407,13 @@ export async function drizzleFindWarehouseByExternalId(
 			)
 			.limit(2);
 		if (matches.length > 1) {
-			return fail("CONFLICT", "External ID resolves to multiple warehouses", {
-				reason: "MASTER_EXTERNAL_ID_CONFLICT",
-				candidateCount: matches.length,
-			} satisfies MasterFailureDetails);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "External ID resolves to multiple warehouses",
+			});
 		}
 		const [ext] = matches;
 		if (ext === undefined) {
-			return ok(null);
+			return errorResult.ok(null);
 		}
 		const [warehouse] = await db
 			.select()
@@ -4480,7 +4427,9 @@ export async function drizzleFindWarehouseByExternalId(
 				),
 			)
 			.limit(1);
-		return ok(warehouse === undefined ? null : mapWarehouse(warehouse));
+		return errorResult.ok(
+			warehouse === undefined ? null : mapWarehouse(warehouse),
+		);
 	} catch (error) {
 		return failFromPersistence(
 			error,

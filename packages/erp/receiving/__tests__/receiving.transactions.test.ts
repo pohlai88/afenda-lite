@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import { describe, expect, it } from "vitest";
 import { createMemoryReceivingStore } from "../src/memory-store";
 import {
@@ -41,14 +41,12 @@ describe("@afenda/receiving transactions", () => {
 		const ports: MutationPorts = {
 			audit: {
 				record() {
-					return resolveAsync(() => ok({ id: "audit-1" }));
+					return resolveAsync(() => errorResult.ok({ id: "audit-1" }));
 				},
 			},
 			outbox: {
 				append(_input: OutboxFactInput): Promise<Result<{ id: string }>> {
-					return resolveAsync(() =>
-						fail("INTERNAL_ERROR", "forced outbox failure"),
-					);
+					return resolveAsync(() => errorResult.fail("INTERNAL_ERROR"));
 				},
 			},
 		};

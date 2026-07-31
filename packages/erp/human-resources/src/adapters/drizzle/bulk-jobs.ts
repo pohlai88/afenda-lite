@@ -9,7 +9,7 @@ import {
 	hrBulkImportJobRow,
 	runNeonHttpTransaction,
 } from "@afenda/db";
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import { z } from "zod";
 
 import type {
@@ -38,9 +38,9 @@ function mapImport(
 	row: typeof hrBulkImportJob.$inferSelect,
 ): Result<HumanResourcesBulkImportJob> {
 	if (!statuses.has(row.status as HumanResourcesBulkJobStatus)) {
-		return fail("INTERNAL_ERROR", "Bulk import job status is invalid");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		...row,
 		entityType: row.entityType as HumanResourcesBulkImportJob["entityType"],
 		requiredPermission: row.requiredPermission as HumanResourcesPermission,
@@ -52,13 +52,13 @@ function mapExport(
 	row: typeof hrBulkExportJob.$inferSelect,
 ): Result<HumanResourcesBulkExportJob> {
 	if (!statuses.has(row.status as HumanResourcesBulkJobStatus)) {
-		return fail("INTERNAL_ERROR", "Bulk export job status is invalid");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 	const fields = fieldsSchema.safeParse(row.requestedFields);
 	if (!fields.success) {
-		return fail("INTERNAL_ERROR", "Bulk export fields are invalid");
+		return errorResult.fail("INTERNAL_ERROR");
 	}
-	return ok({
+	return errorResult.ok({
 		...row,
 		exportType: row.exportType as HumanResourcesBulkExportJob["exportType"],
 		requiredPermission: row.requiredPermission as HumanResourcesPermission,
@@ -105,7 +105,7 @@ export function createDrizzleHumanResourcesBulkJobStore(): HumanResourcesBulkJob
 						),
 					)
 					.limit(1);
-				return row ? mapImport(row) : ok(null);
+				return row ? mapImport(row) : errorResult.ok(null);
 			} catch (error) {
 				return mapPersistenceFailure(error, "Failed to find bulk import job");
 			}
@@ -122,7 +122,7 @@ export function createDrizzleHumanResourcesBulkJobStore(): HumanResourcesBulkJob
 						),
 					)
 					.limit(1);
-				return row ? mapImport(row) : ok(null);
+				return row ? mapImport(row) : errorResult.ok(null);
 			} catch (error) {
 				return mapPersistenceFailure(error, "Failed to load bulk import job");
 			}
@@ -180,11 +180,15 @@ export function createDrizzleHumanResourcesBulkJobStore(): HumanResourcesBulkJob
 				`,
 				]);
 				return saved[0]
-					? ok(input.job)
-					: fail("CONFLICT", "Bulk import job was not created");
+					? errorResult.ok(input.job)
+					: errorResult.fail("CONFLICT", {
+							publicMessage: "The request conflicts with current state",
+						});
 			} catch (error) {
 				return isPostgresUniqueViolation(error)
-					? fail("CONFLICT", "Bulk import job already exists")
+					? errorResult.fail("CONFLICT", {
+							publicMessage: "The request conflicts with current state",
+						})
 					: mapPersistenceFailure(error, "Failed to create bulk import job");
 			}
 		},
@@ -200,7 +204,7 @@ export function createDrizzleHumanResourcesBulkJobStore(): HumanResourcesBulkJob
 						),
 					)
 					.orderBy(asc(hrBulkImportJobRow.rowIndex));
-				return ok(rows satisfies HumanResourcesBulkImportJobRow[]);
+				return errorResult.ok(rows satisfies HumanResourcesBulkImportJobRow[]);
 			} catch (error) {
 				return mapPersistenceFailure(error, "Failed to load bulk import rows");
 			}
@@ -237,8 +241,10 @@ export function createDrizzleHumanResourcesBulkJobStore(): HumanResourcesBulkJob
 				`,
 				]);
 				return saved[0]
-					? ok(input.job)
-					: fail("CONFLICT", "Bulk import job version changed");
+					? errorResult.ok(input.job)
+					: errorResult.fail("CONFLICT", {
+							publicMessage: "The request conflicts with current state",
+						});
 			} catch (error) {
 				return mapPersistenceFailure(error, "Failed to commit bulk import job");
 			}
@@ -252,8 +258,10 @@ export function createDrizzleHumanResourcesBulkJobStore(): HumanResourcesBulkJob
 				]);
 				const found = await this.getImportJob(input);
 				return found.ok && found.data
-					? ok(found.data)
-					: fail("NOT_FOUND", "Bulk import job not found");
+					? errorResult.ok(found.data)
+					: errorResult.fail("NOT_FOUND", {
+							publicMessage: "The requested resource was not found",
+						});
 			} catch (error) {
 				return mapPersistenceFailure(
 					error,
@@ -273,7 +281,7 @@ export function createDrizzleHumanResourcesBulkJobStore(): HumanResourcesBulkJob
 						),
 					)
 					.limit(1);
-				return row ? mapExport(row) : ok(null);
+				return row ? mapExport(row) : errorResult.ok(null);
 			} catch (error) {
 				return mapPersistenceFailure(error, "Failed to find bulk export job");
 			}
@@ -290,7 +298,7 @@ export function createDrizzleHumanResourcesBulkJobStore(): HumanResourcesBulkJob
 						),
 					)
 					.limit(1);
-				return row ? mapExport(row) : ok(null);
+				return row ? mapExport(row) : errorResult.ok(null);
 			} catch (error) {
 				return mapPersistenceFailure(error, "Failed to load bulk export job");
 			}
@@ -320,11 +328,15 @@ export function createDrizzleHumanResourcesBulkJobStore(): HumanResourcesBulkJob
 				`,
 				]);
 				return saved[0]
-					? ok(input.job)
-					: fail("CONFLICT", "Bulk export job was not created");
+					? errorResult.ok(input.job)
+					: errorResult.fail("CONFLICT", {
+							publicMessage: "The request conflicts with current state",
+						});
 			} catch (error) {
 				return isPostgresUniqueViolation(error)
-					? fail("CONFLICT", "Bulk export job already exists")
+					? errorResult.fail("CONFLICT", {
+							publicMessage: "The request conflicts with current state",
+						})
 					: mapPersistenceFailure(error, "Failed to create bulk export job");
 			}
 		},
@@ -363,8 +375,10 @@ export function createDrizzleHumanResourcesBulkJobStore(): HumanResourcesBulkJob
 				`,
 				]);
 				return saved[0]
-					? ok(input.job)
-					: fail("CONFLICT", "Bulk export job version changed");
+					? errorResult.ok(input.job)
+					: errorResult.fail("CONFLICT", {
+							publicMessage: "The request conflicts with current state",
+						});
 			} catch (error) {
 				return mapPersistenceFailure(
 					error,
@@ -375,7 +389,7 @@ export function createDrizzleHumanResourcesBulkJobStore(): HumanResourcesBulkJob
 		async loadExportArtifact(input) {
 			const job = await this.getExportJob(input);
 			if (!(job.ok && job.data)) {
-				return job.ok ? ok(null) : job;
+				return job.ok ? errorResult.ok(null) : job;
 			}
 			try {
 				const chunks = await db
@@ -391,7 +405,7 @@ export function createDrizzleHumanResourcesBulkJobStore(): HumanResourcesBulkJob
 						),
 					)
 					.orderBy(asc(hrBulkExportArtifactChunk.chunkIndex));
-				return ok({
+				return errorResult.ok({
 					job: job.data,
 					content: chunks.map((chunk) => chunk.content).join(""),
 				});
@@ -410,8 +424,10 @@ export function createDrizzleHumanResourcesBulkJobStore(): HumanResourcesBulkJob
 				]);
 				const found = await this.getExportJob(input);
 				return found.ok && found.data
-					? ok(found.data)
-					: fail("NOT_FOUND", "Bulk export job not found");
+					? errorResult.ok(found.data)
+					: errorResult.fail("NOT_FOUND", {
+							publicMessage: "The requested resource was not found",
+						});
 			} catch (error) {
 				return mapPersistenceFailure(
 					error,

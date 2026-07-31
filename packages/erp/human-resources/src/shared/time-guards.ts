@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 
 import {
 	HUMAN_RESOURCES_ERROR_FORBIDDEN,
@@ -71,7 +71,7 @@ function assertTransition<T extends string>(
 	label: string,
 ): Result<void> {
 	if (current === next) {
-		return ok(undefined);
+		return errorResult.ok(undefined);
 	}
 	const allowed = table[current] ?? [];
 	if (!allowed.includes(next)) {
@@ -79,7 +79,7 @@ function assertTransition<T extends string>(
 			`Cannot transition ${label} from ${current} to ${next}`,
 		);
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function assertShiftStatusTransition(
@@ -147,13 +147,13 @@ export function assertNoSelfApprove(input: {
 }): Result<void> {
 	const subject = input.subjectUserId ?? input.createdBy;
 	if (input.actorUserId === subject) {
-		return fail(
-			"FORBIDDEN",
-			"Actor cannot approve their own time record",
-			humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_FORBIDDEN),
-		);
+		return errorResult.fail("FORBIDDEN", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_FORBIDDEN,
+			),
+		});
 	}
-	return ok(undefined);
+	return errorResult.ok(undefined);
 }
 
 export function computeIsOvernight(

@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_NOT_FOUND,
@@ -188,13 +188,14 @@ export function getApplication(
 				return application;
 			}
 			if (application.data === null) {
-				return fail(
-					"NOT_FOUND",
-					"Application not found",
-					humanResourcesErrorDetails(HUMAN_RESOURCES_ERROR_NOT_FOUND),
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_NOT_FOUND,
+					),
+				});
 			}
-			return ok(application.data);
+			return errorResult.ok(application.data);
 		},
 	});
 }
@@ -235,7 +236,7 @@ export function listApplicationStatusHistory(
 			if (!history.ok) {
 				return history;
 			}
-			return ok(history.data);
+			return errorResult.ok(history.data);
 		},
 	});
 }

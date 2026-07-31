@@ -1,4 +1,4 @@
-import { fail, ok, type Result } from "@afenda/errors/result";
+import { errorResult, type Result } from "@afenda/errors";
 import { z } from "zod";
 import type {
 	HumanResourcesBulkExportDefinition,
@@ -16,29 +16,34 @@ function validateRequest(
 	definition: HumanResourcesBulkExportDefinition,
 ): Result<HumanResourcesBulkExportRequest> {
 	if (request.exportType !== definition.exportType) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Export type does not match its definition",
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+		});
 	}
 	if (request.requiredPermission !== definition.requiredPermission) {
-		return fail("FORBIDDEN", "Export permission does not match its definition");
+		return errorResult.fail("FORBIDDEN");
 	}
 	if (request.requestedFields.length === 0) {
-		return fail("VALIDATION_ERROR", "Select at least one export field");
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+		});
 	}
 	if (
 		new Set(request.requestedFields).size !== request.requestedFields.length
 	) {
-		return fail("VALIDATION_ERROR", "Export fields must be unique");
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+		});
 	}
 	const allowed = new Set(definition.allowedFields);
 	if (request.requestedFields.some((field) => !allowed.has(field))) {
-		return fail("FORBIDDEN", "Export contains a field outside its projection");
+		return errorResult.fail("FORBIDDEN");
 	}
 	for (const date of [request.dateFrom, request.dateTo, request.effectiveOn]) {
 		if (date !== undefined && !isoDateSchema.safeParse(date).success) {
-			return fail("VALIDATION_ERROR", "Export dates must use YYYY-MM-DD");
+			return errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "The submitted data is invalid",
+			});
 		}
 	}
 	if (
@@ -46,9 +51,11 @@ function validateRequest(
 		request.dateTo !== undefined &&
 		request.dateFrom > request.dateTo
 	) {
-		return fail("VALIDATION_ERROR", "Export date range is reversed");
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+		});
 	}
-	return ok(request);
+	return errorResult.ok(request);
 }
 
 function recordMatchesFilters(
@@ -88,7 +95,7 @@ export async function runHumanResourcesBulkExport(
 		permission: request.requiredPermission,
 	});
 	if (!authorized) {
-		return fail("FORBIDDEN", "You do not have permission to export this data");
+		return errorResult.fail("FORBIDDEN");
 	}
 
 	const listed = await source.list({
@@ -107,20 +114,16 @@ export async function runHumanResourcesBulkExport(
 			(record) => record.organizationId !== request.organizationId,
 		)
 	) {
-		return fail(
-			"INTERNAL_ERROR",
-			"Bulk export source crossed a tenant boundary",
-		);
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 
 	const records = listed.data.filter((record) =>
 		recordMatchesFilters(record, request),
 	);
 	if (records.length > definition.maximumRows) {
-		return fail(
-			"VALIDATION_ERROR",
-			"Bulk export exceeds the configured row limit",
-		);
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+		});
 	}
 
 	const rows = records.map((record) => ({
@@ -147,7 +150,7 @@ export async function runHumanResourcesBulkExport(
 		return evidence;
 	}
 
-	return ok({
+	return errorResult.ok({
 		organizationId: request.organizationId,
 		exportType: request.exportType,
 		fields: request.requestedFields,

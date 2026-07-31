@@ -11,17 +11,12 @@ import {
 	paymentReversal,
 	runNeonHttpTransaction,
 } from "@afenda/db";
-import { normalizePostgresUnknown } from "@afenda/errors/adapters/postgres";
-import { fail, failFromAppError, ok, type Result } from "@afenda/errors/result";
-
 import {
-	PAYMENTS_ERROR_INSTRUCTION_NOT_FOUND,
-	PAYMENTS_ERROR_INSUFFICIENT_AVAILABILITY,
-	PAYMENTS_ERROR_PAYMENT_NOT_FOUND,
-	PAYMENTS_ERROR_REFUND_LIMIT_EXCEEDED,
-	PAYMENTS_ERROR_TRANSFER_INVALID,
-} from "./error-codes";
-import { failPayments } from "./fail-payments";
+	errorIngress,
+	errorProject,
+	errorResult,
+	type Result,
+} from "@afenda/errors";
 import type {
 	Payment,
 	PaymentAccount,
@@ -45,8 +40,10 @@ import {
 	PAYMENT_STATUSES,
 } from "./model";
 
-function failFromPersistence(error: unknown, fallbackMessage: string) {
-	return failFromAppError(normalizePostgresUnknown(error, fallbackMessage));
+function failFromPersistence(error: unknown, _fallbackMessage: string) {
+	return errorProject.result(
+		errorIngress.postgres(error, { operation: "persistence.postgres" }),
+	);
 }
 
 function parseEnum<T extends string>(
@@ -226,15 +223,15 @@ async function reload(
 	store: DrizzlePaymentsStore,
 	organizationId: string,
 	id: string,
-	message: string,
+	_message: string,
 ): Promise<Result<Payment>> {
 	const result = await store.getById(organizationId, id);
 	if (!result.ok) {
 		return result;
 	}
 	return result.data === null
-		? fail("INTERNAL_ERROR", message)
-		: ok(result.data);
+		? errorResult.fail("INTERNAL_ERROR")
+		: errorResult.ok(result.data);
 }
 
 export class DrizzlePaymentsStore implements PaymentsStore {
@@ -258,9 +255,9 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 				})
 				.returning();
 			if (row === undefined) {
-				return fail("INTERNAL_ERROR", "Failed to create payment account");
+				return errorResult.fail("INTERNAL_ERROR");
 			}
-			return ok(mapAccount(row));
+			return errorResult.ok(mapAccount(row));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to create payment account");
 		}
@@ -275,7 +272,7 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 				.from(paymentAccount)
 				.where(eq(paymentAccount.organizationId, organizationId))
 				.orderBy(desc(paymentAccount.updatedAt), desc(paymentAccount.id));
-			return ok(rows.map(mapAccount));
+			return errorResult.ok(rows.map(mapAccount));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to list payment accounts");
 		}
@@ -342,7 +339,9 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 				`,
 			]);
 			if (rows[0] === undefined) {
-				return fail("CONFLICT", "Payment create conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Payment create conflict",
+				});
 			}
 			return reload(this, record.organizationId, id, "Created payment missing");
 		} catch (error) {
@@ -431,13 +430,11 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 			]);
 			const [row] = rows;
 			if (row === undefined) {
-				return failPayments(
-					"CONFLICT",
-					"Payment application instruction conflict",
-					PAYMENTS_ERROR_INSUFFICIENT_AVAILABILITY,
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Payment application instruction conflict",
+				});
 			}
-			return ok({
+			return errorResult.ok({
 				id: row.id,
 				organizationId: row.organization_id,
 				paymentId: row.payment_id,
@@ -514,7 +511,9 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 				`,
 			]);
 			if (rows[0] === undefined) {
-				return fail("CONFLICT", "Payment post conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Payment post conflict",
+				});
 			}
 			return reload(
 				this,
@@ -590,7 +589,9 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 				`,
 			]);
 			if (rows[0] === undefined) {
-				return fail("CONFLICT", "Payment reversal conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Payment reversal conflict",
+				});
 			}
 			return reload(
 				this,
@@ -607,11 +608,9 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 		record: Parameters<PaymentsStore["createAndPostTransfer"]>[0],
 	): Promise<Result<{ outgoing: Payment; incoming: Payment }>> {
 		if (record.fromPaymentAccountId === record.toPaymentAccountId) {
-			return failPayments(
-				"CONFLICT",
-				"Transfer accounts must differ",
-				PAYMENTS_ERROR_TRANSFER_INVALID,
-			);
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Transfer accounts must differ",
+			});
 		}
 		const groupId = randomUUID();
 		const outgoingId = randomUUID();
@@ -695,11 +694,9 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 				`,
 			]);
 			if (rows[0] === undefined) {
-				return failPayments(
-					"CONFLICT",
-					"Payment transfer conflict",
-					PAYMENTS_ERROR_TRANSFER_INVALID,
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Payment transfer conflict",
+				});
 			}
 			const [outgoing, incoming] = await Promise.all([
 				this.getById(record.organizationId, outgoingId),
@@ -712,9 +709,12 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 				return incoming;
 			}
 			if (outgoing.data === null || incoming.data === null) {
-				return fail("INTERNAL_ERROR", "Posted transfer payments missing");
+				return errorResult.fail("INTERNAL_ERROR");
 			}
-			return ok({ outgoing: outgoing.data, incoming: incoming.data });
+			return errorResult.ok({
+				outgoing: outgoing.data,
+				incoming: incoming.data,
+			});
 		} catch (error) {
 			return failFromPersistence(error, "Failed to create payment transfer");
 		}
@@ -801,11 +801,9 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 				`,
 			]);
 			if (rows[0] === undefined) {
-				return failPayments(
-					"CONFLICT",
-					"Refund post conflict",
-					PAYMENTS_ERROR_REFUND_LIMIT_EXCEEDED,
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Refund post conflict",
+				});
 			}
 			return reload(this, record.organizationId, id, "Posted refund missing");
 		} catch (error) {
@@ -866,13 +864,11 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 			]);
 			const [row] = rows;
 			if (row === undefined) {
-				return failPayments(
-					"CONFLICT",
-					"Application instruction apply conflict",
-					PAYMENTS_ERROR_INSTRUCTION_NOT_FOUND,
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Application instruction apply conflict",
+				});
 			}
-			return ok({
+			return errorResult.ok({
 				id: row.id,
 				organizationId: row.organization_id,
 				paymentId: row.payment_id,
@@ -948,13 +944,11 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 			]);
 			const [row] = rows;
 			if (row === undefined) {
-				return failPayments(
-					"CONFLICT",
-					"Application instruction reject conflict",
-					PAYMENTS_ERROR_INSTRUCTION_NOT_FOUND,
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Application instruction reject conflict",
+				});
 			}
-			return ok({
+			return errorResult.ok({
 				id: row.id,
 				organizationId: row.organization_id,
 				paymentId: row.payment_id,
@@ -992,7 +986,7 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 				)
 				.limit(1);
 			if (header === undefined) {
-				return ok(null);
+				return errorResult.ok(null);
 			}
 			const [instructions, reversals] = await Promise.all([
 				db
@@ -1015,7 +1009,7 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 					)
 					.limit(1),
 			]);
-			return ok(
+			return errorResult.ok(
 				mapPayment(
 					header,
 					instructions.map(mapInstruction),
@@ -1054,11 +1048,11 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 					return result;
 				}
 				if (result.data === null) {
-					return fail("INTERNAL_ERROR", "Listed payment missing");
+					return errorResult.fail("INTERNAL_ERROR");
 				}
 				payments.push(result.data);
 			}
-			return ok(payments);
+			return errorResult.ok(payments);
 		} catch (error) {
 			return failFromPersistence(error, "Failed to list payments");
 		}
@@ -1074,17 +1068,14 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 				return loaded;
 			}
 			if (loaded.data === null) {
-				return failPayments(
-					"NOT_FOUND",
-					"Payment not found",
-					PAYMENTS_ERROR_PAYMENT_NOT_FOUND,
-				);
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "Payment not found",
+				});
 			}
 			if (loaded.data.status !== "posted") {
-				return fail(
-					"CONFLICT",
-					"Application availability requires a posted payment",
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Application availability requires a posted payment",
+				});
 			}
 			const intended = loaded.data.applicationInstructions
 				.filter((instruction) =>
@@ -1111,7 +1102,7 @@ export class DrizzlePaymentsStore implements PaymentsStore {
 				0,
 			);
 			const posted = Number(loaded.data.amount);
-			return ok({
+			return errorResult.ok({
 				paymentId,
 				currencyCode: loaded.data.currencyCode,
 				postedAmount: loaded.data.amount,
