@@ -465,9 +465,6 @@ export function assertLocalOnlyConfigAbsentInProduction(
 	return { ok: issues.length === 0, issues };
 }
 
-export const assertLocalOnlySecretsAbsentInProduction =
-	assertLocalOnlyConfigAbsentInProduction;
-
 export function assertPlaygroundLocalOnly(
 	playgroundEnabled: boolean | undefined,
 	ctx: NeonRuntimeContext = {},

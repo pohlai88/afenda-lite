@@ -12,7 +12,6 @@ export {
 	assertAppUrl,
 	assertCookieSecret,
 	assertLocalOnlyConfigAbsentInProduction,
-	assertLocalOnlySecretsAbsentInProduction,
 	assertNeonAuthBaseUrl,
 	assertNeonCloudIds,
 	assertPairedSecretConfig,

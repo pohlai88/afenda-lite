@@ -15,7 +15,6 @@ import {
 	assertAppUrl,
 	assertCookieSecret,
 	assertLocalOnlyConfigAbsentInProduction,
-	assertLocalOnlySecretsAbsentInProduction,
 	assertNeonAuthBaseUrl,
 	assertNeonCloudIds,
 	assertPairedSecretConfig,
@@ -321,7 +320,7 @@ describe("@afenda/env neon-contract", () => {
 			).ok,
 		).toBe(true);
 		expect(
-			assertLocalOnlySecretsAbsentInProduction(
+			assertLocalOnlyConfigAbsentInProduction(
 				{ SHARED_ADMIN_PASSWORD: "synced-by-mistake" },
 				{ vercelEnv: "production" },
 			).ok,
