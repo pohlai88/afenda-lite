@@ -58,6 +58,8 @@ Task arrives (this repo / Afenda-Lite)
     ├── Test/check lane selection · timeout/failure verification loop · focused vs broad gate? → afenda-focused-verification
     ├── One mission / commit mixing risk? ──────────────────→ bounded-agent-lanes
     ├── Dead code / Knip / skill-catalog drift? ────────────→ afenda-elite-repo-housekeeping
+    ├── Protected package hash / intentional digest refresh? → afenda-package-protection (integrity mechanism only; semantic readiness stays with the owning farm/kernel)
+    ├── Workspace MCP server config / config sprawl? ───────→ update-mcp-config (`.cursor/mcp.json` SSOT; preserve unrelated servers and secrets references)
     ├── Cross-package import / DAG / new packages/*? ───────→ afenda-elite-monorepo-discipline
     ├── Reusable kernel scaffold / apply / semantic cutover / deterministic upgrade / readiness seal · `@afenda/errors`, `@afenda/env`, or `@afenda/testing` integration/upgrade? → afenda-elite-kernel (load target kernel contract; orchestrates owning farms; digest-scoped seal ≠ Module Enterprise Readiness)
     ├── Cross-package move / extract / Slice D delete? ─────→ afenda-elite-monorepo-refactor
