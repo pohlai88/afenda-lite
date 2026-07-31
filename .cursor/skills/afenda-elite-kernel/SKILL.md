@@ -1,6 +1,6 @@
 ---
 name: afenda-elite-kernel
-description: Deterministically discover, scaffold, apply, implement, upgrade, verify, reopen, and readiness-seal reusable Afenda package kernels, including package-band inventory and the protected @afenda/errors root-capability contract. Use when inventorying a package band such as packages/foundation, creating or extending a core package capability, upgrading its public contract or internals, applying an unlocked @afenda/errors consumer boundary, or producing repeatable readiness evidence.
+description: Deterministically discover, scaffold, apply, implement, semantically cut over, upgrade, verify, reopen, and readiness-seal reusable Afenda package kernels, including package-band inventory and the protected @afenda/errors root-capability contract. Use when inventorying a package band such as packages/foundation, centralizing a shared concept behind one registry and durable facade, planning or executing an authorized codemod and final consumer migration, upgrading a core package contract or internals, applying the @afenda/errors boundary, or producing repeatable readiness evidence.
 ---
 
 # Afenda Elite Kernel
@@ -33,7 +33,7 @@ Resolve these fields from the request and disk before editing:
 ```yaml
 kernel_mission:
   target: <verified package or app path>
-  mode: scaffold | apply | implement | upgrade | verify | seal | reopen
+  mode: scaffold | apply | implement | cutover | upgrade | verify | seal | reopen
   capability: <one bounded capability>
   owner: <owning package or composition root>
   consumers: <verified direct consumers>
@@ -80,6 +80,18 @@ State before edits:
 
 Do not invent imports, exports, scripts, or helpers. Verify each on disk first.
 
+For a shared semantic concept, also freeze:
+
+- one canonical semantic owner and one permanent consumer facade;
+- which behavior is shared policy and which remains domain-owned context;
+- normalization, alias, serialization, and historical-input ownership;
+- every derived projection and the exact allowed/prohibited consumer boundary;
+- the current consumer graph, superseded surfaces, and final deletion set.
+
+Do not start a codemod while any of those decisions remain distributed or
+unresolved. A large migration count is an architecture finding: first move the
+repeated decision behind the owner, then migrate the smallest stable call shape.
+
 ### 4. Implement one complete slice
 
 Preserve the target's established shapes. Create real behavior, boundary validation, production adapters, and tests required by the contract. Route special concerns to their owning farms:
@@ -96,13 +108,41 @@ Preserve the target's established shapes. Create real behavior, boundary validat
 
 This skill orchestrates those farms; it does not replace their acceptance rules.
 
-### 5. Verify from narrow to broad
+### 5. Cut over shared semantics once
+
+Use `cutover` only after the owner, facade, and consumer contract are frozen and
+the owning authority explicitly unlocks migration. Execute one atomic cutover:
+
+1. Inventory imports, call shapes, dynamic arguments, raw interpretation, and
+   assertion patterns before editing.
+2. Mechanically migrate imports and structurally equivalent calls only.
+3. Classify dynamic messages, details, vendor data, and domain outcomes by
+   semantic owner. Move shared meaning into the kernel; preserve domain-owned
+   context behind a private in-process capability that cannot cross wire/public
+   projections.
+4. Delete the replaced exports, subpaths, constructors, adapters, maps, and
+   compatibility paths in the same mission.
+5. Add type fixtures, semantic and boundary repository checks, projection
+   parity, hostile-input, bundle-isolation, and consumer contract tests that
+   prevent the old interpretation from returning.
+
+Never use test deletion, wording relaxation, a parallel facade, or discarded
+domain details to make a codemod green. A broad failure fan-out after a
+mechanical rewrite usually identifies semantic information lost at the
+boundary; repair that boundary once before touching consumers further.
+
+### 6. Verify from narrow to broad
 
 Run target-local lint, typecheck, and tests first. Then run the smallest consumer or integration checks that prove the public contract. Use broader repository gates only when the owning verification farm requires them or the user approves them.
 
-On failure, report the exact command and focused error, fix the cause, and rerun the failed gate. Never seal with a skipped, waived, timed-out, or unexplained required gate.
+On failure, report the exact command and focused error, fix the cause, and rerun
+the failed gate. If a broad parallel runner times out while the same focused
+package gate passes, record the broad run as failed or degraded execution, not
+`PASS`; inspect task-owned processes and runner pressure before deciding whether
+the product contract failed. Never seal with a skipped, waived, timed-out, or
+unexplained required gate.
 
-### 6. Seal or remain verified
+### 7. Seal or remain verified
 
 Apply [references/seal-contract.md](references/seal-contract.md). Emit `SEALED` only when every required gate is green and a durable seal record location already exists or is explicitly named by the user or owning farm. Otherwise report `VERIFIED` with the missing seal condition.
 

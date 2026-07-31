@@ -11,6 +11,7 @@ Use one state transition per bounded mission. A state describes evidence, not am
 | `SCAFFOLDED` | Complete compilable package shape exists | Package metadata, barrel, implementation, tests, README, and scripts required by its farm |
 | `IMPLEMENTED` | Named capability works through its public contract | Behavior and boundary tests |
 | `APPLIED` | Existing kernel contract is integrated into a named target | Consumer wiring and integration evidence |
+| `CUT_OVER` | One frozen semantic contract has replaced all accepted legacy surfaces | Complete consumer migration, deletion set, and recurrence gates |
 | `UPGRADED` | Existing capability changed under an explicit compatibility class | Before/after contract diff and affected consumer updates |
 | `VERIFIED` | All required gates for the mission are green | Exact commands, outcomes, and final digest |
 | `SEALED` | Verified evidence is persisted against a digest | Complete seal record |
@@ -30,6 +31,22 @@ Integrate an established kernel contract into one target. Verify the source cont
 ### `implement`
 
 Add a bounded capability without changing accepted public behavior outside the mission. Add validation, errors, observability, and tests where the capability boundary requires them.
+
+### `cutover`
+
+Replace distributed or parallel semantic ownership in one authorized final
+migration. Enter only when the canonical owner, permanent facade, normalization
+boundary, derived projections, consumer rules, and deletion set are frozen.
+
+Separate the work into two passes:
+
+1. mechanical imports and equivalent call shapes;
+2. semantic classification of dynamic data and domain-owned context.
+
+Finish only when all accepted consumers use the permanent surface, every
+superseded public path is deleted, and repository checks reject reintroduction.
+Do not create an intermediate public API or treat a compatibility alias as a
+second construction surface.
 
 ### `upgrade`
 
@@ -61,8 +78,9 @@ Run before changing a sealed target. Record the prior digest, accepted delta, co
 ABSENT     -> SCAFFOLDED -> IMPLEMENTED -> VERIFIED -> SEALED
 DISCOVERED -> IMPLEMENTED -> VERIFIED -> SEALED
 DISCOVERED -> APPLIED     -> VERIFIED -> SEALED
+DISCOVERED -> CUT_OVER    -> VERIFIED -> SEALED
 DISCOVERED -> UPGRADED    -> VERIFIED -> SEALED
-SEALED     -> REOPENED    -> IMPLEMENTED | APPLIED | UPGRADED -> VERIFIED -> SEALED
+SEALED     -> REOPENED    -> IMPLEMENTED | APPLIED | CUT_OVER | UPGRADED -> VERIFIED -> SEALED
 any state  -> BLOCKED when required authority or ownership is unresolved
 ```
 

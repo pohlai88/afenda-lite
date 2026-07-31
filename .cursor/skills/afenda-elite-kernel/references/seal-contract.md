@@ -15,11 +15,28 @@ A seal is reproducible readiness evidence for one target, capability, and conten
 | Tests | Behavior, rejection, and boundary cases required by the capability pass |
 | Static checks | Target lint and typecheck pass |
 | Consumers | Direct consumers compile or pass their focused contract tests |
+| Semantic ownership | Shared meaning has one owner; repository checks reject duplicate interpretation |
+| Cutover deletion | Every superseded public surface named by an accepted cutover is absent |
 | Documentation | Target README and public reference surfaces match the accepted contract |
 | Snapshot | Final inspector digest and working-tree state are recorded |
 | Persistence | Seal record is stored in an existing owner-approved evidence surface |
 
 Every applicable gate must pass. Mark a non-applicable gate `N/A` with a concrete reason; never omit it silently.
+
+## Verification truthfulness
+
+- Run focused package and affected-consumer gates before broad parallel suites.
+- Record the literal outcome of every command. A timed-out, killed, or
+  resource-starved broad run is not `PASS`, even when isolated gates are green.
+- Distinguish an assertion or type failure from runner saturation using the
+  focused reproduction, process command lines, and task output. Terminate only
+  exact task-owned orphan processes after inspection.
+- Do not repeatedly launch broad suites to obtain a lucky green result. Repair
+  a product failure; document an execution failure and run the owner-required
+  equivalent evidence.
+- Update an integrity digest only after implementation, consumers,
+  documentation, governance, and all required tests are final. The digest
+  refresh is the last mutation inside the protected target.
 
 ## Seal record
 

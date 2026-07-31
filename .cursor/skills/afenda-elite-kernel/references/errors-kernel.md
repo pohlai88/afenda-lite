@@ -78,6 +78,83 @@ them; never present them as an alternative capability style.
 The contract is now cut over and sealed. Consumer work may use only the root
 capabilities; removed subpaths and implementation APIs must never be restored.
 
+## Final-cutover method and learned constraints
+
+The successful errors migration established a reusable semantic-cutover
+sequence. Apply it to future shared concepts; do not copy its implementation
+mechanically into unrelated domains.
+
+### 1. Freeze meaning before migration
+
+Count the consumer graph and classify every legacy surface before codemodding.
+Freeze `ERROR_REGISTRY`, the five root capabilities, canonical `Result<T, C>`,
+ingress aliases, wire version, and the allowed/rejected consumer contract first.
+An internal representation change should upgrade consumers automatically. Only
+a deliberate public-contract cutover authorizes consumer edits.
+
+### 2. Use a two-pass codemod
+
+The first pass may rewrite imports and calls whose meaning is structurally
+equivalent. The second pass must classify dynamic messages, details, causes,
+vendor payloads, persistence data, and assertion patterns. Never map these to a
+new API by position alone.
+
+If one mechanical rewrite causes failures across many domain tests, stop. That
+fan-out is evidence that the old call carried a domain-owned fact. Centralize
+the missing boundary once instead of weakening or editing hundreds of tests.
+
+### 3. Separate public meaning from private domain context
+
+| Data | Owner and permitted path |
+|------|--------------------------|
+| Canonical code, message key, safe wording, safe details, HTTP, retry, diagnostics, wire, OpenAPI | `ERROR_REGISTRY` and derived errors capabilities |
+| Domain outcome needed by trusted in-process code | Domain owner, attached through `errorResult.withContext` and read with `errorResult.context` |
+| Historical code or wire alias | Internal ingress ledger; normalize immediately |
+| Raw cause, stack, SQL, credentials, vendor object | Never public or wire; normalize at the owning ingress boundary |
+
+The context channel is package-private storage backed by `WeakMap`: it is not
+enumerable, structural, serializable, or a second failure contract. Persistence
+or normalization code that reconstructs a failure must deliberately preserve
+approved in-process context with `withContext`; public, HTTP, diagnostics, wire,
+and OpenAPI projections must never expose it.
+
+Consumers may narrow canonical codes and test their own domain context. They
+must not assert centrally owned public wording, reconstruct public details, or
+derive status, retry, diagnostics, serialization, or post-normalization shared
+behavior.
+
+### 4. Delete and enforce in the same cutover
+
+Delete subpaths, `AppError`, versioned helpers, manual serializers, compatibility
+facades, and consumer-owned policy maps with the migration. Permanent checks
+must cover:
+
+- root-only imports and exact capability signatures;
+- allowed and rejected TypeScript fixtures;
+- canonical marker presence and forbidden semantic interpretation;
+- hostile structural lookalikes and unknown/vendor input;
+- registry parity across Result, HTTP, retry, diagnostics, wire, and OpenAPI;
+- bundle isolation and byte ceilings for each capability;
+- absence of superseded exports and implementation dependencies.
+
+Bundle checks protect responsibility boundaries, not historical implementation
+assumptions. When a legitimate owned capability changes implementation (as the
+trusted Result context did), update the gate to express what must not leak; do
+not disable it or preserve a stale ban that contradicts the accepted contract.
+
+### 5. Verify without hiding runner failures
+
+Run errors package lint, typecheck, and tests first; then affected domain tests,
+semantic/boundary/OpenAPI checks, and finally the required repository suite. A
+broad parallel timeout with a green isolated package is an execution finding,
+not proof of either product failure or success. Record both outcomes exactly,
+inspect only task-owned processes, and never label the timed-out command green.
+
+Refresh `.protected.sha256` only after code, consumers, fixtures, documentation,
+governance, and required verification are final. `CONTRACT.md` remains semantic
+authority; `PR.md` records execution evidence and must not become a parallel
+contract.
+
 ## Consumer boundary after unlock
 
 | Boundary | Capability |

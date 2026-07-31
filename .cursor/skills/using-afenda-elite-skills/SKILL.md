@@ -59,7 +59,7 @@ Task arrives (this repo / Afenda-Lite)
     ├── One mission / commit mixing risk? ──────────────────→ bounded-agent-lanes
     ├── Dead code / Knip / skill-catalog drift? ────────────→ afenda-elite-repo-housekeeping
     ├── Cross-package import / DAG / new packages/*? ───────→ afenda-elite-monorepo-discipline
-    ├── Reusable kernel scaffold / apply / implement / deterministic upgrade / readiness seal · `@afenda/errors` integration/upgrade? → afenda-elite-kernel (load errors-kernel contract; orchestrates owning farms; digest-scoped seal ≠ Module Enterprise Readiness)
+    ├── Reusable kernel scaffold / apply / semantic cutover / deterministic upgrade / readiness seal · `@afenda/errors` integration/upgrade? → afenda-elite-kernel (load errors-kernel contract; orchestrates owning farms; digest-scoped seal ≠ Module Enterprise Readiness)
     ├── Cross-package move / extract / Slice D delete? ─────→ afenda-elite-monorepo-refactor
     ├── ARCH-028 residual / GUIDE-018 Phase I / Neon Auth optimisation (S* / I* / N* / command-sheet / neon-command-sheet)? → afenda-elite-implementation-slices (then farms from slice-map or neon-auth-slice-map; N* → Neon Slice Score + independent audit)
     ├── FE scaffold / wipe / app routes? ───────────────────→ afenda-elite-frontend-scaffold (consume `@afenda/ui-system` barrel per ADR-010)
@@ -163,7 +163,7 @@ Local skills must remain operable if `afenda-Xerp` is deleted **and** if Living 
 - Scratch packs: [docs-V2/README.md](../../../docs-V2/README.md)
 - Housekeeping: [afenda-elite-repo-housekeeping](../afenda-elite-repo-housekeeping/SKILL.md)
 - Discipline: [afenda-elite-monorepo-discipline](../afenda-elite-monorepo-discipline/SKILL.md) — ARCH-024 import/DAG/export surface
-- Kernel lifecycle: [afenda-elite-kernel](../afenda-elite-kernel/SKILL.md) — deterministic scaffold/apply/implement/upgrade/verify/seal orchestration for reusable package capabilities; registered `@afenda/errors` contract
+- Kernel lifecycle: [afenda-elite-kernel](../afenda-elite-kernel/SKILL.md) — deterministic scaffold/apply/implement/semantic-cutover/upgrade/verify/seal orchestration for reusable package capabilities; registered `@afenda/errors` contract
 - Refactor: [afenda-elite-monorepo-refactor](../afenda-elite-monorepo-refactor/SKILL.md)
 - Phase I / residual scaffold / Neon Auth N*: [afenda-elite-implementation-slices](../afenda-elite-implementation-slices/SKILL.md) — [command-sheet](../afenda-elite-implementation-slices/command-sheet.md) · [neon-command-sheet](../afenda-elite-implementation-slices/neon-command-sheet.md)
 - FE scaffold: [afenda-elite-frontend-scaffold](../afenda-elite-frontend-scaffold/SKILL.md)

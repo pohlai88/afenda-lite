@@ -1,4 +1,4 @@
 interface:
   display_name: "Afenda Elite Kernel"
-  short_description: "Discover and upgrade reusable package kernels"
-  default_prompt: "Use $afenda-elite-kernel to inventory a package band, select one bounded package capability, and implement or verify it with reproducible evidence."
+  short_description: "Build and cut over semantic package kernels"
+  default_prompt: "Use $afenda-elite-kernel to centralize one shared concept behind a durable capability surface, execute any authorized final cutover, and verify it with reproducible evidence."
