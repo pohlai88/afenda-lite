@@ -21,6 +21,7 @@ import {
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import type { ReactNode } from "react";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { expect, within } from "storybook/test";
 import { contractDocsParameters } from "./contract-docs";
 import { contractEvidence, StorySection } from "./evidence";
 
@@ -201,15 +202,15 @@ export const Overview: Story = {
 					</div>
 				</header>
 
-				<Card className="shadow-none">
+				<Card className="min-w-0 shadow-none">
 					<CardHeader>
 						<CardTitle>Invoiced versus paid by month</CardTitle>
 						<CardDescription>
 							Comparable monthly totals · MYR thousands · Apr–Jul 2026
 						</CardDescription>
 					</CardHeader>
-					<CardContent className="grid gap-5">
-						<figure className="grid gap-3">
+					<CardContent className="grid min-w-0 gap-5">
+						<figure className="grid min-w-0 gap-3">
 							<figcaption className="sr-only">
 								Grouped bar chart comparing monthly invoiced and paid
 								receivables amounts from April through July 2026.
@@ -224,7 +225,10 @@ export const Overview: Story = {
 					</CardContent>
 				</Card>
 
-				<section aria-labelledby="exact-values-title" className="grid gap-3">
+				<section
+					aria-labelledby="exact-values-title"
+					className="grid min-w-0 gap-3"
+				>
 					<div className="grid gap-1">
 						<h2
 							className="font-semibold text-base tracking-tight"
@@ -237,8 +241,8 @@ export const Overview: Story = {
 							export, and assistive-technology access to exact amounts.
 						</p>
 					</div>
-					<Card className="shadow-none">
-						<CardContent className="pt-6">
+					<Card className="min-w-0 shadow-none">
+						<CardContent className="min-w-0 pt-6">
 							<ReceivablesTable />
 						</CardContent>
 					</Card>
@@ -246,6 +250,17 @@ export const Overview: Story = {
 			</div>
 		</div>
 	),
+	play: async ({ canvasElement }) => {
+		const canvas = within(canvasElement);
+		await expect(
+			canvas.getByRole("heading", {
+				level: 1,
+				name: "How closely are collections tracking invoicing?",
+			}),
+		).toBeVisible();
+		await expect(canvas.getByRole("table")).toBeVisible();
+		await expect(canvas.getByText("Jul 2026")).toBeVisible();
+	},
 };
 
 export const Usage: Story = {

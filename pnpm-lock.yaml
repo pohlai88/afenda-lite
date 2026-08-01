@@ -615,6 +615,9 @@ importers:
       react-dom:
         specifier: 'catalog:'
         version: 19.2.7(react@19.2.7)
+      recharts:
+        specifier: 'catalog:'
+        version: 3.10.1(@types/react@19.2.9)(react-dom@19.2.7(react@19.2.7))(react-is@17.0.2)(react@19.2.7)(redux@5.0.1)
       tw-animate-css:
         specifier: 'catalog:'
         version: 1.4.0
@@ -970,6 +973,9 @@ importers:
       '@afenda/inventory':
         specifier: workspace:*
         version: link:../inventory
+      '@afenda/master-data':
+        specifier: workspace:*
+        version: link:../master-data
       server-only:
         specifier: 0.0.1
         version: 0.0.1
@@ -1004,9 +1010,6 @@ importers:
       '@afenda/events':
         specifier: workspace:*
         version: link:../../data-plane/events
-      '@afenda/master-data':
-        specifier: workspace:*
-        version: link:../master-data
       server-only:
         specifier: 0.0.1
         version: 0.0.1

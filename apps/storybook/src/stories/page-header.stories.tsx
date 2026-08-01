@@ -14,6 +14,7 @@ import {
 	StatusBadge,
 } from "@afenda/ui-system";
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { expect, userEvent, within } from "storybook/test";
 import { contractDocsParameters } from "./contract-docs";
 import { contractEvidence, StorySection } from "./evidence";
 
@@ -80,6 +81,15 @@ export const Overview: Story = {
 			</div>
 		</div>
 	),
+	play: async ({ canvasElement }) => {
+		const canvas = within(canvasElement);
+		await expect(
+			canvas.getByRole("heading", { level: 1, name: "Supplier invoices" }),
+		).toBeVisible();
+		const createButton = canvas.getByRole("button", { name: "New invoice" });
+		await userEvent.click(createButton);
+		await expect(createButton).toHaveFocus();
+	},
 };
 
 export const SemanticUsage: Story = {

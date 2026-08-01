@@ -9,6 +9,7 @@ import {
 	WorkspacePageHeader,
 } from "@afenda/ui-system";
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { expect, within } from "storybook/test";
 import { contractDocsParameters } from "./contract-docs";
 import { contractEvidence } from "./evidence";
 
@@ -61,4 +62,14 @@ export const Overview: Story = {
 			</WorkspacePage>
 		</div>
 	),
+	play: async ({ canvasElement }) => {
+		const canvas = within(canvasElement);
+		await expect(
+			canvas.getByRole("region", { name: "Sales workspace" }),
+		).toBeVisible();
+		await expect(
+			canvas.getByRole("heading", { level: 1, name: "Sales orders" }),
+		).toBeVisible();
+		await expect(canvas.getByText("Order register")).toBeVisible();
+	},
 };

@@ -1,0 +1,205 @@
+{
+	"schema": "afenda.storybook-production-build-evidence/v1",
+	"command": "pnpm --filter @afenda/storybook build",
+	"platform": "win32",
+	"nodeVersion": "v24.0.0",
+	"pnpmVersion": "10.33.4",
+	"addonPolicy": {
+		"production": ["@storybook/addon-docs", "@storybook/addon-a11y"],
+		"excludedDevelopmentOnly": ["@storybook/addon-vitest"]
+	},
+	"runs": [
+		{
+			"run": 1,
+			"startedAt": "2026-08-01T15:59:30.301Z",
+			"durationMs": 50864,
+			"timeoutMs": 180000,
+			"classification": "completed",
+			"exitCode": 0,
+			"signal": null,
+			"error": null,
+			"peakWorkingSetBytes": 2495688704,
+			"memorySamplingError": null,
+			"phaseMarkers": {
+				"cleaning": {
+					"elapsedMs": 3117,
+					"text": "|\no  Cleaning outputDir: storybook-static"
+				},
+				"loading": {
+					"elapsedMs": 3248,
+					"text": "|\no  Loading presets"
+				},
+				"managerStart": {
+					"elapsedMs": 8442,
+					"text": "|\no  Building manager.."
+				},
+				"previewStart": {
+					"elapsedMs": 9084,
+					"text": "|\n•  Building preview.."
+				},
+				"transformComplete": {
+					"elapsedMs": 44324,
+					"text": "|  Vite ✓ 3739 modules transformed."
+				},
+				"bundleComplete": {
+					"elapsedMs": 49051,
+					"text": "|  Vite ✓ built in 39.33s"
+				},
+				"buildComplete": {
+					"elapsedMs": 50451,
+					"text": "|\n—  Storybook build completed successfully"
+				}
+			},
+			"phaseDurationsMs": {
+				"configurationMs": 9084,
+				"managerMs": null,
+				"previewMs": 39967,
+				"finalizationMs": 1813
+			},
+			"largestChunks": [
+				{
+					"asset": "iframe-Cy2yE6gh.js",
+					"sizeKb": 1176.91,
+					"gzipKb": 337.49
+				},
+				{
+					"asset": "blocks-9vcdCpzE.js",
+					"sizeKb": 854.55,
+					"gzipKb": 272.75
+				},
+				{
+					"asset": "axe-DUN7BSs9.js",
+					"sizeKb": 592.93,
+					"gzipKb": 163.81
+				},
+				{
+					"asset": "chart.stories-DyrNeEXs.js",
+					"sizeKb": 414.05,
+					"gzipKb": 117.88
+				},
+				{
+					"asset": "evidence-Bc_e3f-y.js",
+					"sizeKb": 284.58,
+					"gzipKb": 70.31
+				}
+			],
+			"logFile": "run-1.log"
+		},
+		{
+			"run": 2,
+			"startedAt": "2026-08-01T16:00:21.170Z",
+			"durationMs": 65013,
+			"timeoutMs": 180000,
+			"classification": "completed",
+			"exitCode": 0,
+			"signal": null,
+			"error": null,
+			"peakWorkingSetBytes": 1987321856,
+			"memorySamplingError": null,
+			"phaseMarkers": {
+				"cleaning": {
+					"elapsedMs": 5692,
+					"text": "|\no  Cleaning outputDir: storybook-static"
+				},
+				"loading": {
+					"elapsedMs": 5925,
+					"text": "|\no  Loading presets"
+				},
+				"managerStart": {
+					"elapsedMs": 14097,
+					"text": "|\no  Building manager.."
+				},
+				"previewStart": {
+					"elapsedMs": 14626,
+					"text": "|\n•  Building preview.."
+				},
+				"transformComplete": {
+					"elapsedMs": 60172,
+					"text": "|  Vite ✓ 3739 modules transformed."
+				},
+				"bundleComplete": {
+					"elapsedMs": 63522,
+					"text": "|  Vite ✓ built in 48.37s"
+				},
+				"buildComplete": {
+					"elapsedMs": 64559,
+					"text": "|\n—  Storybook build completed successfully"
+				}
+			},
+			"phaseDurationsMs": {
+				"configurationMs": 14626,
+				"managerMs": null,
+				"previewMs": 48896,
+				"finalizationMs": 1491
+			},
+			"largestChunks": [
+				{
+					"asset": "iframe-Cy2yE6gh.js",
+					"sizeKb": 1176.91,
+					"gzipKb": 337.49
+				},
+				{
+					"asset": "blocks-9vcdCpzE.js",
+					"sizeKb": 854.55,
+					"gzipKb": 272.75
+				},
+				{
+					"asset": "axe-DUN7BSs9.js",
+					"sizeKb": 592.93,
+					"gzipKb": 163.81
+				},
+				{
+					"asset": "chart.stories-DyrNeEXs.js",
+					"sizeKb": 414.05,
+					"gzipKb": 117.88
+				},
+				{
+					"asset": "evidence-Bc_e3f-y.js",
+					"sizeKb": 284.58,
+					"gzipKb": 70.31
+				}
+			],
+			"logFile": "run-2.log"
+		}
+	],
+	"analysis": {
+		"allRunsCompleted": true,
+		"durationDeltaMs": 14149,
+		"slowestStage": {
+			"stage": "previewMs",
+			"averageMs": 44432
+		},
+		"largestChunks": [
+			{
+				"asset": "iframe-Cy2yE6gh.js",
+				"sizeKb": 1176.91,
+				"gzipKb": 337.49
+			},
+			{
+				"asset": "blocks-9vcdCpzE.js",
+				"sizeKb": 854.55,
+				"gzipKb": 272.75
+			},
+			{
+				"asset": "axe-DUN7BSs9.js",
+				"sizeKb": 592.93,
+				"gzipKb": 163.81
+			},
+			{
+				"asset": "chart.stories-DyrNeEXs.js",
+				"sizeKb": 414.05,
+				"gzipKb": 117.88
+			},
+			{
+				"asset": "evidence-Bc_e3f-y.js",
+				"sizeKb": 284.58,
+				"gzipKb": 70.31
+			}
+		],
+		"addonAssetObservation": {
+			"asset": "axe-DUN7BSs9.js",
+			"sizeKb": 592.93,
+			"gzipKb": 163.81
+		}
+	}
+}

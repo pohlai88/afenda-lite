@@ -61,6 +61,7 @@ describe("Chart series semantic facade", () => {
 		const html = renderToStaticMarkup(createElement(ChartContainer, props));
 
 		expect(html).toContain('data-chart="chart-receivables-injected"');
+		expect(html).toContain("w-full min-w-0");
 		expect(html).toContain("[data-chart=chart-receivables-injected]");
 		expect(html).not.toContain("] .injected");
 	});

@@ -21,6 +21,7 @@ import {
 	IssueCreditNoteForm,
 	PostSalesInvoiceForm,
 } from "@/features/receivables/receivables-forms";
+import { ReceivablesStatusChart } from "@/features/receivables/receivables-status-chart";
 import { createReceivablesCommandOptions } from "@/lib/erp/receivables-command-options";
 import { sessionHasPermission } from "@/modules/identity/domain/session-permission";
 
@@ -81,6 +82,16 @@ export async function ReceivablesShell({ surface }: ReceivablesShellProps) {
 		openAmount: invoice.openAmount,
 		lineCount: invoice.lines.length,
 	}));
+	const statusCounts = new Map<string, number>();
+	for (const invoice of invoices) {
+		statusCounts.set(
+			invoice.status,
+			(statusCounts.get(invoice.status) ?? 0) + 1,
+		);
+	}
+	const statusDistribution = [...statusCounts]
+		.map(([status, documents]) => ({ status, documents }))
+		.sort((left, right) => left.status.localeCompare(right.status));
 
 	return (
 		<WorkspacePage>
@@ -90,6 +101,18 @@ export async function ReceivablesShell({ surface }: ReceivablesShellProps) {
 				title="Customer receivables"
 			/>
 			<WorkspacePageContent>
+				<Card className="min-w-0">
+					<CardHeader>
+						<CardTitle>Lifecycle distribution</CardTitle>
+						<CardDescription>
+							A count-based view of the same permission-scoped page shown below.
+						</CardDescription>
+					</CardHeader>
+					<CardContent>
+						<ReceivablesStatusChart data={statusDistribution} />
+					</CardContent>
+				</Card>
+
 				<Card>
 					<CardHeader>
 						<CardTitle>Sales invoices and credit notes</CardTitle>

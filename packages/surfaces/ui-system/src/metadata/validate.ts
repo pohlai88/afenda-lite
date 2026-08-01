@@ -296,11 +296,14 @@ export function validateUiCatalog(
 
 const VERIFIED_REQUIRED_EVIDENCE = [
 	"contract",
+	"storybook",
 	"unit",
 	"interaction",
 	"accessibility",
+	"responsive",
 	"visual",
 	"contrast",
+	"consumer",
 ] as const satisfies readonly EvidenceKind[];
 
 function normalizeClauseForComparison(value: string): string {

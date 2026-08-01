@@ -14,6 +14,17 @@ interface StoryIndex {
 
 type Theme = "light" | "dark";
 
+const VERIFIED_COMPONENT_STORY_IDS = [
+	"ui-system-app-shell--enterprise-operations",
+	"ui-system-button--overview",
+	"ui-system-card--overview",
+	"ui-system-chart--overview",
+	"ui-system-data-table--overview",
+	"ui-system-form-field--overview",
+	"ui-system-page-header--overview",
+	"ui-system-workspace-page--overview",
+] as const;
+
 async function openStory(page: Page, storyId: string, theme: Theme) {
 	await page.setViewportSize({ width: 1440, height: 900 });
 	await page.goto(
@@ -64,6 +75,72 @@ test("all tagged UI-system stories match canonical screenshots @visual", async (
 				await expect(page).toHaveScreenshot(`${story.id}-${theme}.png`);
 			});
 		}
+	}
+});
+
+test("verified component stories have no accessibility violations", async ({
+	page,
+}) => {
+	test.setTimeout(180_000);
+
+	for (const storyId of VERIFIED_COMPONENT_STORY_IDS) {
+		// biome-ignore lint/performance/noAwaitInLoops: one browser page preserves deterministic evidence order.
+		await test.step(storyId, async () => {
+			await openStory(page, storyId, "light");
+			const accessibility = await new AxeBuilder({ page })
+				.include("#storybook-root")
+				.analyze();
+			expect(accessibility.violations).toEqual([]);
+		});
+	}
+});
+
+test("verified component stories preserve 390px reflow", async ({ page }) => {
+	test.setTimeout(180_000);
+
+	for (const storyId of VERIFIED_COMPONENT_STORY_IDS) {
+		// biome-ignore lint/performance/noAwaitInLoops: one browser page preserves deterministic evidence order.
+		await test.step(storyId, async () => {
+			await page.setViewportSize({ width: 390, height: 844 });
+			await page.goto(
+				`/iframe.html?id=${encodeURIComponent(storyId)}&viewMode=story&globals=theme:light`,
+			);
+			await expect(page.locator("#storybook-root")).toBeVisible();
+			await page.evaluate(() => document.fonts.ready);
+			await page.waitForLoadState("networkidle");
+
+			const widths = await page.evaluate(() => {
+				const viewport = document.documentElement.clientWidth;
+				const offenders = [...document.body.querySelectorAll<HTMLElement>("*")]
+					.map((element) => ({
+						className: element.className.toString().slice(0, 160),
+						clientWidth: element.clientWidth,
+						right: Math.round(element.getBoundingClientRect().right),
+						scrollWidth: element.scrollWidth,
+						tag: element.tagName.toLowerCase(),
+					}))
+					.filter(
+						({ clientWidth, right, scrollWidth }) =>
+							right > viewport + 1 || scrollWidth > clientWidth + 1,
+					)
+					.sort(
+						(left, right) =>
+							right.scrollWidth -
+							right.clientWidth -
+							(left.scrollWidth - left.clientWidth),
+					)
+					.slice(0, 12);
+				return {
+					document: document.documentElement.scrollWidth,
+					offenders,
+					viewport,
+				};
+			});
+			expect(
+				widths.document,
+				`Horizontal overflow: ${JSON.stringify(widths.offenders)}`,
+			).toBeLessThanOrEqual(widths.viewport + 1);
+		});
 	}
 });
 

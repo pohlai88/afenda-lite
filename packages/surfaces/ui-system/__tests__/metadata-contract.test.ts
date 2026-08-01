@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import ts from "typescript";
 import { describe, expect, expectTypeOf, it } from "vitest";
@@ -20,6 +20,7 @@ import {
 } from "../src/metadata/validate";
 
 const packageRoot = path.resolve(import.meta.dirname, "..");
+const workspaceRoot = path.resolve(packageRoot, "../../..");
 const contractDirectory = path.join(packageRoot, "src/metadata/contracts");
 
 interface ContractSourceFact {
@@ -516,26 +517,26 @@ describe("UI system metadata contract", () => {
 	});
 
 	it("derives candidate lifecycle from name-based governance without duplicating profile evidence", () => {
-		const button = UI_SYSTEM_CATALOG.components.find(
-			(entry) => entry.id === "ui.button",
+		const alert = UI_SYSTEM_CATALOG.components.find(
+			(entry) => entry.id === "ui.alert",
 		);
 		const accordion = UI_SYSTEM_CATALOG.components.find(
 			(entry) => entry.id === "ui.accordion",
 		);
-		if (!(button && accordion)) {
+		if (!(alert && accordion)) {
 			throw new Error("Component metadata is missing.");
 		}
 
-		expect(button.lifecycle).toBe("candidate");
-		expect(button.governance).toMatchObject({
+		expect(alert.lifecycle).toBe("candidate");
+		expect(alert.governance).toMatchObject({
 			lifecycle: "candidate",
 			contract: {
-				id: "ui.button.contract",
-				component: "ui.button",
+				id: "ui.alert.contract",
+				component: "ui.alert",
 			},
 		});
-		expect(button.governance?.evidence).toBeUndefined();
-		expect(button.evidence.length).toBeGreaterThan(0);
+		expect(alert.governance?.evidence).toBeUndefined();
+		expect(alert.evidence.length).toBeGreaterThan(0);
 		expect(accordion.lifecycle).toBe("candidate");
 		expect(accordion.governance).toMatchObject({
 			lifecycle: "candidate",
@@ -545,6 +546,63 @@ describe("UI system metadata contract", () => {
 			},
 		});
 		expect(accordion.governance?.evidence).toBeUndefined();
+	});
+
+	it("resolves every verified lifecycle claim to canonical repository evidence", () => {
+		const verifiedComponentIds = [
+			"ui.button",
+			"ui.card",
+			"ui.form-field",
+			"ui.page-header",
+			"ui.workspace-page",
+			"ui.data-table",
+			"ui.app-shell",
+			"ui.chart",
+		] as const;
+		const requiredKinds = [
+			"contract",
+			"storybook",
+			"unit",
+			"interaction",
+			"accessibility",
+			"responsive",
+			"visual",
+			"contrast",
+			"consumer",
+		] as const;
+
+		for (const componentId of verifiedComponentIds) {
+			const component = UI_SYSTEM_CATALOG.components.find(
+				(entry) => entry.id === componentId,
+			);
+			if (!component?.governance?.evidence) {
+				throw new Error(`${componentId} verified evidence is missing.`);
+			}
+
+			expect(component.lifecycle).toBe("verified");
+			expect(component.governance.lifecycle).toBe("verified");
+			const kinds = new Set(
+				component.governance.evidence.map(({ kind }) => kind),
+			);
+			for (const requiredKind of requiredKinds) {
+				expect(
+					kinds.has(requiredKind),
+					`${componentId} lacks ${requiredKind}`,
+				).toBe(true);
+			}
+
+			for (const evidence of component.governance.evidence) {
+				const evidencePath = path.resolve(workspaceRoot, evidence.file);
+				expect(existsSync(evidencePath), evidence.file).toBe(true);
+				if (path.extname(evidencePath) === ".png") {
+					expect(path.basename(evidencePath)).toBe(evidence.target);
+					continue;
+				}
+				expect(readFileSync(evidencePath, "utf8"), evidence.file).toContain(
+					evidence.target,
+				);
+			}
+		}
 	});
 
 	it("promotes Storybook-integrated contracts to approved governance", () => {

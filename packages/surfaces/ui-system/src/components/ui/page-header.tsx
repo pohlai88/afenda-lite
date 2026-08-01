@@ -44,6 +44,7 @@ function PageHeaderActions({
 	return (
 		<div
 			className={cn("flex shrink-0 flex-wrap items-center gap-2", className)}
+			data-slot="page-header-actions"
 			{...props}
 		/>
 	);

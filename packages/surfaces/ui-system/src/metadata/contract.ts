@@ -200,11 +200,14 @@ export type ComponentLifecycle =
 
 export type EvidenceKind =
 	| "contract"
+	| "storybook"
 	| "unit"
 	| "interaction"
 	| "accessibility"
+	| "responsive"
 	| "visual"
-	| "contrast";
+	| "contrast"
+	| "consumer";
 
 export type GovernanceEvidenceKind = EvidenceKind;
 

@@ -1,4 +1,5 @@
 import type {
+	ComponentEvidence,
 	ComponentGovernance,
 	ErpModuleId,
 	GovernedComponentContract,
@@ -25,6 +26,69 @@ type ComponentGovernanceOverrides = Readonly<
 		Record<UiComponentMetadata["id"], Omit<ComponentGovernance, "contract">>
 	>
 >;
+
+interface VerifiedComponentEvidenceInput {
+	readonly consumer: Readonly<{ file: string; target: string }>;
+	readonly contractExport: string;
+	readonly interaction: Readonly<{ file: string; target: string }>;
+	readonly slug: string;
+	readonly storyExport: string;
+	readonly storyId: string;
+	readonly unit: Readonly<{ file: string; target: string }>;
+	readonly visualBaseline?: string;
+}
+
+/**
+ * Derives the complete proof set for a verified component. Lifecycle and proof
+ * locations remain owned by this catalogue instead of parallel status ledgers.
+ */
+function verifiedComponentGovernance(
+	input: VerifiedComponentEvidenceInput,
+): Omit<ComponentGovernance, "contract"> {
+	const visualBaseline = input.visualBaseline ?? input.storyId;
+	const evidence = Object.freeze([
+		{
+			kind: "contract",
+			file: `packages/surfaces/ui-system/src/metadata/contracts/${input.slug}.contract.ts`,
+			target: `export const ${input.contractExport}`,
+		},
+		{
+			kind: "storybook",
+			file: `apps/storybook/src/stories/${input.slug}.stories.tsx`,
+			target: `export const ${input.storyExport}`,
+		},
+		{ kind: "unit", ...input.unit },
+		{ kind: "interaction", ...input.interaction },
+		{
+			kind: "accessibility",
+			file: "apps/storybook/visual-tests/storybook.visual.spec.ts",
+			target: "verified component stories have no accessibility violations",
+		},
+		{
+			kind: "responsive",
+			file: "apps/storybook/visual-tests/storybook.visual.spec.ts",
+			target: "verified component stories preserve 390px reflow",
+		},
+		{
+			kind: "visual",
+			file: `apps/storybook/visual-tests/__screenshots__/${visualBaseline}-light.png`,
+			target: `${visualBaseline}-light.png`,
+		},
+		{
+			kind: "visual",
+			file: `apps/storybook/visual-tests/__screenshots__/${visualBaseline}-dark.png`,
+			target: `${visualBaseline}-dark.png`,
+		},
+		{
+			kind: "contrast",
+			file: "packages/surfaces/ui-system/__tests__/color-contrast.test.ts",
+			target: "APCA and WCAG color contracts",
+		},
+		{ kind: "consumer", ...input.consumer },
+	] satisfies readonly ComponentEvidence[]);
+
+	return Object.freeze({ lifecycle: "verified", evidence });
+}
 
 /**
  * Canonical registration gateway for component governance. Contract identity is
@@ -68,6 +132,151 @@ export function defineComponentGovernanceRegistry(
 }
 
 const COMPONENT_GOVERNANCE_OVERRIDES = {
+	"ui.app-shell": verifiedComponentGovernance({
+		slug: "app-shell",
+		contractExport: "appShellContract",
+		storyExport: "EnterpriseOperations",
+		storyId: "ui-system-app-shell--enterprise-operations",
+		visualBaseline: "ui-system-app-shell--enterprise-operations-desktop",
+		unit: {
+			file: "packages/surfaces/ui-system/__tests__/app-shell-utilities.interaction.test.tsx",
+			target: "derives placement from the canonical utility order",
+		},
+		interaction: {
+			file: "apps/storybook/visual-tests/storybook.visual.spec.ts",
+			target: "Enterprise AppShell utilities remain operable and accessible",
+		},
+		consumer: {
+			file: "apps/web/features/portal-chrome/workspace-platform-chrome.tsx",
+			target: "<AppShell",
+		},
+	}),
+	"ui.button": verifiedComponentGovernance({
+		slug: "button",
+		contractExport: "buttonContract",
+		storyExport: "Overview",
+		storyId: "ui-system-button--overview",
+		unit: {
+			file: "packages/surfaces/ui-system/__tests__/mineral-calm-components.test.ts",
+			target: "changes only micro Button sizes",
+		},
+		interaction: {
+			file: "apps/storybook/src/stories/button.stories.tsx",
+			target: "export const StatesAndAccessibility",
+		},
+		consumer: {
+			file: "apps/web/app/global-error.tsx",
+			target: "<Button",
+		},
+	}),
+	"ui.card": verifiedComponentGovernance({
+		slug: "card",
+		contractExport: "cardContract",
+		storyExport: "Overview",
+		storyId: "ui-system-card--overview",
+		unit: {
+			file: "packages/surfaces/ui-system/__tests__/consistency.test.ts",
+			target: "Card root documents Card-only rounded-xl exception",
+		},
+		interaction: {
+			file: "apps/storybook/src/stories/card.stories.tsx",
+			target: "export const Composition",
+		},
+		consumer: {
+			file: "apps/web/features/receivables/receivables-shell.tsx",
+			target: "<Card",
+		},
+	}),
+	"ui.chart": verifiedComponentGovernance({
+		slug: "chart",
+		contractExport: "chartContract",
+		storyExport: "Overview",
+		storyId: "ui-system-chart--overview",
+		unit: {
+			file: "packages/surfaces/ui-system/__tests__/chart-series.test.ts",
+			target: "projects canonical data-series tokens",
+		},
+		interaction: {
+			file: "apps/storybook/src/stories/chart.stories.tsx",
+			target: "export const Overview",
+		},
+		consumer: {
+			file: "apps/web/features/receivables/receivables-status-chart.tsx",
+			target: "<ChartContainer",
+		},
+	}),
+	"ui.data-table": verifiedComponentGovernance({
+		slug: "data-table",
+		contractExport: "dataTableContract",
+		storyExport: "Overview",
+		storyId: "ui-system-data-table--overview",
+		unit: {
+			file: "packages/surfaces/ui-system/__tests__/erp-chrome.test.ts",
+			target: "DataTable stripes odd rows",
+		},
+		interaction: {
+			file: "apps/storybook/src/stories/data-table.stories.tsx",
+			target: "export const StatesAndAccessibility",
+		},
+		consumer: {
+			file: "apps/web/features/sales/sales-orders-table.tsx",
+			target: "<DataTable",
+		},
+	}),
+	"ui.form-field": verifiedComponentGovernance({
+		slug: "form-field",
+		contractExport: "formFieldContract",
+		storyExport: "Overview",
+		storyId: "ui-system-form-field--overview",
+		unit: {
+			file: "packages/surfaces/ui-system/__tests__/form-field-page-header.test.tsx",
+			target: "associates FormField labels, guidance, and correction",
+		},
+		interaction: {
+			file: "apps/storybook/src/stories/form-field.stories.tsx",
+			target: "export const StatesAndAccessibility",
+		},
+		consumer: {
+			file: "apps/web/features/sales/create-sales-order-form.tsx",
+			target: "<FormField",
+		},
+	}),
+	"ui.page-header": verifiedComponentGovernance({
+		slug: "page-header",
+		contractExport: "pageHeaderContract",
+		storyExport: "Overview",
+		storyId: "ui-system-page-header--overview",
+		unit: {
+			file: "packages/surfaces/ui-system/__tests__/form-field-page-header.test.tsx",
+			target: "keeps PageHeader identity and actions",
+		},
+		interaction: {
+			file: "apps/storybook/src/stories/page-header.stories.tsx",
+			target: "export const Overview",
+		},
+		consumer: {
+			file: "apps/web/features/sales/sales-shell.tsx",
+			target: "<WorkspacePageHeader",
+		},
+	}),
+	"ui.workspace-page": verifiedComponentGovernance({
+		slug: "workspace-page",
+		contractExport: "workspacePageContract",
+		storyExport: "Overview",
+		storyId: "ui-system-workspace-page--overview",
+		unit: {
+			file: "packages/surfaces/ui-system/__tests__/workspace-page.test.tsx",
+			target: "owns canonical geometry and page-heading semantics",
+		},
+		interaction: {
+			file: "apps/storybook/src/stories/workspace-page.stories.tsx",
+			target: "export const Overview",
+		},
+		consumer: {
+			file: "apps/web/features/sales/sales-shell.tsx",
+			target: "<WorkspacePage",
+		},
+	}),
 	"ui.slider": { lifecycle: "approved" },
 	"ui.sonner": { lifecycle: "approved" },
 	"ui.spinner": { lifecycle: "approved" },
