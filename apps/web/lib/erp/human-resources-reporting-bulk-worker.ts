@@ -10,6 +10,8 @@ import {
 	type BulkImportResult,
 	buildHumanResourcesReportingSnapshot,
 	type CompensationBulkRow,
+	createHumanResourcesBulkCheckpointCapability,
+	createHumanResourcesReportingSourceCapability,
 	type EmployeeBulkRow,
 	type HumanResourcesReportingSnapshot,
 	type LearningAssignmentBulkRow,
@@ -21,10 +23,6 @@ import {
 	runLearningAssignmentBulkImport,
 	runLeaveEntitlementBulkImport,
 } from "@afenda/human-resources";
-import {
-	createDrizzleBulkCheckpointPort,
-	createDrizzleHumanResourcesReportingSource,
-} from "@afenda/human-resources/adapters/drizzle";
 
 import { createHumanResourcesCommandOptions } from "@/lib/erp/human-resources-command-options";
 
@@ -47,13 +45,14 @@ export function buildHumanResourcesReportingSnapshotWorker(
 			periodStart: input.periodStart,
 			periodEnd: input.periodEnd,
 		},
-		createDrizzleHumanResourcesReportingSource(),
+		createHumanResourcesReportingSourceCapability(),
 	);
 }
 
 function bulkDependencies() {
 	return {
-		checkpoints: createDrizzleBulkCheckpointPort<BulkCommandOutput>(),
+		checkpoints:
+			createHumanResourcesBulkCheckpointCapability<BulkCommandOutput>(),
 		commandOptions: createHumanResourcesCommandOptions(),
 	};
 }
@@ -108,7 +107,8 @@ export async function loadHumanResourcesBulkStatusWorker(input: {
 		auditEvents: readonly BulkAuditEvent[];
 	}>
 > {
-	const checkpoints = createDrizzleBulkCheckpointPort<BulkCommandOutput>();
+	const checkpoints =
+		createHumanResourcesBulkCheckpointCapability<BulkCommandOutput>();
 	const checkpoint = await checkpoints.load(input);
 	if (!checkpoint.ok) {
 		return checkpoint;
@@ -127,7 +127,7 @@ export function loadHumanResourcesBulkErrorArtifactWorker(input: {
 	organizationId: string;
 	idempotencyKey: string;
 }): Promise<Result<BulkErrorArtifact | null>> {
-	return createDrizzleBulkCheckpointPort<BulkCommandOutput>().loadLatestErrorArtifact(
+	return createHumanResourcesBulkCheckpointCapability<BulkCommandOutput>().loadLatestErrorArtifact(
 		input,
 	);
 }

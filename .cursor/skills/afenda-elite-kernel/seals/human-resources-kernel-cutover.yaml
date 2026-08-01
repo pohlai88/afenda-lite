@@ -1,0 +1,143 @@
+kernel_seal:
+  version: 1
+  id: HR-KERNEL-CUTOVER-01
+  target: packages/erp/human-resources
+  capability: canonical Human Resources semantic facade and production consumer cutover
+  owner: "@afenda/human-resources"
+  compatibility: breaking
+  content_digest: 1bbac13d99c5454b2be2c4f51fa2a5b197971558292625a3609fe7c1f792a59c
+  authority:
+    - AGENTS.md
+    - packages/erp/human-resources/README.md
+    - packages/erp/human-resources/package.json
+    - .cursor/skills/afenda-elite-kernel/SKILL.md
+    - .cursor/skills/afenda-elite-kernel/references/lifecycle.md
+    - .cursor/skills/afenda-elite-kernel/references/seal-contract.md
+    - user acceptance of HR-KERNEL-CUTOVER-01 on 2026-08-01
+  scope:
+    includes:
+      - one permanent root production facade
+      - isolated test-only ./testing capability
+      - opaque composition-created execution context
+      - 564 Human Resources operation wrappers
+      - final production consumer migration
+      - deletion of superseded production subpaths and composition files
+      - recurrence enforcement and public documentation
+    excludes:
+      - database schema or migration changes
+      - database table-ownership governance
+      - metrics import correction
+      - generated ownership-register refresh
+      - unrelated UI and broad web typecheck repair
+      - payroll kernelisation
+  invariants:
+    - Production consumers import only from @afenda/human-resources.
+    - The @afenda/human-resources/testing entrypoint is test-only.
+    - Public operations accept the opaque capability context created by approved composition.
+    - Stores, adapters, resolvers, raw ports, schemas, and execution wiring remain internal.
+    - Wildcard public exports and new production subpaths are prohibited.
+    - Payroll consumes supported HR semantics or handoffs, never HR internals.
+    - Database completion preserves this public HR contract.
+  public_contract:
+    exports:
+      - "@afenda/human-resources"
+      - "@afenda/human-resources/testing (test-only)"
+    consumers:
+      - apps/web/app/actions
+      - apps/web/lib/erp
+      - apps/web/modules/platform
+      - apps/web/modules/privacy
+      - apps/web/features/human-resources
+      - packages/erp/payroll
+      - scripts/generate-hr-compensation-actions.mjs
+  gates:
+    - name: authority and accepted scope
+      command: N/A
+      outcome: PASS
+      evidence: User accepted HR-KERNEL-CUTOVER-01 as package-scoped and explicitly separated DB, metrics, register, UI, and payroll work.
+    - name: target structure
+      command: node .cursor/skills/afenda-elite-kernel/scripts/inspect-target.mjs packages/erp/human-resources
+      outcome: PASS
+      evidence: Package exports only the production root and isolated ./testing entrypoint; final digest matches this record.
+    - name: target lint
+      command: pnpm --filter @afenda/human-resources lint
+      outcome: PASS
+      evidence: Biome checked 638 files with no fixes required.
+    - name: target typecheck
+      command: pnpm --filter @afenda/human-resources typecheck -- --pretty false
+      outcome: PASS
+      evidence: TypeScript completed without diagnostics.
+    - name: kernel contract tests
+      command: pnpm --filter @afenda/human-resources test -- public-kernel-cutover human-resources.kernel authorization-facade-boundary currency-capability-boundary
+      outcome: PASS
+      evidence: Four test files and 17 tests passed, covering facade behavior, rejection fixtures, authorization, and capability boundaries.
+    - name: affected web consumers
+      command: >-
+        pnpm --filter @afenda/web test -- hr-self-service-journeys human-resources-payroll-delivery &&
+        pnpm --filter @afenda/web test -- human-resources-payroll-delivery human-resources-reliability-runtime &&
+        pnpm --filter @afenda/web test -- hr-bulk-export-actions human-resources-privacy-deletion human-resources-privacy-port
+      outcome: PASS
+      evidence: Twenty-eight affected consumer tests passed after merging the root-facade bulk-export test mock.
+    - name: production subpath leakage
+      command: rg -n '@afenda/human-resources/' apps/web --glob '!**/__tests__/**'
+      outcome: PASS
+      evidence: No production HR subpath imports remain; the only subpath imports are two tests using ./testing.
+    - name: broad command-option leakage
+      command: rg -n '\bHumanResourcesCommandOptions\b' apps/web scripts
+      outcome: PASS
+      evidence: No consumer exposes or constructs the internal broad command-options contract.
+    - name: public facade leakage
+      command: rg -n '^export \*|HumanResourcesStore|HumanResourcesCommandOptions|Drizzle|ResolverPort|AuthorizationPort' packages/erp/human-resources/src/index.ts
+      outcome: PASS
+      evidence: The root has no wildcard exports or prohibited implementation contracts.
+    - name: cutover deletion
+      command: pnpm --filter @afenda/human-resources test -- public-kernel-cutover
+      outcome: PASS
+      evidence: Removed production subpaths are unpublished, three obsolete composition files are deleted, and recurrence checks pass.
+    - name: documentation
+      command: N/A
+      outcome: PASS
+      evidence: Package README, internal boundary notes, and generated package documentation describe the sealed facade and deleted surfaces.
+    - name: repository module governance
+      command: pnpm validate:modules
+      outcome: N/A
+      evidence: The command reports five pre-existing HR DDL/ownership gaps plus unrelated metrics and register drift; the accepted kernel scope changes no schema or ownership semantics.
+    - name: broad web typecheck
+      command: pnpm --filter @afenda/web typecheck
+      outcome: N/A
+      evidence: An unrelated ui-system workspace-page title-property defect blocks the broad gate; focused HR consumers compile and pass their contract tests.
+    - name: final diff integrity
+      command: git diff --check -- packages/erp/human-resources apps/web/app/actions apps/web/lib/erp apps/web/modules scripts/generate-hr-compensation-actions.mjs apps/docs/content/docs/packages/human-resources.mdx
+      outcome: PASS
+      evidence: No whitespace or patch-integrity errors were reported in the accepted mission paths.
+    - name: final snapshot
+      command: node .cursor/skills/afenda-elite-kernel/scripts/inspect-target.mjs packages/erp/human-resources
+      outcome: PASS
+      evidence: Digest and fourteen enumerated target changes match this seal record.
+  working_tree:
+    state: dirty
+    target_changes:
+      - packages/erp/human-resources/README.md
+      - packages/erp/human-resources/package.json
+      - packages/erp/human-resources/src/index.ts
+      - packages/erp/human-resources/src/module.manifest.ts
+      - packages/erp/human-resources/src/schemas/README.md
+      - packages/erp/human-resources/src/store/README.md
+      - packages/erp/human-resources/src/testing/index.ts
+      - packages/erp/human-resources/__tests__/public-kernel-cutover.test.ts
+      - packages/erp/human-resources/__tests__/public-kernel-cutover.types.ts
+      - packages/erp/human-resources/src/internal-api.ts
+      - packages/erp/human-resources/src/production-capabilities.ts
+      - packages/erp/human-resources/src/public-capabilities.ts
+      - packages/erp/human-resources/src/public-contracts.ts
+      - packages/erp/human-resources/src/public-execution-context.ts
+  separate_missions:
+    - id: HR-DB-DDL-OWNERSHIP-01
+      status: OPEN
+    - id: METRICS-IMPORT-CORRECTION-01
+      status: OPEN
+    - id: TABLE-REGISTER-DRIFT-01
+      status: OPEN
+    - id: UI-WORKSPACE-PAGE-FIX-01
+      status: OPEN
+  sealed_at: 2026-08-01T12:08:41Z

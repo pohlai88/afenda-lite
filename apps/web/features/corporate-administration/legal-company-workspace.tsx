@@ -23,6 +23,7 @@ import {
 	TableHead,
 	TableHeader,
 	TableRow,
+	TextField,
 } from "@afenda/ui-system";
 import type * as React from "react";
 import { useActionState } from "react";
@@ -126,14 +127,14 @@ export function LegalCompanyWorkspace({
 					<CardContent>
 						<form action={registerAction} className="space-y-4">
 							<fieldset className="space-y-4" disabled={disabled || noParties}>
-								<FormField
+								<TextField
 									id="registerCompanyCode"
 									label="Company code"
 									maxLength={64}
 									name="companyCode"
 									required
 								/>
-								<FormField
+								<TextField
 									id="registerDisplayName"
 									label="Display name"
 									maxLength={256}
@@ -159,7 +160,7 @@ export function LegalCompanyWorkspace({
 										))}
 									</NativeSelect>
 								</div>
-								<FormField
+								<TextField
 									className="uppercase"
 									id="registerHomeJurisdictionCountryCode"
 									label="Home jurisdiction"
@@ -285,20 +286,20 @@ function CompanyProfileForm({
 							idPrefix="profile"
 							versionFieldName="expectedVersion"
 						/>
-						<FormField
+						<TextField
 							id="profileDisplayName"
 							label="Display name"
 							maxLength={256}
 							name="displayName"
 							required
 						/>
-						<FormField
+						<TextField
 							id="profileRegisteredName"
 							label="Registered name"
 							maxLength={256}
 							name="registeredName"
 						/>
-						<FormField
+						<TextField
 							id="profileShortName"
 							label="Short name"
 							maxLength={128}
@@ -502,7 +503,7 @@ function JurisdictionFields({
 }: Readonly<{ idPrefix: "set" | "supersede" }>) {
 	return (
 		<>
-			<FormField
+			<TextField
 				className="uppercase"
 				id={`${idPrefix}JurisdictionCountryCode`}
 				label="Jurisdiction"
@@ -522,35 +523,20 @@ function JurisdictionFields({
 					</NativeSelectOption>
 				</NativeSelect>
 			</div>
-			<FormField
+			<TextField
 				id={`${idPrefix}EffectiveFrom`}
 				label="Effective from"
 				name="effectiveFrom"
 				required
 				type="date"
 			/>
-			<FormField
+			<TextField
 				id={`${idPrefix}EffectiveTo`}
 				label="Effective to"
 				name="effectiveTo"
 				type="date"
 			/>
 		</>
-	);
-}
-
-function FormField({
-	id,
-	label,
-	...props
-}: Readonly<
-	React.ComponentProps<typeof Input> & { id: string; label: string }
->) {
-	return (
-		<div className="space-y-2">
-			<Label htmlFor={id}>{label}</Label>
-			<Input id={id} name={props.name ?? id} {...props} />
-		</div>
 	);
 }
 

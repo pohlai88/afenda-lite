@@ -1,7 +1,7 @@
 import type { AuditEntry, AuditRecorder } from "@afenda/audit";
 import { errorResult } from "@afenda/errors";
 import {
-	type HumanResourcesPrivacyPort,
+	type HumanResourcesPrivacyCapability,
 	parseHumanResourcesEmployeeId,
 } from "@afenda/human-resources";
 import { describe, expect, it, vi } from "vitest";
@@ -29,7 +29,7 @@ function privacyPort(input?: {
 		legalHoldId: string;
 		classifications: readonly string[];
 	}[];
-}): HumanResourcesPrivacyPort {
+}): HumanResourcesPrivacyCapability {
 	return {
 		exportSubject: vi.fn(async () =>
 			errorResult.ok({

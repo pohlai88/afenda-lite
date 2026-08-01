@@ -926,9 +926,6 @@ events:
     id: payroll.posting-requested.v1
     moduleId: payroll
   - direction: emits
-    id: payroll.payslip.published.v1
-    moduleId: payroll
-  - direction: emits
     id: purchasing.order.created.v1
     moduleId: purchasing
   - direction: emits

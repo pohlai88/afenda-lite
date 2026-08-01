@@ -86,7 +86,7 @@ export const runHrWorkforceHumanResourcesAction =
 
 type HrPackageFunction<TData> = (
 	input: unknown,
-	options?: ReturnType<typeof createHumanResourcesCommandOptions>,
+	options: ReturnType<typeof createHumanResourcesCommandOptions>,
 ) => Promise<Result<TData>>;
 
 export function invokeHrPackage<TData>(packageFn: HrPackageFunction<TData>) {

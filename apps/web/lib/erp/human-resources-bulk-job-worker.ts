@@ -9,6 +9,7 @@ import {
 	createBulkReliabilityWorkItem,
 	createHumanResourcesBulkExportArtifactChunk,
 	createHumanResourcesBulkExportCsv,
+	createHumanResourcesBulkJobCapability,
 	EXPORT_ARTIFACT_RETENTION_MS,
 	employeeBulkRowSchema,
 	type HumanResourcesBulkImportJob,
@@ -19,7 +20,6 @@ import {
 	type ReliabilityExecutionOutcome,
 	type ReliabilityWorkItem,
 } from "@afenda/human-resources";
-import { createDrizzleHumanResourcesBulkJobStore } from "@afenda/human-resources/adapters/drizzle";
 import type { z } from "zod";
 
 import { createHumanResourcesAuthorizationPort } from "@/lib/erp/human-resources-authorization-port";
@@ -33,7 +33,7 @@ import {
 	runLeaveEntitlementBulkImportWorker,
 } from "@/lib/erp/human-resources-reporting-bulk-worker";
 
-const store = () => createDrizzleHumanResourcesBulkJobStore();
+const store = () => createHumanResourcesBulkJobCapability();
 
 function parseRows<Row>(
 	rows: readonly { sourceReference: string; payload: unknown }[],

@@ -5,6 +5,7 @@ import {
 	isValidElement,
 	type MouseEvent,
 	type ReactNode,
+	type RefObject,
 	useCallback,
 	useState,
 } from "react";
@@ -43,12 +44,18 @@ export function NotificationDropdown({
 	emptyMessage = "No notifications",
 	notifications,
 	onDecision,
+	onOpenChange,
+	open,
+	restoreFocusRef,
 	trigger,
 }: Readonly<{
 	emptyMessage?: string;
 	notifications: readonly NotificationDropdownItem[];
 	onDecision?: (id: string, decision: "accept" | "decline") => void;
-	trigger: ReactNode;
+	onOpenChange?: (open: boolean) => void;
+	open?: boolean;
+	restoreFocusRef?: RefObject<HTMLElement | null>;
+	trigger?: ReactNode;
 }>) {
 	const [category, setCategory] = useState("inbox");
 	const handleDecision = useCallback(
@@ -64,17 +71,34 @@ export function NotificationDropdown({
 		},
 		[onDecision],
 	);
-	const triggerElement = isValidElement(trigger) ? (
-		trigger
-	) : (
-		<Button type="button" variant="outline">
-			{trigger}
-		</Button>
+	let triggerElement: ReactNode = null;
+	if (isValidElement(trigger)) {
+		triggerElement = trigger;
+	} else if (trigger !== undefined) {
+		triggerElement = (
+			<Button type="button" variant="outline">
+				{trigger}
+			</Button>
+		);
+	}
+	const handleOpenChange = useCallback(
+		(nextOpen: boolean) => {
+			onOpenChange?.(nextOpen);
+			if (!nextOpen) {
+				queueMicrotask(() => restoreFocusRef?.current?.focus());
+			}
+		},
+		[onOpenChange, restoreFocusRef],
 	);
 
 	return (
-		<Dialog>
-			<DialogTrigger asChild>{triggerElement}</DialogTrigger>
+		<Dialog
+			{...(open === undefined ? {} : { open })}
+			onOpenChange={handleOpenChange}
+		>
+			{triggerElement ? (
+				<DialogTrigger asChild>{triggerElement}</DialogTrigger>
+			) : null}
 			<DialogContent className="gap-0 p-0 sm:max-w-md">
 				<DialogHeader className="border-b p-4 text-left">
 					<DialogTitle>Notifications</DialogTitle>

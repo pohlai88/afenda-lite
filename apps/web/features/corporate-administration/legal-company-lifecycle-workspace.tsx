@@ -11,8 +11,6 @@ import {
 	CardDescription,
 	CardHeader,
 	CardTitle,
-	Input,
-	Label,
 	StatusBadge,
 	Table,
 	TableBody,
@@ -20,8 +18,9 @@ import {
 	TableHead,
 	TableHeader,
 	TableRow,
+	TextField as UiTextField,
 } from "@afenda/ui-system";
-import type { ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import {
@@ -343,31 +342,35 @@ function LifecycleTransitionForm({
 					value={company.version}
 				/>
 				<div className="grid gap-3 sm:grid-cols-2">
-					<TextField
+					<LifecycleTextField
 						defaultValue={defaultEffectiveFrom}
 						id={`${idPrefix}EffectiveFrom`}
 						label="Effective from"
 						name="effectiveFrom"
 						type="date"
 					/>
-					<TextField
+					<LifecycleTextField
 						id={`${idPrefix}SourceDocument`}
 						label="Source document"
 						name="sourceDocumentId"
 					/>
 				</div>
 				{requireReason ? (
-					<TextField id={`${idPrefix}Reason`} label="Reason" name="reason" />
+					<LifecycleTextField
+						id={`${idPrefix}Reason`}
+						label="Reason"
+						name="reason"
+					/>
 				) : null}
 				{requireApproval ? (
 					<div className="grid gap-3 sm:grid-cols-2">
-						<TextField
+						<LifecycleTextField
 							id={`${idPrefix}ApprovalRequest`}
 							label="Approval request"
 							name="approvalRequestId"
 							required={false}
 						/>
-						<TextField
+						<LifecycleTextField
 							id={`${idPrefix}ApprovalDecision`}
 							label="Approval decision"
 							name="approvalDecisionId"
@@ -382,33 +385,8 @@ function LifecycleTransitionForm({
 	);
 }
 
-function TextField({
-	id,
-	label,
-	name,
-	type,
-	defaultValue,
-	required = true,
-}: Readonly<{
-	id: string;
-	label: string;
-	name: string;
-	type?: string;
-	defaultValue?: string;
-	required?: boolean;
-}>) {
-	return (
-		<div className="space-y-1">
-			<Label htmlFor={id}>{label}</Label>
-			<Input
-				defaultValue={defaultValue}
-				id={id}
-				name={name}
-				required={required}
-				type={type}
-			/>
-		</div>
-	);
+function LifecycleTextField(props: ComponentProps<typeof UiTextField>) {
+	return <UiTextField {...props} required={props.required ?? true} />;
 }
 
 function SubmitButton({

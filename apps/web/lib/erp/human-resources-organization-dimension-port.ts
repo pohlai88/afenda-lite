@@ -4,7 +4,7 @@ import type {
 	HumanResourcesOrganizationDimensionKind,
 	HumanResourcesOrganizationDimensionSnapshot,
 	HumanResourcesOrganizationDimensions,
-	OrganizationDimensionDirectoryPort,
+	OrganizationDimensionDirectoryCapability,
 } from "@afenda/human-resources";
 import {
 	type OrganizationDimensionKind,
@@ -89,7 +89,7 @@ function toHumanResourcesOrganizationDimensions(
  * Application composition boundary: HR supplies tenant/date/key intent while
  * master data remains the sole owner and reader of governed dimensions.
  */
-export function createHumanResourcesOrganizationDimensionPort(): OrganizationDimensionDirectoryPort {
+export function createHumanResourcesOrganizationDimensionPort(): OrganizationDimensionDirectoryCapability {
 	return {
 		async resolveRequiredAsOf(input) {
 			const result = await resolveOrganizationDimensionsAsOf(

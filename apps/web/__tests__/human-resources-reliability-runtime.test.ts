@@ -1,9 +1,9 @@
 import { errorResult } from "@afenda/errors";
 import {
 	claimDueReliabilityWork,
-	createMemoryReliabilityStore,
-	type ReliabilityKernelPorts,
+	type ReliabilityKernelCapabilities,
 } from "@afenda/human-resources";
+import { createMemoryReliabilityStore } from "@afenda/human-resources/testing";
 import { describe, expect, it, vi } from "vitest";
 
 import {
@@ -20,7 +20,7 @@ import {
 
 const now = new Date("2026-07-28T00:00:00.000Z");
 
-async function claimOne(ports: ReliabilityKernelPorts) {
+async function claimOne(ports: ReliabilityKernelCapabilities) {
 	return await claimDueReliabilityWork(
 		{
 			workerId: "worker-1",
@@ -96,7 +96,7 @@ describe("HR reliability runtime composition", () => {
 				write: (entry) => telemetry.push(entry),
 			}),
 		);
-		const ports: ReliabilityKernelPorts = {
+		const ports: ReliabilityKernelCapabilities = {
 			store,
 			clock: { now: () => now },
 			executor: {
@@ -162,7 +162,7 @@ describe("HR reliability runtime composition", () => {
 				write: (entry) => telemetry.push(entry),
 			}),
 		);
-		const ports: ReliabilityKernelPorts = {
+		const ports: ReliabilityKernelCapabilities = {
 			store,
 			clock: { now: () => new Date("2026-07-28T00:00:00.000Z") },
 			executor: { execute },
@@ -211,7 +211,7 @@ describe("HR reliability runtime composition", () => {
 				receiptId: "receipt-acknowledged",
 			}),
 		);
-		const ports: ReliabilityKernelPorts = {
+		const ports: ReliabilityKernelCapabilities = {
 			store,
 			clock: { now: () => new Date("2026-07-28T00:00:00.000Z") },
 			executor: { execute },

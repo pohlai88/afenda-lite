@@ -1,11 +1,11 @@
 import { errorResult } from "@afenda/errors";
-import type { CurrencyLookupPort } from "@afenda/human-resources";
+import type { CurrencyLookupCapability } from "@afenda/human-resources";
 import { getRefCurrencyByCode } from "@afenda/master-data";
 
 import { createMasterDataAuthorizationPort } from "@/lib/erp/master-data-authorization-port";
 
 /** Adapts HR currency validation to the authorized master-data facade. */
-export function createHumanResourcesCurrencyLookupPort(): CurrencyLookupPort {
+export function createHumanResourcesCurrencyLookupPort(): CurrencyLookupCapability {
 	const authorization = createMasterDataAuthorizationPort();
 	return {
 		async exists(input) {

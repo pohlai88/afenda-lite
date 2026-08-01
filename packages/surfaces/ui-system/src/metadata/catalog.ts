@@ -198,9 +198,13 @@ const components = [
 		sourceModule: "src/blocks/app-shell-block/app-shell.tsx",
 		publicExports: [
 			"AppShell",
+			"AppShellHeaderConfig",
 			"AppShellNavItem",
 			"AppShellNavSection",
 			"AppShellProps",
+			"AppShellUtilityId",
+			"AppShellUtilityPriorities",
+			"AppShellUtilityPriority",
 		],
 		layer: "pattern",
 		family: "navigation",

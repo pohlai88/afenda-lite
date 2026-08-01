@@ -2,8 +2,6 @@
 
 import { ChevronRightIcon } from "lucide-react";
 import { type ComponentType, type ReactNode, useCallback } from "react";
-import type { CommandMenuGroup } from "../../app-shell/command-menu";
-import type { NotificationDropdownItem } from "../../app-shell/notification-dropdown";
 import {
 	Collapsible,
 	CollapsibleContent,
@@ -36,6 +34,18 @@ import {
 	useApplicationShellSettings,
 } from "./application-shell-settings-provider";
 import { AppShellHeader, type AppShellHeaderConfig } from "./header";
+import type {
+	AppShellCommandMenuConfig,
+	AppShellNotificationsConfig,
+	AppShellProfileConfig,
+} from "./header-utility-policy";
+
+export type {
+	AppShellHeaderConfig,
+	AppShellUtilityId,
+	AppShellUtilityPriorities,
+	AppShellUtilityPriority,
+} from "./header";
 
 type NavigationLinkComponent = ComponentType<{
 	children: ReactNode;
@@ -79,21 +89,9 @@ export type AppShellProps = Readonly<{
 	defaultSettings?: ApplicationShellSettings;
 	initialSettings?: ApplicationShellSettings;
 	defaultSidebarOpen?: boolean;
-	commandMenu?: {
-		groups: readonly CommandMenuGroup[];
-		onCommand?: (id: string) => void;
-	};
-	notifications?: {
-		emptyMessage?: string;
-		notifications: readonly NotificationDropdownItem[];
-		onDecision?: (id: string, decision: "accept" | "decline") => void;
-	};
-	profile?: {
-		actions?: readonly { id: string; label: string }[];
-		initials?: string;
-		name: string;
-		onAction?: (id: string) => void;
-	};
+	commandMenu?: AppShellCommandMenuConfig;
+	notifications?: AppShellNotificationsConfig;
+	profile?: AppShellProfileConfig;
 	showScrollToTop?: boolean;
 	brand?: string;
 	currentPath?: string;

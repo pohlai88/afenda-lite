@@ -5,6 +5,10 @@ import {
 	acknowledgePolicy,
 	cancelApprovedLeaveRequest,
 	createDraftLeaveRequest,
+	getLeaveEntitlement,
+	getLeaveRequest,
+	getPolicyAcknowledgementStatus,
+	getTimesheet,
 	type HumanResourcesEmployeeId,
 	humanResourcesLeaveEntitlementIdSchema,
 	humanResourcesLeaveRequestIdSchema,
@@ -14,7 +18,6 @@ import {
 	submitTimesheet,
 	withdrawLeaveRequest,
 } from "@afenda/human-resources";
-import { resolveHumanResourcesStore } from "@afenda/human-resources/resolve-store";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { mapPackageResult } from "@/app/actions/map-package-result";
@@ -115,11 +118,15 @@ export async function createOwnLeaveDraftAction(
 				return employee;
 			}
 
-			const entitlement =
-				await resolveHumanResourcesStore().getLeaveEntitlementById({
+			const entitlement = await getLeaveEntitlement(
+				{
 					organizationId: session.orgId,
+					actorUserId: session.userId,
+					correlationId,
 					entitlementId: parsed.data.entitlementId,
-				});
+				},
+				createHumanResourcesCommandOptions(),
+			);
 			if (!entitlement.ok) {
 				return mapPackageResult(entitlement);
 			}
@@ -184,10 +191,15 @@ export async function changeOwnLeaveRequestAction(
 			if (!employee.ok) {
 				return employee;
 			}
-			const request = await resolveHumanResourcesStore().getLeaveRequestById({
-				organizationId: session.orgId,
-				requestId: parsed.data.requestId,
-			});
+			const request = await getLeaveRequest(
+				{
+					organizationId: session.orgId,
+					actorUserId: session.userId,
+					correlationId,
+					requestId: parsed.data.requestId,
+				},
+				createHumanResourcesCommandOptions(),
+			);
 			if (!request.ok) {
 				return mapPackageResult(request);
 			}
@@ -248,10 +260,15 @@ export async function cancelOwnApprovedLeaveAction(
 			if (!employee.ok) {
 				return employee;
 			}
-			const request = await resolveHumanResourcesStore().getLeaveRequestById({
-				organizationId: session.orgId,
-				requestId: parsed.data.requestId,
-			});
+			const request = await getLeaveRequest(
+				{
+					organizationId: session.orgId,
+					actorUserId: session.userId,
+					correlationId,
+					requestId: parsed.data.requestId,
+				},
+				createHumanResourcesCommandOptions(),
+			);
 			if (!request.ok) {
 				return mapPackageResult(request);
 			}
@@ -309,10 +326,15 @@ export async function submitOwnTimesheetAction(
 			if (!employee.ok) {
 				return employee;
 			}
-			const timesheet = await resolveHumanResourcesStore().getTimesheet({
-				organizationId: session.orgId,
-				timesheetId: parsed.data.timesheetId,
-			});
+			const timesheet = await getTimesheet(
+				{
+					organizationId: session.orgId,
+					actorUserId: session.userId,
+					correlationId,
+					timesheetId: parsed.data.timesheetId,
+				},
+				createHumanResourcesCommandOptions(),
+			);
 			if (!timesheet.ok) {
 				return mapPackageResult(timesheet);
 			}
@@ -368,11 +390,15 @@ export async function acknowledgeOwnPolicyAction(
 			if (!employee.ok) {
 				return employee;
 			}
-			const acknowledgement =
-				await resolveHumanResourcesStore().getPolicyAcknowledgementById({
+			const acknowledgement = await getPolicyAcknowledgementStatus(
+				{
 					organizationId: session.orgId,
+					actorUserId: session.userId,
+					correlationId,
 					acknowledgementId: parsed.data.acknowledgementId,
-				});
+				},
+				createHumanResourcesCommandOptions(),
+			);
 			if (!acknowledgement.ok) {
 				return mapPackageResult(acknowledgement);
 			}

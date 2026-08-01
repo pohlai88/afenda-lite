@@ -3,9 +3,9 @@ import {
 	assertSafeHrMetric,
 	type HrFailureReason,
 	type HrMetricObservation,
+	type HrObservabilityCapabilities,
+	type HrObservabilityCapability,
 	type HrObservabilityEvent,
-	type HrObservabilityPort,
-	type HrObservabilityPorts,
 } from "@afenda/human-resources";
 
 import { logger } from "@afenda/logger";
@@ -33,7 +33,7 @@ export function createProductionHrObservabilityRecorder(
 			});
 		},
 	},
-): HrObservabilityPort {
+): HrObservabilityCapability {
 	return {
 		recordMetric(observation: HrMetricObservation) {
 			assertSafeHrMetric(observation);
@@ -55,8 +55,8 @@ export function createProductionHrObservabilityRecorder(
 }
 
 export function createProductionHrObservabilityPorts(
-	recorder: HrObservabilityPort = createProductionHrObservabilityRecorder(),
-): HrObservabilityPorts {
+	recorder: HrObservabilityCapability = createProductionHrObservabilityRecorder(),
+): HrObservabilityCapabilities {
 	return { recorder, clock: { now: () => new Date() } };
 }
 

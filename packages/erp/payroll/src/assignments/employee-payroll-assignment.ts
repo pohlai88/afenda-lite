@@ -13,7 +13,6 @@ import { buildPayrollCreateFingerprint } from "../shared/create-fingerprint";
 import {
 	assertCurrencyAlignment,
 	assertEmployeeEligibleForPayroll,
-	assertEmployeePayGroupMatch,
 	requirePayrollEmployeeAtDate,
 } from "../shared/employee-eligibility";
 import {
@@ -41,6 +40,8 @@ export function createPayrollEmployeeAssignment(
 				organizationId: data.organizationId,
 				employeeId: data.employeeId,
 				effectiveDate: data.effectiveFrom,
+				actorUserId: data.actorUserId,
+				correlationId: data.correlationId,
 			});
 			if (!employeeResult.ok) {
 				return employeeResult;
@@ -49,14 +50,6 @@ export function createPayrollEmployeeAssignment(
 			if (!eligible.ok) {
 				return eligible;
 			}
-			const payGroupMatch = assertEmployeePayGroupMatch({
-				employee: eligible.data,
-				expectedPayGroupId: data.payGroupId,
-			});
-			if (!payGroupMatch.ok) {
-				return payGroupMatch;
-			}
-
 			const payGroup = await store.getPayGroup({
 				organizationId: data.organizationId,
 				payGroupId: data.payGroupId,

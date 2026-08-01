@@ -364,7 +364,7 @@ import {
 } from "@afenda/human-resources";
 import {
 	${schemaImports.join(",\n\t")},
-} from "@afenda/human-resources/schemas";
+} from "@afenda/human-resources";
 
 import {
 	invokeHrPackage,

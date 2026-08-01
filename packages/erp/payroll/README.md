@@ -12,22 +12,40 @@ Sole mutator for payroll-period inputs, gross-to-net calculation results, statut
 
 ```ts
 import {
-	PAYROLL_PERMISSION_RUN_CREATE,
-	type PayrollAuthorizationPort,
-	type PayrollEmployeeQueryPort,
-	type MutationPorts,
+	createPayrollCalendar,
+	createPayrollCapabilityOptions,
 } from "@afenda/payroll";
+
+const payroll = createPayrollCapabilityOptions({
+	authorization: payrollAuthorization,
+	workforce: payrollWorkforce,
+});
+
+const result = await createPayrollCalendar(input, payroll);
 ```
 
-Wire the Drizzle store at the app composition root:
+The capability context is opaque. Production persistence, audit/event
+capabilities, and calculation wiring are selected inside the Payroll owner;
+consumers cannot inject stores, raw ports, or calculators through this facade.
 
-```ts
-import { createDrizzlePayrollStore } from "@afenda/payroll/adapters/drizzle";
-```
+The implementation subpaths listed below remain published only until the final
+kernel cutover. New production consumers must use the root capability facade.
 
-Workforce facts arrive through `PayrollEmployeeQueryPort`, wired at `apps/web` with an HR-backed adapter — **not** via `@afenda/human-resources` package import.
+Workforce facts arrive through `PayrollEmployeeQueryPort`. The Payroll package
+has no HR runtime dependency; the `apps/web` composition adapter consumes the
+sealed `@afenda/human-resources` root handoff and projects only the employment
+and compensation facts Payroll requires. Pay-group membership remains
+Payroll-owned and is validated from the Payroll assignment store.
 
-Finalized runs emit `payroll.payment-requested.v1` and `payroll.posting-requested.v1` for Payments and Accounting app-sagas.
+Run creation and status transitions commit the run row, audit fact, and emitted
+outbox facts in one production database transaction. Finalized runs emit
+`payroll.payment-requested.v1` and `payroll.posting-requested.v1` for Payments
+and Accounting app-sagas.
+
+Date inputs must be real ISO calendar dates. Monetary parsing accepts at most
+the canonical 12 fractional digits and rejects excess precision instead of
+silently truncating it. Memory persistence is test-only; omitted internal store
+wiring resolves to the Drizzle production store.
 
 Manifest: `src/module.manifest.ts` (`@afenda/payroll/module-manifest`).
 
@@ -86,7 +104,7 @@ Implementation method: project skill `afenda-elite-payroll`.
 
 ## Ownership
 
-**Mutation tables (18):** `payroll_calendar` … `payroll_reconciliation` — see `src/mutation-tables.ts`.
+**Mutation tables (19):** `payroll_calendar` … `payroll_rule_finalized_usage` — see `src/mutation-tables.ts`.
 
 | Owns | Does not own |
 |------|----------------|

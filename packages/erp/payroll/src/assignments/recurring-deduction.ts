@@ -54,6 +54,8 @@ export function createPayrollRecurringDeduction(
 				organizationId: data.organizationId,
 				employeeId: data.employeeId,
 				effectiveDate: data.effectiveFrom,
+				actorUserId: data.actorUserId,
+				correlationId: data.correlationId,
 			});
 			if (!employeeResult.ok) {
 				return employeeResult;

@@ -14,7 +14,6 @@ import { isEffectiveOnDate } from "../shared/effective-date";
 import {
 	assertCurrencyAlignment,
 	assertEmployeeEligibleForPayroll,
-	assertEmployeePayGroupMatch,
 	assertInputBeforeCutoff,
 	requirePayrollEmployeeAtDate,
 } from "../shared/employee-eligibility";
@@ -54,6 +53,8 @@ export function createPayrollVariableInput(
 				organizationId: data.organizationId,
 				employeeId: data.employeeId,
 				effectiveDate: data.effectiveFrom,
+				actorUserId: data.actorUserId,
+				correlationId: data.correlationId,
 			});
 			if (!employeeResult.ok) {
 				return employeeResult;
@@ -62,14 +63,6 @@ export function createPayrollVariableInput(
 			if (!eligible.ok) {
 				return eligible;
 			}
-			const payGroupMatch = assertEmployeePayGroupMatch({
-				employee: eligible.data,
-				expectedPayGroupId: data.payGroupId,
-			});
-			if (!payGroupMatch.ok) {
-				return payGroupMatch;
-			}
-
 			const payGroup = await store.getPayGroup({
 				organizationId: data.organizationId,
 				payGroupId: data.payGroupId,
@@ -85,6 +78,25 @@ export function createPayrollVariableInput(
 			if (payGroup.data.status !== "active") {
 				return errorResult.fail("CONFLICT", {
 					publicMessage: "Pay group is not active",
+				});
+			}
+
+			const assignments = await store.listActiveAssignmentsForPayGroup({
+				organizationId: data.organizationId,
+				payGroupId: data.payGroupId,
+				effectiveDate: data.effectiveFrom,
+			});
+			if (!assignments.ok) {
+				return assignments;
+			}
+			if (
+				!assignments.data.some(
+					(assignment) => assignment.employeeId === data.employeeId,
+				)
+			) {
+				return errorResult.fail("CONFLICT", {
+					publicMessage:
+						"Employee has no active payroll assignment for this pay group",
 				});
 			}
 

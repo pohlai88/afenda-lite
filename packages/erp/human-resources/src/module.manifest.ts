@@ -804,7 +804,7 @@ export const humanResourcesModuleManifest = {
 		mutationTables: [...HUMAN_RESOURCES_MUTATION_TABLES],
 	},
 	events: {
-		// Catalog ownership, version, and projection disposition: @afenda/human-resources/event-catalog
+		// Catalog ownership, version, and projection disposition remain internal to @afenda/human-resources.
 		namespace: "human-resources",
 		emits: [
 			HUMAN_RESOURCES_PERSON_CREATED_EVENT,

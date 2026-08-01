@@ -20,9 +20,13 @@ export { ProfileDropdown } from "./app-shell/profile-dropdown";
 // Display / layout primitives
 export {
 	AppShell,
+	type AppShellHeaderConfig,
 	type AppShellNavItem,
 	type AppShellNavSection,
 	type AppShellProps,
+	type AppShellUtilityId,
+	type AppShellUtilityPriorities,
+	type AppShellUtilityPriority,
 } from "./blocks/app-shell-block/app-shell";
 export {
 	APPLICATION_SHELL_SETTINGS_COOKIE,

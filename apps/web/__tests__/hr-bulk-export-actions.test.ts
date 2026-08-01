@@ -1,6 +1,6 @@
 import { errorResult } from "@afenda/errors";
 import {
-	type HumanResourcesReportingSourcePort,
+	type HumanResourcesReportingSourceCapability,
 	runHumanResourcesBulkExport,
 } from "@afenda/human-resources";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -33,17 +33,8 @@ vi.mock("@afenda/human-resources", async (importOriginal) => {
 		await importOriginal<typeof import("@afenda/human-resources")>();
 	return {
 		...actual,
+		createHumanResourcesBulkJobCapability: () => ({ kind: "test-store" }),
 		enqueueHumanResourcesBulkExport: queueMocks.enqueueExport,
-	};
-});
-vi.mock("@afenda/human-resources/adapters/drizzle", async (importOriginal) => {
-	const actual =
-		await importOriginal<
-			typeof import("@afenda/human-resources/adapters/drizzle")
-		>();
-	return {
-		...actual,
-		createDrizzleHumanResourcesBulkJobStore: () => ({ kind: "test-store" }),
 	};
 });
 vi.mock("@afenda/http", () => ({
@@ -142,7 +133,7 @@ describe("HR bulk export composition", () => {
 	});
 
 	it("rejects fields outside the definition before reading or recording evidence", async () => {
-		const reporting: HumanResourcesReportingSourcePort = {
+		const reporting: HumanResourcesReportingSourceCapability = {
 			listFacts: vi.fn(async () =>
 				errorResult.ok({ entries: [], total: 0, page: 1, pageSize: 200 }),
 			),

@@ -902,7 +902,7 @@ export function createDrizzleSetupExtendedMethods(
 			}
 		},
 
-		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Rule supersession is one lock-checked, versioned persistence transaction.
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Rule supersession coordinates a lock check, version guard, successor create, and compensating restore.
 		async supersedeEarningRule(record, ports) {
 			const locked = await assertRuleNotLockedByFinalizedRun(ruleLockStore, {
 				organizationId: record.organizationId,
@@ -1221,7 +1221,7 @@ export function createDrizzleSetupExtendedMethods(
 			}
 		},
 
-		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Rule supersession is one lock-checked, versioned persistence transaction.
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Rule supersession coordinates a lock check, version guard, successor create, and compensating restore.
 		async supersedeDeductionRule(record, ports) {
 			const locked = await assertRuleNotLockedByFinalizedRun(ruleLockStore, {
 				organizationId: record.organizationId,
@@ -1534,7 +1534,7 @@ export function createDrizzleSetupExtendedMethods(
 			}
 		},
 
-		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Rule supersession is one lock-checked, versioned persistence transaction.
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Rule supersession coordinates a lock check, version guard, successor create, and compensating restore.
 		async supersedeStatutoryRule(record, ports) {
 			const locked = await assertRuleNotLockedByFinalizedRun(ruleLockStore, {
 				organizationId: record.organizationId,

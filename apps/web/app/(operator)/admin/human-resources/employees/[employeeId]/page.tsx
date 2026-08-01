@@ -1,4 +1,4 @@
-import { humanResourcesEmployeeIdSchema } from "@afenda/human-resources/brands";
+import { humanResourcesEmployeeIdSchema } from "@afenda/human-resources";
 import { notFound } from "next/navigation";
 
 import { EmployeeAdminDetail } from "@/features/human-resources/admin/employee-detail";

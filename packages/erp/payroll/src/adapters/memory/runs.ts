@@ -2,6 +2,7 @@
 import { randomUUID } from "node:crypto";
 import type { Change } from "@afenda/audit";
 import { errorResult, type Result } from "@afenda/errors";
+import { events } from "@afenda/events";
 
 import {
 	type PayrollRunId,
@@ -9,6 +10,10 @@ import {
 	parsePayrollRunId,
 } from "../../brands";
 import type { MutationPorts } from "../../ports";
+import {
+	buildPayrollRunEventPayload,
+	payrollRunEventsForStatus,
+} from "../../runs/lifecycle-events";
 import { assertPayrollRunTransition } from "../../runs/transitions";
 import { assertExpectedVersion } from "../../shared/concurrency";
 import {
@@ -56,6 +61,44 @@ async function recordAudit(
 		action: input.action,
 		changes: input.changes ?? [],
 	});
+}
+
+async function appendRunEvents(
+	ports: MutationPorts,
+	input: {
+		actorUserId: string;
+		correlationId: string;
+		organizationId: string;
+		runId: string;
+		status: PayrollRun["status"];
+	},
+): Promise<Result<void>> {
+	const eventTypes = payrollRunEventsForStatus(input.status);
+	const payload = buildPayrollRunEventPayload(input);
+	for (const type of eventTypes) {
+		if (
+			!events.registry.validatePayload(type, payload).success ||
+			events.registry.sourceModule(type) !== "payroll"
+		) {
+			return errorResult.fail("INTERNAL_ERROR");
+		}
+	}
+	const results = await Promise.all(
+		eventTypes.map((type) =>
+			ports.outbox.append({
+				type,
+				organizationId: input.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: input.correlationId,
+				payload,
+			}),
+		),
+	);
+	const failure = results.find((result) => !result.ok);
+	if (failure !== undefined && !failure.ok) {
+		return failure;
+	}
+	return errorResult.ok(undefined);
 }
 
 export function createMemoryRunsMethods(
@@ -160,6 +203,21 @@ export function createMemoryRunsMethods(
 					idempotencyMapKey(record.organizationId, record.idempotencyKey),
 				);
 				return audit;
+			}
+
+			const outbox = await appendRunEvents(ports, {
+				organizationId: record.organizationId,
+				runId: run.id,
+				status: run.status,
+				actorUserId: record.createdBy,
+				correlationId: record.correlationId,
+			});
+			if (!outbox.ok) {
+				state.runs.delete(run.id);
+				state.runIdempotency.delete(
+					idempotencyMapKey(record.organizationId, record.idempotencyKey),
+				);
+				return outbox;
 			}
 
 			return errorResult.ok(cloneRun(run));
@@ -271,6 +329,20 @@ export function createMemoryRunsMethods(
 				return audit;
 			}
 
+			if (latest.status !== updated.status) {
+				const outbox = await appendRunEvents(ports, {
+					organizationId: input.organizationId,
+					runId: updated.id,
+					status: updated.status,
+					actorUserId: input.actorUserId,
+					correlationId: input.correlationId,
+				});
+				if (!outbox.ok) {
+					state.runs.set(latest.id, latest);
+					return outbox;
+				}
+			}
+
 			return errorResult.ok(cloneRun(updated));
 		},
 
@@ -281,6 +353,11 @@ export function createMemoryRunsMethods(
 			const run = state.runs.get(record.runId);
 			if (run === undefined || run.organizationId !== record.organizationId) {
 				return mapNotFound("Payroll run not found");
+			}
+			if (run.status === "finalized" || run.status === "reversed") {
+				return mapInvalidState(
+					"Finalized or reversed payroll runs cannot accept exceptions",
+				);
 			}
 
 			const idResult = parsePayrollExceptionId(randomUUID());

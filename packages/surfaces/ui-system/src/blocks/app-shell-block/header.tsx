@@ -1,26 +1,28 @@
 "use client";
 
-import { BellIcon } from "lucide-react";
-
-import {
-	CommandMenu,
-	type CommandMenuGroup,
-} from "../../app-shell/command-menu";
-import {
-	NotificationDropdown,
-	type NotificationDropdownItem,
-} from "../../app-shell/notification-dropdown";
-import { ProfileDropdown } from "../../app-shell/profile-dropdown";
+import { useMemo, useRef } from "react";
 import { Breadcrumb } from "../../components/ui/breadcrumb";
-import { Button } from "../../components/ui/button";
 import { SidebarTrigger } from "../../components/ui/sidebar";
-import { ColorModeToggle, ThemeCustomiser } from "./theme-customiser";
+import { AppShellCompactUtility } from "./header-compact-utility";
+import { AppShellUtilityOverflow } from "./header-utility-overflow";
+import type {
+	AppShellCommandMenuConfig,
+	AppShellHeaderConfig,
+	AppShellNotificationsConfig,
+	AppShellProfileConfig,
+} from "./header-utility-policy";
+import {
+	availableAppShellUtilityIds,
+	resolveAppShellUtilityPolicy,
+} from "./header-utility-policy";
 
-export type AppShellHeaderConfig = Readonly<{
-	title: string;
-	showModeToggle?: boolean;
-	showThemeCustomiser?: boolean;
-}>;
+export type {
+	AppShellHeaderConfig,
+	AppShellUtilityId,
+	AppShellUtilityPriorities,
+	AppShellUtilityPriority,
+} from "./header-utility-policy";
+export { APP_SHELL_UTILITY_IDS } from "./header-utility-policy";
 
 export function AppShellHeader({
 	commandMenu,
@@ -29,26 +31,36 @@ export function AppShellHeader({
 	profile,
 	unreadCount = 0,
 }: Readonly<{
-	commandMenu?: {
-		groups: readonly CommandMenuGroup[];
-		onCommand?: (id: string) => void;
-	};
+	commandMenu?: AppShellCommandMenuConfig;
 	header: AppShellHeaderConfig;
-	notifications?: {
-		emptyMessage?: string;
-		notifications: readonly NotificationDropdownItem[];
-		onDecision?: (id: string, decision: "accept" | "decline") => void;
-	};
-	profile?: {
-		actions?: readonly { id: string; label: string }[];
-		initials?: string;
-		name: string;
-		onAction?: (id: string) => void;
-	};
+	notifications?: AppShellNotificationsConfig;
+	profile?: AppShellProfileConfig;
 	unreadCount?: number;
 }>) {
 	const showModeToggle = header.showModeToggle !== false;
 	const showThemeCustomiser = header.showThemeCustomiser !== false;
+	const overflowTriggerRef = useRef<HTMLButtonElement>(null);
+	const availableUtilityIds = useMemo(
+		() =>
+			availableAppShellUtilityIds({
+				commandMenu: commandMenu !== undefined,
+				modeToggle: showModeToggle,
+				notifications: notifications !== undefined,
+				profile: profile !== undefined,
+				themeCustomiser: showThemeCustomiser,
+			}),
+		[commandMenu, notifications, profile, showModeToggle, showThemeCustomiser],
+	);
+	const { primaryId, secondaryIds } = resolveAppShellUtilityPolicy(
+		availableUtilityIds,
+		header.utilityPriorities,
+	);
+	const utilityProps = {
+		...(commandMenu === undefined ? {} : { commandMenu }),
+		...(notifications === undefined ? {} : { notifications }),
+		...(profile === undefined ? {} : { profile }),
+		unreadCount,
+	};
 
 	return (
 		<header
@@ -61,32 +73,37 @@ export function AppShellHeader({
 				{header.title}
 			</span>
 			<div
-				className="flex items-center gap-1"
+				className="hidden items-center gap-1 sm:flex"
 				data-slot="app-shell-command-area"
 			>
-				{commandMenu ? <CommandMenu {...commandMenu} /> : null}
-				{notifications ? (
-					<NotificationDropdown
-						{...notifications}
-						trigger={
-							<Button
-								aria-label={`Open notifications (${unreadCount} unread)`}
-								className="relative"
-								size="icon-sm"
-								type="button"
-								variant="ghost"
-							>
-								<BellIcon />
-								{unreadCount > 0 ? (
-									<span className="absolute top-1.5 right-1.5 size-1.5 rounded-full bg-destructive" />
-								) : null}
-							</Button>
-						}
+				{availableUtilityIds.map((id) => (
+					<span className="contents" key={id}>
+						<AppShellCompactUtility
+							{...utilityProps}
+							enableShortcut={true}
+							id={id}
+						/>
+					</span>
+				))}
+			</div>
+			<div
+				className="flex items-center gap-1 sm:hidden"
+				data-slot="app-shell-mobile-utilities"
+			>
+				{primaryId ? (
+					<AppShellCompactUtility
+						{...utilityProps}
+						enableShortcut={false}
+						id={primaryId}
 					/>
 				) : null}
-				{showModeToggle ? <ColorModeToggle /> : null}
-				{showThemeCustomiser ? <ThemeCustomiser /> : null}
-				{profile ? <ProfileDropdown {...profile} /> : null}
+				{secondaryIds.length > 0 ? (
+					<AppShellUtilityOverflow
+						{...utilityProps}
+						secondaryIds={secondaryIds}
+						triggerRef={overflowTriggerRef}
+					/>
+				) : null}
 			</div>
 		</header>
 	);

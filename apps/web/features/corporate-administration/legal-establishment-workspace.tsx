@@ -6,7 +6,6 @@ import {
 	AlertDescription,
 	AlertTitle,
 	Button,
-	Input,
 	Label,
 	NativeSelect,
 	NativeSelectOption,
@@ -16,8 +15,10 @@ import {
 	TableHead,
 	TableHeader,
 	TableRow,
+	SelectField as UiSelectField,
+	TextField as UiTextField,
 } from "@afenda/ui-system";
-import { type ReactNode, useActionState } from "react";
+import { type ComponentProps, type ReactNode, useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import {
 	activateLegalEstablishmentFormAction,
@@ -111,7 +112,7 @@ export function LegalEstablishmentWorkspace(props: {
 						type="hidden"
 						value={props.company.version}
 					/>
-					<SelectField
+					<EstablishmentSelectField
 						label="Type"
 						name="establishmentType"
 						options={[
@@ -121,25 +122,29 @@ export function LegalEstablishmentWorkspace(props: {
 							["other", "Other"],
 						]}
 					/>
-					<TextField
+					<EstablishmentTextField
 						label="Jurisdiction"
 						maxLength={2}
 						name="jurisdictionCode"
 						pattern="[A-Za-z]{2}"
 					/>
-					<TextField
+					<EstablishmentTextField
 						label="Registration identifier"
 						maxLength={256}
 						name="registrationIdentifier"
 					/>
-					<TextField label="Display name" maxLength={256} name="displayName" />
-					<TextField
+					<EstablishmentTextField
+						label="Display name"
+						maxLength={256}
+						name="displayName"
+					/>
+					<EstablishmentTextField
 						defaultValue={today}
 						label="Registered from"
 						name="registeredFrom"
 						type="date"
 					/>
-					<TextField
+					<EstablishmentTextField
 						label="Source document reference"
 						maxLength={128}
 						name="sourceDocumentId"
@@ -165,7 +170,7 @@ export function LegalEstablishmentWorkspace(props: {
 						type="hidden"
 						value={props.company.version}
 					/>
-					<SelectField
+					<EstablishmentSelectField
 						label="Address type"
 						name="addressType"
 						options={[
@@ -176,19 +181,19 @@ export function LegalEstablishmentWorkspace(props: {
 					/>
 					<EstablishmentScopeSelect establishments={props.establishments} />
 					<AddressSelect addresses={props.partyAddresses} />
-					<TextField
+					<EstablishmentTextField
 						defaultValue={today}
 						label="Effective from"
 						name="effectiveFrom"
 						type="date"
 					/>
-					<TextField
+					<EstablishmentTextField
 						label="Effective to (optional)"
 						name="effectiveTo"
 						required={false}
 						type="date"
 					/>
-					<TextField
+					<EstablishmentTextField
 						label="Source document reference"
 						maxLength={128}
 						name="sourceDocumentId"
@@ -216,7 +221,7 @@ export function LegalEstablishmentWorkspace(props: {
 						type="hidden"
 						value={props.company.version}
 					/>
-					<SelectField
+					<EstablishmentSelectField
 						label="Premise type"
 						name="premiseType"
 						options={[
@@ -227,21 +232,25 @@ export function LegalEstablishmentWorkspace(props: {
 						]}
 					/>
 					<EstablishmentScopeSelect establishments={props.establishments} />
-					<TextField label="Premise name" maxLength={256} name="displayName" />
+					<EstablishmentTextField
+						label="Premise name"
+						maxLength={256}
+						name="displayName"
+					/>
 					<AddressSelect addresses={props.partyAddresses} />
-					<TextField
+					<EstablishmentTextField
 						defaultValue={today}
 						label="Effective from"
 						name="effectiveFrom"
 						type="date"
 					/>
-					<TextField
+					<EstablishmentTextField
 						label="Effective to (optional)"
 						name="effectiveTo"
 						required={false}
 						type="date"
 					/>
-					<TextField
+					<EstablishmentTextField
 						label="Source document reference"
 						maxLength={128}
 						name="sourceDocumentId"
@@ -372,12 +381,15 @@ function EstablishmentRow({
 			<TableCell className="min-w-80 space-y-3">
 				<form action={updateAction} className="grid gap-2 sm:grid-cols-2">
 					{common}
-					<TextField
+					<EstablishmentTextField
 						defaultValue={item.displayName}
 						label="Updated display name"
 						name="displayName"
 					/>
-					<TextField label="Update evidence" name="sourceDocumentId" />
+					<EstablishmentTextField
+						label="Update evidence"
+						name="sourceDocumentId"
+					/>
 					<SubmitButton disabled={!canWrite}>Update</SubmitButton>
 				</form>
 				{item.status === "registered" || item.status === "suspended" ? (
@@ -428,9 +440,16 @@ function TransitionForm({
 		<form action={action} className="grid gap-2 sm:grid-cols-3">
 			<input name="legalEstablishmentId" type="hidden" value={item.id} />
 			<input name="expectedVersion" type="hidden" value={item.version} />
-			<TextField label={`${label} date`} name="effectiveFrom" type="date" />
-			<TextField label={`${label} reason`} name="reason" />
-			<TextField label={`${label} evidence`} name="sourceDocumentId" />
+			<EstablishmentTextField
+				label={`${label} date`}
+				name="effectiveFrom"
+				type="date"
+			/>
+			<EstablishmentTextField label={`${label} reason`} name="reason" />
+			<EstablishmentTextField
+				label={`${label} evidence`}
+				name="sourceDocumentId"
+			/>
 			<SubmitButton disabled={disabled}>{label}</SubmitButton>
 		</form>
 	);
@@ -462,9 +481,16 @@ function PremiseRow({
 					<form action={action} className="space-y-2">
 						<input name="premiseId" type="hidden" value={item.id} />
 						<input name="expectedVersion" type="hidden" value={item.version} />
-						<TextField label="End date" name="endedOn" type="date" />
-						<TextField label="End reason" name="reason" />
-						<TextField label="End evidence" name="sourceDocumentId" />
+						<EstablishmentTextField
+							label="End date"
+							name="endedOn"
+							type="date"
+						/>
+						<EstablishmentTextField label="End reason" name="reason" />
+						<EstablishmentTextField
+							label="End evidence"
+							name="sourceDocumentId"
+						/>
 						<SubmitButton disabled={!canWrite}>End premise</SubmitButton>
 						<ActionFeedback state={state} success="Premise ended." />
 					</form>
@@ -474,54 +500,14 @@ function PremiseRow({
 	);
 }
 
-function TextField(props: {
-	label: string;
-	name: string;
-	type?: string;
-	defaultValue?: string;
-	maxLength?: number;
-	pattern?: string;
-	required?: boolean;
-}) {
+function EstablishmentTextField(props: ComponentProps<typeof UiTextField>) {
 	const id = `ca-establishment-${props.name}-${props.label.replaceAll(" ", "-").toLowerCase()}`;
-	return (
-		<div className="space-y-1">
-			<Label htmlFor={id}>{props.label}</Label>
-			<Input
-				defaultValue={props.defaultValue}
-				id={id}
-				maxLength={props.maxLength}
-				name={props.name}
-				pattern={props.pattern}
-				required={props.required ?? true}
-				type={props.type}
-			/>
-		</div>
-	);
+	return <UiTextField {...props} id={id} required={props.required ?? true} />;
 }
 
-function SelectField({
-	label,
-	name,
-	options,
-}: {
-	label: string;
-	name: string;
-	options: readonly (readonly [string, string])[];
-}) {
-	const id = `ca-establishment-${name}`;
-	return (
-		<div className="space-y-1">
-			<Label htmlFor={id}>{label}</Label>
-			<NativeSelect id={id} name={name} required>
-				{options.map(([value, text]) => (
-					<NativeSelectOption key={value} value={value}>
-						{text}
-					</NativeSelectOption>
-				))}
-			</NativeSelect>
-		</div>
-	);
+function EstablishmentSelectField(props: ComponentProps<typeof UiSelectField>) {
+	const id = `ca-establishment-${props.name}`;
+	return <UiSelectField {...props} id={id} required={props.required ?? true} />;
 }
 
 function EstablishmentScopeSelect({

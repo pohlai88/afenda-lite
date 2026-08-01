@@ -1,3 +1,11 @@
+import {
+	PAYROLL_PAYMENT_REQUESTED_EVENT,
+	PAYROLL_POSTING_REQUESTED_EVENT,
+	PAYROLL_RUN_CALCULATED_EVENT,
+	PAYROLL_RUN_FINALIZED_EVENT,
+	PAYROLL_RUN_REVERSED_EVENT,
+	PAYROLL_RUN_STARTED_EVENT,
+} from "@afenda/events/schemas";
 import { describe, expect, it } from "vitest";
 
 import type { PayrollAuthorizationPort } from "../src/authorization";
@@ -173,6 +181,22 @@ describe("payroll run lifecycle commands", () => {
 		expect(finalized.data.status).toBe("finalized");
 		expect(finalized.data.finalizedBy).toBe(actorUserId);
 
+		const lateException = await recordPayrollException(
+			{
+				...baseContext(organizationId, actorUserId),
+				runId: finalized.data.id,
+				severity: "blocking",
+				exceptionCode: "LATE_BLOCKER",
+				message: "Must not be accepted after finalization",
+				employeeRef: null,
+			},
+			options,
+		);
+		expect(lateException.ok).toBe(false);
+		if (!lateException.ok) {
+			expect(lateException.code).toBe("CONFLICT");
+		}
+
 		const reversed = await reversePayrollRun(
 			{
 				...baseContext(organizationId, actorUserId),
@@ -187,6 +211,14 @@ describe("payroll run lifecycle commands", () => {
 			return;
 		}
 		expect(reversed.data.status).toBe("reversed");
+		expect(seeded.ports.outbox.calls.map(({ type }) => type)).toEqual([
+			PAYROLL_RUN_STARTED_EVENT,
+			PAYROLL_RUN_CALCULATED_EVENT,
+			PAYROLL_RUN_FINALIZED_EVENT,
+			PAYROLL_PAYMENT_REQUESTED_EVENT,
+			PAYROLL_POSTING_REQUESTED_EVENT,
+			PAYROLL_RUN_REVERSED_EVENT,
+		]);
 	});
 
 	it("rejects illegal transitions through commands", async () => {

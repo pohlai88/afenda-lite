@@ -1,15 +1,13 @@
 import { errorResult, type Result } from "@afenda/errors";
-import type { PayrollEmployeeQueryPort } from "../ports";
-
-export type PayrollEmployeeFacts = NonNullable<
-	Awaited<ReturnType<PayrollEmployeeQueryPort["getPayrollEmployee"]>>
->;
+import type { PayrollEmployeeFacts, PayrollEmployeeQueryPort } from "../ports";
 
 export async function requirePayrollEmployeeAtDate(input: {
 	employees: PayrollEmployeeQueryPort | undefined;
 	organizationId: string;
 	employeeId: string;
 	effectiveDate: string;
+	actorUserId: string;
+	correlationId: string;
 }): Promise<Result<PayrollEmployeeFacts>> {
 	if (input.employees === undefined) {
 		return errorResult.fail("INTERNAL_ERROR");
@@ -19,15 +17,20 @@ export async function requirePayrollEmployeeAtDate(input: {
 		organizationId: input.organizationId,
 		employeeId: input.employeeId,
 		effectiveDate: input.effectiveDate,
+		actorUserId: input.actorUserId,
+		correlationId: input.correlationId,
 	});
+	if (!employee.ok) {
+		return employee;
+	}
 
-	if (employee === null) {
+	if (employee.data === null) {
 		return errorResult.fail("NOT_FOUND", {
 			publicMessage: "Employee not found for payroll at effective date",
 		});
 	}
 
-	return errorResult.ok(employee);
+	return errorResult.ok(employee.data);
 }
 
 export function assertEmployeeEligibleForPayroll(
@@ -39,18 +42,6 @@ export function assertEmployeeEligibleForPayroll(
 		});
 	}
 	return errorResult.ok(employee);
-}
-
-export function assertEmployeePayGroupMatch(input: {
-	employee: PayrollEmployeeFacts;
-	expectedPayGroupId: string;
-}): Result<PayrollEmployeeFacts> {
-	if (input.employee.payGroupId !== input.expectedPayGroupId) {
-		return errorResult.fail("CONFLICT", {
-			publicMessage: "Employee pay group does not match payroll configuration",
-		});
-	}
-	return errorResult.ok(input.employee);
 }
 
 export function assertCurrencyAlignment(input: {

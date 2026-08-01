@@ -2,7 +2,7 @@
 
 Domain-sliced Zod input schemas for `@afenda/human-resources`. The composed entry is `src/schemas/index.ts`; compliance schemas live in `src/schemas/compliance.ts`.
 
-**Status:** Slices A–D complete. Domain commands use narrow `../schemas/<domain>` imports; package `src/index.ts` re-exports `./schemas` for public consumers.
+**Status:** Slices A–D complete. Domain commands use narrow `../schemas/<domain>` imports; public consumers receive only the schemas explicitly exposed by the root capability facade.
 
 ## Layout
 
@@ -29,12 +29,12 @@ src/schemas/
 └── index.ts                       # composed schema barrel (SSOT)
 ```
 
-Package subpath `@afenda/human-resources/schemas` resolves to `schemas/index.ts`.
+`schemas/index.ts` is an internal composition barrel. The package does not expose a `./schemas` subpath.
 
 ## Import patterns
 
 ```ts
-// Package consumers
+// Package-internal composition
 import { createEmployeeInputSchema } from "./schemas";
 import { registerEmployeeDocumentInputSchema } from "./schemas/compliance";
 

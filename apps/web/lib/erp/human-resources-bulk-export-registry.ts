@@ -1,18 +1,18 @@
 // biome-ignore-all lint/performance/noAwaitInLoops: Export pages and dependent aggregates are read serially to preserve bounds and fail-fast ordering.
 import { errorResult, type Result } from "@afenda/errors";
 import type {
+	HumanResourcesBulkExportDataCapability,
 	HumanResourcesBulkExportDefinition,
 	HumanResourcesBulkExportSource,
 	HumanResourcesExportSourceRecord,
 	HumanResourcesReadModelFact,
 	HumanResourcesReportingFactKind,
-	HumanResourcesReportingSourcePort,
-	HumanResourcesStore,
+	HumanResourcesReportingSourceCapability,
 } from "@afenda/human-resources";
 import {
-	createDrizzleHumanResourcesReportingSource,
-	createDrizzleHumanResourcesStore,
-} from "@afenda/human-resources/adapters/drizzle";
+	createHumanResourcesBulkExportDataCapability,
+	createHumanResourcesReportingSourceCapability,
+} from "@afenda/human-resources";
 
 export const HUMAN_RESOURCES_BULK_EXPORT_TYPES = [
 	"employee",
@@ -120,7 +120,7 @@ function dateOnly(value: Date): string {
 }
 
 function employeeSource(
-	store: HumanResourcesStore,
+	store: HumanResourcesBulkExportDataCapability,
 ): HumanResourcesBulkExportSource {
 	return {
 		async list(input) {
@@ -161,7 +161,7 @@ function employeeSource(
 }
 
 function assignmentSource(
-	store: HumanResourcesStore,
+	store: HumanResourcesBulkExportDataCapability,
 ): HumanResourcesBulkExportSource {
 	return {
 		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Assignment export preserves bounded nested aggregate projection.
@@ -232,7 +232,7 @@ function assignmentSource(
 }
 
 function leaveEntitlementSource(
-	store: HumanResourcesStore,
+	store: HumanResourcesBulkExportDataCapability,
 ): HumanResourcesBulkExportSource {
 	return {
 		async list(input) {
@@ -334,7 +334,7 @@ function reportingSource(
 		HumanResourcesReportingFactKind,
 		"attendance" | "compensation" | "learning"
 	>,
-	reporting: HumanResourcesReportingSourcePort,
+	reporting: HumanResourcesReportingSourceCapability,
 ): HumanResourcesBulkExportSource {
 	return {
 		async list(input) {
@@ -370,13 +370,14 @@ function reportingSource(
 export function createHumanResourcesBulkExportSource(
 	exportType: HumanResourcesBulkExportType,
 	dependencies: {
-		store?: HumanResourcesStore;
-		reporting?: HumanResourcesReportingSourcePort;
+		store?: HumanResourcesBulkExportDataCapability;
+		reporting?: HumanResourcesReportingSourceCapability;
 	} = {},
 ): HumanResourcesBulkExportSource {
-	const store = dependencies.store ?? createDrizzleHumanResourcesStore();
+	const store =
+		dependencies.store ?? createHumanResourcesBulkExportDataCapability();
 	const reporting =
-		dependencies.reporting ?? createDrizzleHumanResourcesReportingSource();
+		dependencies.reporting ?? createHumanResourcesReportingSourceCapability();
 	// biome-ignore lint/style/useDefaultSwitchClause: The export-type union is exhaustive so additions require an owned source.
 	switch (exportType) {
 		case "employee":

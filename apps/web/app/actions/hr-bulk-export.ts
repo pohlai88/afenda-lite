@@ -2,11 +2,11 @@
 
 import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import {
+	createHumanResourcesBulkJobCapability,
 	enqueueHumanResourcesBulkExport,
 	type HumanResourcesBulkExportJob,
 	recordHrPrivacyOperation,
 } from "@afenda/human-resources";
-import { createDrizzleHumanResourcesBulkJobStore } from "@afenda/human-resources/adapters/drizzle";
 import { z } from "zod";
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runHrBulkOperatorPermissionAction as runOperatorPermissionAction } from "@/app/actions/run-hr-operator-permission-action";
@@ -72,7 +72,7 @@ export async function runHumanResourcesBulkExportAction(
 						? {}
 						: { effectiveOn: parsed.data.effectiveOn }),
 				},
-				createDrizzleHumanResourcesBulkJobStore(),
+				createHumanResourcesBulkJobCapability(),
 			);
 			await recordHrPrivacyOperation(
 				result.ok

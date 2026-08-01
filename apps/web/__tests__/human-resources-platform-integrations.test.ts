@@ -1,7 +1,10 @@
 import { errorResult } from "@afenda/errors";
 import type { DomainEvent } from "@afenda/events";
-import type { Employee, EmployeeListPage } from "@afenda/human-resources";
-import type { HumanResourcesEmployeeId } from "@afenda/human-resources/brands";
+import type {
+	Employee,
+	EmployeeListPage,
+	HumanResourcesEmployeeId,
+} from "@afenda/human-resources";
 import type { Notification } from "@afenda/notifications";
 import {
 	type SearchDocument,

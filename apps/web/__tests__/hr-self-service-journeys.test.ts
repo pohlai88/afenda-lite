@@ -39,17 +39,13 @@ vi.mock("@/lib/erp/human-resources-identity-resolver-port", () => ({
 		resolveEmployeeForActor: mocks.resolveEmployeeForActor,
 	}),
 }));
-vi.mock("@afenda/human-resources/resolve-store", () => ({
-	resolveHumanResourcesStore: () => ({
-		getLeaveEntitlementById: mocks.getLeaveEntitlementById,
-		getLeaveRequestById: mocks.getLeaveRequestById,
-		getTimesheet: mocks.getTimesheet,
-		getPolicyAcknowledgementById: mocks.getPolicyAcknowledgementById,
-	}),
-}));
 vi.mock("@afenda/human-resources", async (importOriginal) => ({
 	...(await importOriginal<typeof import("@afenda/human-resources")>()),
 	createDraftLeaveRequest: mocks.createDraftLeaveRequest,
+	getLeaveEntitlement: mocks.getLeaveEntitlementById,
+	getLeaveRequest: mocks.getLeaveRequestById,
+	getPolicyAcknowledgementStatus: mocks.getPolicyAcknowledgementById,
+	getTimesheet: mocks.getTimesheet,
 	submitTimesheet: mocks.submitTimesheet,
 	acknowledgePolicy: mocks.acknowledgePolicy,
 }));

@@ -1,7 +1,14 @@
 "use client";
 
 import { Search } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+	type RefObject,
+	useCallback,
+	useEffect,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import { Button } from "../components/ui/button";
 import {
 	CommandDialog,
@@ -32,6 +39,10 @@ export type CommandMenuProps = Readonly<{
 	groups: readonly CommandMenuGroup[];
 	onCommand?: (id: string) => void;
 	enableSlashShortcut?: boolean;
+	onOpenChange?: (open: boolean) => void;
+	open?: boolean;
+	restoreFocusRef?: RefObject<HTMLElement | null>;
+	showTrigger?: boolean;
 }>;
 
 function normalize(value: string): string {
@@ -48,12 +59,17 @@ function isEditableTarget(target: EventTarget | null): boolean {
 }
 
 export function CommandMenu({
+	open: controlledOpen,
 	enableSlashShortcut = true,
 	groups,
 	onCommand,
+	onOpenChange,
+	restoreFocusRef,
+	showTrigger = true,
 }: CommandMenuProps) {
-	const [open, setOpen] = useState(false);
+	const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
 	const triggerRef = useRef<HTMLButtonElement>(null);
+	const open = controlledOpen ?? uncontrolledOpen;
 	const normalizedGroups = useMemo(() => {
 		const seenGroups = new Set<string>();
 		const seenCommands = new Set<string>();
@@ -90,13 +106,31 @@ export function CommandMenu({
 		});
 	}, [groups]);
 
-	const handleOpenChange = useCallback((nextOpen: boolean) => {
-		setOpen(nextOpen);
-		if (!nextOpen) {
-			queueMicrotask(() => triggerRef.current?.focus());
-		}
-	}, []);
-	const openMenu = useCallback(() => setOpen(true), []);
+	const handleOpenChange = useCallback(
+		(nextOpen: boolean) => {
+			if (controlledOpen === undefined) {
+				setUncontrolledOpen(nextOpen);
+			}
+			onOpenChange?.(nextOpen);
+			if (!nextOpen) {
+				queueMicrotask(() => {
+					const trigger = triggerRef.current;
+					const triggerIsHidden =
+						trigger !== null &&
+						window.getComputedStyle(trigger).display === "none";
+					const target = triggerIsHidden
+						? restoreFocusRef?.current
+						: (trigger ?? restoreFocusRef?.current);
+					target?.focus();
+				});
+			}
+		},
+		[controlledOpen, onOpenChange, restoreFocusRef],
+	);
+	const openMenu = useCallback(
+		() => handleOpenChange(true),
+		[handleOpenChange],
+	);
 	const selectCommand = useCallback(
 		(id: string) => {
 			const command = normalizedGroups
@@ -133,26 +167,28 @@ export function CommandMenu({
 				return;
 			}
 			event.preventDefault();
-			setOpen(true);
+			handleOpenChange(true);
 		};
 		document.addEventListener("keydown", handleKeyDown);
 		return () => document.removeEventListener("keydown", handleKeyDown);
-	}, [enableSlashShortcut]);
+	}, [enableSlashShortcut, handleOpenChange]);
 
 	return (
 		<>
-			<Button
-				aria-expanded={open}
-				aria-haspopup="dialog"
-				aria-label="Open command menu"
-				onClick={openMenu}
-				ref={triggerRef}
-				size="icon-sm"
-				type="button"
-				variant="ghost"
-			>
-				<Search />
-			</Button>
+			{showTrigger ? (
+				<Button
+					aria-expanded={open}
+					aria-haspopup="dialog"
+					aria-label="Open command menu"
+					onClick={openMenu}
+					ref={triggerRef}
+					size="icon-sm"
+					type="button"
+					variant="ghost"
+				>
+					<Search />
+				</Button>
+			) : null}
 			<CommandDialog
 				commandLabel="Search workspace commands"
 				description="Search workspace destinations and actions."

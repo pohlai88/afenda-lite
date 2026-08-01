@@ -7,8 +7,8 @@ import {
 	type HumanResourcesDeletionDecision,
 	type HumanResourcesDeletionDecisionInput,
 	type HumanResourcesEmployeeId,
-	type HumanResourcesPrivacyDeletionPort,
-	type HumanResourcesPrivacyPort,
+	type HumanResourcesPrivacyCapability,
+	type HumanResourcesPrivacyDeletionCapability,
 	type HumanResourcesPrivacyProcessorBoundary,
 	type HumanResourcesRetentionClassification,
 } from "@afenda/human-resources";
@@ -34,7 +34,7 @@ export interface HumanResourcesPrivacyDeletionRequest {
 
 export interface HumanResourcesPrivacyDeletionCompositionDeps {
 	audit?: Pick<AuditRecorder, "record">;
-	privacy?: HumanResourcesPrivacyPort;
+	privacy?: HumanResourcesPrivacyCapability;
 	resolveProcessorBoundary?: (input: {
 		organizationId: string;
 		correlationId: string;
@@ -112,12 +112,12 @@ function activeLegalHoldsFromCase(
 
 function createDeletionPort(
 	request: HumanResourcesPrivacyDeletionRequest,
-	privacy: HumanResourcesPrivacyPort,
+	privacy: HumanResourcesPrivacyCapability,
 	audit: Pick<AuditRecorder, "record">,
 	resolveProcessorBoundary: NonNullable<
 		HumanResourcesPrivacyDeletionCompositionDeps["resolveProcessorBoundary"]
 	>,
-): HumanResourcesPrivacyDeletionPort {
+): HumanResourcesPrivacyDeletionCapability {
 	return {
 		getProcessorBoundary: resolveProcessorBoundary,
 		async recordDeletionDecision(evidence) {
@@ -181,7 +181,7 @@ async function evaluateWithComposition(
 ): Promise<
 	Result<{
 		decision: HumanResourcesDeletionDecision;
-		port: HumanResourcesPrivacyDeletionPort;
+		port: HumanResourcesPrivacyDeletionCapability;
 	}>
 > {
 	const privacy = deps.privacy ?? createHumanResourcesPrivacyPort();

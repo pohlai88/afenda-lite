@@ -82,7 +82,16 @@ export function WorkspacePlatformChrome({
 			commandMenu={{ groups: commandGroups, onCommand: handleCommand }}
 			defaultSidebarOpen={defaultSidebarOpen}
 			footerText={`Organization ${orgId}`}
-			header={{ title: activeItem?.label ?? "Workspace" }}
+			header={{
+				title: activeItem?.label ?? "Workspace",
+				utilityPriorities: {
+					"command-menu": "primary",
+					notifications: "secondary",
+					"color-mode": "secondary",
+					appearance: "secondary",
+					profile: "secondary",
+				},
+			}}
 			initialSettings={initialSettings}
 			mainContentId={MAIN_CONTENT_ID}
 			navConfig={{ currentPath: pathname, linkComponent: Link, sections }}

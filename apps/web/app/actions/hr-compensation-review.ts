@@ -10,30 +10,28 @@ import type {
 } from "@afenda/human-resources";
 import {
 	applyApprovedCompensationResult,
+	applyApprovedCompensationResultInputSchema,
 	cancelCompensationReviewCycle,
 	closeCompensationReviewCycle,
+	compensationReviewCycleStatusTransitionInputSchema,
 	createCompensationReviewCycle,
+	createCompensationReviewCycleInputSchema,
 	createCompensationReviewDraft,
+	createCompensationReviewDraftInputSchema,
 	finalizeCompensationReview,
+	finalizeCompensationReviewInputSchema,
 	getCompensationReview,
 	getCompensationReviewCycle,
-	listCompensationReviewCycles,
-	listCompensationReviewsByEmployee,
-	openCompensationReviewCycle,
-	recordCompensationRecommendation,
-} from "@afenda/human-resources";
-import {
-	applyApprovedCompensationResultInputSchema,
-	compensationReviewCycleStatusTransitionInputSchema,
-	createCompensationReviewCycleInputSchema,
-	createCompensationReviewDraftInputSchema,
-	finalizeCompensationReviewInputSchema,
 	getCompensationReviewCycleInputSchema,
 	getCompensationReviewInputSchema,
+	listCompensationReviewCycles,
 	listCompensationReviewCyclesInputSchema,
+	listCompensationReviewsByEmployee,
 	listCompensationReviewsByEmployeeInputSchema,
+	openCompensationReviewCycle,
+	recordCompensationRecommendation,
 	recordCompensationRecommendationInputSchema,
-} from "@afenda/human-resources/schemas";
+} from "@afenda/human-resources";
 import {
 	invokeHrPackage,
 	runHrCompensationHumanResourcesAction as runHrHumanResourcesAction,

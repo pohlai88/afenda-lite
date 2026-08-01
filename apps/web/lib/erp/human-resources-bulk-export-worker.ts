@@ -3,8 +3,8 @@ import { randomUUID } from "node:crypto";
 import { type AuditRecorder, audit as afendaAudit } from "@afenda/audit";
 import { errorResult, type Result } from "@afenda/errors";
 import {
-	type HumanResourcesAuthorizationPort,
-	type HumanResourcesBulkExportPorts,
+	type HumanResourcesAuthorizationCapability,
+	type HumanResourcesBulkExportCapabilities,
 	type HumanResourcesBulkExportResult,
 	runHumanResourcesBulkExport,
 } from "@afenda/human-resources";
@@ -29,11 +29,11 @@ export interface HumanResourcesBulkExportWorkerInput {
 
 export function createHumanResourcesBulkExportPorts(
 	dependencies: {
-		authorization?: HumanResourcesAuthorizationPort;
+		authorization?: HumanResourcesAuthorizationCapability;
 		audit?: AuditRecorder;
 		createEvidenceId?: () => string;
 	} = {},
-): HumanResourcesBulkExportPorts {
+): HumanResourcesBulkExportCapabilities {
 	const authorization =
 		dependencies.authorization ?? createHumanResourcesAuthorizationPort();
 	const audit = dependencies.audit ?? afendaAudit.recorder();

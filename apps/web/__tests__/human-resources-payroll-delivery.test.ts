@@ -4,10 +4,10 @@ import {
 	HANDOFF_PAYROLL_CONTRACT_VERSION,
 } from "@afenda/events/schemas";
 import {
-	createMemoryPayrollDeliveryStore,
-	type PayrollDeliveryPorts,
+	type PayrollDeliveryCapabilities,
 	queuePayrollDelivery,
 } from "@afenda/human-resources";
+import { createMemoryPayrollDeliveryStore } from "@afenda/human-resources/testing";
 import { describe, expect, it, vi } from "vitest";
 
 import {
@@ -134,7 +134,7 @@ describe("HR payroll delivery production composition", () => {
 	it("recovers queued work through the producer and resolves feedback using stored correlation", async () => {
 		const store = createMemoryPayrollDeliveryStore();
 		const publish = vi.fn(async (command) => eventResult(command.payload));
-		const ports: PayrollDeliveryPorts = {
+		const ports: PayrollDeliveryCapabilities = {
 			store,
 			producer: createPayrollDeliveryEventProducer({ publish }, "operator-1"),
 			clock: { now: () => new Date("2026-07-03T00:00:00.000Z") },

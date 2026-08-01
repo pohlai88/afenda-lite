@@ -9,30 +9,28 @@ import type {
 } from "@afenda/human-resources";
 import {
 	addBenefitEnrollmentDependent,
+	addBenefitEnrollmentDependentInputSchema,
 	archiveBenefitPlan,
+	archiveBenefitPlanInputSchema,
 	cancelBenefitEnrollment,
+	cancelBenefitEnrollmentInputSchema,
 	createBenefitPlan,
+	createBenefitPlanInputSchema,
 	endBenefitEnrollment,
 	endBenefitEnrollmentDependent,
-	enrolBenefit,
-	getBenefitPlanEligibility,
-	setBenefitPlanEligibility,
-	updateBenefitPlan,
-	waiveBenefit,
-} from "@afenda/human-resources";
-import {
-	addBenefitEnrollmentDependentInputSchema,
-	archiveBenefitPlanInputSchema,
-	cancelBenefitEnrollmentInputSchema,
-	createBenefitPlanInputSchema,
 	endBenefitEnrollmentDependentInputSchema,
 	endBenefitEnrollmentInputSchema,
+	enrolBenefit,
 	enrolBenefitInputSchema,
+	getBenefitPlanEligibility,
 	getBenefitPlanEligibilityInputSchema,
+	setBenefitPlanEligibility,
 	setBenefitPlanEligibilityInputSchema,
+	updateBenefitPlan,
 	updateBenefitPlanInputSchema,
+	waiveBenefit,
 	waiveBenefitInputSchema,
-} from "@afenda/human-resources/schemas";
+} from "@afenda/human-resources";
 import {
 	invokeHrPackage,
 	runHrCompensationHumanResourcesAction as runHrHumanResourcesAction,

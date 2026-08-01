@@ -1,7 +1,7 @@
 import { errorResult } from "@afenda/errors";
 import type {
+	HumanResourcesPrivacyCapability,
 	HumanResourcesPrivacyCase,
-	HumanResourcesPrivacyPort,
 	HumanResourcesPrivacyRequestContext,
 } from "@afenda/human-resources";
 
@@ -33,7 +33,7 @@ function mapPrivacyCase(
 	};
 }
 
-export function createHumanResourcesPrivacyPort(): HumanResourcesPrivacyPort {
+export function createHumanResourcesPrivacyPort(): HumanResourcesPrivacyCapability {
 	const service = getPlatformPrivacyService();
 
 	return {
@@ -101,5 +101,5 @@ export function createHumanResourcesPrivacyPort(): HumanResourcesPrivacyPort {
 				requestedAt: input.requestedAt,
 			});
 		},
-	} satisfies HumanResourcesPrivacyPort;
+	} satisfies HumanResourcesPrivacyCapability;
 }

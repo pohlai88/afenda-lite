@@ -16,7 +16,7 @@ import {
 	PLATFORM_HUMAN_RESOURCES_WORKFLOW_FACT_RECORDED_EVENT,
 } from "@afenda/events/schemas";
 import {
-	type HrObservabilityPorts,
+	type HrObservabilityCapabilities,
 	type HumanResourcesAccountingProvisioningFact,
 	type HumanResourcesPlatformFacts,
 	type HumanResourcesWorkItemFact,
@@ -265,7 +265,7 @@ export async function handleHumanResourcesPlatformEvent(
 	recorder: HumanResourcesNotificationRecorderPort = notifications,
 	publisher: HumanResourcesFactPublisherPort = events.publisher.create(),
 	workItemSink: HumanResourcesWorkItemSinkPort | null = createProductionHumanResourcesWorkItemSink(),
-	observability: HrObservabilityPorts = createProductionHrObservabilityPorts(),
+	observability: HrObservabilityCapabilities = createProductionHrObservabilityPorts(),
 ): Promise<Result<HumanResourcesPlatformEventResult>> {
 	await recordHrOutboxLag(
 		{

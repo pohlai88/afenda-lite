@@ -8,49 +8,9 @@
 			"types": "./src/index.ts",
 			"default": "./src/index.ts"
 		},
-		"./adapters/drizzle": {
-			"types": "./src/adapters/drizzle/index.ts",
-			"default": "./src/adapters/drizzle/index.ts"
-		},
-		"./authorization": {
-			"types": "./src/authorization.ts",
-			"default": "./src/authorization.ts"
-		},
-		"./brands": {
-			"types": "./src/brands.ts",
-			"default": "./src/brands.ts"
-		},
-		"./identity-resolver": {
-			"types": "./src/identity-resolver.ts",
-			"default": "./src/identity-resolver.ts"
-		},
-		"./resolve-store": {
-			"types": "./src/resolve-store.ts",
-			"default": "./src/resolve-store.ts"
-		},
-		"./schemas": {
-			"types": "./src/schemas/index.ts",
-			"default": "./src/schemas/index.ts"
-		},
-		"./store": {
-			"types": "./src/store/index.ts",
-			"default": "./src/store/index.ts"
-		},
 		"./testing": {
 			"types": "./src/testing/index.ts",
 			"default": "./src/testing/index.ts"
-		},
-		"./module-manifest": {
-			"types": "./src/module.manifest.ts",
-			"default": "./src/module.manifest.ts"
-		},
-		"./event-catalog": {
-			"types": "./src/event-catalog/index.ts",
-			"default": "./src/event-catalog/index.ts"
-		},
-		"./privacy/subject-data-collector": {
-			"types": "./src/privacy/subject-data-collector.ts",
-			"default": "./src/privacy/subject-data-collector.ts"
 		}
 	},
 	"scripts": {

@@ -4,13 +4,14 @@ import {
 	acknowledgeReliabilityWork,
 	checkpointConnectorCursor,
 	claimDueReliabilityWork,
+	createHumanResourcesReliabilityCapability,
 	executeReliabilityWork,
-	type HrObservabilityPorts,
+	type HrObservabilityCapabilities,
 	importAttendanceEvents,
 	type ReliabilityExecutionOutcome,
-	type ReliabilityExecutorPort,
-	type ReliabilityKernelPorts,
-	type ReliabilityStorePort,
+	type ReliabilityExecutorCapability,
+	type ReliabilityKernelCapabilities,
+	type ReliabilityStoreCapability,
 	type ReliabilityWorkItem,
 	recordHrAuthorizationDenial,
 	recordHrBulkError,
@@ -24,7 +25,6 @@ import {
 	replayDeadLetter as replayDeadLetterKernel,
 	resolveReliabilityOperation,
 } from "@afenda/human-resources";
-import { createDrizzleReliabilityStore } from "@afenda/human-resources/adapters/drizzle";
 import {
 	processHumanResourcesBulkExportJob,
 	processHumanResourcesBulkImportJob,
@@ -140,7 +140,7 @@ export function createProductionReliabilityOperationHandlers(): ReliabilityOpera
 
 export function createReliabilityOperationExecutor(
 	handlers: ReliabilityOperationHandlers = createProductionReliabilityOperationHandlers(),
-): ReliabilityExecutorPort {
+): ReliabilityExecutorCapability {
 	return {
 		async execute(item) {
 			const handler = handlers[reliabilityOperationKey(item)];
@@ -156,9 +156,9 @@ export function createReliabilityOperationExecutor(
 
 export function createProductionReliabilityPorts(input?: {
 	handlers?: ReliabilityOperationHandlers;
-}): ReliabilityKernelPorts {
+}): ReliabilityKernelCapabilities {
 	return {
-		store: createDrizzleReliabilityStore(),
+		store: createHumanResourcesReliabilityCapability(),
 		clock: { now: () => new Date() },
 		executor: createReliabilityOperationExecutor(input?.handlers),
 		failureClassifier: {
@@ -172,7 +172,7 @@ export function createProductionReliabilityPorts(input?: {
 async function recordFailureSurface(
 	item: ReliabilityWorkItem,
 	code: string,
-	observability: HrObservabilityPorts,
+	observability: HrObservabilityCapabilities,
 ): Promise<void> {
 	const reason = classifyHrFailure(code);
 	await recordHrEventFailure(
@@ -208,8 +208,8 @@ export async function processReliabilityWork(
 		workItemId: string;
 		leaseOwner: string;
 	},
-	ports: ReliabilityKernelPorts = createProductionReliabilityPorts(),
-	observability: HrObservabilityPorts = createProductionHrObservabilityPorts(),
+	ports: ReliabilityKernelCapabilities = createProductionReliabilityPorts(),
+	observability: HrObservabilityCapabilities = createProductionHrObservabilityPorts(),
 ): Promise<Result<ReliabilityWorkItem>> {
 	const startedAt = Date.now();
 	const found = await ports.store.getWorkItem(input);
@@ -269,8 +269,8 @@ export async function runProductionReliabilityScheduler(
 		leaseDurationMs: number;
 		timeBudgetMs: number;
 	},
-	ports: ReliabilityKernelPorts = createProductionReliabilityPorts(),
-	observability: HrObservabilityPorts = createProductionHrObservabilityPorts(),
+	ports: ReliabilityKernelCapabilities = createProductionReliabilityPorts(),
+	observability: HrObservabilityCapabilities = createProductionHrObservabilityPorts(),
 ): Promise<Result<ReliabilitySchedulerSummary>> {
 	const startedAt = Date.now();
 	const claimed = await claimDueReliabilityWork(
@@ -359,7 +359,7 @@ export async function runProductionReliabilityScheduler(
 export function acknowledgeProductionReliabilityWork(
 	input: Parameters<typeof acknowledgeReliabilityWork>[0],
 	ports: Pick<
-		ReliabilityKernelPorts,
+		ReliabilityKernelCapabilities,
 		"store" | "clock"
 	> = createProductionReliabilityPorts(),
 ) {
@@ -369,7 +369,7 @@ export function acknowledgeProductionReliabilityWork(
 export function registerProductionReliabilityWork(
 	input: Parameters<typeof registerReliabilityWork>[0],
 	ports: Pick<
-		ReliabilityKernelPorts,
+		ReliabilityKernelCapabilities,
 		"store" | "clock"
 	> = createProductionReliabilityPorts(),
 ) {
@@ -392,7 +392,7 @@ export function registerProductionReliabilityWork(
 export function replayProductionReliabilityDeadLetter(
 	input: Parameters<typeof replayDeadLetterKernel>[0],
 	ports: Pick<
-		ReliabilityKernelPorts,
+		ReliabilityKernelCapabilities,
 		"store" | "clock"
 	> = createProductionReliabilityPorts(),
 ) {
@@ -401,7 +401,7 @@ export function replayProductionReliabilityDeadLetter(
 
 export function recoverProductionConnectorCursor(
 	input: Parameters<typeof recoverConnectorCursor>[0],
-	store: ReliabilityStorePort = createDrizzleReliabilityStore(),
+	store: ReliabilityStoreCapability = createHumanResourcesReliabilityCapability(),
 ) {
 	return recoverConnectorCursor(input, store);
 }
@@ -409,7 +409,7 @@ export function recoverProductionConnectorCursor(
 export function checkpointProductionConnectorCursor(
 	input: Parameters<typeof checkpointConnectorCursor>[0],
 	ports: Pick<
-		ReliabilityKernelPorts,
+		ReliabilityKernelCapabilities,
 		"store" | "clock"
 	> = createProductionReliabilityPorts(),
 ) {

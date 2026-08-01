@@ -1,7 +1,7 @@
 "use client";
 
 import { MoonIcon, Settings2Icon, SunIcon } from "lucide-react";
-import { useCallback } from "react";
+import { type RefObject, useCallback } from "react";
 import { Button } from "../../components/ui/button";
 import { Label } from "../../components/ui/label";
 import { RadioGroup, RadioGroupItem } from "../../components/ui/radio-group";
@@ -77,7 +77,17 @@ export function ColorModeToggle() {
 	);
 }
 
-export function ThemeCustomiser() {
+export function ThemeCustomiser({
+	onOpenChange,
+	open,
+	restoreFocusRef,
+	showTrigger = true,
+}: Readonly<{
+	onOpenChange?: (open: boolean) => void;
+	open?: boolean;
+	restoreFocusRef?: RefObject<HTMLElement | null>;
+	showTrigger?: boolean;
+}> = {}) {
 	const { resetSettings, setSettings, settings } =
 		useApplicationShellSettings();
 	const update = useCallback(
@@ -129,19 +139,33 @@ export function ThemeCustomiser() {
 		},
 		[update],
 	);
+	const handleOpenChange = useCallback(
+		(nextOpen: boolean) => {
+			onOpenChange?.(nextOpen);
+			if (!nextOpen) {
+				queueMicrotask(() => restoreFocusRef?.current?.focus());
+			}
+		},
+		[onOpenChange, restoreFocusRef],
+	);
 
 	return (
-		<Sheet>
-			<SheetTrigger asChild>
-				<Button
-					aria-label="Customize appearance"
-					size="icon-sm"
-					type="button"
-					variant="ghost"
-				>
-					<Settings2Icon />
-				</Button>
-			</SheetTrigger>
+		<Sheet
+			{...(open === undefined ? {} : { open })}
+			onOpenChange={handleOpenChange}
+		>
+			{showTrigger ? (
+				<SheetTrigger asChild>
+					<Button
+						aria-label="Customize appearance"
+						size="icon-sm"
+						type="button"
+						variant="ghost"
+					>
+						<Settings2Icon />
+					</Button>
+				</SheetTrigger>
+			) : null}
 			<SheetContent>
 				<SheetHeader>
 					<SheetTitle>Workspace appearance</SheetTitle>

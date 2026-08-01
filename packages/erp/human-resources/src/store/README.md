@@ -1,6 +1,6 @@
 # Human Resources store refactor
 
-The original monolithic store contract combined every HR bounded context into one 4,000+ line surface. This refactor keeps the complete public contract while moving each persistence slice to its owning domain.
+The original monolithic store contract combined every HR bounded context into one 4,000+ line surface. The persistence implementation is now private package infrastructure, split by its owning domain and composed behind the root capability facade.
 
 ## Layout
 
@@ -21,7 +21,7 @@ src/store/
 └── time.ts
 ```
 
-Package subpath `@afenda/human-resources/store` resolves to `store/index.ts`.
+`store/index.ts` is an internal composition barrel. The package does not expose a `./store` subpath or store contracts to consumers.
 
 ## Import patterns
 
@@ -39,7 +39,7 @@ export function createLearningCommands(store: HumanResourcesLearningStore) {
 }
 ```
 
-A complete adapter can still implement the composed contract:
+A package-internal adapter can implement the composed contract:
 
 ```ts
 import type { HumanResourcesStore } from "./store";
@@ -51,4 +51,4 @@ export class MemoryHumanResourcesStore implements HumanResourcesStore {
 
 ## Boundary rule
 
-Store slices own persistence operations only. A domain store may reference identity types from another HR domain, but it should not call another store slice internally. Cross-domain workflows remain application orchestration so transaction and authorization boundaries stay explicit.
+Store slices own persistence operations only. A domain store may reference identity types from another HR domain, but it should not call another store slice internally. Cross-domain business workflows are coordinated by root capabilities; infrastructure dependencies are supplied once by the application composition root through the opaque HR execution context.

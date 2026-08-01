@@ -10,30 +10,28 @@ import type {
 } from "@afenda/human-resources";
 import {
 	completeOnboarding,
-	completeOnboardingTask,
-	getOnboardingAccessHandoffByCase,
-	getOnboardingCase,
-	getOnboardingEquipmentHandoffByCase,
-	getOnboardingOrientationByCase,
-	listOnboardingTasks,
-	recordOnboardingAccessHandoff,
-	recordOnboardingEquipmentHandoff,
-	recordOnboardingOrientation,
-	startOnboarding,
-} from "@afenda/human-resources";
-import {
 	completeOnboardingInputSchema,
+	completeOnboardingTask,
 	completeOnboardingTaskInputSchema,
+	getOnboardingAccessHandoffByCase,
 	getOnboardingAccessHandoffByCaseInputSchema,
+	getOnboardingCase,
 	getOnboardingCaseInputSchema,
+	getOnboardingEquipmentHandoffByCase,
 	getOnboardingEquipmentHandoffByCaseInputSchema,
+	getOnboardingOrientationByCase,
 	getOnboardingOrientationByCaseInputSchema,
+	listOnboardingTasks,
 	listOnboardingTasksInputSchema,
+	recordOnboardingAccessHandoff,
 	recordOnboardingAccessHandoffInputSchema,
+	recordOnboardingEquipmentHandoff,
 	recordOnboardingEquipmentHandoffInputSchema,
+	recordOnboardingOrientation,
 	recordOnboardingOrientationInputSchema,
+	startOnboarding,
 	startOnboardingInputSchema,
-} from "@afenda/human-resources/schemas";
+} from "@afenda/human-resources";
 import {
 	hrActionSchema,
 	withHrSessionContext as withSessionContext,

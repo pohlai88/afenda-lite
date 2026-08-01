@@ -431,7 +431,7 @@ const drizzleSetupCore = {
 		}
 	},
 
-	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Calendar creation keeps idempotency, persistence, audit, and outbox rollback together.
+	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Calendar creation coordinates idempotency, persistence, and audit failure propagation.
 	async createCalendar(
 		record: PayrollCalendarCreateRecord,
 		ports: MutationPorts,

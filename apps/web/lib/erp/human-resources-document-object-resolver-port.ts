@@ -1,7 +1,7 @@
 import { errorResult } from "@afenda/errors";
-import type { DocumentObjectResolverPort } from "@afenda/human-resources";
+import type { DocumentObjectResolverCapability } from "@afenda/human-resources";
 
-export function createHumanResourcesDocumentObjectResolverPort(): DocumentObjectResolverPort {
+export function createHumanResourcesDocumentObjectResolverPort(): DocumentObjectResolverCapability {
 	return {
 		async assertObjectAcceptable(input) {
 			if (input.validated.organizationId !== input.organizationId) {

@@ -1,5 +1,5 @@
 import { errorResult, type Result } from "@afenda/errors";
-import type { HumanResourcesEmployeeId } from "@afenda/human-resources/brands";
+import type { HumanResourcesEmployeeId } from "@afenda/human-resources";
 
 import { createHumanResourcesIdentityResolverPort } from "@/lib/erp/human-resources-identity-resolver-port";
 

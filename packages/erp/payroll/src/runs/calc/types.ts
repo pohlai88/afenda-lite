@@ -21,7 +21,6 @@ export interface PayrollEmployeeSnapshotFacts {
 	currencyCode: string;
 	employeeId: string;
 	employmentStatus: "active" | "notice" | "terminated";
-	payGroupId: string;
 	recurringAllowances: Array<{
 		code: string;
 		amount: string;

@@ -22,7 +22,7 @@ export function calculatePayrollRun(
 		schema: calculatePayrollRunInputSchema,
 		invalidMessage: "Invalid payroll run calculate input",
 		command: PAYROLL_COMMAND_RUN_CALCULATE,
-		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Run calculation coordinates state transition, output replacement, exception evidence, and rollback.
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Run calculation coordinates state transitions, output replacement, exception evidence, and failure-state recovery.
 		execute: async (data, { store, ports, calculator }) => {
 			const calculatorPort = requirePayrollRunCalculator(calculator);
 			if (!calculatorPort.ok) {

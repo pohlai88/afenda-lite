@@ -152,6 +152,13 @@ const columns: DataTableColumn<PaymentBatch>[] = [
 const shellProps = {
 	header: {
 		title: "Finance / Payment operations",
+		utilityPriorities: {
+			"command-menu": "primary",
+			notifications: "secondary",
+			"color-mode": "secondary",
+			appearance: "secondary",
+			profile: "secondary",
+		},
 	},
 	themeConfig: {
 		brand: {

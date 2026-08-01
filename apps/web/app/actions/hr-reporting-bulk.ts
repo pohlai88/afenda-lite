@@ -14,6 +14,7 @@ import {
 	type BulkErrorArtifact,
 	type BulkImportResult,
 	compensationBulkRowSchema,
+	createHumanResourcesBulkJobCapability,
 	employeeBulkRowSchema,
 	enqueueHumanResourcesBulkImport,
 	type HumanResourcesBulkEntityType,
@@ -24,7 +25,6 @@ import {
 	leaveEntitlementBulkRowSchema,
 	recordHrBulkError,
 } from "@afenda/human-resources";
-import { createDrizzleHumanResourcesBulkJobStore } from "@afenda/human-resources/adapters/drizzle";
 import { z } from "zod";
 
 import { mapPackageResult } from "@/app/actions/map-package-result";
@@ -188,7 +188,7 @@ async function runBulkAction<
 						entityType: input.entityType,
 						requiredPermission: input.permission,
 					},
-					createDrizzleHumanResourcesBulkJobStore(),
+					createHumanResourcesBulkJobCapability(),
 				);
 				const mapped = mapPackageResult(queued);
 				return mapped.ok

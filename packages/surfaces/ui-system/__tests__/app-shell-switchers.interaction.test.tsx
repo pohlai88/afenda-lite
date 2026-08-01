@@ -257,12 +257,17 @@ describe("app-shell switchers", () => {
 			.getByRole("button", { name: "Toggle Sidebar" })
 			.closest("[data-slot=app-shell-header]");
 		expect(header).not.toBeNull();
-		expect(
-			header?.querySelector("[data-slot=app-shell-command-area]"),
-		).not.toHaveClass("hidden");
+		const desktopUtilities = header?.querySelector(
+			"[data-slot=app-shell-command-area]",
+		);
+		const mobileUtilities = header?.querySelector(
+			"[data-slot=app-shell-mobile-utilities]",
+		);
+		expect(desktopUtilities).toHaveClass("hidden", "sm:flex");
+		expect(mobileUtilities).toHaveClass("sm:hidden");
 
 		const utilityLabels = Array.from(
-			header?.querySelectorAll("button[aria-label]") ?? [],
+			desktopUtilities?.querySelectorAll("button[aria-label]") ?? [],
 		).map((button) => button.getAttribute("aria-label"));
 		expect(utilityLabels).toEqual([
 			"Open command menu",
@@ -271,10 +276,18 @@ describe("app-shell switchers", () => {
 			"Customize appearance",
 			"Open profile menu for John Doe",
 		]);
+		expect(
+			Array.from(
+				mobileUtilities?.querySelectorAll("button[aria-label]") ?? [],
+			).map((button) => button.getAttribute("aria-label")),
+		).toEqual(["Open command menu", "Open workspace utilities (4 secondary)"]);
 
-		const colorModeToggle = screen.getByRole("button", {
-			name: "Use dark color mode",
-		});
+		const colorModeToggle = desktopUtilities?.querySelector(
+			'button[aria-label="Use dark color mode"]',
+		);
+		if (!(colorModeToggle instanceof HTMLButtonElement)) {
+			throw new Error("Expected the desktop color-mode utility.");
+		}
 		await user.click(colorModeToggle);
 		await waitFor(() => expect(document.documentElement).toHaveClass("dark"));
 		expect(colorModeToggle).toHaveAccessibleName("Use light color mode");

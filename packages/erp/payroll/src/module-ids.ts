@@ -54,7 +54,6 @@ export const PAYROLL_COMMAND_INPUT_VARIABLE_CREATE =
 
 export const PAYROLL_COMMAND_RUN_CREATE = "payroll.run.create" as const;
 export const PAYROLL_COMMAND_RUN_CALCULATE = "payroll.run.calculate" as const;
-export const PAYROLL_COMMAND_RUN_REVIEW = "payroll.run.review" as const;
 export const PAYROLL_COMMAND_RUN_FINALIZE = "payroll.run.finalize" as const;
 export const PAYROLL_COMMAND_RUN_REVERSE = "payroll.run.reverse" as const;
 
@@ -86,7 +85,6 @@ export const PAYROLL_COMMAND_IDS = [
 	PAYROLL_COMMAND_INPUT_VARIABLE_CREATE,
 	PAYROLL_COMMAND_RUN_CREATE,
 	PAYROLL_COMMAND_RUN_CALCULATE,
-	PAYROLL_COMMAND_RUN_REVIEW,
 	PAYROLL_COMMAND_RUN_FINALIZE,
 	PAYROLL_COMMAND_RUN_REVERSE,
 ] as const;
@@ -117,9 +115,6 @@ export const PAYROLL_QUERY_INPUT_VARIABLE_GET =
 	"payroll.input.variable.get" as const;
 
 export const PAYROLL_QUERY_RUN_GET = "payroll.run.get" as const;
-export const PAYROLL_QUERY_RUN_LIST = "payroll.run.list" as const;
-export const PAYROLL_QUERY_PAYSLIP_GET_OWN = "payroll.payslip.get-own" as const;
-export const PAYROLL_QUERY_PAYSLIP_GET = "payroll.payslip.get" as const;
 
 export const PAYROLL_QUERY_IDS = [
 	PAYROLL_QUERY_SETUP_CALENDAR_GET,
@@ -134,9 +129,6 @@ export const PAYROLL_QUERY_IDS = [
 	PAYROLL_QUERY_ASSIGNMENT_GET,
 	PAYROLL_QUERY_INPUT_VARIABLE_GET,
 	PAYROLL_QUERY_RUN_GET,
-	PAYROLL_QUERY_RUN_LIST,
-	PAYROLL_QUERY_PAYSLIP_GET_OWN,
-	PAYROLL_QUERY_PAYSLIP_GET,
 ] as const;
 
 export type PayrollQueryId = (typeof PAYROLL_QUERY_IDS)[number];

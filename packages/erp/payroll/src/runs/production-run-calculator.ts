@@ -200,6 +200,8 @@ export function createProductionPayrollRunCalculator(input: {
 								organizationId: calcInput.organizationId,
 								employeeId: assignment.employeeId,
 								effectiveDate,
+								actorUserId: calcInput.actorUserId,
+								correlationId: calcInput.correlationId,
 							}),
 							input.store.listRecurringEarningsForAssignment({
 								organizationId: calcInput.organizationId,
@@ -236,7 +238,10 @@ export function createProductionPayrollRunCalculator(input: {
 					recurringEarnings,
 					recurringDeductions,
 				} = context;
-				if (employeeFacts === null) {
+				if (!employeeFacts.ok) {
+					return employeeFacts;
+				}
+				if (employeeFacts.data === null) {
 					aggregateExceptions.push({
 						severity: "blocking",
 						exceptionCode: "EMPLOYEE_NOT_FOUND",
@@ -245,6 +250,7 @@ export function createProductionPayrollRunCalculator(input: {
 					});
 					continue;
 				}
+				const payrollEmployee = employeeFacts.data;
 				if (!recurringEarnings.ok) {
 					return recurringEarnings;
 				}
@@ -269,12 +275,11 @@ export function createProductionPayrollRunCalculator(input: {
 					roundingPolicy,
 					eligibility: {
 						eligible:
-							employeeFacts.employmentStatus !== "terminated" &&
-							employeeFacts.payGroupId === calcInput.payGroupId &&
-							employeeFacts.currencyCode === payGroup.data.currencyCode,
+							payrollEmployee.employmentStatus !== "terminated" &&
+							payrollEmployee.currencyCode === payGroup.data.currencyCode,
 						reason: null,
 					},
-					employee: employeeFacts,
+					employee: payrollEmployee,
 					recurringEarnings: recurringEarnings.data.map((line) => ({
 						id: line.id,
 						earningRuleId: line.earningRuleId,

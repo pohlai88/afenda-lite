@@ -14,25 +14,25 @@ Workspace import from the root barrel:
 
 ```ts
 import {
+	createHumanResourcesCapabilityOptions,
 	createEmployee,
 	listEmployees,
-	requestLeave,
 	recordAttendanceEvent,
 	submitTimesheet,
 	type CreateEmployeeInput,
-	type HumanResourcesCommandOptions,
 } from "@afenda/human-resources";
 ```
 
-Wire the Drizzle store and command options at the app composition root (see `apps/web/lib/erp/human-resources-command-options.ts`):
+Create the opaque execution context once at the application composition boundary. Business callers can carry the context but cannot inspect stores, transactions, adapters, or integration wiring:
 
 ```ts
-import type { HumanResourcesCommandOptions } from "@afenda/human-resources";
-import { createProductionAssignmentContextQuery } from "@afenda/human-resources";
-import {
-	createDrizzleAssignmentContextQuery,
-	createDrizzleHumanResourcesStore,
-} from "@afenda/human-resources/adapters/drizzle";
+const execution = createHumanResourcesCapabilityOptions({
+	authorization,
+	currency,
+	organizationDimensions,
+});
+
+const result = await createEmployee(input, execution);
 ```
 
 | Domain farm | Responsibility |
@@ -78,28 +78,20 @@ Person → Worker → Employee specialization
 
 **Tenancy:** Shared Neon schema with organization-scoped rows (`organization_id` NOT NULL on **136** `hr_*` hard-tenant roots of **245** total repo roots; SSOT `packages/data-plane/db/src/hard-tenant-roots.ts`). The current null audit records **243 audited / 2 unrelated pending-DDL skips**. Not multi-DB isolation — see [docs-V2/tenancy](../../../docs-V2/tenancy/README.md).
 
-## Public surfaces
+## Public surface
 
-| Subpath | Role |
+| Entrypoint | Role |
 |---------|------|
-| `@afenda/human-resources` | Domain commands, queries, brands, schemas, permissions, port types, production wiring helpers |
-| `@afenda/human-resources/adapters/drizzle` | `createDrizzleHumanResourcesStore`, per-domain Drizzle adapters, assignment-context and work-calendar lookups |
-| `@afenda/human-resources/authorization` | Composition-root authorization port types and low-level helpers — not a domain entry; domain code uses `authorizeHumanResourcesOperation` |
-| `@afenda/human-resources/brands` | Branded ID types for HR entities |
-| `@afenda/human-resources/identity-resolver` | Actor / subject identity resolution port |
-| `@afenda/human-resources/resolve-store` | Store resolver for composition roots |
-| `@afenda/human-resources/schemas` | Domain-specific strict Zod schemas |
-| `@afenda/human-resources/store` | Domain-specific store contracts |
-| `@afenda/human-resources/testing` | Memory store factories and test harness ports (Vitest; Neon suites skip when `DATABASE_URL` is absent) |
-| `@afenda/human-resources/module-manifest` | Module manifest (`band: R1-F`, `lifecycle: scaffolded`) |
+| `@afenda/human-resources` | Permanent production facade: explicit business operations, domain contracts, strict schemas, events, projections, opaque execution context, and semantic production capabilities |
+| `@afenda/human-resources/testing` | Isolated test-only memory capabilities; never import from product code |
 
-The root barrel does not export raw Drizzle tables, SQL builders, database handles, Next.js types, or HTTP envelopes.
+The root uses explicit exports. It does not export stores, raw ports, command options, resolvers, Drizzle constructors, SQL builders, database handles, authorization-policy implementations, Next.js types, or HTTP envelopes. Production consumers must not import package subpaths.
 
 ## Integration contracts
 
 | Boundary | Consumer contract | Enforcement evidence |
 |---|---|---|
-| Permission | Callers inject `HumanResourcesAuthorizationPort`; app Actions stamp organization, actor, and correlation context and return the standard `ActionResult` envelope. Callers cannot supply tenant identity. | `src/shared/run-authorized-operation.ts` · `apps/web/app/actions/hr-action-runner.ts` |
+| Permission | The composition root injects authorization into `HumanResourcesCapabilityOptions`; app Actions stamp organization, actor, and correlation context and return the standard `ActionResult` envelope. Callers cannot supply tenant identity. | `src/public-execution-context.ts` · `src/public-capabilities.ts` · `apps/web/app/actions/hr-action-runner.ts` |
 | Events and audit | Mutation definitions classify audit-only versus domain-event behavior. Audit recording is required before outbox append; commands fail closed when either required fact cannot be recorded. | `src/emissions/mutation-outcome.ts` · `src/emissions/registry.ts` |
 | Privacy | Sensitive queries use contextual authorization and field projection. Bulk exports use an allowlisted definition-bound permission and record privacy evidence before rows are released. | `src/shared/contextual-authorization.ts` · `src/bulk-export/` · `src/privacy/` |
 | Document references | HR stores canonical `vault://` references only; object acceptance and immutable-version requirements are delegated through `DocumentReferencePort`. Document bytes remain outside this package. | `src/compliance/vault-document-reference-adapter.ts` · `src/ports.ts` |

@@ -1726,9 +1726,6 @@ commands:
   - id: payroll.run.calculate
     moduleId: payroll
     permission: payroll.run.calculate
-  - id: payroll.run.review
-    moduleId: payroll
-    permission: payroll.run.review
   - id: payroll.run.finalize
     moduleId: payroll
     permission: payroll.run.finalize

@@ -1,3 +1,4 @@
+import { errorResult } from "@afenda/errors";
 import type { PayrollEmployeeQueryPort } from "../../src/ports";
 
 export interface MemoryEmployeeFixture {
@@ -24,17 +25,16 @@ export function createMemoryPayrollEmployeeQueryPort(
 		async getPayrollEmployee(input) {
 			const fixture = byKey.get(`${input.organizationId}:${input.employeeId}`);
 			if (fixture === undefined) {
-				return null;
+				return errorResult.ok(null);
 			}
-			return {
+			return errorResult.ok({
 				employeeId: fixture.employeeId,
 				employmentStatus: fixture.employmentStatus,
-				payGroupId: fixture.payGroupId,
 				baseCompensation: fixture.baseCompensation,
 				currencyCode: fixture.currencyCode,
 				recurringAllowances: [],
 				recurringDeductions: [],
-			};
+			});
 		},
 	};
 }

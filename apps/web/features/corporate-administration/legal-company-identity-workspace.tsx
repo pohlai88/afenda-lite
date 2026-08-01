@@ -8,7 +8,6 @@ import {
 	CardDescription,
 	CardHeader,
 	CardTitle,
-	Input,
 	Label,
 	NativeSelect,
 	NativeSelectOption,
@@ -18,6 +17,7 @@ import {
 	TableHead,
 	TableHeader,
 	TableRow,
+	TextField,
 } from "@afenda/ui-system";
 import type * as React from "react";
 import { useActionState } from "react";
@@ -335,7 +335,7 @@ export function CompanyNameForm({
 							<NativeSelectOption value="former">Former</NativeSelectOption>
 						</NativeSelect>
 					</div>
-					<FormField
+					<TextField
 						id="companyNameLanguage"
 						label="Language"
 						maxLength={8}
@@ -343,7 +343,7 @@ export function CompanyNameForm({
 						required
 					/>
 				</div>
-				<FormField
+				<TextField
 					id="companyNameDisplay"
 					label="Display name"
 					maxLength={256}
@@ -351,21 +351,21 @@ export function CompanyNameForm({
 					required
 				/>
 				<div className="grid gap-4 sm:grid-cols-2">
-					<FormField
+					<TextField
 						id="companyNameEffectiveFrom"
 						label="Effective from"
 						name="effectiveFrom"
 						required
 						type="date"
 					/>
-					<FormField
+					<TextField
 						id="companyNameEffectiveTo"
 						label="Effective to"
 						name="effectiveTo"
 						type="date"
 					/>
 				</div>
-				<FormField
+				<TextField
 					id="companyNameSourceDocument"
 					label="Source document"
 					maxLength={256}
@@ -450,27 +450,27 @@ function CompanyNameSupersessionForm({
 					type="hidden"
 					value={name.languageCode}
 				/>
-				<FormField
+				<TextField
 					id="replacementCompanyName"
 					label="Replacement legal name"
 					maxLength={256}
 					name="replacement.displayName"
 					required
 				/>
-				<FormField
+				<TextField
 					id="replacementNameEffectiveFrom"
 					label="Effective from"
 					name="replacement.effectiveFrom"
 					required
 					type="date"
 				/>
-				<FormField
+				<TextField
 					id="replacementNameSource"
 					label="Source document"
 					name="replacement.sourceDocumentId"
 					required
 				/>
-				<FormField
+				<TextField
 					id="replacementNameReason"
 					label="Correction reason"
 					name="replacement.correctionReason"
@@ -561,42 +561,42 @@ export function LegalFormForm({
 					versionFieldName="expectedCompanyVersion"
 				/>
 				<div className="grid gap-4 sm:grid-cols-2">
-					<FormField
+					<TextField
 						id="legalFormJurisdiction"
 						label="Jurisdiction"
 						maxLength={2}
 						name="jurisdictionCode"
 						required
 					/>
-					<FormField
+					<TextField
 						id="legalFormEntityType"
 						label="Entity type"
 						name="entityTypeCode"
 						required
 					/>
 				</div>
-				<FormField
+				<TextField
 					id="legalFormCode"
 					label="Legal form"
 					name="legalFormCode"
 					required
 				/>
 				<div className="grid gap-4 sm:grid-cols-2">
-					<FormField
+					<TextField
 						id="legalFormEffectiveFrom"
 						label="Effective from"
 						name="effectiveFrom"
 						required
 						type="date"
 					/>
-					<FormField
+					<TextField
 						id="legalFormEffectiveTo"
 						label="Effective to"
 						name="effectiveTo"
 						type="date"
 					/>
 				</div>
-				<FormField
+				<TextField
 					id="legalFormSource"
 					label="Source document"
 					name="sourceDocumentId"
@@ -683,39 +683,39 @@ function LegalFormSupersessionForm({
 					type="hidden"
 					value={legalForm.version}
 				/>
-				<FormField
+				<TextField
 					id="replacementLegalFormCode"
 					label="Replacement legal form"
 					name="replacement.legalFormCode"
 					required
 				/>
-				<FormField
+				<TextField
 					id="replacementLegalFormJurisdiction"
 					label="Jurisdiction"
 					maxLength={2}
 					name="replacement.jurisdictionCode"
 					required
 				/>
-				<FormField
+				<TextField
 					id="replacementLegalFormEntityType"
 					label="Entity type"
 					name="replacement.entityTypeCode"
 					required
 				/>
-				<FormField
+				<TextField
 					id="replacementLegalFormEffectiveFrom"
 					label="Effective from"
 					name="replacement.effectiveFrom"
 					required
 					type="date"
 				/>
-				<FormField
+				<TextField
 					id="replacementLegalFormSource"
 					label="Source document"
 					name="replacement.sourceDocumentId"
 					required
 				/>
-				<FormField
+				<TextField
 					id="replacementLegalFormReason"
 					label="Correction reason"
 					name="replacement.correctionReason"
@@ -837,7 +837,7 @@ export function IdentifierForm({
 							</NativeSelectOption>
 						</NativeSelect>
 					</div>
-					<FormField
+					<TextField
 						id="identifierJurisdiction"
 						label="Jurisdiction"
 						maxLength={2}
@@ -845,13 +845,13 @@ export function IdentifierForm({
 						required
 					/>
 				</div>
-				<FormField
+				<TextField
 					id="identifierAuthority"
 					label="Issuing authority"
 					name="issuingAuthorityCode"
 					required
 				/>
-				<FormField
+				<TextField
 					id="identifierValue"
 					label="Identifier value"
 					maxLength={128}
@@ -859,21 +859,21 @@ export function IdentifierForm({
 					required
 				/>
 				<div className="grid gap-4 sm:grid-cols-2">
-					<FormField
+					<TextField
 						id="identifierEffectiveFrom"
 						label="Effective from"
 						name="effectiveFrom"
 						required
 						type="date"
 					/>
-					<FormField
+					<TextField
 						id="identifierEffectiveTo"
 						label="Effective to"
 						name="effectiveTo"
 						type="date"
 					/>
 				</div>
-				<FormField
+				<TextField
 					id="identifierSourceDocument"
 					label="Source document"
 					name="sourceDocumentId"
@@ -975,26 +975,26 @@ function IdentifierSupersessionForm({
 					type="hidden"
 					value={identifier.issuingAuthorityCode}
 				/>
-				<FormField
+				<TextField
 					id="replacementIdentifierValue"
 					label="Replacement identifier value"
 					name="replacement.identifierValue"
 					required
 				/>
-				<FormField
+				<TextField
 					id="replacementIdentifierEffectiveFrom"
 					label="Effective from"
 					name="replacement.effectiveFrom"
 					required
 					type="date"
 				/>
-				<FormField
+				<TextField
 					id="replacementIdentifierSource"
 					label="Source document"
 					name="replacement.sourceDocumentId"
 					required
 				/>
-				<FormField
+				<TextField
 					id="replacementIdentifierReason"
 					label="Correction reason"
 					name="replacement.correctionReason"
@@ -1099,7 +1099,7 @@ export function FinancialYearForm({
 					versionFieldName="expectedCompanyVersion"
 				/>
 				<div className="grid gap-4 sm:grid-cols-2">
-					<FormField
+					<TextField
 						id="financialYearStartMonth"
 						label="Start month"
 						max={12}
@@ -1108,7 +1108,7 @@ export function FinancialYearForm({
 						required
 						type="number"
 					/>
-					<FormField
+					<TextField
 						id="financialYearStartDay"
 						label="Start day"
 						max={31}
@@ -1118,21 +1118,21 @@ export function FinancialYearForm({
 						type="number"
 					/>
 				</div>
-				<FormField
+				<TextField
 					id="financialYearCurrency"
 					label="Reporting currency"
 					maxLength={3}
 					name="reportingCurrencyCode"
 					required
 				/>
-				<FormField
+				<TextField
 					id="financialYearEffectiveFrom"
 					label="Effective from"
 					name="effectiveFrom"
 					required
 					type="date"
 				/>
-				<FormField
+				<TextField
 					id="financialYearSource"
 					label="Source document"
 					name="sourceDocumentId"
@@ -1236,40 +1236,40 @@ export function ActivityForm({
 						</NativeSelectOption>
 					</NativeSelect>
 				</div>
-				<FormField
+				<TextField
 					id="activityCode"
 					label="Activity code"
 					name="activityCode"
 					required
 				/>
-				<FormField
+				<TextField
 					id="activityDescription"
 					label="Description"
 					name="description"
 					required
 				/>
 				<div className="grid gap-4 sm:grid-cols-2">
-					<FormField
+					<TextField
 						id="activityJurisdiction"
 						label="Jurisdiction"
 						maxLength={2}
 						name="jurisdictionCode"
 						required
 					/>
-					<FormField
+					<TextField
 						id="activityRegulator"
 						label="Regulator"
 						name="regulatorCode"
 					/>
 				</div>
-				<FormField
+				<TextField
 					id="activityEffectiveFrom"
 					label="Effective from"
 					name="effectiveFrom"
 					required
 					type="date"
 				/>
-				<FormField
+				<TextField
 					id="activitySource"
 					label="Source document"
 					name="sourceDocumentId"
@@ -1359,14 +1359,14 @@ function EndActivityForm({
 					type="hidden"
 					value={activity.version}
 				/>
-				<FormField
+				<TextField
 					id="activityEndedAt"
 					label="End date"
 					name="endedAt"
 					required
 					type="date"
 				/>
-				<FormField
+				<TextField
 					id="activityEndReason"
 					label="End reason"
 					name="endReason"
@@ -1400,21 +1400,6 @@ function IdentityHiddenFields({
 				<input name={versionFieldName} type="hidden" value={company.version} />
 			) : null}
 		</>
-	);
-}
-
-function FormField({
-	id,
-	label,
-	...props
-}: Readonly<
-	React.ComponentProps<typeof Input> & { id: string; label: string }
->) {
-	return (
-		<div className="space-y-2">
-			<Label htmlFor={id}>{label}</Label>
-			<Input id={id} name={props.name ?? id} {...props} />
-		</div>
 	);
 }
 

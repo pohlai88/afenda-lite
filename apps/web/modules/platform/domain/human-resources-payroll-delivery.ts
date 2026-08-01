@@ -2,15 +2,15 @@ import { errorResult, type Result } from "@afenda/errors";
 import { type EventPublisher, events } from "@afenda/events";
 import { PLATFORM_HUMAN_RESOURCES_PAYROLL_DELIVERY_REQUESTED_EVENT } from "@afenda/events/schemas";
 import {
+	createHumanResourcesPayrollDeliveryCapability,
 	deliverPayrollHandoff as deliverPayrollHandoffWorkflow,
-	type HrObservabilityPorts,
-	type PayrollDeliveryPorts,
-	type PayrollDeliveryProducerPort,
+	type HrObservabilityCapabilities,
+	type PayrollDeliveryCapabilities,
+	type PayrollDeliveryProducerCapability,
 	type PayrollDeliveryRecord,
 	recordHrPayrollDeliveryFailure,
 	recordPayrollDeliveryFeedback as recordPayrollDeliveryFeedbackWorkflow,
 } from "@afenda/human-resources";
-import { createDrizzlePayrollDeliveryStore } from "@afenda/human-resources/adapters/drizzle";
 
 import {
 	classifyHrFailure,
@@ -20,8 +20,8 @@ import {
 export function createPayrollDeliveryEventProducer(
 	publisher: Pick<EventPublisher, "publish"> = events.publisher.create(),
 	actorUserId = "system",
-	observability: HrObservabilityPorts = createProductionHrObservabilityPorts(),
-): PayrollDeliveryProducerPort {
+	observability: HrObservabilityCapabilities = createProductionHrObservabilityPorts(),
+): PayrollDeliveryProducerCapability {
 	return {
 		async publish(input) {
 			const published = await publisher.publish({
@@ -53,10 +53,10 @@ export function createPayrollDeliveryEventProducer(
 export function createProductionPayrollDeliveryPorts(
 	publisher?: Pick<EventPublisher, "publish">,
 	actorUserId = "system",
-	observability?: HrObservabilityPorts,
-): PayrollDeliveryPorts {
+	observability?: HrObservabilityCapabilities,
+): PayrollDeliveryCapabilities {
 	return {
-		store: createDrizzlePayrollDeliveryStore(),
+		store: createHumanResourcesPayrollDeliveryCapability(),
 		producer: createPayrollDeliveryEventProducer(
 			publisher,
 			actorUserId,
@@ -68,7 +68,7 @@ export function createProductionPayrollDeliveryPorts(
 
 export async function publishPayrollDelivery(
 	input: { organizationId: string; deliveryId: string; actorUserId: string },
-	ports?: PayrollDeliveryPorts,
+	ports?: PayrollDeliveryCapabilities,
 ): Promise<Result<PayrollDeliveryRecord>> {
 	const composed =
 		ports ?? createProductionPayrollDeliveryPorts(undefined, input.actorUserId);
@@ -95,7 +95,7 @@ export async function recordPayrollDeliveryFeedback(
 		status: "acknowledged" | "rejected" | "correction_required";
 		reason?: string;
 	},
-	ports?: PayrollDeliveryPorts,
+	ports?: PayrollDeliveryCapabilities,
 ): Promise<Result<PayrollDeliveryRecord>> {
 	const composed =
 		ports ?? createProductionPayrollDeliveryPorts(undefined, input.actorUserId);
@@ -121,7 +121,7 @@ export async function recoverPendingPayrollDeliveries(
 		correlationId: string;
 		limit: number;
 	},
-	ports?: PayrollDeliveryPorts,
+	ports?: PayrollDeliveryCapabilities,
 ): Promise<Result<readonly PayrollDeliveryRecord[]>> {
 	const composed =
 		ports ?? createProductionPayrollDeliveryPorts(undefined, input.actorUserId);

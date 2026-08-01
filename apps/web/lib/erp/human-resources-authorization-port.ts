@@ -1,12 +1,12 @@
 import { errorResult, type Result } from "@afenda/errors";
 import type {
-	HumanResourcesAuthorizationDecisionInput,
-	HumanResourcesAuthorizationPort,
-	HumanResourcesResourceAwareAuthorizationPort,
-} from "@afenda/human-resources/authorization";
+	HumanResourcesAuthorizationCapability,
+	HumanResourcesResourceAuthorizationCapability,
+	HumanResourcesResourceAuthorizationRequest,
+} from "@afenda/human-resources";
 import { hasPermission } from "@/modules/identity/domain/has-permission";
 
-export function createHumanResourcesAuthorizationPort(): HumanResourcesAuthorizationPort {
+export function createHumanResourcesAuthorizationPort(): HumanResourcesAuthorizationCapability {
 	return {
 		async can(input) {
 			return await hasPermission({
@@ -18,10 +18,10 @@ export function createHumanResourcesAuthorizationPort(): HumanResourcesAuthoriza
 	};
 }
 
-export function createHumanResourcesResourceAwareAuthorizationPort(): HumanResourcesResourceAwareAuthorizationPort {
+export function createHumanResourcesResourceAwareAuthorizationPort(): HumanResourcesResourceAuthorizationCapability {
 	return {
 		async canWithContext(
-			input: HumanResourcesAuthorizationDecisionInput,
+			input: HumanResourcesResourceAuthorizationRequest,
 		): Promise<
 			Result<{
 				allowed: boolean;

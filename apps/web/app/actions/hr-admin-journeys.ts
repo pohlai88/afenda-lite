@@ -6,6 +6,10 @@ import {
 	getAssignment,
 	getEmployment,
 	hireEmployment,
+	humanResourcesAssignmentIdSchema,
+	humanResourcesEmployeeIdSchema,
+	humanResourcesEmploymentIdSchema,
+	humanResourcesPositionIdSchema,
 	openProbation,
 	proposeTermination,
 	reactivateEmployment,
@@ -17,12 +21,6 @@ import {
 	terminateEmployment,
 	transferAssignment,
 } from "@afenda/human-resources";
-import {
-	humanResourcesAssignmentIdSchema,
-	humanResourcesEmployeeIdSchema,
-	humanResourcesEmploymentIdSchema,
-	humanResourcesPositionIdSchema,
-} from "@afenda/human-resources/brands";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { mapPackageResult } from "@/app/actions/map-package-result";

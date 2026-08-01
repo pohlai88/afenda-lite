@@ -1009,15 +1009,6 @@ queries:
   - id: payroll.run.get
     moduleId: payroll
     permission: payroll.run.review
-  - id: payroll.run.list
-    moduleId: payroll
-    permission: payroll.run.review
-  - id: payroll.payslip.get-own
-    moduleId: payroll
-    permission: payroll.payslip.read-own
-  - id: payroll.payslip.get
-    moduleId: payroll
-    permission: payroll.payslip.read-all
   - id: purchasing.order.get
     moduleId: purchasing
     permission: purchasing.order.read

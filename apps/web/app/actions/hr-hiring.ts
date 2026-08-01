@@ -2,8 +2,10 @@
 
 import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import type { HireFromAcceptedOfferResult } from "@afenda/human-resources";
-import { hireFromAcceptedOffer } from "@afenda/human-resources";
-import { hireFromAcceptedOfferInputSchema } from "@afenda/human-resources/schemas";
+import {
+	hireFromAcceptedOffer,
+	hireFromAcceptedOfferInputSchema,
+} from "@afenda/human-resources";
 import {
 	hrActionSchema,
 	withHrSessionContext as withSessionContext,

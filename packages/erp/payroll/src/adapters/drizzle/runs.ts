@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { Change } from "@afenda/audit";
+import { audit as afendaAudit, type Change } from "@afenda/audit";
 import {
 	database as afendaDatabase,
 	and,
@@ -8,6 +8,7 @@ import {
 	payrollRun,
 } from "@afenda/db";
 import { errorResult, type Result } from "@afenda/errors";
+import { events } from "@afenda/events";
 
 import {
 	type PayrollRunId,
@@ -17,6 +18,10 @@ import {
 	parsePayrollRunId,
 } from "../../brands";
 import type { MutationPorts } from "../../ports";
+import {
+	buildPayrollRunEventPayload,
+	payrollRunEventsForStatus,
+} from "../../runs/lifecycle-events";
 import { assertPayrollRunTransition } from "../../runs/transitions";
 import { assertExpectedVersion } from "../../shared/concurrency";
 import {
@@ -65,13 +70,6 @@ function formatDateTime(value: Date | null): string | null {
 		return null;
 	}
 	return value.toISOString();
-}
-
-function parseDateTime(value: string | null): Date | null {
-	if (value === null) {
-		return null;
-	}
-	return new Date(value);
 }
 
 function mapRunRow(row: typeof payrollRun.$inferSelect): Result<PayrollRun> {
@@ -175,7 +173,7 @@ export const drizzleRunsMethods: PayrollRunsStore = {
 	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Run creation keeps idempotency, persistence, audit, and outbox rollback in one transaction boundary.
 	async createRun(
 		record: PayrollRunCreateRecord,
-		ports: MutationPorts,
+		_ports: MutationPorts,
 	): Promise<Result<PayrollRun>> {
 		const existing = await this.findRunByIdempotencyKey({
 			organizationId: record.organizationId,
@@ -199,55 +197,109 @@ export const drizzleRunsMethods: PayrollRunsStore = {
 			return runId;
 		}
 
+		const preparedAudit = afendaAudit.transaction.prepare({
+			organizationId: record.organizationId,
+			actorUserId: record.createdBy,
+			correlationId: record.correlationId,
+			module: "payroll",
+			entity: "payroll_run",
+			entityId: runId.data,
+			action: "CREATE",
+			newValue: { status: "draft", version: 1 },
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
+		const auditId = randomUUID();
+		const eventId = randomUUID();
+		const [eventType] = payrollRunEventsForStatus("draft");
+		if (eventType === undefined) {
+			return errorResult.fail("INTERNAL_ERROR");
+		}
+		const payload = buildPayrollRunEventPayload({
+			organizationId: record.organizationId,
+			actorUserId: record.createdBy,
+			correlationId: record.correlationId,
+			runId: runId.data,
+		});
+		const payloadValidation = events.registry.validatePayload(
+			eventType,
+			payload,
+		);
+		const sourceModule = events.registry.sourceModule(eventType);
+		if (!payloadValidation.success || sourceModule !== "payroll") {
+			return errorResult.fail("INTERNAL_ERROR");
+		}
+		const payloadJson = JSON.stringify(payloadValidation.data);
+
 		try {
-			const rows = await afendaDatabase.client
-				.insert(payrollRun)
-				.values({
-					id: runId.data,
-					organizationId: record.organizationId,
-					payGroupId: record.payGroupId,
-					periodId: record.periodId,
-					runType: record.runType,
-					sequence: record.sequence,
-					status: "draft",
-					finalizedAt: null,
-					finalizedBy: null,
-					calculationSnapshotHash: null,
-					calculationVersion: null,
-					roundingPolicyJson: null,
-					createIdempotencyKey: record.idempotencyKey,
-					createRequestFingerprint: record.createRequestFingerprint,
-					version: 1,
-					createdBy: record.createdBy,
-					updatedBy: record.createdBy,
-				})
-				.returning();
-			const [row] = rows;
-			if (row === undefined) {
+			const [rows] = await afendaDatabase.transaction((sqlValue) => [
+				sqlValue`
+					WITH mutated AS (
+						INSERT INTO payroll_run (
+							id, organization_id, pay_group_id, period_id, run_type,
+							sequence, status, finalized_at, finalized_by,
+							calculation_snapshot_hash, calculation_version,
+							rounding_policy_json, create_idempotency_key,
+							create_request_fingerprint, version, created_by, updated_by
+						) VALUES (
+							${runId.data}, ${record.organizationId}, ${record.payGroupId},
+							${record.periodId}, ${record.runType}, ${record.sequence}, 'draft',
+							NULL, NULL, NULL, NULL, NULL, ${record.idempotencyKey},
+							${record.createRequestFingerprint}, 1, ${record.createdBy},
+							${record.createdBy}
+						)
+						RETURNING id, organization_id, created_by
+					),
+					audited AS (
+						INSERT INTO platform_audit_log (
+							id, organization_id, actor_user_id, correlation_id, module,
+							entity, entity_id, action, changes, old_value, new_value,
+							metadata, ip_address, user_agent
+						)
+						SELECT ${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
+						FROM mutated
+						RETURNING id
+					),
+					outboxed AS (
+						INSERT INTO platform_domain_event (
+							id, organization_id, type, source_module, deduplication_key,
+							correlation_id, actor_user_id, payload, status, attempts
+						)
+						SELECT ${eventId}, organization_id, ${eventType}, ${sourceModule},
+							${`${runId.data}:draft:1`}, ${record.correlationId},
+							created_by, ${payloadJson}::jsonb, 'pending', 0
+						FROM mutated
+						RETURNING id
+					)
+					SELECT mutated.id FROM mutated, audited, outboxed
+				`,
+			]);
+			if (rows.length === 0) {
 				return mapPersistenceFailure(
-					new Error("Missing returning row"),
+					new Error("Missing transactional returning row"),
 					"Failed to create payroll run",
 				);
 			}
-
-			const mapped = mapRunRow(row);
-			if (!mapped.ok) {
-				return mapped;
-			}
-
-			const audit = await recordAudit(ports, {
+			const created = await this.getRun({
 				organizationId: record.organizationId,
-				actorUserId: record.createdBy,
-				correlationId: record.correlationId,
-				entity: "payroll_run",
-				entityId: mapped.data.id,
-				action: "CREATE",
+				runId: runId.data,
 			});
-			if (!audit.ok) {
-				return audit;
+			if (!created.ok) {
+				return created;
 			}
-
-			return mapped;
+			if (created.data === null) {
+				return mapPersistenceFailure(
+					new Error("Created payroll run not found"),
+					"Failed to load created payroll run",
+				);
+			}
+			return errorResult.ok(created.data);
 		} catch (error) {
 			if (isCreateIdempotencyUniqueViolation(error)) {
 				const replay = await this.findRunByIdempotencyKey({
@@ -302,7 +354,7 @@ export const drizzleRunsMethods: PayrollRunsStore = {
 	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Versioned run transition keeps state validation and rollback evidence in one transaction boundary.
 	async updateRunWithVersion(
 		input: PayrollRunUpdateInput,
-		ports: MutationPorts,
+		_ports: MutationPorts,
 	): Promise<Result<PayrollRun>> {
 		const current = await this.getRun({
 			organizationId: input.organizationId,
@@ -343,76 +395,165 @@ export const drizzleRunsMethods: PayrollRunsStore = {
 			}
 		}
 
+		const nextVersion = current.data.version + 1;
+		const nextSnapshotHash =
+			input.calculationSnapshotHash === undefined
+				? current.data.calculationSnapshotHash
+				: input.calculationSnapshotHash;
+		const nextCalculationVersion =
+			input.calculationVersion === undefined
+				? current.data.calculationVersion
+				: input.calculationVersion;
+		const nextRoundingPolicy =
+			input.roundingPolicyJson === undefined
+				? current.data.roundingPolicyJson
+				: input.roundingPolicyJson;
+		const nextFinalizedAt =
+			input.finalizedAt === undefined
+				? current.data.finalizedAt
+				: input.finalizedAt;
+		const nextFinalizedBy =
+			input.finalizedBy === undefined
+				? current.data.finalizedBy
+				: input.finalizedBy;
+		const changes: Change[] =
+			current.data.status === nextStatus
+				? []
+				: [
+						{
+							field: "status",
+							oldValue: current.data.status,
+							newValue: nextStatus,
+						},
+					];
+		const preparedAudit = afendaAudit.transaction.prepare({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: input.correlationId,
+			module: "payroll",
+			entity: "payroll_run",
+			entityId: input.runId,
+			action: "UPDATE",
+			changes,
+			oldValue: { status: current.data.status, version: current.data.version },
+			newValue: { status: nextStatus, version: nextVersion },
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
+		const eventTypes =
+			current.data.status === nextStatus
+				? []
+				: [...payrollRunEventsForStatus(nextStatus)];
+		const [eventType1 = null, eventType2 = null, eventType3 = null] =
+			eventTypes;
+		const eventId1 = randomUUID();
+		const eventId2 = randomUUID();
+		const eventId3 = randomUUID();
+		const payload = buildPayrollRunEventPayload({
+			organizationId: input.organizationId,
+			runId: input.runId,
+			actorUserId: input.actorUserId,
+			correlationId: input.correlationId,
+		});
+		for (const eventType of eventTypes) {
+			const validation = events.registry.validatePayload(eventType, payload);
+			if (
+				!validation.success ||
+				events.registry.sourceModule(eventType) !== "payroll"
+			) {
+				return errorResult.fail("INTERNAL_ERROR");
+			}
+		}
+		const payloadJson = JSON.stringify(payload);
+		const roundingPolicyJson =
+			nextRoundingPolicy === null ? null : JSON.stringify(nextRoundingPolicy);
+
 		try {
-			const rows = await afendaDatabase.client
-				.update(payrollRun)
-				.set({
-					status: input.status ?? current.data.status,
-					calculationSnapshotHash:
-						input.calculationSnapshotHash === undefined
-							? current.data.calculationSnapshotHash
-							: input.calculationSnapshotHash,
-					calculationVersion:
-						input.calculationVersion === undefined
-							? current.data.calculationVersion
-							: input.calculationVersion,
-					roundingPolicyJson:
-						input.roundingPolicyJson === undefined
-							? current.data.roundingPolicyJson
-							: input.roundingPolicyJson,
-					finalizedAt:
-						input.finalizedAt === undefined
-							? parseDateTime(current.data.finalizedAt)
-							: parseDateTime(input.finalizedAt),
-					finalizedBy:
-						input.finalizedBy === undefined
-							? current.data.finalizedBy
-							: input.finalizedBy,
-					version: current.data.version + 1,
-					updatedBy: input.actorUserId,
-					updatedAt: new Date(),
-				})
-				.where(
-					and(
-						eq(payrollRun.organizationId, input.organizationId),
-						eq(payrollRun.id, input.runId),
-						eq(payrollRun.version, input.expectedVersion),
+			const [, rows] = await afendaDatabase.transaction((sqlValue) => [
+				sqlValue`
+					SELECT id FROM payroll_run
+					WHERE organization_id = ${input.organizationId}
+						AND id = ${input.runId} AND version = ${input.expectedVersion}
+					FOR UPDATE
+				`,
+				sqlValue`
+					WITH mutated AS (
+						UPDATE payroll_run
+						SET status = ${nextStatus},
+							calculation_snapshot_hash = ${nextSnapshotHash},
+							calculation_version = ${nextCalculationVersion},
+							rounding_policy_json = ${roundingPolicyJson}::jsonb,
+							finalized_at = ${nextFinalizedAt}::timestamptz,
+							finalized_by = ${nextFinalizedBy}, version = ${nextVersion},
+							updated_by = ${input.actorUserId}, updated_at = NOW()
+						WHERE organization_id = ${input.organizationId}
+							AND id = ${input.runId} AND version = ${input.expectedVersion}
+							AND (
+								${nextStatus}::text <> 'finalized'
+								OR NOT EXISTS (
+									SELECT 1 FROM payroll_exception
+									WHERE organization_id = ${input.organizationId}
+										AND run_id = ${input.runId} AND severity = 'blocking'
+								)
+							)
+						RETURNING id, organization_id, updated_by
 					),
-				)
-				.returning();
-			const [row] = rows;
-			if (row === undefined) {
-				return mapConflict("Payroll run version is stale");
+					audited AS (
+						INSERT INTO platform_audit_log (
+							id, organization_id, actor_user_id, correlation_id, module,
+							entity, entity_id, action, changes, old_value, new_value,
+							metadata, ip_address, user_agent
+						)
+						SELECT ${randomUUID()}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
+						FROM mutated
+						RETURNING id
+					),
+					event_values(event_id, event_type, dedupe_key) AS (
+						VALUES
+							(${eventId1}::uuid, ${eventType1}::text, ${`${input.runId}:${nextStatus}:${nextVersion}:1`}::text),
+							(${eventId2}::uuid, ${eventType2}::text, ${`${input.runId}:${nextStatus}:${nextVersion}:2`}::text),
+							(${eventId3}::uuid, ${eventType3}::text, ${`${input.runId}:${nextStatus}:${nextVersion}:3`}::text)
+					),
+					outboxed AS (
+						INSERT INTO platform_domain_event (
+							id, organization_id, type, source_module, deduplication_key,
+							correlation_id, actor_user_id, payload, status, attempts
+						)
+						SELECT event_values.event_id, mutated.organization_id,
+							event_values.event_type, 'payroll', event_values.dedupe_key,
+							${input.correlationId}, mutated.updated_by,
+							${payloadJson}::jsonb, 'pending', 0
+						FROM mutated CROSS JOIN event_values
+						WHERE event_values.event_type IS NOT NULL
+						RETURNING id
+					)
+					SELECT mutated.id FROM mutated, audited
+				`,
+			]);
+			if (rows.length === 0) {
+				return mapConflict(
+					nextStatus === "finalized"
+						? "Payroll run is stale or has blocking exceptions"
+						: "Payroll run version is stale",
+				);
 			}
-
-			const mapped = mapRunRow(row);
-			if (!mapped.ok) {
-				return mapped;
-			}
-
-			const audit = await recordAudit(ports, {
+			const updated = await this.getRun({
 				organizationId: input.organizationId,
-				actorUserId: input.actorUserId,
-				correlationId: input.correlationId,
-				entity: "payroll_run",
-				entityId: mapped.data.id,
-				action: "UPDATE",
-				changes:
-					current.data.status === mapped.data.status
-						? []
-						: [
-								{
-									field: "status",
-									oldValue: current.data.status,
-									newValue: mapped.data.status,
-								},
-							],
+				runId: input.runId,
 			});
-			if (!audit.ok) {
-				return audit;
+			if (!updated.ok) {
+				return updated;
 			}
-
-			return mapped;
+			if (updated.data === null) {
+				return mapNotFound("Payroll run not found after update");
+			}
+			return errorResult.ok(updated.data);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to update payroll run");
 		}
@@ -420,7 +561,7 @@ export const drizzleRunsMethods: PayrollRunsStore = {
 
 	async createException(
 		record: PayrollExceptionCreateRecord,
-		ports: MutationPorts,
+		_ports: MutationPorts,
 	): Promise<Result<PayrollException>> {
 		const run = await this.getRun({
 			organizationId: record.organizationId,
@@ -432,52 +573,100 @@ export const drizzleRunsMethods: PayrollRunsStore = {
 		if (run.data === null) {
 			return mapNotFound("Payroll run not found");
 		}
+		if (run.data.status === "finalized" || run.data.status === "reversed") {
+			return mapInvalidState(
+				"Finalized or reversed payroll runs cannot accept exceptions",
+			);
+		}
 
 		const exceptionId = parsePayrollExceptionId(randomUUID());
 		if (!exceptionId.ok) {
 			return exceptionId;
 		}
 
+		const preparedAudit = afendaAudit.transaction.prepare({
+			organizationId: record.organizationId,
+			actorUserId: record.createdBy,
+			correlationId: record.correlationId,
+			module: "payroll",
+			entity: "payroll_exception",
+			entityId: exceptionId.data,
+			action: "CREATE",
+			newValue: {
+				runId: record.runId,
+				severity: record.severity,
+			},
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
+
 		try {
-			const rows = await afendaDatabase.client
-				.insert(payrollException)
-				.values({
-					id: exceptionId.data,
-					organizationId: record.organizationId,
-					runId: record.runId,
-					severity: record.severity,
-					exceptionCode: record.exceptionCode,
-					message: record.message,
-					employeeRef: record.employeeRef,
-					createdBy: record.createdBy,
-				})
-				.returning();
-			const [row] = rows;
-			if (row === undefined) {
-				return mapPersistenceFailure(
-					new Error("Missing returning row"),
-					"Failed to create payroll exception",
+			const [, rows] = await afendaDatabase.transaction((sqlValue) => [
+				sqlValue`
+					SELECT id FROM payroll_run
+					WHERE organization_id = ${record.organizationId} AND id = ${record.runId}
+					FOR UPDATE
+				`,
+				sqlValue`
+					WITH inserted AS (
+						INSERT INTO payroll_exception (
+							id, organization_id, run_id, severity, exception_code,
+							message, employee_ref, created_by
+						)
+						SELECT ${exceptionId.data}, ${record.organizationId}, ${record.runId},
+							${record.severity}, ${record.exceptionCode}, ${record.message},
+							${record.employeeRef}, ${record.createdBy}
+						WHERE EXISTS (
+							SELECT 1 FROM payroll_run
+							WHERE organization_id = ${record.organizationId}
+								AND id = ${record.runId}
+								AND status NOT IN ('finalized', 'reversed')
+						)
+						RETURNING id
+					),
+					audited AS (
+						INSERT INTO platform_audit_log (
+							id, organization_id, actor_user_id, correlation_id, module,
+							entity, entity_id, action, changes, old_value, new_value,
+							metadata, ip_address, user_agent
+						)
+						SELECT ${randomUUID()}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
+						FROM inserted
+						RETURNING id
+					)
+					SELECT inserted.id FROM inserted, audited
+				`,
+			]);
+			if (rows.length === 0) {
+				return mapInvalidState(
+					"Finalized or reversed payroll runs cannot accept exceptions",
 				);
 			}
 
-			const mapped = mapExceptionRow(row);
-			if (!mapped.ok) {
-				return mapped;
+			const persisted = await afendaDatabase.client
+				.select()
+				.from(payrollException)
+				.where(
+					and(
+						eq(payrollException.organizationId, record.organizationId),
+						eq(payrollException.id, exceptionId.data),
+					),
+				)
+				.limit(1);
+			const [row] = persisted;
+			if (row === undefined) {
+				return mapPersistenceFailure(
+					new Error("Created payroll exception not found"),
+					"Failed to load created payroll exception",
+				);
 			}
-
-			const audit = await recordAudit(ports, {
-				organizationId: record.organizationId,
-				actorUserId: record.createdBy,
-				correlationId: record.correlationId,
-				entity: "payroll_exception",
-				entityId: mapped.data.id,
-				action: "CREATE",
-			});
-			if (!audit.ok) {
-				return audit;
-			}
-
-			return mapped;
+			return mapExceptionRow(row);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to create payroll exception");
 		}

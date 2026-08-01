@@ -189,6 +189,65 @@ test("Enterprise AppShell utilities remain operable and accessible", async ({
 	expect(accessibility.violations).toEqual([]);
 });
 
+test("Enterprise AppShell mobile utilities preserve priority and overflow access", async ({
+	page,
+}) => {
+	await page.setViewportSize({ width: 390, height: 844 });
+	await page.goto(
+		"/iframe.html?id=ui-system-app-shell--enterprise-operations&viewMode=story&globals=theme:light",
+	);
+	await expect(page.locator("#storybook-root")).toBeVisible();
+	await page.evaluate(() => document.fonts.ready);
+	await page.waitForLoadState("networkidle");
+
+	const mobileUtilities = page.locator(
+		'[data-slot="app-shell-mobile-utilities"]',
+	);
+	await expect(
+		mobileUtilities.getByRole("button", { name: "Open command menu" }),
+	).toBeVisible();
+	const overflowTrigger = mobileUtilities.getByRole("button", {
+		name: "Open workspace utilities (4 secondary)",
+	});
+	await overflowTrigger.click();
+	const menu = page.getByRole("menu", { name: "Workspace utilities" });
+	await expect(menu).toBeVisible();
+	await menu
+		.getByRole("menuitem", { name: "Notifications (1 unread)" })
+		.click();
+	await expect(
+		page.getByRole("dialog", { name: "Notifications" }),
+	).toBeVisible();
+	await page.keyboard.press("Escape");
+	await expect(overflowTrigger).toBeFocused();
+
+	await overflowTrigger.click();
+	await page
+		.getByRole("menu", { name: "Workspace utilities" })
+		.getByRole("menuitem", { name: "Customize appearance" })
+		.click();
+	await expect(
+		page.getByRole("dialog", { name: "Workspace appearance" }),
+	).toBeVisible();
+	await page.keyboard.press("Escape");
+	await expect(overflowTrigger).toBeFocused();
+
+	await page.setViewportSize({ width: 195, height: 422 });
+	await expect(overflowTrigger).toBeVisible();
+	await expect
+		.poll(() =>
+			page.evaluate(
+				() => document.documentElement.scrollWidth <= window.innerWidth,
+			),
+		)
+		.toBe(true);
+
+	const accessibility = await new AxeBuilder({ page })
+		.include("#storybook-root")
+		.analyze();
+	expect(accessibility.violations).toEqual([]);
+});
+
 test("Button governed states and compositions remain visually explicit @visual", async ({
 	page,
 }) => {

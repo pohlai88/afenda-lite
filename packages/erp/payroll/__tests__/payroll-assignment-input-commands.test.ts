@@ -131,6 +131,37 @@ async function seedSetupChain(
 }
 
 describe("payroll assignment and input commands", () => {
+	it("rejects excess monetary precision at the command boundary", async () => {
+		const result = await createPayrollVariableInput(
+			{
+				...baseContext("org-precision", "user-precision"),
+				employeeId: "emp-precision",
+				payGroupId: "00000000-0000-4000-8000-000000000001",
+				periodId: "00000000-0000-4000-8000-000000000002",
+				earningRuleId: "00000000-0000-4000-8000-000000000003",
+				amount: "1.1234567890123",
+				currencyCode: "USD",
+				sourceType: "synthetic",
+				sourceId: "precision-1",
+				effectiveFrom: "2025-01-01",
+				idempotencyKey: "idem-precision",
+			},
+			{
+				store: createMemoryPayrollStore(),
+				ports: createMemoryMutationPorts(),
+				authorization: createGrantingAuthorization([
+					PAYROLL_PERMISSION_INPUT_MANAGE,
+				]),
+				employees: createMemoryPayrollEmployeeQueryPort([]),
+			},
+		);
+
+		expect(result.ok).toBe(false);
+		if (!result.ok) {
+			expect(result.code).toBe("VALIDATION_ERROR");
+		}
+	});
+
 	it("denies assignment without payroll.setup.manage", async () => {
 		const result = await createPayrollEmployeeAssignment(
 			{
@@ -298,6 +329,17 @@ describe("payroll assignment and input commands", () => {
 			},
 		]);
 		const options = { ...seeded.options, employees };
+		const assignment = await createPayrollEmployeeAssignment(
+			{
+				...baseContext("org-dup", "user-dup"),
+				employeeId: "emp-dup",
+				payGroupId: seeded.payGroup.id,
+				effectiveFrom: "2025-01-01",
+				idempotencyKey: "idem-dup-assignment",
+			},
+			options,
+		);
+		expect(assignment.ok).toBe(true);
 
 		const payload = {
 			...baseContext("org-dup", "user-dup"),
@@ -342,6 +384,17 @@ describe("payroll assignment and input commands", () => {
 			},
 		]);
 		const options = { ...seeded.options, employees };
+		const assignment = await createPayrollEmployeeAssignment(
+			{
+				...baseContext("org-mis", "user-mis"),
+				employeeId: "emp-mis",
+				payGroupId: seeded.payGroup.id,
+				effectiveFrom: "2025-01-01",
+				idempotencyKey: "idem-mis-assignment",
+			},
+			options,
+		);
+		expect(assignment.ok).toBe(true);
 
 		const first = await createPayrollVariableInput(
 			{

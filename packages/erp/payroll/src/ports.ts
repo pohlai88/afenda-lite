@@ -43,26 +43,29 @@ export interface PayrollRunCalculatorPort {
 	) => Promise<Result<PayrollRunCalculatorResult>>;
 }
 
+export interface PayrollEmployeeFacts {
+	baseCompensation: string;
+	currencyCode: string;
+	employeeId: string;
+	employmentStatus: "active" | "notice" | "terminated";
+	recurringAllowances: Array<{
+		code: string;
+		amount: string;
+	}>;
+	recurringDeductions: Array<{
+		code: string;
+		amount: string;
+	}>;
+}
+
 export interface PayrollEmployeeQueryPort {
 	getPayrollEmployee: (input: {
 		organizationId: string;
 		employeeId: string;
 		effectiveDate: string;
-	}) => Promise<{
-		employeeId: string;
-		employmentStatus: "active" | "notice" | "terminated";
-		payGroupId: string;
-		baseCompensation: string;
-		currencyCode: string;
-		recurringAllowances: Array<{
-			code: string;
-			amount: string;
-		}>;
-		recurringDeductions: Array<{
-			code: string;
-			amount: string;
-		}>;
-	} | null>;
+		actorUserId: string;
+		correlationId: string;
+	}) => Promise<Result<PayrollEmployeeFacts | null>>;
 }
 
 export interface PayrollHrHandoffInputPort {

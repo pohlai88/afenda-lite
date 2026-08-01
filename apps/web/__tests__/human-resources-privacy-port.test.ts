@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { errorResult, type Result } from "@afenda/errors";
-import type { HumanResourcesEmployeeId } from "@afenda/human-resources/brands";
+import type { HumanResourcesEmployeeId } from "@afenda/human-resources";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const privacyServiceRef = vi.hoisted(() => ({

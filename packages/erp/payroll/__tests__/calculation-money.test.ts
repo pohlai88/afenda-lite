@@ -17,6 +17,9 @@ describe("payroll money (BigInt scale-12)", () => {
 	it("rejects invalid decimal input", () => {
 		expect(() => parseDecimalToScaled("1.2.3")).toThrow(RangeError);
 		expect(() => parseDecimalToScaled("not-a-number")).toThrow(RangeError);
+		expect(() => parseDecimalToScaled("1.1234567890123")).toThrow(
+			"exceeds 12 fractional digits",
+		);
 	});
 
 	it("applies half_even rounding at policy scale", () => {
@@ -44,9 +47,9 @@ describe("payroll money (BigInt scale-12)", () => {
 		).toBe("2.01");
 	});
 
-	it("preserves full scale when policy scale equals storage scale", () => {
+	it("preserves exact storage scale when policy scale equals storage scale", () => {
 		const policy = { scale: 12, mode: "half_even" as const };
-		const value = parseDecimalToScaled("123.456789012345");
+		const value = parseDecimalToScaled("123.456789012");
 		expect(roundScaled(value, policy)).toBe(value);
 	});
 });

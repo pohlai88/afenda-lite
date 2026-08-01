@@ -2,7 +2,14 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { PAYROLL_EVENT_IDS } from "@afenda/events/schemas";
+import {
+	PAYROLL_PAYMENT_REQUESTED_EVENT,
+	PAYROLL_POSTING_REQUESTED_EVENT,
+	PAYROLL_RUN_CALCULATED_EVENT,
+	PAYROLL_RUN_FINALIZED_EVENT,
+	PAYROLL_RUN_REVERSED_EVENT,
+	PAYROLL_RUN_STARTED_EVENT,
+} from "@afenda/events/schemas";
 import { describe, expect, it } from "vitest";
 
 import { payrollModuleManifest } from "../src/module.manifest";
@@ -36,10 +43,15 @@ describe("payrollModuleManifest", () => {
 		expect(payrollModuleManifest.owns.queries).toEqual([...PAYROLL_QUERY_IDS]);
 	});
 
-	it("keeps emitted events aligned with PAYROLL_EVENT_IDS", () => {
-		expect(new Set(payrollModuleManifest.events.emits)).toEqual(
-			new Set(PAYROLL_EVENT_IDS),
-		);
+	it("declares only events emitted by implemented lifecycle operations", () => {
+		expect(payrollModuleManifest.events.emits).toEqual([
+			PAYROLL_RUN_STARTED_EVENT,
+			PAYROLL_RUN_CALCULATED_EVENT,
+			PAYROLL_RUN_FINALIZED_EVENT,
+			PAYROLL_RUN_REVERSED_EVENT,
+			PAYROLL_PAYMENT_REQUESTED_EVENT,
+			PAYROLL_POSTING_REQUESTED_EVENT,
+		]);
 	});
 
 	it("keeps permission codes unique", () => {

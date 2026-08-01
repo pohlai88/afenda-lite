@@ -213,6 +213,20 @@ describe("portal-chrome (N16)", () => {
 		expect(chrome).not.toMatch(/shadcn-studio/);
 	});
 
+	it("delegates responsive utility priority and overflow to AppShellHeader", () => {
+		const chrome = source(
+			"features/portal-chrome/workspace-platform-chrome.tsx",
+		);
+		const header = uiSource("blocks/app-shell-block/header.tsx");
+
+		expect(chrome).toContain('"command-menu": "primary"');
+		expect(chrome).toContain('notifications: "secondary"');
+		expect(chrome).not.toMatch(/(?:sm|md|lg):hidden/);
+		expect(header).toContain("APP_SHELL_UTILITY_IDS");
+		expect(header).toContain('aria-label="Workspace utilities"');
+		expect(header).toContain('data-slot="app-shell-mobile-utilities"');
+	});
+
 	it("adopts the archived app-shell customizer without archive runtime imports", () => {
 		const chrome = source(
 			"features/portal-chrome/workspace-platform-chrome.tsx",

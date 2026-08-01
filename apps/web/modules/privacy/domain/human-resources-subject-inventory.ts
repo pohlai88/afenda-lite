@@ -1,7 +1,6 @@
 import { errorResult, type Result } from "@afenda/errors";
-import type { HumanResourcesEmployeeId } from "@afenda/human-resources/brands";
-import { listHumanResourcesSubjectInventoryRecords } from "@afenda/human-resources/privacy/subject-data-collector";
-import { resolveHumanResourcesStore } from "@afenda/human-resources/resolve-store";
+import type { HumanResourcesEmployeeId } from "@afenda/human-resources";
+import { listHumanResourcesSubjectInventoryRecords } from "@afenda/human-resources";
 
 import type {
 	PrivacyModuleId,
@@ -13,11 +12,9 @@ async function listHumanResourcesSubjectRecords(input: {
 	organizationId: string;
 	subjectId: string;
 }): Promise<Result<readonly PrivacySubjectRecord[]>> {
-	const store = resolveHumanResourcesStore();
 	return await listHumanResourcesSubjectInventoryRecords({
 		organizationId: input.organizationId,
 		subjectEmployeeId: input.subjectId as HumanResourcesEmployeeId,
-		store,
 	});
 }
 
