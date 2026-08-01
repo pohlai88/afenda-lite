@@ -199,6 +199,51 @@ queries:
   - id: human-resources.assignment.as-of
     moduleId: human-resources
     permission: human-resources.employee.read
+  - id: human-resources.onboarding-case.get
+    moduleId: human-resources
+    permission: human-resources.employee.read
+  - id: human-resources.onboarding-tasks.list
+    moduleId: human-resources
+    permission: human-resources.employee.read
+  - id: human-resources.onboarding-orientation.get-by-case
+    moduleId: human-resources
+    permission: human-resources.employee.read
+  - id: human-resources.onboarding-equipment-handoff.get-by-case
+    moduleId: human-resources
+    permission: human-resources.employee.read
+  - id: human-resources.onboarding-access-handoff.get-by-case
+    moduleId: human-resources
+    permission: human-resources.employee.read
+  - id: human-resources.probation-review.get
+    moduleId: human-resources
+    permission: human-resources.employee.read
+  - id: human-resources.probation-reviews.list-by-employment
+    moduleId: human-resources
+    permission: human-resources.employee.read
+  - id: human-resources.probation-assessments.list
+    moduleId: human-resources
+    permission: human-resources.employee.read
+  - id: human-resources.employment-confirmation.get
+    moduleId: human-resources
+    permission: human-resources.employee.read
+  - id: human-resources.termination.get
+    moduleId: human-resources
+    permission: human-resources.employee.read
+  - id: human-resources.offboarding-case.get
+    moduleId: human-resources
+    permission: human-resources.employee.read
+  - id: human-resources.offboarding-tasks.list
+    moduleId: human-resources
+    permission: human-resources.employee.read
+  - id: human-resources.clearance.get-by-offboarding-case
+    moduleId: human-resources
+    permission: human-resources.employee.read
+  - id: human-resources.offboarding-access-revocation.get-by-case
+    moduleId: human-resources
+    permission: human-resources.employee.read
+  - id: human-resources.offboarding-payroll-handoff.get-by-case
+    moduleId: human-resources
+    permission: human-resources.employee.read
   - id: human-resources.department.as-of
     moduleId: human-resources
     permission: human-resources.organization.read
@@ -280,51 +325,6 @@ queries:
   - id: human-resources.offer.list
     moduleId: human-resources
     permission: human-resources.offer.approve
-  - id: human-resources.onboarding-case.get
-    moduleId: human-resources
-    permission: human-resources.employee.read
-  - id: human-resources.onboarding-tasks.list
-    moduleId: human-resources
-    permission: human-resources.employee.read
-  - id: human-resources.onboarding-orientation.get-by-case
-    moduleId: human-resources
-    permission: human-resources.employee.read
-  - id: human-resources.onboarding-equipment-handoff.get-by-case
-    moduleId: human-resources
-    permission: human-resources.employee.read
-  - id: human-resources.onboarding-access-handoff.get-by-case
-    moduleId: human-resources
-    permission: human-resources.employee.read
-  - id: human-resources.probation-review.get
-    moduleId: human-resources
-    permission: human-resources.employee.read
-  - id: human-resources.probation-reviews.list-by-employment
-    moduleId: human-resources
-    permission: human-resources.employee.read
-  - id: human-resources.probation-assessments.list
-    moduleId: human-resources
-    permission: human-resources.employee.read
-  - id: human-resources.employment-confirmation.get
-    moduleId: human-resources
-    permission: human-resources.employee.read
-  - id: human-resources.termination.get
-    moduleId: human-resources
-    permission: human-resources.employee.read
-  - id: human-resources.offboarding-case.get
-    moduleId: human-resources
-    permission: human-resources.employee.read
-  - id: human-resources.offboarding-tasks.list
-    moduleId: human-resources
-    permission: human-resources.employee.read
-  - id: human-resources.clearance.get-by-offboarding-case
-    moduleId: human-resources
-    permission: human-resources.employee.read
-  - id: human-resources.offboarding-access-revocation.get-by-case
-    moduleId: human-resources
-    permission: human-resources.employee.read
-  - id: human-resources.offboarding-payroll-handoff.get-by-case
-    moduleId: human-resources
-    permission: human-resources.employee.read
   - id: human-resources.course.get
     moduleId: human-resources
     permission: human-resources.learning.manage
