@@ -6,9 +6,8 @@ import {
 } from "../../authorization";
 import {
 	type MasterCommandOptions,
-	type MasterQueryOptions,
+	type MasterDataCapabilityOptions,
 	resolveCommandDeps,
-	resolveStore,
 } from "../../command-options";
 import {
 	MASTER_COMMAND_WAREHOUSE_ACTIVATE,
@@ -332,7 +331,7 @@ export const archiveWarehouse = retireWarehouse;
 
 export async function getWarehouseById(
 	input: unknown,
-	options: MasterQueryOptions = {},
+	options: MasterDataCapabilityOptions = {},
 ): Promise<Result<Warehouse | null>> {
 	const parsed = parseMasterInput(
 		getByIdInputSchema,
@@ -342,7 +341,7 @@ export async function getWarehouseById(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const store = resolveStore(options.store);
+	const { store } = resolveCommandDeps(options);
 	const { authorization } = options;
 	const authorized = await requireMasterQueryPermission(authorization, {
 		organizationId: parsed.data.organizationId,
@@ -357,7 +356,7 @@ export async function getWarehouseById(
 
 export async function getWarehouseByCode(
 	input: unknown,
-	options: MasterQueryOptions = {},
+	options: MasterDataCapabilityOptions = {},
 ): Promise<Result<Warehouse | null>> {
 	const parsed = parseMasterInput(
 		getByCodeInputSchema,
@@ -367,7 +366,7 @@ export async function getWarehouseByCode(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const store = resolveStore(options.store);
+	const { store } = resolveCommandDeps(options);
 	const { authorization } = options;
 	const authorized = await requireMasterQueryPermission(authorization, {
 		organizationId: parsed.data.organizationId,
@@ -389,7 +388,7 @@ export async function getWarehouseByCode(
 
 export async function existsWarehouseByCode(
 	input: unknown,
-	options: MasterQueryOptions = {},
+	options: MasterDataCapabilityOptions = {},
 ): Promise<Result<boolean>> {
 	const result = await getWarehouseByCode(input, options);
 	if (!result.ok) {
@@ -400,7 +399,7 @@ export async function existsWarehouseByCode(
 
 export async function listWarehouses(
 	input: unknown,
-	options: MasterQueryOptions = {},
+	options: MasterDataCapabilityOptions = {},
 ): Promise<Result<Warehouse[]>> {
 	const parsed = parseMasterInput(
 		masterListOptionsSchema,
@@ -410,7 +409,7 @@ export async function listWarehouses(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const store = resolveStore(options.store);
+	const { store } = resolveCommandDeps(options);
 	const { authorization } = options;
 	const authorized = await requireMasterQueryPermission(authorization, {
 		organizationId: parsed.data.organizationId,
@@ -431,7 +430,7 @@ export async function listWarehouses(
 
 export function listActiveWarehouses(
 	input: unknown,
-	options: MasterQueryOptions = {},
+	options: MasterDataCapabilityOptions = {},
 ): Promise<Result<Warehouse[]>> {
 	return resolveAsync(() => {
 		const parsed = parseMasterInput(
@@ -448,7 +447,7 @@ export function listActiveWarehouses(
 
 export function listWarehousesByStatus(
 	input: unknown,
-	options: MasterQueryOptions = {},
+	options: MasterDataCapabilityOptions = {},
 ): Promise<Result<Warehouse[]>> {
 	return resolveAsync(() => {
 		const parsed = parseMasterInput(
@@ -465,7 +464,7 @@ export function listWarehousesByStatus(
 
 export function listWarehousesUpdatedSince(
 	input: unknown,
-	options: MasterQueryOptions = {},
+	options: MasterDataCapabilityOptions = {},
 ): Promise<Result<Warehouse[]>> {
 	return resolveAsync(() => {
 		const parsed = parseMasterInput(

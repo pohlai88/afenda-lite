@@ -44,6 +44,7 @@ export function createCompensationProposal(
 				const currencyCheck = await assertCurrencyExists(
 					currency,
 					data.proposedCurrencyCode,
+					data,
 				);
 				if (!currencyCheck.ok) {
 					return currencyCheck;
@@ -83,6 +84,7 @@ export function amendCompensationProposal(
 				const currencyCheck = await assertCurrencyExists(
 					currency,
 					data.proposedCurrencyCode,
+					data,
 				);
 				if (!currencyCheck.ok) {
 					return currencyCheck;

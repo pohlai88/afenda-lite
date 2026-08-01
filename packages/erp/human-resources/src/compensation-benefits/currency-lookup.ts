@@ -1,6 +1,9 @@
 import { errorResult, type Result } from "@afenda/errors";
-import { createDrizzleMasterDataStore } from "@afenda/master-data/adapters/drizzle";
 
+import {
+	HUMAN_RESOURCES_ERROR_DEPENDENCY_UNAVAILABLE,
+	humanResourcesErrorDetails,
+} from "../error-codes";
 import type { CurrencyLookupPort } from "../ports";
 
 const MEMORY_CURRENCY_CODES = new Set([
@@ -16,25 +19,28 @@ const MEMORY_CURRENCY_CODES = new Set([
 
 export function createMemoryCurrencyLookup(): CurrencyLookupPort {
 	return {
-		exists(currencyCode: string): Promise<Result<boolean>> {
+		exists(input): Promise<Result<boolean>> {
 			return Promise.resolve(
-				errorResult.ok(MEMORY_CURRENCY_CODES.has(currencyCode.toUpperCase())),
+				errorResult.ok(
+					MEMORY_CURRENCY_CODES.has(input.currencyCode.toUpperCase()),
+				),
 			);
 		},
 	};
 }
 
-export function createProductionCurrencyLookup(): CurrencyLookupPort {
-	const store = createDrizzleMasterDataStore();
+/** Fail-closed default used when the application omits its reference adapter. */
+export function createUnavailableCurrencyLookup(): CurrencyLookupPort {
 	return {
-		async exists(currencyCode: string): Promise<Result<boolean>> {
-			const result = await store.getRefCurrencyByCode(
-				currencyCode.toUpperCase(),
+		exists(): Promise<Result<boolean>> {
+			return Promise.resolve(
+				errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+					internalContext: humanResourcesErrorDetails(
+						HUMAN_RESOURCES_ERROR_DEPENDENCY_UNAVAILABLE,
+					),
+				}),
 			);
-			if (!result.ok) {
-				return result;
-			}
-			return errorResult.ok(result.data !== null);
 		},
 	};
 }

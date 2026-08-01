@@ -47,6 +47,7 @@ export function createCompensationReviewCycle(
 			const currencyCheck = await assertCurrencyExists(
 				currency,
 				data.budgetCurrencyCode,
+				data,
 			);
 			if (!currencyCheck.ok) {
 				return currencyCheck;

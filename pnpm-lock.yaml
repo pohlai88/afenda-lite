@@ -970,9 +970,6 @@ importers:
       '@afenda/inventory':
         specifier: workspace:*
         version: link:../inventory
-      '@afenda/master-data':
-        specifier: workspace:*
-        version: link:../master-data
       server-only:
         specifier: 0.0.1
         version: 0.0.1

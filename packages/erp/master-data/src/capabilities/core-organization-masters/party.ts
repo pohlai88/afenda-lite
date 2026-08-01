@@ -5,9 +5,8 @@ import {
 } from "../../authorization";
 import {
 	type MasterCommandOptions,
-	type MasterQueryOptions,
+	type MasterDataCapabilityOptions,
 	resolveCommandDeps,
-	resolveStore,
 } from "../../command-options";
 import {
 	MASTER_COMMAND_PARTY_ACTIVATE,
@@ -392,7 +391,7 @@ export function restoreParty(
 
 export async function getPartyById(
 	input: unknown,
-	options: MasterQueryOptions = {},
+	options: MasterDataCapabilityOptions = {},
 ): Promise<Result<Party | null>> {
 	const parsed = parseMasterInput(
 		getByIdInputSchema,
@@ -402,7 +401,7 @@ export async function getPartyById(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const store = resolveStore(options.store);
+	const { store } = resolveCommandDeps(options);
 	const authorized = await requireMasterQueryPermission(options.authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
@@ -418,7 +417,7 @@ export const getParty = getPartyById;
 
 export async function getPartyByCode(
 	input: unknown,
-	options: MasterQueryOptions = {},
+	options: MasterDataCapabilityOptions = {},
 ): Promise<Result<Party | null>> {
 	const parsed = parseMasterInput(
 		getByCodeInputSchema,
@@ -428,7 +427,7 @@ export async function getPartyByCode(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const store = resolveStore(options.store);
+	const { store } = resolveCommandDeps(options);
 	const authorized = await requireMasterQueryPermission(options.authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
@@ -449,7 +448,7 @@ export async function getPartyByCode(
 
 export async function existsPartyByCode(
 	input: unknown,
-	options: MasterQueryOptions = {},
+	options: MasterDataCapabilityOptions = {},
 ): Promise<Result<boolean>> {
 	const result = await getPartyByCode(input, options);
 	if (!result.ok) {
@@ -460,7 +459,7 @@ export async function existsPartyByCode(
 
 export async function listParties(
 	input: unknown,
-	options: MasterQueryOptions = {},
+	options: MasterDataCapabilityOptions = {},
 ): Promise<Result<Party[]>> {
 	const parsed = parseMasterInput(
 		masterListOptionsSchema,
@@ -470,7 +469,7 @@ export async function listParties(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const store = resolveStore(options.store);
+	const { store } = resolveCommandDeps(options);
 	const authorized = await requireMasterQueryPermission(options.authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
@@ -490,7 +489,7 @@ export async function listParties(
 
 export function listActiveParties(
 	input: unknown,
-	options: MasterQueryOptions = {},
+	options: MasterDataCapabilityOptions = {},
 ): Promise<Result<Party[]>> {
 	return resolveAsync(() => {
 		const parsed = parseMasterInput(
@@ -507,7 +506,7 @@ export function listActiveParties(
 
 export function listPartiesByStatus(
 	input: unknown,
-	options: MasterQueryOptions = {},
+	options: MasterDataCapabilityOptions = {},
 ): Promise<Result<Party[]>> {
 	return resolveAsync(() => {
 		const parsed = parseMasterInput(
@@ -524,7 +523,7 @@ export function listPartiesByStatus(
 
 export function listPartiesUpdatedSince(
 	input: unknown,
-	options: MasterQueryOptions = {},
+	options: MasterDataCapabilityOptions = {},
 ): Promise<Result<Party[]>> {
 	return resolveAsync(() => {
 		const parsed = parseMasterInput(
@@ -541,7 +540,7 @@ export function listPartiesUpdatedSince(
 
 export async function listPartiesByRole(
 	input: unknown,
-	options: MasterQueryOptions = {},
+	options: MasterDataCapabilityOptions = {},
 ): Promise<Result<Party[]>> {
 	const parsed = parseMasterInput(
 		listPartiesByRoleInputSchema,
@@ -551,7 +550,7 @@ export async function listPartiesByRole(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const store = resolveStore(options.store);
+	const { store } = resolveCommandDeps(options);
 	const authorized = await requireMasterQueryPermission(options.authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
@@ -573,7 +572,7 @@ export async function listPartiesByRole(
 
 export async function findPartyByTaxRegistration(
 	input: unknown,
-	options: MasterQueryOptions = {},
+	options: MasterDataCapabilityOptions = {},
 ): Promise<Result<Party | null>> {
 	const parsed = parseMasterInput(
 		findPartyByTaxRegistrationInputSchema,
@@ -589,7 +588,7 @@ export async function findPartyByTaxRegistration(
 	if (!normalized.ok) {
 		return normalized;
 	}
-	const store = resolveStore(options.store);
+	const { store } = resolveCommandDeps(options);
 	const authorized = await requireMasterQueryPermission(options.authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
@@ -608,7 +607,7 @@ export async function findPartyByTaxRegistration(
 
 export async function searchParties(
 	input: unknown,
-	options: MasterQueryOptions = {},
+	options: MasterDataCapabilityOptions = {},
 ): Promise<Result<Party[]>> {
 	const parsed = parseMasterInput(
 		searchPartiesInputSchema,
@@ -618,7 +617,7 @@ export async function searchParties(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const store = resolveStore(options.store);
+	const { store } = resolveCommandDeps(options);
 	const authorized = await requireMasterQueryPermission(options.authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,

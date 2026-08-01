@@ -133,6 +133,7 @@ belong to one semantic theme.
 | Chromatic decoration | `success`, `warning`, and `info` for icons, graphics, borders, or translucent decoration—not readable copy |
 | Status text | The matching `*-subtle-foreground` role |
 | Filled status UI | The complete `*-subtle`, `*-subtle-foreground`, and `*-border` triplet |
+| Categorical ERP visualization | `data-series-1` through `data-series-5`; do not interpret operational status from series color |
 
 Readable pairs are tested against WCAG 2.2 AA and APCA requirements for their component typography. Focus and invalid-control indicators retain a 3:1 non-text contrast floor in both themes. Use semantic roles instead of raw color literals in component source.
 

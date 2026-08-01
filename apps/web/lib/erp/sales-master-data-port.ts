@@ -3,23 +3,16 @@ import {
 	getItemById,
 	getPartyById,
 	getPaymentTermById,
-	type MasterQueryOptions,
-	refUomIdSchema,
+	getRefUomById,
+	type MasterDataCapabilityOptions,
 } from "@afenda/master-data";
-import {
-	createDrizzleMasterDataStore,
-	createDrizzlePlatformReferenceStore,
-} from "@afenda/master-data/adapters/drizzle";
 import type { MasterDataSnapshotPort } from "@afenda/sales";
 
 import { createMasterDataAuthorizationPort } from "@/lib/erp/master-data-authorization-port";
 
 /** Resolves active Master Data records into immutable Sales document snapshots. */
 export function createSalesMasterDataPort(): MasterDataSnapshotPort {
-	const store = createDrizzleMasterDataStore();
-	const references = createDrizzlePlatformReferenceStore();
-	const options: MasterQueryOptions = {
-		store,
+	const options: MasterDataCapabilityOptions = {
 		authorization: createMasterDataAuthorizationPort(),
 	};
 	return {
@@ -93,15 +86,18 @@ export function createSalesMasterDataPort(): MasterDataSnapshotPort {
 					publicMessage: "Item master is not sellable",
 				});
 			}
-			const uomId = refUomIdSchema.safeParse(
-				input.requestedUomId ?? item.baseUomId,
+			const uomResult = await getRefUomById(
+				{
+					organizationId: input.organizationId,
+					actorUserId: input.actorUserId,
+					id: input.requestedUomId ?? item.baseUomId,
+				},
+				options,
 			);
-			if (!uomId.success) {
-				return errorResult.fail("VALIDATION_ERROR", {
-					publicMessage: "Unit of measure identifier is invalid",
-				});
+			if (!uomResult.ok) {
+				return uomResult;
 			}
-			const uom = await references.getUomById(uomId.data);
+			const uom = uomResult.data;
 			if (!uom?.active) {
 				return errorResult.fail("CONFLICT", {
 					publicMessage: "Unit of measure is not active",

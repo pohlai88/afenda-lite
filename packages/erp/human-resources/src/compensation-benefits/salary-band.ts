@@ -41,6 +41,7 @@ export function createSalaryBand(
 			const currencyCheck = await assertCurrencyExists(
 				currency,
 				data.currencyCode,
+				data,
 			);
 			if (!currencyCheck.ok) {
 				return currencyCheck;
@@ -79,6 +80,7 @@ export function supersedeSalaryBand(
 			const currencyCheck = await assertCurrencyExists(
 				currency,
 				data.currencyCode,
+				data,
 			);
 			if (!currencyCheck.ok) {
 				return currencyCheck;

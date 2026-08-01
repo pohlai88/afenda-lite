@@ -1,8 +1,16 @@
 "use client";
 
-import { type MouseEvent, useCallback, useState } from "react";
+import { useCallback } from "react";
 import { Avatar, AvatarFallback } from "../components/ui/avatar";
 import { Button } from "../components/ui/button";
+import {
+	DropdownMenu,
+	DropdownMenuContent,
+	DropdownMenuItem,
+	DropdownMenuLabel,
+	DropdownMenuSeparator,
+	DropdownMenuTrigger,
+} from "../components/ui/dropdown-menu";
 
 export function ProfileDropdown({
 	actions = [],
@@ -15,43 +23,62 @@ export function ProfileDropdown({
 	name: string;
 	onAction?: (id: string) => void;
 }>) {
-	const [open, setOpen] = useState(false);
 	const fallback = initials ?? name.slice(0, 2).toUpperCase();
-	const toggleOpen = useCallback(() => setOpen((value) => !value), []);
 	const handleAction = useCallback(
-		(event: MouseEvent<HTMLButtonElement>) =>
-			onAction?.(event.currentTarget.value),
+		(event: Event) => {
+			const actionId = (event.currentTarget as HTMLElement | null)?.dataset
+				.actionId;
+			if (actionId !== undefined) {
+				onAction?.(actionId);
+			}
+		},
 		[onAction],
 	);
-
-	return (
-		<div>
-			<Button
-				aria-label={`Open profile menu for ${name}`}
-				onClick={toggleOpen}
-				size="icon-sm"
-				type="button"
-				variant="ghost"
+	if (actions.length === 0 || onAction === undefined) {
+		return (
+			<div
+				aria-label={`Signed in as ${name}`}
+				className="flex size-8 items-center justify-center"
+				role="img"
 			>
 				<Avatar className="size-6">
-					<AvatarFallback>{fallback}</AvatarFallback>
+					<AvatarFallback className="text-foreground-secondary">
+						{fallback}
+					</AvatarFallback>
 				</Avatar>
-			</Button>
-			{open && onAction !== undefined ? (
-				<div aria-label="Profile menu" role="menu">
-					{actions.map((action) => (
-						<button
-							key={action.id}
-							onClick={handleAction}
-							role="menuitem"
-							type="button"
-							value={action.id}
-						>
-							{action.label}
-						</button>
-					))}
-				</div>
-			) : null}
-		</div>
+			</div>
+		);
+	}
+
+	return (
+		<DropdownMenu>
+			<DropdownMenuTrigger asChild>
+				<Button
+					aria-label={`Open profile menu for ${name}`}
+					size="icon-sm"
+					type="button"
+					variant="ghost"
+				>
+					<Avatar className="size-6">
+						<AvatarFallback className="text-foreground-secondary">
+							{fallback}
+						</AvatarFallback>
+					</Avatar>
+				</Button>
+			</DropdownMenuTrigger>
+			<DropdownMenuContent align="end" className="w-52">
+				<DropdownMenuLabel className="truncate">{name}</DropdownMenuLabel>
+				<DropdownMenuSeparator />
+				{actions.map((action) => (
+					<DropdownMenuItem
+						data-action-id={action.id}
+						key={action.id}
+						onSelect={handleAction}
+					>
+						{action.label}
+					</DropdownMenuItem>
+				))}
+			</DropdownMenuContent>
+		</DropdownMenu>
 	);
 }

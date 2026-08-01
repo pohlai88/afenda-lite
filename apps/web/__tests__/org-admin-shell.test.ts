@@ -213,7 +213,7 @@ describe("OrgAdminShell — RSC STABILITY", () => {
 	it("pins fail-closed requireRole('operator') + section density", () => {
 		const shell = source("features/org-admin/org-admin-shell.tsx");
 		const chrome = source(
-			"features/portal-chrome/operator-platform-chrome.tsx",
+			"features/portal-chrome/workspace-platform-chrome.tsx",
 		);
 		expect(shell).toContain('requireRole("operator")');
 		expect(shell).not.toMatch(/\bgetSession\b/);
@@ -222,10 +222,11 @@ describe("OrgAdminShell — RSC STABILITY", () => {
 		expect(shell).toContain("MetricGrid");
 		expect(shell).toContain("admin.organizations.list");
 		expect(shell).toContain("admin.usage.get");
-		expect(chrome).toContain('AppShell } from "@afenda/ui-system"');
+		expect(chrome).toContain('from "@afenda/ui-system"');
+		expect(chrome).toContain("ApplicationShellSettings, AppShell");
 		expect(chrome).toContain("<AppShell");
 		expect(chrome).toContain("mainContentId={MAIN_CONTENT_ID}");
-		expect(chrome).toContain("navigationItems={navItems}");
+		expect(chrome).toContain("navConfig={{ currentPath: pathname");
 		expect(shell).not.toMatch(/from ["']@afenda\/db["']/);
 	});
 

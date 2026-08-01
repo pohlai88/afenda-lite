@@ -128,7 +128,9 @@ export const Overview: Story = {
 							<Badge variant="outline">Receivables</Badge>
 							<StatusBadge label="Operational" size="sm" status="active" />
 						</div>
-						<CardTitle>Open invoices</CardTitle>
+						<CardTitle>
+							<h2>Open invoices</h2>
+						</CardTitle>
 						<CardDescription>
 							org-fragrant-lake · July collection queue
 						</CardDescription>

@@ -87,6 +87,7 @@ export const UI_TOKEN_FAMILY_IDS = [
 	"control",
 	"focus",
 	"chart",
+	"data-series",
 	"motion",
 ] as const;
 
@@ -266,7 +267,7 @@ export interface UiComponentMetadata {
 	renderMode: UiRenderMode;
 	requiredStates: readonly UiState[];
 	sizes?: readonly string[];
-	sourceModule: `src/components/ui/${string}.ts${"" | "x"}`;
+	sourceModule: `src/${"app-shell" | "blocks" | "components/ui"}/${string}.ts${"" | "x"}`;
 	tokenFamilies: readonly UiTokenFamilyId[];
 	variants?: readonly string[];
 }

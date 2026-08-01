@@ -97,9 +97,9 @@ export function validateUiCatalog(
 
 	for (const component of catalog.components) {
 		const moduleName = component.sourceModule
-			.replace("src/components/ui/", "")
+			.replace("src/", "")
 			.replace(COMPONENT_MODULE_EXTENSION_PATTERN, "");
-		if (!snapshot.barrelSource.includes(`./components/ui/${moduleName}`)) {
+		if (!snapshot.barrelSource.includes(`./${moduleName}`)) {
 			issues.push({
 				kind: "export-drift",
 				message: `Cataloged component is missing from the flat barrel: ${component.id}`,

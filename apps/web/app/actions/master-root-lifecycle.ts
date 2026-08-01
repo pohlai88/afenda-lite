@@ -14,7 +14,7 @@ import {
 	inactiveItem,
 	inactiveItemGroup,
 	inactiveWarehouse,
-	type MasterCommandOptions,
+	type MasterDataCapabilityOptions,
 	retireItem,
 	retireItemGroup,
 	retireWarehouse,
@@ -38,7 +38,7 @@ type LifecycleKind = "activate" | "inactive" | "retire";
 
 type LifecycleCommand<TEntity> = (
 	payload: unknown,
-	options?: MasterCommandOptions,
+	options?: MasterDataCapabilityOptions,
 ) => Promise<Result<TEntity>>;
 
 async function runRootLifecycle<

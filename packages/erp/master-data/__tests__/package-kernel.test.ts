@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, relative, sep } from "node:path";
 
+import ts from "typescript";
 import { describe, expect, it } from "vitest";
 
 const packageRoot = join(import.meta.dirname, "..");
@@ -18,6 +19,7 @@ const requiredPackageFiles = [
 	"src/permissions.ts",
 	"src/authorization.ts",
 	"src/command-options.ts",
+	"src/public-capabilities.ts",
 	"src/parse-input.ts",
 	"src/ports.ts",
 	"src/contracts/context.ts",
@@ -65,6 +67,22 @@ describe("@afenda/master-data package kernel", () => {
 
 	it("keeps the root barrel server-only and away from raw Drizzle exports", () => {
 		const source = readFileSync(join(srcRoot, "index.ts"), "utf8");
+		const forbiddenRootImplementationSurface = [
+			/\bAuditFactPort\b/,
+			/\bcreateEmptyDependencyInspector\b/,
+			/\bcreateUnavailableDependencyInspector\b/,
+			/\bDependencyInspector\b/,
+			/\bMutationPorts\b/,
+			/\bOutboxPort\b/,
+			/\bcreateDrizzleOrganizationDimensionStore\b/,
+			/\bcreateProductionMutationPorts\b/,
+			/\bcreateSqlAuditFactPort\b/,
+			/\bcreateSqlOutboxPort\b/,
+			/\bresolveMasterDataStore\b/,
+			/from\s+["'][^"']*(?:commercial-master-store|item-store|party-store|warehouse-store)["']/,
+			/from\s+["'][^"']*core-organization-masters\/store["']/,
+			/from\s+["'][^"']*extensions\/(?:store|template-store)["']/,
+		];
 		expect(source.startsWith('import "server-only";')).toBe(true);
 		expect(source).not.toContain('from "./drizzle-store"');
 		expect(source).not.toContain('from "./adapters/drizzle"');
@@ -78,7 +96,97 @@ describe("@afenda/master-data package kernel", () => {
 		expect(source).not.toContain(
 			'from "./capabilities/platform-references/reference-errors"',
 		);
+		for (const forbidden of forbiddenRootImplementationSurface) {
+			expect(source).not.toMatch(forbidden);
+		}
+		expect(source).not.toMatch(/\bMasterCommandOptions\b/);
+		expect(source).not.toMatch(/\bMasterQueryOptions\b/);
+		expect(source).toMatch(/\bMasterDataCapabilityOptions\b/);
 	});
+
+	it("keeps web consumers on the root capability facade", () => {
+		const webRoot = join(repositoryRoot, "apps/web");
+		const violations = listSourceFiles(webRoot).flatMap((file) => {
+			const source = readFileSync(file, "utf8");
+			return source.includes("@afenda/master-data/adapters/drizzle")
+				? [relative(repositoryRoot, file)]
+				: [];
+		});
+
+		expect(violations).toEqual([]);
+	});
+
+	it("keeps platform and core-master queries on public capability options", () => {
+		const queryModules = [
+			"capabilities/platform-references/authorized-queries.ts",
+			"capabilities/core-organization-masters/item.ts",
+			"capabilities/core-organization-masters/item-group.ts",
+			"capabilities/core-organization-masters/party.ts",
+			"capabilities/core-organization-masters/payment-term.ts",
+			"capabilities/core-organization-masters/tax-registration.ts",
+			"capabilities/core-organization-masters/warehouse.ts",
+		] as const;
+
+		for (const module of queryModules) {
+			const source = readFileSync(join(srcRoot, module), "utf8");
+			expect(source, module).toContain("MasterDataCapabilityOptions");
+			expect(source, module).not.toContain("MasterQueryOptions");
+			expect(source, module).not.toMatch(/options\.store\b/);
+		}
+	});
+
+	it("keeps internal execution options out of every root callable signature", () => {
+		const configPath = join(packageRoot, "tsconfig.json");
+		const config = ts.readConfigFile(configPath, ts.sys.readFile);
+		if (config.error !== undefined) {
+			throw new Error(
+				ts.flattenDiagnosticMessageText(config.error.messageText, "\n"),
+			);
+		}
+		const parsed = ts.parseJsonConfigFileContent(
+			config.config,
+			ts.sys,
+			packageRoot,
+		);
+		const program = ts.createProgram(parsed.fileNames, parsed.options);
+		const checker = program.getTypeChecker();
+		const rootSource = program.getSourceFile(join(srcRoot, "index.ts"));
+		if (rootSource === undefined) {
+			throw new Error("Master-data root source was not loaded.");
+		}
+		const rootSymbol = checker.getSymbolAtLocation(rootSource);
+		if (rootSymbol === undefined) {
+			throw new Error("Master-data root module symbol was not resolved.");
+		}
+
+		const violations = checker
+			.getExportsOfModule(rootSymbol)
+			.flatMap((symbol) => {
+				const declaration = symbol.valueDeclaration ?? symbol.declarations?.[0];
+				if (declaration === undefined) {
+					return [];
+				}
+				const signatures = checker
+					.getTypeOfSymbolAtLocation(symbol, declaration)
+					.getCallSignatures()
+					.map((signature) =>
+						checker.signatureToString(
+							signature,
+							declaration,
+							ts.TypeFormatFlags.NoTruncation,
+						),
+					);
+				return signatures
+					.filter((signature) =>
+						/Master(?:Command|Query)Options|OrganizationDimensionOptions/.test(
+							signature,
+						),
+					)
+					.map((signature) => ({ name: symbol.getName(), signature }));
+			});
+
+		expect(violations).toEqual([]);
+	}, 30_000);
 
 	it("publishes only justified package subpaths", () => {
 		const packageJson = JSON.parse(

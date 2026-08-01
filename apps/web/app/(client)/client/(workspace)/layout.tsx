@@ -1,8 +1,7 @@
 import { authServer } from "@afenda/auth";
 import type { ReactNode } from "react";
 
-import { MAIN_CONTENT_ID } from "@/features/auth/main-content";
-import { ClientWorkspaceNav } from "@/features/portal-chrome/client-workspace-nav";
+import { WorkspacePlatformShell } from "@/features/portal-chrome/workspace-platform-shell";
 
 export const dynamic = "force-dynamic";
 
@@ -18,15 +17,6 @@ export default async function ClientWorkspaceLayout({
 }) {
 	await authServer.session.requireRole("client");
 	return (
-		<>
-			<ClientWorkspaceNav />
-			<main
-				className="min-h-dvh bg-background"
-				id={MAIN_CONTENT_ID}
-				tabIndex={-1}
-			>
-				{children}
-			</main>
-		</>
+		<WorkspacePlatformShell scope="client">{children}</WorkspacePlatformShell>
 	);
 }

@@ -6,9 +6,8 @@ import {
 } from "../../authorization";
 import {
 	type MasterCommandOptions,
-	type MasterQueryOptions,
+	type MasterDataCapabilityOptions,
 	resolveCommandDeps,
-	resolveStore,
 } from "../../command-options";
 import {
 	MASTER_COMMAND_PAYMENT_TERM_ACTIVATE,
@@ -267,7 +266,7 @@ export function retirePaymentTerm(
 
 export async function getPaymentTermById(
 	input: unknown,
-	options: MasterQueryOptions = {},
+	options: MasterDataCapabilityOptions = {},
 ): Promise<Result<PaymentTerm | null>> {
 	const parsed = parseMasterInput(
 		getByIdInputSchema,
@@ -277,7 +276,7 @@ export async function getPaymentTermById(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const store = resolveStore(options.store);
+	const { store } = resolveCommandDeps(options);
 	const { authorization } = options;
 	const authorized = await requireMasterQueryPermission(authorization, {
 		organizationId: parsed.data.organizationId,
@@ -292,7 +291,7 @@ export async function getPaymentTermById(
 
 export async function getPaymentTermByCode(
 	input: unknown,
-	options: MasterQueryOptions = {},
+	options: MasterDataCapabilityOptions = {},
 ): Promise<Result<PaymentTerm | null>> {
 	const parsed = parseMasterInput(
 		getByCodeInputSchema,
@@ -302,7 +301,7 @@ export async function getPaymentTermByCode(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const store = resolveStore(options.store);
+	const { store } = resolveCommandDeps(options);
 	const { authorization } = options;
 	const authorized = await requireMasterQueryPermission(authorization, {
 		organizationId: parsed.data.organizationId,
@@ -324,7 +323,7 @@ export async function getPaymentTermByCode(
 
 export async function existsPaymentTermByCode(
 	input: unknown,
-	options: MasterQueryOptions = {},
+	options: MasterDataCapabilityOptions = {},
 ): Promise<Result<boolean>> {
 	const result = await getPaymentTermByCode(input, options);
 	if (!result.ok) {
@@ -335,7 +334,7 @@ export async function existsPaymentTermByCode(
 
 export async function listPaymentTerms(
 	input: unknown,
-	options: MasterQueryOptions = {},
+	options: MasterDataCapabilityOptions = {},
 ): Promise<Result<PaymentTerm[]>> {
 	const parsed = parseMasterInput(
 		masterListOptionsSchema,
@@ -345,7 +344,7 @@ export async function listPaymentTerms(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const store = resolveStore(options.store);
+	const { store } = resolveCommandDeps(options);
 	const { authorization } = options;
 	const authorized = await requireMasterQueryPermission(authorization, {
 		organizationId: parsed.data.organizationId,
@@ -366,7 +365,7 @@ export async function listPaymentTerms(
 
 export function listActivePaymentTerms(
 	input: unknown,
-	options: MasterQueryOptions = {},
+	options: MasterDataCapabilityOptions = {},
 ): Promise<Result<PaymentTerm[]>> {
 	return resolveAsync(() => {
 		const parsed = parseMasterInput(
@@ -383,7 +382,7 @@ export function listActivePaymentTerms(
 
 export function listPaymentTermsByStatus(
 	input: unknown,
-	options: MasterQueryOptions = {},
+	options: MasterDataCapabilityOptions = {},
 ): Promise<Result<PaymentTerm[]>> {
 	return resolveAsync(() => {
 		const parsed = parseMasterInput(
@@ -400,7 +399,7 @@ export function listPaymentTermsByStatus(
 
 export function listPaymentTermsUpdatedSince(
 	input: unknown,
-	options: MasterQueryOptions = {},
+	options: MasterDataCapabilityOptions = {},
 ): Promise<Result<PaymentTerm[]>> {
 	return resolveAsync(() => {
 		const parsed = parseMasterInput(

@@ -1,7 +1,7 @@
 import type { Result } from "@afenda/errors";
 import { requireMasterQueryPermission } from "../../authorization";
 import {
-	type MasterCommandOptions,
+	type MasterDataCapabilityOptions,
 	resolveCommandDeps,
 } from "../../command-options";
 import { orgQueryActorSchema } from "../../contracts/context";
@@ -57,7 +57,7 @@ const uomIdQuerySchema = orgQueryActorSchema.extend({ id: refUomIdSchema });
 const listRefUomsQuerySchema = orgQueryActorSchema;
 
 function authorizeRefQuery(
-	options: MasterCommandOptions,
+	options: MasterDataCapabilityOptions,
 	input: { organizationId: string; actorUserId: string },
 	query: MasterQueryId,
 ): Promise<Result<void>> {
@@ -71,7 +71,7 @@ function authorizeRefQuery(
 
 export async function getRefCountryByCode(
 	input: unknown,
-	options: MasterCommandOptions = {},
+	options: MasterDataCapabilityOptions = {},
 ): Promise<Result<RefCountry | null>> {
 	const parsed = parseMasterInput(
 		countryCodeQuerySchema,
@@ -96,7 +96,7 @@ export async function getRefCountryByCode(
 
 export async function getRefCurrencyByCode(
 	input: unknown,
-	options: MasterCommandOptions = {},
+	options: MasterDataCapabilityOptions = {},
 ): Promise<Result<RefCurrency | null>> {
 	const parsed = parseMasterInput(
 		currencyCodeQuerySchema,
@@ -121,7 +121,7 @@ export async function getRefCurrencyByCode(
 
 export async function getRefLanguageByCode(
 	input: unknown,
-	options: MasterCommandOptions = {},
+	options: MasterDataCapabilityOptions = {},
 ): Promise<Result<RefLanguage | null>> {
 	const parsed = parseMasterInput(
 		languageCodeQuerySchema,
@@ -146,7 +146,7 @@ export async function getRefLanguageByCode(
 
 export async function getRefTimeZoneByIana(
 	input: unknown,
-	options: MasterCommandOptions = {},
+	options: MasterDataCapabilityOptions = {},
 ): Promise<Result<RefTimeZone | null>> {
 	const parsed = parseMasterInput(
 		ianaQuerySchema,
@@ -171,7 +171,7 @@ export async function getRefTimeZoneByIana(
 
 export async function getRefUomDimensionByCode(
 	input: unknown,
-	options: MasterCommandOptions = {},
+	options: MasterDataCapabilityOptions = {},
 ): Promise<Result<RefUomDimension | null>> {
 	const parsed = parseMasterInput(
 		uomDimensionCodeQuerySchema,
@@ -196,7 +196,7 @@ export async function getRefUomDimensionByCode(
 
 export async function getRefUomById(
 	input: unknown,
-	options: MasterCommandOptions = {},
+	options: MasterDataCapabilityOptions = {},
 ): Promise<Result<RefUom | null>> {
 	const parsed = parseMasterInput(
 		uomIdQuerySchema,
@@ -219,7 +219,7 @@ export async function getRefUomById(
 
 export async function getRefUomByCode(
 	input: unknown,
-	options: MasterCommandOptions = {},
+	options: MasterDataCapabilityOptions = {},
 ): Promise<Result<RefUom | null>> {
 	const parsed = parseMasterInput(
 		uomCodeQuerySchema,
@@ -242,7 +242,7 @@ export async function getRefUomByCode(
 
 export async function listRefUoms(
 	input: unknown,
-	options: MasterCommandOptions = {},
+	options: MasterDataCapabilityOptions = {},
 ): Promise<Result<RefUom[]>> {
 	const parsed = parseMasterInput(
 		listRefUomsQuerySchema,

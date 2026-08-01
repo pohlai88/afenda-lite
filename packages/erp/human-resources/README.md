@@ -163,7 +163,7 @@ pnpm governance:packages
 
 **Allowance/deduction four-way ownership (Slice 8.6):** HR entitlement/agreement → payroll calculation → accounting posting → payments disbursement. SSOT: [allowance-deduction-ownership.md](../../../docs-V2/_scratch/erp/allowance-deduction-ownership.md).
 
-**Dependencies:** `@afenda/db`, `@afenda/errors`, `@afenda/events`, `@afenda/master-data`, `@afenda/audit`.
+**Dependencies:** `@afenda/db`, `@afenda/errors`, `@afenda/events`, `@afenda/audit`. Cross-domain reference capabilities such as currency and organization dimensions are injected by the application composition root; Human Resources does not import master-data persistence or adapters.
 
 ## Authority
 

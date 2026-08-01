@@ -67,8 +67,8 @@ describe("public landing (PL-S2)", () => {
 		const landing = source("features/landing/the-machine-landing.tsx");
 		const stage = source("features/landing/the-machine-landing-stage.tsx");
 		for (const banned of [
-			"OperatorPlatformShell",
-			"OperatorPlatformChrome",
+			"WorkspacePlatformShell",
+			"WorkspacePlatformChrome",
 			"resolveOperatorShellNav",
 			"@afenda/db",
 		] as const) {

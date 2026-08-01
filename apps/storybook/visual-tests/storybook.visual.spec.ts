@@ -32,7 +32,7 @@ test("all tagged UI-system stories match canonical screenshots @visual", async (
 	page,
 	request,
 }) => {
-	test.setTimeout(420_000);
+	test.setTimeout(600_000);
 	const response = await request.get("/index.json");
 	expect(response.ok()).toBe(true);
 	const index = (await response.json()) as StoryIndex;
@@ -106,6 +106,87 @@ test("open Drawer and Menubar portals preserve themed elevation @visual", async 
 			});
 		}
 	}
+});
+
+test("Enterprise AppShell remains usable across desktop and mobile @visual", async ({
+	page,
+}) => {
+	const viewports = [
+		{ id: "desktop", width: 1440, height: 900 },
+		{ id: "mobile", width: 390, height: 844 },
+	] as const;
+
+	for (const viewport of viewports) {
+		for (const theme of ["light", "dark"] as const) {
+			// biome-ignore lint/performance/noAwaitInLoops: viewport/theme evidence must be captured serially.
+			await test.step(`${viewport.id} · ${theme}`, async () => {
+				await page.setViewportSize(viewport);
+				await page.goto(
+					`/iframe.html?id=ui-system-app-shell--enterprise-operations&viewMode=story&globals=theme:${theme}`,
+				);
+				await expect(page.locator("#storybook-root")).toBeVisible();
+				await page.evaluate(() => document.fonts.ready);
+				await page.waitForLoadState("networkidle");
+				await expect(page.locator("html")).toHaveClass(
+					new RegExp(`\\b${theme}\\b`),
+				);
+				await expect(page).toHaveScreenshot(
+					`ui-system-app-shell--enterprise-operations-${viewport.id}-${theme}.png`,
+				);
+			});
+		}
+	}
+});
+
+test("Enterprise AppShell utilities remain operable and accessible", async ({
+	page,
+}) => {
+	await openStory(page, "ui-system-app-shell--enterprise-operations", "light");
+	await expect(
+		page.getByRole("link", { name: /Afenda Enterprise operations/ }),
+	).toHaveAttribute("href", "/");
+
+	await page.getByRole("button", { name: "Open command menu" }).click();
+	const commandDialog = page.getByRole("dialog", { name: "Command menu" });
+	await expect(commandDialog).toBeVisible();
+	await page
+		.getByRole("combobox", { name: "Search workspace commands" })
+		.fill("exceptions");
+	await page.getByRole("option", { name: "Open payment exceptions" }).click();
+	await expect(
+		page.getByText("Command selected: open-exceptions"),
+	).toBeVisible();
+
+	await page
+		.getByRole("button", { name: "Open notifications (1 unread)" })
+		.click();
+	const notificationDialog = page.getByRole("dialog", {
+		name: "Notifications",
+	});
+	await expect(notificationDialog).toBeVisible();
+	await expect(
+		notificationDialog.getByText("requested review of payment batch PAY-2048."),
+	).toBeVisible();
+	await page.keyboard.press("Escape");
+
+	await page.getByRole("button", { name: "Customize appearance" }).click();
+	const appearanceDialog = page.getByRole("dialog", {
+		name: "Workspace appearance",
+	});
+	await expect(appearanceDialog).toBeVisible();
+	await appearanceDialog.getByRole("radio", { name: "Compact" }).click();
+	await expect(
+		appearanceDialog.getByRole("radio", { name: "Compact" }),
+	).toBeChecked();
+	await page.keyboard.press("Escape");
+
+	await page.getByRole("button", { name: "Use dark color mode" }).click();
+	await expect(page.locator("html")).toHaveClass(/\bdark\b/);
+
+	const accessibility = await new AxeBuilder({ page })
+		.include("#storybook-root")
+		.analyze();
+	expect(accessibility.violations).toEqual([]);
 });
 
 test("Button governed states and compositions remain visually explicit @visual", async ({

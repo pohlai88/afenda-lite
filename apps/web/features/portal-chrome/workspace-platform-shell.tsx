@@ -6,27 +6,36 @@ import {
 } from "@afenda/ui-system";
 import { cookies } from "next/headers";
 import type { ReactNode } from "react";
+import {
+	resolveClientShellNav,
+	resolveOperatorShellNav,
+} from "@/features/portal-chrome/resolve-shell-access";
+import {
+	WorkspacePlatformChrome,
+	type WorkspacePlatformScope,
+} from "@/features/portal-chrome/workspace-platform-chrome";
 
-import { OperatorPlatformChrome } from "@/features/portal-chrome/operator-platform-chrome";
-import { resolveOperatorShellNav } from "@/features/portal-chrome/resolve-shell-access";
-
-interface OperatorPlatformShellProps {
+interface WorkspacePlatformShellProps {
 	children: ReactNode;
+	scope: WorkspacePlatformScope;
 }
 
 /**
- * Shared ERP operator platform shell (N16 · ARCH-015/018).
- * Composes Identity permission ports for nav access; vertical pages supply body.
- * Reads sidebar cookie on the server so `defaultOpen` matches first paint.
+ * Canonical authenticated ERP shell. Both client and operator workspaces share
+ * one frame; scope selects only the permission-filtered navigation catalogue.
  */
-export async function OperatorPlatformShell({
+export async function WorkspacePlatformShell({
 	children,
-}: OperatorPlatformShellProps) {
+	scope,
+}: WorkspacePlatformShellProps) {
 	const [session, cookieStore] = await Promise.all([
 		authServer.session.get(),
 		cookies(),
 	]);
-	const navItems = await resolveOperatorShellNav(session);
+	const navItems =
+		scope === "operator"
+			? await resolveOperatorShellNav(session)
+			: await resolveClientShellNav(session);
 	const sidebarCookie = cookieStore.get(SIDEBAR_COOKIE_NAME)?.value;
 	const defaultSidebarOpen = sidebarCookie !== "false";
 	const initialSettings = parseApplicationShellSettings(
@@ -34,13 +43,15 @@ export async function OperatorPlatformShell({
 	);
 
 	return (
-		<OperatorPlatformChrome
+		<WorkspacePlatformChrome
 			defaultSidebarOpen={defaultSidebarOpen}
 			initialSettings={initialSettings}
 			navItems={navItems}
 			orgId={session.orgId}
+			role={session.role}
+			scope={scope}
 		>
 			{children}
-		</OperatorPlatformChrome>
+		</WorkspacePlatformChrome>
 	);
 }

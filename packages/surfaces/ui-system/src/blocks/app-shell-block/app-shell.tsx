@@ -1,6 +1,14 @@
 "use client";
 
+import { ChevronRightIcon } from "lucide-react";
 import { type ComponentType, type ReactNode, useCallback } from "react";
+import type { CommandMenuGroup } from "../../app-shell/command-menu";
+import type { NotificationDropdownItem } from "../../app-shell/notification-dropdown";
+import {
+	Collapsible,
+	CollapsibleContent,
+	CollapsibleTrigger,
+} from "../../components/ui/collapsible";
 import {
 	Sidebar,
 	SidebarContent,
@@ -10,6 +18,7 @@ import {
 	SidebarHeader,
 	SidebarInset,
 	SidebarMenu,
+	SidebarMenuBadge,
 	SidebarMenuButton,
 	SidebarMenuItem,
 	SidebarMenuSub,
@@ -43,6 +52,9 @@ export type AppShellNavItem = Readonly<{
 	label: string;
 	href?: string;
 	activePath?: string;
+	badge?: string;
+	defaultOpen?: boolean;
+	icon?: ComponentType<{ className?: string }>;
 	items?: readonly AppShellNavItem[];
 }>;
 
@@ -56,7 +68,7 @@ export type AppShellProps = Readonly<{
 	children: ReactNode;
 	header?: AppShellHeaderConfig;
 	themeConfig?: {
-		brand?: { name: string; homeHref: string };
+		brand?: { name: string; homeHref: string; subtitle?: string };
 		sidebar?: { groupLabelStyle?: "uppercase" | "default" };
 	};
 	navConfig?: {
@@ -67,11 +79,21 @@ export type AppShellProps = Readonly<{
 	defaultSettings?: ApplicationShellSettings;
 	initialSettings?: ApplicationShellSettings;
 	defaultSidebarOpen?: boolean;
-	commandMenu?: { groups: readonly unknown[]; onCommand?: () => void };
-	notifications?: {
-		notifications: readonly { read?: boolean }[];
+	commandMenu?: {
+		groups: readonly CommandMenuGroup[];
+		onCommand?: (id: string) => void;
 	};
-	profile?: { name: string; initials?: string };
+	notifications?: {
+		emptyMessage?: string;
+		notifications: readonly NotificationDropdownItem[];
+		onDecision?: (id: string, decision: "accept" | "decline") => void;
+	};
+	profile?: {
+		actions?: readonly { id: string; label: string }[];
+		initials?: string;
+		name: string;
+		onAction?: (id: string) => void;
+	};
 	showScrollToTop?: boolean;
 	brand?: string;
 	currentPath?: string;
@@ -101,25 +123,34 @@ function renderItem(
 	currentPath: string,
 	LinkComponent: NavigationLinkComponent,
 ) {
+	const Icon = item.icon;
 	if (item.kind === "branch") {
-		const active = item.items?.some((child) => isActive(currentPath, child));
+		const active =
+			item.items?.some((child) => isActive(currentPath, child)) ?? false;
 		return (
-			<SidebarMenuItem key={item.id}>
-				<button
-					className="w-full rounded-md px-2 py-1.5 text-left text-sm"
-					data-state={active ? "open" : "closed"}
-					type="button"
-				>
-					{item.label}
-				</button>
-				{active ? (
-					<SidebarMenuSub>
-						{item.items?.map((child) =>
-							renderSubItem(child, currentPath, LinkComponent),
-						)}
-					</SidebarMenuSub>
-				) : null}
-			</SidebarMenuItem>
+			<Collapsible
+				asChild
+				className="group/collapsible"
+				defaultOpen={active || item.defaultOpen === true}
+				key={`${item.id}:${active}`}
+			>
+				<SidebarMenuItem>
+					<CollapsibleTrigger asChild>
+						<SidebarMenuButton isActive={active} tooltip={item.label}>
+							{Icon ? <Icon /> : null}
+							<span>{item.label}</span>
+							<ChevronRightIcon className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+						</SidebarMenuButton>
+					</CollapsibleTrigger>
+					<CollapsibleContent>
+						<SidebarMenuSub>
+							{item.items?.map((child) =>
+								renderSubItem(child, currentPath, LinkComponent),
+							)}
+						</SidebarMenuSub>
+					</CollapsibleContent>
+				</SidebarMenuItem>
+			</Collapsible>
 		);
 	}
 	if (item.href === undefined) {
@@ -130,7 +161,7 @@ function renderItem(
 		item.href.startsWith("http://") || item.href.startsWith("https://");
 	return (
 		<SidebarMenuItem key={item.id}>
-			<SidebarMenuButton asChild isActive={active}>
+			<SidebarMenuButton asChild isActive={active} tooltip={item.label}>
 				<LinkComponent
 					href={item.href}
 					{...(active ? { "aria-current": "page" } : {})}
@@ -138,9 +169,11 @@ function renderItem(
 						? { target: "_blank", rel: "noopener noreferrer" }
 						: {})}
 				>
-					{item.label}
+					{Icon ? <Icon /> : null}
+					<span>{item.label}</span>
 				</LinkComponent>
 			</SidebarMenuButton>
+			{item.badge ? <SidebarMenuBadge>{item.badge}</SidebarMenuBadge> : null}
 		</SidebarMenuItem>
 	);
 }
@@ -168,9 +201,10 @@ function renderSubItem(
 						? { target: "_blank", rel: "noopener noreferrer" }
 						: {})}
 				>
-					{item.label}
+					<span>{item.label}</span>
 				</LinkComponent>
 			</SidebarMenuSubButton>
+			{item.badge ? <SidebarMenuBadge>{item.badge}</SidebarMenuBadge> : null}
 		</SidebarMenuSubItem>
 	);
 }
@@ -182,6 +216,7 @@ type AppShellInnerProps = AppShellProps & {
 function AppShellInner({
 	brand,
 	children,
+	commandMenu,
 	currentPath,
 	resolvedDefaultSidebarOpen,
 	footerText,
@@ -216,6 +251,25 @@ function AppShellInner({
 	const unreadCount =
 		notifications?.notifications.filter((notification) => !notification.read)
 			.length ?? 0;
+	const brandName = brand ?? themeConfig?.brand?.name ?? "Afenda-Lite";
+	const brandContent = (
+		<>
+			<div
+				aria-hidden="true"
+				className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary font-semibold text-primary-foreground text-sm"
+			>
+				{brandName.slice(0, 1)}
+			</div>
+			<div className="min-w-0 group-data-[collapsible=icon]:hidden">
+				<p className="truncate font-semibold text-sm">{brandName}</p>
+				{themeConfig?.brand?.subtitle ? (
+					<p className="truncate text-sidebar-muted-foreground text-xs">
+						{themeConfig.brand.subtitle}
+					</p>
+				) : null}
+			</div>
+		</>
+	);
 	const handleSidebarOpenChange = useCallback(
 		(sidebarOpen: boolean) => setSettings({ ...settings, sidebarOpen }),
 		[setSettings, settings],
@@ -230,7 +284,20 @@ function AppShellInner({
 				collapsible={settings.sidebarCollapsible}
 				variant={settings.sidebarVariant}
 			>
-				<SidebarHeader>{brand ?? themeConfig?.brand?.name}</SidebarHeader>
+				<SidebarHeader>
+					{LinkComponent && themeConfig?.brand?.homeHref ? (
+						<LinkComponent
+							className="flex h-12 items-center gap-3 rounded-md px-2 outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+							href={themeConfig.brand.homeHref}
+						>
+							{brandContent}
+						</LinkComponent>
+					) : (
+						<div className="flex h-12 items-center gap-3 px-2">
+							{brandContent}
+						</div>
+					)}
+				</SidebarHeader>
 				<SidebarContent>
 					{sections.map((section) => (
 						<SidebarGroup key={section.id}>
@@ -256,14 +323,18 @@ function AppShellInner({
 						</SidebarGroup>
 					))}
 				</SidebarContent>
-				{footerText ? <div className="p-3 text-xs">{footerText}</div> : null}
+				{footerText ? (
+					<div className="truncate border-t p-3 text-sidebar-muted-foreground text-xs">
+						{footerText}
+					</div>
+				) : null}
 			</Sidebar>
 			<SidebarInset className="bg-background">
 				<AppShellHeader
+					{...(commandMenu === undefined ? {} : { commandMenu })}
 					header={shellHeader}
-					{...(profile?.name === undefined
-						? {}
-						: { profileName: profile.name })}
+					{...(notifications === undefined ? {} : { notifications })}
+					{...(profile === undefined ? {} : { profile })}
 					unreadCount={unreadCount}
 				/>
 				<main

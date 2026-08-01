@@ -1,3 +1,19 @@
+import type { Role } from "@afenda/auth/client";
+import {
+	BoxesIcon,
+	CreditCardIcon,
+	DatabaseIcon,
+	FileTextIcon,
+	HandCoinsIcon,
+	LandmarkIcon,
+	type LucideIcon,
+	PackageCheckIcon,
+	ReceiptTextIcon,
+	ShieldCheckIcon,
+	ShoppingCartIcon,
+	TruckIcon,
+	UsersIcon,
+} from "lucide-react";
 import { OPERATOR_ADMIN_PATH } from "@/features/auth/operator-paths";
 import type { ProductPermissionCode } from "@/modules/identity/domain/session-permission";
 
@@ -16,6 +32,48 @@ export type ShellNavModuleId =
 	| "human-resources";
 
 export type ShellNavKind = "module";
+
+export type ShellNavSectionId =
+	| "administration"
+	| "commercial"
+	| "operations"
+	| "finance"
+	| "people";
+
+export const SHELL_NAV_SECTIONS: readonly Readonly<{
+	id: ShellNavSectionId;
+	label: string;
+}>[] = [
+	{ id: "administration", label: "Administration" },
+	{ id: "commercial", label: "Commercial" },
+	{ id: "operations", label: "Operations" },
+	{ id: "finance", label: "Finance" },
+	{ id: "people", label: "People" },
+] as const;
+
+export const SHELL_MODULE_PRESENTATION = Object.freeze({
+	platform: { icon: ShieldCheckIcon, sectionId: "administration" },
+	"master-data": { icon: DatabaseIcon, sectionId: "administration" },
+	sales: { icon: ShoppingCartIcon, sectionId: "commercial" },
+	purchasing: { icon: ReceiptTextIcon, sectionId: "commercial" },
+	inventory: { icon: BoxesIcon, sectionId: "operations" },
+	receiving: { icon: PackageCheckIcon, sectionId: "operations" },
+	fulfillment: { icon: TruckIcon, sectionId: "operations" },
+	receivables: { icon: HandCoinsIcon, sectionId: "finance" },
+	payables: { icon: FileTextIcon, sectionId: "finance" },
+	payments: { icon: CreditCardIcon, sectionId: "finance" },
+	accounting: { icon: LandmarkIcon, sectionId: "finance" },
+	"human-resources": { icon: UsersIcon, sectionId: "people" },
+} satisfies Record<
+	ShellNavModuleId,
+	Readonly<{ icon: LucideIcon; sectionId: ShellNavSectionId }>
+>);
+
+export const SHELL_ROLE_PRESENTATION = Object.freeze({
+	admin: { initials: "AD", label: "Administrator" },
+	operator: { initials: "OP", label: "Operator" },
+	client: { initials: "CL", label: "Client member" },
+} satisfies Record<Role, Readonly<{ initials: string; label: string }>>);
 
 /**
  * Module-tagged shell navigation (ARCH-015 · ARCH-018).

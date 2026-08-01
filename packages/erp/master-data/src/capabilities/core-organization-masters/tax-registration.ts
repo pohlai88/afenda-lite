@@ -6,9 +6,8 @@ import {
 } from "../../authorization";
 import {
 	type MasterCommandOptions,
-	type MasterQueryOptions,
+	type MasterDataCapabilityOptions,
 	resolveCommandDeps,
-	resolveStore,
 } from "../../command-options";
 import {
 	MASTER_COMMAND_TAX_REGISTRATION_ACTIVATE,
@@ -438,7 +437,7 @@ export function restoreTaxRegistration(
 
 export async function getTaxRegistration(
 	input: unknown,
-	options: MasterQueryOptions = {},
+	options: MasterDataCapabilityOptions = {},
 ): Promise<Result<TaxRegistrationProjection | null>> {
 	const parsed = parseMasterInput(
 		getByIdInputSchema,
@@ -448,7 +447,7 @@ export async function getTaxRegistration(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const store = resolveStore(options.store);
+	const { store } = resolveCommandDeps(options);
 	const { authorization } = options;
 	const authorized = await requireMasterQueryPermission(authorization, {
 		organizationId: parsed.data.organizationId,
@@ -473,7 +472,7 @@ export async function getTaxRegistration(
 
 export async function listTaxRegistrations(
 	input: unknown,
-	options: MasterQueryOptions = {},
+	options: MasterDataCapabilityOptions = {},
 ): Promise<Result<TaxRegistrationProjection[]>> {
 	const parsed = parseMasterInput(
 		listTaxRegistrationsInputSchema,
@@ -483,7 +482,7 @@ export async function listTaxRegistrations(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const store = resolveStore(options.store);
+	const { store } = resolveCommandDeps(options);
 	const { authorization } = options;
 	const authorized = await requireMasterQueryPermission(authorization, {
 		organizationId: parsed.data.organizationId,
@@ -509,7 +508,7 @@ export async function listTaxRegistrations(
 
 export function listTaxRegistrationsUpdatedSince(
 	input: unknown,
-	options: MasterQueryOptions = {},
+	options: MasterDataCapabilityOptions = {},
 ): Promise<Result<TaxRegistrationProjection[]>> {
 	return resolveAsync(() => {
 		const parsed = parseMasterInput(
@@ -533,7 +532,7 @@ export function listTaxRegistrationsUpdatedSince(
 
 export async function findTaxRegistrationsByParty(
 	input: unknown,
-	options: MasterQueryOptions = {},
+	options: MasterDataCapabilityOptions = {},
 ): Promise<Result<TaxRegistrationProjection[]>> {
 	const parsed = parseMasterInput(
 		findTaxRegistrationsByPartyInputSchema,
@@ -543,7 +542,7 @@ export async function findTaxRegistrationsByParty(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const store = resolveStore(options.store);
+	const { store } = resolveCommandDeps(options);
 	const { authorization } = options;
 	const authorized = await requireMasterQueryPermission(authorization, {
 		organizationId: parsed.data.organizationId,
@@ -565,7 +564,7 @@ export async function findTaxRegistrationsByParty(
 
 export async function getSensitiveTaxRegistration(
 	input: unknown,
-	options: MasterQueryOptions = {},
+	options: MasterDataCapabilityOptions = {},
 ): Promise<Result<SensitiveTaxRegistrationProjection | null>> {
 	const parsed = parseMasterInput(
 		getByIdInputSchema,
@@ -575,7 +574,7 @@ export async function getSensitiveTaxRegistration(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const store = resolveStore(options.store);
+	const { store } = resolveCommandDeps(options);
 	const authorized = await requireMasterQueryPermission(options.authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
@@ -599,7 +598,7 @@ export async function getSensitiveTaxRegistration(
 
 export async function listSensitiveTaxRegistrations(
 	input: unknown,
-	options: MasterQueryOptions = {},
+	options: MasterDataCapabilityOptions = {},
 ): Promise<Result<SensitiveTaxRegistrationProjection[]>> {
 	const parsed = parseMasterInput(
 		listTaxRegistrationsInputSchema,
@@ -609,7 +608,7 @@ export async function listSensitiveTaxRegistrations(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const store = resolveStore(options.store);
+	const { store } = resolveCommandDeps(options);
 	const authorized = await requireMasterQueryPermission(options.authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,
@@ -634,7 +633,7 @@ export async function listSensitiveTaxRegistrations(
 
 export async function findSensitiveTaxRegistrationsByParty(
 	input: unknown,
-	options: MasterQueryOptions = {},
+	options: MasterDataCapabilityOptions = {},
 ): Promise<Result<SensitiveTaxRegistrationProjection[]>> {
 	const parsed = parseMasterInput(
 		findTaxRegistrationsByPartyInputSchema,
@@ -644,7 +643,7 @@ export async function findSensitiveTaxRegistrationsByParty(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const store = resolveStore(options.store);
+	const { store } = resolveCommandDeps(options);
 	const authorized = await requireMasterQueryPermission(options.authorization, {
 		organizationId: parsed.data.organizationId,
 		actorUserId: parsed.data.actorUserId,

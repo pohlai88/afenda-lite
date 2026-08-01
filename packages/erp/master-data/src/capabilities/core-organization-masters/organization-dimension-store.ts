@@ -80,6 +80,6 @@ export interface OrganizationDimensionStore {
 }
 
 export interface OrganizationDimensionOptions {
-	authorization?: MasterAuthorizationPort;
+	authorization?: MasterAuthorizationPort | undefined;
 	store?: OrganizationDimensionStore;
 }

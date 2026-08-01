@@ -263,7 +263,7 @@ function unsupportedSearchEntity(value: never): never {
  */
 export async function rebuildMasterDataSearchIndex(
 	input: unknown,
-	options: MasterCommandOptions & { searchCapability?: SearchCapability } = {},
+	options: MasterCommandOptions = {},
 ): Promise<Result<RebuildMasterDataSearchResult>> {
 	const parsed = parseMasterInput(
 		rebuildInputSchema,
@@ -322,7 +322,7 @@ export async function rebuildMasterDataSearchIndex(
 
 export async function searchMasterDataDocuments(
 	input: unknown,
-	options: MasterCommandOptions & { searchCapability?: SearchCapability } = {},
+	options: MasterCommandOptions = {},
 ): Promise<
 	Result<
 		ReadonlyArray<{

@@ -64,6 +64,17 @@ function oklch(value: string | null): { l: number; c: number; h: number } {
 	};
 }
 
+function oklabDistance(left: string | null, right: string | null): number {
+	const first = oklch(left);
+	const second = oklch(right);
+	const radians = (degrees: number) => (degrees * Math.PI) / 180;
+	const firstA = first.c * Math.cos(radians(first.h));
+	const firstB = first.c * Math.sin(radians(first.h));
+	const secondA = second.c * Math.cos(radians(second.h));
+	const secondB = second.c * Math.sin(radians(second.h));
+	return Math.hypot(first.l - second.l, firstA - secondA, firstB - secondB);
+}
+
 const themeBlock = blockBetween(tokens, "@theme inline {", "\n}");
 const rootStart = tokens.indexOf("\n:root {");
 const rootBlock = blockBetween(tokens, "\n:root {", "\n}");
@@ -154,6 +165,11 @@ const erpLight = {
 	"foreground-secondary": "oklch(0.32 0 0)",
 	"foreground-tertiary": "oklch(0.45 0 0)",
 	"foreground-disabled": "oklch(0.708 0 0)",
+	"data-series-1": "oklch(0.646 0.222 41.116)",
+	"data-series-2": "oklch(0.6 0.118 184.704)",
+	"data-series-3": "oklch(0.398 0.07 227.392)",
+	"data-series-4": "oklch(0.828 0.189 84.429)",
+	"data-series-5": "oklch(0.56 0.22 292)",
 	success: "oklch(0.527 0.154 150.069)",
 	"success-foreground": "oklch(0.985 0 0)",
 	"success-subtle": "oklch(1 0 0)",
@@ -210,9 +226,14 @@ const erpDark = {
 	"surface-sunken": "oklch(0.13 0 0)",
 	"surface-raised": "oklch(0.205 0 0)",
 	"surface-overlay": "oklch(0.235 0 0)",
-	"foreground-secondary": "oklch(0.87 0 0)",
-	"foreground-tertiary": "oklch(0.855 0 0)",
+	"foreground-secondary": "oklch(0.9 0 0)",
+	"foreground-tertiary": "oklch(0.85 0 0)",
 	"foreground-disabled": "oklch(0.556 0 0)",
+	"data-series-1": "oklch(0.72 0.18 41.116)",
+	"data-series-2": "oklch(0.75 0.15 170)",
+	"data-series-3": "oklch(0.68 0.18 240)",
+	"data-series-4": "oklch(0.86 0.15 84.429)",
+	"data-series-5": "oklch(0.627 0.265 303.9)",
 	success: "oklch(0.75 0.12 155)",
 	"success-foreground": "oklch(0.145 0 0)",
 	"success-subtle": "oklch(0.205 0 0)",
@@ -329,6 +350,28 @@ describe("@afenda/ui-system token contract", () => {
 		expect(declaration(lightPalette, "control-height")).toBe("2.25rem");
 		expect(declaration(darkPalette, "control-height")).toBe("2.25rem");
 		expect(declaration(lightPalette, "table-row-height")).toBe("2.75rem");
+	});
+
+	it.each([
+		["light", lightPalette],
+		["dark", darkPalette],
+	] as const)("keeps ERP %s data series perceptually separated", (_mode, palette) => {
+		const series = [1, 2, 3, 4, 5].map((index) =>
+			declaration(palette, `data-series-${index}`),
+		);
+
+		for (let left = 0; left < series.length; left += 1) {
+			for (let right = left + 1; right < series.length; right += 1) {
+				const distance = oklabDistance(
+					series[left] ?? null,
+					series[right] ?? null,
+				);
+				expect(
+					distance,
+					`data-series-${left + 1}/data-series-${right + 1}`,
+				).toBeGreaterThanOrEqual(0.18);
+			}
+		}
 	});
 
 	it("keeps ERP surface roles low-chroma and ordered for each mode", () => {

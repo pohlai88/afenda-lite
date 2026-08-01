@@ -12,9 +12,19 @@ import { createProductionMutationPorts } from "./production-ports";
 import { resolveMasterDataStore } from "./resolve-store";
 import type { DependencyInspector } from "./types";
 
-export interface MasterCommandOptions {
+/** Durable dependency surface accepted by public master-data capabilities. */
+export interface MasterDataCapabilityOptions {
 	/** Composition-root injected — never import `@afenda/admin` here. */
 	authorization?: MasterAuthorizationPort | undefined;
+}
+
+export type PublicMasterDataCapability<TInput, TResult> = (
+	input: TInput,
+	options?: MasterDataCapabilityOptions,
+) => TResult;
+
+/** Package-internal execution dependencies; never export from the root facade. */
+export interface MasterCommandOptions extends MasterDataCapabilityOptions {
 	dependencyInspector?: DependencyInspector | undefined;
 	/** Package-internal import row context; never accept this from a public boundary. */
 	importMutation?: ImportMutationContext | undefined;
@@ -23,6 +33,18 @@ export interface MasterCommandOptions {
 	/** Optional derived search store for projectors (defaults to Drizzle). */
 	searchCapability?: SearchCapability | undefined;
 	store?: MasterDataStore | undefined;
+}
+
+export function definePublicMasterDataCapability<TInput, TResult>(
+	capability: (input: TInput, options?: MasterCommandOptions) => TResult,
+): PublicMasterDataCapability<TInput, TResult> {
+	return (input, options) => capability(input, options);
+}
+
+export function definePublicMasterDataQuery<TInput, TResult>(
+	capability: (input: TInput, options?: MasterQueryOptions) => TResult,
+): PublicMasterDataCapability<TInput, TResult> {
+	return (input, options) => capability(input, options);
 }
 
 export type MasterQueryOptions = Pick<

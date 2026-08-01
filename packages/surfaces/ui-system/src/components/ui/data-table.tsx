@@ -218,9 +218,9 @@ function DataTable<T extends object>({
 			return null;
 		}
 		return sortDirection === "asc" ? (
-			<ChevronUpIcon className="ml-1 h-4 w-4" />
+			<ChevronUpIcon aria-hidden="true" data-icon="inline-end" />
 		) : (
-			<ChevronDownIcon className="ml-1 h-4 w-4" />
+			<ChevronDownIcon aria-hidden="true" data-icon="inline-end" />
 		);
 	};
 
@@ -322,7 +322,7 @@ function DataTable<T extends object>({
 	const pages = pageWindow(currentPage, totalPages);
 
 	return (
-		<div className={cn("space-y-3", className)}>
+		<div className={cn("grid gap-3", className)}>
 			{bulkActions ? (
 				<BulkActionBar
 					actions={bulkActions}

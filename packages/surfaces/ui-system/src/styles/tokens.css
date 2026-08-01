@@ -38,6 +38,11 @@
 	--color-chart-3: var(--chart-3);
 	--color-chart-4: var(--chart-4);
 	--color-chart-5: var(--chart-5);
+	--color-data-series-1: var(--data-series-1);
+	--color-data-series-2: var(--data-series-2);
+	--color-data-series-3: var(--data-series-3);
+	--color-data-series-4: var(--data-series-4);
+	--color-data-series-5: var(--data-series-5);
 	--color-sidebar: var(--sidebar);
 	--color-sidebar-foreground: var(--sidebar-foreground);
 	--color-sidebar-primary: var(--sidebar-primary);
@@ -167,6 +172,13 @@
 	--foreground-secondary: oklch(0.32 0 0);
 	--foreground-tertiary: oklch(0.45 0 0);
 	--foreground-disabled: oklch(0.708 0 0);
+
+	/* ERP: categorical data series, distinct from operational status */
+	--data-series-1: oklch(0.646 0.222 41.116);
+	--data-series-2: oklch(0.6 0.118 184.704);
+	--data-series-3: oklch(0.398 0.07 227.392);
+	--data-series-4: oklch(0.828 0.189 84.429);
+	--data-series-5: oklch(0.56 0.22 292);
 
 	/* ERP: status colors are not action colors */
 	--success: oklch(0.527 0.154 150.069);
@@ -302,9 +314,16 @@
 	--surface-sunken: oklch(0.13 0 0);
 	--surface-raised: oklch(0.205 0 0);
 	--surface-overlay: oklch(0.235 0 0);
-	--foreground-secondary: oklch(0.87 0 0);
-	--foreground-tertiary: oklch(0.855 0 0);
+	--foreground-secondary: oklch(0.9 0 0);
+	--foreground-tertiary: oklch(0.85 0 0);
 	--foreground-disabled: oklch(0.556 0 0);
+
+	/* ERP: categorical data series, perceptually balanced for dark surfaces */
+	--data-series-1: oklch(0.72 0.18 41.116);
+	--data-series-2: oklch(0.75 0.15 170);
+	--data-series-3: oklch(0.68 0.18 240);
+	--data-series-4: oklch(0.86 0.15 84.429);
+	--data-series-5: oklch(0.627 0.265 303.9);
 
 	/* ERP: status colors are not action colors */
 	--success: oklch(0.75 0.12 155);

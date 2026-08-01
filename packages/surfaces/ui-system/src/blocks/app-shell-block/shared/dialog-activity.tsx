@@ -1,16 +1,17 @@
 "use client";
 
-import {
-	cloneElement,
-	isValidElement,
-	type MouseEvent,
-	type ReactNode,
-	useCallback,
-	useEffect,
-	useRef,
-	useState,
-} from "react";
+import { isValidElement, type ReactNode } from "react";
+import { Avatar, AvatarFallback } from "../../../components/ui/avatar";
 import { Badge } from "../../../components/ui/badge";
+import { Button } from "../../../components/ui/button";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
+} from "../../../components/ui/dialog";
 import { Empty } from "../../../components/ui/empty";
 import { ScrollArea } from "../../../components/ui/scroll-area";
 
@@ -37,101 +38,90 @@ export function ActivityDialog({
 	onOpenChange?: (open: boolean) => void;
 	trigger: ReactNode;
 }>) {
-	const [open, setOpen] = useState(false);
-	const lastTriggerRef = useRef<HTMLElement | null>(null);
-
-	const setDialogOpen = useCallback(
-		(nextOpen: boolean) => {
-			setOpen(nextOpen);
-			onOpenChange?.(nextOpen);
-			if (!nextOpen) {
-				lastTriggerRef.current?.focus();
-			}
-		},
-		[onOpenChange],
-	);
-	const openDialog = useCallback(() => setDialogOpen(true), [setDialogOpen]);
-
-	useEffect(() => {
-		if (!open) {
-			return;
-		}
-		const handleKeyDown = (event: KeyboardEvent) => {
-			if (event.key === "Escape") {
-				setDialogOpen(false);
-			}
-		};
-		document.addEventListener("keydown", handleKeyDown);
-		return () => document.removeEventListener("keydown", handleKeyDown);
-	}, [open, setDialogOpen]);
-
-	const triggerElement = isValidElement<{
-		onClick?: (event: MouseEvent) => void;
-	}>(trigger) ? (
-		cloneElement(trigger, {
-			onClick: (event: MouseEvent) => {
-				if (event.currentTarget instanceof HTMLElement) {
-					lastTriggerRef.current = event.currentTarget;
-				}
-				trigger.props.onClick?.(event);
-				setDialogOpen(true);
-			},
-		})
+	const triggerElement = isValidElement(trigger) ? (
+		trigger
 	) : (
-		<button onClick={openDialog} type="button">
+		<Button type="button" variant="outline">
 			{trigger}
-		</button>
+		</Button>
 	);
 
 	return (
-		<>
-			{triggerElement}
-			{open ? (
-				<dialog
-					aria-label="Activity"
-					className="fixed inset-0 z-50 bg-background/80 p-6"
-					open
-				>
-					<div className="mx-auto max-w-lg rounded-lg border bg-popover p-4 shadow-lg">
-						<h2>Activity</h2>
-						{activities.length === 0 ? (
-							<Empty title={emptyMessage} />
-						) : (
-							<ScrollArea className="max-h-96">
-								<ol aria-label="Recent activity">
-									{activities.map((activity) => {
-										const tags = Array.from(
-											new Set(
-												activity.tags?.map((tag) => tag.trim()).filter(Boolean),
-											),
-										);
-										return (
-											<li key={activity.id}>
-												<p>
-													<strong>{activity.actor.name}</strong>{" "}
-													{activity.summary}
+		<Dialog {...(onOpenChange === undefined ? {} : { onOpenChange })}>
+			<DialogTrigger asChild>{triggerElement}</DialogTrigger>
+			<DialogContent className="gap-0 p-0 sm:max-w-lg">
+				<DialogHeader className="border-b p-4 text-left">
+					<DialogTitle>Activity</DialogTitle>
+					<DialogDescription>
+						Recent record and workflow history.
+					</DialogDescription>
+				</DialogHeader>
+				{activities.length === 0 ? (
+					<Empty
+						description="New events will appear here when work is recorded."
+						size="sm"
+						title={emptyMessage}
+					/>
+				) : (
+					<ScrollArea className="max-h-[min(32rem,70vh)]">
+						<ol aria-label="Recent activity" className="flex flex-col">
+							{activities.map((activity) => {
+								const tags = Array.from(
+									new Set(
+										activity.tags?.map((tag) => tag.trim()).filter(Boolean),
+									),
+								);
+								const fallback =
+									activity.actor.initials ??
+									activity.actor.name.slice(0, 2).toUpperCase();
+								return (
+									<li
+										className="flex gap-3 border-b p-4 last:border-b-0"
+										key={activity.id}
+									>
+										<Avatar size="sm">
+											<AvatarFallback>{fallback}</AvatarFallback>
+										</Avatar>
+										<div className="min-w-0 flex-1">
+											<p className="text-sm">
+												<strong className="font-medium">
+													{activity.actor.name}
+												</strong>{" "}
+												{activity.summary}
+											</p>
+											<time
+												className="mt-1 block text-foreground-tertiary text-xs"
+												dateTime={activity.occurredAtDateTime}
+											>
+												{activity.occurredAt}
+											</time>
+											{activity.message ? (
+												<p className="mt-3 rounded-md bg-surface-sunken p-3 text-sm">
+													{activity.message}
 												</p>
-												<time dateTime={activity.occurredAtDateTime}>
-													{activity.occurredAt}
-												</time>
-												{activity.message ? <p>{activity.message}</p> : null}
-												{activity.fileName ? <p>{activity.fileName}</p> : null}
-												{tags.length > 0 ? (
-													<div>
-														{tags.map((tag) => (
-															<Badge key={tag}>{tag}</Badge>
-														))}
-													</div>
-												) : null}
-											</li>
-										);
-									})}
-								</ol>
-							</ScrollArea>
-						)}
-					</div>
-				</dialog>
-			) : null}
-		</>
+											) : null}
+											{activity.fileName ? (
+												<p className="mt-3 truncate rounded-md border px-3 py-2 font-mono text-xs">
+													{activity.fileName}
+												</p>
+											) : null}
+											{tags.length > 0 ? (
+												<div className="mt-3 flex flex-wrap gap-2">
+													{tags.map((tag) => (
+														<Badge key={tag} variant="secondary">
+															{tag}
+														</Badge>
+													))}
+												</div>
+											) : null}
+										</div>
+									</li>
+								);
+							})}
+						</ol>
+					</ScrollArea>
+				)}
+			</DialogContent>
+		</Dialog>
 	);
 }

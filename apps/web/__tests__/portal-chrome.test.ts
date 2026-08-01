@@ -11,11 +11,18 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	CLIENT_SHELL_NAV,
 	OPERATOR_SHELL_NAV,
+	SHELL_MODULE_PRESENTATION,
+	SHELL_NAV_SECTIONS,
 } from "../features/portal-chrome/nav-config";
 import {
 	resolveClientShellNav,
 	resolveOperatorShellNav,
 } from "../features/portal-chrome/resolve-shell-access";
+import {
+	buildWorkspaceCommandGroups,
+	buildWorkspaceNavigation,
+	findActiveWorkspaceItem,
+} from "../features/portal-chrome/workspace-platform-model";
 
 const webRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const uiSystemRoot = path.join(
@@ -105,9 +112,8 @@ describe("portal-chrome (N16)", () => {
 		const portalChromeSources = [
 			"features/portal-chrome/nav-config.ts",
 			"features/portal-chrome/resolve-shell-access.ts",
-			"features/portal-chrome/operator-platform-shell.tsx",
-			"features/portal-chrome/operator-platform-chrome.tsx",
-			"features/portal-chrome/client-workspace-nav.tsx",
+			"features/portal-chrome/workspace-platform-shell.tsx",
+			"features/portal-chrome/workspace-platform-chrome.tsx",
 		];
 
 		for (const file of portalChromeSources) {
@@ -116,17 +122,50 @@ describe("portal-chrome (N16)", () => {
 		}
 	});
 
-	it("wires operator layout to OperatorPlatformShell", () => {
+	it("wires both authenticated layouts to the canonical workspace shell", () => {
 		const layout = source("app/(operator)/layout.tsx");
-		expect(layout).toContain("OperatorPlatformShell");
+		const clientLayout = source("app/(client)/client/(workspace)/layout.tsx");
+		expect(layout).toContain("WorkspacePlatformShell");
+		expect(layout).toContain('scope="operator"');
 		expect(layout).toContain('requireRole("operator")');
+		expect(clientLayout).toContain("WorkspacePlatformShell");
+		expect(clientLayout).toContain('scope="client"');
+		expect(clientLayout).toContain('requireRole("client")');
 	});
 
-	it("wires client workspace layout to ClientWorkspaceNav", () => {
-		const layout = source("app/(client)/client/(workspace)/layout.tsx");
-		expect(layout).toContain("ClientWorkspaceNav");
-		expect(layout).toContain('requireRole("client")');
-		expect(layout).toContain('className="min-h-dvh bg-background"');
+	it("derives grouped module icons from one presentation registry", () => {
+		expect(SHELL_NAV_SECTIONS.map((section) => section.id)).toEqual([
+			"administration",
+			"commercial",
+			"operations",
+			"finance",
+			"people",
+		]);
+		expect(SHELL_MODULE_PRESENTATION.accounting.sectionId).toBe("finance");
+		expect(SHELL_MODULE_PRESENTATION.inventory.sectionId).toBe("operations");
+		expect(SHELL_MODULE_PRESENTATION["human-resources"].sectionId).toBe(
+			"people",
+		);
+	});
+
+	it("derives navigation, commands, and longest active route from one input", () => {
+		const navItems = OPERATOR_SHELL_NAV.filter((item) =>
+			["org-admin", "payables", "accounting"].includes(item.id),
+		);
+		const sections = buildWorkspaceNavigation(navItems);
+		const commands = buildWorkspaceCommandGroups(navItems, sections);
+
+		expect(sections.map((section) => section.id)).toEqual([
+			"administration",
+			"finance",
+		]);
+		expect(commands.map((group) => group.id)).toEqual([
+			"administration",
+			"finance",
+		]);
+		expect(
+			findActiveWorkspaceItem(navItems, "/admin/payables/invoices")?.id,
+		).toBe("payables");
 	});
 
 	it("keeps authenticated workspaces on background and embeds segment states", () => {
@@ -151,9 +190,9 @@ describe("portal-chrome (N16)", () => {
 	});
 
 	it("passes server-read sidebar cookie into SidebarProvider defaultOpen", () => {
-		const shell = source("features/portal-chrome/operator-platform-shell.tsx");
+		const shell = source("features/portal-chrome/workspace-platform-shell.tsx");
 		const chrome = source(
-			"features/portal-chrome/operator-platform-chrome.tsx",
+			"features/portal-chrome/workspace-platform-chrome.tsx",
 		);
 		expect(shell).toContain("SIDEBAR_COOKIE_NAME");
 		expect(shell).toContain("cookies()");
@@ -163,7 +202,7 @@ describe("portal-chrome (N16)", () => {
 
 	it("promotes shell-01 header DNA without locale/social/CDN chrome", () => {
 		const chrome = source(
-			"features/portal-chrome/operator-platform-chrome.tsx",
+			"features/portal-chrome/workspace-platform-chrome.tsx",
 		);
 		const header = uiSource("blocks/app-shell-block/header.tsx");
 		expect(header).toContain("Breadcrumb");
@@ -176,7 +215,7 @@ describe("portal-chrome (N16)", () => {
 
 	it("adopts the archived app-shell customizer without archive runtime imports", () => {
 		const chrome = source(
-			"features/portal-chrome/operator-platform-chrome.tsx",
+			"features/portal-chrome/workspace-platform-chrome.tsx",
 		);
 		const shellBlock = uiSource("blocks/app-shell-block/app-shell.tsx");
 		const settings = uiSource(

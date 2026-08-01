@@ -6,9 +6,9 @@ import {
 } from "../../authorization";
 import {
 	type MasterCommandOptions,
-	type MasterQueryOptions,
+	type MasterDataCapabilityOptions,
 	resolveCommandDeps,
-	resolveStore,
+	type resolveStore,
 } from "../../command-options";
 import {
 	MASTER_COMMAND_ITEM_GROUP_ACTIVATE,
@@ -302,7 +302,7 @@ export function retireItemGroup(
 
 export async function resolveItemGroupPath(
 	input: unknown,
-	options: MasterQueryOptions = {},
+	options: MasterDataCapabilityOptions = {},
 ): Promise<Result<ItemGroupPath | null>> {
 	const parsed = parseMasterInput(
 		getByIdInputSchema,
@@ -312,7 +312,7 @@ export async function resolveItemGroupPath(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const store = resolveStore(options.store);
+	const { store } = resolveCommandDeps(options);
 	const { authorization } = options;
 	const authorized = await requireMasterQueryPermission(authorization, {
 		organizationId: parsed.data.organizationId,
@@ -351,7 +351,7 @@ export async function resolveItemGroupPath(
 
 export async function getItemGroupById(
 	input: unknown,
-	options: MasterQueryOptions = {},
+	options: MasterDataCapabilityOptions = {},
 ): Promise<Result<ItemGroup | null>> {
 	const parsed = parseMasterInput(
 		getByIdInputSchema,
@@ -361,7 +361,7 @@ export async function getItemGroupById(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const store = resolveStore(options.store);
+	const { store } = resolveCommandDeps(options);
 	const { authorization } = options;
 	const authorized = await requireMasterQueryPermission(authorization, {
 		organizationId: parsed.data.organizationId,
@@ -376,7 +376,7 @@ export async function getItemGroupById(
 
 export async function getItemGroupByCode(
 	input: unknown,
-	options: MasterQueryOptions = {},
+	options: MasterDataCapabilityOptions = {},
 ): Promise<Result<ItemGroup | null>> {
 	const parsed = parseMasterInput(
 		getByCodeInputSchema,
@@ -386,7 +386,7 @@ export async function getItemGroupByCode(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const store = resolveStore(options.store);
+	const { store } = resolveCommandDeps(options);
 	const { authorization } = options;
 	const authorized = await requireMasterQueryPermission(authorization, {
 		organizationId: parsed.data.organizationId,
@@ -408,7 +408,7 @@ export async function getItemGroupByCode(
 
 export async function existsItemGroupByCode(
 	input: unknown,
-	options: MasterQueryOptions = {},
+	options: MasterDataCapabilityOptions = {},
 ): Promise<Result<boolean>> {
 	const result = await getItemGroupByCode(input, options);
 	if (!result.ok) {
@@ -419,7 +419,7 @@ export async function existsItemGroupByCode(
 
 export async function listItemGroups(
 	input: unknown,
-	options: MasterQueryOptions = {},
+	options: MasterDataCapabilityOptions = {},
 ): Promise<Result<ItemGroup[]>> {
 	const parsed = parseMasterInput(
 		masterListOptionsSchema,
@@ -429,7 +429,7 @@ export async function listItemGroups(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const store = resolveStore(options.store);
+	const { store } = resolveCommandDeps(options);
 	const { authorization } = options;
 	const authorized = await requireMasterQueryPermission(authorization, {
 		organizationId: parsed.data.organizationId,
@@ -450,7 +450,7 @@ export async function listItemGroups(
 
 export function listActiveItemGroups(
 	input: unknown,
-	options: MasterQueryOptions = {},
+	options: MasterDataCapabilityOptions = {},
 ): Promise<Result<ItemGroup[]>> {
 	return resolveAsync(() => {
 		const parsed = parseMasterInput(
@@ -467,7 +467,7 @@ export function listActiveItemGroups(
 
 export function listItemGroupsByStatus(
 	input: unknown,
-	options: MasterQueryOptions = {},
+	options: MasterDataCapabilityOptions = {},
 ): Promise<Result<ItemGroup[]>> {
 	return resolveAsync(() => {
 		const parsed = parseMasterInput(
@@ -484,7 +484,7 @@ export function listItemGroupsByStatus(
 
 export function listItemGroupsUpdatedSince(
 	input: unknown,
-	options: MasterQueryOptions = {},
+	options: MasterDataCapabilityOptions = {},
 ): Promise<Result<ItemGroup[]>> {
 	return resolveAsync(() => {
 		const parsed = parseMasterInput(

@@ -81,7 +81,11 @@ export interface DocumentObjectResolverPort {
 }
 
 export interface CurrencyLookupPort {
-	exists: (currencyCode: string) => Promise<Result<boolean>>;
+	exists: (input: {
+		actorUserId: string;
+		currencyCode: string;
+		organizationId: string;
+	}) => Promise<Result<boolean>>;
 }
 
 export const HUMAN_RESOURCES_ORGANIZATION_DIMENSION_KINDS = [

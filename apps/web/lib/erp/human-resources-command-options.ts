@@ -7,6 +7,7 @@ import {
 	createHumanResourcesAuthorizationPort,
 	createHumanResourcesResourceAwareAuthorizationPort,
 } from "@/lib/erp/human-resources-authorization-port";
+import { createHumanResourcesCurrencyLookupPort } from "@/lib/erp/human-resources-currency-lookup-port";
 import { createHumanResourcesDocumentObjectResolverPort } from "@/lib/erp/human-resources-document-object-resolver-port";
 import { createHumanResourcesDocumentReferencePort } from "@/lib/erp/human-resources-document-reference-port";
 import { createHumanResourcesIdentityResolverPort } from "@/lib/erp/human-resources-identity-resolver-port";
@@ -22,6 +23,7 @@ export function createHumanResourcesCommandOptions(): HumanResourcesCommandOptio
 	const observability = createProductionHrObservabilityPorts();
 	return {
 		authorization: createHumanResourcesAuthorizationPort(),
+		currency: createHumanResourcesCurrencyLookupPort(),
 		resourceAwareAuthorization:
 			createHumanResourcesResourceAwareAuthorizationPort(),
 		identityResolver: createHumanResourcesIdentityResolverPort(),

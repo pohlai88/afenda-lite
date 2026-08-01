@@ -331,8 +331,13 @@ export async function projectCompensationRecord<
 export async function assertCurrencyExists(
 	currency: CurrencyLookupPort,
 	currencyCode: string,
+	actor: Pick<ActorScoped, "actorUserId" | "organizationId">,
 ): Promise<Result<void>> {
-	const exists = await currency.exists(currencyCode);
+	const exists = await currency.exists({
+		actorUserId: actor.actorUserId,
+		currencyCode,
+		organizationId: actor.organizationId,
+	});
 	if (!exists.ok) {
 		return exists;
 	}

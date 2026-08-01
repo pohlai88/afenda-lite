@@ -111,6 +111,7 @@ export function createEmployeeCompensation(
 			const currencyCheck = await assertCurrencyExists(
 				currency,
 				data.currencyCode,
+				data,
 			);
 			if (!currencyCheck.ok) {
 				return currencyCheck;
@@ -166,6 +167,7 @@ export function amendEmployeeCompensation(
 				const currencyCheck = await assertCurrencyExists(
 					currency,
 					data.currencyCode,
+					data,
 				);
 				if (!currencyCheck.ok) {
 					return currencyCheck;
@@ -234,6 +236,7 @@ export function scheduleEmployeeCompensationChange(
 			const currencyCheck = await assertCurrencyExists(
 				currency,
 				data.currencyCode,
+				data,
 			);
 			if (!currencyCheck.ok) {
 				return currencyCheck;
@@ -319,6 +322,7 @@ export function correctEmployeeCompensation(
 			const currencyCheck = await assertCurrencyExists(
 				currency,
 				data.currencyCode,
+				data,
 			);
 			if (!currencyCheck.ok) {
 				return currencyCheck;

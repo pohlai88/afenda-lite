@@ -1,7 +1,7 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { NotificationDropdown } from "../src/app-shell/notificaiton-dropdown";
+import { NotificationDropdown } from "../src/app-shell/notification-dropdown";
 import { ProfileDropdown } from "../src/app-shell/profile-dropdown";
 import { Button } from "../src/components/ui/button";
 
@@ -45,8 +45,7 @@ describe("app-shell utilities", () => {
 		).toBeVisible();
 	});
 
-	it("does not expose profile actions without an implementation", async () => {
-		const user = userEvent.setup();
+	it("does not expose profile actions without an implementation", () => {
 		render(
 			<ProfileDropdown
 				actions={[{ id: "preferences", label: "Preferences" }]}
@@ -55,9 +54,10 @@ describe("app-shell utilities", () => {
 			/>,
 		);
 
-		await user.click(
-			screen.getByRole("button", { name: "Open profile menu for John Tan" }),
-		);
+		expect(screen.getByLabelText("Signed in as John Tan")).toBeVisible();
+		expect(
+			screen.queryByRole("button", { name: "Open profile menu for John Tan" }),
+		).not.toBeInTheDocument();
 		expect(
 			screen.queryByRole("menuitem", { name: "Preferences" }),
 		).not.toBeInTheDocument();

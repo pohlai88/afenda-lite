@@ -6,9 +6,9 @@ import {
 } from "../../authorization";
 import {
 	type MasterCommandOptions,
-	type MasterQueryOptions,
+	type MasterDataCapabilityOptions,
 	resolveCommandDeps,
-	resolveStore,
+	type resolveStore,
 } from "../../command-options";
 import {
 	MASTER_COMMAND_ITEM_ACTIVATE,
@@ -343,7 +343,7 @@ export function restoreItem(
 
 export async function getItemById(
 	input: unknown,
-	options: MasterQueryOptions = {},
+	options: MasterDataCapabilityOptions = {},
 ): Promise<Result<Item | null>> {
 	const parsed = parseMasterInput(
 		getByIdInputSchema,
@@ -353,7 +353,7 @@ export async function getItemById(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const store = resolveStore(options.store);
+	const { store } = resolveCommandDeps(options);
 	const { authorization } = options;
 	const authorized = await requireMasterQueryPermission(authorization, {
 		organizationId: parsed.data.organizationId,
@@ -368,7 +368,7 @@ export async function getItemById(
 
 export async function getItemByCode(
 	input: unknown,
-	options: MasterQueryOptions = {},
+	options: MasterDataCapabilityOptions = {},
 ): Promise<Result<Item | null>> {
 	const parsed = parseMasterInput(
 		getByCodeInputSchema,
@@ -378,7 +378,7 @@ export async function getItemByCode(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const store = resolveStore(options.store);
+	const { store } = resolveCommandDeps(options);
 	const { authorization } = options;
 	const authorized = await requireMasterQueryPermission(authorization, {
 		organizationId: parsed.data.organizationId,
@@ -400,7 +400,7 @@ export async function getItemByCode(
 
 export async function existsItemByCode(
 	input: unknown,
-	options: MasterQueryOptions = {},
+	options: MasterDataCapabilityOptions = {},
 ): Promise<Result<boolean>> {
 	const result = await getItemByCode(input, options);
 	if (!result.ok) {
@@ -411,7 +411,7 @@ export async function existsItemByCode(
 
 export async function listItems(
 	input: unknown,
-	options: MasterQueryOptions = {},
+	options: MasterDataCapabilityOptions = {},
 ): Promise<Result<Item[]>> {
 	const parsed = parseMasterInput(
 		masterListOptionsSchema,
@@ -421,7 +421,7 @@ export async function listItems(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const store = resolveStore(options.store);
+	const { store } = resolveCommandDeps(options);
 	const { authorization } = options;
 	const authorized = await requireMasterQueryPermission(authorization, {
 		organizationId: parsed.data.organizationId,
@@ -442,7 +442,7 @@ export async function listItems(
 
 export function listActiveItems(
 	input: unknown,
-	options: MasterQueryOptions = {},
+	options: MasterDataCapabilityOptions = {},
 ): Promise<Result<Item[]>> {
 	return resolveAsync(() => {
 		const parsed = parseMasterInput(
@@ -459,7 +459,7 @@ export function listActiveItems(
 
 export function listItemsByStatus(
 	input: unknown,
-	options: MasterQueryOptions = {},
+	options: MasterDataCapabilityOptions = {},
 ): Promise<Result<Item[]>> {
 	return resolveAsync(() => {
 		const parsed = parseMasterInput(
@@ -476,7 +476,7 @@ export function listItemsByStatus(
 
 export function listItemsUpdatedSince(
 	input: unknown,
-	options: MasterQueryOptions = {},
+	options: MasterDataCapabilityOptions = {},
 ): Promise<Result<Item[]>> {
 	return resolveAsync(() => {
 		const parsed = parseMasterInput(
@@ -493,7 +493,7 @@ export function listItemsUpdatedSince(
 
 export async function listItemsByGroup(
 	input: unknown,
-	options: MasterQueryOptions = {},
+	options: MasterDataCapabilityOptions = {},
 ): Promise<Result<Item[]>> {
 	const parsed = parseMasterInput(
 		listItemsByGroupInputSchema,
@@ -503,7 +503,7 @@ export async function listItemsByGroup(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const store = resolveStore(options.store);
+	const { store } = resolveCommandDeps(options);
 	const { authorization } = options;
 	const authorized = await requireMasterQueryPermission(authorization, {
 		organizationId: parsed.data.organizationId,

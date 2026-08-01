@@ -1,7 +1,7 @@
 import { authServer } from "@afenda/auth";
 import type { ReactNode } from "react";
 
-import { OperatorPlatformShell } from "@/features/portal-chrome/operator-platform-shell";
+import { WorkspacePlatformShell } from "@/features/portal-chrome/workspace-platform-shell";
 
 export const dynamic = "force-dynamic";
 
@@ -16,5 +16,7 @@ export default async function OperatorLayout({
 	children: ReactNode;
 }) {
 	await authServer.session.requireRole("operator");
-	return <OperatorPlatformShell>{children}</OperatorPlatformShell>;
+	return (
+		<WorkspacePlatformShell scope="operator">{children}</WorkspacePlatformShell>
+	);
 }

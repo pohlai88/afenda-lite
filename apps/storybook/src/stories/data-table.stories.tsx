@@ -339,6 +339,7 @@ function InteractiveApprovalTable({
 			getRowId={invoiceRowId}
 			onSelectionChange={setSelected}
 			selectable
+			selectedRowIds={selected}
 		/>
 	);
 }
@@ -653,7 +654,7 @@ export const StatesAndAccessibility: Story = {
 		});
 		firstRowCheckbox.focus();
 		await expect(firstRowCheckbox).toHaveFocus();
-		await userEvent.keyboard(" ");
+		await userEvent.keyboard("[Space]");
 		await expect(firstRowCheckbox).toBeChecked();
 
 		await expect(

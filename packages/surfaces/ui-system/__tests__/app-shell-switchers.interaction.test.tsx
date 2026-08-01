@@ -21,18 +21,26 @@ function TestLogo({ className }: { className?: string }) {
 function TestLink({
 	"aria-current": ariaCurrent,
 	children,
+	className,
 	href,
 	rel,
 	target,
 }: {
 	children: ReactNode;
+	className?: string;
 	href: string;
 	"aria-current"?: "page";
 	rel?: string;
 	target?: "_blank" | "_self";
 }) {
 	return (
-		<a aria-current={ariaCurrent} href={href} rel={rel} target={target}>
+		<a
+			aria-current={ariaCurrent}
+			className={className}
+			href={href}
+			rel={rel}
+			target={target}
+		>
 			{children}
 		</a>
 	);
@@ -143,6 +151,10 @@ describe("app-shell switchers", () => {
 				.getAllByRole("link", { name: "Dashboard" })
 				.find((element) => element instanceof HTMLAnchorElement),
 		).toHaveAttribute("aria-current", "page");
+		expect(screen.getByRole("link", { name: "Afenda" })).toHaveAttribute(
+			"href",
+			"/",
+		);
 		await user.click(
 			screen.getByRole("button", { name: "Customize appearance" }),
 		);
@@ -203,7 +215,8 @@ describe("app-shell switchers", () => {
 		await waitFor(() => expect(document.documentElement).toHaveClass("dark"));
 	});
 
-	it("keeps command access responsive and orders shell utilities consistently", () => {
+	it("keeps command access responsive and orders shell utilities consistently", async () => {
+		const user = userEvent.setup();
 		render(
 			<AppShell
 				commandMenu={{ groups: [], onCommand: vi.fn() }}
@@ -225,7 +238,12 @@ describe("app-shell switchers", () => {
 						},
 					],
 				}}
-				profile={{ name: "John Doe", initials: "JD" }}
+				profile={{
+					name: "John Doe",
+					initials: "JD",
+					actions: [{ id: "profile", label: "Profile" }],
+					onAction: vi.fn(),
+				}}
 				showScrollToTop={false}
 				themeConfig={{
 					brand: { name: "Afenda", homeHref: "/" },
@@ -249,10 +267,17 @@ describe("app-shell switchers", () => {
 		expect(utilityLabels).toEqual([
 			"Open command menu",
 			"Open notifications (1 unread)",
-			"Toggle color mode",
+			"Use dark color mode",
 			"Customize appearance",
 			"Open profile menu for John Doe",
 		]);
+
+		const colorModeToggle = screen.getByRole("button", {
+			name: "Use dark color mode",
+		});
+		await user.click(colorModeToggle);
+		await waitFor(() => expect(document.documentElement).toHaveClass("dark"));
+		expect(colorModeToggle).toHaveAccessibleName("Use light color mode");
 	});
 
 	it("matches configured query links and secures external navigation", () => {

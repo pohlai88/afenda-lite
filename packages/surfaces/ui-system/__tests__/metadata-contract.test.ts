@@ -214,6 +214,20 @@ function repositorySnapshot(): UiRepositorySnapshot {
 		componentSources[relativePath] = source;
 		exportsBySource[relativePath] = exportedNames(source, name);
 	}
+	for (const component of UI_SYSTEM_CATALOG.components) {
+		if (componentSources[component.sourceModule] !== undefined) {
+			continue;
+		}
+		const source = readFileSync(
+			path.join(packageRoot, component.sourceModule),
+			"utf8",
+		);
+		componentSources[component.sourceModule] = source;
+		exportsBySource[component.sourceModule] = exportedNames(
+			source,
+			path.basename(component.sourceModule),
+		);
+	}
 	const packageSource = readFileSync(
 		path.join(packageRoot, "package.json"),
 		"utf8",

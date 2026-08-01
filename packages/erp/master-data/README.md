@@ -29,7 +29,7 @@ Use this package from Platform and app server code when creating or mutating org
 
 ## Consume
 
-Workspace dependency — import from the root barrel:
+Workspace dependency — import domain commands, queries, contracts, and projections from the root barrel. Persistence stores and construction helpers are implementation details; application composition imports the intentional Drizzle adapter subpath instead.
 
 ```ts
 import { createParty, createPartyRole, activatePartyRole, activateParty } from "@afenda/master-data";
@@ -171,7 +171,7 @@ Required MD-0.1 files:
 | Kernel barrel/contracts | `src/index.ts` · `src/types.ts` · `src/module-ids.ts` · `src/module.manifest.ts` · `src/permissions.ts` · `src/authorization.ts` · `src/command-options.ts` · `src/parse-input.ts` · `src/ports.ts` |
 | Canonical domain contracts | `src/contracts/context.ts` · `src/contracts/reasons.ts` · `src/capabilities/core-organization-masters/normalized-code.ts` · `src/capabilities/core-organization-masters/version-cas.ts` · `src/capabilities/core-organization-masters/lifecycle.ts` |
 
-Do not add thin re-export facades to satisfy checklist filenames. The package root barrel exports the canonical implementations directly, and the canonical files above remain the tested contract surface. Do not duplicate capability logic into package-root files, and do not create a second `capabilities` directory.
+The package root exposes canonical behavior through `src/public-capabilities.ts`, a permanent type boundary that narrows execution options to authorization without duplicating domain logic. Internal commands, stores, ports, and adapters remain package-owned implementation surfaces. Do not create another facade style, duplicate capability behavior into package-root files, or create a second `capabilities` directory.
 
 Boundary evidence is pinned by `__tests__/package-kernel.test.ts`:
 
@@ -180,12 +180,12 @@ Boundary evidence is pinned by `__tests__/package-kernel.test.ts`:
 | Next/apps isolation | No Next.js imports, `@/*` imports, `apps/*` imports, or relative app imports in package source |
 | ERP peer isolation | No imports from transactional ERP peer packages |
 | Transaction boundary | No `transaction-module` imports |
-| Root barrel | `src/index.ts` starts with `server-only` and does not export raw Drizzle adapters/classes |
+| Root barrel | `src/index.ts` starts with `server-only`; every callable signature rejects internal command/query/organization-dimension options and exports no raw stores, persistence records, store resolvers, production-port constructors, or Drizzle factories |
 | Capability layout | Exactly one implementation root: `src/capabilities` |
 
 ## Store Interface Design
 
-The production store contract is composed from coherent capability stores rather than one unstructured method bag: `ReferenceQueryStore`, `OrganizationDimensionStore`, `PartyStore`, `ItemGroupStore`, `ItemStore`, `WarehouseStore`, `CommercialMasterStore`, `ItemTemplateStore`, `ChangeRequestStore`, `ImportBatchStore`, and `MergeStore`.
+Internally, the production store contract is composed from coherent capability stores rather than one unstructured method bag: `ReferenceQueryStore`, `OrganizationDimensionStore`, `PartyStore`, `ItemGroupStore`, `ItemStore`, `WarehouseStore`, `CommercialMasterStore`, `ItemTemplateStore`, `ChangeRequestStore`, `ImportBatchStore`, and `MergeStore`. These store interfaces are not consumer APIs and are not exported from the package root.
 
 Commands should depend on the smallest required store slice through `Pick<...>` or the named capability interface. Do not add `executeMutation(name, payload)` or similar generic dispatch abstractions; master-data commands must keep domain-specific method names so tests, adapters, audit evidence, and type checking preserve business semantics.
 
@@ -266,12 +266,16 @@ Sensitive reads are separate operations and grants. `master_data.tax_registratio
 
 | Path | Role |
 |------|------|
-| `@afenda/master-data` | Commands · queries · Zod schemas · brands · permissions · reasons · `MasterDataStore` type · lifecycle/code helpers (no Drizzle class) |
+| `@afenda/master-data` | Commands · queries · Zod schemas · brands · permissions · reasons · authorization-only `MasterDataCapabilityOptions` · lifecycle/code helpers |
 | `@afenda/master-data/adapters/drizzle` | Master-data and platform-reference Drizzle stores/factories |
 | `@afenda/master-data/module-manifest` | Module manifest |
 | `@afenda/master-data/testing/organization-dimensions` | Organization-dimension testing store helpers |
 
 The root is the permanent semantic facade. Subpaths exist only for production-adapter loading, structural manifest access, or isolated testing. The package never re-exports raw Drizzle tables, stores, injected reference-query machinery, `db`, or `eq` from the root.
+
+Consumers pass only `MasterDataCapabilityOptions` and request domain operations from the root facade. Store, mutation-port, search, import-row, and dependency-inspector injection remain package-internal execution concerns; consumers must not construct `MasterCommandOptions` or `MasterQueryOptions`.
+
+Every public command and organization-scoped query accepts this authorization-only capability surface. Callers cannot select persistence stores or provide execution infrastructure; the package resolves those concerns internally. Contract tests inspect the compiler-resolved root signatures so renamed or inferred internal option types cannot bypass the boundary.
 
 ## Public callable API
 
@@ -284,13 +288,12 @@ The tables below enumerate the governed callable groups exported by the root bar
 | `authorization.ts` | `requireMasterCommandPermission` · `requireMasterQueryPermission` |
 | `core-master-errors.ts` | `coreMasterDependencyBlocked` · `coreMasterNotFound` |
 | `core-master-policy.ts` | `evaluateItemTemplateUsability` · `evaluateItemUsability` · `evaluateItemVariantUsability` · `evaluateMasterStatus` · `evaluatePartyUsability` · `evaluatePaymentTermUsability` · `evaluateTaxRegistrationUsability` · `evaluateWarehouseUsability` |
-| `dependency.ts` | `createEmptyDependencyInspector` · `createUnavailableDependencyInspector` |
 | `item-group.ts` | `activateItemGroup` · `createItemGroup` · `existsItemGroupByCode` · `getItemGroupByCode` · `getItemGroupById` · `inactiveItemGroup` · `listActiveItemGroups` · `listItemGroups` · `listItemGroupsByStatus` · `listItemGroupsUpdatedSince` · `resolveItemGroupPath` · `retireItemGroup` · `updateItemGroup` |
 | `item-template-variant.ts` | `activateItemTemplate` · `archiveItemTemplate` · `createItemTemplate` · `createItemVariant` · `getItemTemplateByCode` · `getItemTemplateById` · `getItemVariantById` · `inactiveItemTemplate` · `listItemTemplates` · `listItemVariantsByTemplate` · `retireItemTemplate` · `retireItemVariant` · `updateItemTemplate` |
 | `item.ts` | `activateItem` · `archiveItem` · `createItem` · `existsItemByCode` · `getItemByCode` · `getItemById` · `inactiveItem` · `listActiveItems` · `listItems` · `listItemsByGroup` · `listItemsByStatus` · `listItemsUpdatedSince` · `restoreItem` · `retireItem` · `suspendItem` · `updateItem` |
 | `lifecycle.ts` | `assertLifecycleTransition` · `assertRestoreTransition` · `assertTaxRegistrationLifecycleTransition` |
 | `normalized-code.ts` | `normalizeEmail` · `normalizeExternalIdValue` · `normalizeMasterCode` · `normalizePhone` · `normalizeSearchText` |
-| `organization-dimension.ts` | `activateOrganizationDimension` · `archiveOrganizationDimension` · `createDrizzleOrganizationDimensionStore` · `createOrganizationDimension` · `deactivateOrganizationDimension` · `getOrganizationDimensionByCode` · `getOrganizationDimensionById` · `getOrganizationDimensionEffective` · `listOrganizationDimensions` · `resolveOrganizationDimensionsAsOf` · `updateOrganizationDimension` |
+| `organization-dimension.ts` | `activateOrganizationDimension` · `archiveOrganizationDimension` · `createOrganizationDimension` · `deactivateOrganizationDimension` · `getOrganizationDimensionByCode` · `getOrganizationDimensionById` · `getOrganizationDimensionEffective` · `listOrganizationDimensions` · `resolveOrganizationDimensionsAsOf` · `updateOrganizationDimension` |
 | `party.ts` | `activateParty` · `archiveParty` · `blockParty` · `createParty` · `existsPartyByCode` · `findPartyByTaxRegistration` · `getParty` · `getPartyByCode` · `getPartyById` · `inactiveParty` · `listActiveParties` · `listParties` · `listPartiesByRole` · `listPartiesByStatus` · `listPartiesUpdatedSince` · `restoreParty` · `retireParty` · `searchParties` · `suspendParty` · `updateParty` |
 | `payment-term.ts` | `activatePaymentTerm` · `createPaymentTerm` · `existsPaymentTermByCode` · `getPaymentTermByCode` · `getPaymentTermById` · `inactivePaymentTerm` · `listActivePaymentTerms` · `listPaymentTerms` · `listPaymentTermsByStatus` · `listPaymentTermsUpdatedSince` · `retirePaymentTerm` · `updatePaymentTerm` |
 | `tax-registration-number.ts` | `maskTaxRegistrationNumber` · `normalizeTaxRegistrationNumber` · `projectTaxRegistrationLifecycleStatus` · `toSensitiveTaxRegistrationProjection` · `toTaxRegistrationProjection` |
@@ -300,8 +303,6 @@ The tables below enumerate the governed callable groups exported by the root bar
 | `version-cas.ts` | `assertExpectedVersion` · `nextMasterVersion` |
 | `warehouse.ts` | `activateWarehouse` · `archiveWarehouse` · `createWarehouse` · `existsWarehouseByCode` · `getWarehouseByCode` · `getWarehouseById` · `inactiveWarehouse` · `listActiveWarehouses` · `listWarehouses` · `listWarehousesByStatus` · `listWarehousesUpdatedSince` · `moveWarehouse` · `retireWarehouse` · `suspendWarehouse` · `updateWarehouse` |
 | `contracts/reasons.ts` | `masterDataErrorCodeForFailureDetails` · `masterDataErrorCodeForReason` |
-| `production-ports.ts` | `createProductionMutationPorts` · `createSqlAuditFactPort` · `createSqlOutboxPort` |
-| `resolve-store.ts` | `resolveMasterDataStore` |
 
 ### Data-governance workflows
 

@@ -80,6 +80,7 @@ export function recordCompensationRecommendation(
 			const currencyCheck = await assertCurrencyExists(
 				currency,
 				data.proposedCurrencyCode,
+				data,
 			);
 			if (!currencyCheck.ok) {
 				return currencyCheck;

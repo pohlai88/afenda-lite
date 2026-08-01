@@ -1,5 +1,5 @@
 import { errorResult, type Result } from "@afenda/errors";
-import { createProductionCurrencyLookup } from "./compensation-benefits/currency-lookup";
+import { createUnavailableCurrencyLookup } from "./compensation-benefits/currency-lookup";
 import { createVaultDocumentReferenceAdapter } from "./compliance/vault-document-reference-adapter";
 import {
 	HUMAN_RESOURCES_ERROR_DEPENDENCY_UNAVAILABLE,
@@ -55,7 +55,7 @@ export function resolvePorts(ports?: MutationPorts): MutationPorts {
 export function resolveCurrencyLookup(
 	currency?: CurrencyLookupPort,
 ): CurrencyLookupPort {
-	return currency ?? createProductionCurrencyLookup();
+	return currency ?? createUnavailableCurrencyLookup();
 }
 
 export function resolveStore(store?: HumanResourcesStore): HumanResourcesStore {

@@ -16,7 +16,6 @@ export * from "./compensation-benefits/compensation-grade-progression-rule";
 export * from "./compensation-benefits/compensation-proposal";
 export * from "./compensation-benefits/compensation-review";
 export * from "./compensation-benefits/compensation-review-cycle";
-export * from "./compensation-benefits/currency-lookup";
 export * from "./compensation-benefits/employee-compensation";
 export * from "./compensation-benefits/salary-band";
 export * from "./compliance/document-requirement";

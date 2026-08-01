@@ -90,7 +90,7 @@ function EntityHeader({
 			)}
 			{...props}
 		>
-			<div className="min-w-0 space-y-2">
+			<div className="grid min-w-0 gap-2">
 				<div className="flex flex-wrap items-center gap-2">
 					<h1 className="font-semibold text-2xl tracking-tight">{title}</h1>
 					{status}

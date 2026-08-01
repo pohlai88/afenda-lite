@@ -506,7 +506,7 @@ describe("Storybook UI-system coverage", () => {
 
 	it("projects validated immutable contract evidence for every visual component", async () => {
 		const evidence = await createStorybookEvidence();
-		expect(Object.keys(evidence)).toHaveLength(73);
+		expect(Object.keys(evidence)).toHaveLength(78);
 		expect(Object.isFrozen(evidence)).toBe(true);
 		expect(evidence["ui.sidebar-cookie"]).toBeUndefined();
 		for (const [componentId, entry] of Object.entries(evidence)) {
