@@ -7,9 +7,6 @@ import {
 } from "@afenda/master-data";
 import { listPurchaseOrders } from "@afenda/purchasing";
 import {
-	Alert,
-	AlertDescription,
-	AlertTitle,
 	Card,
 	CardContent,
 	CardDescription,
@@ -27,6 +24,7 @@ import { CancelPurchaseOrderForm } from "@/features/purchasing/cancel-purchase-o
 import { ClosePurchaseOrderForm } from "@/features/purchasing/close-purchase-order-form";
 import { CreatePurchaseOrderForm } from "@/features/purchasing/create-purchase-order-form";
 import { PostPurchaseOrderForm } from "@/features/purchasing/post-purchase-order-form";
+import { PurchaseOrdersTable } from "@/features/purchasing/purchase-orders-table";
 import { createMasterDataAuthorizationPort } from "@/lib/erp/master-data-authorization-port";
 import { createPurchasingCommandOptions } from "@/lib/erp/purchasing-command-options";
 import { sessionHasPermission } from "@/modules/identity/domain/session-permission";
@@ -107,6 +105,22 @@ export async function PurchasingShell({ surface }: PurchasingShellProps) {
 	]);
 
 	const orders = ordersResult.ok ? ordersResult.data : [];
+	const orderRows = orders.map((order) => ({
+		id: order.id,
+		code: order.code,
+		status: order.status,
+		version: order.version,
+		supplier: `${order.partyCode} · ${order.partyName}`,
+		currencyCode: order.currencyCode,
+		documentTotal: order.documentTotal ?? "—",
+		paymentTerms: order.paymentTermCode
+			? `${order.paymentTermCode} · net ${order.netDays}`
+			: "—",
+		warehouse: order.warehouseCode
+			? `${order.warehouseCode} · ${order.warehouseName}`
+			: "—",
+		lineCount: order.lines.length,
+	}));
 	const parties = partiesResult.ok ? partiesResult.data : [];
 	const items = itemsResult.ok ? itemsResult.data : [];
 	const terms = termsResult.ok ? termsResult.data : [];
@@ -127,13 +141,6 @@ export async function PurchasingShell({ surface }: PurchasingShellProps) {
 				title="Purchase orders"
 			/>
 			<WorkspacePageContent>
-				{ordersResult.ok ? null : (
-					<Alert>
-						<AlertTitle>Could not load orders</AlertTitle>
-						<AlertDescription>{ordersResult.message}</AlertDescription>
-					</Alert>
-				)}
-
 				<Card>
 					<CardHeader>
 						<CardTitle>Orders</CardTitle>
@@ -141,34 +148,11 @@ export async function PurchasingShell({ surface }: PurchasingShellProps) {
 							{orders.length} order(s) · pageSize ≤ 50
 						</CardDescription>
 					</CardHeader>
-					<CardContent className="space-y-3 text-sm">
-						{orders.length === 0 ? (
-							<p className="text-muted-foreground">No purchase orders yet.</p>
-						) : (
-							<ul className="space-y-2">
-								{orders.map((order) => (
-									<li className="rounded-md border px-3 py-2" key={order.id}>
-										<div className="font-medium">
-											{order.code} · {order.status} · {order.currencyCode} · v
-											{order.version}
-										</div>
-										<div className="text-muted-foreground">
-											id <Code>{order.id}</Code> · party {order.partyCode} (
-											{order.partyName}) · {order.lines.length} line(s)
-											{order.documentTotal
-												? ` · total ${order.documentTotal}`
-												: ""}
-											{order.paymentTermCode
-												? ` · ${order.paymentTermCode} / net ${order.netDays}`
-												: ""}
-											{order.warehouseCode
-												? ` · wh ${order.warehouseCode} (${order.warehouseName})`
-												: ""}
-										</div>
-									</li>
-								))}
-							</ul>
-						)}
+					<CardContent>
+						<PurchaseOrdersTable
+							error={ordersResult.ok ? undefined : ordersResult.message}
+							rows={orderRows}
+						/>
 					</CardContent>
 				</Card>
 

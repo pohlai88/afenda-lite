@@ -2,9 +2,6 @@ import { authServer } from "@afenda/auth";
 import { listItems, listParties, listPaymentTerms } from "@afenda/master-data";
 import { listSalesOrders } from "@afenda/sales";
 import {
-	Alert,
-	AlertDescription,
-	AlertTitle,
 	Card,
 	CardContent,
 	CardDescription,
@@ -21,6 +18,7 @@ import { AddSalesOrderLineForm } from "@/features/sales/add-sales-order-line-for
 import { CancelSalesOrderForm } from "@/features/sales/cancel-sales-order-form";
 import { CreateSalesOrderForm } from "@/features/sales/create-sales-order-form";
 import { PostSalesOrderForm } from "@/features/sales/post-sales-order-form";
+import { SalesOrdersTable } from "@/features/sales/sales-orders-table";
 import { createMasterDataAuthorizationPort } from "@/lib/erp/master-data-authorization-port";
 import { createSalesCommandOptions } from "@/lib/erp/sales-command-options";
 import { sessionHasPermission } from "@/modules/identity/domain/session-permission";
@@ -84,6 +82,18 @@ export async function SalesShell({ surface }: SalesShellProps) {
 		]);
 
 	const orders = ordersResult.ok ? ordersResult.data.items : [];
+	const orderRows = orders.map((order) => ({
+		id: order.id,
+		code: order.code,
+		status: order.status,
+		version: order.version,
+		customer: `${order.customer.code} · ${order.customer.name}`,
+		currencyCode: order.currencyCode,
+		documentTotal: order.documentTotal ?? "—",
+		paymentTerms: order.customer.paymentTermCode
+			? `${order.customer.paymentTermCode} · net ${order.customer.netDays}`
+			: "—",
+	}));
 	const parties = partiesResult.ok ? partiesResult.data : [];
 	const items = itemsResult.ok ? itemsResult.data : [];
 	const terms = termsResult.ok ? termsResult.data : [];
@@ -102,13 +112,6 @@ export async function SalesShell({ surface }: SalesShellProps) {
 				title="Sales orders"
 			/>
 			<WorkspacePageContent>
-				{ordersResult.ok ? null : (
-					<Alert>
-						<AlertTitle>Could not load orders</AlertTitle>
-						<AlertDescription>{ordersResult.message}</AlertDescription>
-					</Alert>
-				)}
-
 				<Card>
 					<CardHeader>
 						<CardTitle>Orders</CardTitle>
@@ -116,28 +119,11 @@ export async function SalesShell({ surface }: SalesShellProps) {
 							{orders.length} order(s) · pageSize ≤ 50
 						</CardDescription>
 					</CardHeader>
-					<CardContent className="space-y-3 text-sm">
-						{orders.length === 0 ? (
-							<p className="text-muted-foreground">No sales orders yet.</p>
-						) : (
-							<ul className="space-y-2">
-								{orders.map((order) => (
-									<li className="rounded-md border px-3 py-2" key={order.id}>
-										<div className="font-medium">
-											{order.code} · {order.status} · v{order.version}
-										</div>
-										<div className="text-muted-foreground">
-											id <Code>{order.id}</Code> · party {order.customer.code} (
-											{order.customer.name}) · {order.currencyCode}
-											{order.documentTotal ? ` ${order.documentTotal}` : ""}
-											{order.customer.paymentTermCode
-												? ` · ${order.customer.paymentTermCode} / net ${order.customer.netDays}`
-												: ""}
-										</div>
-									</li>
-								))}
-							</ul>
-						)}
+					<CardContent>
+						<SalesOrdersTable
+							error={ordersResult.ok ? undefined : ordersResult.message}
+							rows={orderRows}
+						/>
 					</CardContent>
 				</Card>
 

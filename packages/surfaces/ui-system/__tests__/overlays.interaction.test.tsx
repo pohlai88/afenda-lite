@@ -898,6 +898,11 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 		expect(
 			screen.getByRole("status", { name: "Loading data..." }),
 		).toBeInTheDocument();
+		expect(screen.getByRole("table")).toHaveAttribute("aria-busy", "true");
+		expect(
+			screen.getByRole("columnheader", { name: "Name" }),
+		).toBeInTheDocument();
+		expect(screen.getAllByRole("row")).toHaveLength(6);
 
 		// Test empty state
 		rerender(

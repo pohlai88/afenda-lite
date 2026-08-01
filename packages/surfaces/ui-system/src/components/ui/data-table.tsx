@@ -32,7 +32,7 @@ import {
 	PaginationNext,
 	PaginationPrevious,
 } from "./pagination";
-import { Spinner } from "./spinner";
+import { Skeleton } from "./skeleton";
 import {
 	Table,
 	TableBody,
@@ -86,6 +86,14 @@ export interface DataTableProps<T> {
 	toolbar?: ReactNode;
 	totalPages?: number;
 }
+
+const LOADING_ROW_KEYS = [
+	"loading-row-1",
+	"loading-row-2",
+	"loading-row-3",
+	"loading-row-4",
+	"loading-row-5",
+] as const;
 
 function pageWindow(
 	currentPage: number,
@@ -293,8 +301,88 @@ function DataTable<T extends object>({
 
 	if (loading) {
 		return (
-			<div className="flex items-center justify-center py-12">
-				<Spinner label="Loading data..." size="lg" />
+			<div
+				className={cn("grid gap-3", className)}
+				data-slot="data-table-loading"
+			>
+				<div aria-label="Loading data..." className="sr-only" role="status">
+					Loading data...
+				</div>
+				<div className="overflow-x-auto rounded-md border">
+					<Table aria-busy="true">
+						<TableHeader className="bg-surface-sunken">
+							<TableRow className={rowHeightClass}>
+								{selectable ? <TableHead className="w-12" /> : null}
+								{visibleColumns.map(({ column, definition }) => (
+									<TableHead
+										className={cn(
+											column.getIsPinned() && "sticky z-20 bg-surface-sunken",
+										)}
+										key={column.id}
+										style={{
+											width: definition.width,
+											left:
+												column.getIsPinned() === "left"
+													? column.getStart("left")
+													: undefined,
+											right:
+												column.getIsPinned() === "right"
+													? column.getAfter("right")
+													: undefined,
+										}}
+									>
+										{definition.title}
+									</TableHead>
+								))}
+								{rowActions ? (
+									<TableHead className="w-[1%] text-right">Actions</TableHead>
+								) : null}
+							</TableRow>
+						</TableHeader>
+						<TableBody>
+							{LOADING_ROW_KEYS.map((rowKey) => (
+								<TableRow className={rowHeightClass} key={rowKey}>
+									{selectable ? (
+										<TableCell>
+											<Skeleton aria-hidden="true" className="size-4" />
+										</TableCell>
+									) : null}
+									{visibleColumns.map(({ column }) => (
+										<TableCell
+											className={cn(
+												column.getIsPinned() && "sticky z-10 bg-background",
+											)}
+											key={column.id}
+											style={{
+												left:
+													column.getIsPinned() === "left"
+														? column.getStart("left")
+														: undefined,
+												right:
+													column.getIsPinned() === "right"
+														? column.getAfter("right")
+														: undefined,
+											}}
+										>
+											<Skeleton
+												aria-hidden="true"
+												className="h-4 w-full max-w-32"
+											/>
+										</TableCell>
+									))}
+									{rowActions ? (
+										<TableCell>
+											<Skeleton
+												aria-hidden="true"
+												className="ml-auto h-8 w-20"
+											/>
+										</TableCell>
+									) : null}
+								</TableRow>
+							))}
+						</TableBody>
+					</Table>
+				</div>
 			</div>
 		);
 	}

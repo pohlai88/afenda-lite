@@ -60,6 +60,48 @@ const DNA_IMPORT_PATTERN =
 	/from\s+["']@\/shadcn-studio(?:\/[^"']*)?["']|from\s+["'][^"']*\/shadcn-studio\/[^"']*["']|import\s+["']@\/shadcn-studio(?:\/[^"']*)?["']/;
 const LEGACY_WORKSPACE_GEOMETRY_PATTERN =
 	/mx-auto\s+flex\s+w-full\s+max-w-(?:5xl|6xl)\s+flex-col\s+gap-(?:6|8)\s+px-6\s+py-10/;
+const OPERATIONAL_COLLECTIONS = [
+	[
+		"features/sales/sales-shell.tsx",
+		"features/sales/sales-orders-table.tsx",
+		"SalesOrdersTable",
+	],
+	[
+		"features/purchasing/purchasing-shell.tsx",
+		"features/purchasing/purchase-orders-table.tsx",
+		"PurchaseOrdersTable",
+	],
+	[
+		"features/fulfillment/fulfillment-shell.tsx",
+		"features/fulfillment/deliveries-table.tsx",
+		"DeliveriesTable",
+	],
+	[
+		"features/receiving/receiving-shell.tsx",
+		"features/receiving/receiving-tables.tsx",
+		"GoodsReceiptsTable",
+	],
+	[
+		"features/receiving/receiving-shell.tsx",
+		"features/receiving/receiving-tables.tsx",
+		"ReceivingExceptionsTable",
+	],
+	[
+		"features/payables/payables-shell.tsx",
+		"features/payables/payables-documents-table.tsx",
+		"PayablesDocumentsTable",
+	],
+	[
+		"features/receivables/receivables-shell.tsx",
+		"features/receivables/receivables-documents-table.tsx",
+		"ReceivablesDocumentsTable",
+	],
+	[
+		"features/payments/payments-shell.tsx",
+		"features/payments/payments-table.tsx",
+		"PaymentsTable",
+	],
+] as const;
 
 function normalizePath(file: string): string {
 	return path.relative(webRoot, file).split(path.sep).join("/");
@@ -181,6 +223,33 @@ describe("@afenda/web ui-system boundary", () => {
 		expect(
 			offenders,
 			`incomplete WorkspacePage compound usage: ${offenders.join(", ")}`,
+		).toEqual([]);
+	});
+
+	it("keeps comparable operational collections behind governed DataTable adapters", () => {
+		const offenders: string[] = [];
+		for (const [shellPath, tablePath, component] of OPERATIONAL_COLLECTIONS) {
+			const shell = readFileSync(path.join(webRoot, shellPath), "utf8");
+			const table = readFileSync(path.join(webRoot, tablePath), "utf8");
+			if (!shell.includes(`<${component}`)) {
+				offenders.push(`${shellPath} -> missing ${component}`);
+			}
+			if (
+				!(
+					table.includes("<DataTable") &&
+					table.includes("getRowId=") &&
+					table.includes("pinnedColumns=")
+				)
+			) {
+				offenders.push(
+					`${tablePath} -> missing DataTable, stable row identity, or pinned identifier`,
+				);
+			}
+		}
+
+		expect(
+			offenders,
+			`operational collection governance drift: ${offenders.join(", ")}`,
 		).toEqual([]);
 	});
 });

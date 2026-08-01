@@ -7,7 +7,7 @@ export const dataTableContract = defineManifestContract({
 		"Provides controlled ERP tabular presentation for sorting, filtering, pagination, selection, row actions, bulkActions, density, and asynchronous collection states — without owning fetch, authorization, or domain eligibility.",
 	ownership: {
 		componentOwns: [
-			"Controlled tabular presentation, interaction mechanics, density (comfortable | compact), empty/loading/error presentation, selection chrome, and bulkActions composition slot.",
+			"Controlled tabular presentation, interaction mechanics, density (comfortable | compact), geometry-preserving loading, empty/error presentation, selection chrome, and bulkActions composition slot.",
 		],
 		consumerOwns: [
 			"Data fetching, stable row identity, authorization, eligibility, URL state, persistence, column render policy, and domain vocabulary including StatusBadge mapping.",
@@ -53,6 +53,7 @@ export const dataTableContract = defineManifestContract({
 		"Row actions must remain discoverable without making the entire row ambiguous.",
 		"Use one consistent row identity key that remains stable across sorting, filtering, pagination, and refreshes.",
 		"Preserve user-visible state when asynchronous refreshes return equivalent data.",
+		"Loading presentation must preserve the visible table headers and representative row geometry so the collection does not collapse or shift while data resolves.",
 		"Filtered-empty state must be distinguishable from a genuinely empty collection.",
 		"Empty-state, error, and toolbar actions must connect to real feature behavior; omit actions when the required route, command, or permission is unavailable.",
 		"Keep numeric amounts in domain-safe units until the presentation column formats currency.",
@@ -65,6 +66,7 @@ export const dataTableContract = defineManifestContract({
 		"Select-all controls must communicate checked, unchecked, and partially selected states.",
 		"Keyboard focus must remain visible for headers, links, selection controls, and row actions.",
 		"Loading, empty, filtered-empty, error, and ready states must be communicated without relying on color alone.",
+		"Loading tables must remain identifiable as tables, expose aria-busy, and announce a concise status without announcing each decorative skeleton.",
 		"Row actions must have accessible names that identify both the action and, where necessary, the affected record.",
 		"Do not rely on hover alone to reveal actions required for keyboard or touch users.",
 	],

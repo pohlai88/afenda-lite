@@ -1,21 +1,18 @@
 import { authServer } from "@afenda/auth";
 import { listSalesInvoices } from "@afenda/receivables";
 import {
-	Alert,
-	AlertDescription,
-	AlertTitle,
 	Card,
 	CardContent,
 	CardDescription,
 	CardHeader,
 	CardTitle,
-	Code,
 	WorkspacePage,
 	WorkspacePageContent,
 	WorkspacePageHeader,
 } from "@afenda/ui-system";
 
 import { requirePermission } from "@/features/auth/require-permission";
+import { ReceivablesDocumentsTable } from "@/features/receivables/receivables-documents-table";
 import {
 	AddSalesInvoiceLineForm,
 	ApplyCustomerReceiptForm,
@@ -73,6 +70,17 @@ export async function ReceivablesShell({ surface }: ReceivablesShellProps) {
 		createReceivablesCommandOptions(),
 	);
 	const invoices = invoicesResult.ok ? invoicesResult.data : [];
+	const invoiceRows = invoices.map((invoice) => ({
+		id: invoice.id,
+		code: invoice.code,
+		invoiceSource: invoice.invoiceSource,
+		status: invoice.status,
+		version: invoice.version,
+		customer: invoice.customerCode,
+		currencyCode: invoice.currencyCode,
+		openAmount: invoice.openAmount,
+		lineCount: invoice.lines.length,
+	}));
 
 	return (
 		<WorkspacePage>
@@ -82,13 +90,6 @@ export async function ReceivablesShell({ surface }: ReceivablesShellProps) {
 				title="Customer receivables"
 			/>
 			<WorkspacePageContent>
-				{invoicesResult.ok ? null : (
-					<Alert>
-						<AlertTitle>Could not load sales invoices</AlertTitle>
-						<AlertDescription>{invoicesResult.message}</AlertDescription>
-					</Alert>
-				)}
-
 				<Card>
 					<CardHeader>
 						<CardTitle>Sales invoices and credit notes</CardTitle>
@@ -96,28 +97,11 @@ export async function ReceivablesShell({ surface }: ReceivablesShellProps) {
 							{invoices.length} document(s) · pageSize ≤ 50
 						</CardDescription>
 					</CardHeader>
-					<CardContent className="space-y-3 text-sm">
-						{invoices.length === 0 ? (
-							<p className="text-muted-foreground">
-								No receivables documents yet.
-							</p>
-						) : (
-							<ul className="space-y-2">
-								{invoices.map((invoice) => (
-									<li className="rounded-md border px-3 py-2" key={invoice.id}>
-										<div className="font-medium">
-											{invoice.code} · {invoice.invoiceSource} ·{" "}
-											{invoice.status} · v{invoice.version}
-										</div>
-										<div className="text-muted-foreground">
-											id <Code>{invoice.id}</Code> · {invoice.customerCode} ·{" "}
-											{invoice.currencyCode} {invoice.openAmount} open ·{" "}
-											{invoice.lines.length} line(s)
-										</div>
-									</li>
-								))}
-							</ul>
-						)}
+					<CardContent>
+						<ReceivablesDocumentsTable
+							error={invoicesResult.ok ? undefined : invoicesResult.message}
+							rows={invoiceRows}
+						/>
 					</CardContent>
 				</Card>
 

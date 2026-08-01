@@ -243,7 +243,7 @@ Product scope: `apps/web/features/**`, `apps/web/app/**` (exclude auth-island al
 | F1 | Fake primary CTA | `Button` / `Button asChild` + `Link` | `inline-flex` with `h-9` and `bg-primary` outside Button usage |
 | F2 | Page shell `p-8` | `p-6` or `p-4` | `\bp-8\b` |
 | F3 | Rogue page title | `text-2xl font-semibold tracking-tight` | `text-(3xl\|4xl\|5xl)` or `text-xl font-semibold` |
-| F4 | Bordered tabular `<ul>` | `DataTable` | `divide-y` with `rounded-md border` on `<ul>` |
+| F4 | Bordered tabular `<ul>` or probable repeated record-card list | Classify the collection; use `DataTable` for comparable operational records and retain purpose-fit narrative, navigation, or hierarchy | `divide-y` + exact `border` on `<ul>`, or mapped `<li>` with exact `rounded-md border`; findings are review candidates, not universal proof that every list is tabular |
 | F5 | Plain loading copy only | `Spinner` / `Skeleton` | loading ellipsis text without Spinner/Skeleton import |
 | F6 | Deep / retired UI import | flat barrel | `@afenda/ui-system/` (not styles.css), `@afenda/ui` |
 | F7 | Parallel UI tree | never | `apps/web/components/ui/` path exists |

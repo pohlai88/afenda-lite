@@ -2,9 +2,6 @@ import { authServer } from "@afenda/auth";
 import { listDeliveries } from "@afenda/fulfillment";
 import { listItems, listWarehouses } from "@afenda/master-data";
 import {
-	Alert,
-	AlertDescription,
-	AlertTitle,
 	Card,
 	CardContent,
 	CardDescription,
@@ -17,6 +14,7 @@ import {
 } from "@afenda/ui-system";
 
 import { requirePermission } from "@/features/auth/require-permission";
+import { DeliveriesTable } from "@/features/fulfillment/deliveries-table";
 import {
 	AddDeliveryLineForm,
 	CancelDeliveryForm,
@@ -84,6 +82,17 @@ export async function FulfillmentShell({ surface }: FulfillmentShellProps) {
 		),
 	]);
 	const deliveries = deliveriesResult.ok ? deliveriesResult.data : [];
+	const deliveryRows = deliveries.map((delivery) => ({
+		id: delivery.id,
+		code: delivery.code,
+		status: delivery.status,
+		version: delivery.version,
+		warehouse: `${delivery.warehouseCode} · ${delivery.warehouseName}`,
+		lineCount: delivery.lines.length,
+		pickCount: delivery.picks.length,
+		packCount: delivery.packs.length,
+		proofOfDelivery: delivery.proofOfDelivery ? "Recorded" : "Not recorded",
+	}));
 	const items = itemsResult.ok ? itemsResult.data : [];
 	const warehouses = warehousesResult.ok ? warehousesResult.data : [];
 
@@ -95,13 +104,6 @@ export async function FulfillmentShell({ surface }: FulfillmentShellProps) {
 				title="Deliveries"
 			/>
 			<WorkspacePageContent>
-				{deliveriesResult.ok ? null : (
-					<Alert>
-						<AlertTitle>Could not load deliveries</AlertTitle>
-						<AlertDescription>{deliveriesResult.message}</AlertDescription>
-					</Alert>
-				)}
-
 				<Card>
 					<CardHeader>
 						<CardTitle>Deliveries</CardTitle>
@@ -109,27 +111,11 @@ export async function FulfillmentShell({ surface }: FulfillmentShellProps) {
 							{deliveries.length} delivery record(s) · pageSize ≤ 50
 						</CardDescription>
 					</CardHeader>
-					<CardContent className="space-y-3 text-sm">
-						{deliveries.length === 0 ? (
-							<p className="text-muted-foreground">No deliveries yet.</p>
-						) : (
-							<ul className="space-y-2">
-								{deliveries.map((delivery) => (
-									<li className="rounded-md border px-3 py-2" key={delivery.id}>
-										<div className="font-medium">
-											{delivery.code} · {delivery.status} · v{delivery.version}
-										</div>
-										<div className="text-muted-foreground">
-											id <Code>{delivery.id}</Code> · wh{" "}
-											{delivery.warehouseCode} ({delivery.warehouseName}) ·{" "}
-											{delivery.lines.length} line(s) · {delivery.picks.length}{" "}
-											pick(s) · {delivery.packs.length} pack(s)
-											{delivery.proofOfDelivery ? " · proof recorded" : ""}
-										</div>
-									</li>
-								))}
-							</ul>
-						)}
+					<CardContent>
+						<DeliveriesTable
+							error={deliveriesResult.ok ? undefined : deliveriesResult.message}
+							rows={deliveryRows}
+						/>
 					</CardContent>
 				</Card>
 

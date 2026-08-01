@@ -5,9 +5,6 @@ import {
 	listReceivingInventoryExceptions,
 } from "@afenda/receiving";
 import {
-	Alert,
-	AlertDescription,
-	AlertTitle,
 	Card,
 	CardContent,
 	CardDescription,
@@ -24,6 +21,10 @@ import { AddGoodsReceiptLineForm } from "@/features/receiving/add-goods-receipt-
 import { CancelGoodsReceiptForm } from "@/features/receiving/cancel-goods-receipt-form";
 import { CreateGoodsReceiptForm } from "@/features/receiving/create-goods-receipt-form";
 import { PostGoodsReceiptForm } from "@/features/receiving/post-goods-receipt-form";
+import {
+	GoodsReceiptsTable,
+	ReceivingExceptionsTable,
+} from "@/features/receiving/receiving-tables";
 import { RecordReceivingDiscrepancyForm } from "@/features/receiving/record-receiving-discrepancy-form";
 import { ResolveReceivingDiscrepancyForm } from "@/features/receiving/resolve-receiving-discrepancy-form";
 import { ReverseGoodsReceiptForm } from "@/features/receiving/reverse-goods-receipt-form";
@@ -33,6 +34,19 @@ import { sessionHasPermission } from "@/modules/identity/domain/session-permissi
 
 interface ReceivingShellProps {
 	surface: "admin" | "client";
+}
+
+function describeReceiptRelation(
+	reversesReceiptId: string | null | undefined,
+	reversedByReceiptId: string | null | undefined,
+): string {
+	if (reversesReceiptId) {
+		return `Reverses ${reversesReceiptId}`;
+	}
+	if (reversedByReceiptId) {
+		return `Reversed by ${reversedByReceiptId}`;
+	}
+	return "—";
 }
 
 /** Receiving console — RSC reads via `@afenda/receiving`; mutations via Actions. */
@@ -99,6 +113,29 @@ export async function ReceivingShell({ surface }: ReceivingShellProps) {
 		]);
 	const receipts = receiptsResult.ok ? receiptsResult.data : [];
 	const exceptions = exceptionsResult.ok ? exceptionsResult.data : [];
+	const receiptRows = receipts.map((receipt) => ({
+		id: receipt.id,
+		code: receipt.code,
+		status: receipt.status,
+		version: receipt.version,
+		source: receipt.sourceId
+			? `${receipt.sourceType} · ${receipt.sourceId}`
+			: receipt.sourceType,
+		warehouse: `${receipt.warehouseCode} · ${receipt.warehouseName}`,
+		lineCount: receipt.lines.length,
+		discrepancyCount: receipt.discrepancies.length,
+		inventoryStatus: receipt.inventoryApplicationStatus,
+		relation: describeReceiptRelation(
+			receipt.reversesReceiptId,
+			receipt.reversedByReceiptId,
+		),
+	}));
+	const exceptionRows = exceptions.map((receipt) => ({
+		id: receipt.id,
+		code: receipt.code,
+		inventoryStatus: receipt.inventoryApplicationStatus,
+		errorMessage: receipt.inventoryApplicationError ?? "Review required",
+	}));
 	const items = itemsResult.ok ? itemsResult.data : [];
 	const warehouses = warehousesResult.ok ? warehousesResult.data : [];
 
@@ -110,14 +147,7 @@ export async function ReceivingShell({ surface }: ReceivingShellProps) {
 				title="Goods receipts"
 			/>
 			<WorkspacePageContent>
-				{receiptsResult.ok ? null : (
-					<Alert>
-						<AlertTitle>Could not load receipts</AlertTitle>
-						<AlertDescription>{receiptsResult.message}</AlertDescription>
-					</Alert>
-				)}
-
-				{exceptions.length > 0 ? (
+				{exceptions.length > 0 || !exceptionsResult.ok ? (
 					<Card>
 						<CardHeader>
 							<CardTitle>Inventory application exceptions</CardTitle>
@@ -126,22 +156,13 @@ export async function ReceivingShell({ surface }: ReceivingShellProps) {
 								inventory application
 							</CardDescription>
 						</CardHeader>
-						<CardContent className="space-y-2 text-sm">
-							<ul className="space-y-2">
-								{exceptions.map((receipt) => (
-									<li className="rounded-md border px-3 py-2" key={receipt.id}>
-										<div className="font-medium">
-											{receipt.code} · {receipt.inventoryApplicationStatus}
-										</div>
-										<div className="text-muted-foreground">
-											id <Code>{receipt.id}</Code>
-											{receipt.inventoryApplicationError
-												? ` · ${receipt.inventoryApplicationError}`
-												: null}
-										</div>
-									</li>
-								))}
-							</ul>
+						<CardContent>
+							<ReceivingExceptionsTable
+								error={
+									exceptionsResult.ok ? undefined : exceptionsResult.message
+								}
+								rows={exceptionRows}
+							/>
 						</CardContent>
 					</Card>
 				) : null}
@@ -153,35 +174,11 @@ export async function ReceivingShell({ surface }: ReceivingShellProps) {
 							{receipts.length} receipt(s) · pageSize ≤ 50
 						</CardDescription>
 					</CardHeader>
-					<CardContent className="space-y-3 text-sm">
-						{receipts.length === 0 ? (
-							<p className="text-muted-foreground">No goods receipts yet.</p>
-						) : (
-							<ul className="space-y-2">
-								{receipts.map((receipt) => (
-									<li className="rounded-md border px-3 py-2" key={receipt.id}>
-										<div className="font-medium">
-											{receipt.code} · {receipt.status} · v{receipt.version}
-											{receipt.reversesReceiptId ? " · reverse" : null}
-											{receipt.reversedByReceiptId ? " · reversed" : null}
-										</div>
-										<div className="text-muted-foreground">
-											id <Code>{receipt.id}</Code> · {receipt.sourceType}
-											{receipt.sourceId ? (
-												<>
-													{" "}
-													· source <Code>{receipt.sourceId}</Code>
-												</>
-											) : null}{" "}
-											· wh {receipt.warehouseCode} ({receipt.warehouseName}) ·{" "}
-											{receipt.lines.length} line(s) ·{" "}
-											{receipt.discrepancies.length} discrepancy record(s) · inv{" "}
-											{receipt.inventoryApplicationStatus}
-										</div>
-									</li>
-								))}
-							</ul>
-						)}
+					<CardContent>
+						<GoodsReceiptsTable
+							error={receiptsResult.ok ? undefined : receiptsResult.message}
+							rows={receiptRows}
+						/>
 					</CardContent>
 				</Card>
 

@@ -5,56 +5,59 @@ import { Code, DataTable, type DataTableColumn } from "@afenda/ui-system";
 
 import { CollectionRetryAction } from "@/features/shared/collection-retry-action";
 
-export type PaymentTableRow = Record<string, unknown> & {
+export type PayablesDocumentTableRow = Record<string, unknown> & {
 	id: string;
 	code: string;
-	direction: string;
+	documentType: string;
 	status: string;
 	version: number;
+	supplier: string;
 	currencyCode: string;
-	amount: string;
-	purpose: string;
-	instructionCount: number;
+	openAmount: string;
+	lineCount: number;
 };
 
-const columns: DataTableColumn<PaymentTableRow>[] = [
-	{ key: "code", title: "Payment", width: "9rem" },
+const columns: DataTableColumn<PayablesDocumentTableRow>[] = [
+	{ key: "code", title: "Document", width: "9rem" },
 	{ key: "status", title: "Status" },
+	{ key: "documentType", title: "Type" },
+	{ key: "supplier", title: "Supplier" },
 	{
-		key: "amount",
-		title: "Amount",
+		key: "openAmount",
+		title: "Open amount",
 		render: (value, row) => `${row.currencyCode} ${String(value)}`,
 	},
-	{ key: "direction", title: "Direction" },
-	{ key: "purpose", title: "Purpose" },
-	{ key: "instructionCount", title: "Instructions" },
+	{ key: "lineCount", title: "Lines" },
 	{ key: "version", title: "Version" },
 	{
 		key: "id",
-		title: "Payment id",
+		title: "Document id",
 		render: (value) => <Code>{String(value)}</Code>,
 	},
 ];
 
-interface PaymentsTableProps {
+interface PayablesDocumentsTableProps {
 	error: string | undefined;
-	rows: PaymentTableRow[];
+	rows: PayablesDocumentTableRow[];
 }
 
-export function PaymentsTable({ error, rows }: PaymentsTableProps) {
+export function PayablesDocumentsTable({
+	error,
+	rows,
+}: PayablesDocumentsTableProps) {
 	return (
 		<DataTable
 			columns={columns}
 			data={rows}
 			density="comfortable"
-			emptyDescription="Create a draft payment to begin the payment register."
-			emptyTitle="No payments yet"
+			emptyDescription="Create a supplier invoice or credit note to begin the payables register."
+			emptyTitle="No payables documents yet"
 			{...(error
 				? {
 						error: {
-							title: "Could not load payments",
+							title: "Could not load supplier documents",
 							description: error,
-							action: <CollectionRetryAction label="Retry loading payments" />,
+							action: <CollectionRetryAction label="Retry loading documents" />,
 						},
 					}
 				: {})}

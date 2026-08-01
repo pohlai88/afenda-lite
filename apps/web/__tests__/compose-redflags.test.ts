@@ -49,6 +49,7 @@ describe("@afenda/web compose red-flags (afenda-elite-ui-compose)", () => {
 
 	it("F4 — no bordered tabular ul (divide-y + rounded-md border)", () => {
 		const ulClass = /<ul[^>]*className="([^"]*)"/g;
+		const listItemClass = /<li[^>]*className="([^"]*)"/g;
 		const offenders = productTsx()
 			.filter(({ src }) => {
 				for (const match of src.matchAll(ulClass)) {
@@ -60,12 +61,21 @@ describe("@afenda/web compose red-flags (afenda-elite-ui-compose)", () => {
 						return true;
 					}
 				}
+				if (!src.includes(".map(")) {
+					return false;
+				}
+				for (const match of src.matchAll(listItemClass)) {
+					const tokens = (match[1] ?? "").split(/\s+/).filter(Boolean);
+					if (tokens.includes("rounded-md") && tokens.includes("border")) {
+						return true;
+					}
+				}
 				return false;
 			})
 			.map(({ rel }) => rel);
 		expect(
 			offenders,
-			`F4 reason=bordered tabular ul (use DataTable); paths: ${offenders.join(", ") || "(none)"}`,
+			`F4 review=bordered or repeated record-card list candidate; classify the collection semantics and use DataTable only for comparable operational records; paths: ${offenders.join(", ") || "(none)"}`,
 		).toEqual([]);
 	});
 

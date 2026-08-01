@@ -5,56 +5,54 @@ import { Code, DataTable, type DataTableColumn } from "@afenda/ui-system";
 
 import { CollectionRetryAction } from "@/features/shared/collection-retry-action";
 
-export type PaymentTableRow = Record<string, unknown> & {
+export type SalesOrderTableRow = Record<string, unknown> & {
 	id: string;
 	code: string;
-	direction: string;
 	status: string;
 	version: number;
+	customer: string;
 	currencyCode: string;
-	amount: string;
-	purpose: string;
-	instructionCount: number;
+	documentTotal: string;
+	paymentTerms: string;
 };
 
-const columns: DataTableColumn<PaymentTableRow>[] = [
-	{ key: "code", title: "Payment", width: "9rem" },
+const columns: DataTableColumn<SalesOrderTableRow>[] = [
+	{ key: "code", title: "Order", width: "9rem" },
 	{ key: "status", title: "Status" },
+	{ key: "customer", title: "Customer" },
 	{
-		key: "amount",
-		title: "Amount",
+		key: "documentTotal",
+		title: "Total",
 		render: (value, row) => `${row.currencyCode} ${String(value)}`,
 	},
-	{ key: "direction", title: "Direction" },
-	{ key: "purpose", title: "Purpose" },
-	{ key: "instructionCount", title: "Instructions" },
+	{ key: "paymentTerms", title: "Payment terms" },
 	{ key: "version", title: "Version" },
 	{
 		key: "id",
-		title: "Payment id",
+		title: "Order id",
 		render: (value) => <Code>{String(value)}</Code>,
 	},
 ];
 
-interface PaymentsTableProps {
+interface SalesOrdersTableProps {
 	error: string | undefined;
-	rows: PaymentTableRow[];
+	rows: SalesOrderTableRow[];
 }
 
-export function PaymentsTable({ error, rows }: PaymentsTableProps) {
+export function SalesOrdersTable({ error, rows }: SalesOrdersTableProps) {
 	return (
 		<DataTable
 			columns={columns}
 			data={rows}
 			density="comfortable"
-			emptyDescription="Create a draft payment to begin the payment register."
-			emptyTitle="No payments yet"
+			emptyDescription="Create a draft sales order to begin the order register."
+			emptyTitle="No sales orders yet"
 			{...(error
 				? {
 						error: {
-							title: "Could not load payments",
+							title: "Could not load sales orders",
 							description: error,
-							action: <CollectionRetryAction label="Retry loading payments" />,
+							action: <CollectionRetryAction label="Retry loading orders" />,
 						},
 					}
 				: {})}

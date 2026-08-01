@@ -127,19 +127,27 @@ export async function PaymentsShell({ surface }: PaymentsShellProps) {
 				title="Payments"
 			/>
 			<WorkspacePageContent>
-				{paymentsResult.ok ? null : (
-					<Alert>
-						<AlertTitle>Could not load payments</AlertTitle>
-						<AlertDescription>{paymentsResult.message}</AlertDescription>
-					</Alert>
-				)}
-
 				{canReadAccounts && accountsResult !== null && !accountsResult.ok ? (
 					<Alert>
 						<AlertTitle>Could not load payment accounts</AlertTitle>
 						<AlertDescription>{accountsResult.message}</AlertDescription>
 					</Alert>
 				) : null}
+
+				<Card>
+					<CardHeader>
+						<CardTitle>Payment register</CardTitle>
+						<CardDescription>
+							{payments.length} payment(s) · pageSize ≤ 50
+						</CardDescription>
+					</CardHeader>
+					<CardContent>
+						<PaymentsTable
+							error={paymentsResult.ok ? undefined : paymentsResult.message}
+							rows={paymentRows}
+						/>
+					</CardContent>
+				</Card>
 
 				{canReadAccounts ? (
 					<Card>
@@ -152,18 +160,6 @@ export async function PaymentsShell({ surface }: PaymentsShellProps) {
 						</CardContent>
 					</Card>
 				) : null}
-
-				<Card>
-					<CardHeader>
-						<CardTitle>Payment register</CardTitle>
-						<CardDescription>
-							{payments.length} payment(s) · pageSize ≤ 50
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<PaymentsTable rows={paymentRows} />
-					</CardContent>
-				</Card>
 
 				{formSections.map(([title, Form], index) => (
 					<Card key={title}>

@@ -1,21 +1,18 @@
 import { authServer } from "@afenda/auth";
 import { listSupplierInvoices } from "@afenda/payables";
 import {
-	Alert,
-	AlertDescription,
-	AlertTitle,
 	Card,
 	CardContent,
 	CardDescription,
 	CardHeader,
 	CardTitle,
-	Code,
 	WorkspacePage,
 	WorkspacePageContent,
 	WorkspacePageHeader,
 } from "@afenda/ui-system";
 
 import { requirePermission } from "@/features/auth/require-permission";
+import { PayablesDocumentsTable } from "@/features/payables/payables-documents-table";
 import {
 	AddSupplierCreditNoteLineForm,
 	AddSupplierInvoiceLineForm,
@@ -69,6 +66,17 @@ export async function PayablesShell({ surface }: PayablesShellProps) {
 		createPayablesCommandOptions(session.userId),
 	);
 	const invoices = invoicesResult.ok ? invoicesResult.data : [];
+	const invoiceRows = invoices.map((invoice) => ({
+		id: invoice.id,
+		code: invoice.code,
+		documentType: invoice.documentType,
+		status: invoice.status,
+		version: invoice.version,
+		supplier: invoice.supplierCode,
+		currencyCode: invoice.currencyCode,
+		openAmount: invoice.openAmount,
+		lineCount: invoice.lines.length,
+	}));
 
 	return (
 		<WorkspacePage>
@@ -78,13 +86,6 @@ export async function PayablesShell({ surface }: PayablesShellProps) {
 				title="Supplier payables"
 			/>
 			<WorkspacePageContent>
-				{invoicesResult.ok ? null : (
-					<Alert>
-						<AlertTitle>Could not load supplier invoices</AlertTitle>
-						<AlertDescription>{invoicesResult.message}</AlertDescription>
-					</Alert>
-				)}
-
 				<Card>
 					<CardHeader>
 						<CardTitle>Supplier invoices and credit notes</CardTitle>
@@ -92,28 +93,11 @@ export async function PayablesShell({ surface }: PayablesShellProps) {
 							{invoices.length} document(s) · pageSize ≤ 50
 						</CardDescription>
 					</CardHeader>
-					<CardContent className="space-y-3 text-sm">
-						{invoices.length === 0 ? (
-							<p className="text-muted-foreground">
-								No payables documents yet.
-							</p>
-						) : (
-							<ul className="space-y-2">
-								{invoices.map((invoice) => (
-									<li className="rounded-md border px-3 py-2" key={invoice.id}>
-										<div className="font-medium">
-											{invoice.code} · {invoice.documentType} · {invoice.status}{" "}
-											· v{invoice.version}
-										</div>
-										<div className="text-muted-foreground">
-											id <Code>{invoice.id}</Code> · {invoice.supplierCode} ·{" "}
-											{invoice.currencyCode} {invoice.openAmount} open ·{" "}
-											{invoice.lines.length} line(s)
-										</div>
-									</li>
-								))}
-							</ul>
-						)}
+					<CardContent>
+						<PayablesDocumentsTable
+							error={invoicesResult.ok ? undefined : invoicesResult.message}
+							rows={invoiceRows}
+						/>
 					</CardContent>
 				</Card>
 
