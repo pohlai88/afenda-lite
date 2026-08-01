@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 
 import {
 	database as afendaDatabase,
+	payrollEmployeeAssignment,
 	payrollException,
 	payrollPayGroup,
 	payrollPeriod,
@@ -13,6 +14,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import {
 	deletePayrollConstraintOrg,
+	isPayrollAssignmentRangeMigrationApplied,
 	isPayrollFoundationMigrationApplied,
 	type PayrollConstraintSeed,
 	seedPayrollConstraintChain,
@@ -46,6 +48,16 @@ const setupRuleRangeMigrationSql = readFileSync(
 	setupRuleRangeMigrationPath,
 	"utf8",
 );
+const assignmentRangeMigrationPath = fileURLToPath(
+	new URL(
+		"../../../data-plane/db/drizzle/0045_payroll_assignment_ranges.sql",
+		import.meta.url,
+	),
+);
+const assignmentRangeMigrationSql = readFileSync(
+	assignmentRangeMigrationPath,
+	"utf8",
+);
 const migrationSql = baselineMigrationSql
 	.split("--> statement-breakpoint")
 	.filter((statement) => statement.includes('"payroll_'))
@@ -77,6 +89,8 @@ function expectTableHasColumn(
 const { hasDatabase } = testingDatabase.resolve();
 const payrollFoundationReady =
 	hasDatabase && (await isPayrollFoundationMigrationApplied());
+const payrollAssignmentRangeReady =
+	payrollFoundationReady && (await isPayrollAssignmentRangeMigrationApplied());
 
 describe("Payroll foundation migration SQL", () => {
 	it("defines setup and run tables without destructive operations", () => {
@@ -155,6 +169,21 @@ describe("Payroll setup rule-range migration SQL", () => {
 });
 
 describe("Payroll assignment/input migration SQL", () => {
+	it("prevents concurrent overlapping active employee assignments", () => {
+		expect(assignmentRangeMigrationSql).toContain(
+			"payroll_employee_assignment_active_range_excl",
+		);
+		expect(assignmentRangeMigrationSql).toContain("EXCLUDE USING gist");
+		expect(assignmentRangeMigrationSql).toContain(
+			`daterange("effective_from", "effective_to", '[]') WITH &&`,
+		);
+		expect(assignmentRangeMigrationSql).toContain(
+			`WHERE ("status" = 'active')`,
+		);
+		expect(assignmentRangeMigrationSql).not.toMatch(/DROP TABLE|DROP COLUMN/);
+		expect(assignmentRangeMigrationSql).not.toMatch(/hr_|payment|journal/);
+	});
+
 	it("defines assignment and input tables without destructive operations", () => {
 		for (const table of [
 			"payroll_employee_assignment",
@@ -413,6 +442,64 @@ describe.skipIf(!payrollFoundationReady)(
 	},
 );
 
+describe.skipIf(!payrollAssignmentRangeReady)(
+	"Payroll assignment effective-range constraint (live inserts)",
+	() => {
+		const runId = `${Date.now()}-assignment`;
+		const organizationId = `org-payroll-constraint-${runId}`;
+		const actorUserId = `user-payroll-constraint-${runId}`;
+		let seed: PayrollConstraintSeed;
+
+		beforeAll(async () => {
+			seed = await seedPayrollConstraintChain({
+				organizationId,
+				actorUserId,
+				suffix: runId,
+			});
+		});
+
+		afterAll(async () => {
+			await deletePayrollConstraintOrg(organizationId);
+		});
+
+		it("rejects overlapping active assignments at the database boundary", async () => {
+			await afendaDatabase.client.insert(payrollEmployeeAssignment).values({
+				id: crypto.randomUUID(),
+				organizationId,
+				employeeId: "emp-assignment-range",
+				payGroupId: seed.payGroupId,
+				status: "active",
+				effectiveFrom: "2025-01-01",
+				effectiveTo: "2025-01-31",
+				createIdempotencyKey: `idem-assignment-range-1-${runId}`,
+				createRequestFingerprint: `fp-assignment-range-1-${runId}`,
+				version: 1,
+				createdBy: actorUserId,
+				updatedBy: actorUserId,
+			});
+
+			await expect(
+				afendaDatabase.client.insert(payrollEmployeeAssignment).values({
+					id: crypto.randomUUID(),
+					organizationId,
+					employeeId: "emp-assignment-range",
+					payGroupId: seed.payGroupId,
+					status: "active",
+					effectiveFrom: "2025-01-15",
+					effectiveTo: null,
+					createIdempotencyKey: `idem-assignment-range-2-${runId}`,
+					createRequestFingerprint: `fp-assignment-range-2-${runId}`,
+					version: 1,
+					createdBy: actorUserId,
+					updatedBy: actorUserId,
+				}),
+			).rejects.toSatisfy((error: unknown) =>
+				hasDatabaseErrorCode(error, "23P01"),
+			);
+		});
+	},
+);
+
 describe("@afenda/payroll schema constraints (live gate)", () => {
 	it("documents live insert gate when DATABASE_URL or payroll schema is absent", () => {
 		const requireDatabase =
@@ -421,9 +508,13 @@ describe("@afenda/payroll schema constraints (live gate)", () => {
 			process.env.CI === "true" ||
 			process.env.CI === "1";
 
-		if (requireDatabase && hasDatabase && !payrollFoundationReady) {
+		if (
+			requireDatabase &&
+			hasDatabase &&
+			!(payrollFoundationReady && payrollAssignmentRangeReady)
+		) {
 			throw new Error(
-				"Payroll foundation schema is not applied — live constraint proofs cannot skip under REQUIRE_DATABASE_TESTS=1. Apply pending migrations with AFENDA_ALLOW_DB_MIGRATE=1 pnpm --filter @afenda/db db:migrate.",
+				"Payroll foundation or assignment-range schema is not applied — live constraint proofs cannot skip under REQUIRE_DATABASE_TESTS=1. Apply pending migrations with AFENDA_ALLOW_DB_MIGRATE=1 pnpm --filter @afenda/db db:migrate.",
 			);
 		}
 

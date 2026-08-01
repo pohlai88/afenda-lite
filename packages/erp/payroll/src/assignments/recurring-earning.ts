@@ -4,7 +4,10 @@ import type { PayrollCommandOptions } from "../command-options";
 import { PAYROLL_COMMAND_ASSIGNMENT_RECURRING_EARNING_CREATE } from "../module-ids";
 import { createPayrollRecurringEarningInputSchema } from "../schemas/assignments";
 import { buildPayrollCreateFingerprint } from "../shared/create-fingerprint";
-import { isEffectiveOnDate } from "../shared/effective-date";
+import {
+	effectiveRangeContains,
+	isEffectiveOnDate,
+} from "../shared/effective-date";
 import {
 	assertCurrencyAlignment,
 	assertEmployeeEligibleForPayroll,
@@ -45,6 +48,12 @@ export function createPayrollRecurringEarning(
 			if (assignment.data.status !== "active") {
 				return errorResult.fail("CONFLICT", {
 					publicMessage: "Payroll employee assignment is not active",
+				});
+			}
+			if (!effectiveRangeContains(assignment.data, data)) {
+				return errorResult.fail("CONFLICT", {
+					publicMessage:
+						"Recurring earning effective range must be within the assignment",
 				});
 			}
 
@@ -90,6 +99,12 @@ export function createPayrollRecurringEarning(
 			) {
 				return errorResult.fail("CONFLICT", {
 					publicMessage: "Earning rule is not effective on requested date",
+				});
+			}
+			if (!effectiveRangeContains(earningRule.data, data)) {
+				return errorResult.fail("CONFLICT", {
+					publicMessage:
+						"Recurring earning effective range must be within the earning rule",
 				});
 			}
 

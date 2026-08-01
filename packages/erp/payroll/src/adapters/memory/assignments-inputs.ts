@@ -10,7 +10,10 @@ import {
 	parsePayrollVariableInputId,
 } from "../../brands";
 import type { MutationPorts } from "../../ports";
-import { isEffectiveOnDate } from "../../shared/effective-date";
+import {
+	effectiveRangesOverlap,
+	isEffectiveOnDate,
+} from "../../shared/effective-date";
 import { mapConflict, mapNotFound } from "../../shared/persistence-errors";
 import {
 	resolveCreateIdempotentReplay,
@@ -116,6 +119,27 @@ export function createMemoryAssignmentsMethods(
 			}
 			if (resolved.data !== "create") {
 				return errorResult.ok(cloneAssignment(resolved.data));
+			}
+
+			const overlapsActiveAssignment = Array.from(
+				state.assignments.values(),
+			).some(
+				(existing) =>
+					existing.organizationId === record.organizationId &&
+					existing.employeeId === record.employeeId &&
+					existing.status === "active" &&
+					effectiveRangesOverlap(
+						existing.effectiveFrom,
+						existing.effectiveTo,
+						record.effectiveFrom,
+						record.effectiveTo ?? null,
+					),
+			);
+			if (overlapsActiveAssignment) {
+				return errorResult.fail("CONFLICT", {
+					publicMessage:
+						"Employee already has an active payroll assignment for this effective range",
+				});
 			}
 
 			const assignmentId = parsePayrollEmployeeAssignmentId(randomUUID());

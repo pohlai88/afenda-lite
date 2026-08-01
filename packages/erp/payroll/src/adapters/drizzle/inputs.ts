@@ -16,7 +16,10 @@ import {
 	parsePayrollVariableInputId,
 } from "../../brands";
 import type { MutationPorts } from "../../ports";
-import { mapPersistenceFailure } from "../../shared/persistence-errors";
+import {
+	isPostgresUniqueViolation,
+	mapPersistenceFailure,
+} from "../../shared/persistence-errors";
 import {
 	resolveCreateIdempotentReplay,
 	resolveSourceIdempotentReplay,
@@ -26,6 +29,7 @@ import type {
 	IdempotentPayrollVariableInputRecord,
 	PayrollPeriod,
 	PayrollVariableInput,
+	PayrollVariableInputCreateRecord,
 } from "../../types";
 
 function recordAudit(
@@ -141,6 +145,77 @@ function mapPeriodRow(
 	});
 }
 
+async function resolveVariableInputSourceReplay(
+	store: PayrollInputsStore,
+	record: PayrollVariableInputCreateRecord,
+): Promise<Result<PayrollVariableInput | "create">> {
+	const existing = await store.findVariableInputBySource({
+		organizationId: record.organizationId,
+		sourceType: record.sourceType,
+		sourceId: record.sourceId,
+	});
+	if (!existing.ok) {
+		return existing;
+	}
+	return resolveSourceIdempotentReplay({
+		existing:
+			existing.data === null
+				? null
+				: {
+						entity: existing.data.variableInput,
+						sourceRequestFingerprint: existing.data.sourceRequestFingerprint,
+					},
+		requestFingerprint: record.sourceRequestFingerprint,
+	});
+}
+
+async function resolveVariableInputIdempotencyReplay(
+	store: PayrollInputsStore,
+	record: PayrollVariableInputCreateRecord,
+): Promise<Result<PayrollVariableInput | "create">> {
+	const existing = await store.findVariableInputByIdempotencyKey({
+		organizationId: record.organizationId,
+		idempotencyKey: record.idempotencyKey,
+	});
+	if (!existing.ok) {
+		return existing;
+	}
+	return resolveCreateIdempotentReplay({
+		existing:
+			existing.data === null
+				? null
+				: {
+						entity: existing.data.variableInput,
+						createRequestFingerprint: existing.data.createRequestFingerprint,
+					},
+		requestFingerprint: record.createRequestFingerprint,
+	});
+}
+
+async function resolveVariableInputUniqueRace(
+	store: PayrollInputsStore,
+	record: PayrollVariableInputCreateRecord,
+): Promise<Result<PayrollVariableInput | null>> {
+	const sourceReplay = await resolveVariableInputSourceReplay(store, record);
+	if (!sourceReplay.ok) {
+		return sourceReplay;
+	}
+	if (sourceReplay.data !== "create") {
+		return errorResult.ok(sourceReplay.data);
+	}
+
+	const idempotencyReplay = await resolveVariableInputIdempotencyReplay(
+		store,
+		record,
+	);
+	if (!idempotencyReplay.ok) {
+		return idempotencyReplay;
+	}
+	return errorResult.ok(
+		idempotencyReplay.data === "create" ? null : idempotencyReplay.data,
+	);
+}
+
 export const drizzleInputsMethods: PayrollInputsStore = {
 	async findVariableInputBySource(input) {
 		try {
@@ -194,24 +269,7 @@ export const drizzleInputsMethods: PayrollInputsStore = {
 	},
 
 	async createVariableInput(record, ports) {
-		const bySource = await this.findVariableInputBySource({
-			organizationId: record.organizationId,
-			sourceType: record.sourceType,
-			sourceId: record.sourceId,
-		});
-		if (!bySource.ok) {
-			return bySource;
-		}
-		const sourceReplay = resolveSourceIdempotentReplay({
-			existing:
-				bySource.data === null
-					? null
-					: {
-							entity: bySource.data.variableInput,
-							sourceRequestFingerprint: bySource.data.sourceRequestFingerprint,
-						},
-			requestFingerprint: record.sourceRequestFingerprint,
-		});
+		const sourceReplay = await resolveVariableInputSourceReplay(this, record);
 		if (!sourceReplay.ok) {
 			return sourceReplay;
 		}
@@ -219,24 +277,10 @@ export const drizzleInputsMethods: PayrollInputsStore = {
 			return errorResult.ok(sourceReplay.data);
 		}
 
-		const byIdempotency = await this.findVariableInputByIdempotencyKey({
-			organizationId: record.organizationId,
-			idempotencyKey: record.idempotencyKey,
-		});
-		if (!byIdempotency.ok) {
-			return byIdempotency;
-		}
-		const idempotencyReplay = resolveCreateIdempotentReplay({
-			existing:
-				byIdempotency.data === null
-					? null
-					: {
-							entity: byIdempotency.data.variableInput,
-							createRequestFingerprint:
-								byIdempotency.data.createRequestFingerprint,
-						},
-			requestFingerprint: record.createRequestFingerprint,
-		});
+		const idempotencyReplay = await resolveVariableInputIdempotencyReplay(
+			this,
+			record,
+		);
 		if (!idempotencyReplay.ok) {
 			return idempotencyReplay;
 		}
@@ -300,6 +344,15 @@ export const drizzleInputsMethods: PayrollInputsStore = {
 			}
 			return errorResult.ok(mapped.data);
 		} catch (error) {
+			if (isPostgresUniqueViolation(error)) {
+				const race = await resolveVariableInputUniqueRace(this, record);
+				if (!race.ok) {
+					return race;
+				}
+				if (race.data !== null) {
+					return errorResult.ok(race.data);
+				}
+			}
 			return mapPersistenceFailure(
 				error,
 				"Failed to create payroll variable input",

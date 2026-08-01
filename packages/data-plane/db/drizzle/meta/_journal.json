@@ -316,6 +316,13 @@
       "when": 1785540000000,
       "tag": "0044_payroll_setup_rule_ranges",
       "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1785543600000,
+      "tag": "0045_payroll_assignment_ranges",
+      "breakpoints": true
     }
   ]
 }

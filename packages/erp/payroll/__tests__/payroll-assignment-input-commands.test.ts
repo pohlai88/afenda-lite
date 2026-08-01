@@ -316,6 +316,219 @@ describe("payroll assignment and input commands", () => {
 		expect(result.ok).toBe(false);
 	});
 
+	it("rejects variable input outside its payroll period", async () => {
+		const seeded = await seedSetupChain("org-period", "user-period", "period");
+		const employees = createMemoryPayrollEmployeeQueryPort([
+			{
+				organizationId: "org-period",
+				employeeId: "emp-period",
+				payGroupId: seeded.payGroup.id,
+				currencyCode: "USD",
+				employmentStatus: "active",
+				baseCompensation: "5000.00",
+			},
+		]);
+		const options = { ...seeded.options, employees };
+		const assignment = await createPayrollEmployeeAssignment(
+			{
+				...baseContext("org-period", "user-period"),
+				employeeId: "emp-period",
+				payGroupId: seeded.payGroup.id,
+				effectiveFrom: "2024-12-01",
+				idempotencyKey: "idem-period-assignment",
+			},
+			options,
+		);
+		expect(assignment.ok).toBe(true);
+
+		const result = await createPayrollVariableInput(
+			{
+				...baseContext("org-period", "user-period"),
+				employeeId: "emp-period",
+				payGroupId: seeded.payGroup.id,
+				periodId: seeded.period.id,
+				earningRuleId: seeded.earningRule.id,
+				amount: "250.00",
+				currencyCode: "USD",
+				sourceType: "timesheet",
+				sourceId: "ts-period-1",
+				effectiveFrom: "2024-12-31",
+				idempotencyKey: "idem-period-input",
+			},
+			options,
+		);
+		expect(result.ok).toBe(false);
+		if (result.ok) {
+			throw new Error("expected period boundary rejection");
+		}
+		expect(result.code).toBe("CONFLICT");
+	});
+
+	it("rejects overlapping active assignments for one employee", async () => {
+		const seeded = await seedSetupChain(
+			"org-overlap",
+			"user-overlap",
+			"overlap",
+		);
+		const employees = createMemoryPayrollEmployeeQueryPort([
+			{
+				organizationId: "org-overlap",
+				employeeId: "emp-overlap",
+				payGroupId: seeded.payGroup.id,
+				currencyCode: "USD",
+				employmentStatus: "active",
+				baseCompensation: "5000.00",
+			},
+		]);
+		const options = { ...seeded.options, employees };
+
+		const first = await createPayrollEmployeeAssignment(
+			{
+				...baseContext("org-overlap", "user-overlap"),
+				employeeId: "emp-overlap",
+				payGroupId: seeded.payGroup.id,
+				effectiveFrom: "2025-01-01",
+				effectiveTo: "2025-01-31",
+				idempotencyKey: "idem-overlap-assignment-1",
+			},
+			options,
+		);
+		expect(first.ok).toBe(true);
+
+		const overlapping = await createPayrollEmployeeAssignment(
+			{
+				...baseContext("org-overlap", "user-overlap"),
+				employeeId: "emp-overlap",
+				payGroupId: seeded.payGroup.id,
+				effectiveFrom: "2025-01-15",
+				idempotencyKey: "idem-overlap-assignment-2",
+			},
+			options,
+		);
+		expect(overlapping.ok).toBe(false);
+		if (overlapping.ok) {
+			throw new Error("expected overlapping assignment rejection");
+		}
+		expect(overlapping.code).toBe("CONFLICT");
+	});
+
+	it("keeps recurring items within their assignment effective range", async () => {
+		const seeded = await seedSetupChain("org-range", "user-range", "range");
+		const employees = createMemoryPayrollEmployeeQueryPort([
+			{
+				organizationId: "org-range",
+				employeeId: "emp-range",
+				payGroupId: seeded.payGroup.id,
+				currencyCode: "USD",
+				employmentStatus: "active",
+				baseCompensation: "5000.00",
+			},
+		]);
+		const options = { ...seeded.options, employees };
+		const assignment = await createPayrollEmployeeAssignment(
+			{
+				...baseContext("org-range", "user-range"),
+				employeeId: "emp-range",
+				payGroupId: seeded.payGroup.id,
+				effectiveFrom: "2025-01-01",
+				effectiveTo: "2025-01-20",
+				idempotencyKey: "idem-range-assignment",
+			},
+			options,
+		);
+		expect(assignment.ok).toBe(true);
+		if (!assignment.ok) {
+			throw new Error(assignment.message);
+		}
+
+		const recurring = await createPayrollRecurringEarning(
+			{
+				...baseContext("org-range", "user-range"),
+				employeeId: "emp-range",
+				assignmentId: assignment.data.id,
+				earningRuleId: seeded.earningRule.id,
+				amount: "100.00",
+				currencyCode: "USD",
+				effectiveFrom: "2025-01-10",
+				effectiveTo: "2025-01-31",
+				idempotencyKey: "idem-range-recurring",
+			},
+			options,
+		);
+		expect(recurring.ok).toBe(false);
+	});
+
+	it("keeps variable inputs within their earning rule effective range", async () => {
+		const seeded = await seedSetupChain(
+			"org-input-rule-range",
+			"user-input-rule-range",
+			"input-rule-range",
+		);
+		const employees = createMemoryPayrollEmployeeQueryPort([
+			{
+				organizationId: "org-input-rule-range",
+				employeeId: "emp-input-rule-range",
+				payGroupId: seeded.payGroup.id,
+				currencyCode: "USD",
+				employmentStatus: "active",
+				baseCompensation: "5000.00",
+			},
+		]);
+		const options = { ...seeded.options, employees };
+		const assignment = await createPayrollEmployeeAssignment(
+			{
+				...baseContext("org-input-rule-range", "user-input-rule-range"),
+				employeeId: "emp-input-rule-range",
+				payGroupId: seeded.payGroup.id,
+				effectiveFrom: "2025-01-01",
+				idempotencyKey: "idem-input-rule-range-assignment",
+			},
+			options,
+		);
+		expect(assignment.ok).toBe(true);
+
+		const boundedRule = await createPayrollEarningRule(
+			{
+				...baseContext("org-input-rule-range", "user-input-rule-range"),
+				payGroupId: seeded.payGroup.id,
+				code: "BOUNDED",
+				name: "Bounded variable earning",
+				ruleType: "fixed",
+				amount: "100.00",
+				rate: null,
+				currencyCode: "USD",
+				ruleVersion: "v1",
+				effectiveFrom: "2025-01-01",
+				effectiveTo: "2025-01-15",
+				idempotencyKey: "idem-input-rule-range-rule",
+			},
+			options,
+		);
+		expect(boundedRule.ok).toBe(true);
+		if (!boundedRule.ok) {
+			throw new Error(boundedRule.message);
+		}
+
+		const result = await createPayrollVariableInput(
+			{
+				...baseContext("org-input-rule-range", "user-input-rule-range"),
+				employeeId: "emp-input-rule-range",
+				payGroupId: seeded.payGroup.id,
+				periodId: seeded.period.id,
+				earningRuleId: boundedRule.data.id,
+				amount: "250.00",
+				currencyCode: "USD",
+				sourceType: "timesheet",
+				sourceId: "ts-input-rule-range-1",
+				effectiveFrom: "2025-01-10",
+				effectiveTo: "2025-01-20",
+				idempotencyKey: "idem-input-rule-range-input",
+			},
+			options,
+		);
+		expect(result.ok).toBe(false);
+	});
+
 	it("returns same variable input for duplicate source idempotency", async () => {
 		const seeded = await seedSetupChain("org-dup", "user-dup", "dup");
 		const employees = createMemoryPayrollEmployeeQueryPort([

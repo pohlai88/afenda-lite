@@ -4,7 +4,10 @@ import type { PayrollCommandOptions } from "../command-options";
 import { PAYROLL_COMMAND_ASSIGNMENT_RECURRING_DEDUCTION_CREATE } from "../module-ids";
 import { createPayrollRecurringDeductionInputSchema } from "../schemas/assignments";
 import { buildPayrollCreateFingerprint } from "../shared/create-fingerprint";
-import { isEffectiveOnDate } from "../shared/effective-date";
+import {
+	effectiveRangeContains,
+	isEffectiveOnDate,
+} from "../shared/effective-date";
 import {
 	assertCurrencyAlignment,
 	assertEmployeeEligibleForPayroll,
@@ -46,6 +49,12 @@ export function createPayrollRecurringDeduction(
 			if (assignment.data.status !== "active") {
 				return errorResult.fail("CONFLICT", {
 					publicMessage: "Payroll employee assignment is not active",
+				});
+			}
+			if (!effectiveRangeContains(assignment.data, data)) {
+				return errorResult.fail("CONFLICT", {
+					publicMessage:
+						"Recurring deduction effective range must be within the assignment",
 				});
 			}
 
@@ -91,6 +100,12 @@ export function createPayrollRecurringDeduction(
 			) {
 				return errorResult.fail("CONFLICT", {
 					publicMessage: "Deduction rule is not effective on requested date",
+				});
+			}
+			if (!effectiveRangeContains(deductionRule.data, data)) {
+				return errorResult.fail("CONFLICT", {
+					publicMessage:
+						"Recurring deduction effective range must be within the deduction rule",
 				});
 			}
 

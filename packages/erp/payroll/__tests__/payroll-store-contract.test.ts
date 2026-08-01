@@ -1123,7 +1123,7 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 			expect(relisted.data[0]?.gross).toBe("5300");
 		});
 
-		it("creates assignments and replays idempotent variable inputs", async () => {
+		it("creates assignments and source-idempotently replays variable inputs", async () => {
 			const harness = createPayrollParityHarness(adapter);
 			const seeded = await seedPayrollRunChain(harness);
 			const employeeId = `emp-${adapter}`;
@@ -1215,21 +1215,45 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 				createdBy: harness.actorUserId,
 				correlationId: `corr-variable-${adapter}`,
 			};
+			const sourceReplayInput = {
+				...variableInput,
+				idempotencyKey: `idem-variable-source-replay-${adapter}`,
+				createRequestFingerprint: "fp-variable-source-replay",
+			};
 
-			const firstInput = await harness.store.createVariableInput(
-				variableInput,
-				harness.ports,
-			);
-			const replayInput = await harness.store.createVariableInput(
-				variableInput,
-				harness.ports,
-			);
+			const [firstInput, replayInput] =
+				adapter === "drizzle"
+					? await Promise.all([
+							harness.store.createVariableInput(variableInput, harness.ports),
+							harness.store.createVariableInput(
+								sourceReplayInput,
+								harness.ports,
+							),
+						])
+					: [
+							await harness.store.createVariableInput(
+								variableInput,
+								harness.ports,
+							),
+							await harness.store.createVariableInput(
+								sourceReplayInput,
+								harness.ports,
+							),
+						];
 			expect(firstInput.ok).toBe(true);
 			expect(replayInput.ok).toBe(true);
 			if (!(firstInput.ok && replayInput.ok)) {
 				return;
 			}
 			expect(replayInput.data.id).toBe(firstInput.data.id);
+			const storedInputs = await harness.store.listVariableInputsForPeriod({
+				organizationId: harness.organizationId,
+				periodId: seeded.period.id,
+			});
+			expect(storedInputs.ok).toBe(true);
+			if (storedInputs.ok) {
+				expect(storedInputs.data).toHaveLength(1);
+			}
 
 			const crossOrg = await createPayrollParityHarness(
 				adapter,

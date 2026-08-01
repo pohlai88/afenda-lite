@@ -6,6 +6,7 @@ import {
 	payrollPeriodIdSchema,
 	payrollVariableInputIdSchema,
 } from "../brands";
+import { isValidEffectiveDateRange } from "../shared/effective-date";
 import {
 	isoDateSchema,
 	payrollActorUserIdSchema,
@@ -45,22 +46,26 @@ export const payrollVariableInputRecordSchema = z.object({
 	updatedAt: z.coerce.date(),
 });
 
+const payrollVariableInputCreateSchema = payrollMutationContextSchema
+	.extend({
+		employeeId: payrollEmployeeIdSchema,
+		payGroupId: payrollPayGroupIdSchema,
+		periodId: payrollPeriodIdSchema,
+		earningRuleId: payrollEarningRuleIdSchema,
+		amount: payrollDecimalStringSchema,
+		currencyCode: z.string().trim().length(3),
+		sourceType: z.string().trim().min(1).max(64),
+		sourceId: z.string().trim().min(1).max(128),
+		effectiveFrom: isoDateSchema,
+		effectiveTo: isoDateSchema.nullable().optional(),
+		idempotencyKey: payrollIdempotencyKeySchema,
+	})
+	.strict();
+
 export const createPayrollVariableInputInputSchema =
-	payrollMutationContextSchema
-		.extend({
-			employeeId: payrollEmployeeIdSchema,
-			payGroupId: payrollPayGroupIdSchema,
-			periodId: payrollPeriodIdSchema,
-			earningRuleId: payrollEarningRuleIdSchema,
-			amount: payrollDecimalStringSchema,
-			currencyCode: z.string().trim().length(3),
-			sourceType: z.string().trim().min(1).max(64),
-			sourceId: z.string().trim().min(1).max(128),
-			effectiveFrom: isoDateSchema,
-			effectiveTo: isoDateSchema.nullable().optional(),
-			idempotencyKey: payrollIdempotencyKeySchema,
-		})
-		.strict();
+	payrollVariableInputCreateSchema.refine(isValidEffectiveDateRange, {
+		message: "effectiveTo must be on or after effectiveFrom",
+	});
 
 export const getPayrollVariableInputInputSchema = payrollMutationContextSchema
 	.extend({
@@ -69,7 +74,7 @@ export const getPayrollVariableInputInputSchema = payrollMutationContextSchema
 	.strict();
 
 export const payrollVariableInputCreateRecordSchema =
-	createPayrollVariableInputInputSchema
+	payrollVariableInputCreateSchema
 		.extend({
 			earningRuleCode: z.string().trim().min(1).max(64),
 			earningRuleVersion: z.string().trim().min(1).max(64),
@@ -77,7 +82,10 @@ export const payrollVariableInputCreateRecordSchema =
 			createRequestFingerprint: z.string().trim().min(1),
 			createdBy: payrollActorUserIdSchema,
 		})
-		.strict();
+		.strict()
+		.refine(isValidEffectiveDateRange, {
+			message: "effectiveTo must be on or after effectiveFrom",
+		});
 
 export const idempotentPayrollVariableInputRecordSchema = z.object({
 	variableInput: payrollVariableInputRecordSchema,

@@ -8,6 +8,7 @@ import {
 	payrollRecurringDeductionIdSchema,
 	payrollRecurringEarningIdSchema,
 } from "../brands";
+import { isValidEffectiveDateRange } from "../shared/effective-date";
 import {
 	isoDateSchema,
 	payrollActorUserIdSchema,
@@ -76,16 +77,20 @@ export const payrollRecurringDeductionRecordSchema = z.object({
 	updatedAt: z.coerce.date(),
 });
 
+const payrollEmployeeAssignmentCreateSchema = payrollMutationContextSchema
+	.extend({
+		employeeId: payrollEmployeeIdSchema,
+		payGroupId: payrollPayGroupIdSchema,
+		effectiveFrom: isoDateSchema,
+		effectiveTo: isoDateSchema.nullable().optional(),
+		idempotencyKey: payrollIdempotencyKeySchema,
+	})
+	.strict();
+
 export const createPayrollEmployeeAssignmentInputSchema =
-	payrollMutationContextSchema
-		.extend({
-			employeeId: payrollEmployeeIdSchema,
-			payGroupId: payrollPayGroupIdSchema,
-			effectiveFrom: isoDateSchema,
-			effectiveTo: isoDateSchema.nullable().optional(),
-			idempotencyKey: payrollIdempotencyKeySchema,
-		})
-		.strict();
+	payrollEmployeeAssignmentCreateSchema.refine(isValidEffectiveDateRange, {
+		message: "effectiveTo must be on or after effectiveFrom",
+	});
 
 export const getPayrollEmployeeAssignmentInputSchema =
 	payrollMutationContextSchema
@@ -94,54 +99,71 @@ export const getPayrollEmployeeAssignmentInputSchema =
 		})
 		.strict();
 
+const payrollRecurringEarningCreateSchema = payrollMutationContextSchema
+	.extend({
+		employeeId: payrollEmployeeIdSchema,
+		assignmentId: payrollEmployeeAssignmentIdSchema,
+		earningRuleId: payrollEarningRuleIdSchema,
+		amount: payrollDecimalStringSchema,
+		currencyCode: z.string().trim().length(3),
+		effectiveFrom: isoDateSchema,
+		effectiveTo: isoDateSchema.nullable().optional(),
+		idempotencyKey: payrollIdempotencyKeySchema,
+	})
+	.strict();
+
 export const createPayrollRecurringEarningInputSchema =
-	payrollMutationContextSchema
-		.extend({
-			employeeId: payrollEmployeeIdSchema,
-			assignmentId: payrollEmployeeAssignmentIdSchema,
-			earningRuleId: payrollEarningRuleIdSchema,
-			amount: payrollDecimalStringSchema,
-			currencyCode: z.string().trim().length(3),
-			effectiveFrom: isoDateSchema,
-			effectiveTo: isoDateSchema.nullable().optional(),
-			idempotencyKey: payrollIdempotencyKeySchema,
-		})
-		.strict();
+	payrollRecurringEarningCreateSchema.refine(isValidEffectiveDateRange, {
+		message: "effectiveTo must be on or after effectiveFrom",
+	});
+
+const payrollRecurringDeductionCreateSchema = payrollMutationContextSchema
+	.extend({
+		employeeId: payrollEmployeeIdSchema,
+		assignmentId: payrollEmployeeAssignmentIdSchema,
+		deductionRuleId: payrollDeductionRuleIdSchema,
+		amount: payrollDecimalStringSchema,
+		currencyCode: z.string().trim().length(3),
+		effectiveFrom: isoDateSchema,
+		effectiveTo: isoDateSchema.nullable().optional(),
+		idempotencyKey: payrollIdempotencyKeySchema,
+	})
+	.strict();
 
 export const createPayrollRecurringDeductionInputSchema =
-	payrollMutationContextSchema
-		.extend({
-			employeeId: payrollEmployeeIdSchema,
-			assignmentId: payrollEmployeeAssignmentIdSchema,
-			deductionRuleId: payrollDeductionRuleIdSchema,
-			amount: payrollDecimalStringSchema,
-			currencyCode: z.string().trim().length(3),
-			effectiveFrom: isoDateSchema,
-			effectiveTo: isoDateSchema.nullable().optional(),
-			idempotencyKey: payrollIdempotencyKeySchema,
-		})
-		.strict();
+	payrollRecurringDeductionCreateSchema.refine(isValidEffectiveDateRange, {
+		message: "effectiveTo must be on or after effectiveFrom",
+	});
 
 export const payrollEmployeeAssignmentCreateRecordSchema =
-	createPayrollEmployeeAssignmentInputSchema
+	payrollEmployeeAssignmentCreateSchema
 		.extend({
 			createRequestFingerprint: z.string().trim().min(1),
 			createdBy: payrollActorUserIdSchema,
 		})
-		.strict();
+		.strict()
+		.refine(isValidEffectiveDateRange, {
+			message: "effectiveTo must be on or after effectiveFrom",
+		});
 
 export const payrollRecurringEarningCreateRecordSchema =
-	createPayrollRecurringEarningInputSchema
+	payrollRecurringEarningCreateSchema
 		.extend({
 			createRequestFingerprint: z.string().trim().min(1),
 			createdBy: payrollActorUserIdSchema,
 		})
-		.strict();
+		.strict()
+		.refine(isValidEffectiveDateRange, {
+			message: "effectiveTo must be on or after effectiveFrom",
+		});
 
 export const payrollRecurringDeductionCreateRecordSchema =
-	createPayrollRecurringDeductionInputSchema
+	payrollRecurringDeductionCreateSchema
 		.extend({
 			createRequestFingerprint: z.string().trim().min(1),
 			createdBy: payrollActorUserIdSchema,
 		})
-		.strict();
+		.strict()
+		.refine(isValidEffectiveDateRange, {
+			message: "effectiveTo must be on or after effectiveFrom",
+		});

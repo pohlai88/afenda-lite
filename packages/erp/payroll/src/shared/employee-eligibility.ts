@@ -57,13 +57,35 @@ export function assertCurrencyAlignment(input: {
 	return errorResult.ok(undefined);
 }
 
-export function assertInputBeforeCutoff(input: {
+export function assertInputWithinPayrollPeriod(input: {
 	effectiveFrom: string;
+	effectiveTo?: string | null | undefined;
+	periodStart: string;
+	periodEnd: string;
 	cutoffDate: string;
 }): Result<void> {
+	if (input.effectiveFrom < input.periodStart) {
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Input effective date is before the payroll period",
+		});
+	}
+	if (input.effectiveFrom > input.periodEnd) {
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Input effective date is after the payroll period",
+		});
+	}
 	if (input.effectiveFrom > input.cutoffDate) {
 		return errorResult.fail("CONFLICT", {
 			publicMessage: "Input effective date is after period cutoff",
+		});
+	}
+	if (
+		input.effectiveTo !== null &&
+		input.effectiveTo !== undefined &&
+		input.effectiveTo > input.periodEnd
+	) {
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Input effective range extends beyond the payroll period",
 		});
 	}
 	return errorResult.ok(undefined);

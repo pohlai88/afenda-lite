@@ -10,11 +10,14 @@ import {
 	getPayrollVariableInputInputSchema,
 } from "../schemas/inputs";
 import { buildPayrollCreateFingerprint } from "../shared/create-fingerprint";
-import { isEffectiveOnDate } from "../shared/effective-date";
+import {
+	effectiveRangeContains,
+	isEffectiveOnDate,
+} from "../shared/effective-date";
 import {
 	assertCurrencyAlignment,
 	assertEmployeeEligibleForPayroll,
-	assertInputBeforeCutoff,
+	assertInputWithinPayrollPeriod,
 	requirePayrollEmployeeAtDate,
 } from "../shared/employee-eligibility";
 import {
@@ -89,14 +92,19 @@ export function createPayrollVariableInput(
 			if (!assignments.ok) {
 				return assignments;
 			}
-			if (
-				!assignments.data.some(
-					(assignment) => assignment.employeeId === data.employeeId,
-				)
-			) {
+			const assignment = assignments.data.find(
+				(candidate) => candidate.employeeId === data.employeeId,
+			);
+			if (assignment === undefined) {
 				return errorResult.fail("CONFLICT", {
 					publicMessage:
 						"Employee has no active payroll assignment for this pay group",
+				});
+			}
+			if (!effectiveRangeContains(assignment, data)) {
+				return errorResult.fail("CONFLICT", {
+					publicMessage:
+						"Variable input effective range must be within the assignment",
 				});
 			}
 
@@ -123,8 +131,11 @@ export function createPayrollVariableInput(
 				});
 			}
 
-			const cutoff = assertInputBeforeCutoff({
+			const cutoff = assertInputWithinPayrollPeriod({
 				effectiveFrom: data.effectiveFrom,
+				effectiveTo: data.effectiveTo,
+				periodStart: period.data.periodStart,
+				periodEnd: period.data.periodEnd,
 				cutoffDate: period.data.cutoffDate,
 			});
 			if (!cutoff.ok) {
@@ -157,6 +168,12 @@ export function createPayrollVariableInput(
 			) {
 				return errorResult.fail("CONFLICT", {
 					publicMessage: "Earning rule is not effective on requested date",
+				});
+			}
+			if (!effectiveRangeContains(earningRule.data, data)) {
+				return errorResult.fail("CONFLICT", {
+					publicMessage:
+						"Variable input effective range must be within the earning rule",
 				});
 			}
 

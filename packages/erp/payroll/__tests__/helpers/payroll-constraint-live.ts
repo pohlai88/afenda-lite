@@ -2,12 +2,23 @@ import {
 	database as afendaDatabase,
 	eq,
 	payrollCalendar,
+	payrollEmployeeAssignment,
 	payrollException,
 	payrollPayGroup,
 	payrollPeriod,
 	payrollRun,
 	sql,
 } from "@afenda/db";
+
+export async function isPayrollAssignmentRangeMigrationApplied(): Promise<boolean> {
+	const rows = await afendaDatabase.client.execute(sql`
+		SELECT 1
+		FROM pg_constraint
+		WHERE conname = 'payroll_employee_assignment_active_range_excl'
+		LIMIT 1
+	`);
+	return (rows.rows as unknown[]).length > 0;
+}
 
 export async function isPayrollFoundationMigrationApplied(): Promise<boolean> {
 	const rows = await afendaDatabase.client.execute(sql`
@@ -130,6 +141,9 @@ export async function seedPayrollConstraintChain(input: {
 export async function deletePayrollConstraintOrg(
 	organizationId: string,
 ): Promise<void> {
+	await afendaDatabase.client
+		.delete(payrollEmployeeAssignment)
+		.where(eq(payrollEmployeeAssignment.organizationId, organizationId));
 	await afendaDatabase.client
 		.delete(payrollException)
 		.where(eq(payrollException.organizationId, organizationId));
