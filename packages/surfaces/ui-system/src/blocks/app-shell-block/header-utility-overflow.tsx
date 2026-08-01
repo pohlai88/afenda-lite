@@ -60,6 +60,7 @@ function ProfileOverflowItems({
 			</DropdownMenuItem>
 		);
 	}
+	const { actions, onAction } = profile;
 	return (
 		<>
 			<DropdownMenuSeparator />
@@ -67,11 +68,11 @@ function ProfileOverflowItems({
 				<UserCircleIcon />
 				{profile.name}
 			</DropdownMenuLabel>
-			{profile.actions.map((action) => (
+			{actions.map((action) => (
 				<ProfileOverflowAction
 					action={action}
 					key={action.id}
-					onAction={profile.onAction}
+					onAction={onAction}
 				/>
 			))}
 		</>

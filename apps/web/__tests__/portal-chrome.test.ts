@@ -218,12 +218,17 @@ describe("portal-chrome (N16)", () => {
 			"features/portal-chrome/workspace-platform-chrome.tsx",
 		);
 		const header = uiSource("blocks/app-shell-block/header.tsx");
+		const overflow = uiSource(
+			"blocks/app-shell-block/header-utility-overflow.tsx",
+		);
+		const policy = uiSource("blocks/app-shell-block/header-utility-policy.ts");
 
 		expect(chrome).toContain('"command-menu": "primary"');
 		expect(chrome).toContain('notifications: "secondary"');
 		expect(chrome).not.toMatch(/(?:sm|md|lg):hidden/);
-		expect(header).toContain("APP_SHELL_UTILITY_IDS");
-		expect(header).toContain('aria-label="Workspace utilities"');
+		expect(policy).toContain("APP_SHELL_UTILITY_IDS");
+		expect(policy).toContain("resolveAppShellUtilityPolicy");
+		expect(overflow).toContain('aria-label="Workspace utilities"');
 		expect(header).toContain('data-slot="app-shell-mobile-utilities"');
 	});
 

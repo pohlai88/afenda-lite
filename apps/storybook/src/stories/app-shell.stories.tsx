@@ -330,6 +330,10 @@ function EnterpriseWorkbench() {
 				initials: "AR",
 				actions: [
 					{ id: "profile", label: "Profile" },
+					{
+						id: "localized-preferences",
+						label: "Organisationsweite Profileinstellungen verwalten",
+					},
 					{ id: "sign-out", label: "Sign out" },
 				],
 				onAction: (id) => setMessage(`Profile action: ${id}`),

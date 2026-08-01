@@ -210,7 +210,9 @@ test("Enterprise AppShell mobile utilities preserve priority and overflow access
 		name: "Open workspace utilities (4 secondary)",
 	});
 	await overflowTrigger.click();
-	const menu = page.getByRole("menu", { name: "Workspace utilities" });
+	const menu = page.getByRole("menu", {
+		name: "Open workspace utilities (4 secondary)",
+	});
 	await expect(menu).toBeVisible();
 	await menu
 		.getByRole("menuitem", { name: "Notifications (1 unread)" })
@@ -223,7 +225,9 @@ test("Enterprise AppShell mobile utilities preserve priority and overflow access
 
 	await overflowTrigger.click();
 	await page
-		.getByRole("menu", { name: "Workspace utilities" })
+		.getByRole("menu", {
+			name: "Open workspace utilities (4 secondary)",
+		})
 		.getByRole("menuitem", { name: "Customize appearance" })
 		.click();
 	await expect(
@@ -232,15 +236,31 @@ test("Enterprise AppShell mobile utilities preserve priority and overflow access
 	await page.keyboard.press("Escape");
 	await expect(overflowTrigger).toBeFocused();
 
+	await overflowTrigger.click();
+	const localizedAction = page.getByRole("menuitem", {
+		name: "Organisationsweite Profileinstellungen verwalten",
+	});
+	await expect(localizedAction).toBeVisible();
+	const localizedBounds = await localizedAction.evaluate((element) => {
+		const bounds = element.getBoundingClientRect();
+		return {
+			left: bounds.left,
+			right: bounds.right,
+			viewport: window.innerWidth,
+		};
+	});
+	expect(localizedBounds.left).toBeGreaterThanOrEqual(0);
+	expect(localizedBounds.right).toBeLessThanOrEqual(localizedBounds.viewport);
+	await page.keyboard.press("Escape");
+	await expect(overflowTrigger).toBeFocused();
+
 	await page.setViewportSize({ width: 195, height: 422 });
 	await expect(overflowTrigger).toBeVisible();
-	await expect
-		.poll(() =>
-			page.evaluate(
-				() => document.documentElement.scrollWidth <= window.innerWidth,
-			),
-		)
-		.toBe(true);
+	const reflow = await page.evaluate(() => ({
+		documentWidth: document.documentElement.scrollWidth,
+		viewportWidth: window.innerWidth,
+	}));
+	expect(reflow.documentWidth).toBeLessThanOrEqual(reflow.viewportWidth + 2);
 
 	const accessibility = await new AxeBuilder({ page })
 		.include("#storybook-root")
