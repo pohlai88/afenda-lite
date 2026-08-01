@@ -16,6 +16,7 @@ import {
 	deletePayrollConstraintOrg,
 	isPayrollAssignmentRangeMigrationApplied,
 	isPayrollFoundationMigrationApplied,
+	isPayrollOutputsMigrationApplied,
 	type PayrollConstraintSeed,
 	seedPayrollConstraintChain,
 } from "./helpers/payroll-constraint-live";
@@ -88,7 +89,9 @@ function expectTableHasColumn(
 
 const { hasDatabase } = testingDatabase.resolve();
 const payrollFoundationReady =
-	hasDatabase && (await isPayrollFoundationMigrationApplied());
+	hasDatabase &&
+	(await isPayrollFoundationMigrationApplied()) &&
+	(await isPayrollOutputsMigrationApplied());
 const payrollAssignmentRangeReady =
 	payrollFoundationReady && (await isPayrollAssignmentRangeMigrationApplied());
 

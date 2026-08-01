@@ -395,7 +395,8 @@ export const drizzleInputsMethods: PayrollInputsStore = {
 						eq(payrollVariableInput.organizationId, input.organizationId),
 						eq(payrollVariableInput.periodId, input.periodId),
 					),
-				);
+				)
+				.orderBy(payrollVariableInput.employeeId, payrollVariableInput.id);
 			const variableInputs: PayrollVariableInput[] = [];
 			for (const row of rows) {
 				if (input.status !== undefined && row.status !== input.status) {

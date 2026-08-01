@@ -3,7 +3,7 @@ import { z } from "zod";
 import {
 	formatScaledToDecimal,
 	minScaled,
-	mulScaled,
+	mulScaledWithRounding,
 	parseDecimalToScaled,
 	roundScaled,
 } from "../../shared/money";
@@ -42,13 +42,13 @@ function computeRateAmount(
 	policy: StatutoryCalculatorInput["roundingPolicy"],
 ): bigint {
 	const rateScaled = parseDecimalToScaled(rate);
-	const raw = mulScaled(base, rateScaled);
-	const capped = applyOptionalCap(raw, cap);
-	return roundScaled(capped, policy);
+	const rounded = mulScaledWithRounding(base, rateScaled, policy);
+	return applyOptionalCap(rounded, cap);
 }
 
 export const synthV1StatutoryCalculator: StatutoryRuleCalculator = {
 	calculatorId: SYNTH_V1_CALCULATOR_ID,
+	productionApproval: { status: "synthetic_only" },
 	calculate(input: StatutoryCalculatorInput): StatutoryCalculatorOutput {
 		const parsed = synthV1ConfigSchema.safeParse(input.configJson);
 		if (!parsed.success) {

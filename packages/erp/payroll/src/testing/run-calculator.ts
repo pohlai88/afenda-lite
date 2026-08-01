@@ -5,6 +5,7 @@ import type {
 	PayrollRunCalculatorPort,
 	PayrollRunCalculatorResult,
 } from "../ports";
+import { hashSnapshot } from "../runs/calc/snapshot";
 import {
 	DEFAULT_PAYROLL_ROUNDING_POLICY,
 	PAYROLL_CALCULATION_VERSION,
@@ -27,7 +28,13 @@ export function createTestPayrollRunCalculator(
 			}
 			return errorResult.ok({
 				calculationSnapshotHash:
-					options.snapshotHash ?? `hash-${input.runId}-${input.sequence}`,
+					options.snapshotHash ??
+					hashSnapshot({
+						runId: input.runId,
+						calculationVersion: PAYROLL_CALCULATION_VERSION,
+						roundingPolicy: DEFAULT_PAYROLL_ROUNDING_POLICY,
+						snapshotHashes: [],
+					}),
 				calculationVersion: PAYROLL_CALCULATION_VERSION,
 				roundingPolicyJson: { ...DEFAULT_PAYROLL_ROUNDING_POLICY },
 				exceptions: options.exceptions ?? [],

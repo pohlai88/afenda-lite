@@ -43,6 +43,18 @@ export interface PayrollRunCalculatorPort {
 	) => Promise<Result<PayrollRunCalculatorResult>>;
 }
 
+/** Redacted, bounded operation telemetry. Amounts and employee data are forbidden. */
+export interface PayrollObservabilityPort {
+	record: (input: {
+		operation: string;
+		outcome: "ok" | "failure";
+		errorCode?: string;
+		durationMs: number;
+		organizationToken: string;
+		actorToken: string;
+	}) => Promise<void> | void;
+}
+
 export interface PayrollEmployeeFacts {
 	baseCompensation: string;
 	currencyCode: string;
@@ -66,6 +78,11 @@ export interface PayrollEmployeeQueryPort {
 		actorUserId: string;
 		correlationId: string;
 	}) => Promise<Result<PayrollEmployeeFacts | null>>;
+	/** Resolve the employee owned by an authenticated actor for self-service reads. */
+	resolveActorEmployeeId?: (input: {
+		organizationId: string;
+		actorUserId: string;
+	}) => Promise<Result<string | null>>;
 }
 
 export interface PayrollHrHandoffInputPort {
@@ -108,7 +125,13 @@ export interface OutboxPort {
 	append: (input: OutboxFactInput) => Promise<Result<{ id: string }>>;
 }
 
+/** Optional unit-of-work boundary used by deterministic/test adapters. */
+export interface MutationFactTransactionPort {
+	execute: <T>(work: () => Promise<Result<T>>) => Promise<Result<T>>;
+}
+
 export interface MutationPorts {
 	audit: AuditFactPort;
 	outbox: OutboxPort;
+	transaction?: MutationFactTransactionPort;
 }

@@ -93,6 +93,26 @@ export function mulScaled(left: bigint, right: bigint): bigint {
 	return (left * right) / SCALE_FACTOR;
 }
 
+/** Multiply two scale-12 values and round once at the requested output scale. */
+export function mulScaledWithRounding(
+	left: bigint,
+	right: bigint,
+	policy: PayrollRoundingPolicy,
+): bigint {
+	if (policy.scale < 0 || policy.scale > PAYROLL_MONEY_SCALE) {
+		throw new RangeError(
+			`Rounding scale must be between 0 and ${PAYROLL_MONEY_SCALE}`,
+		);
+	}
+	const outputUnit = 10n ** BigInt(PAYROLL_MONEY_SCALE - policy.scale);
+	const roundedUnits = divideWithRounding(
+		left * right,
+		SCALE_FACTOR * outputUnit,
+		policy.mode,
+	);
+	return roundedUnits * outputUnit;
+}
+
 export function divScaled(left: bigint, right: bigint): bigint {
 	if (right === 0n) {
 		throw new RangeError("Division by zero in payroll money arithmetic");

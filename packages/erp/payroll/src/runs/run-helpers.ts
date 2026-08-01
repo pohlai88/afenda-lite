@@ -3,7 +3,14 @@ import { errorResult, type Result } from "@afenda/errors";
 import type { PayrollRunId } from "../brands";
 import type { MutationPorts } from "../ports";
 import type { PayrollStore } from "../store";
-import type { PayrollException, PayrollRun, PayrollRunStatus } from "../types";
+import type {
+	PayrollException,
+	PayrollFinalizationProjection,
+	PayrollReversalProjection,
+	PayrollRun,
+	PayrollRunStatus,
+	PayrollRunUpdateInput,
+} from "../types";
 import { assertPayrollRunTransition } from "./transitions";
 
 export async function loadPayrollRun(
@@ -76,6 +83,12 @@ export function transitionPayrollRun(
 		roundingPolicyJson?: Record<string, unknown> | null;
 		finalizedAt?: string | null;
 		finalizedBy?: string | null;
+		auditReason?: string;
+		reversalReasonCode?: PayrollRunUpdateInput["reversalReasonCode"];
+		reversalIdempotencyKey?: string;
+		reversalRequestFingerprint?: string;
+		finalizationProjection?: PayrollFinalizationProjection;
+		reversalProjection?: PayrollReversalProjection;
 	},
 ): Promise<Result<PayrollRun>> {
 	if (input.run.status !== input.toStatus) {
@@ -98,6 +111,12 @@ export function transitionPayrollRun(
 			roundingPolicyJson: input.roundingPolicyJson,
 			finalizedAt: input.finalizedAt,
 			finalizedBy: input.finalizedBy,
+			auditReason: input.auditReason,
+			reversalReasonCode: input.reversalReasonCode,
+			reversalIdempotencyKey: input.reversalIdempotencyKey,
+			reversalRequestFingerprint: input.reversalRequestFingerprint,
+			finalizationProjection: input.finalizationProjection,
+			reversalProjection: input.reversalProjection,
 			expectedVersion: input.expectedVersion,
 			actorUserId: input.actorUserId,
 			correlationId: input.correlationId,

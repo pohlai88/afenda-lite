@@ -44,6 +44,12 @@ import { MasterDataEventSchemas } from "./master-data.events";
 import { PayablesEventSchemas } from "./payables.events";
 import { PaymentsEventSchemas } from "./payments.events";
 import { PayrollEventSchemas } from "./payroll.events";
+
+export {
+	type PayrollReversalReasonCode,
+	payrollReversalReasonCodeSchema,
+} from "./payroll.events";
+
 import { PlatformEventSchemas } from "./platform.events";
 import { PurchasingEventSchemas } from "./purchasing.events";
 import { ReceivablesEventSchemas } from "./receivables.events";
@@ -335,8 +341,10 @@ export {
 } from "./payments.events";
 export {
 	PAYROLL_EVENT_IDS,
+	PAYROLL_PAYMENT_CORRECTION_REQUESTED_EVENT,
 	PAYROLL_PAYMENT_REQUESTED_EVENT,
 	PAYROLL_PAYSLIP_PUBLISHED_EVENT,
+	PAYROLL_POSTING_CORRECTION_REQUESTED_EVENT,
 	PAYROLL_POSTING_REQUESTED_EVENT,
 	PAYROLL_RUN_CALCULATED_EVENT,
 	PAYROLL_RUN_FINALIZED_EVENT,
@@ -345,7 +353,15 @@ export {
 	type PayrollEntityPayload,
 	PayrollEventSchemas,
 	type PayrollEventType,
+	type PayrollPaymentRequestedPayload,
+	type PayrollPostingRequestedPayload,
+	type PayrollRunFinalizedPayload,
 	payrollEntityPayloadSchema,
+	payrollPaymentCorrectionRequestedPayloadSchema,
+	payrollPaymentRequestedPayloadSchema,
+	payrollPostingCorrectionRequestedPayloadSchema,
+	payrollPostingRequestedPayloadSchema,
+	payrollRunFinalizedPayloadSchema,
 } from "./payroll.events";
 export {
 	PLATFORM_HUMAN_RESOURCES_ACCOUNTING_PROVISIONING_FACT_RECORDED_EVENT,

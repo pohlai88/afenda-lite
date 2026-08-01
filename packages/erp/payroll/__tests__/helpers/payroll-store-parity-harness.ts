@@ -1,6 +1,7 @@
 import { createDrizzlePayrollStore } from "../../src/adapters/drizzle";
 import type { MutationPorts } from "../../src/ports";
 import type { PayrollStore } from "../../src/store";
+import type { MemoryPayrollStore } from "../../src/testing";
 import { createMemoryPayrollStore } from "../../src/testing";
 import { createMemoryMutationPorts } from "./memory-ports";
 
@@ -9,6 +10,7 @@ export type PayrollStoreAdapter = "memory" | "drizzle";
 export interface PayrollParityHarness {
 	actorUserId: string;
 	adapter: PayrollStoreAdapter;
+	memoryStore: MemoryPayrollStore | null;
 	organizationId: string;
 	ports: MutationPorts;
 	store: PayrollStore;
@@ -22,12 +24,11 @@ export function createPayrollParityHarness(
 	adapter: PayrollStoreAdapter,
 ): PayrollParityHarness {
 	const suffix = uniqueSuffix(adapter);
+	const memoryStore = adapter === "memory" ? createMemoryPayrollStore() : null;
 	return {
 		adapter,
-		store:
-			adapter === "memory"
-				? createMemoryPayrollStore()
-				: createDrizzlePayrollStore(),
+		store: memoryStore ?? createDrizzlePayrollStore(),
+		memoryStore,
 		ports: createMemoryMutationPorts(),
 		organizationId: `org-payroll-${suffix}`,
 		actorUserId: `user-payroll-${suffix}`,

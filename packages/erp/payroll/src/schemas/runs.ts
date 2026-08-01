@@ -1,3 +1,4 @@
+import { payrollReversalReasonCodeSchema } from "@afenda/events/schemas";
 import { z } from "zod";
 
 import {
@@ -45,6 +46,15 @@ export const payrollRunRecordSchema = z.object({
 	calculationSnapshotHash: z.string().trim().min(1).max(256).nullable(),
 	calculationVersion: z.string().trim().min(1).max(64).nullable(),
 	roundingPolicyJson: payrollRoundingPolicySchema.nullable(),
+	reversalReasonCode: payrollReversalReasonCodeSchema.nullable().default(null),
+	reversalIdempotencyKey: payrollIdempotencyKeySchema.nullable().default(null),
+	reversalRequestFingerprint: z
+		.string()
+		.trim()
+		.min(1)
+		.max(256)
+		.nullable()
+		.default(null),
 	version: z.number().int().positive(),
 	createdBy: payrollActorUserIdSchema,
 	updatedBy: payrollActorUserIdSchema,
@@ -94,6 +104,10 @@ export const payrollRunUpdateInputSchema = z
 		roundingPolicyJson: payrollRoundingPolicySchema.nullable().optional(),
 		finalizedAt: isoDateTimeSchema.nullable().optional(),
 		finalizedBy: payrollActorUserIdSchema.nullable().optional(),
+		auditReason: z.string().trim().min(1).max(512).optional(),
+		reversalReasonCode: payrollReversalReasonCodeSchema.optional(),
+		reversalIdempotencyKey: payrollIdempotencyKeySchema.optional(),
+		reversalRequestFingerprint: z.string().trim().min(1).max(256).optional(),
 		expectedVersion: payrollExpectedVersionSchema,
 		actorUserId: payrollActorUserIdSchema,
 		correlationId: payrollCorrelationIdSchema,
@@ -159,6 +173,8 @@ export const reversePayrollRunInputSchema = z
 		organizationId: payrollOrganizationIdSchema,
 		runId: payrollRunIdSchema,
 		expectedVersion: payrollExpectedVersionSchema,
+		idempotencyKey: payrollIdempotencyKeySchema,
+		reasonCode: payrollReversalReasonCodeSchema,
 		reason: z.string().trim().min(1).max(512),
 		actorUserId: payrollActorUserIdSchema,
 		correlationId: payrollCorrelationIdSchema,

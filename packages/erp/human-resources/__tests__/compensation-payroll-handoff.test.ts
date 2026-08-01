@@ -2,7 +2,6 @@ import {
 	approvedPayrollHandoffSchema,
 	HANDOFF_PAYROLL_CONTRACT_VERSION,
 } from "@afenda/events/schemas";
-import { parseApprovedPayrollHandoffInput } from "@afenda/payroll";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -222,9 +221,9 @@ describe("compensation payroll handoff parity (Slice 8.8)", () => {
 			return;
 		}
 
-		const parsed = parseApprovedPayrollHandoffInput(mapped.data);
-		expect(parsed.ok).toBe(true);
-		if (!parsed.ok) {
+		const parsed = approvedPayrollHandoffSchema.safeParse(mapped.data);
+		expect(parsed.success).toBe(true);
+		if (!parsed.success) {
 			return;
 		}
 

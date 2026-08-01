@@ -1,5 +1,7 @@
 import {
+	PAYROLL_PAYMENT_CORRECTION_REQUESTED_EVENT,
 	PAYROLL_PAYMENT_REQUESTED_EVENT,
+	PAYROLL_POSTING_CORRECTION_REQUESTED_EVENT,
 	PAYROLL_POSTING_REQUESTED_EVENT,
 	PAYROLL_RUN_CALCULATED_EVENT,
 	PAYROLL_RUN_FINALIZED_EVENT,
@@ -17,15 +19,26 @@ import {
 	PAYROLL_PERMISSION_RUN_REVIEW,
 	PAYROLL_PERMISSION_SETUP_MANAGE,
 } from "../src/permissions";
+import { hashSnapshot } from "../src/runs/calculation";
 import {
 	listPayrollExceptionsForRun,
 	recordPayrollException,
 } from "../src/runs/exception";
 import { finalizePayrollRun } from "../src/runs/finalization";
+import {
+	buildPayrollFinalizationProjection,
+	buildPayrollReversalProjection,
+} from "../src/runs/finalization-evidence";
+import { buildPayrollRunEventPayloadForType } from "../src/runs/lifecycle-events";
 import { createPayrollPeriod } from "../src/runs/payroll-period";
 import { createPayrollRun, getPayrollRun } from "../src/runs/payroll-run";
 import { reversePayrollRun } from "../src/runs/reversal";
 import { calculatePayrollRun } from "../src/runs/run-calculate-command";
+import {
+	payrollResultLineRecordSchema,
+	payrollRunEmployeeRecordSchema,
+} from "../src/schemas/outputs";
+import { payrollRunRecordSchema } from "../src/schemas/runs";
 import { createPayrollCalendar } from "../src/setup/calendar";
 import { createPayrollPayGroup } from "../src/setup/pay-group";
 import {
@@ -125,13 +138,128 @@ async function seedOpenPeriod(
 }
 
 describe("payroll run lifecycle commands", () => {
+	it("derives exact opposite payment and posting correction contracts", () => {
+		const now = new Date("2025-01-31T00:00:00.000Z");
+		const snapshotHash = hashSnapshot({ employee: "synthetic-1" });
+		const run = payrollRunRecordSchema.parse({
+			id: "00000000-0000-4000-8000-000000000951",
+			organizationId: "org-opposite-contract",
+			payGroupId: "00000000-0000-4000-8000-000000000952",
+			periodId: "00000000-0000-4000-8000-000000000953",
+			runType: "regular",
+			sequence: 1,
+			status: "finalized",
+			finalizedAt: now.toISOString(),
+			finalizedBy: "actor-opposite-contract",
+			calculationSnapshotHash: hashSnapshot({
+				runId: "00000000-0000-4000-8000-000000000951",
+				calculationVersion: "payroll.calc.v1",
+				roundingPolicy: { mode: "half_even", scale: 2 },
+				snapshotHashes: [snapshotHash],
+			}),
+			calculationVersion: "payroll.calc.v1",
+			roundingPolicyJson: { mode: "half_even", scale: 2 },
+			version: 3,
+			createdBy: "actor-opposite-contract",
+			updatedBy: "actor-opposite-contract",
+			createdAt: now,
+			updatedAt: now,
+		});
+		const employee = payrollRunEmployeeRecordSchema.parse({
+			id: "00000000-0000-4000-8000-000000000954",
+			organizationId: run.organizationId,
+			runId: run.id,
+			employeeId: "synthetic-employee-1",
+			assignmentId: null,
+			currencyCode: "USD",
+			gross: "1000",
+			employeeDeductions: "0",
+			employeeStatutory: "0",
+			employerCost: "0",
+			net: "1000",
+			snapshotJson: { employee: "synthetic-1" },
+			snapshotHash,
+			calculationVersion: "payroll.calc.v1",
+			status: "calculated",
+			createdAt: now,
+			updatedAt: now,
+		});
+		const line = payrollResultLineRecordSchema.parse({
+			id: "00000000-0000-4000-8000-000000000955",
+			organizationId: run.organizationId,
+			runId: run.id,
+			runEmployeeId: employee.id,
+			employeeId: employee.employeeId,
+			lineKind: "earning",
+			code: "BASE",
+			ruleCode: "BASE",
+			ruleVersion: "1",
+			ruleKind: "earning",
+			amount: "1000",
+			currencyCode: "USD",
+			sourceType: null,
+			sourceId: null,
+			sequence: 1,
+			traceRef: "trace-opposite-contract",
+			createdAt: now,
+			updatedAt: now,
+		});
+		const original = buildPayrollFinalizationProjection({
+			run,
+			periodEnd: "2025-01-31",
+			runEmployees: [employee],
+			resultLines: [line],
+		});
+		const correction = buildPayrollReversalProjection({
+			run,
+			periodEnd: "2025-01-31",
+			reason: "Synthetic exact-opposite contract",
+			reasonCode: "calculation_correction",
+			runEmployees: [employee],
+			resultLines: [line],
+		});
+		expect(original.ok).toBe(true);
+		expect(correction.ok).toBe(true);
+		if (!(original.ok && correction.ok)) {
+			return;
+		}
+		expect(correction.data.payments[0]?.amount).toBe(
+			`-${original.data.payments[0]?.amount}`,
+		);
+		expect(correction.data.postingLines[0]?.amount).toBe(
+			`-${original.data.postingLines[0]?.amount}`,
+		);
+		const paymentEvent = buildPayrollRunEventPayloadForType({
+			eventType: PAYROLL_PAYMENT_CORRECTION_REQUESTED_EVENT,
+			actorUserId: "actor-opposite-contract",
+			correlationId: "corr-opposite-contract",
+			run: { ...run, status: "reversed" },
+			reversalProjection: correction.data,
+		});
+		const postingEvent = buildPayrollRunEventPayloadForType({
+			eventType: PAYROLL_POSTING_CORRECTION_REQUESTED_EVENT,
+			actorUserId: "actor-opposite-contract",
+			correlationId: "corr-opposite-contract",
+			run: { ...run, status: "reversed" },
+			reversalProjection: correction.data,
+		});
+		expect(paymentEvent).toMatchObject({
+			reasonCode: "calculation_correction",
+			payments: [{ amount: "-1000" }],
+		});
+		expect(postingEvent).toMatchObject({
+			reasonCode: "calculation_correction",
+			lines: [{ amount: "-1000" }],
+		});
+		expect(paymentEvent).not.toHaveProperty("reason");
+		expect(postingEvent).not.toHaveProperty("reason");
+	});
+
 	it("runs create → calculate → finalize → reverse", async () => {
 		const organizationId = "org-run-lifecycle-happy";
 		const actorUserId = "user-run-lifecycle-happy";
 		const seeded = await seedOpenPeriod(organizationId, actorUserId, "happy");
-		const calculator = createTestPayrollRunCalculator({
-			snapshotHash: "hash-happy-path",
-		});
+		const calculator = createTestPayrollRunCalculator();
 		const options = { ...seeded.options, calculator };
 
 		const created = await createPayrollRun(
@@ -164,7 +292,7 @@ describe("payroll run lifecycle commands", () => {
 			return;
 		}
 		expect(calculated.data.status).toBe("calculated");
-		expect(calculated.data.calculationSnapshotHash).toBe("hash-happy-path");
+		expect(calculated.data.calculationSnapshotHash).toHaveLength(64);
 
 		const finalized = await finalizePayrollRun(
 			{
@@ -202,6 +330,8 @@ describe("payroll run lifecycle commands", () => {
 				...baseContext(organizationId, actorUserId),
 				runId: finalized.data.id,
 				expectedVersion: finalized.data.version,
+				idempotencyKey: "reverse-lifecycle-success",
+				reasonCode: "operational_correction",
 				reason: "Synthetic reversal for lifecycle test",
 			},
 			options,
@@ -211,6 +341,37 @@ describe("payroll run lifecycle commands", () => {
 			return;
 		}
 		expect(reversed.data.status).toBe("reversed");
+		const reversalReplay = await reversePayrollRun(
+			{
+				...baseContext(organizationId, actorUserId),
+				runId: finalized.data.id,
+				expectedVersion: finalized.data.version,
+				idempotencyKey: "reverse-lifecycle-success",
+				reasonCode: "operational_correction",
+				reason: "Synthetic reversal for lifecycle test",
+			},
+			options,
+		);
+		expect(reversalReplay.ok).toBe(true);
+		if (reversalReplay.ok) {
+			expect(reversalReplay.data.id).toBe(reversed.data.id);
+			expect(reversalReplay.data.version).toBe(reversed.data.version);
+		}
+		const conflictingReplay = await reversePayrollRun(
+			{
+				...baseContext(organizationId, actorUserId),
+				runId: finalized.data.id,
+				expectedVersion: finalized.data.version,
+				idempotencyKey: "reverse-lifecycle-success",
+				reasonCode: "accounting_correction",
+				reason: "Different request must conflict",
+			},
+			options,
+		);
+		expect(conflictingReplay.ok).toBe(false);
+		if (!conflictingReplay.ok) {
+			expect(conflictingReplay.code).toBe("CONFLICT");
+		}
 		expect(seeded.ports.outbox.calls.map(({ type }) => type)).toEqual([
 			PAYROLL_RUN_STARTED_EVENT,
 			PAYROLL_RUN_CALCULATED_EVENT,
@@ -218,7 +379,46 @@ describe("payroll run lifecycle commands", () => {
 			PAYROLL_PAYMENT_REQUESTED_EVENT,
 			PAYROLL_POSTING_REQUESTED_EVENT,
 			PAYROLL_RUN_REVERSED_EVENT,
+			PAYROLL_PAYMENT_CORRECTION_REQUESTED_EVENT,
+			PAYROLL_POSTING_CORRECTION_REQUESTED_EVENT,
 		]);
+		const paymentRequest = seeded.ports.outbox.calls.find(
+			({ type }) => type === PAYROLL_PAYMENT_REQUESTED_EVENT,
+		);
+		const postingRequest = seeded.ports.outbox.calls.find(
+			({ type }) => type === PAYROLL_POSTING_REQUESTED_EVENT,
+		);
+		const paymentCorrection = seeded.ports.outbox.calls.find(
+			({ type }) => type === PAYROLL_PAYMENT_CORRECTION_REQUESTED_EVENT,
+		);
+		const postingCorrection = seeded.ports.outbox.calls.find(
+			({ type }) => type === PAYROLL_POSTING_CORRECTION_REQUESTED_EVENT,
+		);
+		expect(paymentRequest?.payload).toMatchObject({
+			payGroupId: seeded.payGroup.id,
+			periodId: seeded.period.id,
+			paymentDate: seeded.period.periodEnd,
+			payments: [],
+		});
+		expect(postingRequest?.payload).toMatchObject({
+			postingDate: seeded.period.periodEnd,
+			lines: [],
+		});
+		expect(paymentCorrection?.payload).toMatchObject({
+			originalRunId: finalized.data.id,
+			reasonCode: "operational_correction",
+			payments: [],
+		});
+		expect(postingCorrection?.payload).toMatchObject({
+			originalRunId: finalized.data.id,
+			reasonCode: "operational_correction",
+			lines: [],
+		});
+		expect(seeded.ports.audit.calls.at(-1)?.changes).toContainEqual({
+			field: "reason",
+			oldValue: null,
+			newValue: "Synthetic reversal for lifecycle test",
+		});
 	});
 
 	it("rejects illegal transitions through commands", async () => {
@@ -755,5 +955,63 @@ describe("payroll run lifecycle commands", () => {
 			return;
 		}
 		expect(loaded.data.status).toBe("calculated");
+	});
+
+	it("rolls back finalization facts and state when event publication fails", async () => {
+		const organizationId = "org-run-finalize-fault";
+		const actorUserId = "user-run-finalize-fault";
+		const seeded = await seedOpenPeriod(
+			organizationId,
+			actorUserId,
+			"finalize-fault",
+		);
+		const calculated = await createPayrollRun(
+			{
+				...baseContext(organizationId, actorUserId),
+				payGroupId: seeded.payGroup.id,
+				periodId: seeded.period.id,
+				runType: "regular",
+				sequence: 1,
+				idempotencyKey: "idem-finalize-fault",
+			},
+			seeded.options,
+		);
+		expect(calculated.ok).toBe(true);
+		if (!calculated.ok) {
+			return;
+		}
+		const ready = await calculatePayrollRun(
+			{
+				...baseContext(organizationId, actorUserId),
+				runId: calculated.data.id,
+				expectedVersion: calculated.data.version,
+			},
+			{ ...seeded.options, calculator: createTestPayrollRunCalculator() },
+		);
+		expect(ready.ok).toBe(true);
+		if (!ready.ok) {
+			return;
+		}
+
+		const failingPorts = createMemoryMutationPorts({ outboxFailAfter: 1 });
+		const result = await finalizePayrollRun(
+			{
+				...baseContext(organizationId, actorUserId),
+				runId: ready.data.id,
+				expectedVersion: ready.data.version,
+			},
+			{ ...seeded.options, ports: failingPorts },
+		);
+		expect(result.ok).toBe(false);
+		expect(failingPorts.audit.calls).toHaveLength(0);
+		expect(failingPorts.outbox.calls).toHaveLength(0);
+		const persisted = await seeded.store.getRun({
+			organizationId,
+			runId: ready.data.id,
+		});
+		expect(persisted.ok).toBe(true);
+		if (persisted.ok) {
+			expect(persisted.data?.status).toBe("calculated");
+		}
 	});
 });

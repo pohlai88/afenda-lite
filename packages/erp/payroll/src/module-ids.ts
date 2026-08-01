@@ -56,6 +56,10 @@ export const PAYROLL_COMMAND_RUN_CREATE = "payroll.run.create" as const;
 export const PAYROLL_COMMAND_RUN_CALCULATE = "payroll.run.calculate" as const;
 export const PAYROLL_COMMAND_RUN_FINALIZE = "payroll.run.finalize" as const;
 export const PAYROLL_COMMAND_RUN_REVERSE = "payroll.run.reverse" as const;
+export const PAYROLL_COMMAND_RECONCILIATION_RECORD =
+	"payroll.reconciliation.record" as const;
+export const PAYROLL_COMMAND_RECONCILIATION_RESOLVE =
+	"payroll.reconciliation.resolve" as const;
 
 export const PAYROLL_COMMAND_IDS = [
 	PAYROLL_COMMAND_SETUP_CALENDAR_CREATE,
@@ -87,6 +91,8 @@ export const PAYROLL_COMMAND_IDS = [
 	PAYROLL_COMMAND_RUN_CALCULATE,
 	PAYROLL_COMMAND_RUN_FINALIZE,
 	PAYROLL_COMMAND_RUN_REVERSE,
+	PAYROLL_COMMAND_RECONCILIATION_RECORD,
+	PAYROLL_COMMAND_RECONCILIATION_RESOLVE,
 ] as const;
 
 export type PayrollCommandId = (typeof PAYROLL_COMMAND_IDS)[number];
@@ -115,6 +121,12 @@ export const PAYROLL_QUERY_INPUT_VARIABLE_GET =
 	"payroll.input.variable.get" as const;
 
 export const PAYROLL_QUERY_RUN_GET = "payroll.run.get" as const;
+export const PAYROLL_QUERY_PAYSLIP_READ_OWN =
+	"payroll.payslip.read-own" as const;
+export const PAYROLL_QUERY_PAYSLIP_READ_ALL =
+	"payroll.payslip.read-all" as const;
+export const PAYROLL_QUERY_RECONCILIATION_LIST =
+	"payroll.reconciliation.list" as const;
 
 export const PAYROLL_QUERY_IDS = [
 	PAYROLL_QUERY_SETUP_CALENDAR_GET,
@@ -129,6 +141,9 @@ export const PAYROLL_QUERY_IDS = [
 	PAYROLL_QUERY_ASSIGNMENT_GET,
 	PAYROLL_QUERY_INPUT_VARIABLE_GET,
 	PAYROLL_QUERY_RUN_GET,
+	PAYROLL_QUERY_PAYSLIP_READ_OWN,
+	PAYROLL_QUERY_PAYSLIP_READ_ALL,
+	PAYROLL_QUERY_RECONCILIATION_LIST,
 ] as const;
 
 export type PayrollQueryId = (typeof PAYROLL_QUERY_IDS)[number];

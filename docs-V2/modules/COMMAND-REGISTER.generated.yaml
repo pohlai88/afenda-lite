@@ -1732,6 +1732,12 @@ commands:
   - id: payroll.run.reverse
     moduleId: payroll
     permission: payroll.run.reverse
+  - id: payroll.reconciliation.record
+    moduleId: payroll
+    permission: payroll.reconciliation.manage
+  - id: payroll.reconciliation.resolve
+    moduleId: payroll
+    permission: payroll.reconciliation.manage
   - id: purchasing.order.create
     moduleId: purchasing
     permission: purchasing.order.create

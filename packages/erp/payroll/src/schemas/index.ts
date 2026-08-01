@@ -3,6 +3,7 @@ export * from "./common";
 export * from "./handoff";
 export * from "./inputs";
 export * from "./outputs";
+export * from "./payslips";
 export * from "./reconciliation";
 export * from "./runs";
 export * from "./setup";

@@ -3,13 +3,11 @@ import {
 	and,
 	eq,
 	payrollResultLine,
-	payrollRun,
 	payrollRunEmployee,
 } from "@afenda/db";
 import { errorResult, type Result } from "@afenda/errors";
 
 import {
-	type PayrollRunId,
 	parsePayrollEmployeeAssignmentId,
 	parsePayrollResultLineId,
 	parsePayrollRunEmployeeId,
@@ -130,61 +128,48 @@ function mapResultLineRow(
 	});
 }
 
-async function assertRunAllowsOutputMutation(input: {
-	organizationId: string;
-	runId: PayrollRunId;
-}): Promise<Result<{ status: string }>> {
-	try {
-		const rows = await afendaDatabase.client
-			.select({ status: payrollRun.status })
-			.from(payrollRun)
-			.where(
-				and(
-					eq(payrollRun.organizationId, input.organizationId),
-					eq(payrollRun.id, input.runId),
-				),
-			)
-			.limit(1);
-		const [row] = rows;
-		if (row === undefined) {
-			return mapNotFound("Payroll run not found");
-		}
-		if (row.status === "finalized" || row.status === "reversed") {
-			return mapInvalidState(
-				"Finalized or reversed payroll runs cannot change calculation outputs",
-			);
-		}
-		return errorResult.ok({ status: row.status });
-	} catch (error) {
-		return mapPersistenceFailure(error, "Failed to load payroll run");
-	}
-}
-
 /** Drizzle persistence methods for payroll outputs. */
 export const drizzleOutputsMethods: PayrollOutputsStore = {
 	async deleteCalculationOutputsForRun(input, ports) {
-		const run = await assertRunAllowsOutputMutation(input);
-		if (!run.ok) {
-			return run;
-		}
-
 		try {
-			await afendaDatabase.client
-				.delete(payrollResultLine)
-				.where(
-					and(
-						eq(payrollResultLine.organizationId, input.organizationId),
-						eq(payrollResultLine.runId, input.runId),
-					),
+			const [lockedRows] = await afendaDatabase.transaction((sqlValue) => [
+				sqlValue`
+					SELECT status FROM payroll_run
+					WHERE organization_id = ${input.organizationId} AND id = ${input.runId}
+					FOR UPDATE
+				`,
+				sqlValue`
+					DELETE FROM payroll_result_line
+					WHERE organization_id = ${input.organizationId} AND run_id = ${input.runId}
+						AND EXISTS (
+							SELECT 1 FROM payroll_run
+							WHERE organization_id = ${input.organizationId} AND id = ${input.runId}
+								AND status NOT IN ('calculated', 'finalized', 'reversed')
+						)
+				`,
+				sqlValue`
+					DELETE FROM payroll_run_employee
+					WHERE organization_id = ${input.organizationId} AND run_id = ${input.runId}
+						AND EXISTS (
+							SELECT 1 FROM payroll_run
+							WHERE organization_id = ${input.organizationId} AND id = ${input.runId}
+								AND status NOT IN ('calculated', 'finalized', 'reversed')
+						)
+				`,
+			]);
+			const lockedStatus = lockedRows[0]?.status;
+			if (lockedStatus === undefined) {
+				return mapNotFound("Payroll run not found");
+			}
+			if (
+				lockedStatus === "calculated" ||
+				lockedStatus === "finalized" ||
+				lockedStatus === "reversed"
+			) {
+				return mapInvalidState(
+					"Calculated, finalized, or reversed payroll runs cannot change calculation outputs",
 				);
-			await afendaDatabase.client
-				.delete(payrollRunEmployee)
-				.where(
-					and(
-						eq(payrollRunEmployee.organizationId, input.organizationId),
-						eq(payrollRunEmployee.runId, input.runId),
-					),
-				);
+			}
 
 			const audit = await recordAudit(ports, {
 				organizationId: input.organizationId,
@@ -208,91 +193,81 @@ export const drizzleOutputsMethods: PayrollOutputsStore = {
 	},
 
 	async replaceRunCalculationOutputs(input, ports) {
-		const run = await assertRunAllowsOutputMutation(input);
-		if (!run.ok) {
-			return run;
-		}
-
-		const deleted = await this.deleteCalculationOutputsForRun(
-			{
-				organizationId: input.organizationId,
-				runId: input.runId,
-				actorUserId: input.actorUserId,
-				correlationId: input.correlationId,
-			},
-			ports,
-		);
-		if (!deleted.ok) {
-			return deleted;
-		}
-
-		const runEmployees: PayrollRunEmployee[] = [];
-		const resultLines: PayrollResultLine[] = [];
-
 		try {
-			if (input.runEmployees.length > 0) {
-				const rows = await afendaDatabase.client
-					.insert(payrollRunEmployee)
-					.values(
-						input.runEmployees.map((employee) => ({
-							id: employee.id,
-							organizationId: input.organizationId,
-							runId: input.runId,
-							employeeId: employee.employeeId,
-							assignmentId: employee.assignmentId,
-							currencyCode: employee.currencyCode,
-							gross: employee.gross,
-							employeeDeductions: employee.employeeDeductions,
-							employeeStatutory: employee.employeeStatutory,
-							employerCost: employee.employerCost,
-							net: employee.net,
-							snapshotJson: employee.snapshotJson,
-							snapshotHash: employee.snapshotHash,
-							calculationVersion: employee.calculationVersion,
-							status: employee.status,
-						})),
+			const employeeRowsJson = JSON.stringify(input.runEmployees);
+			const resultLineRowsJson = JSON.stringify(input.resultLines);
+			const [lockedRows] = await afendaDatabase.transaction((sqlValue) => [
+				sqlValue`
+					SELECT status FROM payroll_run
+					WHERE organization_id = ${input.organizationId} AND id = ${input.runId}
+					FOR UPDATE
+				`,
+				sqlValue`
+					DELETE FROM payroll_result_line
+					WHERE organization_id = ${input.organizationId} AND run_id = ${input.runId}
+						AND EXISTS (SELECT 1 FROM payroll_run WHERE organization_id = ${input.organizationId}
+							AND id = ${input.runId} AND status NOT IN ('calculated', 'finalized', 'reversed'))
+				`,
+				sqlValue`
+					DELETE FROM payroll_run_employee
+					WHERE organization_id = ${input.organizationId} AND run_id = ${input.runId}
+						AND EXISTS (SELECT 1 FROM payroll_run WHERE organization_id = ${input.organizationId}
+							AND id = ${input.runId} AND status NOT IN ('calculated', 'finalized', 'reversed'))
+				`,
+				sqlValue`
+					INSERT INTO payroll_run_employee (
+						id, organization_id, run_id, employee_id, assignment_id, currency_code,
+						gross, employee_deductions, employee_statutory, employer_cost, net,
+						snapshot_json, snapshot_hash, calculation_version, status
 					)
-					.returning();
-				for (const row of rows) {
-					const mapped = mapRunEmployeeRow(row);
-					if (!mapped.ok) {
-						return mapped;
-					}
-					runEmployees.push(mapped.data);
-				}
+					SELECT employee.id::uuid, ${input.organizationId}, ${input.runId},
+						employee."employeeId", employee."assignmentId"::uuid, employee."currencyCode",
+						employee.gross::numeric, employee."employeeDeductions"::numeric,
+						employee."employeeStatutory"::numeric, employee."employerCost"::numeric,
+						employee.net::numeric, employee."snapshotJson", employee."snapshotHash",
+						employee."calculationVersion", employee.status
+					FROM jsonb_to_recordset(${employeeRowsJson}::jsonb) AS employee(
+						id text, "employeeId" text, "assignmentId" text, "currencyCode" text,
+						gross text, "employeeDeductions" text, "employeeStatutory" text,
+						"employerCost" text, net text, "snapshotJson" jsonb,
+						"snapshotHash" text, "calculationVersion" text, status text
+					)
+					WHERE EXISTS (SELECT 1 FROM payroll_run WHERE organization_id = ${input.organizationId}
+						AND id = ${input.runId} AND status NOT IN ('calculated', 'finalized', 'reversed'))
+				`,
+				sqlValue`
+					INSERT INTO payroll_result_line (
+						id, organization_id, run_id, run_employee_id, employee_id, line_kind,
+						code, rule_code, rule_version, rule_kind, amount, currency_code,
+						source_type, source_id, sequence, trace_ref
+					)
+					SELECT line.id::uuid, ${input.organizationId}, ${input.runId},
+						line."runEmployeeId"::uuid, line."employeeId", line."lineKind",
+						line.code, line."ruleCode", line."ruleVersion", line."ruleKind",
+						line.amount::numeric, line."currencyCode", line."sourceType",
+						line."sourceId", line.sequence::integer, line."traceRef"
+					FROM jsonb_to_recordset(${resultLineRowsJson}::jsonb) AS line(
+						id text, "runEmployeeId" text, "employeeId" text, "lineKind" text,
+						code text, "ruleCode" text, "ruleVersion" text, "ruleKind" text,
+						amount text, "currencyCode" text, "sourceType" text,
+						"sourceId" text, sequence text, "traceRef" text
+					)
+					WHERE EXISTS (SELECT 1 FROM payroll_run WHERE organization_id = ${input.organizationId}
+						AND id = ${input.runId} AND status NOT IN ('calculated', 'finalized', 'reversed'))
+				`,
+			]);
+			const lockedStatus = lockedRows[0]?.status;
+			if (lockedStatus === undefined) {
+				return mapNotFound("Payroll run not found");
 			}
-
-			if (input.resultLines.length > 0) {
-				const rows = await afendaDatabase.client
-					.insert(payrollResultLine)
-					.values(
-						input.resultLines.map((line) => ({
-							id: line.id,
-							organizationId: input.organizationId,
-							runId: input.runId,
-							runEmployeeId: line.runEmployeeId,
-							employeeId: line.employeeId,
-							lineKind: line.lineKind,
-							code: line.code,
-							ruleCode: line.ruleCode,
-							ruleVersion: line.ruleVersion,
-							ruleKind: line.ruleKind,
-							amount: line.amount,
-							currencyCode: line.currencyCode,
-							sourceType: line.sourceType,
-							sourceId: line.sourceId,
-							sequence: line.sequence,
-							traceRef: line.traceRef,
-						})),
-					)
-					.returning();
-				for (const row of rows) {
-					const mapped = mapResultLineRow(row);
-					if (!mapped.ok) {
-						return mapped;
-					}
-					resultLines.push(mapped.data);
-				}
+			if (
+				lockedStatus === "calculated" ||
+				lockedStatus === "finalized" ||
+				lockedStatus === "reversed"
+			) {
+				return mapInvalidState(
+					"Calculated, finalized, or reversed payroll runs cannot change calculation outputs",
+				);
 			}
 
 			const audit = await recordAudit(ports, {
@@ -307,7 +282,20 @@ export const drizzleOutputsMethods: PayrollOutputsStore = {
 				return audit;
 			}
 
-			return errorResult.ok({ runEmployees, resultLines });
+			const [runEmployees, resultLines] = await Promise.all([
+				this.listRunEmployeesForRun(input),
+				this.listResultLinesForRun(input),
+			]);
+			if (!runEmployees.ok) {
+				return runEmployees;
+			}
+			if (!resultLines.ok) {
+				return resultLines;
+			}
+			return errorResult.ok({
+				runEmployees: runEmployees.data,
+				resultLines: resultLines.data,
+			});
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,

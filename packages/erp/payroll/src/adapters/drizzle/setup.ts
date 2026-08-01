@@ -1563,7 +1563,8 @@ const drizzleSetupCore = {
 						eq(payrollEarningRule.code, input.code),
 						ne(payrollEarningRule.status, "archived"),
 					),
-				);
+				)
+				.orderBy(payrollEarningRule.code, payrollEarningRule.id);
 			const selected = selectRuleAtEffectiveDate(rows, input.effectiveDate);
 			if (selected === null) {
 				return errorResult.ok(null);
@@ -1594,7 +1595,8 @@ const drizzleSetupCore = {
 						eq(payrollDeductionRule.code, input.code),
 						ne(payrollDeductionRule.status, "archived"),
 					),
-				);
+				)
+				.orderBy(payrollDeductionRule.code, payrollDeductionRule.id);
 			const selected = selectRuleAtEffectiveDate(rows, input.effectiveDate);
 			if (selected === null) {
 				return errorResult.ok(null);
@@ -1625,7 +1627,8 @@ const drizzleSetupCore = {
 						eq(payrollStatutoryRule.code, input.code),
 						ne(payrollStatutoryRule.status, "archived"),
 					),
-				);
+				)
+				.orderBy(payrollStatutoryRule.code, payrollStatutoryRule.id);
 			const selected = selectRuleAtEffectiveDate(rows, input.effectiveDate);
 			if (selected === null) {
 				return errorResult.ok(null);
@@ -1654,7 +1657,8 @@ const drizzleSetupCore = {
 						eq(payrollEarningRule.payGroupId, input.payGroupId),
 						ne(payrollEarningRule.status, "archived"),
 					),
-				);
+				)
+				.orderBy(payrollEarningRule.code, payrollEarningRule.id);
 			const active = listActiveRulesForPayGroup(rows, input);
 			const rules: PayrollEarningRule[] = [];
 			for (const row of active) {
@@ -1688,7 +1692,8 @@ const drizzleSetupCore = {
 						eq(payrollDeductionRule.payGroupId, input.payGroupId),
 						ne(payrollDeductionRule.status, "archived"),
 					),
-				);
+				)
+				.orderBy(payrollDeductionRule.code, payrollDeductionRule.id);
 			const active = listActiveRulesForPayGroup(rows, input);
 			const rules: PayrollDeductionRule[] = [];
 			for (const row of active) {
@@ -1722,7 +1727,8 @@ const drizzleSetupCore = {
 						eq(payrollStatutoryRule.payGroupId, input.payGroupId),
 						ne(payrollStatutoryRule.status, "archived"),
 					),
-				);
+				)
+				.orderBy(payrollStatutoryRule.code, payrollStatutoryRule.id);
 			const active = listActiveRulesForPayGroup(rows, input);
 			const rules: PayrollStatutoryRule[] = [];
 			for (const row of active) {

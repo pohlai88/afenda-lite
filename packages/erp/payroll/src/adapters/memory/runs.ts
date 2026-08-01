@@ -5,21 +5,29 @@ import { errorResult, type Result } from "@afenda/errors";
 import { events } from "@afenda/events";
 
 import {
+	type PayrollAdjustmentId,
 	type PayrollRunId,
+	parsePayrollAdjustmentId,
 	parsePayrollExceptionId,
 	parsePayrollRunId,
 } from "../../brands";
 import type { MutationPorts } from "../../ports";
 import {
 	buildPayrollRunEventPayload,
+	buildPayrollRunEventPayloadForType,
 	payrollRunEventsForStatus,
 } from "../../runs/lifecycle-events";
+import { assertPayrollRunReversalUpdate } from "../../runs/reversal-policy";
 import { assertPayrollRunTransition } from "../../runs/transitions";
 import { assertExpectedVersion } from "../../shared/concurrency";
 import {
 	collectFinalizedRuleUsage,
 	type FinalizedRuleUsage,
 } from "../../shared/finalized-rule-usage";
+import {
+	formatScaledToDecimal,
+	parseDecimalToScaled,
+} from "../../shared/money";
 import {
 	mapConflict,
 	mapInvalidState,
@@ -76,11 +84,24 @@ async function appendRunEvents(
 		organizationId: string;
 		runId: string;
 		status: PayrollRun["status"];
+		run?: PayrollRun;
+		finalizationProjection?: PayrollRunUpdateInput["finalizationProjection"];
+		reversalProjection?: PayrollRunUpdateInput["reversalProjection"];
 	},
 ): Promise<Result<void>> {
 	const eventTypes = payrollRunEventsForStatus(input.status);
-	const payload = buildPayrollRunEventPayload(input);
 	for (const type of eventTypes) {
+		const payload =
+			input.run === undefined
+				? buildPayrollRunEventPayload(input)
+				: buildPayrollRunEventPayloadForType({
+						eventType: type,
+						actorUserId: input.actorUserId,
+						correlationId: input.correlationId,
+						run: input.run,
+						finalizationProjection: input.finalizationProjection,
+						reversalProjection: input.reversalProjection,
+					});
 		if (
 			!events.registry.validatePayload(type, payload).success ||
 			events.registry.sourceModule(type) !== "payroll"
@@ -89,15 +110,26 @@ async function appendRunEvents(
 		}
 	}
 	const results = await Promise.all(
-		eventTypes.map((type) =>
-			ports.outbox.append({
+		eventTypes.map((type) => {
+			const payload =
+				input.run === undefined
+					? buildPayrollRunEventPayload(input)
+					: buildPayrollRunEventPayloadForType({
+							eventType: type,
+							actorUserId: input.actorUserId,
+							correlationId: input.correlationId,
+							run: input.run,
+							finalizationProjection: input.finalizationProjection,
+							reversalProjection: input.reversalProjection,
+						});
+			return ports.outbox.append({
 				type,
 				organizationId: input.organizationId,
 				actorUserId: input.actorUserId,
 				correlationId: input.correlationId,
 				payload,
-			}),
-		),
+			});
+		}),
 	);
 	const failure = results.find((result) => !result.ok);
 	if (failure !== undefined && !failure.ok) {
@@ -106,10 +138,36 @@ async function appendRunEvents(
 	return errorResult.ok(undefined);
 }
 
+async function recordRunTransitionFacts(
+	ports: MutationPorts,
+	input: {
+		audit: Parameters<typeof recordAudit>[1];
+		events?: Parameters<typeof appendRunEvents>[1];
+	},
+): Promise<Result<void>> {
+	const work = async (): Promise<Result<void>> => {
+		const audit = await recordAudit(ports, input.audit);
+		if (!audit.ok) {
+			return audit;
+		}
+		if (input.events !== undefined) {
+			const outbox = await appendRunEvents(ports, input.events);
+			if (!outbox.ok) {
+				return outbox;
+			}
+		}
+		return errorResult.ok(undefined);
+	};
+	return ports.transaction === undefined
+		? work()
+		: ports.transaction.execute(work);
+}
+
 export function createMemoryRunsMethods(
 	memoryState: MemoryPayrollStoreState,
 ): PayrollRunsStore {
 	const state = memoryState.runs;
+	const createLocks = new Map<string, Promise<void>>();
 	function isCurrentRuleVersion(usage: FinalizedRuleUsage): boolean {
 		if (usage.ruleKind === "earning") {
 			return (
@@ -145,106 +203,130 @@ export function createMemoryRunsMethods(
 			});
 		},
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Creation intentionally owns keyed serialization, idempotency, rollback, audit, and outbox consistency.
 		async createRun(
 			record: PayrollRunCreateRecord,
 			ports: MutationPorts,
 		): Promise<Result<PayrollRun>> {
-			const existing = await this.findRunByIdempotencyKey({
-				organizationId: record.organizationId,
-				idempotencyKey: record.idempotencyKey,
-			});
-			if (!existing.ok) {
-				return existing;
-			}
-			if (existing.data !== null) {
-				if (
-					existing.data.createRequestFingerprint !==
-					record.createRequestFingerprint
-				) {
-					return mapConflict("Idempotency key conflict");
-				}
-				return errorResult.ok(cloneRun(existing.data.run));
-			}
-
-			for (const run of state.runs.values()) {
-				if (
-					run.organizationId === record.organizationId &&
-					run.payGroupId === record.payGroupId &&
-					run.periodId === record.periodId &&
-					run.runType === record.runType &&
-					run.sequence === record.sequence
-				) {
-					return mapConflict("Payroll run identity already exists");
-				}
-			}
-
-			const idResult = parsePayrollRunId(randomUUID());
-			if (!idResult.ok) {
-				return idResult;
-			}
-
-			const now = new Date();
-			const run: PayrollRun = {
-				id: idResult.data,
-				organizationId: record.organizationId,
-				payGroupId: record.payGroupId,
-				periodId: record.periodId,
-				runType: record.runType,
-				sequence: record.sequence,
-				status: "draft",
-				finalizedAt: null,
-				finalizedBy: null,
-				calculationSnapshotHash: null,
-				calculationVersion: null,
-				roundingPolicyJson: null,
-				version: 1,
-				createdBy: record.createdBy,
-				updatedBy: record.createdBy,
-				createdAt: now,
-				updatedAt: now,
-			};
-
-			state.runs.set(run.id, run);
-			state.runIdempotency.set(
-				idempotencyMapKey(record.organizationId, record.idempotencyKey),
-				{
-					run: cloneRun(run),
-					createRequestFingerprint: record.createRequestFingerprint,
-				},
+			const lockKey = idempotencyMapKey(
+				record.organizationId,
+				record.idempotencyKey,
 			);
-
-			const audit = await recordAudit(ports, {
-				organizationId: record.organizationId,
-				actorUserId: record.createdBy,
-				correlationId: record.correlationId,
-				entity: "payroll_run",
-				entityId: run.id,
-				action: "CREATE",
+			const previous = createLocks.get(lockKey) ?? Promise.resolve();
+			let releaseLock = (): void => undefined;
+			const current = new Promise<void>((resolve) => {
+				releaseLock = resolve;
 			});
-			if (!audit.ok) {
-				state.runs.delete(run.id);
-				state.runIdempotency.delete(
-					idempotencyMapKey(record.organizationId, record.idempotencyKey),
-				);
-				return audit;
-			}
+			const queued = previous.then(() => current);
+			createLocks.set(lockKey, queued);
+			await previous;
+			try {
+				const existing = await this.findRunByIdempotencyKey({
+					organizationId: record.organizationId,
+					idempotencyKey: record.idempotencyKey,
+				});
+				if (!existing.ok) {
+					return existing;
+				}
+				if (existing.data !== null) {
+					if (
+						existing.data.createRequestFingerprint !==
+						record.createRequestFingerprint
+					) {
+						return mapConflict("Idempotency key conflict");
+					}
+					return errorResult.ok(cloneRun(existing.data.run));
+				}
 
-			const outbox = await appendRunEvents(ports, {
-				organizationId: record.organizationId,
-				runId: run.id,
-				status: run.status,
-				actorUserId: record.createdBy,
-				correlationId: record.correlationId,
-			});
-			if (!outbox.ok) {
-				state.runs.delete(run.id);
-				state.runIdempotency.delete(
-					idempotencyMapKey(record.organizationId, record.idempotencyKey),
-				);
-				return outbox;
-			}
+				for (const run of state.runs.values()) {
+					if (
+						run.organizationId === record.organizationId &&
+						run.payGroupId === record.payGroupId &&
+						run.periodId === record.periodId &&
+						run.runType === record.runType &&
+						run.sequence === record.sequence
+					) {
+						return mapConflict("Payroll run identity already exists");
+					}
+				}
 
-			return errorResult.ok(cloneRun(run));
+				const idResult = parsePayrollRunId(randomUUID());
+				if (!idResult.ok) {
+					return idResult;
+				}
+
+				const now = new Date();
+				const run: PayrollRun = {
+					id: idResult.data,
+					organizationId: record.organizationId,
+					payGroupId: record.payGroupId,
+					periodId: record.periodId,
+					runType: record.runType,
+					sequence: record.sequence,
+					status: "draft",
+					finalizedAt: null,
+					finalizedBy: null,
+					calculationSnapshotHash: null,
+					calculationVersion: null,
+					roundingPolicyJson: null,
+					reversalReasonCode: null,
+					reversalIdempotencyKey: null,
+					reversalRequestFingerprint: null,
+					version: 1,
+					createdBy: record.createdBy,
+					updatedBy: record.createdBy,
+					createdAt: now,
+					updatedAt: now,
+				};
+
+				state.runs.set(run.id, run);
+				state.runIdempotency.set(
+					idempotencyMapKey(record.organizationId, record.idempotencyKey),
+					{
+						run: cloneRun(run),
+						createRequestFingerprint: record.createRequestFingerprint,
+					},
+				);
+
+				const audit = await recordAudit(ports, {
+					organizationId: record.organizationId,
+					actorUserId: record.createdBy,
+					correlationId: record.correlationId,
+					entity: "payroll_run",
+					entityId: run.id,
+					action: "CREATE",
+				});
+				if (!audit.ok) {
+					state.runs.delete(run.id);
+					state.runIdempotency.delete(
+						idempotencyMapKey(record.organizationId, record.idempotencyKey),
+					);
+					return audit;
+				}
+
+				const outbox = await appendRunEvents(ports, {
+					organizationId: record.organizationId,
+					runId: run.id,
+					status: run.status,
+					run,
+					actorUserId: record.createdBy,
+					correlationId: record.correlationId,
+				});
+				if (!outbox.ok) {
+					state.runs.delete(run.id);
+					state.runIdempotency.delete(
+						idempotencyMapKey(record.organizationId, record.idempotencyKey),
+					);
+					return outbox;
+				}
+
+				return errorResult.ok(cloneRun(run));
+			} finally {
+				releaseLock();
+				if (createLocks.get(lockKey) === queued) {
+					createLocks.delete(lockKey);
+				}
+			}
 		},
 
 		async getRun(input: {
@@ -289,6 +371,14 @@ export function createMemoryRunsMethods(
 			}
 
 			const nextStatus = input.status ?? latest.status;
+			const reversalCheck = assertPayrollRunReversalUpdate({
+				current: latest,
+				update: input,
+				nextStatus,
+			});
+			if (!reversalCheck.ok) {
+				return reversalCheck;
+			}
 			if (nextStatus !== latest.status) {
 				const transitionCheck = assertPayrollRunTransition(
 					latest.status,
@@ -345,48 +435,99 @@ export function createMemoryRunsMethods(
 					input.finalizedBy === undefined
 						? latest.finalizedBy
 						: input.finalizedBy,
+				reversalReasonCode:
+					input.reversalReasonCode === undefined
+						? latest.reversalReasonCode
+						: input.reversalReasonCode,
+				reversalIdempotencyKey:
+					input.reversalIdempotencyKey === undefined
+						? latest.reversalIdempotencyKey
+						: input.reversalIdempotencyKey,
+				reversalRequestFingerprint:
+					input.reversalRequestFingerprint === undefined
+						? latest.reversalRequestFingerprint
+						: input.reversalRequestFingerprint,
 				version: latest.version + 1,
 				updatedBy: input.actorUserId,
 				updatedAt: now,
 			};
 
 			state.runs.set(updated.id, updated);
-
-			const audit = await recordAudit(ports, {
-				organizationId: input.organizationId,
-				actorUserId: input.actorUserId,
-				correlationId: input.correlationId,
-				entity: "payroll_run",
-				entityId: updated.id,
-				action: "UPDATE",
-				changes:
-					latest.status === updated.status
-						? []
-						: [
-								{
-									field: "status",
-									oldValue: latest.status,
-									newValue: updated.status,
-								},
-							],
-			});
-			if (!audit.ok) {
-				state.runs.set(latest.id, latest);
-				return audit;
+			const createdAdjustmentIds: PayrollAdjustmentId[] = [];
+			if (nextStatus === "reversed" && input.reversalProjection !== undefined) {
+				for (const total of input.reversalProjection.totals) {
+					const adjustmentId = parsePayrollAdjustmentId(randomUUID());
+					if (!adjustmentId.ok) {
+						state.runs.set(latest.id, latest);
+						return adjustmentId;
+					}
+					memoryState.runs.adjustments.set(adjustmentId.data, {
+						id: adjustmentId.data,
+						organizationId: input.organizationId,
+						originalRunId: input.runId,
+						reversalRunId: null,
+						originalRunEmployeeId: null,
+						adjustmentType: "reversal",
+						amount: formatScaledToDecimal(-parseDecimalToScaled(total.net)),
+						currencyCode: total.currencyCode,
+						reason: input.reversalProjection.reason,
+						createdBy: input.actorUserId,
+						createdAt: now,
+					});
+					createdAdjustmentIds.push(adjustmentId.data);
+				}
 			}
 
-			if (latest.status !== updated.status) {
-				const outbox = await appendRunEvents(ports, {
+			const changes: Change[] =
+				latest.status === updated.status
+					? []
+					: [
+							{
+								field: "status",
+								oldValue: latest.status,
+								newValue: updated.status,
+							},
+						];
+			if (input.auditReason !== undefined) {
+				changes.push({
+					field: "reason",
+					oldValue: null,
+					newValue: input.auditReason,
+				});
+			}
+			const eventFacts =
+				latest.status === updated.status
+					? {}
+					: {
+							events: {
+								organizationId: input.organizationId,
+								runId: updated.id,
+								status: updated.status,
+								run: updated,
+								finalizationProjection: input.finalizationProjection,
+								reversalProjection: input.reversalProjection,
+								actorUserId: input.actorUserId,
+								correlationId: input.correlationId,
+							},
+						};
+			const facts = await recordRunTransitionFacts(ports, {
+				audit: {
 					organizationId: input.organizationId,
-					runId: updated.id,
-					status: updated.status,
 					actorUserId: input.actorUserId,
 					correlationId: input.correlationId,
-				});
-				if (!outbox.ok) {
-					state.runs.set(latest.id, latest);
-					return outbox;
+					entity: "payroll_run",
+					entityId: updated.id,
+					action: "UPDATE",
+					changes,
+				},
+				...eventFacts,
+			});
+			if (!facts.ok) {
+				state.runs.set(latest.id, latest);
+				for (const adjustmentId of createdAdjustmentIds) {
+					memoryState.runs.adjustments.delete(adjustmentId);
 				}
+				return facts;
 			}
 			for (const usage of finalizedRuleUsage.data) {
 				memoryState.setup.ruleFinalizedUsage.add(ruleFinalizedUsageKey(usage));

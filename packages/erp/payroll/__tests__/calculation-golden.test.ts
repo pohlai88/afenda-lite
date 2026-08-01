@@ -21,6 +21,8 @@ const fixture = JSON.parse(readFileSync(fixturePath, "utf8")) as {
 		employerCost: string;
 		net: string;
 	};
+	expectedLines: string[][];
+	expectedTraceStages: string[];
 };
 
 describe("payroll golden calculation (synth.v1 synthetic only)", () => {
@@ -31,6 +33,18 @@ describe("payroll golden calculation (synth.v1 synthetic only)", () => {
 
 		expect(fixture.description).toContain("not a real jurisdiction");
 		expect(output.totals).toEqual(fixture.expectedTotals);
+		expect(
+			output.lines.map((line) => [
+				line.lineKind,
+				line.ruleCode,
+				line.ruleVersion,
+				line.amount,
+				line.sourceType,
+			]),
+		).toEqual(fixture.expectedLines);
+		expect([...new Set(output.trace.map(({ stage }) => stage))]).toEqual(
+			fixture.expectedTraceStages,
+		);
 		expect(output.statutoryResults[0]?.calculatorId).toBe("synth.v1");
 	});
 });

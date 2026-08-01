@@ -926,6 +926,12 @@ events:
     id: payroll.posting-requested.v1
     moduleId: payroll
   - direction: emits
+    id: payroll.payment-correction-requested.v1
+    moduleId: payroll
+  - direction: emits
+    id: payroll.posting-correction-requested.v1
+    moduleId: payroll
+  - direction: emits
     id: purchasing.order.created.v1
     moduleId: purchasing
   - direction: emits

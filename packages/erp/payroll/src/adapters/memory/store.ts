@@ -1,11 +1,11 @@
 import type { PayrollStore } from "../../store";
 import { composeStoreSlices } from "../drizzle/compose";
-import { drizzleReconciliationMethods } from "../drizzle/reconciliation";
 import {
 	createMemoryAssignmentsMethods,
 	createMemoryInputsMethods,
 } from "./assignments-inputs";
 import { createMemoryOutputsMethods } from "./outputs";
+import { createMemoryReconciliationMethods } from "./reconciliation";
 import { createMemoryRunsMethods } from "./runs";
 import { createMemorySetupMethods } from "./setup";
 import {
@@ -37,7 +37,7 @@ export function createMemoryPayrollStore(): MemoryPayrollStore {
 			outputs: state.outputs,
 			runs: state.runs,
 		}),
-		drizzleReconciliationMethods,
+		createMemoryReconciliationMethods(state),
 	) as MemoryPayrollStore;
 
 	Object.defineProperty(store, "state", {

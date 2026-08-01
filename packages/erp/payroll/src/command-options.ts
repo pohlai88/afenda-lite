@@ -2,6 +2,7 @@ import type { PayrollAuthorizationPort } from "./authorization";
 import type {
 	MutationPorts,
 	PayrollEmployeeQueryPort,
+	PayrollObservabilityPort,
 	PayrollRunCalculatorPort,
 } from "./ports";
 import { createProductionMutationPorts } from "./production-ports";
@@ -12,6 +13,7 @@ export interface PayrollCommandOptions {
 	authorization?: PayrollAuthorizationPort;
 	calculator?: PayrollRunCalculatorPort;
 	employees?: PayrollEmployeeQueryPort;
+	observability?: PayrollObservabilityPort;
 	ports?: MutationPorts;
 	store?: PayrollStore;
 }
@@ -30,6 +32,7 @@ export function resolveCommandDeps(options: PayrollCommandOptions = {}): {
 	authorization: PayrollAuthorizationPort | undefined;
 	employees: PayrollEmployeeQueryPort | undefined;
 	calculator: PayrollRunCalculatorPort | undefined;
+	observability: PayrollObservabilityPort | undefined;
 } {
 	return {
 		store: resolveStore(options.store),
@@ -37,5 +40,6 @@ export function resolveCommandDeps(options: PayrollCommandOptions = {}): {
 		authorization: options.authorization,
 		employees: options.employees,
 		calculator: options.calculator,
+		observability: options.observability,
 	};
 }

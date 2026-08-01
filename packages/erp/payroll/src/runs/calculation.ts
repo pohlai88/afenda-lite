@@ -10,6 +10,7 @@ export {
 	isNegative,
 	isZero,
 	mulScaled,
+	mulScaledWithRounding,
 	PAYROLL_MONEY_SCALE,
 	parseDecimalToScaled,
 	roundScaled,
@@ -24,6 +25,9 @@ export {
 } from "../shared/rounding-policy";
 export {
 	getStatutoryCalculator,
+	getStatutoryCalculatorReadiness,
+	isStatutoryCalculatorProductionApproved,
+	isStatutoryProductionReady,
 	listRegisteredStatutoryCalculators,
 } from "../statutory/calculators/registry";
 export {

@@ -6,5 +6,23 @@
 		"employeeStatutory": "470",
 		"employerCost": "235",
 		"net": "4130"
-	}
+	},
+	"expectedLines": [
+		["earning", "BASE_COMPENSATION", "snapshot", "5000", "employee_snapshot"],
+		["earning", "MEAL", "hr_snapshot", "200", "hr_recurring_allowance"],
+		["earning", "BONUS", "1", "0", "recurring_earning"],
+		["pre_tax_deduction", "PRE401", "1", "500", "recurring_deduction"],
+		["employee_statutory", "SYNTH_TAX", "1", "470", "statutory_rule"],
+		["post_tax_deduction", "POSTTAX", "1", "100", "recurring_deduction"],
+		["employer_contribution", "SYNTH_TAX", "1", "235", "statutory_rule"]
+	],
+	"expectedTraceStages": [
+		"eligibility",
+		"earnings",
+		"pre_tax_deductions",
+		"statutory",
+		"post_tax_deductions",
+		"employer_contributions",
+		"totals"
+	]
 }

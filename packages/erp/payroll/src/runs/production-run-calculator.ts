@@ -17,6 +17,7 @@ import {
 	PAYROLL_CALCULATION_VERSION,
 	type PayrollRoundingPolicy,
 } from "../shared/rounding-policy";
+import { isStatutoryCalculatorProductionApproved } from "../statutory/calculators/registry";
 import type { PayrollStore } from "../store";
 import type {
 	PayrollDeductionRule,
@@ -84,6 +85,14 @@ function mapStatutoryRule(
 		configJson: rule.configJson,
 		ruleVersion: rule.ruleVersion,
 	};
+}
+
+function compareCanonicalRecords(
+	left: { id: string; code?: string },
+	right: { id: string; code?: string },
+): number {
+	const code = (left.code ?? "").localeCompare(right.code ?? "");
+	return code === 0 ? left.id.localeCompare(right.id) : code;
 }
 
 export function createProductionPayrollRunCalculator(input: {
@@ -180,21 +189,46 @@ export function createProductionPayrollRunCalculator(input: {
 			) {
 				return errorResult.fail("INTERNAL_ERROR");
 			}
+			if (
+				statutoryRules.data.some((rule) => {
+					const { calculatorId } = rule.configJson;
+					return (
+						typeof calculatorId !== "string" ||
+						!isStatutoryCalculatorProductionApproved(calculatorId)
+					);
+				})
+			) {
+				return errorResult.fail("CONFLICT", {
+					publicMessage:
+						"Payroll statutory calculation is not approved for production",
+				});
+			}
 
 			const employeeFilter =
 				calcInput.employeeIds === undefined
 					? null
 					: new Set(calcInput.employeeIds);
 
-			const selectedAssignments = assignments.data.filter((assignment) =>
-				employeeFilter === null
-					? true
-					: employeeFilter.has(assignment.employeeId),
-			);
+			const selectedAssignments = assignments.data
+				.filter((assignment) =>
+					employeeFilter === null
+						? true
+						: employeeFilter.has(assignment.employeeId),
+				)
+				.sort((left, right) => {
+					const employee = left.employeeId.localeCompare(right.employeeId);
+					return employee === 0 ? left.id.localeCompare(right.id) : employee;
+				});
 
-			const earningRuleSnapshots = earningRules.data.map(mapEarningRule);
-			const deductionRuleSnapshots = deductionRules.data.map(mapDeductionRule);
-			const statutoryRuleSnapshots = statutoryRules.data.map(mapStatutoryRule);
+			const earningRuleSnapshots = earningRules.data
+				.map(mapEarningRule)
+				.sort(compareCanonicalRecords);
+			const deductionRuleSnapshots = deductionRules.data
+				.map(mapDeductionRule)
+				.sort(compareCanonicalRecords);
+			const statutoryRuleSnapshots = statutoryRules.data
+				.map(mapStatutoryRule)
+				.sort(compareCanonicalRecords);
 			const assignmentContexts = await Promise.all(
 				selectedAssignments.map(async (assignment) => {
 					const [employeeFacts, recurringEarnings, recurringDeductions] =
@@ -282,43 +316,57 @@ export function createProductionPayrollRunCalculator(input: {
 							payrollEmployee.currencyCode === payGroup.data.currencyCode,
 						reason: null,
 					},
-					employee: payrollEmployee,
-					recurringEarnings: recurringEarnings.data.map((line) => ({
-						id: line.id,
-						earningRuleId: line.earningRuleId,
-						earningRuleCode:
-							earningRules.data.find((rule) => rule.id === line.earningRuleId)
-								?.code ?? line.earningRuleId,
-						earningRuleVersion:
-							earningRules.data.find((rule) => rule.id === line.earningRuleId)
-								?.ruleVersion ?? "unknown",
-						amount: line.amount,
-						currencyCode: line.currencyCode,
-					})),
-					recurringDeductions: recurringDeductions.data.map((line) => ({
-						id: line.id,
-						deductionRuleId: line.deductionRuleId,
-						deductionRuleCode:
-							deductionRules.data.find(
-								(rule) => rule.id === line.deductionRuleId,
-							)?.code ?? line.deductionRuleId,
-						deductionRuleVersion:
-							deductionRules.data.find(
-								(rule) => rule.id === line.deductionRuleId,
-							)?.ruleVersion ?? "unknown",
-						amount: line.amount,
-						currencyCode: line.currencyCode,
-					})),
-					variableInputs: employeeVariableInputs.map((entry) => ({
-						id: entry.id,
-						earningRuleId: entry.earningRuleId,
-						earningRuleCode: entry.earningRuleCode,
-						earningRuleVersion: entry.earningRuleVersion,
-						amount: entry.amount,
-						currencyCode: entry.currencyCode,
-						sourceType: entry.sourceType,
-						sourceId: entry.sourceId,
-					})),
+					employee: {
+						...payrollEmployee,
+						recurringAllowances: [...payrollEmployee.recurringAllowances].sort(
+							(left, right) => left.code.localeCompare(right.code),
+						),
+						recurringDeductions: [...payrollEmployee.recurringDeductions].sort(
+							(left, right) => left.code.localeCompare(right.code),
+						),
+					},
+					recurringEarnings: [...recurringEarnings.data]
+						.sort(compareCanonicalRecords)
+						.map((line) => ({
+							id: line.id,
+							earningRuleId: line.earningRuleId,
+							earningRuleCode:
+								earningRules.data.find((rule) => rule.id === line.earningRuleId)
+									?.code ?? line.earningRuleId,
+							earningRuleVersion:
+								earningRules.data.find((rule) => rule.id === line.earningRuleId)
+									?.ruleVersion ?? "unknown",
+							amount: line.amount,
+							currencyCode: line.currencyCode,
+						})),
+					recurringDeductions: [...recurringDeductions.data]
+						.sort(compareCanonicalRecords)
+						.map((line) => ({
+							id: line.id,
+							deductionRuleId: line.deductionRuleId,
+							deductionRuleCode:
+								deductionRules.data.find(
+									(rule) => rule.id === line.deductionRuleId,
+								)?.code ?? line.deductionRuleId,
+							deductionRuleVersion:
+								deductionRules.data.find(
+									(rule) => rule.id === line.deductionRuleId,
+								)?.ruleVersion ?? "unknown",
+							amount: line.amount,
+							currencyCode: line.currencyCode,
+						})),
+					variableInputs: employeeVariableInputs
+						.sort(compareCanonicalRecords)
+						.map((entry) => ({
+							id: entry.id,
+							earningRuleId: entry.earningRuleId,
+							earningRuleCode: entry.earningRuleCode,
+							earningRuleVersion: entry.earningRuleVersion,
+							amount: entry.amount,
+							currencyCode: entry.currencyCode,
+							sourceType: entry.sourceType,
+							sourceId: entry.sourceId,
+						})),
 					earningRules: earningRuleSnapshots,
 					deductionRules: deductionRuleSnapshots,
 					statutoryRules: statutoryRuleSnapshots,

@@ -26,6 +26,9 @@ describe("payroll calculation pipeline", () => {
 			stages.indexOf("post_tax_deductions"),
 		);
 		expect(stages.indexOf("post_tax_deductions")).toBeLessThan(
+			stages.indexOf("employer_contributions"),
+		);
+		expect(stages.indexOf("employer_contributions")).toBeLessThan(
 			stages.indexOf("totals"),
 		);
 

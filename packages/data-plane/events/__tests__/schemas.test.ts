@@ -22,7 +22,7 @@ describe("@afenda/events schemas", () => {
 		const livingTypes = Object.keys(AllEventSchemas).toSorted();
 
 		expect(new Set(livingTypes).size).toBe(livingTypes.length);
-		expect(livingTypes).toHaveLength(369);
+		expect(livingTypes).toHaveLength(371);
 		expect(livingTypes).toEqual([...livingTypes].toSorted());
 		expect(livingTypes).toEqual(
 			expect.arrayContaining([

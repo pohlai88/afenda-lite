@@ -2,7 +2,7 @@ import {
 	addScaled,
 	formatScaledToDecimal,
 	isNegative,
-	mulScaled,
+	mulScaledWithRounding,
 	parseDecimalToScaled,
 	roundScaled,
 	subScaled,
@@ -136,6 +136,39 @@ function findDeductionRuleByCode(
 	return ctx.snapshot.deductionRules.find((rule) => rule.code === code);
 }
 
+function assertPinnedRule(input: {
+	ctx: CalculationContext;
+	sourceRef: string;
+	expectedCode: string;
+	expectedVersion: string;
+	rule: {
+		code: string;
+		ruleVersion: string;
+		currencyCode: string;
+	};
+}): boolean {
+	if (
+		input.rule.code !== input.expectedCode ||
+		input.rule.ruleVersion !== input.expectedVersion
+	) {
+		addException(input.ctx, {
+			exceptionCode: "RULE_VERSION_MISMATCH",
+			message: `Pinned rule ${input.expectedCode}@${input.expectedVersion} does not match selected snapshot`,
+			sourceRef: input.sourceRef,
+		});
+		return false;
+	}
+	if (input.rule.currencyCode !== input.ctx.snapshot.currencyCode) {
+		addException(input.ctx, {
+			exceptionCode: CURRENCY_MISMATCH_CODE,
+			message: `Rule currency ${input.rule.currencyCode} does not match snapshot currency ${input.ctx.snapshot.currencyCode}`,
+			sourceRef: input.sourceRef,
+		});
+		return false;
+	}
+	return true;
+}
+
 function computeFixedOrRateAmount(input: {
 	ctx: CalculationContext;
 	ruleType: "fixed" | "rate";
@@ -182,7 +215,7 @@ function computeFixedOrRateAmount(input: {
 		return null;
 	}
 
-	return roundScaled(mulScaled(input.rateBase, rateScaled), input.ctx.policy);
+	return mulScaledWithRounding(input.rateBase, rateScaled, input.ctx.policy);
 }
 
 function pushLine(
@@ -226,6 +259,7 @@ function sumLineAmounts(
 		);
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Earnings keeps fixed/rate, recurring, variable, currency, and pinned-version evidence in one auditable stage.
 function calculateEarnings(ctx: CalculationContext): bigint {
 	const { snapshot } = ctx;
 	let grossTotal = 0n;
@@ -299,6 +333,17 @@ function calculateEarnings(ctx: CalculationContext): bigint {
 			});
 			continue;
 		}
+		if (
+			!assertPinnedRule({
+				ctx,
+				sourceRef: recurring.id,
+				expectedCode: recurring.earningRuleCode,
+				expectedVersion: recurring.earningRuleVersion,
+				rule,
+			})
+		) {
+			continue;
+		}
 
 		const amount = computeFixedOrRateAmount({
 			ctx,
@@ -340,6 +385,17 @@ function calculateEarnings(ctx: CalculationContext): bigint {
 				message: `Variable input ${variable.id} references missing earning rule`,
 				sourceRef: variable.id,
 			});
+			continue;
+		}
+		if (
+			!assertPinnedRule({
+				ctx,
+				sourceRef: variable.id,
+				expectedCode: variable.earningRuleCode,
+				expectedVersion: variable.earningRuleVersion,
+				rule,
+			})
+		) {
 			continue;
 		}
 
@@ -458,6 +514,17 @@ function calculateDeductions(input: {
 			});
 			continue;
 		}
+		if (
+			!assertPinnedRule({
+				ctx,
+				sourceRef: recurring.id,
+				expectedCode: recurring.deductionRuleCode,
+				expectedVersion: recurring.deductionRuleVersion,
+				rule,
+			})
+		) {
+			continue;
+		}
 		if (rule.taxTiming !== taxTiming) {
 			continue;
 		}
@@ -499,15 +566,25 @@ function calculateDeductions(input: {
 	return total;
 }
 
+interface PendingEmployerContribution {
+	amount: bigint;
+	code: string;
+	ruleId: string;
+	ruleVersion: string;
+}
+
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The statutory matrix keeps calculator, rounding, and exception evidence branches auditable.
 function calculateStatutory(input: {
 	ctx: CalculationContext;
 	gross: bigint;
 	preTaxDeductions: bigint;
-}): { employeeStatutory: bigint; employerStatutory: bigint } {
+}): {
+	employeeStatutory: bigint;
+	employerContributions: PendingEmployerContribution[];
+} {
 	const taxableBase = subScaled(input.gross, input.preTaxDeductions);
 	let employeeStatutory = 0n;
-	let employerStatutory = 0n;
+	const employerContributions: PendingEmployerContribution[] = [];
 
 	for (const rule of input.ctx.snapshot.statutoryRules) {
 		const calculatorIdValue = rule.configJson.calculatorId;
@@ -582,20 +659,12 @@ function calculateStatutory(input: {
 			}
 
 			if (!isNegative(result.employerAmount) && result.employerAmount !== 0n) {
-				pushLine(input.ctx, {
-					lineKind: "employer_contribution",
-					code: rule.code,
-					ruleCode: rule.code,
-					ruleVersion: rule.ruleVersion,
-					ruleKind: "statutory",
+				employerContributions.push({
 					amount: result.employerAmount,
-					currencyCode: input.ctx.snapshot.currencyCode,
-					sourceType: "statutory_rule",
-					sourceId: rule.id,
-					traceStage: "employer_contributions",
-					traceMessage: `Employer statutory ${rule.code}`,
+					code: rule.code,
+					ruleId: rule.id,
+					ruleVersion: rule.ruleVersion,
 				});
-				employerStatutory = addScaled(employerStatutory, result.employerAmount);
 			}
 
 			addTrace(input.ctx, {
@@ -620,7 +689,33 @@ function calculateStatutory(input: {
 		}
 	}
 
-	return { employeeStatutory, employerStatutory };
+	return { employeeStatutory, employerContributions };
+}
+
+function applyEmployerContributions(
+	ctx: CalculationContext,
+	contributions: PendingEmployerContribution[],
+): void {
+	for (const contribution of contributions) {
+		pushLine(ctx, {
+			lineKind: "employer_contribution",
+			code: contribution.code,
+			ruleCode: contribution.code,
+			ruleVersion: contribution.ruleVersion,
+			ruleKind: "statutory",
+			amount: contribution.amount,
+			currencyCode: ctx.snapshot.currencyCode,
+			sourceType: "statutory_rule",
+			sourceId: contribution.ruleId,
+			traceStage: "employer_contributions",
+			traceMessage: `Employer statutory ${contribution.code}`,
+		});
+	}
+	addTrace(ctx, {
+		stage: "employer_contributions",
+		message: "Completed employer contributions",
+		amount: sumLineAmounts(ctx.lines, ["employer_contribution"]),
+	});
 }
 
 function buildIneligibleOutput(
@@ -687,7 +782,7 @@ export function calculateEmployeePayroll(
 		gross,
 		taxTiming: "pre_tax",
 	});
-	calculateStatutory({
+	const statutory = calculateStatutory({
 		ctx,
 		gross,
 		preTaxDeductions,
@@ -697,6 +792,7 @@ export function calculateEmployeePayroll(
 		gross,
 		taxTiming: "post_tax",
 	});
+	applyEmployerContributions(ctx, statutory.employerContributions);
 	const derivedGross = sumLineAmounts(ctx.lines, ["earning"]);
 	const derivedEmployeeDeductions = sumLineAmounts(ctx.lines, [
 		"pre_tax_deduction",

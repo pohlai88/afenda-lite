@@ -1,5 +1,8 @@
 import type { PayrollAuthorizationPort } from "./authorization";
-import type { PayrollEmployeeQueryPort } from "./ports";
+import type {
+	PayrollEmployeeQueryPort,
+	PayrollObservabilityPort,
+} from "./ports";
 
 /** Authorization capability supplied once by the application composition root. */
 export type PayrollAuthorizationCapability = PayrollAuthorizationPort;
@@ -10,5 +13,6 @@ export type PayrollWorkforceCapability = PayrollEmployeeQueryPort;
 /** Stable composition input for the permanent Payroll execution facade. */
 export interface PayrollCapabilityComposition {
 	readonly authorization: PayrollAuthorizationCapability;
+	readonly observability?: PayrollObservabilityPort;
 	readonly workforce: PayrollWorkforceCapability;
 }

@@ -1020,9 +1020,6 @@ importers:
       '@afenda/config':
         specifier: workspace:*
         version: link:../../foundation/config
-      '@afenda/payroll':
-        specifier: workspace:*
-        version: link:../payroll
       '@afenda/testing':
         specifier: workspace:*
         version: link:../../foundation/testing

@@ -31,7 +31,6 @@
 	},
 	"devDependencies": {
 		"@afenda/config": "workspace:*",
-		"@afenda/payroll": "workspace:*",
 		"@afenda/testing": "workspace:*",
 		"@types/node": "catalog:",
 		"typescript": "catalog:",

@@ -65,9 +65,7 @@ export function verifyAccountingIdentities(
 		);
 	}
 
-	const netIncludingEmployer = addScaled(net, employerCost);
-	const netExcludingEmployer = subScaled(netIncludingEmployer, employerCost);
-	if (netExcludingEmployer !== net) {
+	if (employerCost !== 0n && net === subScaled(expectedNet, employerCost)) {
 		violations.push("employer cost must not reduce employee net pay");
 	}
 

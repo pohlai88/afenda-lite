@@ -22,4 +22,12 @@ export interface StatutoryCalculatorOutput {
 export interface StatutoryRuleCalculator {
 	calculate: (input: StatutoryCalculatorInput) => StatutoryCalculatorOutput;
 	readonly calculatorId: string;
+	readonly productionApproval:
+		| { readonly status: "synthetic_only" }
+		| {
+				readonly status: "approved";
+				readonly reviewedBy: string;
+				readonly reviewedAt: string;
+				readonly jurisdictions: readonly string[];
+		  };
 }

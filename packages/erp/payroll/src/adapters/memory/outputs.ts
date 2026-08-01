@@ -46,9 +46,13 @@ function assertRunAllowsOutputMutation(
 	if (run === undefined || run.organizationId !== input.organizationId) {
 		return mapNotFound("Payroll run not found");
 	}
-	if (run.status === "finalized" || run.status === "reversed") {
+	if (
+		run.status === "calculated" ||
+		run.status === "finalized" ||
+		run.status === "reversed"
+	) {
 		return mapInvalidState(
-			"Finalized or reversed payroll runs cannot change calculation outputs",
+			"Calculated, finalized, or reversed payroll runs cannot change calculation outputs",
 		);
 	}
 	return errorResult.ok(true);

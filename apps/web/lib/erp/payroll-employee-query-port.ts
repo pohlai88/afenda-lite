@@ -1,12 +1,12 @@
 import { assembleApprovedPayrollHandoff } from "@afenda/human-resources";
-import type { PayrollEmployeeQueryPort } from "@afenda/payroll";
+import type { PayrollWorkforceCapability } from "@afenda/payroll";
 import { createHumanResourcesCommandOptions } from "@/lib/erp/human-resources-command-options";
 
 /**
  * Composition-root workforce projection. HR owns employment and compensation
  * truth; Payroll owns pay-group assignment and calculation interpretation.
  */
-export function createPayrollEmployeeQueryPort(): PayrollEmployeeQueryPort {
+export function createPayrollEmployeeQueryPort(): PayrollWorkforceCapability {
 	return {
 		async getPayrollEmployee(input) {
 			const handoff = await assembleApprovedPayrollHandoff(

@@ -63,16 +63,30 @@ export function createMemoryMutationPorts(options?: {
 	audit: ReturnType<typeof createMemoryAuditPort>;
 	outbox: ReturnType<typeof createMemoryOutboxPort>;
 } {
+	const audit = createMemoryAuditPort(
+		options?.auditFailAfter === undefined
+			? undefined
+			: { failAfter: options.auditFailAfter },
+	);
+	const outbox = createMemoryOutboxPort(
+		options?.outboxFailAfter === undefined
+			? undefined
+			: { failAfter: options.outboxFailAfter },
+	);
 	return {
-		audit: createMemoryAuditPort(
-			options?.auditFailAfter === undefined
-				? undefined
-				: { failAfter: options.auditFailAfter },
-		),
-		outbox: createMemoryOutboxPort(
-			options?.outboxFailAfter === undefined
-				? undefined
-				: { failAfter: options.outboxFailAfter },
-		),
+		audit,
+		outbox,
+		transaction: {
+			async execute<T>(work: () => Promise<Result<T>>): Promise<Result<T>> {
+				const auditLength = audit.calls.length;
+				const outboxLength = outbox.calls.length;
+				const result = await work();
+				if (!result.ok) {
+					audit.calls.splice(auditLength);
+					outbox.calls.splice(outboxLength);
+				}
+				return result;
+			},
+		},
 	};
 }

@@ -21,6 +21,29 @@ const adapters: PayrollStoreAdapter[] = runDrizzleParity
 	? ["memory", "drizzle"]
 	: ["memory"];
 
+const EMPTY_FINALIZATION_PROJECTION = {
+	paymentDate: "2025-01-31",
+	postingDate: "2025-01-31",
+	payments: [],
+	postingLines: [],
+	totals: [],
+} as const;
+const EMPTY_REVERSAL_PROJECTION = {
+	...EMPTY_FINALIZATION_PROJECTION,
+	reason: "Correction required",
+	reasonCode: "operational_correction",
+	totals: [
+		{
+			currencyCode: "USD",
+			gross: "1000",
+			employeeDeductions: "100",
+			employeeStatutory: "50",
+			employerCost: "25",
+			net: "850",
+		},
+	],
+} as const;
+
 function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 	describe(`@afenda/payroll store contract (${adapter})`, () => {
 		it("isolates organizations on calendar reads", async () => {
@@ -219,6 +242,33 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 				return;
 			}
 			expect(duplicate.code).toBe("CONFLICT");
+		});
+
+		it("replays concurrent run creates with one canonical identity", async () => {
+			const harness = createPayrollParityHarness(adapter);
+			const seeded = await seedPayrollRunChain(harness);
+			const input = {
+				organizationId: harness.organizationId,
+				payGroupId: seeded.payGroup.id,
+				periodId: seeded.period.id,
+				runType: "regular" as const,
+				sequence: 1,
+				idempotencyKey: `idem-run-concurrent-${adapter}`,
+				createRequestFingerprint: "fp-run-concurrent",
+				createdBy: harness.actorUserId,
+				correlationId: `corr-run-concurrent-${adapter}`,
+			};
+
+			const [first, second] = await Promise.all([
+				harness.store.createRun(input, harness.ports),
+				harness.store.createRun(input, harness.ports),
+			]);
+			expect(first.ok).toBe(true);
+			expect(second.ok).toBe(true);
+			if (!(first.ok && second.ok)) {
+				return;
+			}
+			expect(second.data.id).toBe(first.data.id);
 		});
 
 		it("rejects overlapping active deduction rules for the same code", async () => {
@@ -791,22 +841,19 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 				throw new Error(rule.message);
 			}
 			const seededRun = await seedDraftRun(harness, seeded);
-			const calculated = await harness.store.updateRunWithVersion(
+			const calculating = await harness.store.updateRunWithVersion(
 				{
 					organizationId: harness.organizationId,
 					runId: seededRun.run.id,
-					status: "calculated",
-					calculationSnapshotHash: "hash-finalize-race",
-					calculationVersion: "payroll.calc.v1",
-					roundingPolicyJson: null,
+					status: "calculating",
 					actorUserId: harness.actorUserId,
 					correlationId: `corr-calculate-race-${adapter}`,
 					expectedVersion: seededRun.run.version,
 				},
 				harness.ports,
 			);
-			if (!calculated.ok) {
-				throw new Error(calculated.message);
+			if (!calculating.ok) {
+				throw new Error(calculating.message);
 			}
 			const runEmployeeId = parsePayrollRunEmployeeId(crypto.randomUUID());
 			if (!runEmployeeId.ok) {
@@ -815,7 +862,7 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 			const outputs = await harness.store.replaceRunCalculationOutputs(
 				{
 					organizationId: harness.organizationId,
-					runId: calculated.data.id,
+					runId: calculating.data.id,
 					runEmployees: [
 						{
 							id: runEmployeeId.data,
@@ -848,6 +895,23 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 			if (!outputs.ok) {
 				throw new Error(outputs.message);
 			}
+			const calculated = await harness.store.updateRunWithVersion(
+				{
+					organizationId: harness.organizationId,
+					runId: calculating.data.id,
+					status: "calculated",
+					calculationSnapshotHash: "hash-finalize-race",
+					calculationVersion: "payroll.calc.v1",
+					roundingPolicyJson: null,
+					actorUserId: harness.actorUserId,
+					correlationId: `corr-calculated-race-${adapter}`,
+					expectedVersion: calculating.data.version,
+				},
+				harness.ports,
+			);
+			if (!calculated.ok) {
+				throw new Error(calculated.message);
+			}
 			const uppercaseRuleId = parsePayrollEarningRuleId(
 				rule.data.id.toUpperCase(),
 			);
@@ -862,6 +926,7 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 						status: "finalized",
 						finalizedAt: new Date().toISOString(),
 						finalizedBy: harness.actorUserId,
+						finalizationProjection: EMPTY_FINALIZATION_PROJECTION,
 						actorUserId: harness.actorUserId,
 						correlationId: `corr-finalize-race-${adapter}`,
 						expectedVersion: calculated.data.version,
@@ -936,6 +1001,7 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 					runId: created.data.id,
 					status: "calculated",
 					calculationSnapshotHash: "hash-contract-test",
+					calculationVersion: "payroll.calc.v1",
 					expectedVersion: finalized.data.version,
 					actorUserId: harness.actorUserId,
 					correlationId: `corr-run-calculated-${adapter}`,
@@ -954,6 +1020,7 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 					status: "finalized",
 					finalizedAt: new Date().toISOString(),
 					finalizedBy: harness.actorUserId,
+					finalizationProjection: EMPTY_FINALIZATION_PROJECTION,
 					expectedVersion: calculated.data.version,
 					actorUserId: harness.actorUserId,
 					correlationId: `corr-run-finalize-${adapter}`,
@@ -981,6 +1048,180 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 				return;
 			}
 			expect(blocked.code).toBe("CONFLICT");
+		});
+
+		it("serializes concurrent calculation and finalization transitions", async () => {
+			const harness = createPayrollParityHarness(adapter);
+			const seeded = await seedDraftRun(harness);
+			const calculatingInput = {
+				organizationId: harness.organizationId,
+				runId: seeded.run.id,
+				status: "calculating" as const,
+				expectedVersion: seeded.run.version,
+				actorUserId: harness.actorUserId,
+				correlationId: `corr-concurrent-calculating-${adapter}`,
+			};
+			const calculating = await Promise.all([
+				harness.store.updateRunWithVersion(calculatingInput, harness.ports),
+				harness.store.updateRunWithVersion(calculatingInput, harness.ports),
+			]);
+			expect(calculating.filter(({ ok }) => ok)).toHaveLength(1);
+			const calculatingWinner = calculating.find(({ ok }) => ok);
+			if (calculatingWinner === undefined || !calculatingWinner.ok) {
+				return;
+			}
+
+			const calculated = await harness.store.updateRunWithVersion(
+				{
+					organizationId: harness.organizationId,
+					runId: seeded.run.id,
+					status: "calculated",
+					calculationSnapshotHash: "hash-concurrent-finalize",
+					calculationVersion: "payroll.calc.v1",
+					expectedVersion: calculatingWinner.data.version,
+					actorUserId: harness.actorUserId,
+					correlationId: `corr-concurrent-calculated-${adapter}`,
+				},
+				harness.ports,
+			);
+			if (!calculated.ok) {
+				throw new Error(calculated.message);
+			}
+			const finalizedAt = new Date().toISOString();
+			const finalizeInput = {
+				organizationId: harness.organizationId,
+				runId: seeded.run.id,
+				status: "finalized" as const,
+				finalizedAt,
+				finalizedBy: harness.actorUserId,
+				finalizationProjection: EMPTY_FINALIZATION_PROJECTION,
+				expectedVersion: calculated.data.version,
+				actorUserId: harness.actorUserId,
+				correlationId: `corr-concurrent-finalized-${adapter}`,
+			};
+			const finalized = await Promise.all([
+				harness.store.updateRunWithVersion(finalizeInput, harness.ports),
+				harness.store.updateRunWithVersion(finalizeInput, harness.ports),
+			]);
+			expect(finalized.filter(({ ok }) => ok)).toHaveLength(1);
+		});
+
+		it("preserves finalized evidence during a reasoned reversal", async () => {
+			const harness = createPayrollParityHarness(adapter);
+			const seeded = await seedDraftRun(harness);
+			const calculating = await harness.store.updateRunWithVersion(
+				{
+					organizationId: harness.organizationId,
+					runId: seeded.run.id,
+					status: "calculating",
+					expectedVersion: seeded.run.version,
+					actorUserId: harness.actorUserId,
+					correlationId: `corr-reversal-calculating-${adapter}`,
+				},
+				harness.ports,
+			);
+			if (!calculating.ok) {
+				throw new Error(calculating.message);
+			}
+			const calculated = await harness.store.updateRunWithVersion(
+				{
+					organizationId: harness.organizationId,
+					runId: seeded.run.id,
+					status: "calculated",
+					calculationSnapshotHash: "hash-frozen-evidence",
+					calculationVersion: "payroll.calc.v1",
+					roundingPolicyJson: { mode: "half_even", scale: 2 },
+					expectedVersion: calculating.data.version,
+					actorUserId: harness.actorUserId,
+					correlationId: `corr-reversal-calculated-${adapter}`,
+				},
+				harness.ports,
+			);
+			if (!calculated.ok) {
+				throw new Error(calculated.message);
+			}
+			const finalizedAt = new Date().toISOString();
+			const finalized = await harness.store.updateRunWithVersion(
+				{
+					organizationId: harness.organizationId,
+					runId: seeded.run.id,
+					status: "finalized",
+					finalizedAt,
+					finalizedBy: harness.actorUserId,
+					finalizationProjection: EMPTY_FINALIZATION_PROJECTION,
+					expectedVersion: calculated.data.version,
+					actorUserId: harness.actorUserId,
+					correlationId: `corr-reversal-finalized-${adapter}`,
+				},
+				harness.ports,
+			);
+			if (!finalized.ok) {
+				throw new Error(finalized.message);
+			}
+
+			const rewritten = await harness.store.updateRunWithVersion(
+				{
+					organizationId: harness.organizationId,
+					runId: seeded.run.id,
+					status: "reversed",
+					calculationSnapshotHash: "rewritten-hash",
+					auditReason: "Correction required",
+					reversalReasonCode: "operational_correction",
+					reversalIdempotencyKey: `reverse-valid-${adapter}`,
+					reversalRequestFingerprint: "reversal-fingerprint-valid",
+					expectedVersion: finalized.data.version,
+					actorUserId: harness.actorUserId,
+					correlationId: `corr-reversal-rewrite-${adapter}`,
+				},
+				harness.ports,
+			);
+			expect(rewritten.ok).toBe(false);
+
+			const reversed = await harness.store.updateRunWithVersion(
+				{
+					organizationId: harness.organizationId,
+					runId: seeded.run.id,
+					status: "reversed",
+					auditReason: "Correction required",
+					reversalProjection: EMPTY_REVERSAL_PROJECTION,
+					reversalReasonCode: "operational_correction",
+					reversalIdempotencyKey: `reverse-valid-${adapter}`,
+					reversalRequestFingerprint: "reversal-fingerprint-valid",
+					expectedVersion: finalized.data.version,
+					actorUserId: harness.actorUserId,
+					correlationId: `corr-reversal-valid-${adapter}`,
+				},
+				harness.ports,
+			);
+			expect(reversed.ok).toBe(true);
+			if (!reversed.ok) {
+				return;
+			}
+			expect(reversed.data).toMatchObject({
+				status: "reversed",
+				calculationSnapshotHash: "hash-frozen-evidence",
+				calculationVersion: "payroll.calc.v1",
+				roundingPolicyJson: { mode: "half_even", scale: 2 },
+				finalizedAt,
+				finalizedBy: harness.actorUserId,
+			});
+			if (adapter === "memory") {
+				const { memoryStore } = harness;
+				expect(memoryStore).not.toBeNull();
+				if (memoryStore === null) {
+					return;
+				}
+				expect(memoryStore.state.runs.adjustments.size).toBe(1);
+				expect(
+					[...memoryStore.state.runs.adjustments.values()][0],
+				).toMatchObject({
+					originalRunId: seeded.run.id,
+					adjustmentType: "reversal",
+					amount: "-850",
+					currencyCode: "USD",
+					reason: "Correction required",
+				});
+			}
 		});
 
 		it("persists and replaces calculation outputs with org isolation", async () => {

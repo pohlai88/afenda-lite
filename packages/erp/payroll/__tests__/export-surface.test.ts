@@ -8,6 +8,10 @@ const pkgPath = path.resolve(
 	path.dirname(fileURLToPath(import.meta.url)),
 	"../package.json",
 );
+const indexPath = path.resolve(
+	path.dirname(fileURLToPath(import.meta.url)),
+	"../src/index.ts",
+);
 
 describe("@afenda/payroll export surface contract", () => {
 	it("root barrel exposes intentional public symbols only", async () => {
@@ -15,31 +19,29 @@ describe("@afenda/payroll export surface contract", () => {
 
 		expect(root.PAYROLL_PERMISSION_SETUP_MANAGE).toBe("payroll.setup.manage");
 		expect(root.PAYROLL_PERMISSION_RUN_CREATE).toBe("payroll.run.create");
-		expect(root.payrollTenantContextSchema).toBeDefined();
-		expect(root.payrollMutationContextSchema).toBeDefined();
 		expect(typeof root.createPayrollCapabilityOptions).toBe("function");
 		expect(typeof root.createPayrollCalendar).toBe("function");
 		expect(
 			(root as Record<string, unknown>).createDrizzlePayrollStore,
 		).toBeUndefined();
+		expect(
+			(root as Record<string, unknown>).createProductionPayrollRunCalculator,
+		).toBeUndefined();
+		expect((root as Record<string, unknown>).MutationPorts).toBeUndefined();
 	}, 45_000);
 
-	it("declares documented package.json export subpaths", () => {
+	it("publishes exactly one permanent root entrypoint", () => {
 		const pkg = JSON.parse(readFileSync(pkgPath, "utf8")) as {
 			exports?: Record<string, unknown>;
 		};
 
-		expect(pkg.exports?.["."]).toBeDefined();
-		expect(pkg.exports?.["./adapters/drizzle"]).toBeDefined();
-		expect(pkg.exports?.["./module-manifest"]).toBeDefined();
-		expect(pkg.exports?.["./schemas"]).toBeDefined();
-		expect(pkg.exports?.["./store"]).toBeDefined();
-		expect(pkg.exports?.["./testing"]).toBeDefined();
+		expect(Object.keys(pkg.exports ?? {})).toEqual(["."]);
 	});
 
-	it("keeps drizzle store factory on adapters subpath only", async () => {
-		const drizzle = await import("../src/adapters/drizzle/index");
-
-		expect(typeof drizzle.createDrizzlePayrollStore).toBe("function");
-	}, 45_000);
+	it("keeps implementation and composition internals out of the root barrel", () => {
+		const source = readFileSync(indexPath, "utf8");
+		expect(source).not.toMatch(
+			/PayrollCommandOptions|MutationPorts|createProductionPayrollRunCalculator|createDrizzlePayrollStore|PayrollStore/,
+		);
+	});
 });

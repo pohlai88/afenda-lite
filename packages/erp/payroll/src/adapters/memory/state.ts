@@ -1,4 +1,5 @@
 import type {
+	PayrollAdjustmentId,
 	PayrollCalendarId,
 	PayrollDeductionRuleId,
 	PayrollEarningRuleId,
@@ -6,6 +7,7 @@ import type {
 	PayrollExceptionId,
 	PayrollPayGroupId,
 	PayrollPeriodId,
+	PayrollReconciliationId,
 	PayrollRecurringDeductionId,
 	PayrollRecurringEarningId,
 	PayrollResultLineId,
@@ -19,6 +21,7 @@ import type {
 	IdempotentPayrollCalendarRecord,
 	IdempotentPayrollRunRecord,
 	IdempotentPayrollVariableInputRecord,
+	PayrollAdjustment,
 	PayrollCalendar,
 	PayrollDeductionRule,
 	PayrollEarningRule,
@@ -26,6 +29,7 @@ import type {
 	PayrollException,
 	PayrollPayGroup,
 	PayrollPeriod,
+	PayrollReconciliation,
 	PayrollRecurringDeduction,
 	PayrollRecurringEarning,
 	PayrollResultLine,
@@ -75,6 +79,7 @@ export interface SetupMemoryState {
 }
 
 export interface RunsMemoryState {
+	adjustments: Map<PayrollAdjustmentId, PayrollAdjustment>;
 	exceptions: Map<PayrollExceptionId, PayrollException>;
 	runIdempotency: Map<string, IdempotentPayrollRunRecord>;
 	runs: Map<PayrollRunId, PayrollRun>;
@@ -116,10 +121,16 @@ export interface StatutoryMemoryState {
 	statutoryResults: Map<PayrollStatutoryResultId, PayrollStatutoryResult>;
 }
 
+export interface ReconciliationMemoryState {
+	idempotency: Map<string, IdempotentEntityRecord<PayrollReconciliation>>;
+	reconciliations: Map<PayrollReconciliationId, PayrollReconciliation>;
+}
+
 export interface MemoryPayrollStoreState {
 	assignments: AssignmentsMemoryState;
 	inputs: InputsMemoryState;
 	outputs: OutputsMemoryState;
+	reconciliation: ReconciliationMemoryState;
 	runs: RunsMemoryState;
 	setup: SetupMemoryState;
 	statutory: StatutoryMemoryState;
@@ -161,6 +172,7 @@ export function resetSetupMemoryState(state: SetupMemoryState): void {
 
 export function createRunsMemoryState(): RunsMemoryState {
 	return {
+		adjustments: new Map(),
 		runs: new Map(),
 		runIdempotency: new Map(),
 		exceptions: new Map(),
@@ -168,6 +180,7 @@ export function createRunsMemoryState(): RunsMemoryState {
 }
 
 export function resetRunsMemoryState(state: RunsMemoryState): void {
+	state.adjustments.clear();
 	state.runs.clear();
 	state.runIdempotency.clear();
 	state.exceptions.clear();
@@ -227,6 +240,17 @@ export function createStatutoryMemoryState(): StatutoryMemoryState {
 	};
 }
 
+export function createReconciliationMemoryState(): ReconciliationMemoryState {
+	return { reconciliations: new Map(), idempotency: new Map() };
+}
+
+export function resetReconciliationMemoryState(
+	state: ReconciliationMemoryState,
+): void {
+	state.reconciliations.clear();
+	state.idempotency.clear();
+}
+
 export function resetStatutoryMemoryState(state: StatutoryMemoryState): void {
 	state.statutoryResults.clear();
 }
@@ -239,6 +263,7 @@ export function createMemoryPayrollStoreState(): MemoryPayrollStoreState {
 		runs: createRunsMemoryState(),
 		outputs: createOutputsMemoryState(),
 		statutory: createStatutoryMemoryState(),
+		reconciliation: createReconciliationMemoryState(),
 	};
 }
 
@@ -251,4 +276,5 @@ export function resetMemoryPayrollStoreState(
 	resetRunsMemoryState(state.runs);
 	resetOutputsMemoryState(state.outputs);
 	resetStatutoryMemoryState(state.statutory);
+	resetReconciliationMemoryState(state.reconciliation);
 }

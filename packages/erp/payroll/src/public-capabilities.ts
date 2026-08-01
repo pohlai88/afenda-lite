@@ -9,8 +9,17 @@ import {
 	createPayrollVariableInput as createPayrollVariableInputInternal,
 	getPayrollVariableInput as getPayrollVariableInputInternal,
 } from "./inputs/variable-input";
+import {
+	getOwnPayrollPayslip as getOwnPayrollPayslipInternal,
+	getPayrollPayslip as getPayrollPayslipInternal,
+} from "./outputs/payslip";
 import type { PayrollCapabilityOptions } from "./public-execution-context";
 import { resolvePayrollCapabilityOptions } from "./public-execution-context";
+import {
+	listPayrollReconciliationsForRun as listPayrollReconciliationsForRunInternal,
+	recordPayrollReconciliation as recordPayrollReconciliationInternal,
+	resolvePayrollReconciliation as resolvePayrollReconciliationInternal,
+} from "./reconciliation/payroll-reconciliation";
 import {
 	listPayrollExceptionsForRun as listPayrollExceptionsForRunInternal,
 	recordPayrollException as recordPayrollExceptionInternal,
@@ -94,6 +103,21 @@ export const createPayrollVariableInput = bindPayrollOperation(
 );
 export const getPayrollVariableInput = bindPayrollOperation(
 	getPayrollVariableInputInternal,
+);
+export const getOwnPayrollPayslip = bindPayrollOperation(
+	getOwnPayrollPayslipInternal,
+);
+export const getPayrollPayslip = bindPayrollOperation(
+	getPayrollPayslipInternal,
+);
+export const recordPayrollReconciliation = bindPayrollOperation(
+	recordPayrollReconciliationInternal,
+);
+export const resolvePayrollReconciliation = bindPayrollOperation(
+	resolvePayrollReconciliationInternal,
+);
+export const listPayrollReconciliationsForRun = bindPayrollOperation(
+	listPayrollReconciliationsForRunInternal,
 );
 export const recordPayrollException = bindPayrollOperation(
 	recordPayrollExceptionInternal,

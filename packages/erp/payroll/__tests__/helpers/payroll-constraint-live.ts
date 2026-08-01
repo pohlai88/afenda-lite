@@ -45,6 +45,18 @@ export async function isPayrollFoundationMigrationApplied(): Promise<boolean> {
 	return (runColumns.rows as unknown[]).length > 0;
 }
 
+export async function isPayrollOutputsMigrationApplied(): Promise<boolean> {
+	const rows = await afendaDatabase.client.execute(sql`
+		SELECT 1
+		FROM information_schema.columns
+		WHERE table_schema = 'public'
+			AND table_name = 'payroll_run'
+			AND column_name = 'reversal_request_fingerprint'
+		LIMIT 1
+	`);
+	return (rows.rows as unknown[]).length > 0;
+}
+
 export interface PayrollConstraintSeed {
 	actorUserId: string;
 	calendarId: string;

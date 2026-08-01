@@ -20,13 +20,15 @@ import {
 import type { MutationPorts } from "../../ports";
 import {
 	buildPayrollRunEventPayload,
+	buildPayrollRunEventPayloadForType,
 	payrollRunEventsForStatus,
 } from "../../runs/lifecycle-events";
+import { assertPayrollRunReversalUpdate } from "../../runs/reversal-policy";
 import { assertPayrollRunTransition } from "../../runs/transitions";
 import { assertExpectedVersion } from "../../shared/concurrency";
 import {
-	isCreateIdempotencyUniqueViolation,
 	isPayrollRunIdentityUniqueViolation,
+	isPostgresUniqueViolation,
 	mapConflict,
 	mapInvalidState,
 	mapNotFound,
@@ -41,29 +43,6 @@ import type {
 	PayrollRunCreateRecord,
 	PayrollRunUpdateInput,
 } from "../../types";
-
-function recordAudit(
-	ports: MutationPorts,
-	input: {
-		organizationId: string;
-		actorUserId: string;
-		correlationId: string;
-		entity: string;
-		entityId: string;
-		action: "CREATE" | "UPDATE" | "DELETE";
-		changes?: Change[];
-	},
-): Promise<Result<{ id: string }>> {
-	return ports.audit.record({
-		organizationId: input.organizationId,
-		actorUserId: input.actorUserId,
-		correlationId: input.correlationId,
-		entity: input.entity,
-		entityId: input.entityId,
-		action: input.action,
-		changes: input.changes ?? [],
-	});
-}
 
 function formatDateTime(value: Date | null): string | null {
 	if (value === null) {
@@ -101,6 +80,10 @@ function mapRunRow(row: typeof payrollRun.$inferSelect): Result<PayrollRun> {
 			row.roundingPolicyJson === null
 				? null
 				: (row.roundingPolicyJson as PayrollRun["roundingPolicyJson"]),
+		reversalReasonCode:
+			row.reversalReasonCode as PayrollRun["reversalReasonCode"],
+		reversalIdempotencyKey: row.reversalIdempotencyKey,
+		reversalRequestFingerprint: row.reversalRequestFingerprint,
 		version: row.version,
 		createdBy: row.createdBy,
 		updatedBy: row.updatedBy,
@@ -301,7 +284,7 @@ export const drizzleRunsMethods: PayrollRunsStore = {
 			}
 			return errorResult.ok(created.data);
 		} catch (error) {
-			if (isCreateIdempotencyUniqueViolation(error)) {
+			if (isPostgresUniqueViolation(error)) {
 				const replay = await this.findRunByIdempotencyKey({
 					organizationId: record.organizationId,
 					idempotencyKey: record.idempotencyKey,
@@ -385,6 +368,14 @@ export const drizzleRunsMethods: PayrollRunsStore = {
 		}
 
 		const nextStatus = input.status ?? current.data.status;
+		const reversalCheck = assertPayrollRunReversalUpdate({
+			current: current.data,
+			update: input,
+			nextStatus,
+		});
+		if (!reversalCheck.ok) {
+			return reversalCheck;
+		}
 		if (nextStatus !== current.data.status) {
 			const transitionCheck = assertPayrollRunTransition(
 				current.data.status,
@@ -416,6 +407,18 @@ export const drizzleRunsMethods: PayrollRunsStore = {
 			input.finalizedBy === undefined
 				? current.data.finalizedBy
 				: input.finalizedBy;
+		const nextReversalReasonCode =
+			input.reversalReasonCode === undefined
+				? current.data.reversalReasonCode
+				: input.reversalReasonCode;
+		const nextReversalIdempotencyKey =
+			input.reversalIdempotencyKey === undefined
+				? current.data.reversalIdempotencyKey
+				: input.reversalIdempotencyKey;
+		const nextReversalRequestFingerprint =
+			input.reversalRequestFingerprint === undefined
+				? current.data.reversalRequestFingerprint
+				: input.reversalRequestFingerprint;
 		const changes: Change[] =
 			current.data.status === nextStatus
 				? []
@@ -426,6 +429,13 @@ export const drizzleRunsMethods: PayrollRunsStore = {
 							newValue: nextStatus,
 						},
 					];
+		if (input.auditReason !== undefined) {
+			changes.push({
+				field: "reason",
+				oldValue: null,
+				newValue: input.auditReason,
+			});
+		}
 		const preparedAudit = afendaAudit.transaction.prepare({
 			organizationId: input.organizationId,
 			actorUserId: input.actorUserId,
@@ -448,17 +458,25 @@ export const drizzleRunsMethods: PayrollRunsStore = {
 				: [...payrollRunEventsForStatus(nextStatus)];
 		const [eventType1 = null, eventType2 = null, eventType3 = null] =
 			eventTypes;
+		const eventRun = { ...current.data, status: nextStatus };
 		const eventId1 = randomUUID();
 		const eventId2 = randomUUID();
 		const eventId3 = randomUUID();
-		const payload = buildPayrollRunEventPayload({
-			organizationId: input.organizationId,
-			runId: input.runId,
-			actorUserId: input.actorUserId,
-			correlationId: input.correlationId,
-		});
-		for (const eventType of eventTypes) {
-			const validation = events.registry.validatePayload(eventType, payload);
+		const payloads = eventTypes.map((eventType) =>
+			buildPayrollRunEventPayloadForType({
+				eventType,
+				actorUserId: input.actorUserId,
+				correlationId: input.correlationId,
+				run: eventRun,
+				finalizationProjection: input.finalizationProjection,
+				reversalProjection: input.reversalProjection,
+			}),
+		);
+		for (const [index, eventType] of eventTypes.entries()) {
+			const validation = events.registry.validatePayload(
+				eventType,
+				payloads[index],
+			);
 			if (
 				!validation.success ||
 				events.registry.sourceModule(eventType) !== "payroll"
@@ -466,9 +484,14 @@ export const drizzleRunsMethods: PayrollRunsStore = {
 				return errorResult.fail("INTERNAL_ERROR");
 			}
 		}
-		const payloadJson = JSON.stringify(payload);
+		const [payload1 = null, payload2 = null, payload3 = null] = payloads.map(
+			(payload) => JSON.stringify(payload),
+		);
 		const roundingPolicyJson =
 			nextRoundingPolicy === null ? null : JSON.stringify(nextRoundingPolicy);
+		const reversalTotalsJson = JSON.stringify(
+			input.reversalProjection?.totals ?? [],
+		);
 
 		try {
 			const [, , rows] = await afendaDatabase.transaction((sqlValue) => [
@@ -556,6 +579,9 @@ export const drizzleRunsMethods: PayrollRunsStore = {
 							rounding_policy_json = ${roundingPolicyJson}::jsonb,
 							finalized_at = ${nextFinalizedAt}::timestamptz,
 							finalized_by = ${nextFinalizedBy}, version = ${nextVersion},
+							reversal_reason_code = ${nextReversalReasonCode},
+							reversal_idempotency_key = ${nextReversalIdempotencyKey},
+							reversal_request_fingerprint = ${nextReversalRequestFingerprint},
 							updated_by = ${input.actorUserId}, updated_at = NOW()
 						WHERE organization_id = ${input.organizationId}
 							AND id = ${input.runId} AND version = ${input.expectedVersion}
@@ -606,6 +632,44 @@ export const drizzleRunsMethods: PayrollRunsStore = {
 						DO NOTHING
 						RETURNING id
 					),
+					reversal_adjustments AS (
+						INSERT INTO payroll_adjustment (
+							id, organization_id, original_run_id, reversal_run_id,
+							original_run_employee_id, adjustment_type, amount,
+							currency_code, reason, create_idempotency_key,
+							create_request_fingerprint, created_by
+						)
+						SELECT gen_random_uuid(), mutated.organization_id, mutated.id, NULL,
+							NULL, 'reversal', -(reversal_total.net::numeric),
+							reversal_total."currencyCode", ${input.auditReason},
+							${input.reversalIdempotencyKey}::text || ':' || reversal_total."currencyCode",
+							${input.reversalRequestFingerprint},
+							mutated.updated_by
+						FROM mutated
+						CROSS JOIN jsonb_to_recordset(${reversalTotalsJson}::jsonb)
+							AS reversal_total("currencyCode" text, net text)
+						WHERE ${nextStatus}::text = 'reversed'
+						RETURNING id
+					),
+					payslip_work_items AS (
+						INSERT INTO payroll_payslip (
+							id, organization_id, run_id, run_employee_id, employee_id,
+							view_version, content_hash, status, version,
+							created_by, updated_by
+						)
+						SELECT gen_random_uuid(), mutated.organization_id, mutated.id,
+							run_employee.id, run_employee.employee_id, 1,
+							NULL, 'pending', 1,
+							mutated.updated_by, mutated.updated_by
+						FROM mutated
+						JOIN payroll_run_employee AS run_employee
+							ON run_employee.organization_id = mutated.organization_id
+							AND run_employee.run_id = mutated.id
+						WHERE ${nextStatus}::text = 'finalized'
+						ON CONFLICT (organization_id, run_employee_id, view_version)
+						DO NOTHING
+						RETURNING id
+					),
 					audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module,
@@ -620,11 +684,11 @@ export const drizzleRunsMethods: PayrollRunsStore = {
 						FROM mutated
 						RETURNING id
 					),
-					event_values(event_id, event_type, dedupe_key) AS (
+					event_values(event_id, event_type, dedupe_key, payload_json) AS (
 						VALUES
-							(${eventId1}::uuid, ${eventType1}::text, ${`${input.runId}:${nextStatus}:${nextVersion}:1`}::text),
-							(${eventId2}::uuid, ${eventType2}::text, ${`${input.runId}:${nextStatus}:${nextVersion}:2`}::text),
-							(${eventId3}::uuid, ${eventType3}::text, ${`${input.runId}:${nextStatus}:${nextVersion}:3`}::text)
+							(${eventId1}::uuid, ${eventType1}::text, ${`${input.runId}:${nextStatus}:${nextVersion}:1`}::text, ${payload1}::jsonb),
+							(${eventId2}::uuid, ${eventType2}::text, ${`${input.runId}:${nextStatus}:${nextVersion}:2`}::text, ${payload2}::jsonb),
+							(${eventId3}::uuid, ${eventType3}::text, ${`${input.runId}:${nextStatus}:${nextVersion}:3`}::text, ${payload3}::jsonb)
 					),
 					outboxed AS (
 						INSERT INTO platform_domain_event (
@@ -634,12 +698,15 @@ export const drizzleRunsMethods: PayrollRunsStore = {
 						SELECT event_values.event_id, mutated.organization_id,
 							event_values.event_type, 'payroll', event_values.dedupe_key,
 							${input.correlationId}, mutated.updated_by,
-							${payloadJson}::jsonb, 'pending', 0
+							event_values.payload_json, 'pending', 0
 						FROM mutated CROSS JOIN event_values
 						WHERE event_values.event_type IS NOT NULL
 						RETURNING id
 					)
-					SELECT mutated.id FROM mutated, audited
+					SELECT mutated.id,
+						(SELECT count(*) FROM payslip_work_items),
+						(SELECT count(*) FROM reversal_adjustments)
+					FROM mutated, audited
 				`,
 			]);
 			if (rows.length === 0) {
@@ -820,7 +887,7 @@ export const drizzleRunsMethods: PayrollRunsStore = {
 		}
 	},
 
-	async deleteExceptionsForRun(input, ports) {
+	async deleteExceptionsForRun(input, _ports) {
 		const run = await this.getRun({
 			organizationId: input.organizationId,
 			runId: input.runId,
@@ -837,42 +904,85 @@ export const drizzleRunsMethods: PayrollRunsStore = {
 			);
 		}
 
+		const preparedAudit = afendaAudit.transaction.prepare({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: input.correlationId,
+			module: "payroll",
+			entity: "payroll_run",
+			entityId: input.runId,
+			action: "DELETE",
+			changes: [
+				{
+					field: "exceptions",
+					oldValue: "present",
+					newValue: "cleared",
+				},
+			],
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
+
 		try {
-			const existing = await afendaDatabase.client
-				.select({ id: payrollException.id })
-				.from(payrollException)
-				.where(
-					and(
-						eq(payrollException.organizationId, input.organizationId),
-						eq(payrollException.runId, input.runId),
+			const [rows] = await afendaDatabase.transaction((sqlValue) => [
+				sqlValue`
+					WITH locked_run AS MATERIALIZED (
+						SELECT id FROM payroll_run
+						WHERE organization_id = ${input.organizationId}
+							AND id = ${input.runId}
+							AND status NOT IN ('finalized', 'reversed')
+						FOR UPDATE
 					),
-				);
-			if (existing.length === 0) {
+					deleted AS (
+						DELETE FROM payroll_exception
+						WHERE organization_id = ${input.organizationId}
+							AND run_id = ${input.runId}
+							AND EXISTS (SELECT 1 FROM locked_run)
+						RETURNING id
+					),
+					deleted_summary AS (
+						SELECT count(*) AS deleted_count FROM deleted
+					),
+					audited AS (
+						INSERT INTO platform_audit_log (
+							id, organization_id, actor_user_id, correlation_id, module,
+							entity, entity_id, action, changes, old_value, new_value,
+							metadata, ip_address, user_agent
+						)
+						SELECT ${randomUUID()}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
+						FROM deleted_summary WHERE deleted_count > 0
+						RETURNING id
+					)
+					SELECT deleted.id FROM deleted CROSS JOIN audited
+				`,
+			]);
+			if (rows.length === 0) {
+				const latest = await this.getRun({
+					organizationId: input.organizationId,
+					runId: input.runId,
+				});
+				if (!latest.ok) {
+					return latest;
+				}
+				if (
+					latest.data === null ||
+					latest.data.status === "finalized" ||
+					latest.data.status === "reversed"
+				) {
+					return mapInvalidState(
+						"Finalized or reversed payroll runs cannot delete exceptions",
+					);
+				}
 				return errorResult.ok({ deletedCount: 0 });
 			}
 
-			await afendaDatabase.client
-				.delete(payrollException)
-				.where(
-					and(
-						eq(payrollException.organizationId, input.organizationId),
-						eq(payrollException.runId, input.runId),
-					),
-				);
-
-			const audit = await recordAudit(ports, {
-				organizationId: input.organizationId,
-				actorUserId: input.actorUserId,
-				correlationId: input.correlationId,
-				entity: "payroll_run",
-				entityId: input.runId,
-				action: "DELETE",
-			});
-			if (!audit.ok) {
-				return audit;
-			}
-
-			return errorResult.ok({ deletedCount: existing.length });
+			return errorResult.ok({ deletedCount: rows.length });
 		} catch (error) {
 			return mapPersistenceFailure(
 				error,

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
 	formatScaledToDecimal,
+	mulScaledWithRounding,
 	parseDecimalToScaled,
 	roundScaled,
 } from "../src/runs/calculation";
@@ -51,5 +52,14 @@ describe("payroll money (BigInt scale-12)", () => {
 		const policy = { scale: 12, mode: "half_even" as const };
 		const value = parseDecimalToScaled("123.456789012");
 		expect(roundScaled(value, policy)).toBe(value);
+	});
+
+	it("rounds multiplication before discarding scale-24 precision", () => {
+		const result = mulScaledWithRounding(
+			parseDecimalToScaled("1.01"),
+			parseDecimalToScaled("0.004950495050"),
+			{ scale: 2, mode: "half_even" },
+		);
+		expect(formatScaledToDecimal(result)).toBe("0.01");
 	});
 });

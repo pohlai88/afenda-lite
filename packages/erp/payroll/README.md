@@ -28,10 +28,11 @@ The capability context is opaque. Production persistence, audit/event
 capabilities, and calculation wiring are selected inside the Payroll owner;
 consumers cannot inject stores, raw ports, or calculators through this facade.
 
-The implementation subpaths listed below remain published only until the final
-kernel cutover. New production consumers must use the root capability facade.
+The package publishes exactly one entrypoint: `@afenda/payroll`. Consumers use
+the root capability facade; stores, adapters, schemas, calculators, brands, and
+mutation ports are package-private implementation details.
 
-Workforce facts arrive through `PayrollEmployeeQueryPort`. The Payroll package
+Workforce facts arrive through the public `PayrollWorkforceCapability`. The Payroll package
 has no HR runtime dependency; the `apps/web` composition adapter consumes the
 sealed `@afenda/human-resources` root handoff and projects only the employment
 and compensation facts Payroll requires. Pay-group membership remains
@@ -40,12 +41,27 @@ Payroll-owned and is validated from the Payroll assignment store.
 Run creation and status transitions commit the run row, audit fact, and emitted
 outbox facts in one production database transaction. Finalized runs emit
 `payroll.payment-requested.v1` and `payroll.posting-requested.v1` for Payments
-and Accounting app-sagas.
+and Accounting app-sagas. Reversal preserves the sealed original evidence,
+creates linked compensating adjustments, and emits negative payment/posting
+correction requests exactly once. Bounded reason codes cross that integration
+boundary; detailed reasons remain in Payroll audit evidence, and persisted
+request fingerprints reject conflicting retries.
+
+Payslips are deterministic versioned views over finalized evidence. Self-service
+reads derive the employee from the authenticated workforce mapping; privileged
+reads require the distinct all-payslip permission. Reconciliation derives
+expected totals and tolerance policy from finalized evidence, exposes authorized
+aggregate state, and owns the versioned discrepancy-resolution workflow.
 
 Date inputs must be real ISO calendar dates. Monetary parsing accepts at most
 the canonical 12 fractional digits and rejects excess precision instead of
 silently truncating it. Memory persistence is test-only; omitted internal store
 wiring resolves to the Drizzle production store.
+
+Production statutory activation is fail-closed. The bundled `synth.v1`
+calculator is test-only and is not a jurisdiction approval. See
+[PRODUCTION_READINESS.md](./PRODUCTION_READINESS.md) for recovery controls and
+the qualified-review gate.
 
 Setup rules are effective-dated versions. At most one non-archived earning,
 deduction, or statutory rule may cover a date for the same organization, pay
@@ -57,7 +73,8 @@ shares a deterministic per-rule transaction lock with update, archive, and
 supersede, so a finalized version cannot be changed or retired even under a
 concurrent mutation.
 
-Manifest: `src/module.manifest.ts` (`@afenda/payroll/module-manifest`).
+Manifest: `src/module.manifest.ts` (repository-governance input, not a consumer
+subpath).
 
 ## Domain farms
 
@@ -79,20 +96,17 @@ Supporting trees (same shape as `@afenda/human-resources`):
 | `store/` | Domain-sliced persistence contracts → composed `PayrollStore` |
 | `adapters/drizzle/` | Per-domain Drizzle methods + `createDrizzlePayrollStore` |
 | `adapters/memory/` | In-memory store for unit/domain tests |
-| `testing/` | Test-facing factory exports |
+| `testing/` | Package-private test factory |
 
 ## Public surfaces
 
-| Subpath | Role |
-|---------|------|
-| `@afenda/payroll` | Brands, schemas, permissions, port types |
-| `@afenda/payroll/adapters/drizzle` | `createDrizzlePayrollStore`, per-domain Drizzle adapters |
-| `@afenda/payroll/schemas` | Domain Zod schemas |
-| `@afenda/payroll/store` | Domain store contracts |
-| `@afenda/payroll/testing` | Memory store factories |
-| `@afenda/payroll/module-manifest` | Module manifest |
+| Entry point | Role |
+|-------------|------|
+| `@afenda/payroll` | Commands, queries, permissions, and opaque composition capabilities |
 
-The root barrel does not export raw Drizzle tables, SQL builders, database handles, Next.js types, or HTTP envelopes.
+The root barrel does not export stores, adapters, calculators, mutation ports,
+raw schemas/brands, Drizzle tables, SQL builders, database handles, Next.js
+types, or HTTP envelopes.
 
 ## Maintain
 

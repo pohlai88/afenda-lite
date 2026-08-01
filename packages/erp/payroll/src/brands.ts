@@ -102,6 +102,26 @@ export type PayrollStatutoryResultId = z.infer<
 	typeof payrollStatutoryResultIdSchema
 >;
 
+export const payrollPayslipIdSchema = z
+	.string()
+	.uuid()
+	.brand<"PayrollPayslipId">();
+export type PayrollPayslipId = z.infer<typeof payrollPayslipIdSchema>;
+
+export const payrollReconciliationIdSchema = z
+	.string()
+	.uuid()
+	.brand<"PayrollReconciliationId">();
+export type PayrollReconciliationId = z.infer<
+	typeof payrollReconciliationIdSchema
+>;
+
+export const payrollAdjustmentIdSchema = z
+	.string()
+	.uuid()
+	.brand<"PayrollAdjustmentId">();
+export type PayrollAdjustmentId = z.infer<typeof payrollAdjustmentIdSchema>;
+
 /** Brand after UUID generation or trusted DB load — never cast without parse. */
 export function parsePayrollCalendarId(id: string): Result<PayrollCalendarId> {
 	const parsed = payrollCalendarIdSchema.safeParse(id);
@@ -243,4 +263,29 @@ export function parsePayrollStatutoryResultId(
 		return errorResult.fail("INTERNAL_ERROR");
 	}
 	return errorResult.ok(parsed.data);
+}
+
+export function parsePayrollPayslipId(id: string): Result<PayrollPayslipId> {
+	const parsed = payrollPayslipIdSchema.safeParse(id);
+	return parsed.success
+		? errorResult.ok(parsed.data)
+		: errorResult.fail("INTERNAL_ERROR");
+}
+
+export function parsePayrollReconciliationId(
+	id: string,
+): Result<PayrollReconciliationId> {
+	const parsed = payrollReconciliationIdSchema.safeParse(id);
+	return parsed.success
+		? errorResult.ok(parsed.data)
+		: errorResult.fail("INTERNAL_ERROR");
+}
+
+export function parsePayrollAdjustmentId(
+	id: string,
+): Result<PayrollAdjustmentId> {
+	const parsed = payrollAdjustmentIdSchema.safeParse(id);
+	return parsed.success
+		? errorResult.ok(parsed.data)
+		: errorResult.fail("INTERNAL_ERROR");
 }

@@ -17,15 +17,13 @@ src/schemas/
 └── index.ts            # composed schema barrel
 ```
 
-Package subpath `@afenda/payroll/schemas` resolves to `schemas/index.ts`.
+This tree is package-internal. Consumers use the root `@afenda/payroll`
+capabilities; no schema subpath is published.
 
 ## Import patterns
 
 ```ts
-// Package consumers
-import { payrollMutationContextSchema } from "@afenda/payroll/schemas";
-
-// Domain-owned code (preferred)
+// Domain-owned code
 import { createPayGroupInputSchema } from "../schemas/setup";
 ```
 

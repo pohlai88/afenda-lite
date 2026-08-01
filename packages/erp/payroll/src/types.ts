@@ -1,4 +1,10 @@
+import type { PayrollReversalReasonCode } from "@afenda/events/schemas";
 import type { z } from "zod";
+import type {
+	PayrollAdjustmentId,
+	PayrollRunEmployeeId,
+	PayrollRunId,
+} from "./brands";
 import type {
 	payrollEmployeeAssignmentCreateRecordSchema,
 	payrollEmployeeAssignmentRecordSchema,
@@ -25,6 +31,10 @@ import type {
 	payrollRunEmployeeStatusSchema,
 	replaceRunCalculationOutputsInputSchema,
 } from "./schemas/outputs";
+import type {
+	payrollReconciliationCreateRecordSchema,
+	payrollReconciliationRecordSchema,
+} from "./schemas/reconciliation";
 import type {
 	payrollExceptionCreateRecordSchema,
 	payrollExceptionRecordSchema,
@@ -197,7 +207,45 @@ export type PayrollException = z.infer<typeof payrollExceptionRecordSchema>;
 export type PayrollRunCreateRecord = z.infer<
 	typeof payrollRunCreateRecordSchema
 >;
-export type PayrollRunUpdateInput = z.infer<typeof payrollRunUpdateInputSchema>;
+export interface PayrollFinalizationProjection {
+	paymentDate: string;
+	payments: Array<{
+		employeeId: string;
+		sourceId: string;
+		amount: string;
+		currencyCode: string;
+	}>;
+	postingDate: string;
+	postingLines: Array<{
+		sourceId: string;
+		employeeId: string;
+		category: PayrollResultLine["lineKind"];
+		amount: string;
+		currencyCode: string;
+		dimensions: Record<string, string>;
+	}>;
+	totals: Array<{
+		currencyCode: string;
+		gross: string;
+		employeeDeductions: string;
+		employeeStatutory: string;
+		employerCost: string;
+		net: string;
+	}>;
+}
+
+export interface PayrollReversalProjection
+	extends PayrollFinalizationProjection {
+	reason: string;
+	reasonCode: PayrollReversalReasonCode;
+}
+
+export type PayrollRunUpdateInput = z.infer<
+	typeof payrollRunUpdateInputSchema
+> & {
+	finalizationProjection?: PayrollFinalizationProjection | undefined;
+	reversalProjection?: PayrollReversalProjection | undefined;
+};
 export type PayrollExceptionCreateRecord = z.infer<
 	typeof payrollExceptionCreateRecordSchema
 >;
@@ -273,3 +321,46 @@ export type PayrollStatutoryResultCreateRecord = z.infer<
 export type ReplaceStatutoryResultsForRunInput = z.infer<
 	typeof replaceStatutoryResultsForRunInputSchema
 >;
+
+export type PayrollReconciliation = z.infer<
+	typeof payrollReconciliationRecordSchema
+>;
+export type PayrollReconciliationCreateRecord = z.infer<
+	typeof payrollReconciliationCreateRecordSchema
+>;
+
+export interface PayrollPayslipViewModel {
+	contentHash: string;
+	contractVersion: "payroll.payslip.v1";
+	currencyCode: string;
+	employeeDeductions: string;
+	employeeId: string;
+	employeeStatutory: string;
+	employerCost: string;
+	gross: string;
+	lines: Array<{
+		sequence: number;
+		category: PayrollResultLine["lineKind"];
+		code: string;
+		amount: string;
+		currencyCode: string;
+	}>;
+	net: string;
+	organizationId: string;
+	runId: PayrollRunId;
+	status: "finalized" | "reversed";
+}
+
+export interface PayrollAdjustment {
+	adjustmentType: "reversal" | "adjustment";
+	amount: string;
+	createdAt: Date;
+	createdBy: string;
+	currencyCode: string;
+	id: PayrollAdjustmentId;
+	organizationId: string;
+	originalRunEmployeeId: PayrollRunEmployeeId | null;
+	originalRunId: PayrollRunId;
+	reason: string;
+	reversalRunId: PayrollRunId | null;
+}

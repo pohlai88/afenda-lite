@@ -20,6 +20,10 @@ const setupSource = readFileSync(
 	),
 	"utf8",
 );
+const outputSource = readFileSync(
+	fileURLToPath(new URL("../src/adapters/drizzle/outputs.ts", import.meta.url)),
+	"utf8",
+);
 
 describe("payroll run production transaction contract", () => {
 	it("commits run state, audit evidence, and lifecycle outbox together", () => {
@@ -27,12 +31,25 @@ describe("payroll run production transaction contract", () => {
 		expect(source).toContain("INSERT INTO platform_audit_log");
 		expect(source).toContain("INSERT INTO platform_domain_event");
 		expect(source).toContain("WITH mutated AS");
+		expect(source).toContain(
+			"event_values(event_id, event_type, dedupe_key, payload_json)",
+		);
+		expect(source).toContain("event_values.payload_json");
 	});
 
 	it("serializes finalization with exception creation and rechecks blockers", () => {
 		expect(source.match(/FOR UPDATE/g)?.length ?? 0).toBeGreaterThanOrEqual(2);
 		expect(source).toContain("severity = 'blocking'");
 		expect(source).toContain("status NOT IN ('finalized', 'reversed')");
+	});
+
+	it("clears exceptions and records its audit in one transaction", () => {
+		expect(source).toContain("WITH locked_run AS MATERIALIZED");
+		expect(source).toContain("DELETE FROM payroll_exception");
+		expect(source).toContain("deleted_summary AS");
+		expect(source).toContain(
+			"SELECT deleted.id FROM deleted CROSS JOIN audited",
+		);
 	});
 
 	it("records finalized rule usage from calculation snapshots atomically", () => {
@@ -47,6 +64,34 @@ describe("payroll run production transaction contract", () => {
 		expect(source).toContain("snapshot_json -> 'statutoryRules'");
 		expect(source).toContain(
 			"ON CONFLICT (organization_id, rule_kind, rule_id, run_id)",
+		);
+	});
+
+	it("creates one immutable payslip publication work item per finalized employee", () => {
+		expect(source).toContain("payslip_work_items AS");
+		expect(source).toContain("INSERT INTO payroll_payslip");
+		expect(source).toContain(
+			"ON CONFLICT (organization_id, run_employee_id, view_version)",
+		);
+		expect(source).toContain("NULL, 'pending', 1");
+	});
+
+	it("locks run status and replaces calculation outputs in one transaction", () => {
+		expect(outputSource.match(/afendaDatabase\.transaction/g)).toHaveLength(2);
+		expect(outputSource.match(/FOR UPDATE/g)).toHaveLength(2);
+		expect(outputSource).toContain(
+			"status NOT IN ('calculated', 'finalized', 'reversed')",
+		);
+		expect(outputSource).toContain("jsonb_to_recordset");
+	});
+
+	it("creates idempotent compensating adjustment records with reversal state", () => {
+		expect(source).toContain("reversal_adjustments AS");
+		expect(source).toContain("INSERT INTO payroll_adjustment");
+		expect(source).toContain("-(reversal_total.net::numeric)");
+		expect(source).toContain("input.reversalRequestFingerprint");
+		expect(source).not.toContain(
+			"ON CONFLICT (organization_id, create_idempotency_key) DO NOTHING",
 		);
 	});
 

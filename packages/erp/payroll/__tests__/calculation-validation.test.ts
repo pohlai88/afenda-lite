@@ -102,4 +102,40 @@ describe("payroll calculation validation", () => {
 			"Unknown statutory calculator: unknown.calculator",
 		);
 	});
+
+	it("blocks stale pinned earning rule versions", () => {
+		const baseline = buildSyntheticCalcSnapshot();
+		const [recurring] = baseline.recurringEarnings;
+		expect(recurring).toBeDefined();
+		if (recurring === undefined) {
+			return;
+		}
+		const output = calculateEmployeePayroll(
+			buildSyntheticCalcSnapshot({
+				recurringEarnings: [
+					{ ...recurring, earningRuleVersion: "stale-version" },
+				],
+			}),
+		);
+		expect(output.exceptions).toContainEqual(
+			expect.objectContaining({ exceptionCode: "RULE_VERSION_MISMATCH" }),
+		);
+	});
+
+	it("blocks rule currency mismatches", () => {
+		const baseline = buildSyntheticCalcSnapshot();
+		const [rule] = baseline.earningRules;
+		expect(rule).toBeDefined();
+		if (rule === undefined) {
+			return;
+		}
+		const output = calculateEmployeePayroll(
+			buildSyntheticCalcSnapshot({
+				earningRules: [{ ...rule, currencyCode: "EUR" }],
+			}),
+		);
+		expect(output.exceptions).toContainEqual(
+			expect.objectContaining({ exceptionCode: "CURRENCY_MISMATCH" }),
+		);
+	});
 });

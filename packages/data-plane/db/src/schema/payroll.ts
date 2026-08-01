@@ -15,8 +15,6 @@ import {
 	uuid,
 } from "drizzle-orm/pg-core";
 
-import { createErpScaffoldTable } from "./scaffold-table";
-
 const payrollAuditColumns = {
 	version: integer("version").notNull().default(1),
 	createdBy: text("created_by").notNull(),
@@ -347,6 +345,9 @@ export const payrollRun = pgTable(
 		calculationSnapshotHash: text("calculation_snapshot_hash"),
 		calculationVersion: text("calculation_version"),
 		roundingPolicyJson: jsonb("rounding_policy_json"),
+		reversalReasonCode: text("reversal_reason_code"),
+		reversalIdempotencyKey: text("reversal_idempotency_key"),
+		reversalRequestFingerprint: text("reversal_request_fingerprint"),
 		...payrollIdempotencyColumns,
 		...payrollAuditColumns,
 	},
@@ -367,6 +368,9 @@ export const payrollRun = pgTable(
 			t.organizationId,
 			t.createIdempotencyKey,
 		),
+		uniqueIndex("payroll_run_org_reversal_idempotency_uidx")
+			.on(t.organizationId, t.reversalIdempotencyKey)
+			.where(sql`${t.reversalIdempotencyKey} IS NOT NULL`),
 		foreignKey({
 			columns: [t.organizationId, t.payGroupId],
 			foreignColumns: [payrollPayGroup.organizationId, payrollPayGroup.id],
@@ -384,6 +388,14 @@ export const payrollRun = pgTable(
 		check(
 			"payroll_run_status_check",
 			sql`${t.status} IN ('draft', 'calculating', 'calculated', 'failed', 'finalized', 'reversed')`,
+		),
+		check(
+			"payroll_run_reversal_evidence_check",
+			sql`(${t.status} = 'reversed' AND ${t.reversalReasonCode} IS NOT NULL AND ${t.reversalIdempotencyKey} IS NOT NULL AND ${t.reversalRequestFingerprint} IS NOT NULL) OR (${t.status} <> 'reversed' AND ${t.reversalReasonCode} IS NULL AND ${t.reversalIdempotencyKey} IS NULL AND ${t.reversalRequestFingerprint} IS NULL)`,
+		),
+		check(
+			"payroll_run_reversal_reason_code_check",
+			sql`${t.reversalReasonCode} IS NULL OR ${t.reversalReasonCode} IN ('calculation_correction', 'employee_data_correction', 'statutory_correction', 'payment_correction', 'accounting_correction', 'operational_correction')`,
 		),
 	],
 );
@@ -731,6 +743,12 @@ export const payrollRunEmployee = pgTable(
 		index("payroll_run_employee_org_id_idx").on(t.organizationId, t.id),
 		index("payroll_run_employee_org_run_idx").on(t.organizationId, t.runId),
 		unique("payroll_run_employee_org_id_uidx").on(t.organizationId, t.id),
+		uniqueIndex("payroll_run_employee_org_id_run_employee_uidx").on(
+			t.organizationId,
+			t.id,
+			t.runId,
+			t.employeeId,
+		),
 		uniqueIndex("payroll_run_employee_org_run_employee_uidx").on(
 			t.organizationId,
 			t.runId,
@@ -869,8 +887,161 @@ export const payrollStatutoryResult = pgTable(
 		}),
 	],
 );
-export const payrollPayslip = createErpScaffoldTable("payroll_payslip");
-export const payrollAdjustment = createErpScaffoldTable("payroll_adjustment");
-export const payrollReconciliation = createErpScaffoldTable(
+/** Immutable publication metadata for a versioned employee payslip view. */
+export const payrollPayslip = pgTable(
+	"payroll_payslip",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		runId: uuid("run_id").notNull(),
+		runEmployeeId: uuid("run_employee_id").notNull(),
+		employeeId: text("employee_id").notNull(),
+		viewVersion: integer("view_version").notNull(),
+		contentHash: text("content_hash"),
+		storageKey: text("storage_key"),
+		status: text("status").notNull(),
+		publishedAt: timestamp("published_at", { withTimezone: true }),
+		publishedBy: text("published_by"),
+		...payrollAuditColumns,
+	},
+	(t) => [
+		index("payroll_payslip_org_id_idx").on(t.organizationId, t.id),
+		index("payroll_payslip_org_employee_idx").on(
+			t.organizationId,
+			t.employeeId,
+		),
+		unique("payroll_payslip_org_id_uidx").on(t.organizationId, t.id),
+		uniqueIndex("payroll_payslip_org_run_employee_version_uidx").on(
+			t.organizationId,
+			t.runEmployeeId,
+			t.viewVersion,
+		),
+		foreignKey({
+			columns: [t.organizationId, t.runId],
+			foreignColumns: [payrollRun.organizationId, payrollRun.id],
+			name: "payroll_payslip_org_run_fk",
+		}),
+		foreignKey({
+			columns: [t.organizationId, t.runEmployeeId, t.runId, t.employeeId],
+			foreignColumns: [
+				payrollRunEmployee.organizationId,
+				payrollRunEmployee.id,
+				payrollRunEmployee.runId,
+				payrollRunEmployee.employeeId,
+			],
+			name: "payroll_payslip_org_run_employee_lineage_fk",
+		}),
+		check(
+			"payroll_payslip_status_check",
+			sql`${t.status} IN ('pending', 'generated', 'published', 'superseded')`,
+		),
+	],
+);
+
+/** Compensating evidence linked to the immutable original payroll result. */
+export const payrollAdjustment = pgTable(
+	"payroll_adjustment",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		originalRunId: uuid("original_run_id").notNull(),
+		reversalRunId: uuid("reversal_run_id"),
+		originalRunEmployeeId: uuid("original_run_employee_id"),
+		adjustmentType: text("adjustment_type").notNull(),
+		amount: numeric("amount", { precision: 24, scale: 12 }).notNull(),
+		currencyCode: text("currency_code").notNull(),
+		reason: text("reason").notNull(),
+		...payrollIdempotencyColumns,
+		createdBy: text("created_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("payroll_adjustment_org_id_idx").on(t.organizationId, t.id),
+		index("payroll_adjustment_org_original_run_idx").on(
+			t.organizationId,
+			t.originalRunId,
+		),
+		unique("payroll_adjustment_org_id_uidx").on(t.organizationId, t.id),
+		uniqueIndex("payroll_adjustment_org_idempotency_uidx").on(
+			t.organizationId,
+			t.createIdempotencyKey,
+		),
+		foreignKey({
+			columns: [t.organizationId, t.originalRunId],
+			foreignColumns: [payrollRun.organizationId, payrollRun.id],
+			name: "payroll_adjustment_org_original_run_fk",
+		}),
+		check(
+			"payroll_adjustment_type_check",
+			sql`${t.adjustmentType} IN ('reversal', 'adjustment')`,
+		),
+	],
+);
+
+/** Downstream payment/accounting reconciliation with explicit discrepancy state. */
+export const payrollReconciliation = pgTable(
 	"payroll_reconciliation",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		runId: uuid("run_id").notNull(),
+		kind: text("kind").notNull(),
+		downstreamReference: text("downstream_reference").notNull(),
+		expectedAmount: numeric("expected_amount", {
+			precision: 24,
+			scale: 12,
+		}).notNull(),
+		actualAmount: numeric("actual_amount", {
+			precision: 24,
+			scale: 12,
+		}).notNull(),
+		toleranceAmount: numeric("tolerance_amount", {
+			precision: 24,
+			scale: 12,
+		}).notNull(),
+		currencyCode: text("currency_code").notNull(),
+		status: text("status").notNull(),
+		resolutionNote: text("resolution_note"),
+		resolvedBy: text("resolved_by"),
+		resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+		...payrollIdempotencyColumns,
+		...payrollAuditColumns,
+	},
+	(t) => [
+		index("payroll_reconciliation_org_id_idx").on(t.organizationId, t.id),
+		index("payroll_reconciliation_org_run_idx").on(t.organizationId, t.runId),
+		unique("payroll_reconciliation_org_id_uidx").on(t.organizationId, t.id),
+		uniqueIndex("payroll_reconciliation_org_downstream_uidx").on(
+			t.organizationId,
+			t.kind,
+			t.downstreamReference,
+		),
+		uniqueIndex("payroll_reconciliation_org_idempotency_uidx").on(
+			t.organizationId,
+			t.createIdempotencyKey,
+		),
+		foreignKey({
+			columns: [t.organizationId, t.runId],
+			foreignColumns: [payrollRun.organizationId, payrollRun.id],
+			name: "payroll_reconciliation_org_run_fk",
+		}),
+		check(
+			"payroll_reconciliation_kind_check",
+			sql`${t.kind} IN ('payment', 'accounting')`,
+		),
+		check(
+			"payroll_reconciliation_status_check",
+			sql`${t.status} IN ('matched', 'discrepant', 'resolved')`,
+		),
+		check(
+			"payroll_reconciliation_resolution_evidence_check",
+			sql`(${t.status} = 'resolved' AND ${t.resolutionNote} IS NOT NULL AND ${t.resolvedBy} IS NOT NULL AND ${t.resolvedAt} IS NOT NULL) OR (${t.status} <> 'resolved' AND ${t.resolutionNote} IS NULL AND ${t.resolvedBy} IS NULL AND ${t.resolvedAt} IS NULL)`,
+		),
+		check(
+			"payroll_reconciliation_nonnegative_amounts_check",
+			sql`${t.expectedAmount} >= 0 AND ${t.actualAmount} >= 0 AND ${t.toleranceAmount} >= 0`,
+		),
+	],
 );

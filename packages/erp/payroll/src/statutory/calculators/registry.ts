@@ -18,3 +18,29 @@ export function getStatutoryCalculator(
 export function listRegisteredStatutoryCalculators(): readonly string[] {
 	return [...calculators.keys()].sort();
 }
+
+export function getStatutoryCalculatorReadiness(): readonly {
+	calculatorId: string;
+	status: StatutoryRuleCalculator["productionApproval"]["status"];
+}[] {
+	return [...calculators.values()]
+		.map((calculator) => ({
+			calculatorId: calculator.calculatorId,
+			status: calculator.productionApproval.status,
+		}))
+		.sort((left, right) => left.calculatorId.localeCompare(right.calculatorId));
+}
+
+export function isStatutoryProductionReady(): boolean {
+	return [...calculators.values()].some(
+		(calculator) => calculator.productionApproval.status === "approved",
+	);
+}
+
+export function isStatutoryCalculatorProductionApproved(
+	calculatorId: string,
+): boolean {
+	return (
+		calculators.get(calculatorId)?.productionApproval.status === "approved"
+	);
+}

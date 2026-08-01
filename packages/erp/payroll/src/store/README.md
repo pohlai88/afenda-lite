@@ -16,9 +16,10 @@ src/store/
 └── index.ts            # PayrollStore composition (SSOT)
 ```
 
-Package subpath `@afenda/payroll/store` resolves to `store/index.ts`.
+This tree is package-internal. Consumers use the root `@afenda/payroll`
+capabilities; no store subpath is published.
 
-## Import patterns
+## Internal import patterns
 
 ```ts
 import type { PayrollStore } from "../store";

@@ -31,6 +31,9 @@ export function createPayrollCapabilityOptions(
 	internalOptions.set(context, {
 		authorization: composition.authorization,
 		employees: composition.workforce,
+		...(composition.observability === undefined
+			? {}
+			: { observability: composition.observability }),
 		store,
 		ports: createProductionMutationPorts(),
 		calculator: createProductionPayrollRunCalculator({

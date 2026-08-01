@@ -2,7 +2,11 @@ import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
 
 import type { PayrollAuthorizationPort } from "../src/authorization";
-import { parsePayrollRunEmployeeId } from "../src/brands";
+import {
+	parsePayrollResultLineId,
+	parsePayrollRunEmployeeId,
+} from "../src/brands";
+import { hashSnapshot } from "../src/runs/calc/snapshot";
 import { finalizePayrollRun } from "../src/runs/finalization";
 import {
 	closePayrollPeriod,
@@ -39,6 +43,10 @@ import {
 	createPayrollStatutoryRule,
 	supersedePayrollStatutoryRule,
 } from "../src/setup/statutory-rule";
+import {
+	DEFAULT_PAYROLL_ROUNDING_POLICY,
+	PAYROLL_CALCULATION_VERSION,
+} from "../src/shared/rounding-policy";
 import {
 	createMemoryPayrollStore,
 	createTestPayrollRunCalculator,
@@ -541,10 +549,7 @@ describe("payroll setup lifecycle and versioning", () => {
 		if (!rule.ok) {
 			throw new Error(rule.message);
 		}
-		const runOptions = {
-			...seeded.options,
-			calculator: createTestPayrollRunCalculator(),
-		};
+		let runOptions = seeded.options;
 		const run = await createPayrollRun(
 			{
 				...context("corr-finalized-run"),
@@ -559,21 +564,20 @@ describe("payroll setup lifecycle and versioning", () => {
 		if (!run.ok) {
 			throw new Error(run.message);
 		}
-		const calculated = await calculatePayrollRun(
-			{
-				...context("corr-finalized-calculate"),
-				runId: run.data.id,
-				expectedVersion: run.data.version,
-			},
-			runOptions,
-		);
-		if (!calculated.ok) {
-			throw new Error(calculated.message);
-		}
 		const runEmployeeId = parsePayrollRunEmployeeId(randomUUID());
 		if (!runEmployeeId.ok) {
 			throw new Error(runEmployeeId.message);
 		}
+		const resultLineId = parsePayrollResultLineId(randomUUID());
+		if (!resultLineId.ok) {
+			throw new Error(resultLineId.message);
+		}
+		const snapshotJson = {
+			earningRules: [{ id: rule.data.id, recordVersion: rule.data.version }],
+			deductionRules: [],
+			statutoryRules: [],
+		};
+		const employeeSnapshotHash = hashSnapshot(snapshotJson);
 		const outputs = await seeded.store.replaceRunCalculationOutputs(
 			{
 				organizationId,
@@ -589,19 +593,30 @@ describe("payroll setup lifecycle and versioning", () => {
 						employeeStatutory: "0.00",
 						employerCost: "0.00",
 						net: "1000.00",
-						snapshotJson: {
-							earningRules: [
-								{ id: rule.data.id, recordVersion: rule.data.version },
-							],
-							deductionRules: [],
-							statutoryRules: [],
-						},
-						snapshotHash: "hash-finalized-lock",
+						snapshotJson,
+						snapshotHash: employeeSnapshotHash,
 						calculationVersion: "payroll.calc.v1",
 						status: "calculated",
 					},
 				],
-				resultLines: [],
+				resultLines: [
+					{
+						id: resultLineId.data,
+						runEmployeeId: runEmployeeId.data,
+						employeeId: "employee-finalized-lock",
+						lineKind: "earning",
+						code: "FINALIZED-BASE",
+						ruleCode: "FINALIZED-BASE",
+						ruleVersion: "1",
+						ruleKind: "earning",
+						amount: "1000.00",
+						currencyCode: "USD",
+						sourceType: "earning_rule",
+						sourceId: rule.data.id,
+						sequence: 1,
+						traceRef: "finalized-lock:1",
+					},
+				],
 				actorUserId,
 				correlationId: "corr-finalized-outputs",
 			},
@@ -609,6 +624,28 @@ describe("payroll setup lifecycle and versioning", () => {
 		);
 		if (!outputs.ok) {
 			throw new Error(outputs.message);
+		}
+		runOptions = {
+			...seeded.options,
+			calculator: createTestPayrollRunCalculator({
+				snapshotHash: hashSnapshot({
+					runId: run.data.id,
+					calculationVersion: PAYROLL_CALCULATION_VERSION,
+					roundingPolicy: DEFAULT_PAYROLL_ROUNDING_POLICY,
+					snapshotHashes: [employeeSnapshotHash],
+				}),
+			}),
+		};
+		const calculated = await calculatePayrollRun(
+			{
+				...context("corr-finalized-calculate"),
+				runId: run.data.id,
+				expectedVersion: run.data.version,
+			},
+			runOptions,
+		);
+		if (!calculated.ok) {
+			throw new Error(calculated.message);
 		}
 		const finalized = await finalizePayrollRun(
 			{

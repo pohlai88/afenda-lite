@@ -663,6 +663,10 @@ export const drizzleAssignmentsMethods: PayrollAssignmentsStore = {
 						eq(payrollEmployeeAssignment.payGroupId, input.payGroupId),
 						eq(payrollEmployeeAssignment.status, "active"),
 					),
+				)
+				.orderBy(
+					payrollEmployeeAssignment.employeeId,
+					payrollEmployeeAssignment.id,
 				);
 			const assignments: PayrollEmployeeAssignment[] = [];
 			for (const row of rows) {
@@ -705,7 +709,8 @@ export const drizzleAssignmentsMethods: PayrollAssignmentsStore = {
 						eq(payrollRecurringEarning.assignmentId, input.assignmentId),
 						eq(payrollRecurringEarning.status, "active"),
 					),
-				);
+				)
+				.orderBy(payrollRecurringEarning.id);
 			const recurringEarnings: PayrollRecurringEarning[] = [];
 			for (const row of rows) {
 				if (
@@ -747,7 +752,8 @@ export const drizzleAssignmentsMethods: PayrollAssignmentsStore = {
 						eq(payrollRecurringDeduction.assignmentId, input.assignmentId),
 						eq(payrollRecurringDeduction.status, "active"),
 					),
-				);
+				)
+				.orderBy(payrollRecurringDeduction.id);
 			const recurringDeductions: PayrollRecurringDeduction[] = [];
 			for (const row of rows) {
 				if (

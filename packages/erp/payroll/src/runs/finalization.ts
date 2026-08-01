@@ -5,6 +5,7 @@ import { PAYROLL_COMMAND_RUN_FINALIZE } from "../module-ids";
 import { finalizePayrollRunInputSchema } from "../schemas/runs";
 import { runPayrollSetupCommand } from "../shared/setup-command";
 import type { PayrollRun } from "../types";
+import { buildPayrollFinalizationProjection } from "./finalization-evidence";
 import {
 	hasBlockingPayrollExceptions,
 	loadPayrollRun,
@@ -24,6 +25,7 @@ export function finalizePayrollRun(
 		schema: finalizePayrollRunInputSchema,
 		invalidMessage: "Invalid payroll run finalize input",
 		command: PAYROLL_COMMAND_RUN_FINALIZE,
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Finalization deliberately verifies authorization, blockers, persisted evidence, and the atomic transition boundary.
 		execute: async (data, { store, ports }) => {
 			const loaded = await loadPayrollRun(store, {
 				organizationId: data.organizationId,
@@ -57,6 +59,43 @@ export function finalizePayrollRun(
 					publicMessage: "Blocking payroll exceptions prevent finalization",
 				});
 			}
+			const [period, runEmployees, resultLines] = await Promise.all([
+				store.getPeriod({
+					organizationId: data.organizationId,
+					periodId: run.periodId,
+				}),
+				store.listRunEmployeesForRun({
+					organizationId: data.organizationId,
+					runId: run.id,
+				}),
+				store.listResultLinesForRun({
+					organizationId: data.organizationId,
+					runId: run.id,
+				}),
+			]);
+			if (!period.ok) {
+				return period;
+			}
+			if (!runEmployees.ok) {
+				return runEmployees;
+			}
+			if (!resultLines.ok) {
+				return resultLines;
+			}
+			if (period.data === null) {
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "Payroll period not found",
+				});
+			}
+			const finalizationProjection = buildPayrollFinalizationProjection({
+				run,
+				periodEnd: period.data.periodEnd,
+				runEmployees: runEmployees.data,
+				resultLines: resultLines.data,
+			});
+			if (!finalizationProjection.ok) {
+				return finalizationProjection;
+			}
 
 			return transitionPayrollRun(store, ports, {
 				run,
@@ -66,6 +105,7 @@ export function finalizePayrollRun(
 				finalizedBy: data.actorUserId,
 				actorUserId: data.actorUserId,
 				correlationId: data.correlationId,
+				finalizationProjection: finalizationProjection.data,
 			});
 		},
 	});
