@@ -628,6 +628,26 @@ tables:
   - moduleId: human-resources
     packageName: "@afenda/human-resources"
     schemaOwner: "@afenda/db"
+    table: hr_bulk_export_artifact_chunk
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_bulk_export_job
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_bulk_import_job
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_bulk_import_job_row
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
+    table: hr_user_employee
+  - moduleId: human-resources
+    packageName: "@afenda/human-resources"
+    schemaOwner: "@afenda/db"
     table: hr_reliability_work_item
   - moduleId: human-resources
     packageName: "@afenda/human-resources"
@@ -849,6 +869,10 @@ tables:
     packageName: "@afenda/master-data"
     schemaOwner: "@afenda/db"
     table: md_import_batch
+  - moduleId: master-data
+    packageName: "@afenda/master-data"
+    schemaOwner: "@afenda/db"
+    table: md_import_batch_row
   - moduleId: payables
     packageName: "@afenda/payables"
     schemaOwner: "@afenda/db"

@@ -1,6 +1,10 @@
 import type { Result } from "@afenda/errors";
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
+	runEmploymentLifecycleCommand,
+	runEmploymentLifecycleQuery,
+} from "../employment-lifecycle/run-operation";
+import {
 	HUMAN_RESOURCES_COMMAND_PROBATION_EXTEND,
 	HUMAN_RESOURCES_COMMAND_PROBATION_OPEN,
 	HUMAN_RESOURCES_COMMAND_PROBATION_RECORD_ASSESSMENT,
@@ -19,10 +23,6 @@ import {
 	recordProbationOutcomeInputSchema,
 } from "../schemas/lifecycle";
 import { fingerprintProbationOpen } from "../shared/fingerprint";
-import {
-	runLifecycleCommand,
-	runLifecycleQuery,
-} from "../shared/lifecycle-command";
 import { buildMutationMeta } from "../shared/mutation-meta";
 import type { ProbationAssessment, ProbationReview } from "../types";
 
@@ -34,10 +34,11 @@ export function openProbation(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<ProbationReview>> {
-	return runLifecycleCommand(input, options, {
+	return runEmploymentLifecycleCommand(input, options, {
 		schema: openProbationInputSchema,
 		invalidMessage: "Invalid open probation input",
 		command: HUMAN_RESOURCES_COMMAND_PROBATION_OPEN,
+		storeMethods: ["openProbation"],
 		execute: (data, { store, ports }) => {
 			const fingerprint = fingerprintProbationOpen({
 				employmentId: data.employmentId,
@@ -68,10 +69,11 @@ export function extendProbation(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<ProbationReview>> {
-	return runLifecycleCommand(input, options, {
+	return runEmploymentLifecycleCommand(input, options, {
 		schema: extendProbationInputSchema,
 		invalidMessage: "Invalid extend probation input",
 		command: HUMAN_RESOURCES_COMMAND_PROBATION_EXTEND,
+		storeMethods: ["extendProbation"],
 		execute: (data, { store, ports }) =>
 			store.extendProbation(
 				{
@@ -96,10 +98,11 @@ export function recordProbationAssessment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<ProbationAssessment>> {
-	return runLifecycleCommand(input, options, {
+	return runEmploymentLifecycleCommand(input, options, {
 		schema: recordProbationAssessmentInputSchema,
 		invalidMessage: "Invalid record probation assessment input",
 		command: HUMAN_RESOURCES_COMMAND_PROBATION_RECORD_ASSESSMENT,
+		storeMethods: ["recordProbationAssessment"],
 		execute: (data, { store, ports }) =>
 			store.recordProbationAssessment(
 				{
@@ -124,10 +127,11 @@ export function recordProbationOutcome(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<ProbationReview>> {
-	return runLifecycleCommand(input, options, {
+	return runEmploymentLifecycleCommand(input, options, {
 		schema: recordProbationOutcomeInputSchema,
 		invalidMessage: "Invalid record probation outcome input",
 		command: HUMAN_RESOURCES_COMMAND_PROBATION_RECORD_OUTCOME,
+		storeMethods: ["recordProbationOutcome"],
 		execute: (data, { store, ports }) =>
 			store.recordProbationOutcome(
 				{
@@ -153,10 +157,11 @@ export function getProbationReview(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<ProbationReview | null>> {
-	return runLifecycleQuery(input, options, {
+	return runEmploymentLifecycleQuery(input, options, {
 		schema: getProbationReviewInputSchema,
 		invalidMessage: "Invalid get probation review input",
 		query: HUMAN_RESOURCES_QUERY_PROBATION_REVIEW_GET,
+		storeMethods: ["getProbationReview"],
 		execute: (data, { store }) =>
 			store.getProbationReview({
 				organizationId: data.organizationId,
@@ -169,10 +174,11 @@ export function listProbationReviewsByEmployment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<ProbationReview[]>> {
-	return runLifecycleQuery(input, options, {
+	return runEmploymentLifecycleQuery(input, options, {
 		schema: listProbationReviewsByEmploymentInputSchema,
 		invalidMessage: "Invalid list probation reviews input",
 		query: HUMAN_RESOURCES_QUERY_PROBATION_REVIEWS_LIST_BY_EMPLOYMENT,
+		storeMethods: ["listProbationReviewsByEmployment"],
 		execute: (data, { store }) =>
 			store.listProbationReviewsByEmployment({
 				organizationId: data.organizationId,
@@ -185,10 +191,11 @@ export function listProbationAssessments(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<ProbationAssessment[]>> {
-	return runLifecycleQuery(input, options, {
+	return runEmploymentLifecycleQuery(input, options, {
 		schema: listProbationAssessmentsInputSchema,
 		invalidMessage: "Invalid list probation assessments input",
 		query: HUMAN_RESOURCES_QUERY_PROBATION_ASSESSMENTS_LIST,
+		storeMethods: ["listProbationAssessments"],
 		execute: (data, { store }) =>
 			store.listProbationAssessments({
 				organizationId: data.organizationId,

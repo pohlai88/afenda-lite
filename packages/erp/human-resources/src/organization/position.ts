@@ -25,12 +25,9 @@ import {
 	updatePositionInputSchema,
 } from "../schemas/organization";
 import { buildMutationMeta } from "../shared/mutation-meta";
-import {
-	runOrganizationCommand,
-	runOrganizationQuery,
-} from "../shared/organization-command";
 import type { Position, PositionOccupancyAsOf } from "../types";
 import type { PositionDefinitionAtAsOf } from "./organization-structure-lineage";
+import { runOrganizationCommand, runOrganizationQuery } from "./run-operation";
 
 export function createPosition(
 	input: unknown,
@@ -40,6 +37,7 @@ export function createPosition(
 		schema: createPositionInputSchema,
 		invalidMessage: "Invalid position create input",
 		command: HUMAN_RESOURCES_COMMAND_POSITION_CREATE,
+		storeMethods: ["createPosition"],
 		execute: async (data, { store, ports }) =>
 			store.createPosition(
 				{
@@ -68,6 +66,7 @@ export function updatePosition(
 		schema: updatePositionInputSchema,
 		invalidMessage: "Invalid position update input",
 		command: HUMAN_RESOURCES_COMMAND_POSITION_UPDATE,
+		storeMethods: ["updatePosition"],
 		execute: async (data, { store, ports }) =>
 			store.updatePosition(
 				{
@@ -99,6 +98,7 @@ export function activatePosition(
 		schema: positionStatusTransitionInputSchema,
 		invalidMessage: "Invalid position activate input",
 		command: HUMAN_RESOURCES_COMMAND_POSITION_ACTIVATE,
+		storeMethods: ["setPositionStatus"],
 		execute: async (data, { store, ports }) =>
 			store.setPositionStatus(
 				{
@@ -125,6 +125,7 @@ export function freezePosition(
 		schema: positionStatusTransitionInputSchema,
 		invalidMessage: "Invalid position freeze input",
 		command: HUMAN_RESOURCES_COMMAND_POSITION_FREEZE,
+		storeMethods: ["setPositionStatus"],
 		execute: async (data, { store, ports }) =>
 			store.setPositionStatus(
 				{
@@ -151,6 +152,7 @@ export function closePosition(
 		schema: positionStatusTransitionInputSchema,
 		invalidMessage: "Invalid position close input",
 		command: HUMAN_RESOURCES_COMMAND_POSITION_CLOSE,
+		storeMethods: ["setPositionStatus"],
 		execute: async (data, { store, ports }) =>
 			store.setPositionStatus(
 				{
@@ -177,6 +179,7 @@ export function getPosition(
 		schema: getPositionInputSchema,
 		invalidMessage: "Invalid position get input",
 		query: HUMAN_RESOURCES_QUERY_POSITION_GET,
+		storeMethods: ["getPositionById"],
 		execute: async (data, { store }) => {
 			const position = await store.getPositionById({
 				organizationId: data.organizationId,
@@ -206,6 +209,7 @@ export function getPositionAsOf(
 		schema: getPositionAsOfInputSchema,
 		invalidMessage: "Invalid position as-of input",
 		query: HUMAN_RESOURCES_QUERY_POSITION_AS_OF,
+		storeMethods: ["findPositionAsOf"],
 		execute: async (data, { store }) => {
 			const position = await store.findPositionAsOf({
 				organizationId: data.organizationId,
@@ -236,6 +240,7 @@ export function getPositionOccupancyAsOf(
 		schema: getPositionOccupancyAsOfInputSchema,
 		invalidMessage: "Invalid position occupancy input",
 		query: HUMAN_RESOURCES_QUERY_POSITION_OCCUPANCY_AS_OF,
+		storeMethods: ["resolvePositionOccupancyAsOf"],
 		execute: async (data, { store }) => {
 			const occupancy = await store.resolvePositionOccupancyAsOf({
 				organizationId: data.organizationId,
@@ -266,6 +271,7 @@ export function listPositions(
 		schema: listPositionsInputSchema,
 		invalidMessage: "Invalid position list input",
 		query: HUMAN_RESOURCES_QUERY_POSITION_LIST,
+		storeMethods: ["listPositions"],
 		execute: async (data, { store }) =>
 			store.listPositions({
 				organizationId: data.organizationId,

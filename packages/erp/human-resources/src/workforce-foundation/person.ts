@@ -16,22 +16,26 @@ import {
 	getPersonInputSchema,
 	updatePersonNameInputSchema,
 } from "../schemas/workforce-foundation";
-import { runCoreCommand, runCoreQuery } from "../shared/core-command";
 import { fingerprintPersonCreate } from "../shared/fingerprint";
 import { buildMutationMeta } from "../shared/mutation-meta";
 import type {
 	Person,
 	PersonIdentityAtAsOf,
 } from "../workforce-foundation/types";
+import {
+	runWorkforceFoundationCommand,
+	runWorkforceFoundationQuery,
+} from "./run-operation";
 
 export function createPerson(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Person>> {
-	return runCoreCommand(input, options, {
+	return runWorkforceFoundationCommand(input, options, {
 		schema: createPersonInputSchema,
 		invalidMessage: "Invalid person create input",
 		command: HUMAN_RESOURCES_COMMAND_PERSON_CREATE,
+		storeMethods: ["findPersonByIdempotencyKey", "createPerson"],
 		execute: async (data, { store, ports }) => {
 			const requestFingerprint = fingerprintPersonCreate({
 				legalName: data.legalName,
@@ -84,10 +88,11 @@ export function updatePersonName(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Person>> {
-	return runCoreCommand(input, options, {
+	return runWorkforceFoundationCommand(input, options, {
 		schema: updatePersonNameInputSchema,
 		invalidMessage: "Invalid person update input",
 		command: HUMAN_RESOURCES_COMMAND_PERSON_UPDATE,
+		storeMethods: ["updatePersonName"],
 		execute: async (data, { store, ports }) =>
 			store.updatePersonName(
 				{
@@ -113,10 +118,11 @@ export function getPersonById(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Person>> {
-	return runCoreQuery(input, options, {
+	return runWorkforceFoundationQuery(input, options, {
 		schema: getPersonInputSchema,
 		invalidMessage: "Invalid person get input",
 		query: HUMAN_RESOURCES_QUERY_PERSON_GET,
+		storeMethods: ["getPersonById"],
 		execute: async (data, { store }) => {
 			const result = await store.getPersonById({
 				organizationId: data.organizationId,
@@ -139,10 +145,11 @@ export function getPersonAsOf(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PersonIdentityAtAsOf>> {
-	return runCoreQuery(input, options, {
+	return runWorkforceFoundationQuery(input, options, {
 		schema: getPersonAsOfInputSchema,
 		invalidMessage: "Invalid person as-of input",
 		query: HUMAN_RESOURCES_QUERY_PERSON_AS_OF,
+		storeMethods: ["findPersonAsOf"],
 		execute: async (data, { store }) => {
 			const result = await store.findPersonAsOf({
 				organizationId: data.organizationId,

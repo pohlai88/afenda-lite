@@ -1,5 +1,6 @@
 import { errorResult, type Result } from "@afenda/errors";
 import type { HumanResourcesCommandOptions } from "../command-options";
+import { runEmploymentLifecycleQuery } from "../employment-lifecycle/run-operation";
 import {
 	HUMAN_RESOURCES_ERROR_NOT_FOUND,
 	humanResourcesErrorDetails,
@@ -9,17 +10,21 @@ import {
 	type EmployeeOrgContextAsOf,
 	resolveEmployeeOrgContextAsOfInputSchema,
 } from "../schemas/org-context";
-import { runCoreQuery } from "../shared/core-command";
 import { resolveEmployeeOrgContextForEmployment } from "./employee-org-context-resolution";
 
 export function resolveEmployeeOrgContextAsOf(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeOrgContextAsOf>> {
-	return runCoreQuery(input, options, {
+	return runEmploymentLifecycleQuery(input, options, {
 		schema: resolveEmployeeOrgContextAsOfInputSchema,
 		invalidMessage: "Invalid employee org context resolve input",
 		query: HUMAN_RESOURCES_QUERY_EMPLOYEE_ORG_CONTEXT_RESOLVE,
+		storeMethods: [
+			"findEmploymentByEmployeeAsOf",
+			"findAssignmentByEmploymentAsOf",
+			"findPositionAsOf",
+		],
 		execute: async (data, { store }) => {
 			const employment = await store.findEmploymentByEmployeeAsOf({
 				organizationId: data.organizationId,

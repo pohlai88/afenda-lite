@@ -268,12 +268,12 @@ import {
 	HUMAN_RESOURCES_COMMAND_WORKER_CREATE,
 	HUMAN_RESOURCES_COMPENSATION_BENEFITS_COMMAND_IDS,
 	HUMAN_RESOURCES_COMPLIANCE_COMMAND_IDS,
-	HUMAN_RESOURCES_CORE_ORGANIZATION_COMMAND_IDS,
 	HUMAN_RESOURCES_EMPLOYEE_RELATIONS_COMMAND_IDS,
+	HUMAN_RESOURCES_EMPLOYMENT_LIFECYCLE_COMMAND_IDS,
 	HUMAN_RESOURCES_HIRE_ORCHESTRATION_COMMAND_IDS,
 	HUMAN_RESOURCES_LEARNING_COMMAND_IDS,
 	HUMAN_RESOURCES_LEAVE_COMMAND_IDS,
-	HUMAN_RESOURCES_LIFECYCLE_COMMAND_IDS,
+	HUMAN_RESOURCES_ORGANIZATION_COMMAND_IDS,
 	HUMAN_RESOURCES_PERFORMANCE_COMMAND_IDS,
 	HUMAN_RESOURCES_RECRUITMENT_COMMAND_IDS,
 	HUMAN_RESOURCES_TALENT_COMMAND_IDS,
@@ -493,6 +493,10 @@ import {
 const ORG = "org-corr-integrity";
 const ACTOR = "user-corr-integrity";
 const MANAGER = "user-corr-manager";
+const MILLISECONDS_PER_DAY = 86_400_000;
+const TOMORROW = new Date(Date.now() + MILLISECONDS_PER_DAY)
+	.toISOString()
+	.slice(0, 10);
 
 function harness() {
 	const store = createMemoryHumanResourcesStore();
@@ -602,10 +606,10 @@ describe("correlation integrity", () => {
 			...HUMAN_RESOURCES_TIME_COMMAND_IDS,
 			...HUMAN_RESOURCES_LEAVE_COMMAND_IDS,
 			...HUMAN_RESOURCES_WORKFORCE_FOUNDATION_COMMAND_IDS,
-			...HUMAN_RESOURCES_CORE_ORGANIZATION_COMMAND_IDS,
+			...HUMAN_RESOURCES_EMPLOYMENT_LIFECYCLE_COMMAND_IDS,
+			...HUMAN_RESOURCES_ORGANIZATION_COMMAND_IDS,
 			...HUMAN_RESOURCES_RECRUITMENT_COMMAND_IDS,
 			...HUMAN_RESOURCES_HIRE_ORCHESTRATION_COMMAND_IDS,
-			...HUMAN_RESOURCES_LIFECYCLE_COMMAND_IDS,
 			...HUMAN_RESOURCES_EMPLOYEE_RELATIONS_COMMAND_IDS,
 			...HUMAN_RESOURCES_COMPLIANCE_COMMAND_IDS,
 			...HUMAN_RESOURCES_TALENT_COMMAND_IDS,
@@ -675,7 +679,7 @@ describe("correlation integrity", () => {
 				correlationId: nameCorr,
 				personId: person.data.id,
 				legalName: "Workforce Corr Updated",
-				effectiveOn: "2026-08-01",
+				effectiveOn: TOMORROW,
 				reasonCode: "legal_name_correction",
 				expectedVersion: person.data.version,
 			},
@@ -1700,7 +1704,7 @@ describe("correlation integrity", () => {
 		});
 	});
 
-	it("propagates correlationId across core-organization domain_event mutations", async () => {
+	it("propagates correlationId across employment-lifecycle and organization domain-event mutations", async () => {
 		const ready = harness();
 
 		const employee = await createEmployee(

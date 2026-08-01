@@ -2,11 +2,11 @@
 # Dual control: ERP mutationTables in module.manifest.ts must match writeOwner rows.
 # Platform sole-mutator rows are hand-authored here (no ERP manifest).
 # Schema DDL / migrations stay in @afenda/db — hosting a table does not grant write ownership.
-# Version: schema-ownership/2026-07-26
+# Version: schema-ownership/2026-08-02
 # Authority: docs-V2/monorepo · LAYERS.md · packages/README.md · validate:modules
 
-version: "schema-ownership/2026-07-26"
-updated: "2026-07-26"
+version: "schema-ownership/2026-08-02"
+updated: "2026-08-02"
 authority: packages-catalog-production-governance
 
 invariant: |
@@ -229,6 +229,9 @@ tables:
   - table: md_import_batch
     writeOwner: "@afenda/master-data"
     kind: erp
+  - table: md_import_batch_row
+    writeOwner: "@afenda/master-data"
+    kind: erp
   - table: md_organization_dimension
     writeOwner: "@afenda/master-data"
     kind: erp
@@ -411,6 +414,9 @@ tables:
     writeOwner: "@afenda/human-resources"
     kind: erp
   - table: hr_employee
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_user_employee
     writeOwner: "@afenda/human-resources"
     kind: erp
   - table: hr_worker
@@ -796,6 +802,18 @@ tables:
     writeOwner: "@afenda/human-resources"
     kind: erp
   - table: hr_bulk_import_error_artifact
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_bulk_import_job
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_bulk_import_job_row
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_bulk_export_job
+    writeOwner: "@afenda/human-resources"
+    kind: erp
+  - table: hr_bulk_export_artifact_chunk
     writeOwner: "@afenda/human-resources"
     kind: erp
   - table: hr_reliability_work_item

@@ -9,13 +9,13 @@ const DOCUMENTED_NO_CONSUMER_REASON_BY_DOMAIN: Record<
 	time: "No downstream event consumer registered; time and attendance facts are emitted for future payroll handoff integration.",
 	"workforce-foundation":
 		"No downstream event consumer registered; person and worker foundation facts are audit-traceable via platform outbox.",
+	"employment-lifecycle":
+		"No downstream event consumer registered; employment, contract, and assignment facts are audit-traceable via platform outbox.",
 	core: "No downstream event consumer registered; core employment facts are audit-traceable via platform outbox.",
 	organization:
 		"No downstream event consumer registered; organization structure facts are audit-traceable via platform outbox.",
 	recruitment:
 		"No downstream event consumer registered; recruitment pipeline facts are audit-traceable via platform outbox.",
-	lifecycle:
-		"No downstream event consumer registered; lifecycle transition facts are audit-traceable via platform outbox.",
 	"compensation-benefits":
 		"No downstream event consumer registered; compensation and benefit facts are audit-traceable via platform outbox.",
 	performance:

@@ -6,6 +6,7 @@ import { getTableConfig, PgDialect, PgTable } from "drizzle-orm/pg-core";
 import { describe, expect, it } from "vitest";
 import { parseHardTenantRootEntries } from "../../../../scripts/lib/hard-tenant-root-registry.mjs";
 
+import { database } from "../src/capabilities/database";
 import { orgWhere, tenantEntityPredicate, withOrg } from "../src/client";
 import { databaseSchema } from "../src/database-schema";
 import {
@@ -177,6 +178,17 @@ describe("@afenda/db hard tenant roots (N9 / ARCH-023)", () => {
 				getTableName(table),
 			),
 		).toEqual([...HARD_TENANT_ROOT_TABLE_NAMES]);
+	});
+
+	it("derives one schema export symbol for every hard tenant root", () => {
+		const projection = database.tenancy.rootNamesBySchemaSymbol;
+		expect(Object.keys(projection)).toHaveLength(274);
+		expect([...new Set(Object.values(projection))]).toHaveLength(274);
+		expect(projection.hrBulkImportJob).toBe("hr_bulk_import_job");
+		expect(projection.hrBulkExportArtifactChunk).toBe(
+			"hr_bulk_export_artifact_chunk",
+		);
+		expect(projection.hrUserEmployee).toBe("hr_user_employee");
 	});
 
 	it("exposes organization_id NOT NULL on every hard tenant root", () => {

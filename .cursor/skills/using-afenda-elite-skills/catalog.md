@@ -125,10 +125,11 @@ Management = `local`. Status = `keep`. Method library invoked after a farm is fi
 | `afenda-readme-diataxis` | local-method | `.cursor/skills/afenda-readme-diataxis/SKILL.md` (Diátaxis triage + QUALITY ORDER + README Score / Path to 100%; handoff to doc-control / technical-writing / documentation-and-adrs) |
 | `technical-writing` | local-method | `.cursor/skills/technical-writing/SKILL.md` |
 | `afenda-coding-discipline` | local-method | `.cursor/skills/afenda-coding-discipline/SKILL.md` (full TS/coding table after farm fixed; L0 floor = alwaysApply `.cursor/rules/coding-discipline.mdc` → PREFLIGHT **Rules**; skill name only under **Skills** when loaded) |
+| `afenda-semantic-registry-cutover` | local-method | `.cursor/skills/afenda-semantic-registry-cutover/SKILL.md` (internal package semantic-owner registries, derived projections, narrow capabilities, stable facade, and final superseded-source deletion; invoked after owning farm + kernel boundary) |
 
 ## Planned (approved backlog — no SKILL.md until authoring mission)
 
-_None. Last authored: `afenda-elite-kernel` 2026-07-31 → keep (local-elite-farm)._
+_None. Last authored: `afenda-semantic-registry-cutover` 2026-08-02 → keep (local-method)._
 
 ## Candidate gaps (not approved for authoring)
 

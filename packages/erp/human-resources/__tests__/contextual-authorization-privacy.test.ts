@@ -6,9 +6,6 @@ import type {
 	HumanResourcesPermission,
 } from "../src";
 import {
-	applyResourceFieldProjection,
-	authorizeHumanResourcesOperation,
-	authorizeHumanResourcesSensitiveResource,
 	HUMAN_RESOURCES_ACTOR_SCOPES,
 	HUMAN_RESOURCES_RETENTION_CLASSIFICATIONS,
 	HUMAN_RESOURCES_RETENTION_POLICIES,
@@ -20,7 +17,14 @@ import {
 import type { HumanResourcesAuthorizationPort } from "../src/authorization";
 import type { HumanResourcesQueryId } from "../src/module-ids";
 import { HUMAN_RESOURCES_PERMISSION_COMPENSATION_READ } from "../src/permissions";
-import { COMPENSATION_FIELD_CLASSES } from "../src/shared/field-projection";
+import {
+	authorizeHumanResourcesOperation,
+	authorizeHumanResourcesSensitiveResource,
+} from "../src/shared/contextual-authorization";
+import {
+	applyResourceFieldProjection,
+	COMPENSATION_FIELD_CLASSES,
+} from "../src/shared/field-projection";
 
 const employeeId =
 	"550e8400-e29b-41d4-a716-446655440000" as HumanResourcesEmployeeId;

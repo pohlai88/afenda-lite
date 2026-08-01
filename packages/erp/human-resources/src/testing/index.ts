@@ -2,6 +2,7 @@
 
 export { createMemoryHumanResourcesReportingSource } from "../adapters/memory/reporting";
 export { createMemoryHumanResourcesStore } from "../adapters/memory/store";
+export { createMemoryBulkCheckpointPort } from "../bulk/memory-checkpoint-store";
 export { createMemoryPayrollDeliveryStore } from "../integrations/payroll-delivery/memory-store";
 export { createMemoryReliabilityStore } from "../reliability/memory-store";
 export { createStoreAssignmentContextQuery } from "../time/store-assignment-context-query";

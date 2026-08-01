@@ -9,8 +9,15 @@ import {
 	HUMAN_RESOURCES_ERROR_NOT_FOUND,
 	humanResourcesErrorDetails,
 } from "../error-codes";
+import type { HumanResourcesOrganizationStore } from "../organization/store";
 import type { EmployeeOrgContextAsOf } from "../schemas/org-context";
-import type { HumanResourcesStore } from "../store";
+import type { HumanResourcesCoreStore } from "../store/core";
+
+export type EmployeeOrgContextResolutionStore = Pick<
+	HumanResourcesCoreStore,
+	"findAssignmentByEmploymentAsOf"
+> &
+	Pick<HumanResourcesOrganizationStore, "findPositionAsOf">;
 
 export type ResolveEmployeeOrgContextMode = "strict" | "soft";
 
@@ -19,7 +26,7 @@ export type ResolveEmployeeOrgContextMode = "strict" | "soft";
  * Strict mode fails when assignment/dimensions are missing; soft mode returns null.
  */
 export async function resolveEmployeeOrgContextForEmployment(input: {
-	store: HumanResourcesStore;
+	store: EmployeeOrgContextResolutionStore;
 	organizationId: string;
 	employeeId: HumanResourcesEmployeeId;
 	employmentId: HumanResourcesEmploymentId;

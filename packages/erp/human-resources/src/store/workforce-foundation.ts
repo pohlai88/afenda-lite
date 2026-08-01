@@ -25,6 +25,7 @@ import type {
 	WorkerClassificationAtAsOf,
 	WorkerClassificationVersion,
 } from "../workforce-foundation/types";
+import type { HumanResourcesCoreStore } from "./core";
 
 export interface PersonCreateRecord {
 	createdBy: string;
@@ -320,3 +321,14 @@ export interface HumanResourcesWorkforceFoundationStore {
 		meta: HumanResourcesMutationMeta,
 	) => Promise<Result<Person>>;
 }
+
+export type HumanResourcesWorkforceFoundationOperationStore =
+	HumanResourcesWorkforceFoundationStore &
+		Pick<
+			HumanResourcesCoreStore,
+			| "createEmployee"
+			| "findEmployeeByIdempotencyKey"
+			| "getEmployeeById"
+			| "listEmployees"
+			| "updateEmployee"
+		>;

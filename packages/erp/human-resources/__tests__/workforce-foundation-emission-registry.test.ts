@@ -30,8 +30,8 @@ import {
 	HUMAN_RESOURCES_WORKER_CREATED_EVENT,
 } from "@afenda/events/schemas";
 import { describe, expect, it } from "vitest";
-
-import { HUMAN_RESOURCES_CORE_ORGANIZATION_EMISSIONS } from "../src/emissions/domains/core-organization";
+import { HUMAN_RESOURCES_EMPLOYMENT_LIFECYCLE_EMISSIONS } from "../src/emissions/domains/employment-lifecycle";
+import { HUMAN_RESOURCES_ORGANIZATION_EMISSIONS } from "../src/emissions/domains/organization";
 import { HUMAN_RESOURCES_TIME_EMISSIONS } from "../src/emissions/domains/time";
 import { HUMAN_RESOURCES_WORKFORCE_FOUNDATION_EMISSIONS } from "../src/emissions/domains/workforce-foundation";
 import { HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD } from "../src/emissions/registry";
@@ -75,7 +75,7 @@ import {
 	HUMAN_RESOURCES_COMMAND_WORKER_CHANGE_STATUS,
 	HUMAN_RESOURCES_COMMAND_WORKER_CHANGE_TYPE,
 	HUMAN_RESOURCES_COMMAND_WORKER_CREATE,
-	HUMAN_RESOURCES_CORE_ORGANIZATION_COMMAND_IDS,
+	HUMAN_RESOURCES_ORGANIZATION_COMMAND_IDS,
 	HUMAN_RESOURCES_WORKFORCE_FOUNDATION_COMMAND_IDS,
 } from "../src/module-ids";
 
@@ -238,17 +238,33 @@ const EXPECTED_MATRIX: Record<
 	},
 };
 
-describe("workforce-foundation + core-organization emission registry", () => {
+describe("workforce-foundation + employment-lifecycle + organization emission registry", () => {
 	it("registers every workforce-foundation command exactly once in domain file", () => {
 		expect(Object.keys(HUMAN_RESOURCES_WORKFORCE_FOUNDATION_EMISSIONS)).toEqual(
 			[...HUMAN_RESOURCES_WORKFORCE_FOUNDATION_COMMAND_IDS],
 		);
 	});
 
-	it("registers every core-organization command exactly once in domain file", () => {
-		expect(Object.keys(HUMAN_RESOURCES_CORE_ORGANIZATION_EMISSIONS)).toEqual([
-			...HUMAN_RESOURCES_CORE_ORGANIZATION_COMMAND_IDS,
+	it("registers every organization command exactly once in its domain file", () => {
+		expect(Object.keys(HUMAN_RESOURCES_ORGANIZATION_EMISSIONS)).toEqual([
+			...HUMAN_RESOURCES_ORGANIZATION_COMMAND_IDS,
 		]);
+	});
+
+	it("registers every employment-record command exactly once in its projection", () => {
+		expect(Object.keys(HUMAN_RESOURCES_EMPLOYMENT_LIFECYCLE_EMISSIONS)).toEqual(
+			[
+				HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CREATE,
+				HUMAN_RESOURCES_COMMAND_EMPLOYMENT_AMEND,
+				HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CORRECT,
+				HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_CREATE,
+				HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_CORRECT,
+				HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_SUPERSEDE,
+				HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_END,
+				HUMAN_RESOURCES_COMMAND_ASSIGNMENT_CREATE,
+				HUMAN_RESOURCES_COMMAND_ASSIGNMENT_END,
+			],
+		);
 	});
 
 	it("keeps drained commands out of Time classifications", () => {
@@ -264,7 +280,8 @@ describe("workforce-foundation + core-organization emission registry", () => {
 	it("matches the locked mode/eventType matrix with audit + correlation flags", () => {
 		const sliceCommands = [
 			...HUMAN_RESOURCES_WORKFORCE_FOUNDATION_COMMAND_IDS,
-			...HUMAN_RESOURCES_CORE_ORGANIZATION_COMMAND_IDS,
+			...Object.keys(HUMAN_RESOURCES_EMPLOYMENT_LIFECYCLE_EMISSIONS),
+			...HUMAN_RESOURCES_ORGANIZATION_COMMAND_IDS,
 		];
 
 		for (const commandId of sliceCommands) {

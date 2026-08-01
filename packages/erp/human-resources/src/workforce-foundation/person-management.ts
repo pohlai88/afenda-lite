@@ -28,7 +28,6 @@ import {
 	updatePersonContactInputSchema,
 	updatePersonPreferredNameInputSchema,
 } from "../schemas/workforce-foundation";
-import { runCoreCommand, runCoreQuery } from "../shared/core-command";
 import {
 	fingerprintPersonContactAdd,
 	fingerprintPersonIdentifierAdd,
@@ -39,6 +38,10 @@ import {
 	last4PersonIdentifier,
 	normalizePersonContactValue,
 } from "./person-privacy";
+import {
+	runWorkforceFoundationCommand,
+	runWorkforceFoundationQuery,
+} from "./run-operation";
 import type {
 	Person,
 	PersonContact,
@@ -50,10 +53,11 @@ export function updatePersonPreferredName(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Person>> {
-	return runCoreCommand(input, options, {
+	return runWorkforceFoundationCommand(input, options, {
 		schema: updatePersonPreferredNameInputSchema,
 		invalidMessage: "Invalid person preferred name update input",
 		command: HUMAN_RESOURCES_COMMAND_PERSON_PREFERRED_NAME_UPDATE,
+		storeMethods: ["updatePersonPreferredName"],
 		execute: async (data, { store, ports }) =>
 			store.updatePersonPreferredName(
 				{
@@ -76,10 +80,11 @@ export function setPersonPrivacyClassification(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Person>> {
-	return runCoreCommand(input, options, {
+	return runWorkforceFoundationCommand(input, options, {
 		schema: setPersonPrivacyClassificationInputSchema,
 		invalidMessage: "Invalid person privacy classification input",
 		command: HUMAN_RESOURCES_COMMAND_PERSON_PRIVACY_CLASSIFICATION_SET,
+		storeMethods: ["setPersonPrivacyClassification"],
 		execute: async (data, { store, ports }) =>
 			store.setPersonPrivacyClassification(
 				{
@@ -103,10 +108,11 @@ export function addPersonContact(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PersonContact>> {
-	return runCoreCommand(input, options, {
+	return runWorkforceFoundationCommand(input, options, {
 		schema: addPersonContactInputSchema,
 		invalidMessage: "Invalid person contact add input",
 		command: HUMAN_RESOURCES_COMMAND_PERSON_CONTACT_ADD,
+		storeMethods: ["findPersonContactByIdempotencyKey", "addPersonContact"],
 		execute: async (data, { store, ports }) => {
 			const normalizedValue = normalizePersonContactValue(
 				data.contactType,
@@ -166,10 +172,11 @@ export function updatePersonContact(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PersonContact>> {
-	return runCoreCommand(input, options, {
+	return runWorkforceFoundationCommand(input, options, {
 		schema: updatePersonContactInputSchema,
 		invalidMessage: "Invalid person contact update input",
 		command: HUMAN_RESOURCES_COMMAND_PERSON_CONTACT_UPDATE,
+		storeMethods: ["listPersonContacts", "updatePersonContact"],
 		execute: async (data, { store, ports }) => {
 			const contacts = await store.listPersonContacts({
 				organizationId: data.organizationId,
@@ -216,10 +223,11 @@ export function retirePersonContact(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PersonContact>> {
-	return runCoreCommand(input, options, {
+	return runWorkforceFoundationCommand(input, options, {
 		schema: retirePersonContactInputSchema,
 		invalidMessage: "Invalid person contact retire input",
 		command: HUMAN_RESOURCES_COMMAND_PERSON_CONTACT_RETIRE,
+		storeMethods: ["retirePersonContact"],
 		execute: async (data, { store, ports }) =>
 			store.retirePersonContact(
 				{
@@ -242,10 +250,11 @@ export function listPersonContacts(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<readonly PersonContact[]>> {
-	return runCoreQuery(input, options, {
+	return runWorkforceFoundationQuery(input, options, {
 		schema: listPersonContactsInputSchema,
 		invalidMessage: "Invalid person contacts list input",
 		query: HUMAN_RESOURCES_QUERY_PERSON_CONTACTS_LIST,
+		storeMethods: ["listPersonContacts"],
 		execute: async (data, { store }) =>
 			store.listPersonContacts({
 				organizationId: data.organizationId,
@@ -258,10 +267,14 @@ export function addPersonIdentifier(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PersonIdentifier>> {
-	return runCoreCommand(input, options, {
+	return runWorkforceFoundationCommand(input, options, {
 		schema: addPersonIdentifierInputSchema,
 		invalidMessage: "Invalid person identifier add input",
 		command: HUMAN_RESOURCES_COMMAND_PERSON_IDENTIFIER_ADD,
+		storeMethods: [
+			"findPersonIdentifierByIdempotencyKey",
+			"addPersonIdentifier",
+		],
 		execute: async (data, { store, ports }) => {
 			const identifierFingerprint = fingerprintPersonIdentifier(
 				data.identifierValue,
@@ -322,10 +335,11 @@ export function retirePersonIdentifier(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PersonIdentifier>> {
-	return runCoreCommand(input, options, {
+	return runWorkforceFoundationCommand(input, options, {
 		schema: retirePersonIdentifierInputSchema,
 		invalidMessage: "Invalid person identifier retire input",
 		command: HUMAN_RESOURCES_COMMAND_PERSON_IDENTIFIER_RETIRE,
+		storeMethods: ["retirePersonIdentifier"],
 		execute: async (data, { store, ports }) =>
 			store.retirePersonIdentifier(
 				{
@@ -349,10 +363,11 @@ export function listPersonIdentifiers(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<readonly PersonIdentifier[]>> {
-	return runCoreQuery(input, options, {
+	return runWorkforceFoundationQuery(input, options, {
 		schema: listPersonIdentifiersInputSchema,
 		invalidMessage: "Invalid person identifiers list input",
 		query: HUMAN_RESOURCES_QUERY_PERSON_IDENTIFIERS_LIST,
+		storeMethods: ["listPersonIdentifiers"],
 		execute: async (data, { store }) =>
 			store.listPersonIdentifiers({
 				organizationId: data.organizationId,
@@ -365,10 +380,11 @@ export function detectPersonDuplicates(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<readonly PersonDuplicateCandidate[]>> {
-	return runCoreQuery(input, options, {
+	return runWorkforceFoundationQuery(input, options, {
 		schema: detectPersonDuplicatesInputSchema,
 		invalidMessage: "Invalid person duplicate detection input",
 		query: HUMAN_RESOURCES_QUERY_PERSON_DUPLICATES_DETECT,
+		storeMethods: ["detectPersonDuplicates"],
 		execute: async (data, { store }) =>
 			store.detectPersonDuplicates({
 				organizationId: data.organizationId,

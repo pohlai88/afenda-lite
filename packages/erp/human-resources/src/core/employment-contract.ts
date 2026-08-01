@@ -2,6 +2,11 @@ import { errorResult, type Result } from "@afenda/errors";
 import type { z } from "zod";
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
+	runEmploymentLifecycleCommand,
+	runEmploymentLifecycleQuery,
+} from "../employment-lifecycle/run-operation";
+import type { HumanResourcesEmploymentLifecycleStore } from "../employment-lifecycle/store";
+import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
 	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
 	HUMAN_RESOURCES_ERROR_NOT_FOUND,
@@ -27,7 +32,6 @@ import {
 	listEmploymentContractsInputSchema,
 	supersedeEmploymentContractInputSchema,
 } from "../schemas/core";
-import { runCoreCommand, runCoreQuery } from "../shared/core-command";
 import { previousIsoDate } from "../shared/effective-dates";
 import {
 	assertContractWithinEmployment,
@@ -36,7 +40,6 @@ import {
 } from "../shared/employment-contract-guards";
 import { assertValidDateRange } from "../shared/employment-status";
 import { buildMutationMeta } from "../shared/mutation-meta";
-import type { HumanResourcesCoreStore } from "../store/core";
 import type { Employment, EmploymentContract } from "../types";
 
 interface ValidatedContractSupersession {
@@ -46,7 +49,7 @@ interface ValidatedContractSupersession {
 }
 
 async function loadEmploymentForContract(
-	store: HumanResourcesCoreStore,
+	store: Pick<HumanResourcesEmploymentLifecycleStore, "getEmploymentById">,
 	data: {
 		organizationId: string;
 		employmentId: EmploymentContract["employmentId"];
@@ -71,7 +74,10 @@ async function loadEmploymentForContract(
 }
 
 async function validateActiveContractMutationRange(
-	store: HumanResourcesCoreStore,
+	store: Pick<
+		HumanResourcesEmploymentLifecycleStore,
+		"getEmploymentById" | "listActiveContractsByEmployment"
+	>,
 	input: {
 		organizationId: string;
 		contract: EmploymentContract;
@@ -131,7 +137,10 @@ async function validateActiveContractMutationRange(
 }
 
 function resolveEmploymentContractAsOf(
-	store: HumanResourcesCoreStore,
+	store: Pick<
+		HumanResourcesEmploymentLifecycleStore,
+		"findEmploymentContractByEmploymentAsOf"
+	>,
 	input: {
 		organizationId: string;
 		employmentId: EmploymentContract["employmentId"];
@@ -142,7 +151,13 @@ function resolveEmploymentContractAsOf(
 }
 
 async function validateContractSupersession(
-	store: HumanResourcesCoreStore,
+	store: Pick<
+		HumanResourcesEmploymentLifecycleStore,
+		| "findContractByEmploymentAndCode"
+		| "getEmploymentById"
+		| "getEmploymentContractById"
+		| "listActiveContractsByEmployment"
+	>,
 	data: z.output<typeof supersedeEmploymentContractInputSchema>,
 ): Promise<Result<ValidatedContractSupersession>> {
 	const predecessor = await store.getEmploymentContractById({
@@ -245,10 +260,15 @@ export function createEmploymentContract(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmploymentContract>> {
-	return runCoreCommand(input, options, {
+	return runEmploymentLifecycleCommand(input, options, {
 		schema: createEmploymentContractInputSchema,
 		invalidMessage: "Invalid employment contract create input",
 		command: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_CREATE,
+		storeMethods: [
+			"getEmploymentById",
+			"listActiveContractsByEmployment",
+			"createEmploymentContract",
+		],
 		execute: async (data, { store, ports }) => {
 			const employment = await loadEmploymentForContract(store, {
 				organizationId: data.organizationId,
@@ -316,10 +336,17 @@ export function correctEmploymentContract(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmploymentContract>> {
-	return runCoreCommand(input, options, {
+	return runEmploymentLifecycleCommand(input, options, {
 		schema: correctEmploymentContractInputSchema,
 		invalidMessage: "Invalid employment contract correct input",
 		command: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_CORRECT,
+		storeMethods: [
+			"getEmploymentContractById",
+			"getEmploymentById",
+			"listActiveContractsByEmployment",
+			"findContractByEmploymentAndCode",
+			"correctEmploymentContract",
+		],
 		execute: async (data, { store, ports }) => {
 			const existing = await store.getEmploymentContractById({
 				organizationId: data.organizationId,
@@ -399,10 +426,17 @@ export function supersedeEmploymentContract(
 ): Promise<
 	Result<{ superseded: EmploymentContract; successor: EmploymentContract }>
 > {
-	return runCoreCommand(input, options, {
+	return runEmploymentLifecycleCommand(input, options, {
 		schema: supersedeEmploymentContractInputSchema,
 		invalidMessage: "Invalid employment contract supersede input",
 		command: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_SUPERSEDE,
+		storeMethods: [
+			"getEmploymentContractById",
+			"getEmploymentById",
+			"listActiveContractsByEmployment",
+			"findContractByEmploymentAndCode",
+			"supersedeEmploymentContract",
+		],
 		execute: async (data, { store, ports }) => {
 			const validated = await validateContractSupersession(store, data);
 			if (!validated.ok) {
@@ -436,10 +470,16 @@ export function endEmploymentContract(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmploymentContract>> {
-	return runCoreCommand(input, options, {
+	return runEmploymentLifecycleCommand(input, options, {
 		schema: endEmploymentContractInputSchema,
 		invalidMessage: "Invalid employment contract end input",
 		command: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_END,
+		storeMethods: [
+			"getEmploymentContractById",
+			"getEmploymentById",
+			"listActiveContractsByEmployment",
+			"correctEmploymentContract",
+		],
 		execute: async (data, { store, ports }) => {
 			const existing = await store.getEmploymentContractById({
 				organizationId: data.organizationId,
@@ -493,10 +533,11 @@ export function getEmploymentContract(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmploymentContract>> {
-	return runCoreQuery(input, options, {
+	return runEmploymentLifecycleQuery(input, options, {
 		schema: getEmploymentContractInputSchema,
 		invalidMessage: "Invalid employment contract get input",
 		query: HUMAN_RESOURCES_QUERY_EMPLOYMENT_CONTRACT_GET,
+		storeMethods: ["getEmploymentContractById"],
 		execute: async (data, { store }) => {
 			const contract = await store.getEmploymentContractById({
 				organizationId: data.organizationId,
@@ -522,10 +563,11 @@ export function getEmploymentContractAsOf(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmploymentContract | null>> {
-	return runCoreQuery(input, options, {
+	return runEmploymentLifecycleQuery(input, options, {
 		schema: getEmploymentContractAsOfInputSchema,
 		invalidMessage: "Invalid employment contract as-of input",
 		query: HUMAN_RESOURCES_QUERY_EMPLOYMENT_CONTRACT_AS_OF,
+		storeMethods: ["findEmploymentContractByEmploymentAsOf"],
 		execute: async (data, { store }) =>
 			resolveEmploymentContractAsOf(store, {
 				organizationId: data.organizationId,
@@ -539,10 +581,11 @@ export function getCurrentEmploymentContract(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmploymentContract | null>> {
-	return runCoreQuery(input, options, {
+	return runEmploymentLifecycleQuery(input, options, {
 		schema: getCurrentEmploymentContractInputSchema,
 		invalidMessage: "Invalid employment contract current input",
 		query: HUMAN_RESOURCES_QUERY_EMPLOYMENT_CONTRACT_CURRENT,
+		storeMethods: ["findEmploymentContractByEmploymentAsOf"],
 		execute: async (data, { store }) =>
 			resolveEmploymentContractAsOf(store, {
 				organizationId: data.organizationId,
@@ -556,10 +599,11 @@ export function listEmploymentContracts(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmploymentContract[]>> {
-	return runCoreQuery(input, options, {
+	return runEmploymentLifecycleQuery(input, options, {
 		schema: listEmploymentContractsInputSchema,
 		invalidMessage: "Invalid employment contract list input",
 		query: HUMAN_RESOURCES_QUERY_EMPLOYMENT_CONTRACT_LIST,
+		storeMethods: ["listEmploymentContractsByEmployment"],
 		execute: async (data, { store }) =>
 			store.listEmploymentContractsByEmployment({
 				organizationId: data.organizationId,

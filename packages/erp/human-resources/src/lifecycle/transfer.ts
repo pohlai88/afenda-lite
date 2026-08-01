@@ -3,6 +3,7 @@ import {
 	type HumanResourcesCommandOptions,
 	requireOrganizationDimensionDirectory,
 } from "../command-options";
+import { runEmploymentLifecycleCommand } from "../employment-lifecycle/run-operation";
 import {
 	HUMAN_RESOURCES_ERROR_NOT_FOUND,
 	humanResourcesErrorDetails,
@@ -10,7 +11,6 @@ import {
 import { HUMAN_RESOURCES_COMMAND_ASSIGNMENT_TRANSFER } from "../module-ids";
 import { transferAssignmentInputSchema } from "../schemas/lifecycle";
 import { resolveAssignmentContextSnapshots } from "../shared/assignment-snapshots";
-import { runLifecycleCommand } from "../shared/lifecycle-command";
 import { buildMutationMeta } from "../shared/mutation-meta";
 import type { EmploymentMovement } from "../types";
 
@@ -22,10 +22,22 @@ export function transferAssignment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmploymentMovement>> {
-	return runLifecycleCommand(input, options, {
+	return runEmploymentLifecycleCommand(input, options, {
 		schema: transferAssignmentInputSchema,
 		invalidMessage: "Invalid transfer assignment input",
 		command: HUMAN_RESOURCES_COMMAND_ASSIGNMENT_TRANSFER,
+		storeMethods: [
+			"findPositionAsOf",
+			"getEmploymentById",
+			"getPositionById",
+			"getWorkCalendar",
+			"listAssignmentsByEmployment",
+			"listWorkCalendarScopeAssignments",
+			"listWorkCalendars",
+			"resolveEmploymentCalendar",
+			"resolvePrimaryManager",
+			"transferAssignment",
+		],
 		execute: async (data, { store, ports }) => {
 			const directory = requireOrganizationDimensionDirectory(options);
 			if (!directory.ok) {

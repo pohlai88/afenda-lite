@@ -1,6 +1,10 @@
 import type { Result } from "@afenda/errors";
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
+	runEmploymentLifecycleCommand,
+	runEmploymentLifecycleQuery,
+} from "../employment-lifecycle/run-operation";
+import {
 	HUMAN_RESOURCES_COMMAND_OFFBOARDING_COMPLETE,
 	HUMAN_RESOURCES_COMMAND_OFFBOARDING_COMPLETE_TASK,
 	HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_ACCESS_REVOCATION,
@@ -29,10 +33,6 @@ import {
 	startOffboardingInputSchema,
 } from "../schemas/lifecycle";
 import { fingerprintOffboardingStart } from "../shared/fingerprint";
-import {
-	runLifecycleCommand,
-	runLifecycleQuery,
-} from "../shared/lifecycle-command";
 import { buildMutationMeta } from "../shared/mutation-meta";
 import type {
 	Clearance,
@@ -50,10 +50,11 @@ export function startOffboarding(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OffboardingCase>> {
-	return runLifecycleCommand(input, options, {
+	return runEmploymentLifecycleCommand(input, options, {
 		schema: startOffboardingInputSchema,
 		invalidMessage: "Invalid start offboarding input",
 		command: HUMAN_RESOURCES_COMMAND_OFFBOARDING_START,
+		storeMethods: ["startOffboarding"],
 		execute: (data, { store, ports }) => {
 			const fingerprint = fingerprintOffboardingStart({
 				employmentId: data.employmentId,
@@ -83,10 +84,11 @@ export function completeOffboardingTask(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OffboardingCase>> {
-	return runLifecycleCommand(input, options, {
+	return runEmploymentLifecycleCommand(input, options, {
 		schema: completeOffboardingTaskInputSchema,
 		invalidMessage: "Invalid complete offboarding task input",
 		command: HUMAN_RESOURCES_COMMAND_OFFBOARDING_COMPLETE_TASK,
+		storeMethods: ["completeOffboardingTask"],
 		execute: (data, { store, ports }) =>
 			store.completeOffboardingTask(
 				{
@@ -109,10 +111,11 @@ export function recordExitInterview(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OffboardingCase>> {
-	return runLifecycleCommand(input, options, {
+	return runEmploymentLifecycleCommand(input, options, {
 		schema: recordExitInterviewInputSchema,
 		invalidMessage: "Invalid record exit interview input",
 		command: HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_EXIT_INTERVIEW,
+		storeMethods: ["recordExitInterview"],
 		execute: (data, { store, ports }) =>
 			store.recordExitInterview(
 				{
@@ -136,10 +139,11 @@ export function recordClearance(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OffboardingCase>> {
-	return runLifecycleCommand(input, options, {
+	return runEmploymentLifecycleCommand(input, options, {
 		schema: recordClearanceInputSchema,
 		invalidMessage: "Invalid record clearance input",
 		command: HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_CLEARANCE,
+		storeMethods: ["recordClearance"],
 		execute: (data, { store, ports }) =>
 			store.recordClearance(
 				{
@@ -162,10 +166,11 @@ export function recordOffboardingAccessRevocation(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OffboardingCase>> {
-	return runLifecycleCommand(input, options, {
+	return runEmploymentLifecycleCommand(input, options, {
 		schema: recordOffboardingAccessRevocationInputSchema,
 		invalidMessage: "Invalid record offboarding access revocation input",
 		command: HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_ACCESS_REVOCATION,
+		storeMethods: ["recordOffboardingAccessRevocation"],
 		execute: (data, { store, ports }) =>
 			store.recordOffboardingAccessRevocation(
 				{
@@ -190,10 +195,11 @@ export function recordOffboardingPayrollHandoff(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OffboardingCase>> {
-	return runLifecycleCommand(input, options, {
+	return runEmploymentLifecycleCommand(input, options, {
 		schema: recordOffboardingPayrollHandoffInputSchema,
 		invalidMessage: "Invalid record offboarding payroll handoff input",
 		command: HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_PAYROLL_HANDOFF,
+		storeMethods: ["recordOffboardingPayrollHandoff"],
 		execute: (data, { store, ports }) =>
 			store.recordOffboardingPayrollHandoff(
 				{
@@ -218,10 +224,11 @@ export function completeOffboarding(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OffboardingCase>> {
-	return runLifecycleCommand(input, options, {
+	return runEmploymentLifecycleCommand(input, options, {
 		schema: completeOffboardingInputSchema,
 		invalidMessage: "Invalid complete offboarding input",
 		command: HUMAN_RESOURCES_COMMAND_OFFBOARDING_COMPLETE,
+		storeMethods: ["completeOffboarding"],
 		execute: (data, { store, ports }) =>
 			store.completeOffboarding(
 				{
@@ -243,10 +250,11 @@ export function getOffboardingCase(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OffboardingCase | null>> {
-	return runLifecycleQuery(input, options, {
+	return runEmploymentLifecycleQuery(input, options, {
 		schema: getOffboardingCaseInputSchema,
 		invalidMessage: "Invalid get offboarding case input",
 		query: HUMAN_RESOURCES_QUERY_OFFBOARDING_CASE_GET,
+		storeMethods: ["getOffboardingCase"],
 		execute: (data, { store }) =>
 			store.getOffboardingCase({
 				organizationId: data.organizationId,
@@ -259,10 +267,11 @@ export function listOffboardingTasks(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OffboardingTask[]>> {
-	return runLifecycleQuery(input, options, {
+	return runEmploymentLifecycleQuery(input, options, {
 		schema: listOffboardingTasksInputSchema,
 		invalidMessage: "Invalid list offboarding tasks input",
 		query: HUMAN_RESOURCES_QUERY_OFFBOARDING_TASKS_LIST,
+		storeMethods: ["listOffboardingTasks"],
 		execute: (data, { store }) =>
 			store.listOffboardingTasks({
 				organizationId: data.organizationId,
@@ -275,10 +284,11 @@ export function getClearanceByOffboardingCase(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Clearance | null>> {
-	return runLifecycleQuery(input, options, {
+	return runEmploymentLifecycleQuery(input, options, {
 		schema: getClearanceByOffboardingCaseInputSchema,
 		invalidMessage: "Invalid get clearance input",
 		query: HUMAN_RESOURCES_QUERY_CLEARANCE_GET_BY_OFFBOARDING_CASE,
+		storeMethods: ["getClearanceByOffboardingCase"],
 		execute: (data, { store }) =>
 			store.getClearanceByOffboardingCase({
 				organizationId: data.organizationId,
@@ -291,10 +301,11 @@ export function getOffboardingAccessRevocationByCase(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OffboardingAccessRevocation | null>> {
-	return runLifecycleQuery(input, options, {
+	return runEmploymentLifecycleQuery(input, options, {
 		schema: getOffboardingAccessRevocationByCaseInputSchema,
 		invalidMessage: "Invalid get offboarding access revocation input",
 		query: HUMAN_RESOURCES_QUERY_OFFBOARDING_ACCESS_REVOCATION_GET_BY_CASE,
+		storeMethods: ["getOffboardingAccessRevocationByCase"],
 		execute: (data, { store }) =>
 			store.getOffboardingAccessRevocationByCase({
 				organizationId: data.organizationId,
@@ -307,10 +318,11 @@ export function getOffboardingPayrollHandoffByCase(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OffboardingPayrollHandoff | null>> {
-	return runLifecycleQuery(input, options, {
+	return runEmploymentLifecycleQuery(input, options, {
 		schema: getOffboardingPayrollHandoffByCaseInputSchema,
 		invalidMessage: "Invalid get offboarding payroll handoff input",
 		query: HUMAN_RESOURCES_QUERY_OFFBOARDING_PAYROLL_HANDOFF_GET_BY_CASE,
+		storeMethods: ["getOffboardingPayrollHandoffByCase"],
 		execute: (data, { store }) =>
 			store.getOffboardingPayrollHandoffByCase({
 				organizationId: data.organizationId,

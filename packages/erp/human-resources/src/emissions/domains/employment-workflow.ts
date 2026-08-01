@@ -35,7 +35,7 @@ import {
 	HUMAN_RESOURCES_COMMAND_TERMINATION_APPROVE,
 	HUMAN_RESOURCES_COMMAND_TERMINATION_FINALIZE,
 	HUMAN_RESOURCES_COMMAND_TERMINATION_PROPOSE,
-	type HumanResourcesLifecycleCommandId,
+	type HumanResourcesEmploymentLifecycleCommandId,
 } from "../../module-ids";
 
 import {
@@ -44,11 +44,11 @@ import {
 } from "../define-emission";
 import type { HumanResourcesMutationEmissionDefinition } from "../types";
 
-export const HUMAN_RESOURCES_LIFECYCLE_EMISSIONS = {
+export const HUMAN_RESOURCES_EMPLOYMENT_WORKFLOW_EMISSIONS = {
 	[HUMAN_RESOURCES_COMMAND_ONBOARDING_START]: defineDomainEventEmission(
 		HUMAN_RESOURCES_COMMAND_ONBOARDING_START,
 		{
-			domain: "lifecycle",
+			domain: "employment-lifecycle",
 			aggregateType: "onboarding_case",
 			eventTypes: [HUMAN_RESOURCES_ONBOARDING_STARTED_EVENT] as const,
 		},
@@ -56,14 +56,14 @@ export const HUMAN_RESOURCES_LIFECYCLE_EMISSIONS = {
 	[HUMAN_RESOURCES_COMMAND_ONBOARDING_COMPLETE_TASK]: defineAuditOnlyEmission(
 		HUMAN_RESOURCES_COMMAND_ONBOARDING_COMPLETE_TASK,
 		{
-			domain: "lifecycle",
+			domain: "employment-lifecycle",
 			aggregateType: "onboarding_task",
 		},
 	),
 	[HUMAN_RESOURCES_COMMAND_ONBOARDING_COMPLETE]: defineDomainEventEmission(
 		HUMAN_RESOURCES_COMMAND_ONBOARDING_COMPLETE,
 		{
-			domain: "lifecycle",
+			domain: "employment-lifecycle",
 			aggregateType: "onboarding_case",
 			eventTypes: [HUMAN_RESOURCES_ONBOARDING_COMPLETED_EVENT] as const,
 		},
@@ -72,7 +72,7 @@ export const HUMAN_RESOURCES_LIFECYCLE_EMISSIONS = {
 		defineAuditOnlyEmission(
 			HUMAN_RESOURCES_COMMAND_ONBOARDING_RECORD_ORIENTATION,
 			{
-				domain: "lifecycle",
+				domain: "employment-lifecycle",
 				aggregateType: "onboarding_orientation",
 			},
 		),
@@ -80,7 +80,7 @@ export const HUMAN_RESOURCES_LIFECYCLE_EMISSIONS = {
 		defineAuditOnlyEmission(
 			HUMAN_RESOURCES_COMMAND_ONBOARDING_RECORD_EQUIPMENT_HANDOFF,
 			{
-				domain: "lifecycle",
+				domain: "employment-lifecycle",
 				aggregateType: "onboarding_equipment_handoff",
 			},
 		),
@@ -88,21 +88,21 @@ export const HUMAN_RESOURCES_LIFECYCLE_EMISSIONS = {
 		defineAuditOnlyEmission(
 			HUMAN_RESOURCES_COMMAND_ONBOARDING_RECORD_ACCESS_HANDOFF,
 			{
-				domain: "lifecycle",
+				domain: "employment-lifecycle",
 				aggregateType: "onboarding_access_handoff",
 			},
 		),
 	[HUMAN_RESOURCES_COMMAND_PROBATION_OPEN]: defineAuditOnlyEmission(
 		HUMAN_RESOURCES_COMMAND_PROBATION_OPEN,
 		{
-			domain: "lifecycle",
+			domain: "employment-lifecycle",
 			aggregateType: "probation_review",
 		},
 	),
 	[HUMAN_RESOURCES_COMMAND_PROBATION_EXTEND]: defineDomainEventEmission(
 		HUMAN_RESOURCES_COMMAND_PROBATION_EXTEND,
 		{
-			domain: "lifecycle",
+			domain: "employment-lifecycle",
 			aggregateType: "probation_review",
 			eventTypes: [HUMAN_RESOURCES_PROBATION_EXTENDED_EVENT] as const,
 		},
@@ -110,7 +110,7 @@ export const HUMAN_RESOURCES_LIFECYCLE_EMISSIONS = {
 	[HUMAN_RESOURCES_COMMAND_PROBATION_RECORD_OUTCOME]: defineDomainEventEmission(
 		HUMAN_RESOURCES_COMMAND_PROBATION_RECORD_OUTCOME,
 		{
-			domain: "lifecycle",
+			domain: "employment-lifecycle",
 			aggregateType: "probation_review",
 			eventTypes: [HUMAN_RESOURCES_PROBATION_REVIEWED_EVENT] as const,
 		},
@@ -119,7 +119,7 @@ export const HUMAN_RESOURCES_LIFECYCLE_EMISSIONS = {
 		defineDomainEventEmission(
 			HUMAN_RESOURCES_COMMAND_PROBATION_RECORD_ASSESSMENT,
 			{
-				domain: "lifecycle",
+				domain: "employment-lifecycle",
 				aggregateType: "probation_assessment",
 				eventTypes: [
 					HUMAN_RESOURCES_PROBATION_ASSESSMENT_RECORDED_EVENT,
@@ -129,7 +129,7 @@ export const HUMAN_RESOURCES_LIFECYCLE_EMISSIONS = {
 	[HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONFIRM]: defineDomainEventEmission(
 		HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONFIRM,
 		{
-			domain: "lifecycle",
+			domain: "employment-lifecycle",
 			aggregateType: "employment_confirmation",
 			eventTypes: [HUMAN_RESOURCES_EMPLOYEE_CONFIRMED_EVENT] as const,
 		},
@@ -137,7 +137,7 @@ export const HUMAN_RESOURCES_LIFECYCLE_EMISSIONS = {
 	[HUMAN_RESOURCES_COMMAND_ASSIGNMENT_TRANSFER]: defineDomainEventEmission(
 		HUMAN_RESOURCES_COMMAND_ASSIGNMENT_TRANSFER,
 		{
-			domain: "lifecycle",
+			domain: "employment-lifecycle",
 			aggregateType: "employment_movement",
 			eventTypes: [HUMAN_RESOURCES_EMPLOYEE_TRANSFERRED_EVENT] as const,
 		},
@@ -145,21 +145,21 @@ export const HUMAN_RESOURCES_LIFECYCLE_EMISSIONS = {
 	[HUMAN_RESOURCES_COMMAND_TERMINATION_PROPOSE]: defineAuditOnlyEmission(
 		HUMAN_RESOURCES_COMMAND_TERMINATION_PROPOSE,
 		{
-			domain: "lifecycle",
+			domain: "employment-lifecycle",
 			aggregateType: "termination",
 		},
 	),
 	[HUMAN_RESOURCES_COMMAND_TERMINATION_APPROVE]: defineAuditOnlyEmission(
 		HUMAN_RESOURCES_COMMAND_TERMINATION_APPROVE,
 		{
-			domain: "lifecycle",
+			domain: "employment-lifecycle",
 			aggregateType: "termination",
 		},
 	),
 	[HUMAN_RESOURCES_COMMAND_TERMINATION_FINALIZE]: defineDomainEventEmission(
 		HUMAN_RESOURCES_COMMAND_TERMINATION_FINALIZE,
 		{
-			domain: "lifecycle",
+			domain: "employment-lifecycle",
 			aggregateType: "termination",
 			eventTypes: [HUMAN_RESOURCES_EMPLOYEE_TERMINATED_EVENT] as const,
 		},
@@ -167,7 +167,7 @@ export const HUMAN_RESOURCES_LIFECYCLE_EMISSIONS = {
 	[HUMAN_RESOURCES_COMMAND_OFFBOARDING_START]: defineDomainEventEmission(
 		HUMAN_RESOURCES_COMMAND_OFFBOARDING_START,
 		{
-			domain: "lifecycle",
+			domain: "employment-lifecycle",
 			aggregateType: "offboarding_case",
 			eventTypes: [HUMAN_RESOURCES_OFFBOARDING_STARTED_EVENT] as const,
 		},
@@ -175,7 +175,7 @@ export const HUMAN_RESOURCES_LIFECYCLE_EMISSIONS = {
 	[HUMAN_RESOURCES_COMMAND_OFFBOARDING_COMPLETE_TASK]: defineAuditOnlyEmission(
 		HUMAN_RESOURCES_COMMAND_OFFBOARDING_COMPLETE_TASK,
 		{
-			domain: "lifecycle",
+			domain: "employment-lifecycle",
 			aggregateType: "offboarding_task",
 		},
 	),
@@ -183,7 +183,7 @@ export const HUMAN_RESOURCES_LIFECYCLE_EMISSIONS = {
 		defineAuditOnlyEmission(
 			HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_EXIT_INTERVIEW,
 			{
-				domain: "lifecycle",
+				domain: "employment-lifecycle",
 				aggregateType: "exit_interview",
 			},
 		),
@@ -191,7 +191,7 @@ export const HUMAN_RESOURCES_LIFECYCLE_EMISSIONS = {
 		defineDomainEventEmission(
 			HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_CLEARANCE,
 			{
-				domain: "lifecycle",
+				domain: "employment-lifecycle",
 				aggregateType: "clearance",
 				eventTypes: [HUMAN_RESOURCES_CLEARANCE_COMPLETED_EVENT] as const,
 			},
@@ -200,7 +200,7 @@ export const HUMAN_RESOURCES_LIFECYCLE_EMISSIONS = {
 		defineAuditOnlyEmission(
 			HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_ACCESS_REVOCATION,
 			{
-				domain: "lifecycle",
+				domain: "employment-lifecycle",
 				aggregateType: "offboarding_access_revocation",
 			},
 		),
@@ -208,19 +208,21 @@ export const HUMAN_RESOURCES_LIFECYCLE_EMISSIONS = {
 		defineAuditOnlyEmission(
 			HUMAN_RESOURCES_COMMAND_OFFBOARDING_RECORD_PAYROLL_HANDOFF,
 			{
-				domain: "lifecycle",
+				domain: "employment-lifecycle",
 				aggregateType: "offboarding_payroll_handoff",
 			},
 		),
 	[HUMAN_RESOURCES_COMMAND_OFFBOARDING_COMPLETE]: defineDomainEventEmission(
 		HUMAN_RESOURCES_COMMAND_OFFBOARDING_COMPLETE,
 		{
-			domain: "lifecycle",
+			domain: "employment-lifecycle",
 			aggregateType: "offboarding_case",
 			eventTypes: [HUMAN_RESOURCES_OFFBOARDING_COMPLETED_EVENT] as const,
 		},
 	),
-} satisfies Record<
-	HumanResourcesLifecycleCommandId,
-	HumanResourcesMutationEmissionDefinition
+} satisfies Partial<
+	Record<
+		HumanResourcesEmploymentLifecycleCommandId,
+		HumanResourcesMutationEmissionDefinition
+	>
 >;

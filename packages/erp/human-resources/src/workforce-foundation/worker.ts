@@ -18,9 +18,12 @@ import {
 	getWorkerAsOfInputSchema,
 	getWorkerInputSchema,
 } from "../schemas/workforce-foundation";
-import { runCoreCommand, runCoreQuery } from "../shared/core-command";
 import { fingerprintWorkerCreate } from "../shared/fingerprint";
 import { buildMutationMeta } from "../shared/mutation-meta";
+import {
+	runWorkforceFoundationCommand,
+	runWorkforceFoundationQuery,
+} from "./run-operation";
 import type {
 	EmployeeWorker,
 	NonEmployeeWorker,
@@ -32,10 +35,11 @@ export function createWorker(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Worker>> {
-	return runCoreCommand(input, options, {
+	return runWorkforceFoundationCommand(input, options, {
 		schema: createWorkerInputSchema,
 		invalidMessage: "Invalid worker create input",
 		command: HUMAN_RESOURCES_COMMAND_WORKER_CREATE,
+		storeMethods: ["findWorkerByIdempotencyKey", "createWorker"],
 		execute: async (data, { store, ports }) => {
 			const requestFingerprint = fingerprintWorkerCreate({
 				personId: data.personId,
@@ -108,10 +112,11 @@ export function changeWorkerType(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeWorker | NonEmployeeWorker>> {
-	return runCoreCommand(input, options, {
+	return runWorkforceFoundationCommand(input, options, {
 		schema: changeWorkerTypeInputSchema,
 		invalidMessage: "Invalid worker type change input",
 		command: HUMAN_RESOURCES_COMMAND_WORKER_CHANGE_TYPE,
+		storeMethods: ["changeWorkerType"],
 		execute: (data, { store, ports }) => {
 			const shared = {
 				organizationId: data.organizationId,
@@ -151,10 +156,11 @@ export function changeWorkerStatus(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Worker>> {
-	return runCoreCommand(input, options, {
+	return runWorkforceFoundationCommand(input, options, {
 		schema: changeWorkerStatusInputSchema,
 		invalidMessage: "Invalid worker status change input",
 		command: HUMAN_RESOURCES_COMMAND_WORKER_CHANGE_STATUS,
+		storeMethods: ["changeWorkerStatus"],
 		execute: async (data, { store, ports }) =>
 			store.changeWorkerStatus(
 				{
@@ -180,10 +186,11 @@ export function getWorkerById(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Worker>> {
-	return runCoreQuery(input, options, {
+	return runWorkforceFoundationQuery(input, options, {
 		schema: getWorkerInputSchema,
 		invalidMessage: "Invalid worker get input",
 		query: HUMAN_RESOURCES_QUERY_WORKER_GET,
+		storeMethods: ["getWorkerById"],
 		execute: async (data, { store }) => {
 			const result = await store.getWorkerById({
 				organizationId: data.organizationId,
@@ -206,10 +213,11 @@ export function getWorkerAsOf(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<WorkerClassificationAtAsOf>> {
-	return runCoreQuery(input, options, {
+	return runWorkforceFoundationQuery(input, options, {
 		schema: getWorkerAsOfInputSchema,
 		invalidMessage: "Invalid worker as-of input",
 		query: HUMAN_RESOURCES_QUERY_WORKER_AS_OF,
+		storeMethods: ["findWorkerAsOf"],
 		execute: async (data, { store }) => {
 			const result = await store.findWorkerAsOf({
 				organizationId: data.organizationId,

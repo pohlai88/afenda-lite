@@ -49,6 +49,12 @@ const ORG_A = "org-org-a";
 const ORG_B = "org-org-b";
 const ACTOR = "user-org-1";
 
+function addIsoDays(value: string, days: number): string {
+	const date = new Date(`${value}T00:00:00.000Z`);
+	date.setUTCDate(date.getUTCDate() + days);
+	return date.toISOString().slice(0, 10);
+}
+
 function harness(
 	permissions: readonly HumanResourcesPermission[] = HUMAN_RESOURCES_PERMISSION_CODES,
 ) {
@@ -813,6 +819,12 @@ describe("@afenda/human-resources organization structure", () => {
 
 describe("@afenda/human-resources organization historical truth", () => {
 	const structureEffectiveFrom = new Date().toISOString().slice(0, 10);
+	const firstStructureChange = addIsoDays(structureEffectiveFrom, 10);
+	const afterFirstStructureChange = addIsoDays(structureEffectiveFrom, 20);
+	const jobDefinitionChange = addIsoDays(structureEffectiveFrom, 30);
+	const beforeJobDefinitionChange = addIsoDays(structureEffectiveFrom, 20);
+	const positionDefinitionChange = addIsoDays(structureEffectiveFrom, 50);
+	const beforePositionDefinitionChange = addIsoDays(structureEffectiveFrom, 40);
 
 	it("preserves department structure lineage and resolves as-of after rename", async () => {
 		const ready = harness();
@@ -839,7 +851,7 @@ describe("@afenda/human-resources organization historical truth", () => {
 				departmentId: department.data.id,
 				name: "Renamed Department",
 				expectedVersion: 1,
-				effectiveOn: "2026-08-01",
+				effectiveOn: firstStructureChange,
 				reasonCode: "rename",
 			},
 			ready,
@@ -867,7 +879,7 @@ describe("@afenda/human-resources organization historical truth", () => {
 				actorUserId: ACTOR,
 				correlationId: "corr-lineage-dept-after",
 				departmentId: department.data.id,
-				asOf: "2026-08-15",
+				asOf: afterFirstStructureChange,
 			},
 			ready,
 		);
@@ -896,7 +908,7 @@ describe("@afenda/human-resources organization historical truth", () => {
 				jobId: seeded.jobId,
 				title: "Senior Engineer",
 				expectedVersion: 1,
-				effectiveOn: "2026-09-01",
+				effectiveOn: jobDefinitionChange,
 				reasonCode: "grade_change",
 			},
 			ready,
@@ -909,7 +921,7 @@ describe("@afenda/human-resources organization historical truth", () => {
 				actorUserId: ACTOR,
 				correlationId: "corr-lineage-job-before",
 				jobId: seeded.jobId,
-				asOf: "2026-08-15",
+				asOf: beforeJobDefinitionChange,
 			},
 			ready,
 		);
@@ -943,7 +955,7 @@ describe("@afenda/human-resources organization historical truth", () => {
 				positionId: position.data.id,
 				title: "Engineer II",
 				expectedVersion: 1,
-				effectiveOn: "2026-10-01",
+				effectiveOn: positionDefinitionChange,
 				reasonCode: "regrade",
 			},
 			ready,
@@ -956,7 +968,7 @@ describe("@afenda/human-resources organization historical truth", () => {
 				actorUserId: ACTOR,
 				correlationId: "corr-lineage-pos-before",
 				positionId: position.data.id,
-				asOf: "2026-09-15",
+				asOf: beforePositionDefinitionChange,
 			},
 			ready,
 		);
@@ -1024,7 +1036,7 @@ describe("@afenda/human-resources organization historical truth", () => {
 				departmentId: child.data.id,
 				parentDepartmentId: null,
 				expectedVersion: 1,
-				effectiveOn: "2026-08-01",
+				effectiveOn: firstStructureChange,
 				reasonCode: "restructure",
 			},
 			ready,
@@ -1036,7 +1048,7 @@ describe("@afenda/human-resources organization historical truth", () => {
 				organizationId: ORG_A,
 				actorUserId: ACTOR,
 				correlationId: "corr-tree-after",
-				asOf: "2026-08-15",
+				asOf: afterFirstStructureChange,
 				rootDepartmentId: root.data.id,
 			},
 			ready,

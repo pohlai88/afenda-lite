@@ -13,7 +13,7 @@ import {
 } from "@afenda/events/schemas";
 import { describe, expect, it } from "vitest";
 
-import { HUMAN_RESOURCES_LIFECYCLE_EMISSIONS } from "../src/emissions/domains/lifecycle";
+import { HUMAN_RESOURCES_EMPLOYMENT_WORKFLOW_EMISSIONS } from "../src/emissions/domains/employment-workflow";
 import { HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD } from "../src/emissions/registry";
 import {
 	HUMAN_RESOURCES_COMMAND_ASSIGNMENT_TRANSFER,
@@ -38,7 +38,7 @@ import {
 	HUMAN_RESOURCES_COMMAND_TERMINATION_APPROVE,
 	HUMAN_RESOURCES_COMMAND_TERMINATION_FINALIZE,
 	HUMAN_RESOURCES_COMMAND_TERMINATION_PROPOSE,
-	HUMAN_RESOURCES_LIFECYCLE_COMMAND_IDS,
+	HUMAN_RESOURCES_EMPLOYMENT_WORKFLOW_COMMAND_IDS,
 } from "../src/module-ids";
 
 const EXPECTED_MATRIX: Record<
@@ -118,15 +118,15 @@ const EXPECTED_MATRIX: Record<
 	},
 };
 
-describe("lifecycle emission registry", () => {
-	it("registers every lifecycle command exactly once in domain file", () => {
-		expect(Object.keys(HUMAN_RESOURCES_LIFECYCLE_EMISSIONS)).toEqual([
-			...HUMAN_RESOURCES_LIFECYCLE_COMMAND_IDS,
+describe("employment workflow emission projection", () => {
+	it("registers every workflow command exactly once in its domain projection", () => {
+		expect(Object.keys(HUMAN_RESOURCES_EMPLOYMENT_WORKFLOW_EMISSIONS)).toEqual([
+			...HUMAN_RESOURCES_EMPLOYMENT_WORKFLOW_COMMAND_IDS,
 		]);
 	});
 
-	it("matches the locked lifecycle mode/eventType matrix", () => {
-		for (const commandId of HUMAN_RESOURCES_LIFECYCLE_COMMAND_IDS) {
+	it("matches the locked workflow mode/eventType matrix", () => {
+		for (const commandId of HUMAN_RESOURCES_EMPLOYMENT_WORKFLOW_COMMAND_IDS) {
 			const expected = EXPECTED_MATRIX[commandId];
 			expect(expected).toBeDefined();
 

@@ -4,6 +4,11 @@ import {
 	requireOrganizationDimensionDirectory,
 } from "../command-options";
 import {
+	runEmploymentLifecycleCommand,
+	runEmploymentLifecycleQuery,
+} from "../employment-lifecycle/run-operation";
+import type { HumanResourcesEmploymentLifecycleStore } from "../employment-lifecycle/store";
+import {
 	HUMAN_RESOURCES_ERROR_NOT_FOUND,
 	humanResourcesErrorDetails,
 } from "../error-codes";
@@ -24,14 +29,12 @@ import {
 	assertNoAssignmentOverlap,
 } from "../shared/assignment-guards";
 import { resolveAssignmentContextSnapshots } from "../shared/assignment-snapshots";
-import { runCoreCommand, runCoreQuery } from "../shared/core-command";
 import { assertValidDateRange } from "../shared/employment-status";
 import { buildMutationMeta } from "../shared/mutation-meta";
-import type { HumanResourcesCoreStore } from "../store/core";
 import type { Employment, WorkAssignment } from "../types";
 
 async function loadEmploymentForAssignment(
-	store: HumanResourcesCoreStore,
+	store: Pick<HumanResourcesEmploymentLifecycleStore, "getEmploymentById">,
 	data: { organizationId: string; employmentId: Employment["id"] },
 ): Promise<Result<Employment>> {
 	const employment = await store.getEmploymentById({
@@ -56,10 +59,21 @@ export function createAssignment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<WorkAssignment>> {
-	return runCoreCommand(input, options, {
+	return runEmploymentLifecycleCommand(input, options, {
 		schema: createAssignmentInputSchema,
 		invalidMessage: "Invalid assignment create input",
 		command: HUMAN_RESOURCES_COMMAND_ASSIGNMENT_CREATE,
+		storeMethods: [
+			"getEmploymentById",
+			"getPositionById",
+			"resolvePrimaryManager",
+			"listWorkCalendarScopeAssignments",
+			"resolveEmploymentCalendar",
+			"listWorkCalendars",
+			"getWorkCalendar",
+			"listAssignmentsByEmployment",
+			"createAssignment",
+		],
 		execute: async (data, { store, ports }) => {
 			const directory = requireOrganizationDimensionDirectory(options);
 			if (!directory.ok) {
@@ -164,10 +178,16 @@ export function endAssignment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<WorkAssignment>> {
-	return runCoreCommand(input, options, {
+	return runEmploymentLifecycleCommand(input, options, {
 		schema: endAssignmentInputSchema,
 		invalidMessage: "Invalid assignment end input",
 		command: HUMAN_RESOURCES_COMMAND_ASSIGNMENT_END,
+		storeMethods: [
+			"getAssignmentById",
+			"getEmploymentById",
+			"listAssignmentsByEmployment",
+			"endAssignment",
+		],
 		execute: async (data, { store, ports }) => {
 			const existing = await store.getAssignmentById({
 				organizationId: data.organizationId,
@@ -251,10 +271,11 @@ export function getAssignment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<WorkAssignment>> {
-	return runCoreQuery(input, options, {
+	return runEmploymentLifecycleQuery(input, options, {
 		schema: getAssignmentInputSchema,
 		invalidMessage: "Invalid assignment get input",
 		query: HUMAN_RESOURCES_QUERY_ASSIGNMENT_GET,
+		storeMethods: ["getAssignmentById"],
 		execute: async (data, { store }) => {
 			const assignment = await store.getAssignmentById({
 				organizationId: data.organizationId,
@@ -280,10 +301,11 @@ export function getAssignmentAsOf(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<WorkAssignment | null>> {
-	return runCoreQuery(input, options, {
+	return runEmploymentLifecycleQuery(input, options, {
 		schema: getAssignmentAsOfInputSchema,
 		invalidMessage: "Invalid assignment as-of input",
 		query: HUMAN_RESOURCES_QUERY_ASSIGNMENT_AS_OF,
+		storeMethods: ["findAssignmentByEmploymentAsOf"],
 		execute: async (data, { store }) =>
 			store.findAssignmentByEmploymentAsOf({
 				organizationId: data.organizationId,

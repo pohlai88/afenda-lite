@@ -33,9 +33,9 @@ export type EffectiveTruthClassificationDomain =
 	| "compliance"
 	| "core"
 	| "employee-relations"
+	| "employment-lifecycle"
 	| "leave"
 	| "learning"
-	| "lifecycle"
 	| "organization"
 	| "performance"
 	| "recruitment"
@@ -232,7 +232,7 @@ export const HUMAN_RESOURCES_EFFECTIVE_TRUTH_CLASSIFICATION = [
 	row({
 		table: "hr_employment_movement",
 		category: "append-only-operational-fact",
-		domain: "lifecycle",
+		domain: "employment-lifecycle",
 		cluster: "A",
 		rationale: "Cluster A lifecycle — immutable movement audit trail",
 	}),
@@ -298,21 +298,21 @@ export const HUMAN_RESOURCES_EFFECTIVE_TRUTH_CLASSIFICATION = [
 	row({
 		table: "hr_onboarding_case",
 		category: "transactional-state-machine",
-		domain: "lifecycle",
+		domain: "employment-lifecycle",
 		cluster: "A",
 		rationale: "Cluster A lifecycle workflow — onboarding case state",
 	}),
 	row({
 		table: "hr_onboarding_task",
 		category: "transactional-state-machine",
-		domain: "lifecycle",
+		domain: "employment-lifecycle",
 		cluster: "A",
 		rationale: "Cluster A lifecycle workflow — onboarding task completion",
 	}),
 	row({
 		table: "hr_onboarding_orientation",
 		category: "transactional-state-machine",
-		domain: "lifecycle",
+		domain: "employment-lifecycle",
 		cluster: "A",
 		rationale:
 			"Cluster A lifecycle workflow — onboarding orientation scheduling and completion",
@@ -320,7 +320,7 @@ export const HUMAN_RESOURCES_EFFECTIVE_TRUTH_CLASSIFICATION = [
 	row({
 		table: "hr_onboarding_equipment_handoff",
 		category: "transactional-state-machine",
-		domain: "lifecycle",
+		domain: "employment-lifecycle",
 		cluster: "A",
 		rationale:
 			"Cluster A lifecycle workflow — equipment provisioning handoff state",
@@ -328,7 +328,7 @@ export const HUMAN_RESOURCES_EFFECTIVE_TRUTH_CLASSIFICATION = [
 	row({
 		table: "hr_onboarding_access_handoff",
 		category: "transactional-state-machine",
-		domain: "lifecycle",
+		domain: "employment-lifecycle",
 		cluster: "A",
 		rationale:
 			"Cluster A lifecycle workflow — system access provisioning handoff state",
@@ -336,63 +336,63 @@ export const HUMAN_RESOURCES_EFFECTIVE_TRUTH_CLASSIFICATION = [
 	row({
 		table: "hr_probation_review",
 		category: "transactional-state-machine",
-		domain: "lifecycle",
+		domain: "employment-lifecycle",
 		cluster: "A",
 		rationale: "Cluster A lifecycle workflow — probation review state",
 	}),
 	row({
 		table: "hr_probation_assessment",
 		category: "transactional-state-machine",
-		domain: "lifecycle",
+		domain: "employment-lifecycle",
 		cluster: "A",
 		rationale: "Cluster A lifecycle workflow — interim probation assessment",
 	}),
 	row({
 		table: "hr_employment_confirmation",
 		category: "transactional-state-machine",
-		domain: "lifecycle",
+		domain: "employment-lifecycle",
 		cluster: "A",
 		rationale: "Cluster A lifecycle workflow — confirmation decision state",
 	}),
 	row({
 		table: "hr_termination",
 		category: "transactional-state-machine",
-		domain: "lifecycle",
+		domain: "employment-lifecycle",
 		cluster: "A",
 		rationale: "Cluster A lifecycle workflow — termination processing state",
 	}),
 	row({
 		table: "hr_offboarding_case",
 		category: "transactional-state-machine",
-		domain: "lifecycle",
+		domain: "employment-lifecycle",
 		cluster: "A",
 		rationale: "Cluster A lifecycle workflow — offboarding case state",
 	}),
 	row({
 		table: "hr_offboarding_task",
 		category: "transactional-state-machine",
-		domain: "lifecycle",
+		domain: "employment-lifecycle",
 		cluster: "A",
 		rationale: "Cluster A lifecycle workflow — offboarding task completion",
 	}),
 	row({
 		table: "hr_exit_interview",
 		category: "transactional-state-machine",
-		domain: "lifecycle",
+		domain: "employment-lifecycle",
 		cluster: "A",
 		rationale: "Cluster A lifecycle workflow — exit interview capture state",
 	}),
 	row({
 		table: "hr_clearance",
 		category: "transactional-state-machine",
-		domain: "lifecycle",
+		domain: "employment-lifecycle",
 		cluster: "A",
 		rationale: "Cluster A lifecycle workflow — clearance checklist state",
 	}),
 	row({
 		table: "hr_offboarding_access_revocation",
 		category: "transactional-state-machine",
-		domain: "lifecycle",
+		domain: "employment-lifecycle",
 		cluster: "A",
 		rationale:
 			"Cluster A lifecycle workflow — access revocation checklist state",
@@ -400,7 +400,7 @@ export const HUMAN_RESOURCES_EFFECTIVE_TRUTH_CLASSIFICATION = [
 	row({
 		table: "hr_offboarding_payroll_handoff",
 		category: "transactional-state-machine",
-		domain: "lifecycle",
+		domain: "employment-lifecycle",
 		cluster: "A",
 		rationale:
 			"Cluster A lifecycle workflow — payroll finalization handoff state",

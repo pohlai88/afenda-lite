@@ -1,6 +1,10 @@
 import type { Result } from "@afenda/errors";
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
+	runEmploymentLifecycleCommand,
+	runEmploymentLifecycleQuery,
+} from "../employment-lifecycle/run-operation";
+import {
 	HUMAN_RESOURCES_COMMAND_TERMINATION_APPROVE,
 	HUMAN_RESOURCES_COMMAND_TERMINATION_FINALIZE,
 	HUMAN_RESOURCES_COMMAND_TERMINATION_PROPOSE,
@@ -13,10 +17,6 @@ import {
 	proposeTerminationInputSchema,
 } from "../schemas/lifecycle";
 import { fingerprintTermination } from "../shared/fingerprint";
-import {
-	runLifecycleCommand,
-	runLifecycleQuery,
-} from "../shared/lifecycle-command";
 import { buildMutationMeta } from "../shared/mutation-meta";
 import type { Termination } from "../types";
 
@@ -28,10 +28,11 @@ export function proposeTermination(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Termination>> {
-	return runLifecycleCommand(input, options, {
+	return runEmploymentLifecycleCommand(input, options, {
 		schema: proposeTerminationInputSchema,
 		invalidMessage: "Invalid propose termination input",
 		command: HUMAN_RESOURCES_COMMAND_TERMINATION_PROPOSE,
+		storeMethods: ["proposeTermination"],
 		execute: (data, { store, ports }) => {
 			const fingerprint = fingerprintTermination({
 				employmentId: data.employmentId,
@@ -66,10 +67,11 @@ export function approveTermination(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Termination>> {
-	return runLifecycleCommand(input, options, {
+	return runEmploymentLifecycleCommand(input, options, {
 		schema: approveTerminationInputSchema,
 		invalidMessage: "Invalid approve termination input",
 		command: HUMAN_RESOURCES_COMMAND_TERMINATION_APPROVE,
+		storeMethods: ["approveTermination"],
 		execute: (data, { store, ports }) =>
 			store.approveTermination(
 				{
@@ -91,10 +93,11 @@ export function finalizeTermination(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Termination>> {
-	return runLifecycleCommand(input, options, {
+	return runEmploymentLifecycleCommand(input, options, {
 		schema: finalizeTerminationInputSchema,
 		invalidMessage: "Invalid finalize termination input",
 		command: HUMAN_RESOURCES_COMMAND_TERMINATION_FINALIZE,
+		storeMethods: ["finalizeTermination"],
 		execute: (data, { store, ports }) =>
 			store.finalizeTermination(
 				{
@@ -116,10 +119,11 @@ export function getTermination(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Termination | null>> {
-	return runLifecycleQuery(input, options, {
+	return runEmploymentLifecycleQuery(input, options, {
 		schema: getTerminationInputSchema,
 		invalidMessage: "Invalid get termination input",
 		query: HUMAN_RESOURCES_QUERY_TERMINATION_GET,
+		storeMethods: ["getTermination"],
 		execute: (data, { store }) =>
 			store.getTermination({
 				organizationId: data.organizationId,

@@ -23,6 +23,13 @@ import {
 } from "../shared/field-projection";
 import type { EmployeeProfile } from "./types";
 
+type EmployeeProfileProjection = Omit<
+	ProjectedData<EmployeeProfile>,
+	"data"
+> & {
+	data: EmployeeProfile;
+};
+
 export type EmployeeProfileAudienceTier = "manager" | "self" | "hr";
 
 /** Tiered employee profile field classes — managers receive public only. */
@@ -219,7 +226,7 @@ export function projectEmployeeProfileFields(input: {
 	projection: HumanResourcesFieldProjection | undefined;
 	audienceTier: EmployeeProfileAudienceTier;
 	actorPermissions: ReadonlySet<HumanResourcesPermission>;
-}): ProjectedData<EmployeeProfile> {
+}): EmployeeProfileProjection {
 	const requested = employeeProfileQueryRequestedFields();
 	const tierProjection = partitionEmployeeProfileFieldsByAudience({
 		requestedFields: requested,
@@ -265,5 +272,5 @@ export function projectEmployeeProfileFromDecision(
 		projection,
 		audienceTier,
 		actorPermissions: input.actorPermissions,
-	}).data as EmployeeProfile;
+	}).data;
 }

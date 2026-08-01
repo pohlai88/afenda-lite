@@ -1,6 +1,11 @@
 import type { Result } from "@afenda/errors";
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
+	runEmploymentLifecycleCommand,
+	runEmploymentLifecycleQuery,
+} from "../employment-lifecycle/run-operation";
+import type { HumanResourcesEmploymentLifecycleStore } from "../employment-lifecycle/store";
+import {
 	HUMAN_RESOURCES_COMMAND_ONBOARDING_COMPLETE,
 	HUMAN_RESOURCES_COMMAND_ONBOARDING_COMPLETE_TASK,
 	HUMAN_RESOURCES_COMMAND_ONBOARDING_RECORD_ACCESS_HANDOFF,
@@ -28,13 +33,8 @@ import {
 } from "../schemas/lifecycle";
 import { invalidState, notFound } from "../shared/domain-guards";
 import { fingerprintOnboardingStart } from "../shared/fingerprint";
-import {
-	runLifecycleCommand,
-	runLifecycleQuery,
-} from "../shared/lifecycle-command";
 import { buildMutationMeta } from "../shared/mutation-meta";
 import { evaluateOnboardingCompletionReadiness } from "../shared/onboarding-completion-readiness";
-import type { HumanResourcesStore } from "../store";
 import type {
 	OnboardingAccessHandoff,
 	OnboardingCase,
@@ -54,7 +54,16 @@ export type HumanResourcesOnboardingAggregate =
 	typeof HUMAN_RESOURCES_AGGREGATE_ONBOARDING;
 
 async function loadOnboardingCompletionContext(
-	store: HumanResourcesStore,
+	store: Pick<
+		HumanResourcesEmploymentLifecycleStore,
+		| "getActiveWorkEligibilityForEmployee"
+		| "getOnboardingAccessHandoffByCase"
+		| "getOnboardingCase"
+		| "getOnboardingEquipmentHandoffByCase"
+		| "getOnboardingOrientationByCase"
+		| "listMissingRequiredDocuments"
+		| "listOnboardingTasks"
+	>,
 	input: {
 		organizationId: string;
 		onboardingCaseId: OnboardingCase["id"];
@@ -149,7 +158,12 @@ async function loadOnboardingCompletionContext(
 }
 
 async function assertOnboardingTaskCompliance(
-	store: HumanResourcesStore,
+	store: Pick<
+		HumanResourcesEmploymentLifecycleStore,
+		| "getActiveWorkEligibilityForEmployee"
+		| "getOnboardingCase"
+		| "listMissingRequiredDocuments"
+	>,
 	input: {
 		organizationId: string;
 		task: OnboardingTask;
@@ -210,10 +224,11 @@ export function startOnboarding(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OnboardingCase>> {
-	return runLifecycleCommand(input, options, {
+	return runEmploymentLifecycleCommand(input, options, {
 		schema: startOnboardingInputSchema,
 		invalidMessage: "Invalid start onboarding input",
 		command: HUMAN_RESOURCES_COMMAND_ONBOARDING_START,
+		storeMethods: ["startOnboarding"],
 		execute: (data, { store, ports }) => {
 			const tasks = mergeOnboardingChecklist(data.tasks);
 			const fingerprint = fingerprintOnboardingStart({
@@ -244,10 +259,17 @@ export function completeOnboardingTask(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OnboardingCase>> {
-	return runLifecycleCommand(input, options, {
+	return runEmploymentLifecycleCommand(input, options, {
 		schema: completeOnboardingTaskInputSchema,
 		invalidMessage: "Invalid complete onboarding task input",
 		command: HUMAN_RESOURCES_COMMAND_ONBOARDING_COMPLETE_TASK,
+		storeMethods: [
+			"completeOnboardingTask",
+			"getActiveWorkEligibilityForEmployee",
+			"getOnboardingCase",
+			"getOnboardingTask",
+			"listMissingRequiredDocuments",
+		],
 		execute: async (data, { store, ports }) => {
 			const task = await store.getOnboardingTask({
 				organizationId: data.organizationId,
@@ -291,10 +313,11 @@ export function recordOnboardingOrientation(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OnboardingCase>> {
-	return runLifecycleCommand(input, options, {
+	return runEmploymentLifecycleCommand(input, options, {
 		schema: recordOnboardingOrientationInputSchema,
 		invalidMessage: "Invalid record onboarding orientation input",
 		command: HUMAN_RESOURCES_COMMAND_ONBOARDING_RECORD_ORIENTATION,
+		storeMethods: ["recordOnboardingOrientation"],
 		execute: (data, { store, ports }) =>
 			store.recordOnboardingOrientation(
 				{
@@ -318,10 +341,11 @@ export function recordOnboardingEquipmentHandoff(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OnboardingCase>> {
-	return runLifecycleCommand(input, options, {
+	return runEmploymentLifecycleCommand(input, options, {
 		schema: recordOnboardingEquipmentHandoffInputSchema,
 		invalidMessage: "Invalid record onboarding equipment handoff input",
 		command: HUMAN_RESOURCES_COMMAND_ONBOARDING_RECORD_EQUIPMENT_HANDOFF,
+		storeMethods: ["recordOnboardingEquipmentHandoff"],
 		execute: (data, { store, ports }) =>
 			store.recordOnboardingEquipmentHandoff(
 				{
@@ -346,10 +370,11 @@ export function recordOnboardingAccessHandoff(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OnboardingCase>> {
-	return runLifecycleCommand(input, options, {
+	return runEmploymentLifecycleCommand(input, options, {
 		schema: recordOnboardingAccessHandoffInputSchema,
 		invalidMessage: "Invalid record onboarding access handoff input",
 		command: HUMAN_RESOURCES_COMMAND_ONBOARDING_RECORD_ACCESS_HANDOFF,
+		storeMethods: ["recordOnboardingAccessHandoff"],
 		execute: (data, { store, ports }) =>
 			store.recordOnboardingAccessHandoff(
 				{
@@ -373,10 +398,20 @@ export function completeOnboarding(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OnboardingCase>> {
-	return runLifecycleCommand(input, options, {
+	return runEmploymentLifecycleCommand(input, options, {
 		schema: completeOnboardingInputSchema,
 		invalidMessage: "Invalid complete onboarding input",
 		command: HUMAN_RESOURCES_COMMAND_ONBOARDING_COMPLETE,
+		storeMethods: [
+			"completeOnboarding",
+			"getActiveWorkEligibilityForEmployee",
+			"getOnboardingAccessHandoffByCase",
+			"getOnboardingCase",
+			"getOnboardingEquipmentHandoffByCase",
+			"getOnboardingOrientationByCase",
+			"listMissingRequiredDocuments",
+			"listOnboardingTasks",
+		],
 		execute: async (data, { store, ports }) => {
 			const context = await loadOnboardingCompletionContext(store, {
 				organizationId: data.organizationId,
@@ -421,10 +456,11 @@ export function getOnboardingCase(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OnboardingCase | null>> {
-	return runLifecycleQuery(input, options, {
+	return runEmploymentLifecycleQuery(input, options, {
 		schema: getOnboardingCaseInputSchema,
 		invalidMessage: "Invalid get onboarding case input",
 		query: HUMAN_RESOURCES_QUERY_ONBOARDING_CASE_GET,
+		storeMethods: ["getOnboardingCase"],
 		execute: (data, { store }) =>
 			store.getOnboardingCase({
 				organizationId: data.organizationId,
@@ -437,10 +473,11 @@ export function listOnboardingTasks(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OnboardingTask[]>> {
-	return runLifecycleQuery(input, options, {
+	return runEmploymentLifecycleQuery(input, options, {
 		schema: listOnboardingTasksInputSchema,
 		invalidMessage: "Invalid list onboarding tasks input",
 		query: HUMAN_RESOURCES_QUERY_ONBOARDING_TASKS_LIST,
+		storeMethods: ["listOnboardingTasks"],
 		execute: (data, { store }) =>
 			store.listOnboardingTasks({
 				organizationId: data.organizationId,
@@ -453,10 +490,11 @@ export function getOnboardingOrientationByCase(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OnboardingOrientation | null>> {
-	return runLifecycleQuery(input, options, {
+	return runEmploymentLifecycleQuery(input, options, {
 		schema: getOnboardingOrientationByCaseInputSchema,
 		invalidMessage: "Invalid get onboarding orientation input",
 		query: HUMAN_RESOURCES_QUERY_ONBOARDING_ORIENTATION_GET_BY_CASE,
+		storeMethods: ["getOnboardingOrientationByCase"],
 		execute: (data, { store }) =>
 			store.getOnboardingOrientationByCase({
 				organizationId: data.organizationId,
@@ -469,10 +507,11 @@ export function getOnboardingEquipmentHandoffByCase(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OnboardingEquipmentHandoff | null>> {
-	return runLifecycleQuery(input, options, {
+	return runEmploymentLifecycleQuery(input, options, {
 		schema: getOnboardingEquipmentHandoffByCaseInputSchema,
 		invalidMessage: "Invalid get onboarding equipment handoff input",
 		query: HUMAN_RESOURCES_QUERY_ONBOARDING_EQUIPMENT_HANDOFF_GET_BY_CASE,
+		storeMethods: ["getOnboardingEquipmentHandoffByCase"],
 		execute: (data, { store }) =>
 			store.getOnboardingEquipmentHandoffByCase({
 				organizationId: data.organizationId,
@@ -485,10 +524,11 @@ export function getOnboardingAccessHandoffByCase(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OnboardingAccessHandoff | null>> {
-	return runLifecycleQuery(input, options, {
+	return runEmploymentLifecycleQuery(input, options, {
 		schema: getOnboardingAccessHandoffByCaseInputSchema,
 		invalidMessage: "Invalid get onboarding access handoff input",
 		query: HUMAN_RESOURCES_QUERY_ONBOARDING_ACCESS_HANDOFF_GET_BY_CASE,
+		storeMethods: ["getOnboardingAccessHandoffByCase"],
 		execute: (data, { store }) =>
 			store.getOnboardingAccessHandoffByCase({
 				organizationId: data.organizationId,

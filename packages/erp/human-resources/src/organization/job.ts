@@ -22,12 +22,9 @@ import {
 	updateJobInputSchema,
 } from "../schemas/organization";
 import { buildMutationMeta } from "../shared/mutation-meta";
-import {
-	runOrganizationCommand,
-	runOrganizationQuery,
-} from "../shared/organization-command";
 import type { Job } from "../types";
 import type { JobDefinitionAtAsOf } from "./organization-structure-lineage";
+import { runOrganizationCommand, runOrganizationQuery } from "./run-operation";
 
 export const HUMAN_RESOURCES_AGGREGATE_JOB = "job" as const;
 export type HumanResourcesJobAggregate = typeof HUMAN_RESOURCES_AGGREGATE_JOB;
@@ -40,6 +37,7 @@ export function createJob(
 		schema: createJobInputSchema,
 		invalidMessage: "Invalid job create input",
 		command: HUMAN_RESOURCES_COMMAND_JOB_CREATE,
+		storeMethods: ["createJob"],
 		execute: async (data, { store, ports }) =>
 			store.createJob(
 				{
@@ -66,6 +64,7 @@ export function updateJob(
 		schema: updateJobInputSchema,
 		invalidMessage: "Invalid job update input",
 		command: HUMAN_RESOURCES_COMMAND_JOB_UPDATE,
+		storeMethods: ["updateJob"],
 		execute: async (data, { store, ports }) =>
 			store.updateJob(
 				{
@@ -95,6 +94,7 @@ export function activateJob(
 		schema: jobStatusTransitionInputSchema,
 		invalidMessage: "Invalid job activate input",
 		command: HUMAN_RESOURCES_COMMAND_JOB_ACTIVATE,
+		storeMethods: ["setJobStatus"],
 		execute: async (data, { store, ports }) =>
 			store.setJobStatus(
 				{
@@ -121,6 +121,7 @@ export function archiveJob(
 		schema: jobStatusTransitionInputSchema,
 		invalidMessage: "Invalid job archive input",
 		command: HUMAN_RESOURCES_COMMAND_JOB_ARCHIVE,
+		storeMethods: ["setJobStatus"],
 		execute: async (data, { store, ports }) =>
 			store.setJobStatus(
 				{
@@ -147,6 +148,7 @@ export function getJob(
 		schema: getJobInputSchema,
 		invalidMessage: "Invalid job get input",
 		query: HUMAN_RESOURCES_QUERY_JOB_GET,
+		storeMethods: ["getJobById"],
 		execute: async (data, { store }) => {
 			const job = await store.getJobById({
 				organizationId: data.organizationId,
@@ -176,6 +178,7 @@ export function getJobAsOf(
 		schema: getJobAsOfInputSchema,
 		invalidMessage: "Invalid job as-of input",
 		query: HUMAN_RESOURCES_QUERY_JOB_AS_OF,
+		storeMethods: ["findJobAsOf"],
 		execute: async (data, { store }) => {
 			const job = await store.findJobAsOf({
 				organizationId: data.organizationId,
@@ -206,6 +209,7 @@ export function listJobs(
 		schema: listJobsInputSchema,
 		invalidMessage: "Invalid job list input",
 		query: HUMAN_RESOURCES_QUERY_JOB_LIST,
+		storeMethods: ["listJobs"],
 		execute: async (data, { store }) =>
 			store.listJobs({
 				organizationId: data.organizationId,

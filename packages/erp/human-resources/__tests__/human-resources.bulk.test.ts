@@ -1,9 +1,9 @@
 import {
 	type BulkImportPorts,
 	type BulkImportRequest,
-	createMemoryBulkCheckpointPort,
 	runHumanResourcesBulkImport,
 } from "@afenda/human-resources";
+import { createMemoryBulkCheckpointPort } from "@afenda/human-resources/testing";
 import { describe, expect, it, vi } from "vitest";
 
 interface Row {

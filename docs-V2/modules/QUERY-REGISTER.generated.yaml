@@ -139,9 +139,6 @@ queries:
   - id: fulfillment.delivery.list
     moduleId: fulfillment
     permission: fulfillment.delivery.read
-  - id: human-resources.employee.org-context.resolve
-    moduleId: human-resources
-    permission: human-resources.employee.read
   - id: human-resources.person.get
     moduleId: human-resources
     permission: human-resources.person.read
@@ -172,6 +169,9 @@ queries:
   - id: human-resources.employee.profile.get
     moduleId: human-resources
     permission: human-resources.employee.read
+  - id: human-resources.employee.org-context.resolve
+    moduleId: human-resources
+    permission: human-resources.employee.read
   - id: human-resources.employment.get
     moduleId: human-resources
     permission: human-resources.employee.read
@@ -193,13 +193,28 @@ queries:
   - id: human-resources.employment-contract.list
     moduleId: human-resources
     permission: human-resources.employee.read
+  - id: human-resources.assignment.get
+    moduleId: human-resources
+    permission: human-resources.employee.read
+  - id: human-resources.assignment.as-of
+    moduleId: human-resources
+    permission: human-resources.employee.read
+  - id: human-resources.department.as-of
+    moduleId: human-resources
+    permission: human-resources.organization.read
   - id: human-resources.department.get
     moduleId: human-resources
     permission: human-resources.organization.read
   - id: human-resources.department.list
     moduleId: human-resources
     permission: human-resources.organization.read
-  - id: human-resources.department.as-of
+  - id: human-resources.organization.tree-as-of
+    moduleId: human-resources
+    permission: human-resources.organization.read
+  - id: human-resources.organization.tree
+    moduleId: human-resources
+    permission: human-resources.organization.read
+  - id: human-resources.job.as-of
     moduleId: human-resources
     permission: human-resources.organization.read
   - id: human-resources.job.get
@@ -208,7 +223,7 @@ queries:
   - id: human-resources.job.list
     moduleId: human-resources
     permission: human-resources.organization.read
-  - id: human-resources.job.as-of
+  - id: human-resources.position.as-of
     moduleId: human-resources
     permission: human-resources.organization.read
   - id: human-resources.position.get
@@ -217,28 +232,13 @@ queries:
   - id: human-resources.position.list
     moduleId: human-resources
     permission: human-resources.organization.read
-  - id: human-resources.position.as-of
-    moduleId: human-resources
-    permission: human-resources.organization.read
   - id: human-resources.position.occupancy-as-of
     moduleId: human-resources
     permission: human-resources.organization.read
-  - id: human-resources.assignment.get
-    moduleId: human-resources
-    permission: human-resources.employee.read
-  - id: human-resources.assignment.as-of
-    moduleId: human-resources
-    permission: human-resources.employee.read
   - id: human-resources.reporting-line.resolve-primary-manager
     moduleId: human-resources
     permission: human-resources.organization.read
   - id: human-resources.reporting-line.list-direct-reports
-    moduleId: human-resources
-    permission: human-resources.organization.read
-  - id: human-resources.organization.tree
-    moduleId: human-resources
-    permission: human-resources.organization.read
-  - id: human-resources.organization.tree-as-of
     moduleId: human-resources
     permission: human-resources.organization.read
   - id: human-resources.requisition.get

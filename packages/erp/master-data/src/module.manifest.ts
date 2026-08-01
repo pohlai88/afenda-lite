@@ -105,6 +105,7 @@ const MASTER_DATA_MUTATION_TABLES = [
 	"md_item_variant_attribute_value_option",
 	"md_change_request",
 	"md_import_batch",
+	"md_import_batch_row",
 ] as const;
 
 const ROOT_LIFECYCLE_COMMAND_PERMISSION: Partial<

@@ -6,17 +6,17 @@ import type {
 	HumanResourcesPositionId,
 	HumanResourcesWorkCalendarId,
 } from "../brands";
+import type { HumanResourcesEmploymentLifecycleStore } from "../employment-lifecycle/store";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
 	humanResourcesErrorDetails,
 } from "../error-codes";
 import type { HumanResourcesOrganizationDimensions } from "../ports";
-import type { HumanResourcesStore } from "../store";
 import { resolveEmployeeWorkCalendar } from "../time/employee-work-calendar-resolution";
 import type { AssignmentContextQueryPort } from "../time/handoff/ports";
 
 type AssignmentSnapshotStore = Pick<
-	HumanResourcesStore,
+	HumanResourcesEmploymentLifecycleStore,
 	"resolvePrimaryManager" | "getPositionById"
 >;
 

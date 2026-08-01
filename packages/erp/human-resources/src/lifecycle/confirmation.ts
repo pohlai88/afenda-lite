@@ -1,6 +1,10 @@
 import type { Result } from "@afenda/errors";
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
+	runEmploymentLifecycleCommand,
+	runEmploymentLifecycleQuery,
+} from "../employment-lifecycle/run-operation";
+import {
 	HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONFIRM,
 	HUMAN_RESOURCES_QUERY_EMPLOYMENT_CONFIRMATION_GET,
 } from "../module-ids";
@@ -9,10 +13,6 @@ import {
 	getEmploymentConfirmationInputSchema,
 } from "../schemas/lifecycle";
 import { fingerprintConfirmation } from "../shared/fingerprint";
-import {
-	runLifecycleCommand,
-	runLifecycleQuery,
-} from "../shared/lifecycle-command";
 import { buildMutationMeta } from "../shared/mutation-meta";
 import type { EmploymentConfirmation } from "../types";
 
@@ -24,10 +24,11 @@ export function confirmEmployment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmploymentConfirmation>> {
-	return runLifecycleCommand(input, options, {
+	return runEmploymentLifecycleCommand(input, options, {
 		schema: confirmEmploymentInputSchema,
 		invalidMessage: "Invalid confirm employment input",
 		command: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONFIRM,
+		storeMethods: ["confirmEmployment"],
 		execute: (data, { store, ports }) => {
 			const fingerprint = fingerprintConfirmation({
 				employmentId: data.employmentId,
@@ -57,10 +58,11 @@ export function getEmploymentConfirmation(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmploymentConfirmation | null>> {
-	return runLifecycleQuery(input, options, {
+	return runEmploymentLifecycleQuery(input, options, {
 		schema: getEmploymentConfirmationInputSchema,
 		invalidMessage: "Invalid get employment confirmation input",
 		query: HUMAN_RESOURCES_QUERY_EMPLOYMENT_CONFIRMATION_GET,
+		storeMethods: ["getEmploymentConfirmation"],
 		execute: (data, { store }) =>
 			store.getEmploymentConfirmation({
 				organizationId: data.organizationId,

@@ -6,10 +6,10 @@ export type HumanResourcesEmissionMode = "audit_only" | "domain_event";
 
 export type HumanResourcesDomain =
 	| "workforce-foundation"
+	| "employment-lifecycle"
 	| "core"
 	| "organization"
 	| "recruitment"
-	| "lifecycle"
 	| "leave"
 	| "time"
 	| "compensation-benefits"

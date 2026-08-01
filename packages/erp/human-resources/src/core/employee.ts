@@ -17,20 +17,24 @@ import {
 	listEmployeesInputSchema,
 	updateEmployeeInputSchema,
 } from "../schemas/core";
-import { runCoreCommand, runCoreQuery } from "../shared/core-command";
 import { normalizeEmployeeNumber } from "../shared/employee-number";
 import { fingerprintEmployeeCreate } from "../shared/fingerprint";
 import { buildMutationMeta } from "../shared/mutation-meta";
 import type { Employee, EmployeeListPage } from "../types";
+import {
+	runWorkforceFoundationCommand,
+	runWorkforceFoundationQuery,
+} from "../workforce-foundation/run-operation";
 
 export function createEmployee(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Employee>> {
-	return runCoreCommand(input, options, {
+	return runWorkforceFoundationCommand(input, options, {
 		schema: createEmployeeInputSchema,
 		invalidMessage: "Invalid employee create input",
 		command: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CREATE,
+		storeMethods: ["findEmployeeByIdempotencyKey", "createEmployee"],
 		execute: async (data, { store, ports }) => {
 			const numberResult = normalizeEmployeeNumber(data.employeeNumber);
 			if (!numberResult.ok) {
@@ -87,10 +91,11 @@ export function updateEmployee(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Employee>> {
-	return runCoreCommand(input, options, {
+	return runWorkforceFoundationCommand(input, options, {
 		schema: updateEmployeeInputSchema,
 		invalidMessage: "Invalid employee update input",
 		command: HUMAN_RESOURCES_COMMAND_EMPLOYEE_UPDATE,
+		storeMethods: ["updateEmployee"],
 		execute: async (data, { store, ports }) =>
 			store.updateEmployee(
 				{
@@ -113,10 +118,11 @@ export function getEmployeeById(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Employee>> {
-	return runCoreQuery(input, options, {
+	return runWorkforceFoundationQuery(input, options, {
 		schema: getEmployeeByIdInputSchema,
 		invalidMessage: "Invalid employee get input",
 		query: HUMAN_RESOURCES_QUERY_EMPLOYEE_GET,
+		storeMethods: ["getEmployeeById"],
 		execute: async (data, { store }) => {
 			const employee = await store.getEmployeeById({
 				organizationId: data.organizationId,
@@ -142,10 +148,11 @@ export function listEmployees(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeListPage>> {
-	return runCoreQuery(input, options, {
+	return runWorkforceFoundationQuery(input, options, {
 		schema: listEmployeesInputSchema,
 		invalidMessage: "Invalid employee list input",
 		query: HUMAN_RESOURCES_QUERY_EMPLOYEE_LIST,
+		storeMethods: ["listEmployees"],
 		execute: (data, { store }) => {
 			const page = data.page ?? 1;
 			const pageSize = data.pageSize ?? 20;

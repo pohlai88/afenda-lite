@@ -26,12 +26,9 @@ import {
 	updateDepartmentInputSchema,
 } from "../schemas/organization";
 import { buildMutationMeta } from "../shared/mutation-meta";
-import {
-	runOrganizationCommand,
-	runOrganizationQuery,
-} from "../shared/organization-command";
 import type { Department, OrganizationTreePage } from "../types";
 import type { DepartmentStructureAtAsOf } from "./organization-structure-lineage";
+import { runOrganizationCommand, runOrganizationQuery } from "./run-operation";
 
 export const HUMAN_RESOURCES_AGGREGATE_DEPARTMENT = "department" as const;
 export type HumanResourcesDepartmentAggregate =
@@ -45,6 +42,7 @@ export function createDepartment(
 		schema: createDepartmentInputSchema,
 		invalidMessage: "Invalid department create input",
 		command: HUMAN_RESOURCES_COMMAND_DEPARTMENT_CREATE,
+		storeMethods: ["createDepartment"],
 		execute: async (data, { store, ports }) =>
 			store.createDepartment(
 				{
@@ -72,6 +70,7 @@ export function updateDepartment(
 		schema: updateDepartmentInputSchema,
 		invalidMessage: "Invalid department update input",
 		command: HUMAN_RESOURCES_COMMAND_DEPARTMENT_UPDATE,
+		storeMethods: ["updateDepartment"],
 		execute: async (data, { store, ports }) =>
 			store.updateDepartment(
 				{
@@ -102,6 +101,7 @@ export function activateDepartment(
 		schema: departmentStatusTransitionInputSchema,
 		invalidMessage: "Invalid department activate input",
 		command: HUMAN_RESOURCES_COMMAND_DEPARTMENT_ACTIVATE,
+		storeMethods: ["setDepartmentStatus"],
 		execute: async (data, { store, ports }) =>
 			store.setDepartmentStatus(
 				{
@@ -128,6 +128,7 @@ export function archiveDepartment(
 		schema: departmentStatusTransitionInputSchema,
 		invalidMessage: "Invalid department archive input",
 		command: HUMAN_RESOURCES_COMMAND_DEPARTMENT_ARCHIVE,
+		storeMethods: ["setDepartmentStatus"],
 		execute: async (data, { store, ports }) =>
 			store.setDepartmentStatus(
 				{
@@ -154,6 +155,7 @@ export function getDepartment(
 		schema: getDepartmentInputSchema,
 		invalidMessage: "Invalid department get input",
 		query: HUMAN_RESOURCES_QUERY_DEPARTMENT_GET,
+		storeMethods: ["getDepartmentById"],
 		execute: async (data, { store }) => {
 			const department = await store.getDepartmentById({
 				organizationId: data.organizationId,
@@ -183,6 +185,7 @@ export function listDepartments(
 		schema: listDepartmentsInputSchema,
 		invalidMessage: "Invalid department list input",
 		query: HUMAN_RESOURCES_QUERY_DEPARTMENT_LIST,
+		storeMethods: ["listDepartments"],
 		execute: async (data, { store }) =>
 			store.listDepartments({
 				organizationId: data.organizationId,
@@ -202,6 +205,7 @@ export function getOrganizationTree(
 		schema: organizationTreeInputSchema,
 		invalidMessage: "Invalid organization tree input",
 		query: HUMAN_RESOURCES_QUERY_ORGANIZATION_TREE,
+		storeMethods: ["getOrganizationTree"],
 		execute: async (data, { store }) =>
 			store.getOrganizationTree({
 				organizationId: data.organizationId,
@@ -220,6 +224,7 @@ export function getDepartmentAsOf(
 		schema: getDepartmentAsOfInputSchema,
 		invalidMessage: "Invalid department as-of input",
 		query: HUMAN_RESOURCES_QUERY_DEPARTMENT_AS_OF,
+		storeMethods: ["findDepartmentAsOf"],
 		execute: async (data, { store }) => {
 			const department = await store.findDepartmentAsOf({
 				organizationId: data.organizationId,
@@ -250,6 +255,7 @@ export function getOrganizationTreeAsOf(
 		schema: organizationTreeAsOfInputSchema,
 		invalidMessage: "Invalid organization tree as-of input",
 		query: HUMAN_RESOURCES_QUERY_ORGANIZATION_TREE_AS_OF,
+		storeMethods: ["getOrganizationTreeAsOf"],
 		execute: async (data, { store }) =>
 			store.getOrganizationTreeAsOf({
 				organizationId: data.organizationId,

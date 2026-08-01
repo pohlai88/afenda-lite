@@ -1,0 +1,4 @@
+interface:
+  display_name: "Afenda Semantic Registry Cutover"
+  short_description: "Centralize package semantics behind one owner"
+  default_prompt: "Use $afenda-semantic-registry-cutover to centralize a duplicated package concept behind one canonical registry and stable facade."

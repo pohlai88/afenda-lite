@@ -2,7 +2,10 @@ import { errorResult, type Result } from "@afenda/errors";
 import type { HumanResourcesEmployeeId } from "../brands";
 import type { HumanResourcesCommandOptions } from "../command-options";
 import { resolveCommandDeps } from "../command-options";
-import { resolveEmployeeOrgContextForEmployment } from "../core/employee-org-context-resolution";
+import {
+	type EmployeeOrgContextResolutionStore,
+	resolveEmployeeOrgContextForEmployment,
+} from "../core/employee-org-context-resolution";
 import {
 	HUMAN_RESOURCES_ERROR_AUTHORIZATION_DENIED,
 	HUMAN_RESOURCES_ERROR_NOT_FOUND,
@@ -19,7 +22,8 @@ import {
 	authorizationDecisionToFailure,
 	resolveActorContextFromInput,
 } from "../shared/run-authorized-operation";
-import type { HumanResourcesStore } from "../store";
+import type { HumanResourcesCoreStore } from "../store/core";
+import type { HumanResourcesWorkforceFoundationOperationStore } from "../store/workforce-foundation";
 import type { Employment } from "../types";
 import {
 	employeeProfileQueryRequestedFields,
@@ -33,8 +37,22 @@ import type {
 	Worker,
 } from "./types";
 
+type EmployeeProfileStore = Pick<
+	HumanResourcesWorkforceFoundationOperationStore,
+	| "findWorkerByEmployeeId"
+	| "getEmployeeById"
+	| "getPersonById"
+	| "listPersonContacts"
+	| "listPersonIdentifiers"
+> &
+	Pick<
+		HumanResourcesCoreStore,
+		"findEmploymentByEmployeeAsOf" | "findOpenEmploymentByEmployee"
+	> &
+	EmployeeOrgContextResolutionStore;
+
 async function resolveOrganizationEntry(input: {
-	store: HumanResourcesStore;
+	store: EmployeeProfileStore;
 	organizationId: string;
 	employeeId: HumanResourcesEmployeeId;
 	employment: Employment;
@@ -89,7 +107,7 @@ interface PersonProfileDetails {
 }
 
 async function loadPersonProfileDetails(input: {
-	store: HumanResourcesStore;
+	store: EmployeeProfileStore;
 	organizationId: string;
 	personId: Worker["personId"];
 }): Promise<Result<PersonProfileDetails>> {
@@ -125,7 +143,7 @@ async function loadPersonProfileDetails(input: {
 }
 
 async function resolveProfileEmployment(input: {
-	store: HumanResourcesStore;
+	store: EmployeeProfileStore;
 	organizationId: string;
 	employeeId: HumanResourcesEmployeeId;
 	asOf: string;
@@ -145,7 +163,7 @@ async function resolveProfileEmployment(input: {
 }
 
 async function assembleEmployeeProfile(input: {
-	store: HumanResourcesStore;
+	store: EmployeeProfileStore;
 	organizationId: string;
 	employeeId: HumanResourcesEmployeeId;
 	asOf: string;

@@ -2,6 +2,11 @@ import { errorResult, type Result } from "@afenda/errors";
 import type { z } from "zod";
 import type { HumanResourcesCommandOptions } from "../command-options";
 import {
+	runEmploymentLifecycleCommand,
+	runEmploymentLifecycleQuery,
+} from "../employment-lifecycle/run-operation";
+import type { HumanResourcesEmploymentLifecycleStore } from "../employment-lifecycle/store";
+import {
 	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
 	HUMAN_RESOURCES_ERROR_NOT_FOUND,
 	humanResourcesErrorDetails,
@@ -22,7 +27,6 @@ import {
 	getEmploymentInputSchema,
 	listEmploymentStatusHistoryInputSchema,
 } from "../schemas/core";
-import { runCoreCommand, runCoreQuery } from "../shared/core-command";
 import {
 	rehireRequiresEndedEmployment,
 	resolveAmendEndsOn,
@@ -36,7 +40,6 @@ import {
 	assertNoEmploymentOverlap,
 } from "../shared/employment-status";
 import { buildMutationMeta } from "../shared/mutation-meta";
-import type { HumanResourcesCoreStore } from "../store/core";
 import type { Employment, EmploymentStatusHistory } from "../types";
 
 interface ValidatedEmploymentAmendment {
@@ -46,7 +49,10 @@ interface ValidatedEmploymentAmendment {
 }
 
 async function validateEmploymentAmendment(
-	store: HumanResourcesCoreStore,
+	store: Pick<
+		HumanResourcesEmploymentLifecycleStore,
+		"getEmploymentById" | "listEmploymentsByEmployee"
+	>,
 	data: z.output<typeof amendEmploymentInputSchema>,
 ): Promise<Result<ValidatedEmploymentAmendment>> {
 	const existing = await store.getEmploymentById({
@@ -122,10 +128,15 @@ export function createEmployment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Employment>> {
-	return runCoreCommand(input, options, {
+	return runEmploymentLifecycleCommand(input, options, {
 		schema: createEmploymentInputSchema,
 		invalidMessage: "Invalid employment create input",
 		command: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CREATE,
+		storeMethods: [
+			"findOpenEmploymentByEmployee",
+			"listEmploymentsByEmployee",
+			"createEmployment",
+		],
 		execute: async (data, { store, ports }) => {
 			const openEmployment = await store.findOpenEmploymentByEmployee({
 				organizationId: data.organizationId,
@@ -176,10 +187,15 @@ export function amendEmployment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Employment>> {
-	return runCoreCommand(input, options, {
+	return runEmploymentLifecycleCommand(input, options, {
 		schema: amendEmploymentInputSchema,
 		invalidMessage: "Invalid employment amend input",
 		command: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_AMEND,
+		storeMethods: [
+			"getEmploymentById",
+			"listEmploymentsByEmployee",
+			"amendEmployment",
+		],
 		execute: async (data, { store, ports }) => {
 			const amendment = await validateEmploymentAmendment(store, data);
 			if (!amendment.ok) {
@@ -215,10 +231,15 @@ export function correctEmployment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Employment>> {
-	return runCoreCommand(input, options, {
+	return runEmploymentLifecycleCommand(input, options, {
 		schema: correctEmploymentInputSchema,
 		invalidMessage: "Invalid employment correction input",
 		command: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CORRECT,
+		storeMethods: [
+			"getEmploymentById",
+			"listEmploymentsByEmployee",
+			"correctEmployment",
+		],
 		execute: async (data, { store, ports }) => {
 			const existing = await store.getEmploymentById({
 				organizationId: data.organizationId,
@@ -293,10 +314,11 @@ export function getEmployment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Employment>> {
-	return runCoreQuery(input, options, {
+	return runEmploymentLifecycleQuery(input, options, {
 		schema: getEmploymentInputSchema,
 		invalidMessage: "Invalid employment get input",
 		query: HUMAN_RESOURCES_QUERY_EMPLOYMENT_GET,
+		storeMethods: ["getEmploymentById"],
 		execute: async (data, { store }) => {
 			const employment = await store.getEmploymentById({
 				organizationId: data.organizationId,
@@ -322,10 +344,11 @@ export function getEmploymentAsOf(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Employment | null>> {
-	return runCoreQuery(input, options, {
+	return runEmploymentLifecycleQuery(input, options, {
 		schema: getEmploymentAsOfInputSchema,
 		invalidMessage: "Invalid employment as-of input",
 		query: HUMAN_RESOURCES_QUERY_EMPLOYMENT_AS_OF,
+		storeMethods: ["findEmploymentByEmployeeAsOf"],
 		execute: async (data, { store }) =>
 			store.findEmploymentByEmployeeAsOf({
 				organizationId: data.organizationId,
@@ -344,10 +367,11 @@ export function listEmploymentStatusHistory(
 		statusAsOf: ReturnType<typeof resolveEmploymentStatusAsOf> | null;
 	}>
 > {
-	return runCoreQuery(input, options, {
+	return runEmploymentLifecycleQuery(input, options, {
 		schema: listEmploymentStatusHistoryInputSchema,
 		invalidMessage: "Invalid employment status history input",
 		query: HUMAN_RESOURCES_QUERY_EMPLOYMENT_STATUS_HISTORY_LIST,
+		storeMethods: ["listEmploymentStatusHistory"],
 		execute: async (data, { store }) => {
 			const history = await store.listEmploymentStatusHistory({
 				organizationId: data.organizationId,

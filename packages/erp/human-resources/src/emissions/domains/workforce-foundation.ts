@@ -1,4 +1,5 @@
 import {
+	HUMAN_RESOURCES_EMPLOYEE_CREATED_EVENT,
 	HUMAN_RESOURCES_PERSON_CHANGED_EVENT,
 	HUMAN_RESOURCES_PERSON_CONTACT_ADDED_EVENT,
 	HUMAN_RESOURCES_PERSON_CONTACT_CHANGED_EVENT,
@@ -11,6 +12,8 @@ import {
 } from "@afenda/events/schemas";
 
 import {
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CREATE,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_UPDATE,
 	HUMAN_RESOURCES_COMMAND_PERSON_CONTACT_ADD,
 	HUMAN_RESOURCES_COMMAND_PERSON_CONTACT_RETIRE,
 	HUMAN_RESOURCES_COMMAND_PERSON_CONTACT_UPDATE,
@@ -26,7 +29,10 @@ import {
 	type HumanResourcesWorkforceFoundationCommandId,
 } from "../../module-ids";
 
-import { defineDomainEventEmission } from "../define-emission";
+import {
+	defineAuditOnlyEmission,
+	defineDomainEventEmission,
+} from "../define-emission";
 import type { HumanResourcesMutationEmissionDefinition } from "../types";
 
 export const HUMAN_RESOURCES_WORKFORCE_FOUNDATION_EMISSIONS = {
@@ -126,6 +132,21 @@ export const HUMAN_RESOURCES_WORKFORCE_FOUNDATION_EMISSIONS = {
 			domain: "workforce-foundation",
 			aggregateType: "worker",
 			eventTypes: [HUMAN_RESOURCES_WORKER_CHANGED_EVENT] as const,
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_EMPLOYEE_CREATE]: defineDomainEventEmission(
+		HUMAN_RESOURCES_COMMAND_EMPLOYEE_CREATE,
+		{
+			domain: "workforce-foundation",
+			aggregateType: "employee",
+			eventTypes: [HUMAN_RESOURCES_EMPLOYEE_CREATED_EVENT] as const,
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_EMPLOYEE_UPDATE]: defineAuditOnlyEmission(
+		HUMAN_RESOURCES_COMMAND_EMPLOYEE_UPDATE,
+		{
+			domain: "workforce-foundation",
+			aggregateType: "employee",
 		},
 	),
 } satisfies Record<

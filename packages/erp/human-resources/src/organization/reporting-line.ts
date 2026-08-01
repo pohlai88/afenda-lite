@@ -15,11 +15,8 @@ import {
 	resolvePrimaryManagerInputSchema,
 } from "../schemas/organization";
 import { buildMutationMeta } from "../shared/mutation-meta";
-import {
-	runOrganizationCommand,
-	runOrganizationQuery,
-} from "../shared/organization-command";
 import type { ReportingLine } from "../types";
+import { runOrganizationCommand, runOrganizationQuery } from "./run-operation";
 
 export const HUMAN_RESOURCES_AGGREGATE_REPORTING_LINE =
 	"reporting-line" as const;
@@ -34,6 +31,7 @@ export function assignPrimaryReportingLine(
 		schema: assignPrimaryReportingLineInputSchema,
 		invalidMessage: "Invalid primary reporting line assign input",
 		command: HUMAN_RESOURCES_COMMAND_REPORTING_LINE_ASSIGN_PRIMARY,
+		storeMethods: ["assignPrimaryReportingLine"],
 		execute: async (data, { store, ports }) =>
 			store.assignPrimaryReportingLine(
 				{
@@ -61,6 +59,7 @@ export function closeReportingLine(
 		schema: closeReportingLineInputSchema,
 		invalidMessage: "Invalid reporting line close input",
 		command: HUMAN_RESOURCES_COMMAND_REPORTING_LINE_CLOSE,
+		storeMethods: ["closeReportingLine"],
 		execute: async (data, { store, ports }) =>
 			store.closeReportingLine(
 				{
@@ -87,6 +86,7 @@ export function replacePrimaryReportingLine(
 		schema: replacePrimaryReportingLineInputSchema,
 		invalidMessage: "Invalid primary reporting line replace input",
 		command: HUMAN_RESOURCES_COMMAND_REPORTING_LINE_REPLACE_PRIMARY,
+		storeMethods: ["replacePrimaryReportingLine"],
 		execute: (data, { store, ports }) => {
 			const closePriorOn = data.closePriorOn ?? data.startsOn;
 			return store.replacePrimaryReportingLine(
@@ -117,6 +117,7 @@ export function resolvePrimaryManager(
 		schema: resolvePrimaryManagerInputSchema,
 		invalidMessage: "Invalid resolve primary manager input",
 		query: HUMAN_RESOURCES_QUERY_REPORTING_LINE_RESOLVE_PRIMARY_MANAGER,
+		storeMethods: ["resolvePrimaryManager"],
 		execute: (data, { store }) => {
 			const asOf = data.asOf ?? new Date().toISOString().slice(0, 10);
 			return store.resolvePrimaryManager({
@@ -136,6 +137,7 @@ export function listDirectReports(
 		schema: listDirectReportsInputSchema,
 		invalidMessage: "Invalid list direct reports input",
 		query: HUMAN_RESOURCES_QUERY_REPORTING_LINE_LIST_DIRECT_REPORTS,
+		storeMethods: ["listDirectReports"],
 		execute: (data, { store }) => {
 			const asOf = data.asOf ?? new Date().toISOString().slice(0, 10);
 			return store.listDirectReports({
