@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+import { audit as afendaAudit } from "@afenda/audit";
 import {
 	database as afendaDatabase,
 	and,
@@ -25,6 +27,10 @@ import type { MutationPorts } from "../../ports";
 import { payrollJsonObjectSchema } from "../../schemas/common";
 import { assertExpectedVersion } from "../../shared/concurrency";
 import {
+	endSupersededEffectiveRange,
+	isValidEffectiveDateRange,
+} from "../../shared/effective-date";
+import {
 	isPostgresUniqueViolation,
 	mapConflict,
 	mapInvalidState,
@@ -32,6 +38,10 @@ import {
 	mapPersistenceFailure,
 } from "../../shared/persistence-errors";
 import { assertRuleNotLockedByFinalizedRun } from "../../shared/setup-rule-guards";
+import {
+	assertValidPayrollAmountRateRuleConfiguration,
+	assertValidRuleSuccessorDate,
+} from "../../shared/setup-rule-policy";
 import type { PayrollSetupStore } from "../../store/setup";
 import type {
 	PayrollCalendar,
@@ -763,42 +773,66 @@ export function createDrizzleSetupExtendedMethods(
 			if (current.data.status !== "active") {
 				return mapInvalidState("Only active earning rules can be updated");
 			}
+			const amount =
+				ruleInput.amount === undefined ? current.data.amount : ruleInput.amount;
+			const rate =
+				ruleInput.rate === undefined ? current.data.rate : ruleInput.rate;
+			const name = ruleInput.name ?? current.data.name;
+			const effectiveTo =
+				ruleInput.effectiveTo === undefined
+					? current.data.effectiveTo
+					: ruleInput.effectiveTo;
+			const configuration = assertValidPayrollAmountRateRuleConfiguration({
+				ruleType: current.data.ruleType,
+				amount,
+				rate,
+			});
+			if (!configuration.ok) {
+				return configuration;
+			}
+			if (
+				!isValidEffectiveDateRange({
+					effectiveFrom: current.data.effectiveFrom,
+					effectiveTo,
+				})
+			) {
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "effectiveTo must be on or after effectiveFrom",
+				});
+			}
 
 			try {
-				const rows = await afendaDatabase.client
-					.update(payrollEarningRule)
-					.set({
-						name: ruleInput.name ?? current.data.name,
-						amount:
-							ruleInput.amount === undefined
-								? current.data.amount
-								: ruleInput.amount,
-						rate:
-							ruleInput.rate === undefined ? current.data.rate : ruleInput.rate,
-						effectiveTo:
-							ruleInput.effectiveTo === undefined
-								? current.data.effectiveTo
-								: ruleInput.effectiveTo,
-						version: current.data.version + 1,
-						updatedBy: ruleInput.actorUserId,
-						updatedAt: new Date(),
-					})
-					.where(
-						and(
-							eq(payrollEarningRule.organizationId, ruleInput.organizationId),
-							eq(payrollEarningRule.id, ruleInput.ruleId),
-							eq(payrollEarningRule.version, ruleInput.expectedVersion),
-						),
-					)
-					.returning();
-				const [row] = rows;
-				if (row === undefined) {
-					return mapConflict("Payroll earning rule version is stale");
+				const [, rows] = await afendaDatabase.transaction((sqlValue) => [
+					sqlValue`SELECT pg_advisory_xact_lock(hashtextextended(${ruleInput.organizationId}::text || ':earning:' || ${ruleInput.ruleId}::uuid::text, 0))`,
+					sqlValue`
+						UPDATE payroll_earning_rule
+						SET name = ${name}, amount = ${amount},
+							rate = ${rate}, effective_to = ${effectiveTo},
+							version = version + 1, updated_by = ${ruleInput.actorUserId},
+							updated_at = NOW()
+						WHERE organization_id = ${ruleInput.organizationId}
+							AND id = ${ruleInput.ruleId} AND version = ${ruleInput.expectedVersion}
+							AND status = 'active'
+							AND NOT EXISTS (
+								SELECT 1 FROM payroll_rule_finalized_usage
+								WHERE organization_id = ${ruleInput.organizationId}
+									AND rule_kind = 'earning' AND rule_id = ${ruleInput.ruleId}
+							)
+						RETURNING id
+					`,
+				]);
+				if (rows.length === 0) {
+					return mapConflict("Payroll earning rule is stale or finalized");
 				}
-
-				const mapped = mapEarningRuleRow(row);
-				if (!mapped.ok) {
-					return mapped;
+				const updated = await this.getEarningRule({
+					organizationId: ruleInput.organizationId,
+					ruleId: ruleInput.ruleId,
+				});
+				if (!updated.ok) {
+					return updated;
+				}
+				if (updated.data === null) {
+					return errorResult.fail("INTERNAL_ERROR");
 				}
 
 				const audit = await recordAudit(ports, {
@@ -806,14 +840,14 @@ export function createDrizzleSetupExtendedMethods(
 					actorUserId: ruleInput.actorUserId,
 					correlationId: ruleInput.correlationId,
 					entity: "payroll_earning_rule",
-					entityId: mapped.data.id,
+					entityId: updated.data.id,
 					action: "UPDATE",
 				});
 				if (!audit.ok) {
 					return audit;
 				}
 
-				return mapped;
+				return errorResult.ok(updated.data);
 			} catch (error) {
 				return mapPersistenceFailure(
 					error,
@@ -855,30 +889,34 @@ export function createDrizzleSetupExtendedMethods(
 			}
 
 			try {
-				const rows = await afendaDatabase.client
-					.update(payrollEarningRule)
-					.set({
-						status: "archived",
-						version: current.data.version + 1,
-						updatedBy: ruleInput.actorUserId,
-						updatedAt: new Date(),
-					})
-					.where(
-						and(
-							eq(payrollEarningRule.organizationId, ruleInput.organizationId),
-							eq(payrollEarningRule.id, ruleInput.ruleId),
-							eq(payrollEarningRule.version, ruleInput.expectedVersion),
-						),
-					)
-					.returning();
-				const [row] = rows;
-				if (row === undefined) {
-					return mapConflict("Payroll earning rule version is stale");
+				const [, rows] = await afendaDatabase.transaction((sqlValue) => [
+					sqlValue`SELECT pg_advisory_xact_lock(hashtextextended(${ruleInput.organizationId}::text || ':earning:' || ${ruleInput.ruleId}::uuid::text, 0))`,
+					sqlValue`
+						UPDATE payroll_earning_rule
+						SET status = 'archived', version = version + 1,
+							updated_by = ${ruleInput.actorUserId}, updated_at = NOW()
+						WHERE organization_id = ${ruleInput.organizationId}
+							AND id = ${ruleInput.ruleId} AND version = ${ruleInput.expectedVersion}
+							AND NOT EXISTS (
+								SELECT 1 FROM payroll_rule_finalized_usage
+								WHERE organization_id = ${ruleInput.organizationId}
+									AND rule_kind = 'earning' AND rule_id = ${ruleInput.ruleId}
+							)
+						RETURNING id
+					`,
+				]);
+				if (rows.length === 0) {
+					return mapConflict("Payroll earning rule is stale or finalized");
 				}
-
-				const mapped = mapEarningRuleRow(row);
-				if (!mapped.ok) {
-					return mapped;
+				const updated = await this.getEarningRule({
+					organizationId: ruleInput.organizationId,
+					ruleId: ruleInput.ruleId,
+				});
+				if (!updated.ok) {
+					return updated;
+				}
+				if (updated.data === null) {
+					return errorResult.fail("INTERNAL_ERROR");
 				}
 
 				const audit = await recordAudit(ports, {
@@ -886,14 +924,14 @@ export function createDrizzleSetupExtendedMethods(
 					actorUserId: ruleInput.actorUserId,
 					correlationId: ruleInput.correlationId,
 					entity: "payroll_earning_rule",
-					entityId: mapped.data.id,
+					entityId: updated.data.id,
 					action: "UPDATE",
 				});
 				if (!audit.ok) {
 					return audit;
 				}
 
-				return mapped;
+				return errorResult.ok(updated.data);
 			} catch (error) {
 				return mapPersistenceFailure(
 					error,
@@ -902,8 +940,8 @@ export function createDrizzleSetupExtendedMethods(
 			}
 		},
 
-		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Rule supersession coordinates a lock check, version guard, successor create, and compensating restore.
-		async supersedeEarningRule(record, ports) {
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Rule supersession validates the semantic transition before one atomic persistence statement.
+		async supersedeEarningRule(record, _ports) {
 			const locked = await assertRuleNotLockedByFinalizedRun(ruleLockStore, {
 				organizationId: record.organizationId,
 				ruleKind: "earning",
@@ -935,90 +973,153 @@ export function createDrizzleSetupExtendedMethods(
 			if (existing.status !== "active") {
 				return mapInvalidState("Only active earning rules can be superseded");
 			}
+			const successorDate = assertValidRuleSuccessorDate({
+				currentEffectiveFrom: existing.effectiveFrom,
+				successorEffectiveFrom: record.effectiveFrom,
+			});
+			if (!successorDate.ok) {
+				return successorDate;
+			}
+			const successorConfiguration =
+				assertValidPayrollAmountRateRuleConfiguration({
+					ruleType: record.ruleType ?? existing.ruleType,
+					amount: record.amount === undefined ? existing.amount : record.amount,
+					rate: record.rate === undefined ? existing.rate : record.rate,
+				});
+			if (!successorConfiguration.ok) {
+				return successorConfiguration;
+			}
 
-			let supersededRow: typeof payrollEarningRule.$inferSelect | undefined;
+			const successorId = parsePayrollEarningRuleId(randomUUID());
+			if (!successorId.ok) {
+				return successorId;
+			}
+			const predecessorAudit = afendaAudit.transaction.prepare({
+				organizationId: record.organizationId,
+				actorUserId: record.createdBy,
+				correlationId: record.correlationId,
+				module: "payroll",
+				entity: "payroll_earning_rule",
+				entityId: record.ruleId,
+				action: "UPDATE",
+				oldValue: { status: existing.status, version: existing.version },
+				newValue: { status: "superseded", successorId: successorId.data },
+			});
+			if (!predecessorAudit.ok) {
+				return predecessorAudit;
+			}
+			const successorAudit = afendaAudit.transaction.prepare({
+				organizationId: record.organizationId,
+				actorUserId: record.createdBy,
+				correlationId: record.correlationId,
+				module: "payroll",
+				entity: "payroll_earning_rule",
+				entityId: successorId.data,
+				action: "CREATE",
+				newValue: { status: "active", predecessorId: record.ruleId },
+			});
+			if (!successorAudit.ok) {
+				return successorAudit;
+			}
+			const oldAudit = predecessorAudit.data;
+			const newAudit = successorAudit.data;
 			try {
-				const rows = await afendaDatabase.client
-					.update(payrollEarningRule)
-					.set({
-						status: "superseded",
-						version: existing.version + 1,
-						updatedBy: record.createdBy,
-						updatedAt: new Date(),
-					})
-					.where(
-						and(
-							eq(payrollEarningRule.organizationId, record.organizationId),
-							eq(payrollEarningRule.id, record.ruleId),
-							eq(payrollEarningRule.version, record.expectedVersion),
-						),
-					)
-					.returning();
-				[supersededRow] = rows;
-				if (supersededRow === undefined) {
-					return mapConflict("Payroll earning rule version is stale");
+				const [, rows] = await afendaDatabase.transaction((sqlValue) => [
+					sqlValue`SELECT pg_advisory_xact_lock(hashtextextended(${record.organizationId}::text || ':earning:' || ${record.ruleId}::uuid::text, 0))`,
+					sqlValue`
+						WITH superseded AS (
+							UPDATE payroll_earning_rule
+							SET status = 'superseded',
+								effective_to = ${endSupersededEffectiveRange(existing.effectiveTo, record.effectiveFrom)},
+								version = version + 1, updated_by = ${record.createdBy}, updated_at = NOW()
+							WHERE organization_id = ${record.organizationId}
+								AND id = ${record.ruleId} AND version = ${record.expectedVersion}
+								AND status = 'active'
+								AND NOT EXISTS (
+									SELECT 1 FROM payroll_rule_finalized_usage
+									WHERE organization_id = ${record.organizationId}
+										AND rule_kind = 'earning' AND rule_id = ${record.ruleId}
+								)
+							RETURNING id
+						), successor AS (
+							INSERT INTO payroll_earning_rule (
+								id, organization_id, pay_group_id, code, name, rule_type,
+								amount, rate, currency_code, rule_version, status,
+								effective_from, effective_to, create_idempotency_key,
+								create_request_fingerprint, version, created_by, updated_by
+							)
+							SELECT ${successorId.data}, ${record.organizationId}, ${existing.payGroupId},
+								${existing.code}, ${record.name ?? existing.name},
+								${record.ruleType ?? existing.ruleType},
+								${record.amount === undefined ? existing.amount : record.amount},
+								${record.rate === undefined ? existing.rate : record.rate},
+								${record.currencyCode ?? existing.currencyCode}, ${record.ruleVersion},
+								'active', ${record.effectiveFrom}, ${record.effectiveTo ?? null},
+								${record.idempotencyKey}, ${record.createRequestFingerprint}, 1,
+								${record.createdBy}, ${record.createdBy}
+							FROM superseded RETURNING id
+						), predecessor_audited AS (
+							INSERT INTO platform_audit_log (
+								id, organization_id, actor_user_id, correlation_id, module,
+								entity, entity_id, action, changes, old_value, new_value,
+								metadata, ip_address, user_agent
+							)
+							SELECT ${randomUUID()}, ${oldAudit.organizationId}, ${oldAudit.actorUserId},
+								${oldAudit.correlationId}, ${oldAudit.module}, ${oldAudit.entity},
+								${oldAudit.entityId}, ${oldAudit.action}, ${oldAudit.changesJson}::jsonb,
+								${oldAudit.oldValueJson}::jsonb, ${oldAudit.newValueJson}::jsonb,
+								${oldAudit.metadataJson}::jsonb, ${oldAudit.ipAddress}, ${oldAudit.userAgent}
+							FROM successor
+							RETURNING id
+						), successor_audited AS (
+							INSERT INTO platform_audit_log (
+								id, organization_id, actor_user_id, correlation_id, module,
+								entity, entity_id, action, changes, old_value, new_value,
+								metadata, ip_address, user_agent
+							)
+							SELECT ${randomUUID()}, ${newAudit.organizationId}, ${newAudit.actorUserId},
+								${newAudit.correlationId}, ${newAudit.module}, ${newAudit.entity},
+								${newAudit.entityId}, ${newAudit.action}, ${newAudit.changesJson}::jsonb,
+								${newAudit.oldValueJson}::jsonb, ${newAudit.newValueJson}::jsonb,
+								${newAudit.metadataJson}::jsonb, ${newAudit.ipAddress}, ${newAudit.userAgent}
+							FROM successor
+							RETURNING id
+						)
+						SELECT superseded.id AS superseded_id, successor.id AS successor_id
+						FROM superseded CROSS JOIN successor
+							CROSS JOIN predecessor_audited CROSS JOIN successor_audited
+					`,
+				]);
+				if (rows.length === 0) {
+					return mapConflict("Payroll earning rule is stale or finalized");
 				}
+				const superseded = await this.getEarningRule({
+					organizationId: record.organizationId,
+					ruleId: record.ruleId,
+				});
+				const successor = await this.getEarningRule({
+					organizationId: record.organizationId,
+					ruleId: successorId.data,
+				});
+				if (!superseded.ok) {
+					return superseded;
+				}
+				if (!successor.ok) {
+					return successor;
+				}
+				if (superseded.data === null || successor.data === null) {
+					return errorResult.fail("INTERNAL_ERROR");
+				}
+				return errorResult.ok({
+					superseded: superseded.data,
+					successor: successor.data,
+				} satisfies PayrollRuleSupersedeResult<PayrollEarningRule>);
 			} catch (error) {
 				return mapPersistenceFailure(
 					error,
 					"Failed to supersede payroll earning rule",
 				);
 			}
-
-			const supersededMapped = mapEarningRuleRow(supersededRow);
-			if (!supersededMapped.ok) {
-				return supersededMapped;
-			}
-
-			const successorResult = await host.createEarningRule(
-				{
-					organizationId: record.organizationId,
-					payGroupId: existing.payGroupId,
-					code: existing.code,
-					name: record.name ?? existing.name,
-					ruleType: record.ruleType ?? existing.ruleType,
-					amount: record.amount === undefined ? existing.amount : record.amount,
-					rate: record.rate === undefined ? existing.rate : record.rate,
-					currencyCode: record.currencyCode ?? existing.currencyCode,
-					ruleVersion: record.ruleVersion,
-					effectiveFrom: record.effectiveFrom,
-					effectiveTo: record.effectiveTo ?? null,
-					idempotencyKey: record.idempotencyKey,
-					createRequestFingerprint: record.createRequestFingerprint,
-					createdBy: record.createdBy,
-					correlationId: record.correlationId,
-				},
-				ports,
-			);
-			if (!successorResult.ok) {
-				try {
-					await afendaDatabase.client
-						.update(payrollEarningRule)
-						.set({
-							status: existing.status,
-							version: existing.version,
-							updatedBy: existing.updatedBy,
-							updatedAt: existing.updatedAt,
-						})
-						.where(
-							and(
-								eq(payrollEarningRule.organizationId, record.organizationId),
-								eq(payrollEarningRule.id, record.ruleId),
-							),
-						);
-				} catch {
-					return mapPersistenceFailure(
-						new Error("Supersede rollback failed"),
-						"Failed to roll back superseded payroll earning rule",
-					);
-				}
-				return successorResult;
-			}
-
-			return errorResult.ok({
-				superseded: supersededMapped.data,
-				successor: successorResult.data,
-			} satisfies PayrollRuleSupersedeResult<PayrollEarningRule>);
 		},
 
 		async getDeductionRule(getInput) {
@@ -1078,46 +1179,67 @@ export function createDrizzleSetupExtendedMethods(
 			if (current.data.status !== "active") {
 				return mapInvalidState("Only active deduction rules can be updated");
 			}
+			const amount =
+				ruleInput.amount === undefined ? current.data.amount : ruleInput.amount;
+			const rate =
+				ruleInput.rate === undefined ? current.data.rate : ruleInput.rate;
+			const name = ruleInput.name ?? current.data.name;
+			const taxTiming = ruleInput.taxTiming ?? current.data.taxTiming;
+			const effectiveTo =
+				ruleInput.effectiveTo === undefined
+					? current.data.effectiveTo
+					: ruleInput.effectiveTo;
+			const configuration = assertValidPayrollAmountRateRuleConfiguration({
+				ruleType: current.data.ruleType,
+				amount,
+				rate,
+			});
+			if (!configuration.ok) {
+				return configuration;
+			}
+			if (
+				!isValidEffectiveDateRange({
+					effectiveFrom: current.data.effectiveFrom,
+					effectiveTo,
+				})
+			) {
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "effectiveTo must be on or after effectiveFrom",
+				});
+			}
 
 			try {
-				const rows = await afendaDatabase.client
-					.update(payrollDeductionRule)
-					.set({
-						name: ruleInput.name ?? current.data.name,
-						amount:
-							ruleInput.amount === undefined
-								? current.data.amount
-								: ruleInput.amount,
-						rate:
-							ruleInput.rate === undefined ? current.data.rate : ruleInput.rate,
-						taxTiming:
-							ruleInput.taxTiming === undefined
-								? current.data.taxTiming
-								: ruleInput.taxTiming,
-						effectiveTo:
-							ruleInput.effectiveTo === undefined
-								? current.data.effectiveTo
-								: ruleInput.effectiveTo,
-						version: current.data.version + 1,
-						updatedBy: ruleInput.actorUserId,
-						updatedAt: new Date(),
-					})
-					.where(
-						and(
-							eq(payrollDeductionRule.organizationId, ruleInput.organizationId),
-							eq(payrollDeductionRule.id, ruleInput.ruleId),
-							eq(payrollDeductionRule.version, ruleInput.expectedVersion),
-						),
-					)
-					.returning();
-				const [row] = rows;
-				if (row === undefined) {
-					return mapConflict("Payroll deduction rule version is stale");
+				const [, rows] = await afendaDatabase.transaction((sqlValue) => [
+					sqlValue`SELECT pg_advisory_xact_lock(hashtextextended(${ruleInput.organizationId}::text || ':deduction:' || ${ruleInput.ruleId}::uuid::text, 0))`,
+					sqlValue`
+						UPDATE payroll_deduction_rule
+						SET name = ${name}, amount = ${amount},
+							rate = ${rate}, tax_timing = ${taxTiming},
+							effective_to = ${effectiveTo}, version = version + 1,
+							updated_by = ${ruleInput.actorUserId}, updated_at = NOW()
+						WHERE organization_id = ${ruleInput.organizationId}
+							AND id = ${ruleInput.ruleId} AND version = ${ruleInput.expectedVersion}
+							AND status = 'active'
+							AND NOT EXISTS (
+								SELECT 1 FROM payroll_rule_finalized_usage
+								WHERE organization_id = ${ruleInput.organizationId}
+									AND rule_kind = 'deduction' AND rule_id = ${ruleInput.ruleId}
+							)
+						RETURNING id
+					`,
+				]);
+				if (rows.length === 0) {
+					return mapConflict("Payroll deduction rule is stale or finalized");
 				}
-
-				const mapped = mapDeductionRuleRow(row);
-				if (!mapped.ok) {
-					return mapped;
+				const updated = await this.getDeductionRule({
+					organizationId: ruleInput.organizationId,
+					ruleId: ruleInput.ruleId,
+				});
+				if (!updated.ok) {
+					return updated;
+				}
+				if (updated.data === null) {
+					return errorResult.fail("INTERNAL_ERROR");
 				}
 
 				const audit = await recordAudit(ports, {
@@ -1125,14 +1247,14 @@ export function createDrizzleSetupExtendedMethods(
 					actorUserId: ruleInput.actorUserId,
 					correlationId: ruleInput.correlationId,
 					entity: "payroll_deduction_rule",
-					entityId: mapped.data.id,
+					entityId: updated.data.id,
 					action: "UPDATE",
 				});
 				if (!audit.ok) {
 					return audit;
 				}
 
-				return mapped;
+				return errorResult.ok(updated.data);
 			} catch (error) {
 				return mapPersistenceFailure(
 					error,
@@ -1174,30 +1296,34 @@ export function createDrizzleSetupExtendedMethods(
 			}
 
 			try {
-				const rows = await afendaDatabase.client
-					.update(payrollDeductionRule)
-					.set({
-						status: "archived",
-						version: current.data.version + 1,
-						updatedBy: ruleInput.actorUserId,
-						updatedAt: new Date(),
-					})
-					.where(
-						and(
-							eq(payrollDeductionRule.organizationId, ruleInput.organizationId),
-							eq(payrollDeductionRule.id, ruleInput.ruleId),
-							eq(payrollDeductionRule.version, ruleInput.expectedVersion),
-						),
-					)
-					.returning();
-				const [row] = rows;
-				if (row === undefined) {
-					return mapConflict("Payroll deduction rule version is stale");
+				const [, rows] = await afendaDatabase.transaction((sqlValue) => [
+					sqlValue`SELECT pg_advisory_xact_lock(hashtextextended(${ruleInput.organizationId}::text || ':deduction:' || ${ruleInput.ruleId}::uuid::text, 0))`,
+					sqlValue`
+						UPDATE payroll_deduction_rule
+						SET status = 'archived', version = version + 1,
+							updated_by = ${ruleInput.actorUserId}, updated_at = NOW()
+						WHERE organization_id = ${ruleInput.organizationId}
+							AND id = ${ruleInput.ruleId} AND version = ${ruleInput.expectedVersion}
+							AND NOT EXISTS (
+								SELECT 1 FROM payroll_rule_finalized_usage
+								WHERE organization_id = ${ruleInput.organizationId}
+									AND rule_kind = 'deduction' AND rule_id = ${ruleInput.ruleId}
+							)
+						RETURNING id
+					`,
+				]);
+				if (rows.length === 0) {
+					return mapConflict("Payroll deduction rule is stale or finalized");
 				}
-
-				const mapped = mapDeductionRuleRow(row);
-				if (!mapped.ok) {
-					return mapped;
+				const updated = await this.getDeductionRule({
+					organizationId: ruleInput.organizationId,
+					ruleId: ruleInput.ruleId,
+				});
+				if (!updated.ok) {
+					return updated;
+				}
+				if (updated.data === null) {
+					return errorResult.fail("INTERNAL_ERROR");
 				}
 
 				const audit = await recordAudit(ports, {
@@ -1205,14 +1331,14 @@ export function createDrizzleSetupExtendedMethods(
 					actorUserId: ruleInput.actorUserId,
 					correlationId: ruleInput.correlationId,
 					entity: "payroll_deduction_rule",
-					entityId: mapped.data.id,
+					entityId: updated.data.id,
 					action: "UPDATE",
 				});
 				if (!audit.ok) {
 					return audit;
 				}
 
-				return mapped;
+				return errorResult.ok(updated.data);
 			} catch (error) {
 				return mapPersistenceFailure(
 					error,
@@ -1221,8 +1347,8 @@ export function createDrizzleSetupExtendedMethods(
 			}
 		},
 
-		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Rule supersession coordinates a lock check, version guard, successor create, and compensating restore.
-		async supersedeDeductionRule(record, ports) {
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Rule supersession validates the semantic transition before one atomic persistence statement.
+		async supersedeDeductionRule(record, _ports) {
 			const locked = await assertRuleNotLockedByFinalizedRun(ruleLockStore, {
 				organizationId: record.organizationId,
 				ruleKind: "deduction",
@@ -1254,91 +1380,152 @@ export function createDrizzleSetupExtendedMethods(
 			if (existing.status !== "active") {
 				return mapInvalidState("Only active deduction rules can be superseded");
 			}
+			const successorDate = assertValidRuleSuccessorDate({
+				currentEffectiveFrom: existing.effectiveFrom,
+				successorEffectiveFrom: record.effectiveFrom,
+			});
+			if (!successorDate.ok) {
+				return successorDate;
+			}
+			const successorConfiguration =
+				assertValidPayrollAmountRateRuleConfiguration({
+					ruleType: record.ruleType ?? existing.ruleType,
+					amount: record.amount === undefined ? existing.amount : record.amount,
+					rate: record.rate === undefined ? existing.rate : record.rate,
+				});
+			if (!successorConfiguration.ok) {
+				return successorConfiguration;
+			}
 
-			let supersededRow: typeof payrollDeductionRule.$inferSelect | undefined;
+			const successorId = parsePayrollDeductionRuleId(randomUUID());
+			if (!successorId.ok) {
+				return successorId;
+			}
+			const predecessorAudit = afendaAudit.transaction.prepare({
+				organizationId: record.organizationId,
+				actorUserId: record.createdBy,
+				correlationId: record.correlationId,
+				module: "payroll",
+				entity: "payroll_deduction_rule",
+				entityId: record.ruleId,
+				action: "UPDATE",
+				oldValue: { status: existing.status, version: existing.version },
+				newValue: { status: "superseded", successorId: successorId.data },
+			});
+			if (!predecessorAudit.ok) {
+				return predecessorAudit;
+			}
+			const successorAudit = afendaAudit.transaction.prepare({
+				organizationId: record.organizationId,
+				actorUserId: record.createdBy,
+				correlationId: record.correlationId,
+				module: "payroll",
+				entity: "payroll_deduction_rule",
+				entityId: successorId.data,
+				action: "CREATE",
+				newValue: { status: "active", predecessorId: record.ruleId },
+			});
+			if (!successorAudit.ok) {
+				return successorAudit;
+			}
+			const oldAudit = predecessorAudit.data;
+			const newAudit = successorAudit.data;
 			try {
-				const rows = await afendaDatabase.client
-					.update(payrollDeductionRule)
-					.set({
-						status: "superseded",
-						version: existing.version + 1,
-						updatedBy: record.createdBy,
-						updatedAt: new Date(),
-					})
-					.where(
-						and(
-							eq(payrollDeductionRule.organizationId, record.organizationId),
-							eq(payrollDeductionRule.id, record.ruleId),
-							eq(payrollDeductionRule.version, record.expectedVersion),
-						),
+				const [, rows] = await afendaDatabase.transaction((sqlValue) => [
+					sqlValue`SELECT pg_advisory_xact_lock(hashtextextended(${record.organizationId}::text || ':deduction:' || ${record.ruleId}::uuid::text, 0))`,
+					sqlValue`
+					WITH superseded AS (
+						UPDATE payroll_deduction_rule
+						SET status = 'superseded',
+							effective_to = ${endSupersededEffectiveRange(existing.effectiveTo, record.effectiveFrom)},
+							version = version + 1, updated_by = ${record.createdBy}, updated_at = NOW()
+						WHERE organization_id = ${record.organizationId}
+							AND id = ${record.ruleId} AND version = ${record.expectedVersion}
+							AND status = 'active'
+							AND NOT EXISTS (
+								SELECT 1 FROM payroll_rule_finalized_usage
+								WHERE organization_id = ${record.organizationId}
+									AND rule_kind = 'deduction' AND rule_id = ${record.ruleId}
+							)
+						RETURNING id
+					), successor AS (
+						INSERT INTO payroll_deduction_rule (
+							id, organization_id, pay_group_id, code, name, rule_type,
+							amount, rate, currency_code, tax_timing, rule_version, status,
+							effective_from, effective_to, create_idempotency_key,
+							create_request_fingerprint, version, created_by, updated_by
+						)
+						SELECT ${successorId.data}, ${record.organizationId}, ${existing.payGroupId},
+							${existing.code}, ${record.name ?? existing.name},
+							${record.ruleType ?? existing.ruleType},
+							${record.amount === undefined ? existing.amount : record.amount},
+							${record.rate === undefined ? existing.rate : record.rate},
+							${record.currencyCode ?? existing.currencyCode},
+							${record.taxTiming ?? existing.taxTiming}, ${record.ruleVersion}, 'active',
+							${record.effectiveFrom}, ${record.effectiveTo ?? null},
+							${record.idempotencyKey}, ${record.createRequestFingerprint}, 1,
+							${record.createdBy}, ${record.createdBy}
+						FROM superseded RETURNING id
+					), predecessor_audited AS (
+						INSERT INTO platform_audit_log (
+							id, organization_id, actor_user_id, correlation_id, module,
+							entity, entity_id, action, changes, old_value, new_value,
+							metadata, ip_address, user_agent
+						)
+						SELECT ${randomUUID()}, ${oldAudit.organizationId}, ${oldAudit.actorUserId},
+							${oldAudit.correlationId}, ${oldAudit.module}, ${oldAudit.entity},
+							${oldAudit.entityId}, ${oldAudit.action}, ${oldAudit.changesJson}::jsonb,
+							${oldAudit.oldValueJson}::jsonb, ${oldAudit.newValueJson}::jsonb,
+							${oldAudit.metadataJson}::jsonb, ${oldAudit.ipAddress}, ${oldAudit.userAgent}
+						FROM successor RETURNING id
+					), successor_audited AS (
+						INSERT INTO platform_audit_log (
+							id, organization_id, actor_user_id, correlation_id, module,
+							entity, entity_id, action, changes, old_value, new_value,
+							metadata, ip_address, user_agent
+						)
+						SELECT ${randomUUID()}, ${newAudit.organizationId}, ${newAudit.actorUserId},
+							${newAudit.correlationId}, ${newAudit.module}, ${newAudit.entity},
+							${newAudit.entityId}, ${newAudit.action}, ${newAudit.changesJson}::jsonb,
+							${newAudit.oldValueJson}::jsonb, ${newAudit.newValueJson}::jsonb,
+							${newAudit.metadataJson}::jsonb, ${newAudit.ipAddress}, ${newAudit.userAgent}
+						FROM successor RETURNING id
 					)
-					.returning();
-				[supersededRow] = rows;
-				if (supersededRow === undefined) {
-					return mapConflict("Payroll deduction rule version is stale");
+					SELECT superseded.id AS superseded_id, successor.id AS successor_id
+					FROM superseded CROSS JOIN successor
+						CROSS JOIN predecessor_audited CROSS JOIN successor_audited
+				`,
+				]);
+				if (rows.length === 0) {
+					return mapConflict("Payroll deduction rule is stale or finalized");
 				}
+				const superseded = await this.getDeductionRule({
+					organizationId: record.organizationId,
+					ruleId: record.ruleId,
+				});
+				const successor = await this.getDeductionRule({
+					organizationId: record.organizationId,
+					ruleId: successorId.data,
+				});
+				if (!superseded.ok) {
+					return superseded;
+				}
+				if (!successor.ok) {
+					return successor;
+				}
+				if (superseded.data === null || successor.data === null) {
+					return errorResult.fail("INTERNAL_ERROR");
+				}
+				return errorResult.ok({
+					superseded: superseded.data,
+					successor: successor.data,
+				} satisfies PayrollRuleSupersedeResult<PayrollDeductionRule>);
 			} catch (error) {
 				return mapPersistenceFailure(
 					error,
 					"Failed to supersede payroll deduction rule",
 				);
 			}
-
-			const supersededMapped = mapDeductionRuleRow(supersededRow);
-			if (!supersededMapped.ok) {
-				return supersededMapped;
-			}
-
-			const successorResult = await host.createDeductionRule(
-				{
-					organizationId: record.organizationId,
-					payGroupId: existing.payGroupId,
-					code: existing.code,
-					name: record.name ?? existing.name,
-					ruleType: record.ruleType ?? existing.ruleType,
-					amount: record.amount === undefined ? existing.amount : record.amount,
-					rate: record.rate === undefined ? existing.rate : record.rate,
-					currencyCode: record.currencyCode ?? existing.currencyCode,
-					taxTiming: record.taxTiming ?? existing.taxTiming,
-					ruleVersion: record.ruleVersion,
-					effectiveFrom: record.effectiveFrom,
-					effectiveTo: record.effectiveTo ?? null,
-					idempotencyKey: record.idempotencyKey,
-					createRequestFingerprint: record.createRequestFingerprint,
-					createdBy: record.createdBy,
-					correlationId: record.correlationId,
-				},
-				ports,
-			);
-			if (!successorResult.ok) {
-				try {
-					await afendaDatabase.client
-						.update(payrollDeductionRule)
-						.set({
-							status: existing.status,
-							version: existing.version,
-							updatedBy: existing.updatedBy,
-							updatedAt: existing.updatedAt,
-						})
-						.where(
-							and(
-								eq(payrollDeductionRule.organizationId, record.organizationId),
-								eq(payrollDeductionRule.id, record.ruleId),
-							),
-						);
-				} catch {
-					return mapPersistenceFailure(
-						new Error("Supersede rollback failed"),
-						"Failed to roll back superseded payroll deduction rule",
-					);
-				}
-				return successorResult;
-			}
-
-			return errorResult.ok({
-				superseded: supersededMapped.data,
-				successor: successorResult.data,
-			} satisfies PayrollRuleSupersedeResult<PayrollDeductionRule>);
 		},
 
 		async getStatutoryRule(getInput) {
@@ -1398,39 +1585,58 @@ export function createDrizzleSetupExtendedMethods(
 			if (current.data.status !== "active") {
 				return mapInvalidState("Only active statutory rules can be updated");
 			}
+			const effectiveTo =
+				ruleInput.effectiveTo === undefined
+					? current.data.effectiveTo
+					: ruleInput.effectiveTo;
+			const name = ruleInput.name ?? current.data.name;
+			const jurisdictionCode =
+				ruleInput.jurisdictionCode ?? current.data.jurisdictionCode;
+			const nextConfigJson = ruleInput.configJson ?? current.data.configJson;
+			if (
+				!isValidEffectiveDateRange({
+					effectiveFrom: current.data.effectiveFrom,
+					effectiveTo,
+				})
+			) {
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "effectiveTo must be on or after effectiveFrom",
+				});
+			}
 
 			try {
-				const rows = await afendaDatabase.client
-					.update(payrollStatutoryRule)
-					.set({
-						name: ruleInput.name ?? current.data.name,
-						jurisdictionCode:
-							ruleInput.jurisdictionCode ?? current.data.jurisdictionCode,
-						configJson: ruleInput.configJson ?? current.data.configJson,
-						effectiveTo:
-							ruleInput.effectiveTo === undefined
-								? current.data.effectiveTo
-								: ruleInput.effectiveTo,
-						version: current.data.version + 1,
-						updatedBy: ruleInput.actorUserId,
-						updatedAt: new Date(),
-					})
-					.where(
-						and(
-							eq(payrollStatutoryRule.organizationId, ruleInput.organizationId),
-							eq(payrollStatutoryRule.id, ruleInput.ruleId),
-							eq(payrollStatutoryRule.version, ruleInput.expectedVersion),
-						),
-					)
-					.returning();
-				const [row] = rows;
-				if (row === undefined) {
-					return mapConflict("Payroll statutory rule version is stale");
+				const configJson = JSON.stringify(nextConfigJson);
+				const [, rows] = await afendaDatabase.transaction((sqlValue) => [
+					sqlValue`SELECT pg_advisory_xact_lock(hashtextextended(${ruleInput.organizationId}::text || ':statutory:' || ${ruleInput.ruleId}::uuid::text, 0))`,
+					sqlValue`
+						UPDATE payroll_statutory_rule
+						SET name = ${name}, jurisdiction_code = ${jurisdictionCode},
+							config_json = ${configJson}::jsonb, effective_to = ${effectiveTo},
+							version = version + 1, updated_by = ${ruleInput.actorUserId},
+							updated_at = NOW()
+						WHERE organization_id = ${ruleInput.organizationId}
+							AND id = ${ruleInput.ruleId} AND version = ${ruleInput.expectedVersion}
+							AND status = 'active'
+							AND NOT EXISTS (
+								SELECT 1 FROM payroll_rule_finalized_usage
+								WHERE organization_id = ${ruleInput.organizationId}
+									AND rule_kind = 'statutory' AND rule_id = ${ruleInput.ruleId}
+							)
+						RETURNING id
+					`,
+				]);
+				if (rows.length === 0) {
+					return mapConflict("Payroll statutory rule is stale or finalized");
 				}
-
-				const mapped = mapStatutoryRuleRow(row);
-				if (!mapped.ok) {
-					return mapped;
+				const updated = await this.getStatutoryRule({
+					organizationId: ruleInput.organizationId,
+					ruleId: ruleInput.ruleId,
+				});
+				if (!updated.ok) {
+					return updated;
+				}
+				if (updated.data === null) {
+					return errorResult.fail("INTERNAL_ERROR");
 				}
 
 				const audit = await recordAudit(ports, {
@@ -1438,14 +1644,14 @@ export function createDrizzleSetupExtendedMethods(
 					actorUserId: ruleInput.actorUserId,
 					correlationId: ruleInput.correlationId,
 					entity: "payroll_statutory_rule",
-					entityId: mapped.data.id,
+					entityId: updated.data.id,
 					action: "UPDATE",
 				});
 				if (!audit.ok) {
 					return audit;
 				}
 
-				return mapped;
+				return errorResult.ok(updated.data);
 			} catch (error) {
 				return mapPersistenceFailure(
 					error,
@@ -1487,30 +1693,34 @@ export function createDrizzleSetupExtendedMethods(
 			}
 
 			try {
-				const rows = await afendaDatabase.client
-					.update(payrollStatutoryRule)
-					.set({
-						status: "archived",
-						version: current.data.version + 1,
-						updatedBy: ruleInput.actorUserId,
-						updatedAt: new Date(),
-					})
-					.where(
-						and(
-							eq(payrollStatutoryRule.organizationId, ruleInput.organizationId),
-							eq(payrollStatutoryRule.id, ruleInput.ruleId),
-							eq(payrollStatutoryRule.version, ruleInput.expectedVersion),
-						),
-					)
-					.returning();
-				const [row] = rows;
-				if (row === undefined) {
-					return mapConflict("Payroll statutory rule version is stale");
+				const [, rows] = await afendaDatabase.transaction((sqlValue) => [
+					sqlValue`SELECT pg_advisory_xact_lock(hashtextextended(${ruleInput.organizationId}::text || ':statutory:' || ${ruleInput.ruleId}::uuid::text, 0))`,
+					sqlValue`
+						UPDATE payroll_statutory_rule
+						SET status = 'archived', version = version + 1,
+							updated_by = ${ruleInput.actorUserId}, updated_at = NOW()
+						WHERE organization_id = ${ruleInput.organizationId}
+							AND id = ${ruleInput.ruleId} AND version = ${ruleInput.expectedVersion}
+							AND NOT EXISTS (
+								SELECT 1 FROM payroll_rule_finalized_usage
+								WHERE organization_id = ${ruleInput.organizationId}
+									AND rule_kind = 'statutory' AND rule_id = ${ruleInput.ruleId}
+							)
+						RETURNING id
+					`,
+				]);
+				if (rows.length === 0) {
+					return mapConflict("Payroll statutory rule is stale or finalized");
 				}
-
-				const mapped = mapStatutoryRuleRow(row);
-				if (!mapped.ok) {
-					return mapped;
+				const updated = await this.getStatutoryRule({
+					organizationId: ruleInput.organizationId,
+					ruleId: ruleInput.ruleId,
+				});
+				if (!updated.ok) {
+					return updated;
+				}
+				if (updated.data === null) {
+					return errorResult.fail("INTERNAL_ERROR");
 				}
 
 				const audit = await recordAudit(ports, {
@@ -1518,14 +1728,14 @@ export function createDrizzleSetupExtendedMethods(
 					actorUserId: ruleInput.actorUserId,
 					correlationId: ruleInput.correlationId,
 					entity: "payroll_statutory_rule",
-					entityId: mapped.data.id,
+					entityId: updated.data.id,
 					action: "UPDATE",
 				});
 				if (!audit.ok) {
 					return audit;
 				}
 
-				return mapped;
+				return errorResult.ok(updated.data);
 			} catch (error) {
 				return mapPersistenceFailure(
 					error,
@@ -1534,8 +1744,8 @@ export function createDrizzleSetupExtendedMethods(
 			}
 		},
 
-		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Rule supersession coordinates a lock check, version guard, successor create, and compensating restore.
-		async supersedeStatutoryRule(record, ports) {
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Rule supersession validates the semantic transition before one atomic persistence statement.
+		async supersedeStatutoryRule(record, _ports) {
 			const locked = await assertRuleNotLockedByFinalizedRun(ruleLockStore, {
 				organizationId: record.organizationId,
 				ruleKind: "statutory",
@@ -1567,89 +1777,143 @@ export function createDrizzleSetupExtendedMethods(
 			if (existing.status !== "active") {
 				return mapInvalidState("Only active statutory rules can be superseded");
 			}
+			const successorDate = assertValidRuleSuccessorDate({
+				currentEffectiveFrom: existing.effectiveFrom,
+				successorEffectiveFrom: record.effectiveFrom,
+			});
+			if (!successorDate.ok) {
+				return successorDate;
+			}
 
-			let supersededRow: typeof payrollStatutoryRule.$inferSelect | undefined;
+			const successorId = parsePayrollStatutoryRuleId(randomUUID());
+			if (!successorId.ok) {
+				return successorId;
+			}
+			const predecessorAudit = afendaAudit.transaction.prepare({
+				organizationId: record.organizationId,
+				actorUserId: record.createdBy,
+				correlationId: record.correlationId,
+				module: "payroll",
+				entity: "payroll_statutory_rule",
+				entityId: record.ruleId,
+				action: "UPDATE",
+				oldValue: { status: existing.status, version: existing.version },
+				newValue: { status: "superseded", successorId: successorId.data },
+			});
+			if (!predecessorAudit.ok) {
+				return predecessorAudit;
+			}
+			const successorAudit = afendaAudit.transaction.prepare({
+				organizationId: record.organizationId,
+				actorUserId: record.createdBy,
+				correlationId: record.correlationId,
+				module: "payroll",
+				entity: "payroll_statutory_rule",
+				entityId: successorId.data,
+				action: "CREATE",
+				newValue: { status: "active", predecessorId: record.ruleId },
+			});
+			if (!successorAudit.ok) {
+				return successorAudit;
+			}
+			const oldAudit = predecessorAudit.data;
+			const newAudit = successorAudit.data;
+			const configJson = JSON.stringify(
+				record.configJson ?? existing.configJson,
+			);
 			try {
-				const rows = await afendaDatabase.client
-					.update(payrollStatutoryRule)
-					.set({
-						status: "superseded",
-						version: existing.version + 1,
-						updatedBy: record.createdBy,
-						updatedAt: new Date(),
-					})
-					.where(
-						and(
-							eq(payrollStatutoryRule.organizationId, record.organizationId),
-							eq(payrollStatutoryRule.id, record.ruleId),
-							eq(payrollStatutoryRule.version, record.expectedVersion),
-						),
+				const [, rows] = await afendaDatabase.transaction((sqlValue) => [
+					sqlValue`SELECT pg_advisory_xact_lock(hashtextextended(${record.organizationId}::text || ':statutory:' || ${record.ruleId}::uuid::text, 0))`,
+					sqlValue`
+					WITH superseded AS (
+						UPDATE payroll_statutory_rule
+						SET status = 'superseded',
+							effective_to = ${endSupersededEffectiveRange(existing.effectiveTo, record.effectiveFrom)},
+							version = version + 1, updated_by = ${record.createdBy}, updated_at = NOW()
+						WHERE organization_id = ${record.organizationId}
+							AND id = ${record.ruleId} AND version = ${record.expectedVersion}
+							AND status = 'active'
+							AND NOT EXISTS (
+								SELECT 1 FROM payroll_rule_finalized_usage
+								WHERE organization_id = ${record.organizationId}
+									AND rule_kind = 'statutory' AND rule_id = ${record.ruleId}
+							)
+						RETURNING id
+					), successor AS (
+						INSERT INTO payroll_statutory_rule (
+							id, organization_id, pay_group_id, code, name, jurisdiction_code,
+							config_json, rule_version, status, effective_from, effective_to,
+							create_idempotency_key, create_request_fingerprint, version,
+							created_by, updated_by
+						)
+						SELECT ${successorId.data}, ${record.organizationId}, ${existing.payGroupId},
+							${existing.code}, ${record.name ?? existing.name},
+							${record.jurisdictionCode ?? existing.jurisdictionCode},
+							${configJson}::jsonb, ${record.ruleVersion}, 'active',
+							${record.effectiveFrom}, ${record.effectiveTo ?? null},
+							${record.idempotencyKey}, ${record.createRequestFingerprint}, 1,
+							${record.createdBy}, ${record.createdBy}
+						FROM superseded RETURNING id
+					), predecessor_audited AS (
+						INSERT INTO platform_audit_log (
+							id, organization_id, actor_user_id, correlation_id, module,
+							entity, entity_id, action, changes, old_value, new_value,
+							metadata, ip_address, user_agent
+						)
+						SELECT ${randomUUID()}, ${oldAudit.organizationId}, ${oldAudit.actorUserId},
+							${oldAudit.correlationId}, ${oldAudit.module}, ${oldAudit.entity},
+							${oldAudit.entityId}, ${oldAudit.action}, ${oldAudit.changesJson}::jsonb,
+							${oldAudit.oldValueJson}::jsonb, ${oldAudit.newValueJson}::jsonb,
+							${oldAudit.metadataJson}::jsonb, ${oldAudit.ipAddress}, ${oldAudit.userAgent}
+						FROM successor RETURNING id
+					), successor_audited AS (
+						INSERT INTO platform_audit_log (
+							id, organization_id, actor_user_id, correlation_id, module,
+							entity, entity_id, action, changes, old_value, new_value,
+							metadata, ip_address, user_agent
+						)
+						SELECT ${randomUUID()}, ${newAudit.organizationId}, ${newAudit.actorUserId},
+							${newAudit.correlationId}, ${newAudit.module}, ${newAudit.entity},
+							${newAudit.entityId}, ${newAudit.action}, ${newAudit.changesJson}::jsonb,
+							${newAudit.oldValueJson}::jsonb, ${newAudit.newValueJson}::jsonb,
+							${newAudit.metadataJson}::jsonb, ${newAudit.ipAddress}, ${newAudit.userAgent}
+						FROM successor RETURNING id
 					)
-					.returning();
-				[supersededRow] = rows;
-				if (supersededRow === undefined) {
-					return mapConflict("Payroll statutory rule version is stale");
+					SELECT superseded.id AS superseded_id, successor.id AS successor_id
+					FROM superseded CROSS JOIN successor
+						CROSS JOIN predecessor_audited CROSS JOIN successor_audited
+				`,
+				]);
+				if (rows.length === 0) {
+					return mapConflict("Payroll statutory rule is stale or finalized");
 				}
+				const superseded = await this.getStatutoryRule({
+					organizationId: record.organizationId,
+					ruleId: record.ruleId,
+				});
+				const successor = await this.getStatutoryRule({
+					organizationId: record.organizationId,
+					ruleId: successorId.data,
+				});
+				if (!superseded.ok) {
+					return superseded;
+				}
+				if (!successor.ok) {
+					return successor;
+				}
+				if (superseded.data === null || successor.data === null) {
+					return errorResult.fail("INTERNAL_ERROR");
+				}
+				return errorResult.ok({
+					superseded: superseded.data,
+					successor: successor.data,
+				} satisfies PayrollRuleSupersedeResult<PayrollStatutoryRule>);
 			} catch (error) {
 				return mapPersistenceFailure(
 					error,
 					"Failed to supersede payroll statutory rule",
 				);
 			}
-
-			const supersededMapped = mapStatutoryRuleRow(supersededRow);
-			if (!supersededMapped.ok) {
-				return supersededMapped;
-			}
-
-			const successorResult = await host.createStatutoryRule(
-				{
-					organizationId: record.organizationId,
-					payGroupId: existing.payGroupId,
-					code: existing.code,
-					name: record.name ?? existing.name,
-					jurisdictionCode:
-						record.jurisdictionCode ?? existing.jurisdictionCode,
-					configJson: record.configJson ?? existing.configJson,
-					ruleVersion: record.ruleVersion,
-					effectiveFrom: record.effectiveFrom,
-					effectiveTo: record.effectiveTo ?? null,
-					idempotencyKey: record.idempotencyKey,
-					createRequestFingerprint: record.createRequestFingerprint,
-					createdBy: record.createdBy,
-					correlationId: record.correlationId,
-				},
-				ports,
-			);
-			if (!successorResult.ok) {
-				try {
-					await afendaDatabase.client
-						.update(payrollStatutoryRule)
-						.set({
-							status: existing.status,
-							version: existing.version,
-							updatedBy: existing.updatedBy,
-							updatedAt: existing.updatedAt,
-						})
-						.where(
-							and(
-								eq(payrollStatutoryRule.organizationId, record.organizationId),
-								eq(payrollStatutoryRule.id, record.ruleId),
-							),
-						);
-				} catch {
-					return mapPersistenceFailure(
-						new Error("Supersede rollback failed"),
-						"Failed to roll back superseded payroll statutory rule",
-					);
-				}
-				return successorResult;
-			}
-
-			return errorResult.ok({
-				superseded: supersededMapped.data,
-				successor: successorResult.data,
-			} satisfies PayrollRuleSupersedeResult<PayrollStatutoryRule>);
 		},
 
 		async recordRuleVersionUsedByFinalizedRun(usageInput) {

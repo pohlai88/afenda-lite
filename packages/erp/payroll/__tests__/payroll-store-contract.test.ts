@@ -1,6 +1,7 @@
 import { testingDatabase } from "@afenda/testing";
 import { describe, expect, it } from "vitest";
 import {
+	parsePayrollEarningRuleId,
 	parsePayrollResultLineId,
 	parsePayrollRunEmployeeId,
 } from "../src/brands";
@@ -758,6 +759,136 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 				harness.ports,
 			);
 			expect(blocked.ok).toBe(false);
+		});
+
+		it("serializes concurrent Drizzle finalization against rule mutation", async () => {
+			if (adapter !== "drizzle") {
+				return;
+			}
+			const harness = createPayrollParityHarness(adapter);
+			const seeded = await seedPayrollRunChain(harness);
+			const rule = await harness.store.createEarningRule(
+				{
+					organizationId: harness.organizationId,
+					payGroupId: seeded.payGroup.id,
+					code: "FINALIZE-RACE",
+					name: "Finalization race rule",
+					ruleType: "fixed",
+					amount: "1000.00",
+					rate: null,
+					currencyCode: "USD",
+					ruleVersion: "1",
+					effectiveFrom: "2025-01-01",
+					effectiveTo: null,
+					idempotencyKey: `idem-finalize-race-${adapter}`,
+					createRequestFingerprint: "fp-finalize-race",
+					createdBy: harness.actorUserId,
+					correlationId: `corr-finalize-race-${adapter}`,
+				},
+				harness.ports,
+			);
+			if (!rule.ok) {
+				throw new Error(rule.message);
+			}
+			const seededRun = await seedDraftRun(harness, seeded);
+			const calculated = await harness.store.updateRunWithVersion(
+				{
+					organizationId: harness.organizationId,
+					runId: seededRun.run.id,
+					status: "calculated",
+					calculationSnapshotHash: "hash-finalize-race",
+					calculationVersion: "payroll.calc.v1",
+					roundingPolicyJson: null,
+					actorUserId: harness.actorUserId,
+					correlationId: `corr-calculate-race-${adapter}`,
+					expectedVersion: seededRun.run.version,
+				},
+				harness.ports,
+			);
+			if (!calculated.ok) {
+				throw new Error(calculated.message);
+			}
+			const runEmployeeId = parsePayrollRunEmployeeId(crypto.randomUUID());
+			if (!runEmployeeId.ok) {
+				throw new Error(runEmployeeId.message);
+			}
+			const outputs = await harness.store.replaceRunCalculationOutputs(
+				{
+					organizationId: harness.organizationId,
+					runId: calculated.data.id,
+					runEmployees: [
+						{
+							id: runEmployeeId.data,
+							employeeId: "employee-finalize-race",
+							assignmentId: null,
+							currencyCode: "USD",
+							gross: "1000.00",
+							employeeDeductions: "0.00",
+							employeeStatutory: "0.00",
+							employerCost: "0.00",
+							net: "1000.00",
+							snapshotJson: {
+								earningRules: [
+									{ id: rule.data.id, recordVersion: rule.data.version },
+								],
+								deductionRules: [],
+								statutoryRules: [],
+							},
+							snapshotHash: "hash-finalize-race",
+							calculationVersion: "payroll.calc.v1",
+							status: "calculated",
+						},
+					],
+					resultLines: [],
+					actorUserId: harness.actorUserId,
+					correlationId: `corr-output-race-${adapter}`,
+				},
+				harness.ports,
+			);
+			if (!outputs.ok) {
+				throw new Error(outputs.message);
+			}
+			const uppercaseRuleId = parsePayrollEarningRuleId(
+				rule.data.id.toUpperCase(),
+			);
+			if (!uppercaseRuleId.ok) {
+				throw new Error(uppercaseRuleId.message);
+			}
+			const [finalized, updated] = await Promise.all([
+				harness.store.updateRunWithVersion(
+					{
+						organizationId: harness.organizationId,
+						runId: calculated.data.id,
+						status: "finalized",
+						finalizedAt: new Date().toISOString(),
+						finalizedBy: harness.actorUserId,
+						actorUserId: harness.actorUserId,
+						correlationId: `corr-finalize-race-${adapter}`,
+						expectedVersion: calculated.data.version,
+					},
+					harness.ports,
+				),
+				harness.store.updateEarningRule(
+					{
+						organizationId: harness.organizationId,
+						ruleId: uppercaseRuleId.data,
+						name: "Concurrent mutation",
+						expectedVersion: rule.data.version,
+						actorUserId: harness.actorUserId,
+						correlationId: `corr-mutate-race-${adapter}`,
+					},
+					harness.ports,
+				),
+			]);
+			expect(Number(finalized.ok) + Number(updated.ok)).toBe(1);
+			if (finalized.ok) {
+				const locked = await harness.store.isRuleVersionUsedByFinalizedRun({
+					organizationId: harness.organizationId,
+					ruleKind: "earning",
+					ruleId: rule.data.id,
+				});
+				expect(locked.ok && locked.data).toBe(true);
+			}
 		});
 
 		it("blocks updates to finalized runs", async () => {

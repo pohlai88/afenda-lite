@@ -28,7 +28,7 @@ export function createMemoryPayrollStore(): MemoryPayrollStore {
 		createMemorySetupMethods(state.setup),
 		createMemoryAssignmentsMethods(state.assignments),
 		createMemoryInputsMethods(state.inputs),
-		createMemoryRunsMethods(state.runs),
+		createMemoryRunsMethods(state),
 		createMemoryStatutoryMethods({
 			statutory: state.statutory,
 			runs: state.runs,

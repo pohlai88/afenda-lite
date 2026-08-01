@@ -18,8 +18,13 @@ import { assertExpectedVersion } from "../../shared/concurrency";
 import {
 	effectiveRangesOverlap,
 	isEffectiveOnDate,
+	isValidEffectiveDateRange,
 } from "../../shared/effective-date";
 import { mapConflict, mapNotFound } from "../../shared/persistence-errors";
+import {
+	assertValidPayrollAmountRateRuleConfiguration,
+	isHistoricallyApplicableRuleStatus,
+} from "../../shared/setup-rule-policy";
 import type { PayrollSetupStore } from "../../store/setup";
 import type {
 	IdempotentPayrollCalendarRecord,
@@ -104,7 +109,7 @@ function resolveIdempotentReplay<TEntity>(
 	return errorResult.ok(clone(existing.entity));
 }
 
-function hasActiveRuleOverlap<
+function hasRuleHistoryOverlap<
 	TRule extends {
 		organizationId: string;
 		payGroupId: PayrollPayGroupId;
@@ -128,7 +133,7 @@ function hasActiveRuleOverlap<
 			rule.organizationId !== record.organizationId ||
 			rule.payGroupId !== record.payGroupId ||
 			rule.code !== record.code ||
-			rule.status !== "active"
+			!isHistoricallyApplicableRuleStatus(rule.status)
 		) {
 			continue;
 		}
@@ -170,7 +175,7 @@ function selectRuleAtEffectiveDate<
 			rule.organizationId !== input.organizationId ||
 			rule.payGroupId !== input.payGroupId ||
 			rule.code !== input.code ||
-			rule.status !== "active"
+			!isHistoricallyApplicableRuleStatus(rule.status)
 		) {
 			continue;
 		}
@@ -211,7 +216,7 @@ function listActiveRulesForPayGroup<
 		if (
 			rule.organizationId !== input.organizationId ||
 			rule.payGroupId !== input.payGroupId ||
-			rule.status !== "active"
+			!isHistoricallyApplicableRuleStatus(rule.status)
 		) {
 			continue;
 		}
@@ -253,6 +258,11 @@ export function createMemorySetupMethods(
 			record: PayrollCalendarCreateRecord,
 			ports: MutationPorts,
 		): Promise<Result<PayrollCalendar>> {
+			if (!isValidEffectiveDateRange(record)) {
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "effectiveTo must be on or after effectiveFrom",
+				});
+			}
 			const existing = await this.findCalendarByIdempotencyKey({
 				organizationId: record.organizationId,
 				idempotencyKey: record.idempotencyKey,
@@ -353,16 +363,27 @@ export function createMemorySetupMethods(
 			if (!versionCheck.ok) {
 				return versionCheck;
 			}
+			const effectiveTo =
+				input.effectiveTo === undefined
+					? calendar.effectiveTo
+					: input.effectiveTo;
+			if (
+				!isValidEffectiveDateRange({
+					effectiveFrom: calendar.effectiveFrom,
+					effectiveTo,
+				})
+			) {
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "effectiveTo must be on or after effectiveFrom",
+				});
+			}
 
 			const now = new Date();
 			const updated: PayrollCalendar = {
 				...calendar,
 				name: input.name ?? calendar.name,
 				timezone: input.timezone ?? calendar.timezone,
-				effectiveTo:
-					input.effectiveTo === undefined
-						? calendar.effectiveTo
-						: input.effectiveTo,
+				effectiveTo,
 				version: calendar.version + 1,
 				updatedBy: input.actorUserId,
 				updatedAt: now,
@@ -604,6 +625,16 @@ export function createMemorySetupMethods(
 			record: PayrollEarningRuleCreateRecord,
 			ports: MutationPorts,
 		): Promise<Result<PayrollEarningRule>> {
+			if (!isValidEffectiveDateRange(record)) {
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "effectiveTo must be on or after effectiveFrom",
+				});
+			}
+			const configuration =
+				assertValidPayrollAmountRateRuleConfiguration(record);
+			if (!configuration.ok) {
+				return configuration;
+			}
 			const replay = resolveIdempotentReplay(
 				state.earningRuleIdempotency.get(
 					idempotencyMapKey(record.organizationId, record.idempotencyKey),
@@ -626,9 +657,10 @@ export function createMemorySetupMethods(
 				return mapNotFound("Payroll pay group not found");
 			}
 
-			if (hasActiveRuleOverlap(state.earningRules.values(), record)) {
+			if (hasRuleHistoryOverlap(state.earningRules.values(), record)) {
 				return errorResult.fail("CONFLICT", {
-					publicMessage: "Overlapping effective range for active earning rule",
+					publicMessage:
+						"Overlapping effective range for non-archived earning rule",
 				});
 			}
 
@@ -691,6 +723,16 @@ export function createMemorySetupMethods(
 			record: PayrollDeductionRuleCreateRecord,
 			ports: MutationPorts,
 		): Promise<Result<PayrollDeductionRule>> {
+			if (!isValidEffectiveDateRange(record)) {
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "effectiveTo must be on or after effectiveFrom",
+				});
+			}
+			const configuration =
+				assertValidPayrollAmountRateRuleConfiguration(record);
+			if (!configuration.ok) {
+				return configuration;
+			}
 			const replay = resolveIdempotentReplay(
 				state.deductionRuleIdempotency.get(
 					idempotencyMapKey(record.organizationId, record.idempotencyKey),
@@ -713,10 +755,10 @@ export function createMemorySetupMethods(
 				return mapNotFound("Payroll pay group not found");
 			}
 
-			if (hasActiveRuleOverlap(state.deductionRules.values(), record)) {
+			if (hasRuleHistoryOverlap(state.deductionRules.values(), record)) {
 				return errorResult.fail("CONFLICT", {
 					publicMessage:
-						"Overlapping effective range for active deduction rule",
+						"Overlapping effective range for non-archived deduction rule",
 				});
 			}
 
@@ -780,6 +822,11 @@ export function createMemorySetupMethods(
 			record: PayrollStatutoryRuleCreateRecord,
 			ports: MutationPorts,
 		): Promise<Result<PayrollStatutoryRule>> {
+			if (!isValidEffectiveDateRange(record)) {
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "effectiveTo must be on or after effectiveFrom",
+				});
+			}
 			const replay = resolveIdempotentReplay(
 				state.statutoryRuleIdempotency.get(
 					idempotencyMapKey(record.organizationId, record.idempotencyKey),
@@ -802,10 +849,10 @@ export function createMemorySetupMethods(
 				return mapNotFound("Payroll pay group not found");
 			}
 
-			if (hasActiveRuleOverlap(state.statutoryRules.values(), record)) {
+			if (hasRuleHistoryOverlap(state.statutoryRules.values(), record)) {
 				return errorResult.fail("CONFLICT", {
 					publicMessage:
-						"Overlapping effective range for active statutory rule",
+						"Overlapping effective range for non-archived statutory rule",
 				});
 			}
 

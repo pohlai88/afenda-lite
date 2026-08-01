@@ -3,6 +3,7 @@ import {
 	database as afendaDatabase,
 	and,
 	eq,
+	ne,
 	payrollCalendar,
 	payrollDeductionRule,
 	payrollEarningRule,
@@ -29,6 +30,7 @@ import { assertExpectedVersion } from "../../shared/concurrency";
 import {
 	effectiveRangesOverlap,
 	isEffectiveOnDate,
+	isValidEffectiveDateRange,
 } from "../../shared/effective-date";
 import {
 	isCreateIdempotencyUniqueViolation,
@@ -36,6 +38,10 @@ import {
 	mapNotFound,
 	mapPersistenceFailure,
 } from "../../shared/persistence-errors";
+import {
+	assertValidPayrollAmountRateRuleConfiguration,
+	isHistoricallyApplicableRuleStatus,
+} from "../../shared/setup-rule-policy";
 import type { PayrollSetupStore } from "../../store/setup";
 import type {
 	IdempotentPayrollCalendarRecord,
@@ -298,7 +304,7 @@ async function resolveIdempotentCreate<
 	return mapRow(inserted.data);
 }
 
-function hasActiveRuleOverlap<
+function hasRuleHistoryOverlap<
 	TRule extends {
 		status: string;
 		effectiveFrom: string;
@@ -312,7 +318,7 @@ function hasActiveRuleOverlap<
 	},
 ): boolean {
 	for (const rule of rules) {
-		if (rule.status !== "active") {
+		if (!isHistoricallyApplicableRuleStatus(rule.status)) {
 			continue;
 		}
 		if (
@@ -338,7 +344,7 @@ function selectRuleAtEffectiveDate<
 >(rules: TRule[], effectiveDate: string): TRule | null {
 	let selected: TRule | null = null;
 	for (const rule of rules) {
-		if (rule.status !== "active") {
+		if (!isHistoricallyApplicableRuleStatus(rule.status)) {
 			continue;
 		}
 		if (
@@ -377,7 +383,7 @@ function listActiveRulesForPayGroup<
 		if (rule.payGroupId !== input.payGroupId) {
 			continue;
 		}
-		if (rule.status !== "active") {
+		if (!isHistoricallyApplicableRuleStatus(rule.status)) {
 			continue;
 		}
 		if (
@@ -436,6 +442,11 @@ const drizzleSetupCore = {
 		record: PayrollCalendarCreateRecord,
 		ports: MutationPorts,
 	): Promise<Result<PayrollCalendar>> {
+		if (!isValidEffectiveDateRange(record)) {
+			return errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "effectiveTo must be on or after effectiveFrom",
+			});
+		}
 		const existing = await this.findCalendarByIdempotencyKey({
 			organizationId: record.organizationId,
 			idempotencyKey: record.idempotencyKey,
@@ -573,6 +584,20 @@ const drizzleSetupCore = {
 		if (!versionCheck.ok) {
 			return versionCheck;
 		}
+		const effectiveTo =
+			input.effectiveTo === undefined
+				? current.data.effectiveTo
+				: input.effectiveTo;
+		if (
+			!isValidEffectiveDateRange({
+				effectiveFrom: current.data.effectiveFrom,
+				effectiveTo,
+			})
+		) {
+			return errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "effectiveTo must be on or after effectiveFrom",
+			});
+		}
 
 		try {
 			const rows = await afendaDatabase.client
@@ -580,10 +605,7 @@ const drizzleSetupCore = {
 				.set({
 					name: input.name ?? current.data.name,
 					timezone: input.timezone ?? current.data.timezone,
-					effectiveTo:
-						input.effectiveTo === undefined
-							? current.data.effectiveTo
-							: input.effectiveTo,
+					effectiveTo,
 					version: current.data.version + 1,
 					updatedBy: input.actorUserId,
 					updatedAt: new Date(),
@@ -1011,6 +1033,17 @@ const drizzleSetupCore = {
 		record: PayrollEarningRuleCreateRecord,
 		ports: MutationPorts,
 	): Promise<Result<PayrollEarningRule>> {
+		if (!isValidEffectiveDateRange(record)) {
+			return Promise.resolve(
+				errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "effectiveTo must be on or after effectiveFrom",
+				}),
+			);
+		}
+		const configuration = assertValidPayrollAmountRateRuleConfiguration(record);
+		if (!configuration.ok) {
+			return Promise.resolve(configuration);
+		}
 		return resolveIdempotentCreate(
 			async () => {
 				try {
@@ -1070,13 +1103,13 @@ const drizzleSetupCore = {
 								eq(payrollEarningRule.organizationId, record.organizationId),
 								eq(payrollEarningRule.payGroupId, record.payGroupId),
 								eq(payrollEarningRule.code, record.code),
-								eq(payrollEarningRule.status, "active"),
+								ne(payrollEarningRule.status, "archived"),
 							),
 						);
-					if (hasActiveRuleOverlap(activeRows, record)) {
+					if (hasRuleHistoryOverlap(activeRows, record)) {
 						return errorResult.fail("CONFLICT", {
 							publicMessage:
-								"Overlapping effective range for active earning rule",
+								"Overlapping effective range for non-archived earning rule",
 						});
 					}
 
@@ -1172,6 +1205,17 @@ const drizzleSetupCore = {
 		record: PayrollDeductionRuleCreateRecord,
 		ports: MutationPorts,
 	): Promise<Result<PayrollDeductionRule>> {
+		if (!isValidEffectiveDateRange(record)) {
+			return Promise.resolve(
+				errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "effectiveTo must be on or after effectiveFrom",
+				}),
+			);
+		}
+		const configuration = assertValidPayrollAmountRateRuleConfiguration(record);
+		if (!configuration.ok) {
+			return Promise.resolve(configuration);
+		}
 		return resolveIdempotentCreate(
 			async () => {
 				try {
@@ -1231,13 +1275,13 @@ const drizzleSetupCore = {
 								eq(payrollDeductionRule.organizationId, record.organizationId),
 								eq(payrollDeductionRule.payGroupId, record.payGroupId),
 								eq(payrollDeductionRule.code, record.code),
-								eq(payrollDeductionRule.status, "active"),
+								ne(payrollDeductionRule.status, "archived"),
 							),
 						);
-					if (hasActiveRuleOverlap(activeRows, record)) {
+					if (hasRuleHistoryOverlap(activeRows, record)) {
 						return errorResult.fail("CONFLICT", {
 							publicMessage:
-								"Overlapping effective range for active deduction rule",
+								"Overlapping effective range for non-archived deduction rule",
 						});
 					}
 
@@ -1337,6 +1381,13 @@ const drizzleSetupCore = {
 		record: PayrollStatutoryRuleCreateRecord,
 		ports: MutationPorts,
 	): Promise<Result<PayrollStatutoryRule>> {
+		if (!isValidEffectiveDateRange(record)) {
+			return Promise.resolve(
+				errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "effectiveTo must be on or after effectiveFrom",
+				}),
+			);
+		}
 		return resolveIdempotentCreate(
 			async () => {
 				try {
@@ -1396,13 +1447,13 @@ const drizzleSetupCore = {
 								eq(payrollStatutoryRule.organizationId, record.organizationId),
 								eq(payrollStatutoryRule.payGroupId, record.payGroupId),
 								eq(payrollStatutoryRule.code, record.code),
-								eq(payrollStatutoryRule.status, "active"),
+								ne(payrollStatutoryRule.status, "archived"),
 							),
 						);
-					if (hasActiveRuleOverlap(activeRows, record)) {
+					if (hasRuleHistoryOverlap(activeRows, record)) {
 						return errorResult.fail("CONFLICT", {
 							publicMessage:
-								"Overlapping effective range for active statutory rule",
+								"Overlapping effective range for non-archived statutory rule",
 						});
 					}
 
@@ -1510,7 +1561,7 @@ const drizzleSetupCore = {
 						eq(payrollEarningRule.organizationId, input.organizationId),
 						eq(payrollEarningRule.payGroupId, input.payGroupId),
 						eq(payrollEarningRule.code, input.code),
-						eq(payrollEarningRule.status, "active"),
+						ne(payrollEarningRule.status, "archived"),
 					),
 				);
 			const selected = selectRuleAtEffectiveDate(rows, input.effectiveDate);
@@ -1541,7 +1592,7 @@ const drizzleSetupCore = {
 						eq(payrollDeductionRule.organizationId, input.organizationId),
 						eq(payrollDeductionRule.payGroupId, input.payGroupId),
 						eq(payrollDeductionRule.code, input.code),
-						eq(payrollDeductionRule.status, "active"),
+						ne(payrollDeductionRule.status, "archived"),
 					),
 				);
 			const selected = selectRuleAtEffectiveDate(rows, input.effectiveDate);
@@ -1572,7 +1623,7 @@ const drizzleSetupCore = {
 						eq(payrollStatutoryRule.organizationId, input.organizationId),
 						eq(payrollStatutoryRule.payGroupId, input.payGroupId),
 						eq(payrollStatutoryRule.code, input.code),
-						eq(payrollStatutoryRule.status, "active"),
+						ne(payrollStatutoryRule.status, "archived"),
 					),
 				);
 			const selected = selectRuleAtEffectiveDate(rows, input.effectiveDate);
@@ -1601,7 +1652,7 @@ const drizzleSetupCore = {
 					and(
 						eq(payrollEarningRule.organizationId, input.organizationId),
 						eq(payrollEarningRule.payGroupId, input.payGroupId),
-						eq(payrollEarningRule.status, "active"),
+						ne(payrollEarningRule.status, "archived"),
 					),
 				);
 			const active = listActiveRulesForPayGroup(rows, input);
@@ -1635,7 +1686,7 @@ const drizzleSetupCore = {
 					and(
 						eq(payrollDeductionRule.organizationId, input.organizationId),
 						eq(payrollDeductionRule.payGroupId, input.payGroupId),
-						eq(payrollDeductionRule.status, "active"),
+						ne(payrollDeductionRule.status, "archived"),
 					),
 				);
 			const active = listActiveRulesForPayGroup(rows, input);
@@ -1669,7 +1720,7 @@ const drizzleSetupCore = {
 					and(
 						eq(payrollStatutoryRule.organizationId, input.organizationId),
 						eq(payrollStatutoryRule.payGroupId, input.payGroupId),
-						eq(payrollStatutoryRule.status, "active"),
+						ne(payrollStatutoryRule.status, "archived"),
 					),
 				);
 			const active = listActiveRulesForPayGroup(rows, input);

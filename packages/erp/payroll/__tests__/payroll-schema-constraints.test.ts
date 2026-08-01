@@ -36,6 +36,16 @@ const baselineMigrationPath = fileURLToPath(
 	),
 );
 const baselineMigrationSql = readFileSync(baselineMigrationPath, "utf8");
+const setupRuleRangeMigrationPath = fileURLToPath(
+	new URL(
+		"../../../data-plane/db/drizzle/0044_payroll_setup_rule_ranges.sql",
+		import.meta.url,
+	),
+);
+const setupRuleRangeMigrationSql = readFileSync(
+	setupRuleRangeMigrationPath,
+	"utf8",
+);
 const migrationSql = baselineMigrationSql
 	.split("--> statement-breakpoint")
 	.filter((statement) => statement.includes('"payroll_'))
@@ -122,6 +132,25 @@ describe("Payroll foundation migration SQL", () => {
 		]) {
 			expectTableHasColumn(migrationSql, table, "create_idempotency_key");
 		}
+	});
+});
+
+describe("Payroll setup rule-range migration SQL", () => {
+	it("enforces concurrent non-archived range exclusion for every rule family", () => {
+		for (const ruleKind of ["earning", "deduction", "statutory"]) {
+			expect(setupRuleRangeMigrationSql).toContain(
+				`payroll_${ruleKind}_rule_non_archived_range_excl`,
+			);
+		}
+		expect(setupRuleRangeMigrationSql).toContain("EXCLUDE USING gist");
+		expect(setupRuleRangeMigrationSql).toContain(
+			`daterange("effective_from", "effective_to", '[]') WITH &&`,
+		);
+		expect(
+			setupRuleRangeMigrationSql.match(/status" <> 'archived'/g),
+		).toHaveLength(3);
+		expect(setupRuleRangeMigrationSql).not.toMatch(/DROP TABLE|DROP COLUMN/);
+		expect(setupRuleRangeMigrationSql).not.toMatch(/hr_|payment|journal/);
 	});
 });
 

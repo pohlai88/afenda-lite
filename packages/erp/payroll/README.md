@@ -47,6 +47,16 @@ the canonical 12 fractional digits and rejects excess precision instead of
 silently truncating it. Memory persistence is test-only; omitted internal store
 wiring resolves to the Drizzle production store.
 
+Setup rules are effective-dated versions. At most one non-archived earning,
+deduction, or statutory rule may cover a date for the same organization, pay
+group, and code; PostgreSQL exclusion constraints provide the concurrency-safe
+boundary. Supersession closes the prior inclusive range and preserves that
+version for historical resolution. Archiving removes a version from future
+resolution. Finalization validates calculation-snapshot record versions and
+shares a deterministic per-rule transaction lock with update, archive, and
+supersede, so a finalized version cannot be changed or retired even under a
+concurrent mutation.
+
 Manifest: `src/module.manifest.ts` (`@afenda/payroll/module-manifest`).
 
 ## Domain farms

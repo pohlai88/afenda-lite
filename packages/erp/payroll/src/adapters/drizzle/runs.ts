@@ -471,7 +471,7 @@ export const drizzleRunsMethods: PayrollRunsStore = {
 			nextRoundingPolicy === null ? null : JSON.stringify(nextRoundingPolicy);
 
 		try {
-			const [, rows] = await afendaDatabase.transaction((sqlValue) => [
+			const [, , rows] = await afendaDatabase.transaction((sqlValue) => [
 				sqlValue`
 					SELECT id FROM payroll_run
 					WHERE organization_id = ${input.organizationId}
@@ -479,7 +479,76 @@ export const drizzleRunsMethods: PayrollRunsStore = {
 					FOR UPDATE
 				`,
 				sqlValue`
-					WITH mutated AS (
+					SELECT pg_advisory_xact_lock(
+						hashtextextended(
+							${input.organizationId}::text || ':' || rule_ref.rule_kind || ':' || rule_ref.rule_id::text,
+							0
+						)
+					)
+					FROM (
+						SELECT DISTINCT rule_kind, rule_id
+						FROM payroll_run_employee
+						CROSS JOIN LATERAL (
+							SELECT 'earning'::text AS rule_kind, (item ->> 'id')::uuid AS rule_id
+							FROM jsonb_array_elements(
+								CASE WHEN ${nextStatus}::text = 'finalized'
+									THEN COALESCE(payroll_run_employee.snapshot_json -> 'earningRules', '[]'::jsonb)
+									ELSE '[]'::jsonb END
+							) AS item
+							UNION ALL
+							SELECT 'deduction'::text, (item ->> 'id')::uuid
+							FROM jsonb_array_elements(
+								CASE WHEN ${nextStatus}::text = 'finalized'
+									THEN COALESCE(payroll_run_employee.snapshot_json -> 'deductionRules', '[]'::jsonb)
+									ELSE '[]'::jsonb END
+							) AS item
+							UNION ALL
+							SELECT 'statutory'::text, (item ->> 'id')::uuid
+							FROM jsonb_array_elements(
+								CASE WHEN ${nextStatus}::text = 'finalized'
+									THEN COALESCE(payroll_run_employee.snapshot_json -> 'statutoryRules', '[]'::jsonb)
+									ELSE '[]'::jsonb END
+							) AS item
+						) AS usage
+						WHERE payroll_run_employee.organization_id = ${input.organizationId}
+							AND payroll_run_employee.run_id = ${input.runId}
+					) AS rule_ref
+					ORDER BY rule_ref.rule_kind, rule_ref.rule_id
+				`,
+				sqlValue`
+					WITH snapshot_rule_refs AS MATERIALIZED (
+						SELECT DISTINCT rule_usage.rule_kind, rule_usage.rule_id,
+							rule_usage.record_version
+						FROM payroll_run_employee
+						CROSS JOIN LATERAL (
+							SELECT 'earning'::text AS rule_kind, (item ->> 'id')::uuid AS rule_id,
+								(item ->> 'recordVersion')::integer AS record_version
+							FROM jsonb_array_elements(
+								CASE WHEN ${nextStatus}::text = 'finalized'
+									THEN COALESCE(payroll_run_employee.snapshot_json -> 'earningRules', '[]'::jsonb)
+									ELSE '[]'::jsonb END
+							) AS item
+							UNION ALL
+							SELECT 'deduction'::text, (item ->> 'id')::uuid,
+								(item ->> 'recordVersion')::integer
+							FROM jsonb_array_elements(
+								CASE WHEN ${nextStatus}::text = 'finalized'
+									THEN COALESCE(payroll_run_employee.snapshot_json -> 'deductionRules', '[]'::jsonb)
+									ELSE '[]'::jsonb END
+							) AS item
+							UNION ALL
+							SELECT 'statutory'::text, (item ->> 'id')::uuid,
+								(item ->> 'recordVersion')::integer
+							FROM jsonb_array_elements(
+								CASE WHEN ${nextStatus}::text = 'finalized'
+									THEN COALESCE(payroll_run_employee.snapshot_json -> 'statutoryRules', '[]'::jsonb)
+									ELSE '[]'::jsonb END
+							) AS item
+						) AS rule_usage
+						WHERE payroll_run_employee.organization_id = ${input.organizationId}
+							AND payroll_run_employee.run_id = ${input.runId}
+					),
+					mutated AS (
 						UPDATE payroll_run
 						SET status = ${nextStatus},
 							calculation_snapshot_hash = ${nextSnapshotHash},
@@ -492,13 +561,50 @@ export const drizzleRunsMethods: PayrollRunsStore = {
 							AND id = ${input.runId} AND version = ${input.expectedVersion}
 							AND (
 								${nextStatus}::text <> 'finalized'
-								OR NOT EXISTS (
-									SELECT 1 FROM payroll_exception
-									WHERE organization_id = ${input.organizationId}
-										AND run_id = ${input.runId} AND severity = 'blocking'
+								OR (
+									NOT EXISTS (
+										SELECT 1 FROM payroll_exception
+										WHERE organization_id = ${input.organizationId}
+											AND run_id = ${input.runId} AND severity = 'blocking'
+									)
+									AND NOT EXISTS (
+										SELECT 1 FROM snapshot_rule_refs
+										WHERE CASE snapshot_rule_refs.rule_kind
+											WHEN 'earning' THEN NOT EXISTS (
+												SELECT 1 FROM payroll_earning_rule
+												WHERE organization_id = ${input.organizationId}
+													AND id = snapshot_rule_refs.rule_id
+													AND version = snapshot_rule_refs.record_version
+											)
+											WHEN 'deduction' THEN NOT EXISTS (
+												SELECT 1 FROM payroll_deduction_rule
+												WHERE organization_id = ${input.organizationId}
+													AND id = snapshot_rule_refs.rule_id
+													AND version = snapshot_rule_refs.record_version
+											)
+											WHEN 'statutory' THEN NOT EXISTS (
+												SELECT 1 FROM payroll_statutory_rule
+												WHERE organization_id = ${input.organizationId}
+													AND id = snapshot_rule_refs.rule_id
+													AND version = snapshot_rule_refs.record_version
+											)
+											ELSE TRUE
+										END
+									)
 								)
 							)
 						RETURNING id, organization_id, updated_by
+					),
+					finalized_rule_usage AS (
+						INSERT INTO payroll_rule_finalized_usage (
+							id, organization_id, rule_kind, rule_id, run_id
+						)
+						SELECT DISTINCT gen_random_uuid(), mutated.organization_id,
+							rule_usage.rule_kind, rule_usage.rule_id, mutated.id
+						FROM mutated CROSS JOIN snapshot_rule_refs AS rule_usage
+						ON CONFLICT (organization_id, rule_kind, rule_id, run_id)
+						DO NOTHING
+						RETURNING id
 					),
 					audited AS (
 						INSERT INTO platform_audit_log (
@@ -539,7 +645,7 @@ export const drizzleRunsMethods: PayrollRunsStore = {
 			if (rows.length === 0) {
 				return mapConflict(
 					nextStatus === "finalized"
-						? "Payroll run is stale or has blocking exceptions"
+						? "Payroll run is stale, has blocking exceptions, or references changed rules"
 						: "Payroll run version is stale",
 				);
 			}

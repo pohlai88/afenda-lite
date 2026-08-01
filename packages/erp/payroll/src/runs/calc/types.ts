@@ -38,6 +38,7 @@ export interface PayrollCalcEarningRuleSnapshot {
 	id: string;
 	name: string;
 	rate: string | null;
+	recordVersion: number;
 	ruleType: "fixed" | "rate";
 	ruleVersion: string;
 }
@@ -49,6 +50,7 @@ export interface PayrollCalcDeductionRuleSnapshot {
 	id: string;
 	name: string;
 	rate: string | null;
+	recordVersion: number;
 	ruleType: "fixed" | "rate";
 	ruleVersion: string;
 	taxTiming: PayrollDeductionTaxTiming;
@@ -60,6 +62,7 @@ export interface PayrollCalcStatutoryRuleSnapshot {
 	id: string;
 	jurisdictionCode: string;
 	name: string;
+	recordVersion: number;
 	ruleVersion: string;
 }
 

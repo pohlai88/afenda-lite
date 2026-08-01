@@ -49,6 +49,7 @@ function mapEarningRule(
 		ruleType: rule.ruleType,
 		amount: rule.amount,
 		rate: rule.rate,
+		recordVersion: rule.version,
 		currencyCode: rule.currencyCode,
 		ruleVersion: rule.ruleVersion,
 	};
@@ -64,6 +65,7 @@ function mapDeductionRule(
 		ruleType: rule.ruleType,
 		amount: rule.amount,
 		rate: rule.rate,
+		recordVersion: rule.version,
 		currencyCode: rule.currencyCode,
 		ruleVersion: rule.ruleVersion,
 		taxTiming: rule.taxTiming,
@@ -77,6 +79,7 @@ function mapStatutoryRule(
 		id: rule.id,
 		code: rule.code,
 		name: rule.name,
+		recordVersion: rule.version,
 		jurisdictionCode: rule.jurisdictionCode,
 		configJson: rule.configJson,
 		ruleVersion: rule.ruleVersion,

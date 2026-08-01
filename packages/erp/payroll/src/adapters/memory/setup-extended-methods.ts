@@ -4,9 +4,18 @@ import { errorResult, type Result } from "@afenda/errors";
 import { parsePayrollRunId } from "../../brands";
 import type { MutationPorts } from "../../ports";
 import { assertExpectedVersion } from "../../shared/concurrency";
+import {
+	effectiveRangesOverlap,
+	endSupersededEffectiveRange,
+	isValidEffectiveDateRange,
+} from "../../shared/effective-date";
 import { mapInvalidState, mapNotFound } from "../../shared/persistence-errors";
 import { ruleFinalizedUsageKey } from "../../shared/rule-finalized-lock";
 import { assertRuleNotLockedByFinalizedRun } from "../../shared/setup-rule-guards";
+import {
+	assertValidPayrollAmountRateRuleConfiguration,
+	assertValidRuleSuccessorDate,
+} from "../../shared/setup-rule-policy";
 import type { PayrollSetupStore } from "../../store/setup";
 import type {
 	PayrollCalendar,
@@ -31,6 +40,41 @@ type AuditFn = (
 		action: "CREATE" | "UPDATE" | "DELETE";
 	},
 ) => Promise<Result<{ id: string }>>;
+
+function hasRuleHistoryOverlapAfterUpdate<
+	TRule extends {
+		code: string;
+		effectiveFrom: string;
+		effectiveTo: string | null;
+		id: string;
+		organizationId: string;
+		payGroupId: string;
+		status: "active" | "superseded" | "archived";
+	},
+>(rules: Iterable<TRule>, current: TRule, effectiveTo: string | null): boolean {
+	for (const candidate of rules) {
+		if (
+			candidate.id === current.id ||
+			candidate.organizationId !== current.organizationId ||
+			candidate.payGroupId !== current.payGroupId ||
+			candidate.code !== current.code ||
+			candidate.status !== "active"
+		) {
+			continue;
+		}
+		if (
+			effectiveRangesOverlap(
+				current.effectiveFrom,
+				effectiveTo,
+				candidate.effectiveFrom,
+				candidate.effectiveTo,
+			)
+		) {
+			return true;
+		}
+	}
+	return false;
+}
 
 export function createMemorySetupExtendedMethods(input: {
 	state: SetupMemoryState;
@@ -349,6 +393,7 @@ export function createMemorySetupExtendedMethods(input: {
 			return errorResult.ok(cloneEarningRule(rule));
 		},
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Setup mutation keeps version, finalized-use, range, rule-shape, overlap, audit, and rollback guards together.
 		async updateEarningRule(ruleInput, ports) {
 			const rule = state.earningRules.get(ruleInput.ruleId);
 			if (
@@ -375,17 +420,51 @@ export function createMemorySetupExtendedMethods(input: {
 			if (rule.status !== "active") {
 				return mapInvalidState("Only active earning rules can be updated");
 			}
+			const amount =
+				ruleInput.amount === undefined ? rule.amount : ruleInput.amount;
+			const rate = ruleInput.rate === undefined ? rule.rate : ruleInput.rate;
+			const effectiveTo =
+				ruleInput.effectiveTo === undefined
+					? rule.effectiveTo
+					: ruleInput.effectiveTo;
+			const configuration = assertValidPayrollAmountRateRuleConfiguration({
+				ruleType: rule.ruleType,
+				amount,
+				rate,
+			});
+			if (!configuration.ok) {
+				return configuration;
+			}
+			if (
+				!isValidEffectiveDateRange({
+					effectiveFrom: rule.effectiveFrom,
+					effectiveTo,
+				})
+			) {
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "effectiveTo must be on or after effectiveFrom",
+				});
+			}
+			if (
+				hasRuleHistoryOverlapAfterUpdate(
+					state.earningRules.values(),
+					rule,
+					effectiveTo,
+				)
+			) {
+				return errorResult.fail("CONFLICT", {
+					publicMessage:
+						"Overlapping effective range for non-archived earning rule",
+				});
+			}
 
 			const now = new Date();
 			const updated: PayrollEarningRule = {
 				...rule,
 				name: ruleInput.name ?? rule.name,
-				amount: ruleInput.amount === undefined ? rule.amount : ruleInput.amount,
-				rate: ruleInput.rate === undefined ? rule.rate : ruleInput.rate,
-				effectiveTo:
-					ruleInput.effectiveTo === undefined
-						? rule.effectiveTo
-						: ruleInput.effectiveTo,
+				amount,
+				rate,
+				effectiveTo,
 				version: rule.version + 1,
 				updatedBy: ruleInput.actorUserId,
 				updatedAt: now,
@@ -459,6 +538,7 @@ export function createMemorySetupExtendedMethods(input: {
 			return errorResult.ok(cloneEarningRule(updated));
 		},
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Supersession coordinates the permanent versioning invariants and compensating memory rollback in one adapter boundary.
 		async supersedeEarningRule(record, ports) {
 			const existing = state.earningRules.get(record.ruleId);
 			if (
@@ -485,11 +565,31 @@ export function createMemorySetupExtendedMethods(input: {
 			if (existing.status !== "active") {
 				return mapInvalidState("Only active earning rules can be superseded");
 			}
+			const successorDate = assertValidRuleSuccessorDate({
+				currentEffectiveFrom: existing.effectiveFrom,
+				successorEffectiveFrom: record.effectiveFrom,
+			});
+			if (!successorDate.ok) {
+				return successorDate;
+			}
+			const successorConfiguration =
+				assertValidPayrollAmountRateRuleConfiguration({
+					ruleType: record.ruleType ?? existing.ruleType,
+					amount: record.amount === undefined ? existing.amount : record.amount,
+					rate: record.rate === undefined ? existing.rate : record.rate,
+				});
+			if (!successorConfiguration.ok) {
+				return successorConfiguration;
+			}
 
 			const now = new Date();
 			const superseded: PayrollEarningRule = {
 				...existing,
 				status: "superseded",
+				effectiveTo: endSupersededEffectiveRange(
+					existing.effectiveTo,
+					record.effectiveFrom,
+				),
 				version: existing.version + 1,
 				updatedBy: record.createdBy,
 				updatedAt: now,
@@ -538,6 +638,7 @@ export function createMemorySetupExtendedMethods(input: {
 			return errorResult.ok(cloneDeductionRule(rule));
 		},
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Setup mutation keeps version, finalized-use, range, rule-shape, overlap, audit, and rollback guards together.
 		async updateDeductionRule(ruleInput, ports) {
 			const rule = state.deductionRules.get(ruleInput.ruleId);
 			if (
@@ -564,21 +665,55 @@ export function createMemorySetupExtendedMethods(input: {
 			if (rule.status !== "active") {
 				return mapInvalidState("Only active deduction rules can be updated");
 			}
+			const amount =
+				ruleInput.amount === undefined ? rule.amount : ruleInput.amount;
+			const rate = ruleInput.rate === undefined ? rule.rate : ruleInput.rate;
+			const effectiveTo =
+				ruleInput.effectiveTo === undefined
+					? rule.effectiveTo
+					: ruleInput.effectiveTo;
+			const configuration = assertValidPayrollAmountRateRuleConfiguration({
+				ruleType: rule.ruleType,
+				amount,
+				rate,
+			});
+			if (!configuration.ok) {
+				return configuration;
+			}
+			if (
+				!isValidEffectiveDateRange({
+					effectiveFrom: rule.effectiveFrom,
+					effectiveTo,
+				})
+			) {
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "effectiveTo must be on or after effectiveFrom",
+				});
+			}
+			if (
+				hasRuleHistoryOverlapAfterUpdate(
+					state.deductionRules.values(),
+					rule,
+					effectiveTo,
+				)
+			) {
+				return errorResult.fail("CONFLICT", {
+					publicMessage:
+						"Overlapping effective range for non-archived deduction rule",
+				});
+			}
 
 			const now = new Date();
 			const updated: PayrollDeductionRule = {
 				...rule,
 				name: ruleInput.name ?? rule.name,
-				amount: ruleInput.amount === undefined ? rule.amount : ruleInput.amount,
-				rate: ruleInput.rate === undefined ? rule.rate : ruleInput.rate,
+				amount,
+				rate,
 				taxTiming:
 					ruleInput.taxTiming === undefined
 						? rule.taxTiming
 						: ruleInput.taxTiming,
-				effectiveTo:
-					ruleInput.effectiveTo === undefined
-						? rule.effectiveTo
-						: ruleInput.effectiveTo,
+				effectiveTo,
 				version: rule.version + 1,
 				updatedBy: ruleInput.actorUserId,
 				updatedAt: now,
@@ -652,6 +787,7 @@ export function createMemorySetupExtendedMethods(input: {
 			return errorResult.ok(cloneDeductionRule(updated));
 		},
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Supersession coordinates the permanent versioning invariants and compensating memory rollback in one adapter boundary.
 		async supersedeDeductionRule(record, ports) {
 			const existing = state.deductionRules.get(record.ruleId);
 			if (
@@ -678,11 +814,31 @@ export function createMemorySetupExtendedMethods(input: {
 			if (existing.status !== "active") {
 				return mapInvalidState("Only active deduction rules can be superseded");
 			}
+			const successorDate = assertValidRuleSuccessorDate({
+				currentEffectiveFrom: existing.effectiveFrom,
+				successorEffectiveFrom: record.effectiveFrom,
+			});
+			if (!successorDate.ok) {
+				return successorDate;
+			}
+			const successorConfiguration =
+				assertValidPayrollAmountRateRuleConfiguration({
+					ruleType: record.ruleType ?? existing.ruleType,
+					amount: record.amount === undefined ? existing.amount : record.amount,
+					rate: record.rate === undefined ? existing.rate : record.rate,
+				});
+			if (!successorConfiguration.ok) {
+				return successorConfiguration;
+			}
 
 			const now = new Date();
 			const superseded: PayrollDeductionRule = {
 				...existing,
 				status: "superseded",
+				effectiveTo: endSupersededEffectiveRange(
+					existing.effectiveTo,
+					record.effectiveFrom,
+				),
 				version: existing.version + 1,
 				updatedBy: record.createdBy,
 				updatedAt: now,
@@ -758,6 +914,32 @@ export function createMemorySetupExtendedMethods(input: {
 			if (rule.status !== "active") {
 				return mapInvalidState("Only active statutory rules can be updated");
 			}
+			const effectiveTo =
+				ruleInput.effectiveTo === undefined
+					? rule.effectiveTo
+					: ruleInput.effectiveTo;
+			if (
+				!isValidEffectiveDateRange({
+					effectiveFrom: rule.effectiveFrom,
+					effectiveTo,
+				})
+			) {
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "effectiveTo must be on or after effectiveFrom",
+				});
+			}
+			if (
+				hasRuleHistoryOverlapAfterUpdate(
+					state.statutoryRules.values(),
+					rule,
+					effectiveTo,
+				)
+			) {
+				return errorResult.fail("CONFLICT", {
+					publicMessage:
+						"Overlapping effective range for non-archived statutory rule",
+				});
+			}
 
 			const now = new Date();
 			const updated: PayrollStatutoryRule = {
@@ -765,10 +947,7 @@ export function createMemorySetupExtendedMethods(input: {
 				name: ruleInput.name ?? rule.name,
 				jurisdictionCode: ruleInput.jurisdictionCode ?? rule.jurisdictionCode,
 				configJson: ruleInput.configJson ?? rule.configJson,
-				effectiveTo:
-					ruleInput.effectiveTo === undefined
-						? rule.effectiveTo
-						: ruleInput.effectiveTo,
+				effectiveTo,
 				version: rule.version + 1,
 				updatedBy: ruleInput.actorUserId,
 				updatedAt: now,
@@ -868,11 +1047,22 @@ export function createMemorySetupExtendedMethods(input: {
 			if (existing.status !== "active") {
 				return mapInvalidState("Only active statutory rules can be superseded");
 			}
+			const successorDate = assertValidRuleSuccessorDate({
+				currentEffectiveFrom: existing.effectiveFrom,
+				successorEffectiveFrom: record.effectiveFrom,
+			});
+			if (!successorDate.ok) {
+				return successorDate;
+			}
 
 			const now = new Date();
 			const superseded: PayrollStatutoryRule = {
 				...existing,
 				status: "superseded",
+				effectiveTo: endSupersededEffectiveRange(
+					existing.effectiveTo,
+					record.effectiveFrom,
+				),
 				version: existing.version + 1,
 				updatedBy: record.createdBy,
 				updatedAt: now,

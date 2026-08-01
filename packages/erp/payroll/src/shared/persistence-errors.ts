@@ -36,6 +36,10 @@ export function isPostgresForeignKeyViolation(error: unknown): boolean {
 	return postgresErrorCode(error) === "23503";
 }
 
+export function isPostgresExclusionViolation(error: unknown): boolean {
+	return postgresErrorCode(error) === "23P01";
+}
+
 function postgresErrorCode(error: unknown): string | undefined {
 	const code = readProperty(error, "code");
 	return typeof code === "string" ? code.toUpperCase() : undefined;
@@ -79,6 +83,12 @@ export function mapPersistenceFailure(
 	}
 	if (isPostgresUniqueViolation(error)) {
 		return errorResult.fail("CONFLICT", { publicMessage: "Duplicate record" });
+	}
+	if (isPostgresExclusionViolation(error)) {
+		return errorResult.fail("CONFLICT", {
+			publicMessage:
+				"The requested effective range overlaps a non-archived record",
+		});
 	}
 
 	return errorProject.result(

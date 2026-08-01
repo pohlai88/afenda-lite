@@ -17,10 +17,15 @@ import {
 import { assertPayrollRunTransition } from "../../runs/transitions";
 import { assertExpectedVersion } from "../../shared/concurrency";
 import {
+	collectFinalizedRuleUsage,
+	type FinalizedRuleUsage,
+} from "../../shared/finalized-rule-usage";
+import {
 	mapConflict,
 	mapInvalidState,
 	mapNotFound,
 } from "../../shared/persistence-errors";
+import { ruleFinalizedUsageKey } from "../../shared/rule-finalized-lock";
 import type { PayrollRunsStore } from "../../store/runs";
 import type {
 	IdempotentPayrollRunRecord,
@@ -30,7 +35,7 @@ import type {
 	PayrollRunCreateRecord,
 	PayrollRunUpdateInput,
 } from "../../types";
-import { idempotencyMapKey, type RunsMemoryState } from "./state";
+import { idempotencyMapKey, type MemoryPayrollStoreState } from "./state";
 
 function cloneRun(run: PayrollRun): PayrollRun {
 	return { ...run };
@@ -102,8 +107,27 @@ async function appendRunEvents(
 }
 
 export function createMemoryRunsMethods(
-	state: RunsMemoryState,
+	memoryState: MemoryPayrollStoreState,
 ): PayrollRunsStore {
+	const state = memoryState.runs;
+	function isCurrentRuleVersion(usage: FinalizedRuleUsage): boolean {
+		if (usage.ruleKind === "earning") {
+			return (
+				memoryState.setup.earningRules.get(usage.ruleId)?.version ===
+				usage.recordVersion
+			);
+		}
+		if (usage.ruleKind === "deduction") {
+			return (
+				memoryState.setup.deductionRules.get(usage.ruleId)?.version ===
+				usage.recordVersion
+			);
+		}
+		return (
+			memoryState.setup.statutoryRules.get(usage.ruleId)?.version ===
+			usage.recordVersion
+		);
+	}
 	return {
 		async findRunByIdempotencyKey(input: {
 			organizationId: string;
@@ -274,6 +298,28 @@ export function createMemoryRunsMethods(
 					return transitionCheck;
 				}
 			}
+			const finalizedRuleUsage =
+				nextStatus === "finalized"
+					? collectFinalizedRuleUsage({
+							organizationId: input.organizationId,
+							runId: input.runId,
+							snapshots: Array.from(memoryState.outputs.runEmployees.values())
+								.filter(
+									(employee) =>
+										employee.organizationId === input.organizationId &&
+										employee.runId === input.runId,
+								)
+								.map((employee) => employee.snapshotJson),
+						})
+					: errorResult.ok([]);
+			if (!finalizedRuleUsage.ok) {
+				return finalizedRuleUsage;
+			}
+			if (!finalizedRuleUsage.data.every(isCurrentRuleVersion)) {
+				return mapInvalidState(
+					"Payroll calculation snapshots reference stale rule versions",
+				);
+			}
 
 			const now = new Date();
 			const updated: PayrollRun = {
@@ -341,6 +387,9 @@ export function createMemoryRunsMethods(
 					state.runs.set(latest.id, latest);
 					return outbox;
 				}
+			}
+			for (const usage of finalizedRuleUsage.data) {
+				memoryState.setup.ruleFinalizedUsage.add(ruleFinalizedUsageKey(usage));
 			}
 
 			return errorResult.ok(cloneRun(updated));

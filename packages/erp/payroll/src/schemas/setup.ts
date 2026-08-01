@@ -8,6 +8,8 @@ import {
 	payrollPeriodIdSchema,
 	payrollStatutoryRuleIdSchema,
 } from "../brands";
+import { isValidEffectiveDateRange } from "../shared/effective-date";
+import { isValidPayrollAmountRateRuleConfiguration } from "../shared/setup-rule-policy";
 import {
 	isoDateSchema,
 	payrollActorUserIdSchema,
@@ -139,7 +141,10 @@ export const payrollCalendarCreateRecordSchema = z
 		createdBy: payrollActorUserIdSchema,
 		correlationId: payrollCorrelationIdSchema,
 	})
-	.strict();
+	.strict()
+	.refine(isValidEffectiveDateRange, {
+		message: "effectiveTo must be on or after effectiveFrom",
+	});
 
 export const payrollPayGroupCreateRecordSchema = z
 	.object({
@@ -191,12 +196,12 @@ export const payrollEarningRuleCreateRecordSchema = z
 		correlationId: payrollCorrelationIdSchema,
 	})
 	.strict()
-	.refine(
-		(value) =>
-			(value.ruleType === "fixed" && value.amount !== null) ||
-			(value.ruleType === "rate" && value.rate !== null),
-		{ message: "fixed rules require amount; rate rules require rate" },
-	);
+	.refine(isValidPayrollAmountRateRuleConfiguration, {
+		message: "fixed rules require only amount; rate rules require only rate",
+	})
+	.refine(isValidEffectiveDateRange, {
+		message: "effectiveTo must be on or after effectiveFrom",
+	});
 
 export const payrollDeductionRuleCreateRecordSchema =
 	payrollEarningRuleCreateRecordSchema.extend({
@@ -219,7 +224,10 @@ export const payrollStatutoryRuleCreateRecordSchema = z
 		createdBy: payrollActorUserIdSchema,
 		correlationId: payrollCorrelationIdSchema,
 	})
-	.strict();
+	.strict()
+	.refine(isValidEffectiveDateRange, {
+		message: "effectiveTo must be on or after effectiveFrom",
+	});
 
 export const payrollCalendarUpdateInputSchema = z
 	.object({
@@ -243,7 +251,10 @@ export const createPayrollCalendarInputSchema = payrollMutationContextSchema
 		effectiveTo: isoDateSchema.nullable().optional(),
 		idempotencyKey: payrollIdempotencyKeySchema,
 	})
-	.strict();
+	.strict()
+	.refine(isValidEffectiveDateRange, {
+		message: "effectiveTo must be on or after effectiveFrom",
+	});
 
 export const updatePayrollCalendarInputSchema =
 	payrollCalendarUpdateInputSchema;
@@ -371,12 +382,12 @@ export const createPayrollEarningRuleInputSchema = payrollMutationContextSchema
 		idempotencyKey: payrollIdempotencyKeySchema,
 	})
 	.strict()
-	.refine(
-		(value) =>
-			(value.ruleType === "fixed" && value.amount !== null) ||
-			(value.ruleType === "rate" && value.rate !== null),
-		{ message: "fixed rules require amount; rate rules require rate" },
-	);
+	.refine(isValidPayrollAmountRateRuleConfiguration, {
+		message: "fixed rules require only amount; rate rules require only rate",
+	})
+	.refine(isValidEffectiveDateRange, {
+		message: "effectiveTo must be on or after effectiveFrom",
+	});
 
 export const updatePayrollEarningRuleInputSchema = payrollMutationContextSchema
 	.extend({
@@ -407,7 +418,10 @@ export const supersedePayrollEarningRuleInputSchema =
 			expectedVersion: payrollExpectedVersionSchema,
 			idempotencyKey: payrollIdempotencyKeySchema,
 		})
-		.strict();
+		.strict()
+		.refine(isValidEffectiveDateRange, {
+			message: "effectiveTo must be on or after effectiveFrom",
+		});
 
 export const getPayrollEarningRuleInputSchema = payrollMutationContextSchema
 	.extend({
@@ -474,7 +488,10 @@ export const createPayrollStatutoryRuleInputSchema =
 			effectiveTo: isoDateSchema.nullable().optional(),
 			idempotencyKey: payrollIdempotencyKeySchema,
 		})
-		.strict();
+		.strict()
+		.refine(isValidEffectiveDateRange, {
+			message: "effectiveTo must be on or after effectiveFrom",
+		});
 
 export const updatePayrollStatutoryRuleInputSchema =
 	payrollMutationContextSchema
@@ -509,7 +526,10 @@ export const supersedePayrollStatutoryRuleInputSchema =
 			expectedVersion: payrollExpectedVersionSchema,
 			idempotencyKey: payrollIdempotencyKeySchema,
 		})
-		.strict();
+		.strict()
+		.refine(isValidEffectiveDateRange, {
+			message: "effectiveTo must be on or after effectiveFrom",
+		});
 
 export const getPayrollStatutoryRuleInputSchema = payrollMutationContextSchema
 	.extend({
@@ -612,7 +632,10 @@ export const payrollEarningRuleSupersedeRecordSchema = z
 		createdBy: payrollActorUserIdSchema,
 		correlationId: payrollCorrelationIdSchema,
 	})
-	.strict();
+	.strict()
+	.refine(isValidEffectiveDateRange, {
+		message: "effectiveTo must be on or after effectiveFrom",
+	});
 
 export const payrollDeductionRuleUpdateInputSchema =
 	payrollEarningRuleUpdateInputSchema.extend({
@@ -630,10 +653,28 @@ export const payrollDeductionRuleArchiveInputSchema = z
 	})
 	.strict();
 
-export const payrollDeductionRuleSupersedeRecordSchema =
-	payrollEarningRuleSupersedeRecordSchema.extend({
+export const payrollDeductionRuleSupersedeRecordSchema = z
+	.object({
+		organizationId: payrollOrganizationIdSchema,
 		ruleId: payrollDeductionRuleIdSchema,
+		name: z.string().trim().min(1).max(256).optional(),
+		ruleType: payrollRuleTypeSchema.optional(),
+		amount: payrollDecimalStringSchema.nullable().optional(),
+		rate: payrollDecimalStringSchema.nullable().optional(),
+		currencyCode: z.string().trim().length(3).optional(),
 		taxTiming: payrollDeductionTaxTimingSchema.optional(),
+		ruleVersion: z.string().trim().min(1).max(64),
+		effectiveFrom: isoDateSchema,
+		effectiveTo: isoDateSchema.nullable().optional(),
+		expectedVersion: payrollExpectedVersionSchema,
+		idempotencyKey: payrollIdempotencyKeySchema,
+		createRequestFingerprint: z.string().trim().min(1).max(256),
+		createdBy: payrollActorUserIdSchema,
+		correlationId: payrollCorrelationIdSchema,
+	})
+	.strict()
+	.refine(isValidEffectiveDateRange, {
+		message: "effectiveTo must be on or after effectiveFrom",
 	});
 
 export const payrollStatutoryRuleUpdateInputSchema = z
@@ -676,4 +717,7 @@ export const payrollStatutoryRuleSupersedeRecordSchema = z
 		createdBy: payrollActorUserIdSchema,
 		correlationId: payrollCorrelationIdSchema,
 	})
-	.strict();
+	.strict()
+	.refine(isValidEffectiveDateRange, {
+		message: "effectiveTo must be on or after effectiveFrom",
+	});
