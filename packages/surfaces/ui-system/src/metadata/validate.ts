@@ -12,6 +12,7 @@ import type {
 
 const COMPONENT_MODULE_EXTENSION_PATTERN = /\.tsx?$/;
 const USE_CLIENT_DIRECTIVE_PATTERN = /^\s*["']use client["'];/m;
+const TYPESCRIPT_IDENTIFIER_PATTERN = /^[A-Za-z_$][\w$]*$/;
 
 import { UI_COMPONENT_CONTRACT_STANDARD } from "./contracts/manifest.contract";
 
@@ -55,6 +56,23 @@ export function validateUiCatalog(
 	const surfaceIds = new Set(catalog.surfaceProfiles.map((entry) => entry.id));
 	const tokenIds = new Set(catalog.tokenFamilies.map((entry) => entry.id));
 	const evidencePaths = new Set(snapshot.evidencePaths);
+	const forbiddenConsumerDeclarations = new Map<string, string>();
+	for (const component of catalog.components) {
+		const names =
+			component.governance?.contract?.consumerEnforcement
+				?.forbiddenLocalComponentNames ?? [];
+		for (const name of names) {
+			const existingOwner = forbiddenConsumerDeclarations.get(name);
+			if (existingOwner && existingOwner !== component.id) {
+				issues.push({
+					kind: "component-drift",
+					message: `Consumer declaration ${name} has multiple semantic owners: ${existingOwner}, ${component.id}`,
+				});
+				continue;
+			}
+			forbiddenConsumerDeclarations.set(name, component.id);
+		}
+	}
 
 	for (const duplicate of duplicates(catalogSources)) {
 		issues.push({
@@ -82,6 +100,19 @@ export function validateUiCatalog(
 				kind: "component-drift",
 				message: `Cataloged component source is missing: ${source}`,
 			});
+		}
+	}
+	for (const [source, declarations] of Object.entries(
+		snapshot.consumerDeclarationsBySource,
+	).sort(([left], [right]) => left.localeCompare(right))) {
+		for (const declaration of [...declarations].sort()) {
+			const owner = forbiddenConsumerDeclarations.get(declaration);
+			if (owner) {
+				issues.push({
+					kind: "consumer-drift",
+					message: `${source} declares local ${declaration}; consume the canonical ${owner} capability instead`,
+				});
+			}
 		}
 	}
 
@@ -386,6 +417,44 @@ function validateUsageRuleSections(input: {
 	return diagnostics;
 }
 
+function validateConsumerEnforcement(
+	component: string,
+	value: unknown,
+): GovernanceDiagnostic[] {
+	if (value === undefined) {
+		return [];
+	}
+	if (!isRecord(value)) {
+		return [
+			{
+				severity: "error",
+				code: "invalid_contract_clause",
+				component,
+				message: 'Contract section "consumerEnforcement" must be an object.',
+			},
+		];
+	}
+	const diagnostics = validateClauseSection({
+		component,
+		section: "consumerEnforcement.forbiddenLocalComponentNames",
+		value: value.forbiddenLocalComponentNames,
+	});
+	if (!Array.isArray(value.forbiddenLocalComponentNames)) {
+		return diagnostics;
+	}
+	for (const name of value.forbiddenLocalComponentNames) {
+		if (typeof name === "string" && !TYPESCRIPT_IDENTIFIER_PATTERN.test(name)) {
+			diagnostics.push({
+				severity: "error",
+				code: "invalid_contract_clause",
+				component,
+				message: `Forbidden local component name must be a TypeScript identifier: "${name}".`,
+			});
+		}
+	}
+	return diagnostics;
+}
+
 function validateContractShape(
 	component: string,
 	contract: GovernedComponentContract,
@@ -450,6 +519,13 @@ function validateContractShape(
 				"Contract ownership requires componentOwns and consumerOwns clauses.",
 		});
 	}
+
+	diagnostics.push(
+		...validateConsumerEnforcement(
+			component,
+			runtimeContract.consumerEnforcement,
+		),
+	);
 
 	diagnostics.push(
 		...validateClauseSection({

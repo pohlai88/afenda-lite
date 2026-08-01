@@ -45,7 +45,7 @@ test("all tagged UI-system stories match canonical screenshots @visual", async (
 		)
 		.sort((left, right) => left.id.localeCompare(right.id));
 
-	expect(stories).toHaveLength(74);
+	expect(stories).toHaveLength(75);
 
 	for (const story of stories) {
 		for (const theme of ["light", "dark"] as const) {

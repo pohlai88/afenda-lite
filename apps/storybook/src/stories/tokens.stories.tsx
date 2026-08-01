@@ -107,12 +107,12 @@ const surfaceRoles = [
 	},
 ] as const satisfies readonly ColorRole[];
 
-const chartTokens = [
-	"--chart-1",
-	"--chart-2",
-	"--chart-3",
-	"--chart-4",
-	"--chart-5",
+const dataSeriesTokens = [
+	"--data-series-1",
+	"--data-series-2",
+	"--data-series-3",
+	"--data-series-4",
+	"--data-series-5",
 ] as const;
 
 const sizeTokens = [
@@ -309,12 +309,12 @@ function TokensOverview() {
 			</WorkbenchSection>
 
 			<WorkbenchSection
-				description="Ordered categorical accents; chart meaning and accessible labels remain consumer-owned."
+				description="Governed categorical accents; consumers own series labels and analytical meaning, while the UI system owns palette projection."
 				id="chart-sequence"
-				title="Chart sequence"
+				title="Data-series sequence"
 			>
 				<ol className="grid list-none grid-cols-5 gap-2 p-0">
-					{chartTokens.map((token, index) => (
+					{dataSeriesTokens.map((token, index) => (
 						<li className="space-y-2 text-center" key={token}>
 							<div
 								aria-hidden="true"

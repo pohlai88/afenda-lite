@@ -23,7 +23,7 @@ export const chartContract = defineManifestContract({
 		"Use named reproducible metrics with explicit units and a stated comparison basis.",
 		"Choose chart forms that match the analytical relationship — comparison, composition, or distribution — rather than decoration.",
 		"Provide a tabular or textual equivalent when exact values matter for posting, collection, or audit decisions.",
-		"Map series keys in ChartConfig to stable labels and token colours so legend and tooltip stay consistent.",
+		"Assign each series key a stable label and canonical data-series slot; ChartStyle owns CSS-variable projection so legend and tooltip stay consistent across themes.",
 		"Keep Charts inside a named analytical surface; feature code owns filters, period, and permission to view the series.",
 	],
 	accessibility: [
@@ -38,5 +38,6 @@ export const chartContract = defineManifestContract({
 		"Do not use charts for decorative numbers without an analytical question.",
 		"Do not present a chart as proof of causation or as a substitute for StatusBadge lifecycle.",
 		"Do not omit units, currency, or period from the surrounding title or description.",
+		"Do not pass raw color strings, theme maps, or shadcn chart variables through ChartConfig.",
 	],
 });

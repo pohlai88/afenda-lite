@@ -29,6 +29,9 @@ import {
 	CardHeader,
 	CardTitle,
 	Code,
+	WorkspacePage,
+	WorkspacePageContent,
+	WorkspacePageHeader,
 } from "@afenda/ui-system";
 
 import { activateItemTemplateFormAction } from "@/app/actions/activate-item-template";
@@ -347,614 +350,615 @@ export async function MasterDataShell({ surface }: MasterDataShellProps) {
 		});
 
 	return (
-		<section className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 py-10">
-			<header className="space-y-2">
-				<p className="text-muted-foreground text-sm">
-					{surface === "admin" ? "Org admin" : "Client workspace"}
-				</p>
-				<h1 className="font-semibold text-2xl tracking-tight">Master data</h1>
-				<p className="max-w-2xl text-muted-foreground text-sm">
-					Organization parties, items, item templates/variants, warehouses, and
-					payment terms. Writes go through `@afenda/master-data` only.
-				</p>
-			</header>
+		<WorkspacePage>
+			<WorkspacePageHeader
+				description="Organization parties, items, item templates/variants, warehouses, and payment terms. Writes go through @afenda/master-data only."
+				scope={surface === "admin" ? "Org admin" : "Client workspace"}
+				title="Master data"
+			/>
+			<WorkspacePageContent>
+				{loadError ? (
+					<Alert role="alert" variant="destructive">
+						<AlertTitle>Catalog load incomplete</AlertTitle>
+						<AlertDescription>
+							One or more master-data lists failed. Retry or contact an admin.
+						</AlertDescription>
+					</Alert>
+				) : null}
 
-			{loadError ? (
-				<Alert role="alert" variant="destructive">
-					<AlertTitle>Catalog load incomplete</AlertTitle>
-					<AlertDescription>
-						One or more master-data lists failed. Retry or contact an admin.
-					</AlertDescription>
-				</Alert>
-			) : null}
-
-			<div className="grid gap-6 lg:grid-cols-2">
-				{canSearch ? (
+				<div className="grid gap-6 lg:grid-cols-2">
+					{canSearch ? (
+						<Card>
+							<CardHeader>
+								<CardTitle>Search</CardTitle>
+								<CardDescription>
+									Derived FTS index — never authorizes writes.
+								</CardDescription>
+							</CardHeader>
+							<CardContent>
+								<MasterDataSearchPanel />
+							</CardContent>
+						</Card>
+					) : null}
 					<Card>
 						<CardHeader>
-							<CardTitle>Search</CardTitle>
+							<CardTitle>Party import</CardTitle>
 							<CardDescription>
-								Derived FTS index — never authorizes writes.
+								Validate dry-run, then apply with import_apply. Max 100 rows.
 							</CardDescription>
 						</CardHeader>
 						<CardContent>
-							<MasterDataSearchPanel />
+							<MasterDataImportPanel
+								canImportApply={canImportApply}
+								canImportValidate={canImportValidate}
+							/>
 						</CardContent>
 					</Card>
-				) : null}
-				<Card>
-					<CardHeader>
-						<CardTitle>Party import</CardTitle>
-						<CardDescription>
-							Validate dry-run, then apply with import_apply. Max 100 rows.
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<MasterDataImportPanel
-							canImportApply={canImportApply}
-							canImportValidate={canImportValidate}
-						/>
-					</CardContent>
-				</Card>
-			</div>
+				</div>
 
-			<div className="grid gap-6 lg:grid-cols-2">
+				<div className="grid gap-6 lg:grid-cols-2">
+					<Card>
+						<CardHeader>
+							<CardTitle>Create party</CardTitle>
+							<CardDescription>
+								Draft party root. Add a commercial role before activation.
+							</CardDescription>
+						</CardHeader>
+						<CardContent>
+							<CreatePartyForm
+								canManage={canCreateParties}
+								partyKinds={PARTY_KINDS}
+							/>
+						</CardContent>
+					</Card>
+					<Card>
+						<CardHeader>
+							<CardTitle>Party roles</CardTitle>
+							<CardDescription>
+								Closed role catalog (customer, supplier, …).
+							</CardDescription>
+						</CardHeader>
+						<CardContent>
+							<CreatePartyRoleForm
+								canManage={canManagePartyRoles}
+								parties={partyOptions}
+								roleCodes={PARTY_ROLE_CODES}
+							/>
+						</CardContent>
+					</Card>
+				</div>
+
 				<Card>
 					<CardHeader>
-						<CardTitle>Create party</CardTitle>
+						<CardTitle>MDG change requests</CardTitle>
 						<CardDescription>
-							Draft party root. Add a commercial role before activation.
+							Maker-checker for activate — submit, approve/reject, then apply.
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
-						<CreatePartyForm
-							canManage={canCreateParties}
-							partyKinds={PARTY_KINDS}
-						/>
-					</CardContent>
-				</Card>
-				<Card>
-					<CardHeader>
-						<CardTitle>Party roles</CardTitle>
-						<CardDescription>
-							Closed role catalog (customer, supplier, …).
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<CreatePartyRoleForm
-							canManage={canManagePartyRoles}
+						<ChangeRequestPanel
+							approvedActivateRequests={approvedActivateRequests}
+							canApply={canApplyPartyActivation}
+							canApprove={canApproveChangeRequests}
+							canSubmit={canSubmitChangeRequests}
 							parties={partyOptions}
-							roleCodes={PARTY_ROLE_CODES}
+							submittedRequests={submittedRequests}
 						/>
 					</CardContent>
 				</Card>
-			</div>
 
-			<Card>
-				<CardHeader>
-					<CardTitle>MDG change requests</CardTitle>
-					<CardDescription>
-						Maker-checker for activate — submit, approve/reject, then apply.
-					</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<ChangeRequestPanel
-						approvedActivateRequests={approvedActivateRequests}
-						canApply={canApplyPartyActivation}
-						canApprove={canApproveChangeRequests}
-						canSubmit={canSubmitChangeRequests}
-						parties={partyOptions}
-						submittedRequests={submittedRequests}
-					/>
-				</CardContent>
-			</Card>
-
-			<Card>
-				<CardHeader>
-					<CardTitle>Governed merge</CardTitle>
-					<CardDescription>
-						MDG-gated merge — submit a change request, then apply after
-						approval. Preserves former codes; never auto-merges.
-					</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<MergePartiesForm
-						approvedMergeRequests={approvedMergeRequests}
-						canManage={canMergeParties}
-						parties={mergePartyOptions}
-					/>
-				</CardContent>
-			</Card>
-
-			<Card>
-				<CardHeader>
-					<CardTitle>Parties</CardTitle>
-					<CardDescription>
-						{parties.length} loaded (page size ≤ 50).
-					</CardDescription>
-				</CardHeader>
-				<CardContent>
-					{parties.length === 0 ? (
-						<p className="text-muted-foreground text-sm">No parties yet.</p>
-					) : (
-						<ul className="divide-y divide-border">
-							{parties.map((party) => (
-								<li
-									className="flex flex-wrap items-baseline justify-between gap-2 py-3 text-sm"
-									key={party.id}
-								>
-									<span>
-										<Code>{party.code}</Code> {party.name}
-									</span>
-									<span className="text-muted-foreground">
-										{party.partyKind} · {party.status} · v{party.version}
-									</span>
-								</li>
-							))}
-						</ul>
-					)}
-				</CardContent>
-			</Card>
-
-			<div className="grid gap-6 lg:grid-cols-2">
 				<Card>
 					<CardHeader>
-						<CardTitle>Create payment term</CardTitle>
+						<CardTitle>Governed merge</CardTitle>
 						<CardDescription>
-							Org commercial default (net days). Referenced later by
-							transactional modules — not SO/PO lines here.
+							MDG-gated merge — submit a change request, then apply after
+							approval. Preserves former codes; never auto-merges.
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
-						<CreatePaymentTermForm canManage={canManagePaymentTerms} />
+						<MergePartiesForm
+							approvedMergeRequests={approvedMergeRequests}
+							canManage={canMergeParties}
+							parties={mergePartyOptions}
+						/>
 					</CardContent>
 				</Card>
+
 				<Card>
 					<CardHeader>
-						<CardTitle>Payment terms</CardTitle>
+						<CardTitle>Parties</CardTitle>
 						<CardDescription>
-							{paymentTerms.length} loaded (page size ≤ 50).
+							{parties.length} loaded (page size ≤ 50).
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
-						{paymentTerms.length === 0 ? (
-							<p className="text-muted-foreground text-sm">
-								No payment terms yet.
-							</p>
+						{parties.length === 0 ? (
+							<p className="text-muted-foreground text-sm">No parties yet.</p>
 						) : (
 							<ul className="divide-y divide-border">
-								{paymentTerms.map((term) => (
+								{parties.map((party) => (
 									<li
 										className="flex flex-wrap items-baseline justify-between gap-2 py-3 text-sm"
-										key={term.id}
+										key={party.id}
 									>
 										<span>
-											<Code>{term.code}</Code> {term.name}
+											<Code>{party.code}</Code> {party.name}
 										</span>
 										<span className="text-muted-foreground">
-											net {term.netDays}d · {term.status} · v{term.version}
+											{party.partyKind} · {party.status} · v{party.version}
 										</span>
 									</li>
 								))}
 							</ul>
 						)}
-						<div className="mt-6 border-border border-t pt-4">
-							<p className="mb-3 font-medium text-sm">Lifecycle</p>
-							<PaymentTermLifecycleForm
-								canManage={canManagePaymentTerms}
-								terms={paymentTerms}
-							/>
-						</div>
 					</CardContent>
 				</Card>
-			</div>
 
-			<div className="grid gap-6 lg:grid-cols-2">
-				<Card>
-					<CardHeader>
-						<CardTitle>Create tax registration</CardTitle>
-						<CardDescription>
-							Party-linked tax identity (jurisdiction + type + number). No rate
-							or returns engines here.
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<CreateTaxRegistrationForm
-							canManage={canManageTaxRegistrations}
-							countryCodes={TAX_JURISDICTION_COUNTRY_CODES}
-							parties={partyOptions.map((party) => ({
-								id: party.id,
-								label: party.label,
-							}))}
-							registrationTypes={TAX_REGISTRATION_TYPES}
-						/>
-					</CardContent>
-				</Card>
-				<Card>
-					<CardHeader>
-						<CardTitle>Tax registrations</CardTitle>
-						<CardDescription>
-							{taxRegistrations.length} loaded (page size ≤ 50).
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						{taxRegistrations.length === 0 ? (
-							<p className="text-muted-foreground text-sm">
-								No tax registrations yet.
-							</p>
-						) : (
-							<ul className="divide-y divide-border">
-								{taxRegistrations.map((row) => (
-									<li
-										className="flex flex-wrap items-baseline justify-between gap-2 py-3 text-sm"
-										key={row.id}
-									>
-										<span>
-											<Code>{row.taxType}</Code> {row.maskedRegistrationNumber}
-										</span>
-										<span className="text-muted-foreground">
-											{row.status} · v{row.version}
-										</span>
-									</li>
-								))}
-							</ul>
-						)}
-						<div className="mt-6 border-border border-t pt-4">
-							<p className="mb-3 font-medium text-sm">Lifecycle</p>
-							<TaxRegistrationLifecycleForm
-								canManage={canManageTaxRegistrations}
-								registrations={taxRegistrations}
-							/>
-						</div>
-					</CardContent>
-				</Card>
-			</div>
-
-			<div className="grid gap-6 lg:grid-cols-2">
-				<Card>
-					<CardHeader>
-						<CardTitle>Create item template</CardTitle>
-						<CardDescription>
-							Defines allowed attributes. Concrete sellable variants are
-							separate `md_item` rows — never a JSON bag.
-						</CardDescription>
-					</CardHeader>
-					<CardContent className="space-y-6">
-						<CreateItemTemplateForm canManage={canManageTemplates} />
-						<AddItemTemplateAttributeForm
-							canManage={canManageVariantDefiningAttributes}
-							dataTypes={ITEM_TEMPLATE_ATTRIBUTE_FORM_DATA_TYPES}
-							draftTemplates={templates
-								.filter((template) => template.status === "draft")
-								.map((template) => ({
-									id: template.id,
-									label: `${template.code} · ${template.name}`,
-								}))}
-						/>
-						<AddItemTemplateAttributeOptionForm
-							canManage={canManageTemplateOptions}
-							draftOptionAttributes={draftOptionAttributes}
-						/>
-					</CardContent>
-				</Card>
-				<Card>
-					<CardHeader>
-						<CardTitle>Item templates</CardTitle>
-						<CardDescription>
-							{templates.length} loaded. Activate when attributes (and options)
-							are ready.
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						{templates.length === 0 ? (
-							<p className="text-muted-foreground text-sm">No templates yet.</p>
-						) : (
-							<ul className="divide-y divide-border">
-								{templatePanels.map(({ template, attributes }) => (
-									<li className="space-y-2 py-3 text-sm" key={template.id}>
-										<div className="flex flex-wrap items-baseline justify-between gap-2">
+				<div className="grid gap-6 lg:grid-cols-2">
+					<Card>
+						<CardHeader>
+							<CardTitle>Create payment term</CardTitle>
+							<CardDescription>
+								Org commercial default (net days). Referenced later by
+								transactional modules — not SO/PO lines here.
+							</CardDescription>
+						</CardHeader>
+						<CardContent>
+							<CreatePaymentTermForm canManage={canManagePaymentTerms} />
+						</CardContent>
+					</Card>
+					<Card>
+						<CardHeader>
+							<CardTitle>Payment terms</CardTitle>
+							<CardDescription>
+								{paymentTerms.length} loaded (page size ≤ 50).
+							</CardDescription>
+						</CardHeader>
+						<CardContent>
+							{paymentTerms.length === 0 ? (
+								<p className="text-muted-foreground text-sm">
+									No payment terms yet.
+								</p>
+							) : (
+								<ul className="divide-y divide-border">
+									{paymentTerms.map((term) => (
+										<li
+											className="flex flex-wrap items-baseline justify-between gap-2 py-3 text-sm"
+											key={term.id}
+										>
 											<span>
-												<Code>{template.code}</Code> {template.name}
+												<Code>{term.code}</Code> {term.name}
 											</span>
 											<span className="text-muted-foreground">
-												{template.status} · v{template.version} ·{" "}
-												{attributes.length} attrs
+												net {term.netDays}d · {term.status} · v{term.version}
 											</span>
-										</div>
-										{attributes.length > 0 ? (
-											<ul className="space-y-1 text-muted-foreground">
-												{attributes.map((attribute) => (
-													<li key={attribute.id}>
-														<Code>{attribute.code}</Code> {attribute.name} (
-														{attribute.dataType}
-														{attribute.dataType === "single_option" ||
-														attribute.dataType === "multiple_option"
-															? ` · ${attribute.options.length} options`
-															: ""}
-														)
-													</li>
-												))}
-											</ul>
-										) : null}
-										{canManageTemplates && template.status === "draft" ? (
-											<form action={activateItemTemplateFormAction}>
-												<input name="id" type="hidden" value={template.id} />
-												<input
-													name="expectedVersion"
-													type="hidden"
-													value={template.version}
-												/>
-												<Button size="sm" type="submit" variant="outline">
-													Activate template
-												</Button>
-											</form>
-										) : null}
-									</li>
-								))}
-							</ul>
-						)}
-					</CardContent>
-				</Card>
-			</div>
+										</li>
+									))}
+								</ul>
+							)}
+							<div className="mt-6 border-border border-t pt-4">
+								<p className="mb-3 font-medium text-sm">Lifecycle</p>
+								<PaymentTermLifecycleForm
+									canManage={canManagePaymentTerms}
+									terms={paymentTerms}
+								/>
+							</div>
+						</CardContent>
+					</Card>
+				</div>
 
-			<div className="grid gap-6 lg:grid-cols-2">
-				<Card>
-					<CardHeader>
-						<CardTitle>Create item variant</CardTitle>
-						<CardDescription>
-							Own item id + code under an active template. Attribute
-							combinations are unique while live; retired variants stay
-							resolvable by id.
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<CreateItemVariantForm
-							baseUomId={EA_UOM_ID}
-							canManage={canManageVariantAttributes}
-							itemGroups={itemGroups.map((group) => ({
-								id: group.id,
-								label: `${group.code} · ${group.name}`,
-							}))}
-							itemTypes={ITEM_TYPES}
-							templates={templatePanels
-								.filter(({ template }) => template.status === "active")
-								.map(({ template, attributes }) => ({
-									id: template.id,
-									label: `${template.code} · ${template.name}`,
-									attributes: attributes.map((attribute) => ({
-										id: attribute.id,
-										code: attribute.code,
-										name: attribute.name,
-										dataType: attribute.dataType,
-										options: attribute.options,
-									})),
+				<div className="grid gap-6 lg:grid-cols-2">
+					<Card>
+						<CardHeader>
+							<CardTitle>Create tax registration</CardTitle>
+							<CardDescription>
+								Party-linked tax identity (jurisdiction + type + number). No
+								rate or returns engines here.
+							</CardDescription>
+						</CardHeader>
+						<CardContent>
+							<CreateTaxRegistrationForm
+								canManage={canManageTaxRegistrations}
+								countryCodes={TAX_JURISDICTION_COUNTRY_CODES}
+								parties={partyOptions.map((party) => ({
+									id: party.id,
+									label: party.label,
 								}))}
-						/>
-					</CardContent>
-				</Card>
-				<Card>
-					<CardHeader>
-						<CardTitle>Item variants</CardTitle>
-						<CardDescription>
-							{variantRows.length} loaded across templates (by item identity).
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						{variantRows.length === 0 ? (
-							<p className="text-muted-foreground text-sm">No variants yet.</p>
-						) : (
-							<ul className="divide-y divide-border">
-								{variantRows.map(({ templateCode, variant }) => (
-									<li
-										className="flex flex-wrap items-baseline justify-between gap-2 py-3 text-sm"
-										key={variant.id}
-									>
-										<span>
-											<Code>{variant.item.code}</Code> {variant.item.name}
-										</span>
-										<span className="text-muted-foreground">
-											{templateCode} · {variant.item.status}
-											{variant.retiredAt === null
-												? ""
-												: " · membership retired"}
-										</span>
-									</li>
-								))}
-							</ul>
-						)}
-					</CardContent>
-				</Card>
-			</div>
+								registrationTypes={TAX_REGISTRATION_TYPES}
+							/>
+						</CardContent>
+					</Card>
+					<Card>
+						<CardHeader>
+							<CardTitle>Tax registrations</CardTitle>
+							<CardDescription>
+								{taxRegistrations.length} loaded (page size ≤ 50).
+							</CardDescription>
+						</CardHeader>
+						<CardContent>
+							{taxRegistrations.length === 0 ? (
+								<p className="text-muted-foreground text-sm">
+									No tax registrations yet.
+								</p>
+							) : (
+								<ul className="divide-y divide-border">
+									{taxRegistrations.map((row) => (
+										<li
+											className="flex flex-wrap items-baseline justify-between gap-2 py-3 text-sm"
+											key={row.id}
+										>
+											<span>
+												<Code>{row.taxType}</Code>{" "}
+												{row.maskedRegistrationNumber}
+											</span>
+											<span className="text-muted-foreground">
+												{row.status} · v{row.version}
+											</span>
+										</li>
+									))}
+								</ul>
+							)}
+							<div className="mt-6 border-border border-t pt-4">
+								<p className="mb-3 font-medium text-sm">Lifecycle</p>
+								<TaxRegistrationLifecycleForm
+									canManage={canManageTaxRegistrations}
+									registrations={taxRegistrations}
+								/>
+							</div>
+						</CardContent>
+					</Card>
+				</div>
 
-			<div className="grid gap-6 lg:grid-cols-2">
-				<Card>
-					<CardHeader>
-						<CardTitle>Create item group</CardTitle>
-						<CardDescription>
-							Draft group for catalog hierarchy. Activate before attaching items
-							that require an active group.
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<CreateItemGroupForm canManage={canManageItemGroups} />
-					</CardContent>
-				</Card>
-				<Card>
-					<CardHeader>
-						<CardTitle>Item groups</CardTitle>
-						<CardDescription>
-							{itemGroups.length} loaded (page size ≤ 50).
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						{itemGroups.length === 0 ? (
-							<p className="text-muted-foreground text-sm">
-								No item groups yet.
-							</p>
-						) : (
-							<ul className="divide-y divide-border">
-								{itemGroups.map((group) => (
-									<li
-										className="flex flex-wrap items-baseline justify-between gap-2 py-3 text-sm"
-										key={group.id}
-									>
-										<span>
-											<Code>{group.code}</Code> {group.name}
-										</span>
-										<span className="text-muted-foreground">
-											{group.status} · v{group.version}
-										</span>
-									</li>
-								))}
-							</ul>
-						)}
-						<div className="mt-6 border-border border-t pt-4">
-							<p className="mb-3 font-medium text-sm">Lifecycle</p>
-							<MasterRootLifecycleForm
-								canManage={canManageItemGroups}
-								entity="itemGroup"
-								options={itemGroups.map((group) => ({
+				<div className="grid gap-6 lg:grid-cols-2">
+					<Card>
+						<CardHeader>
+							<CardTitle>Create item template</CardTitle>
+							<CardDescription>
+								Defines allowed attributes. Concrete sellable variants are
+								separate `md_item` rows — never a JSON bag.
+							</CardDescription>
+						</CardHeader>
+						<CardContent className="space-y-6">
+							<CreateItemTemplateForm canManage={canManageTemplates} />
+							<AddItemTemplateAttributeForm
+								canManage={canManageVariantDefiningAttributes}
+								dataTypes={ITEM_TEMPLATE_ATTRIBUTE_FORM_DATA_TYPES}
+								draftTemplates={templates
+									.filter((template) => template.status === "draft")
+									.map((template) => ({
+										id: template.id,
+										label: `${template.code} · ${template.name}`,
+									}))}
+							/>
+							<AddItemTemplateAttributeOptionForm
+								canManage={canManageTemplateOptions}
+								draftOptionAttributes={draftOptionAttributes}
+							/>
+						</CardContent>
+					</Card>
+					<Card>
+						<CardHeader>
+							<CardTitle>Item templates</CardTitle>
+							<CardDescription>
+								{templates.length} loaded. Activate when attributes (and
+								options) are ready.
+							</CardDescription>
+						</CardHeader>
+						<CardContent>
+							{templates.length === 0 ? (
+								<p className="text-muted-foreground text-sm">
+									No templates yet.
+								</p>
+							) : (
+								<ul className="divide-y divide-border">
+									{templatePanels.map(({ template, attributes }) => (
+										<li className="space-y-2 py-3 text-sm" key={template.id}>
+											<div className="flex flex-wrap items-baseline justify-between gap-2">
+												<span>
+													<Code>{template.code}</Code> {template.name}
+												</span>
+												<span className="text-muted-foreground">
+													{template.status} · v{template.version} ·{" "}
+													{attributes.length} attrs
+												</span>
+											</div>
+											{attributes.length > 0 ? (
+												<ul className="space-y-1 text-muted-foreground">
+													{attributes.map((attribute) => (
+														<li key={attribute.id}>
+															<Code>{attribute.code}</Code> {attribute.name} (
+															{attribute.dataType}
+															{attribute.dataType === "single_option" ||
+															attribute.dataType === "multiple_option"
+																? ` · ${attribute.options.length} options`
+																: ""}
+															)
+														</li>
+													))}
+												</ul>
+											) : null}
+											{canManageTemplates && template.status === "draft" ? (
+												<form action={activateItemTemplateFormAction}>
+													<input name="id" type="hidden" value={template.id} />
+													<input
+														name="expectedVersion"
+														type="hidden"
+														value={template.version}
+													/>
+													<Button size="sm" type="submit" variant="outline">
+														Activate template
+													</Button>
+												</form>
+											) : null}
+										</li>
+									))}
+								</ul>
+							)}
+						</CardContent>
+					</Card>
+				</div>
+
+				<div className="grid gap-6 lg:grid-cols-2">
+					<Card>
+						<CardHeader>
+							<CardTitle>Create item variant</CardTitle>
+							<CardDescription>
+								Own item id + code under an active template. Attribute
+								combinations are unique while live; retired variants stay
+								resolvable by id.
+							</CardDescription>
+						</CardHeader>
+						<CardContent>
+							<CreateItemVariantForm
+								baseUomId={EA_UOM_ID}
+								canManage={canManageVariantAttributes}
+								itemGroups={itemGroups.map((group) => ({
 									id: group.id,
 									label: `${group.code} · ${group.name}`,
-									version: group.version,
-									status: group.status,
 								}))}
-								title="Item group"
+								itemTypes={ITEM_TYPES}
+								templates={templatePanels
+									.filter(({ template }) => template.status === "active")
+									.map(({ template, attributes }) => ({
+										id: template.id,
+										label: `${template.code} · ${template.name}`,
+										attributes: attributes.map((attribute) => ({
+											id: attribute.id,
+											code: attribute.code,
+											name: attribute.name,
+											dataType: attribute.dataType,
+											options: attribute.options,
+										})),
+									}))}
 							/>
-						</div>
-					</CardContent>
-				</Card>
-			</div>
+						</CardContent>
+					</Card>
+					<Card>
+						<CardHeader>
+							<CardTitle>Item variants</CardTitle>
+							<CardDescription>
+								{variantRows.length} loaded across templates (by item identity).
+							</CardDescription>
+						</CardHeader>
+						<CardContent>
+							{variantRows.length === 0 ? (
+								<p className="text-muted-foreground text-sm">
+									No variants yet.
+								</p>
+							) : (
+								<ul className="divide-y divide-border">
+									{variantRows.map(({ templateCode, variant }) => (
+										<li
+											className="flex flex-wrap items-baseline justify-between gap-2 py-3 text-sm"
+											key={variant.id}
+										>
+											<span>
+												<Code>{variant.item.code}</Code> {variant.item.name}
+											</span>
+											<span className="text-muted-foreground">
+												{templateCode} · {variant.item.status}
+												{variant.retiredAt === null
+													? ""
+													: " · membership retired"}
+											</span>
+										</li>
+									))}
+								</ul>
+							)}
+						</CardContent>
+					</Card>
+				</div>
 
-			<div className="grid gap-6 lg:grid-cols-2">
-				<Card>
-					<CardHeader>
-						<CardTitle>Create item</CardTitle>
-						<CardDescription>
-							Draft catalog item (non-variant). Variants use Create item variant
-							under an active template.
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<CreateItemForm
-							baseUomId={EA_UOM_ID}
-							canManage={canCreateItems}
-							itemGroups={itemGroups.map((group) => ({
-								id: group.id,
-								label: `${group.code} · ${group.name}`,
-							}))}
-							itemTypes={ITEM_TYPES}
-						/>
-					</CardContent>
-				</Card>
-				<Card>
-					<CardHeader>
-						<CardTitle>Items</CardTitle>
-						<CardDescription>
-							{items.length} loaded (page size ≤ 50).
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						{items.length === 0 ? (
-							<p className="text-muted-foreground text-sm">No items yet.</p>
-						) : (
-							<ul className="divide-y divide-border">
-								{items.map((item) => (
-									<li
-										className="flex flex-wrap items-baseline justify-between gap-2 py-3 text-sm"
-										key={item.id}
-									>
-										<span>
-											<Code>{item.code}</Code> {item.name}
-										</span>
-										<span className="text-muted-foreground">
-											{item.itemType} · {item.status} · v{item.version}
-										</span>
-									</li>
-								))}
-							</ul>
-						)}
-						<div className="mt-6 border-border border-t pt-4">
-							<p className="mb-3 font-medium text-sm">Lifecycle</p>
-							<MasterRootLifecycleForm
-								canManage={canManageItemLifecycle}
-								entity="item"
-								options={items.map((item) => ({
-									id: item.id,
-									label: `${item.code} · ${item.name}`,
-									version: item.version,
-									status: item.status,
+				<div className="grid gap-6 lg:grid-cols-2">
+					<Card>
+						<CardHeader>
+							<CardTitle>Create item group</CardTitle>
+							<CardDescription>
+								Draft group for catalog hierarchy. Activate before attaching
+								items that require an active group.
+							</CardDescription>
+						</CardHeader>
+						<CardContent>
+							<CreateItemGroupForm canManage={canManageItemGroups} />
+						</CardContent>
+					</Card>
+					<Card>
+						<CardHeader>
+							<CardTitle>Item groups</CardTitle>
+							<CardDescription>
+								{itemGroups.length} loaded (page size ≤ 50).
+							</CardDescription>
+						</CardHeader>
+						<CardContent>
+							{itemGroups.length === 0 ? (
+								<p className="text-muted-foreground text-sm">
+									No item groups yet.
+								</p>
+							) : (
+								<ul className="divide-y divide-border">
+									{itemGroups.map((group) => (
+										<li
+											className="flex flex-wrap items-baseline justify-between gap-2 py-3 text-sm"
+											key={group.id}
+										>
+											<span>
+												<Code>{group.code}</Code> {group.name}
+											</span>
+											<span className="text-muted-foreground">
+												{group.status} · v{group.version}
+											</span>
+										</li>
+									))}
+								</ul>
+							)}
+							<div className="mt-6 border-border border-t pt-4">
+								<p className="mb-3 font-medium text-sm">Lifecycle</p>
+								<MasterRootLifecycleForm
+									canManage={canManageItemGroups}
+									entity="itemGroup"
+									options={itemGroups.map((group) => ({
+										id: group.id,
+										label: `${group.code} · ${group.name}`,
+										version: group.version,
+										status: group.status,
+									}))}
+									title="Item group"
+								/>
+							</div>
+						</CardContent>
+					</Card>
+				</div>
+
+				<div className="grid gap-6 lg:grid-cols-2">
+					<Card>
+						<CardHeader>
+							<CardTitle>Create item</CardTitle>
+							<CardDescription>
+								Draft catalog item (non-variant). Variants use Create item
+								variant under an active template.
+							</CardDescription>
+						</CardHeader>
+						<CardContent>
+							<CreateItemForm
+								baseUomId={EA_UOM_ID}
+								canManage={canCreateItems}
+								itemGroups={itemGroups.map((group) => ({
+									id: group.id,
+									label: `${group.code} · ${group.name}`,
 								}))}
-								title="Item"
+								itemTypes={ITEM_TYPES}
 							/>
-						</div>
-					</CardContent>
-				</Card>
-			</div>
+						</CardContent>
+					</Card>
+					<Card>
+						<CardHeader>
+							<CardTitle>Items</CardTitle>
+							<CardDescription>
+								{items.length} loaded (page size ≤ 50).
+							</CardDescription>
+						</CardHeader>
+						<CardContent>
+							{items.length === 0 ? (
+								<p className="text-muted-foreground text-sm">No items yet.</p>
+							) : (
+								<ul className="divide-y divide-border">
+									{items.map((item) => (
+										<li
+											className="flex flex-wrap items-baseline justify-between gap-2 py-3 text-sm"
+											key={item.id}
+										>
+											<span>
+												<Code>{item.code}</Code> {item.name}
+											</span>
+											<span className="text-muted-foreground">
+												{item.itemType} · {item.status} · v{item.version}
+											</span>
+										</li>
+									))}
+								</ul>
+							)}
+							<div className="mt-6 border-border border-t pt-4">
+								<p className="mb-3 font-medium text-sm">Lifecycle</p>
+								<MasterRootLifecycleForm
+									canManage={canManageItemLifecycle}
+									entity="item"
+									options={items.map((item) => ({
+										id: item.id,
+										label: `${item.code} · ${item.name}`,
+										version: item.version,
+										status: item.status,
+									}))}
+									title="Item"
+								/>
+							</div>
+						</CardContent>
+					</Card>
+				</div>
 
-			<div className="grid gap-6 lg:grid-cols-2">
-				<Card>
-					<CardHeader>
-						<CardTitle>Create warehouse</CardTitle>
-						<CardDescription>
-							Draft stock location. Inventory modules reference active
-							warehouses only.
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<CreateWarehouseForm
-							canManage={canManageWarehouses}
-							locationTypes={WAREHOUSE_LOCATION_TYPES}
-						/>
-					</CardContent>
-				</Card>
-				<Card>
-					<CardHeader>
-						<CardTitle>Warehouses</CardTitle>
-						<CardDescription>
-							{warehouses.length} loaded (page size ≤ 50).
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						{warehouses.length === 0 ? (
-							<p className="text-muted-foreground text-sm">
-								No warehouses yet.
-							</p>
-						) : (
-							<ul className="divide-y divide-border">
-								{warehouses.map((warehouse) => (
-									<li
-										className="flex flex-wrap items-baseline justify-between gap-2 py-3 text-sm"
-										key={warehouse.id}
-									>
-										<span>
-											<Code>{warehouse.code}</Code> {warehouse.name}
-										</span>
-										<span className="text-muted-foreground">
-											{warehouse.locationType} · {warehouse.status} · v
-											{warehouse.version}
-										</span>
-									</li>
-								))}
-							</ul>
-						)}
-						<div className="mt-6 border-border border-t pt-4">
-							<p className="mb-3 font-medium text-sm">Lifecycle</p>
-							<MasterRootLifecycleForm
+				<div className="grid gap-6 lg:grid-cols-2">
+					<Card>
+						<CardHeader>
+							<CardTitle>Create warehouse</CardTitle>
+							<CardDescription>
+								Draft stock location. Inventory modules reference active
+								warehouses only.
+							</CardDescription>
+						</CardHeader>
+						<CardContent>
+							<CreateWarehouseForm
 								canManage={canManageWarehouses}
-								entity="warehouse"
-								options={warehouses.map((warehouse) => ({
-									id: warehouse.id,
-									label: `${warehouse.code} · ${warehouse.name}`,
-									version: warehouse.version,
-									status: warehouse.status,
-								}))}
-								title="Warehouse"
+								locationTypes={WAREHOUSE_LOCATION_TYPES}
 							/>
-						</div>
-					</CardContent>
-				</Card>
-			</div>
-		</section>
+						</CardContent>
+					</Card>
+					<Card>
+						<CardHeader>
+							<CardTitle>Warehouses</CardTitle>
+							<CardDescription>
+								{warehouses.length} loaded (page size ≤ 50).
+							</CardDescription>
+						</CardHeader>
+						<CardContent>
+							{warehouses.length === 0 ? (
+								<p className="text-muted-foreground text-sm">
+									No warehouses yet.
+								</p>
+							) : (
+								<ul className="divide-y divide-border">
+									{warehouses.map((warehouse) => (
+										<li
+											className="flex flex-wrap items-baseline justify-between gap-2 py-3 text-sm"
+											key={warehouse.id}
+										>
+											<span>
+												<Code>{warehouse.code}</Code> {warehouse.name}
+											</span>
+											<span className="text-muted-foreground">
+												{warehouse.locationType} · {warehouse.status} · v
+												{warehouse.version}
+											</span>
+										</li>
+									))}
+								</ul>
+							)}
+							<div className="mt-6 border-border border-t pt-4">
+								<p className="mb-3 font-medium text-sm">Lifecycle</p>
+								<MasterRootLifecycleForm
+									canManage={canManageWarehouses}
+									entity="warehouse"
+									options={warehouses.map((warehouse) => ({
+										id: warehouse.id,
+										label: `${warehouse.code} · ${warehouse.name}`,
+										version: warehouse.version,
+										status: warehouse.status,
+									}))}
+									title="Warehouse"
+								/>
+							</div>
+						</CardContent>
+					</Card>
+				</div>
+			</WorkspacePageContent>
+		</WorkspacePage>
 	);
 }

@@ -54,6 +54,7 @@ import {
 	Progress,
 	Select,
 	SelectContent,
+	SelectField,
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
@@ -63,6 +64,7 @@ import {
 	SheetTrigger,
 	Slider,
 	Spinner,
+	TextField,
 	ToggleGroup,
 	ToggleGroupItem,
 	Tooltip,
@@ -1056,6 +1058,45 @@ describe("WCAG 2.2 AA — Accessible Names and Descriptions", () => {
 		// Optional field should not have required indicator or error state
 		const optionalInput = screen.getByLabelText("Optional field");
 		expect(optionalInput).not.toHaveAttribute("aria-invalid");
+	});
+
+	it("canonical field projections preserve labels, requirements, errors, and choices", () => {
+		render(
+			<div>
+				<TextField
+					description="Issued by the supplier authority."
+					error="Registration number is required."
+					id="supplier-registration"
+					label="Registration number"
+					name="registrationNumber"
+					required
+				/>
+				<SelectField
+					id="supplier-jurisdiction"
+					label="Jurisdiction"
+					name="jurisdictionCode"
+					options={[
+						["MY", "Malaysia"],
+						["SG", "Singapore"],
+					]}
+					required
+				/>
+			</div>,
+		);
+
+		const registration = screen.getByLabelText(/Registration number/);
+		expect(registration).toHaveAttribute("id", "supplier-registration");
+		expect(registration).toHaveAttribute("name", "registrationNumber");
+		expect(registration).toBeRequired();
+		expect(registration).toHaveAttribute("aria-invalid", "true");
+		expect(registration.getAttribute("aria-describedby")).toContain(
+			"supplier-registration-error",
+		);
+
+		const jurisdiction = screen.getByLabelText(/Jurisdiction/);
+		expect(jurisdiction).toHaveAttribute("id", "supplier-jurisdiction");
+		expect(jurisdiction).toBeRequired();
+		expect(screen.getByRole("option", { name: "Malaysia" })).toHaveValue("MY");
 	});
 
 	it("Collapsible toggles content visibility with accessible expanded state", async () => {

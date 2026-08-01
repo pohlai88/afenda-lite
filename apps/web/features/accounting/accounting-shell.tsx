@@ -9,6 +9,9 @@ import {
 	CardDescription,
 	CardHeader,
 	CardTitle,
+	WorkspacePage,
+	WorkspacePageContent,
+	WorkspacePageHeader,
 } from "@afenda/ui-system";
 import {
 	AddJournalLineForm,
@@ -77,75 +80,72 @@ export async function AccountingShell({ surface }: AccountingShellProps) {
 	const trialBalance = trialBalanceResult.ok ? trialBalanceResult.data : [];
 
 	return (
-		<section className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 py-10">
-			<div className="space-y-2">
-				<p className="text-muted-foreground text-sm">
-					{surface === "admin" ? "Operator" : "Client"} · Accounting
-				</p>
-				<h1 className="font-semibold text-2xl tracking-tight">Accounting</h1>
-				<p className="max-w-2xl text-muted-foreground text-sm">
-					Manage accounting periods and journals, post balanced entries, reverse
-					posted journals, and review the organization trial balance.
-				</p>
-			</div>
+		<WorkspacePage>
+			<WorkspacePageHeader
+				description="Manage accounting periods and journals, post balanced entries, reverse posted journals, and review the organization trial balance."
+				scope={`${surface === "admin" ? "Operator" : "Client"} · Accounting`}
+				title="Accounting"
+			/>
+			<WorkspacePageContent>
+				{journalsResult.ok ? null : (
+					<Alert>
+						<AlertTitle>Could not load journals</AlertTitle>
+						<AlertDescription>{journalsResult.message}</AlertDescription>
+					</Alert>
+				)}
+				{trialBalanceResult.ok ? null : (
+					<Alert>
+						<AlertTitle>Could not load trial balance</AlertTitle>
+						<AlertDescription>{trialBalanceResult.message}</AlertDescription>
+					</Alert>
+				)}
 
-			{journalsResult.ok ? null : (
-				<Alert>
-					<AlertTitle>Could not load journals</AlertTitle>
-					<AlertDescription>{journalsResult.message}</AlertDescription>
-				</Alert>
-			)}
-			{trialBalanceResult.ok ? null : (
-				<Alert>
-					<AlertTitle>Could not load trial balance</AlertTitle>
-					<AlertDescription>{trialBalanceResult.message}</AlertDescription>
-				</Alert>
-			)}
-
-			<Card>
-				<CardHeader>
-					<CardTitle>Journal register</CardTitle>
-					<CardDescription>
-						{journals.length} journal(s) · pageSize ≤ 50
-					</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<JournalsTable
-						rows={journals.map((journal) => ({
-							id: journal.id,
-							code: journal.code,
-							periodId: journal.periodId,
-							status: journal.status,
-							version: journal.version,
-							currencyCode: journal.currencyCode,
-							lineCount: journal.lines.length,
-						}))}
-					/>
-				</CardContent>
-			</Card>
-
-			<Card>
-				<CardHeader>
-					<CardTitle>Trial balance</CardTitle>
-					<CardDescription>
-						{trialBalance.length} account balance row(s) across posted journals
-					</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<TrialBalanceTable rows={trialBalance.map((row) => ({ ...row }))} />
-				</CardContent>
-			</Card>
-
-			{formSections.map(([title, Form]) => (
-				<Card key={title}>
+				<Card>
 					<CardHeader>
-						<CardTitle>{title}</CardTitle>
+						<CardTitle>Journal register</CardTitle>
+						<CardDescription>
+							{journals.length} journal(s) · pageSize ≤ 50
+						</CardDescription>
 					</CardHeader>
 					<CardContent>
-						<Form canManage={canManage} />
+						<JournalsTable
+							rows={journals.map((journal) => ({
+								id: journal.id,
+								code: journal.code,
+								periodId: journal.periodId,
+								status: journal.status,
+								version: journal.version,
+								currencyCode: journal.currencyCode,
+								lineCount: journal.lines.length,
+							}))}
+						/>
 					</CardContent>
 				</Card>
-			))}
-		</section>
+
+				<Card>
+					<CardHeader>
+						<CardTitle>Trial balance</CardTitle>
+						<CardDescription>
+							{trialBalance.length} account balance row(s) across posted
+							journals
+						</CardDescription>
+					</CardHeader>
+					<CardContent>
+						<TrialBalanceTable rows={trialBalance.map((row) => ({ ...row }))} />
+					</CardContent>
+				</Card>
+
+				{formSections.map(([title, Form]) => (
+					<Card key={title}>
+						<CardHeader>
+							<CardTitle>{title}</CardTitle>
+						</CardHeader>
+						<CardContent>
+							<Form canManage={canManage} />
+						</CardContent>
+					</Card>
+				))}
+			</WorkspacePageContent>
+		</WorkspacePage>
 	);
 }

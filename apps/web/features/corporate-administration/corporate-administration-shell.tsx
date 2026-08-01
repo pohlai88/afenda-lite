@@ -14,7 +14,14 @@ import {
 	listLegalEstablishmentsAsOf,
 	listPremisesAsOf,
 } from "@afenda/corporate-administration";
-import { Alert, AlertDescription, AlertTitle } from "@afenda/ui-system";
+import {
+	Alert,
+	AlertDescription,
+	AlertTitle,
+	WorkspacePage,
+	WorkspacePageContent,
+	WorkspacePageHeader,
+} from "@afenda/ui-system";
 
 import { requirePermission } from "@/features/auth/require-permission";
 import {
@@ -147,114 +154,112 @@ export async function CorporateAdministrationShell({
 				});
 
 	return (
-		<section className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-6 py-10">
-			<header className="space-y-2">
-				<p className="text-muted-foreground text-sm">
-					{surface === "admin" ? "Org admin" : "Client workspace"}
-				</p>
-				<h1 className="font-semibold text-2xl tracking-tight">
-					Corporate Administration
-				</h1>
-				<p className="max-w-2xl text-muted-foreground text-sm">
-					Draft legal-company roots only. This does not activate a company or
-					claim incorporation.
-				</p>
-			</header>
-
-			{companiesResult.ok ? null : (
-				<Alert role="alert" variant="destructive">
-					<AlertTitle>Legal companies unavailable</AlertTitle>
-					<AlertDescription>{companiesResult.message}</AlertDescription>
-				</Alert>
-			)}
-
-			<LegalCompanyWorkspace
-				canWrite={canWrite}
-				companies={companies}
-				parties={partyRows}
+		<WorkspacePage width="wide">
+			<WorkspacePageHeader
+				description="Draft legal-company roots only. This does not activate a company or claim incorporation."
+				scope={surface === "admin" ? "Org admin" : "Client workspace"}
+				title="Corporate Administration"
 			/>
+			<WorkspacePageContent>
+				{companiesResult.ok ? null : (
+					<Alert role="alert" variant="destructive">
+						<AlertTitle>Legal companies unavailable</AlertTitle>
+						<AlertDescription>{companiesResult.message}</AlertDescription>
+					</Alert>
+				)}
 
-			{selectedCompany === undefined ? null : (
-				<>
-					{identityState?.ok === false ? (
-						<Alert role="alert" variant="destructive">
-							<AlertTitle>Company identity unavailable</AlertTitle>
-							<AlertDescription>{identityState.message}</AlertDescription>
-						</Alert>
-					) : null}
-					<LegalCompanyIdentityWorkspace
-						activities={
-							identityState?.ok === true ? identityState.activities : []
-						}
-						canWrite={canWrite}
-						company={{
-							legalCompanyId: selectedCompany.legalCompanyId,
-							companyCode: selectedCompany.companyCode,
-							displayName: selectedCompany.profile.displayName,
-							version: selectedCompany.version,
-						}}
-						financialYears={
-							identityState?.ok === true ? identityState.financialYears : []
-						}
-						identifiers={
-							identityState?.ok === true ? identityState.identifiers : []
-						}
-						legalForms={
-							identityState?.ok === true ? identityState.legalForms : []
-						}
-						names={identityState?.ok === true ? identityState.names : []}
-						organizationSlug="client"
-					/>
-					{legalPresenceState?.ok === false ? (
-						<Alert role="alert" variant="destructive">
-							<AlertTitle>Legal presence unavailable</AlertTitle>
-							<AlertDescription>{legalPresenceState.message}</AlertDescription>
-						</Alert>
-					) : null}
-					<LegalEstablishmentWorkspace
-						canWrite={canWrite}
-						company={{
-							legalCompanyId: selectedCompany.legalCompanyId,
-							version: selectedCompany.version,
-						}}
-						establishments={
-							legalPresenceState?.ok === true
-								? legalPresenceState.establishments
-								: []
-						}
-						partyAddresses={partyAddresses}
-						premises={
-							legalPresenceState?.ok === true ? legalPresenceState.premises : []
-						}
-						registeredAddresses={
-							legalPresenceState?.ok === true
-								? legalPresenceState.registeredAddresses
-								: []
-						}
-					/>
-					{lifecycleState?.ok === false ? (
-						<Alert role="alert" variant="destructive">
-							<AlertTitle>Company lifecycle unavailable</AlertTitle>
-							<AlertDescription>{lifecycleState.message}</AlertDescription>
-						</Alert>
-					) : null}
-					<LegalCompanyLifecycleWorkspace
-						canWrite={canWrite}
-						company={{
-							legalCompanyId: selectedCompany.legalCompanyId,
-							companyCode: selectedCompany.companyCode,
-							displayName: selectedCompany.profile.displayName,
-							state: selectedCompany.state,
-							version: selectedCompany.version,
-						}}
-						completeness={
-							lifecycleState?.ok === true ? lifecycleState.completeness : null
-						}
-						organizationSlug="client"
-					/>
-				</>
-			)}
-		</section>
+				<LegalCompanyWorkspace
+					canWrite={canWrite}
+					companies={companies}
+					parties={partyRows}
+				/>
+
+				{selectedCompany === undefined ? null : (
+					<>
+						{identityState?.ok === false ? (
+							<Alert role="alert" variant="destructive">
+								<AlertTitle>Company identity unavailable</AlertTitle>
+								<AlertDescription>{identityState.message}</AlertDescription>
+							</Alert>
+						) : null}
+						<LegalCompanyIdentityWorkspace
+							activities={
+								identityState?.ok === true ? identityState.activities : []
+							}
+							canWrite={canWrite}
+							company={{
+								legalCompanyId: selectedCompany.legalCompanyId,
+								companyCode: selectedCompany.companyCode,
+								displayName: selectedCompany.profile.displayName,
+								version: selectedCompany.version,
+							}}
+							financialYears={
+								identityState?.ok === true ? identityState.financialYears : []
+							}
+							identifiers={
+								identityState?.ok === true ? identityState.identifiers : []
+							}
+							legalForms={
+								identityState?.ok === true ? identityState.legalForms : []
+							}
+							names={identityState?.ok === true ? identityState.names : []}
+							organizationSlug="client"
+						/>
+						{legalPresenceState?.ok === false ? (
+							<Alert role="alert" variant="destructive">
+								<AlertTitle>Legal presence unavailable</AlertTitle>
+								<AlertDescription>
+									{legalPresenceState.message}
+								</AlertDescription>
+							</Alert>
+						) : null}
+						<LegalEstablishmentWorkspace
+							canWrite={canWrite}
+							company={{
+								legalCompanyId: selectedCompany.legalCompanyId,
+								version: selectedCompany.version,
+							}}
+							establishments={
+								legalPresenceState?.ok === true
+									? legalPresenceState.establishments
+									: []
+							}
+							partyAddresses={partyAddresses}
+							premises={
+								legalPresenceState?.ok === true
+									? legalPresenceState.premises
+									: []
+							}
+							registeredAddresses={
+								legalPresenceState?.ok === true
+									? legalPresenceState.registeredAddresses
+									: []
+							}
+						/>
+						{lifecycleState?.ok === false ? (
+							<Alert role="alert" variant="destructive">
+								<AlertTitle>Company lifecycle unavailable</AlertTitle>
+								<AlertDescription>{lifecycleState.message}</AlertDescription>
+							</Alert>
+						) : null}
+						<LegalCompanyLifecycleWorkspace
+							canWrite={canWrite}
+							company={{
+								legalCompanyId: selectedCompany.legalCompanyId,
+								companyCode: selectedCompany.companyCode,
+								displayName: selectedCompany.profile.displayName,
+								state: selectedCompany.state,
+								version: selectedCompany.version,
+							}}
+							completeness={
+								lifecycleState?.ok === true ? lifecycleState.completeness : null
+							}
+							organizationSlug="client"
+						/>
+					</>
+				)}
+			</WorkspacePageContent>
+		</WorkspacePage>
 	);
 }
 

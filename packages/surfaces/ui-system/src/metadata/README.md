@@ -12,12 +12,12 @@ The model exists so maintainers can change the UI system without relying on an i
 | [`catalog.ts`](./catalog.ts) | Registration, lifecycle, baseline evidence, capabilities, profiles, module coverage, and token families |
 | [`contracts/manifest.contract.ts`](./contracts/manifest.contract.ts) | Mandatory authoring gateway for semantic component contracts |
 | [`contracts/*.contract.ts`](./contracts) | One semantic contract per governed component |
-| [`contracts/index.ts`](./contracts/index.ts) | Internal contract registration barrel |
+| [`contracts/index.ts`](./contracts/index.ts) | Internal contract aggregation projection; it carries no lifecycle policy |
 | [`validate.ts`](./validate.ts) | Catalog drift and component-governance validation |
 | [`index.ts`](./index.ts) | Internal metadata barrel |
 | [`__type-tests__/`](./__type-tests__) | Compile-time checks for required manifest sections |
 
-The locked `erp-ui-v1` catalog is the registration authority. Contract files enrich registered components; they do not form a second catalog.
+The locked `erp-ui-v1` catalog is the registration authority. Contract files enrich registered components; they do not form a second catalog. `defineComponentGovernanceRegistry()` derives stable component identity from every manifest contract, applies the catalog's small lifecycle override ledger, freezes the projection, and fails closed on duplicate contracts or orphaned overrides.
 
 ## Keep the boundary intact
 
@@ -64,7 +64,7 @@ Use Node `24.x` and pnpm `>=10.33.4`, as declared by the repository root.
 4. Separate the component's reusable responsibility from the consuming feature's responsibility under `ownership`.
 5. State interpretations or decisions that the component must not imply under `semanticBoundaries`.
 6. Cover every cataloged variant and size when `approvedVariants` or `approvedSizes` applies.
-7. Register the contract in [`contracts/index.ts`](./contracts/index.ts), import it in [`catalog.ts`](./catalog.ts), and attach it in `componentGovernanceById`.
+7. Export the contract once from [`contracts/index.ts`](./contracts/index.ts). The catalog derives registration from that aggregation; add a lifecycle override only when review deliberately promotes or deprecates the component.
 8. Keep the contract out of the package's public [`../index.ts`](../index.ts) barrel.
 
 The required shape is:
@@ -87,7 +87,7 @@ export const exampleContract = defineManifestContract({
 });
 ```
 
-Each required clause collection is non-empty. Clauses are whitespace-normalized and duplicates within the same semantic section are rejected.
+Each required clause collection is non-empty. Clauses are whitespace-normalized and duplicates within the same semantic section are rejected. A contract may also declare `consumerEnforcement.forbiddenLocalComponentNames`; the repository snapshot gate then rejects feature-local declarations that would recreate that canonical capability.
 
 ## Update the catalog
 
@@ -99,7 +99,7 @@ When a component source or public export changes, update [`catalog.ts`](./catalo
 4. Extend capability, surface-profile, or module coverage only when the shared UI outcome actually changes.
 5. Point evidence to existing package test files; do not use metadata as a claim that unsupported evidence exists.
 
-`validateUiCatalog()` compares this model with a repository snapshot and reports component, export, capability, quality, surface, module, token, boundary, and baseline drift. `validateGovernance()` separately checks semantic contract content, option parity, lifecycle requirements, deprecation replacements, and component-specific evidence.
+`validateUiCatalog()` compares this model with a repository snapshot and reports component, export, capability, quality, surface, module, token, boundary, consumer, and baseline drift. `validateGovernance()` separately checks semantic contract content, option parity, lifecycle requirements, deprecation replacements, and component-specific evidence.
 
 ## Inspect and verify
 
@@ -130,7 +130,7 @@ The executable checks live in [`../../package.json`](../../package.json). [`../.
 
 - A component file exists but has no catalog entry, or its cataloged exports differ from the public barrel.
 - A contract is authored directly with `defineComponentContract()` instead of `defineManifestContract()`.
-- A contract is created but not exported internally and attached by stable component ID.
+- A contract is created but not exported internally, or a lifecycle override names an unregistered component.
 - Contract variants or sizes do not exactly match the component metadata.
 - A component is marked `approved` or `verified` without a contract.
 - A deprecated component names itself, a missing component, or another deprecated component as its replacement.

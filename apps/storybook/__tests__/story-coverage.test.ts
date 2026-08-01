@@ -352,7 +352,7 @@ describe("Storybook UI-system coverage", () => {
 		const allStories = moduleNames(storyRoot, ".stories.tsx");
 		const stories = allStories.filter((story) => !foundationStories.has(story));
 
-		expect(components).toHaveLength(73);
+		expect(components).toHaveLength(74);
 		expect(stories).toEqual(components);
 		expect(allStories).toEqual(expect.arrayContaining([...foundationStories]));
 	});
@@ -498,7 +498,7 @@ describe("Storybook UI-system coverage", () => {
 			path.join(appRoot, "visual-tests/storybook.visual.spec.ts"),
 			"utf8",
 		);
-		expect(visualSpec).toContain("expect(stories).toHaveLength(74)");
+		expect(visualSpec).toContain("expect(stories).toHaveLength(75)");
 		expect(visualSpec).toContain('"ui-system-drawer--overview"');
 		expect(visualSpec).toContain('"ui-system-menubar--overview"');
 		expect(visualSpec).toContain("ui-system-button--focus-visible-");
@@ -506,7 +506,7 @@ describe("Storybook UI-system coverage", () => {
 
 	it("projects validated immutable contract evidence for every visual component", async () => {
 		const evidence = await createStorybookEvidence();
-		expect(Object.keys(evidence)).toHaveLength(78);
+		expect(Object.keys(evidence)).toHaveLength(79);
 		expect(Object.isFrozen(evidence)).toBe(true);
 		expect(evidence["ui.sidebar-cookie"]).toBeUndefined();
 		for (const [componentId, entry] of Object.entries(evidence)) {

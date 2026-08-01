@@ -9,6 +9,9 @@ import {
 	CardDescription,
 	CardHeader,
 	CardTitle,
+	WorkspacePage,
+	WorkspacePageContent,
+	WorkspacePageHeader,
 } from "@afenda/ui-system";
 
 import { requirePermission } from "@/features/auth/require-permission";
@@ -117,66 +120,62 @@ export async function PaymentsShell({ surface }: PaymentsShellProps) {
 	}));
 
 	return (
-		<section className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 py-10">
-			<div className="space-y-2">
-				<p className="text-muted-foreground text-sm">
-					{surface === "admin" ? "Operator" : "Client"} · Payments
-				</p>
-				<h1 className="font-semibold text-2xl tracking-tight">Payments</h1>
-				<p className="max-w-2xl text-muted-foreground text-sm">
-					Create and allocate payments, post completed transactions, reverse
-					posted payments, and issue refunds.
-				</p>
-			</div>
+		<WorkspacePage>
+			<WorkspacePageHeader
+				description="Create and allocate payments, post completed transactions, reverse posted payments, and issue refunds."
+				scope={`${surface === "admin" ? "Operator" : "Client"} · Payments`}
+				title="Payments"
+			/>
+			<WorkspacePageContent>
+				{paymentsResult.ok ? null : (
+					<Alert>
+						<AlertTitle>Could not load payments</AlertTitle>
+						<AlertDescription>{paymentsResult.message}</AlertDescription>
+					</Alert>
+				)}
 
-			{paymentsResult.ok ? null : (
-				<Alert>
-					<AlertTitle>Could not load payments</AlertTitle>
-					<AlertDescription>{paymentsResult.message}</AlertDescription>
-				</Alert>
-			)}
+				{canReadAccounts && accountsResult !== null && !accountsResult.ok ? (
+					<Alert>
+						<AlertTitle>Could not load payment accounts</AlertTitle>
+						<AlertDescription>{accountsResult.message}</AlertDescription>
+					</Alert>
+				) : null}
 
-			{canReadAccounts && accountsResult !== null && !accountsResult.ok ? (
-				<Alert>
-					<AlertTitle>Could not load payment accounts</AlertTitle>
-					<AlertDescription>{accountsResult.message}</AlertDescription>
-				</Alert>
-			) : null}
+				{canReadAccounts ? (
+					<Card>
+						<CardHeader>
+							<CardTitle>Payment accounts</CardTitle>
+							<CardDescription>{accounts.length} account(s)</CardDescription>
+						</CardHeader>
+						<CardContent>
+							<PaymentAccountsTable rows={accountRows} />
+						</CardContent>
+					</Card>
+				) : null}
 
-			{canReadAccounts ? (
 				<Card>
 					<CardHeader>
-						<CardTitle>Payment accounts</CardTitle>
-						<CardDescription>{accounts.length} account(s)</CardDescription>
+						<CardTitle>Payment register</CardTitle>
+						<CardDescription>
+							{payments.length} payment(s) · pageSize ≤ 50
+						</CardDescription>
 					</CardHeader>
 					<CardContent>
-						<PaymentAccountsTable rows={accountRows} />
+						<PaymentsTable rows={paymentRows} />
 					</CardContent>
 				</Card>
-			) : null}
 
-			<Card>
-				<CardHeader>
-					<CardTitle>Payment register</CardTitle>
-					<CardDescription>
-						{payments.length} payment(s) · pageSize ≤ 50
-					</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<PaymentsTable rows={paymentRows} />
-				</CardContent>
-			</Card>
-
-			{formSections.map(([title, Form], index) => (
-				<Card key={title}>
-					<CardHeader>
-						<CardTitle>{title}</CardTitle>
-					</CardHeader>
-					<CardContent>
-						<Form canManage={formPermissions[index] ?? false} />
-					</CardContent>
-				</Card>
-			))}
-		</section>
+				{formSections.map(([title, Form], index) => (
+					<Card key={title}>
+						<CardHeader>
+							<CardTitle>{title}</CardTitle>
+						</CardHeader>
+						<CardContent>
+							<Form canManage={formPermissions[index] ?? false} />
+						</CardContent>
+					</Card>
+				))}
+			</WorkspacePageContent>
+		</WorkspacePage>
 	);
 }

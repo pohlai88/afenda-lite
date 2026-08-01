@@ -10,7 +10,9 @@ import {
 	FormField,
 	FormInput,
 	FormTextarea,
+	SelectField,
 	StatusBadge,
+	TextField,
 } from "@afenda/ui-system";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import type { ChangeEvent, FormEvent, ReactNode } from "react";
@@ -454,7 +456,7 @@ export const VariantsAndSizes: Story = {
 		docs: {
 			description: {
 				story:
-					"Family inventory: FormField with FormInput (single-line) and FormTextarea (multi-line). No size scale on FormField — denseness comes from the composed control and layout width.",
+					"Family inventory: FormField with FormInput/FormTextarea composition plus canonical TextField and SelectField projections. No size scale on FormField — denseness comes from the composed control and layout width.",
 			},
 		},
 	},
@@ -481,6 +483,32 @@ export const VariantsAndSizes: Story = {
 				>
 					<FormTextarea defaultValue="Bank account evidence verified." />
 				</FormField>
+			</div>
+			<div className="grid gap-2">
+				<p className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
+					TextField projection
+				</p>
+				<TextField
+					description="Canonical label and control association."
+					label="Supplier registration"
+					name="supplierRegistration"
+					required
+				/>
+			</div>
+			<div className="grid gap-2">
+				<p className="font-medium text-foreground-tertiary text-xs uppercase tracking-wide">
+					SelectField projection
+				</p>
+				<SelectField
+					description="Bounded native choice with the same field semantics."
+					label="Jurisdiction"
+					name="jurisdictionCode"
+					options={[
+						["MY", "Malaysia"],
+						["SG", "Singapore"],
+					]}
+					required
+				/>
 			</div>
 		</div>
 	),

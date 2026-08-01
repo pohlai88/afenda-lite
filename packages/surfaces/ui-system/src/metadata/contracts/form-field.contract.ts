@@ -19,9 +19,13 @@ export const formFieldContract = defineManifestContract({
 		"Disabled presentation does not imply that an existing value should be hidden or excluded from review.",
 		"FormField clones a single child control for id and ARIA association — it does not own query, save, or permission outcomes.",
 	],
+	consumerEnforcement: {
+		forbiddenLocalComponentNames: ["FormField", "TextField", "SelectField"],
+	},
 	rules: [
-		"This contract governs FormField, FormInput, and FormTextarea as one field-composition family.",
+		"This contract governs FormField, FormInput, FormTextarea, TextField, and SelectField as one field-composition family.",
 		"FormInput and FormTextarea provide control aliases; they do not add labels, descriptions, validation, or workflow behavior by themselves.",
+		"TextField and SelectField are canonical convenience projections that derive label, control, and ARIA composition from FormField without taking ownership of domain policy.",
 		"Use FormField for one logical field when a larger form-library abstraction is unnecessary.",
 		"Associate the field label, description, and error content through stable control identifiers (fieldId or generated id).",
 		"Keep validation messages specific, actionable, and written in terms the operator can correct.",

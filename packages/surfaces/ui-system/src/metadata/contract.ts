@@ -138,6 +138,7 @@ export const UI_CAPABILITY_IDS = [
 	"ui.workflow.audit",
 	"ui.workflow.diff",
 	"ui.analytics.chart",
+	"ui.layout.workspace-page",
 	"ui.layout.page-heading",
 	"ui.layout.section-heading",
 	"ui.layout.entity-heading",
@@ -228,11 +229,17 @@ export type ComponentContractOwnership = Readonly<{
 	consumerOwns: NonEmptyReadonlyArray<string>;
 }>;
 
+export type ComponentConsumerEnforcement = Readonly<{
+	/** Local declaration names that would duplicate this canonical capability. */
+	forbiddenLocalComponentNames: NonEmptyReadonlyArray<string>;
+}>;
+
 export interface GovernedComponentContract {
 	readonly accessibility: NonEmptyReadonlyArray<string>;
 	readonly approvedSizes?: Readonly<Record<string, UsageRule>>;
 	readonly approvedVariants?: Readonly<Record<string, UsageRule>>;
 	readonly component: UiComponentMetadata["id"];
+	readonly consumerEnforcement?: ComponentConsumerEnforcement;
 	readonly id: `${UiComponentMetadata["id"]}.contract`;
 	readonly ownership: ComponentContractOwnership;
 	readonly prohibitedUsage: NonEmptyReadonlyArray<string>;
@@ -320,6 +327,7 @@ export interface UiCatalog {
 export interface UiRepositorySnapshot {
 	barrelSource: string;
 	componentSources: Readonly<Record<string, string>>;
+	consumerDeclarationsBySource: Readonly<Record<string, readonly string[]>>;
 	erpModuleIds: readonly string[];
 	evidencePaths: readonly string[];
 	exportsBySource: Readonly<Record<string, readonly string[]>>;
@@ -336,6 +344,7 @@ export type UiCatalogIssue =
 	| { kind: "module-drift"; message: string }
 	| { kind: "token-drift"; message: string }
 	| { kind: "boundary-drift"; message: string }
+	| { kind: "consumer-drift"; message: string }
 	| { kind: "baseline-drift"; message: string };
 
 export type GovernedCatalogComponent = Pick<

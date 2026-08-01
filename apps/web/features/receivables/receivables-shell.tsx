@@ -10,6 +10,9 @@ import {
 	CardHeader,
 	CardTitle,
 	Code,
+	WorkspacePage,
+	WorkspacePageContent,
+	WorkspacePageHeader,
 } from "@afenda/ui-system";
 
 import { requirePermission } from "@/features/auth/require-permission";
@@ -72,69 +75,63 @@ export async function ReceivablesShell({ surface }: ReceivablesShellProps) {
 	const invoices = invoicesResult.ok ? invoicesResult.data : [];
 
 	return (
-		<section className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 py-10">
-			<div className="space-y-2">
-				<p className="text-muted-foreground text-sm">
-					{surface === "admin" ? "Operator" : "Client"} · Receivables
-				</p>
-				<h1 className="font-semibold text-2xl tracking-tight">
-					Customer receivables
-				</h1>
-				<p className="max-w-2xl text-muted-foreground text-sm">
-					Create and post sales invoices, issue credit notes, apply customer
-					receipts, and track open balances.
-				</p>
-			</div>
+		<WorkspacePage>
+			<WorkspacePageHeader
+				description="Create and post sales invoices, issue credit notes, apply customer receipts, and track open balances."
+				scope={`${surface === "admin" ? "Operator" : "Client"} · Receivables`}
+				title="Customer receivables"
+			/>
+			<WorkspacePageContent>
+				{invoicesResult.ok ? null : (
+					<Alert>
+						<AlertTitle>Could not load sales invoices</AlertTitle>
+						<AlertDescription>{invoicesResult.message}</AlertDescription>
+					</Alert>
+				)}
 
-			{invoicesResult.ok ? null : (
-				<Alert>
-					<AlertTitle>Could not load sales invoices</AlertTitle>
-					<AlertDescription>{invoicesResult.message}</AlertDescription>
-				</Alert>
-			)}
-
-			<Card>
-				<CardHeader>
-					<CardTitle>Sales invoices and credit notes</CardTitle>
-					<CardDescription>
-						{invoices.length} document(s) · pageSize ≤ 50
-					</CardDescription>
-				</CardHeader>
-				<CardContent className="space-y-3 text-sm">
-					{invoices.length === 0 ? (
-						<p className="text-muted-foreground">
-							No receivables documents yet.
-						</p>
-					) : (
-						<ul className="space-y-2">
-							{invoices.map((invoice) => (
-								<li className="rounded-md border px-3 py-2" key={invoice.id}>
-									<div className="font-medium">
-										{invoice.code} · {invoice.invoiceSource} · {invoice.status}{" "}
-										· v{invoice.version}
-									</div>
-									<div className="text-muted-foreground">
-										id <Code>{invoice.id}</Code> · {invoice.customerCode} ·{" "}
-										{invoice.currencyCode} {invoice.openAmount} open ·{" "}
-										{invoice.lines.length} line(s)
-									</div>
-								</li>
-							))}
-						</ul>
-					)}
-				</CardContent>
-			</Card>
-
-			{formSections.map(([title, Form], index) => (
-				<Card key={title}>
+				<Card>
 					<CardHeader>
-						<CardTitle>{title}</CardTitle>
+						<CardTitle>Sales invoices and credit notes</CardTitle>
+						<CardDescription>
+							{invoices.length} document(s) · pageSize ≤ 50
+						</CardDescription>
 					</CardHeader>
-					<CardContent>
-						<Form canManage={formPermissions[index] ?? false} />
+					<CardContent className="space-y-3 text-sm">
+						{invoices.length === 0 ? (
+							<p className="text-muted-foreground">
+								No receivables documents yet.
+							</p>
+						) : (
+							<ul className="space-y-2">
+								{invoices.map((invoice) => (
+									<li className="rounded-md border px-3 py-2" key={invoice.id}>
+										<div className="font-medium">
+											{invoice.code} · {invoice.invoiceSource} ·{" "}
+											{invoice.status} · v{invoice.version}
+										</div>
+										<div className="text-muted-foreground">
+											id <Code>{invoice.id}</Code> · {invoice.customerCode} ·{" "}
+											{invoice.currencyCode} {invoice.openAmount} open ·{" "}
+											{invoice.lines.length} line(s)
+										</div>
+									</li>
+								))}
+							</ul>
+						)}
 					</CardContent>
 				</Card>
-			))}
-		</section>
+
+				{formSections.map(([title, Form], index) => (
+					<Card key={title}>
+						<CardHeader>
+							<CardTitle>{title}</CardTitle>
+						</CardHeader>
+						<CardContent>
+							<Form canManage={formPermissions[index] ?? false} />
+						</CardContent>
+					</Card>
+				))}
+			</WorkspacePageContent>
+		</WorkspacePage>
 	);
 }

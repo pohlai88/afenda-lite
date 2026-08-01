@@ -77,3 +77,4 @@ export { toggleGroupContract } from "./toggle-group.contract";
 export { toolbarContract } from "./toolbar.contract";
 export { tooltipContract } from "./tooltip.contract";
 export { treeViewContract } from "./tree-view.contract";
+export { workspacePageContract } from "./workspace-page.contract";

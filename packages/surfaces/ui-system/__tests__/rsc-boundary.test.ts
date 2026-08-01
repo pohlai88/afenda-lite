@@ -42,6 +42,7 @@ const SERVER_SAFE = [
 	"textarea",
 	"timeline",
 	"toolbar",
+	"workspace-page",
 ] as const;
 
 const uiPrimitives = readdirSync(uiDir)

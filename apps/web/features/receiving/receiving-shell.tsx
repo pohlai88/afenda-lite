@@ -14,6 +14,9 @@ import {
 	CardHeader,
 	CardTitle,
 	Code,
+	WorkspacePage,
+	WorkspacePageContent,
+	WorkspacePageHeader,
 } from "@afenda/ui-system";
 
 import { requirePermission } from "@/features/auth/require-permission";
@@ -100,196 +103,192 @@ export async function ReceivingShell({ surface }: ReceivingShellProps) {
 	const warehouses = warehousesResult.ok ? warehousesResult.data : [];
 
 	return (
-		<section className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 py-10">
-			<div className="space-y-2">
-				<p className="text-muted-foreground text-sm">
-					{surface === "admin" ? "Operator" : "Client"} · Receiving
-				</p>
-				<h1 className="font-semibold text-2xl tracking-tight">
-					Goods receipts
-				</h1>
-				<p className="max-w-2xl text-muted-foreground text-sm">
-					Record inbound goods against purchase orders, post accepted quantity
-					to inventory, reverse posted receipts, and manage discrepancies.
-				</p>
-			</div>
+		<WorkspacePage>
+			<WorkspacePageHeader
+				description="Record inbound goods against purchase orders, post accepted quantity to inventory, reverse posted receipts, and manage discrepancies."
+				scope={`${surface === "admin" ? "Operator" : "Client"} · Receiving`}
+				title="Goods receipts"
+			/>
+			<WorkspacePageContent>
+				{receiptsResult.ok ? null : (
+					<Alert>
+						<AlertTitle>Could not load receipts</AlertTitle>
+						<AlertDescription>{receiptsResult.message}</AlertDescription>
+					</Alert>
+				)}
 
-			{receiptsResult.ok ? null : (
-				<Alert>
-					<AlertTitle>Could not load receipts</AlertTitle>
-					<AlertDescription>{receiptsResult.message}</AlertDescription>
-				</Alert>
-			)}
+				{exceptions.length > 0 ? (
+					<Card>
+						<CardHeader>
+							<CardTitle>Inventory application exceptions</CardTitle>
+							<CardDescription>
+								{exceptions.length} posted receipt(s) pending or failed
+								inventory application
+							</CardDescription>
+						</CardHeader>
+						<CardContent className="space-y-2 text-sm">
+							<ul className="space-y-2">
+								{exceptions.map((receipt) => (
+									<li className="rounded-md border px-3 py-2" key={receipt.id}>
+										<div className="font-medium">
+											{receipt.code} · {receipt.inventoryApplicationStatus}
+										</div>
+										<div className="text-muted-foreground">
+											id <Code>{receipt.id}</Code>
+											{receipt.inventoryApplicationError
+												? ` · ${receipt.inventoryApplicationError}`
+												: null}
+										</div>
+									</li>
+								))}
+							</ul>
+						</CardContent>
+					</Card>
+				) : null}
 
-			{exceptions.length > 0 ? (
 				<Card>
 					<CardHeader>
-						<CardTitle>Inventory application exceptions</CardTitle>
+						<CardTitle>Receipts</CardTitle>
 						<CardDescription>
-							{exceptions.length} posted receipt(s) pending or failed inventory
-							application
+							{receipts.length} receipt(s) · pageSize ≤ 50
 						</CardDescription>
 					</CardHeader>
-					<CardContent className="space-y-2 text-sm">
-						<ul className="space-y-2">
-							{exceptions.map((receipt) => (
-								<li className="rounded-md border px-3 py-2" key={receipt.id}>
-									<div className="font-medium">
-										{receipt.code} · {receipt.inventoryApplicationStatus}
-									</div>
-									<div className="text-muted-foreground">
-										id <Code>{receipt.id}</Code>
-										{receipt.inventoryApplicationError
-											? ` · ${receipt.inventoryApplicationError}`
-											: null}
-									</div>
-								</li>
-							))}
-						</ul>
+					<CardContent className="space-y-3 text-sm">
+						{receipts.length === 0 ? (
+							<p className="text-muted-foreground">No goods receipts yet.</p>
+						) : (
+							<ul className="space-y-2">
+								{receipts.map((receipt) => (
+									<li className="rounded-md border px-3 py-2" key={receipt.id}>
+										<div className="font-medium">
+											{receipt.code} · {receipt.status} · v{receipt.version}
+											{receipt.reversesReceiptId ? " · reverse" : null}
+											{receipt.reversedByReceiptId ? " · reversed" : null}
+										</div>
+										<div className="text-muted-foreground">
+											id <Code>{receipt.id}</Code> · {receipt.sourceType}
+											{receipt.sourceId ? (
+												<>
+													{" "}
+													· source <Code>{receipt.sourceId}</Code>
+												</>
+											) : null}{" "}
+											· wh {receipt.warehouseCode} ({receipt.warehouseName}) ·{" "}
+											{receipt.lines.length} line(s) ·{" "}
+											{receipt.discrepancies.length} discrepancy record(s) · inv{" "}
+											{receipt.inventoryApplicationStatus}
+										</div>
+									</li>
+								))}
+							</ul>
+						)}
 					</CardContent>
 				</Card>
-			) : null}
 
-			<Card>
-				<CardHeader>
-					<CardTitle>Receipts</CardTitle>
-					<CardDescription>
-						{receipts.length} receipt(s) · pageSize ≤ 50
-					</CardDescription>
-				</CardHeader>
-				<CardContent className="space-y-3 text-sm">
-					{receipts.length === 0 ? (
-						<p className="text-muted-foreground">No goods receipts yet.</p>
-					) : (
-						<ul className="space-y-2">
-							{receipts.map((receipt) => (
-								<li className="rounded-md border px-3 py-2" key={receipt.id}>
-									<div className="font-medium">
-										{receipt.code} · {receipt.status} · v{receipt.version}
-										{receipt.reversesReceiptId ? " · reverse" : null}
-										{receipt.reversedByReceiptId ? " · reversed" : null}
-									</div>
-									<div className="text-muted-foreground">
-										id <Code>{receipt.id}</Code> · {receipt.sourceType}
-										{receipt.sourceId ? (
-											<>
-												{" "}
-												· source <Code>{receipt.sourceId}</Code>
-											</>
-										) : null}{" "}
-										· wh {receipt.warehouseCode} ({receipt.warehouseName}) ·{" "}
-										{receipt.lines.length} line(s) ·{" "}
-										{receipt.discrepancies.length} discrepancy record(s) · inv{" "}
-										{receipt.inventoryApplicationStatus}
-									</div>
-								</li>
-							))}
-						</ul>
-					)}
-				</CardContent>
-			</Card>
+				<Card>
+					<CardHeader>
+						<CardTitle>Master pickers (read)</CardTitle>
+						<CardDescription>
+							Resolve ids from Authority B — paste into forms below.
+						</CardDescription>
+					</CardHeader>
+					<CardContent className="grid gap-4 text-sm md:grid-cols-2">
+						<div>
+							<p className="mb-2 font-medium">Items</p>
+							<ul className="space-y-1 text-muted-foreground">
+								{items.slice(0, 12).map((item) => (
+									<li key={item.id}>
+										{item.code} · {item.status}
+										<br />
+										<Code>{item.id}</Code>
+									</li>
+								))}
+							</ul>
+						</div>
+						<div>
+							<p className="mb-2 font-medium">Warehouses</p>
+							<ul className="space-y-1 text-muted-foreground">
+								{warehouses.slice(0, 12).map((warehouse) => (
+									<li key={warehouse.id}>
+										{warehouse.code} · {warehouse.status}
+										<br />
+										<Code>{warehouse.id}</Code>
+									</li>
+								))}
+							</ul>
+						</div>
+					</CardContent>
+				</Card>
 
-			<Card>
-				<CardHeader>
-					<CardTitle>Master pickers (read)</CardTitle>
-					<CardDescription>
-						Resolve ids from Authority B — paste into forms below.
-					</CardDescription>
-				</CardHeader>
-				<CardContent className="grid gap-4 text-sm md:grid-cols-2">
-					<div>
-						<p className="mb-2 font-medium">Items</p>
-						<ul className="space-y-1 text-muted-foreground">
-							{items.slice(0, 12).map((item) => (
-								<li key={item.id}>
-									{item.code} · {item.status}
-									<br />
-									<Code>{item.id}</Code>
-								</li>
-							))}
-						</ul>
-					</div>
-					<div>
-						<p className="mb-2 font-medium">Warehouses</p>
-						<ul className="space-y-1 text-muted-foreground">
-							{warehouses.slice(0, 12).map((warehouse) => (
-								<li key={warehouse.id}>
-									{warehouse.code} · {warehouse.status}
-									<br />
-									<Code>{warehouse.id}</Code>
-								</li>
-							))}
-						</ul>
-					</div>
-				</CardContent>
-			</Card>
-
-			<Card>
-				<CardHeader>
-					<CardTitle>Create draft</CardTitle>
-				</CardHeader>
-				<CardContent>
-					<CreateGoodsReceiptForm canManage={canCreate} />
-				</CardContent>
-			</Card>
-			<Card>
-				<CardHeader>
-					<CardTitle>Add line</CardTitle>
-				</CardHeader>
-				<CardContent>
-					<AddGoodsReceiptLineForm canManage={canUpdate} />
-				</CardContent>
-			</Card>
-			<Card>
-				<CardHeader>
-					<CardTitle>Post receipt</CardTitle>
-					<CardDescription>
-						Posts accepted quantity to inventory. Requires lines and active
-						warehouse/items.
-					</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<PostGoodsReceiptForm canManage={canPost} />
-				</CardContent>
-			</Card>
-			<Card>
-				<CardHeader>
-					<CardTitle>Record discrepancy</CardTitle>
-				</CardHeader>
-				<CardContent>
-					<RecordReceivingDiscrepancyForm canManage={canRecordDiscrepancy} />
-				</CardContent>
-			</Card>
-			<Card>
-				<CardHeader>
-					<CardTitle>Resolve discrepancy</CardTitle>
-				</CardHeader>
-				<CardContent>
-					<ResolveReceivingDiscrepancyForm canResolve={canResolveDiscrepancy} />
-				</CardContent>
-			</Card>
-			<Card>
-				<CardHeader>
-					<CardTitle>Cancel draft receipt</CardTitle>
-					<CardDescription>
-						Draft only. Posted receipts must be reversed.
-					</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<CancelGoodsReceiptForm canManage={canCancel} />
-				</CardContent>
-			</Card>
-			<Card>
-				<CardHeader>
-					<CardTitle>Reverse posted receipt</CardTitle>
-					<CardDescription>
-						Creates a linked compensating receipt and inventory reversal.
-					</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<ReverseGoodsReceiptForm canReverse={canReverse} />
-				</CardContent>
-			</Card>
-		</section>
+				<Card>
+					<CardHeader>
+						<CardTitle>Create draft</CardTitle>
+					</CardHeader>
+					<CardContent>
+						<CreateGoodsReceiptForm canManage={canCreate} />
+					</CardContent>
+				</Card>
+				<Card>
+					<CardHeader>
+						<CardTitle>Add line</CardTitle>
+					</CardHeader>
+					<CardContent>
+						<AddGoodsReceiptLineForm canManage={canUpdate} />
+					</CardContent>
+				</Card>
+				<Card>
+					<CardHeader>
+						<CardTitle>Post receipt</CardTitle>
+						<CardDescription>
+							Posts accepted quantity to inventory. Requires lines and active
+							warehouse/items.
+						</CardDescription>
+					</CardHeader>
+					<CardContent>
+						<PostGoodsReceiptForm canManage={canPost} />
+					</CardContent>
+				</Card>
+				<Card>
+					<CardHeader>
+						<CardTitle>Record discrepancy</CardTitle>
+					</CardHeader>
+					<CardContent>
+						<RecordReceivingDiscrepancyForm canManage={canRecordDiscrepancy} />
+					</CardContent>
+				</Card>
+				<Card>
+					<CardHeader>
+						<CardTitle>Resolve discrepancy</CardTitle>
+					</CardHeader>
+					<CardContent>
+						<ResolveReceivingDiscrepancyForm
+							canResolve={canResolveDiscrepancy}
+						/>
+					</CardContent>
+				</Card>
+				<Card>
+					<CardHeader>
+						<CardTitle>Cancel draft receipt</CardTitle>
+						<CardDescription>
+							Draft only. Posted receipts must be reversed.
+						</CardDescription>
+					</CardHeader>
+					<CardContent>
+						<CancelGoodsReceiptForm canManage={canCancel} />
+					</CardContent>
+				</Card>
+				<Card>
+					<CardHeader>
+						<CardTitle>Reverse posted receipt</CardTitle>
+						<CardDescription>
+							Creates a linked compensating receipt and inventory reversal.
+						</CardDescription>
+					</CardHeader>
+					<CardContent>
+						<ReverseGoodsReceiptForm canReverse={canReverse} />
+					</CardContent>
+				</Card>
+			</WorkspacePageContent>
+		</WorkspacePage>
 	);
 }

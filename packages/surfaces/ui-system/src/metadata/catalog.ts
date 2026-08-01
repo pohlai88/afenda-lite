@@ -15,196 +15,81 @@ import type {
 	UiTokenFamilyId,
 } from "./contract";
 import { defineComponentGovernance, UI_QUALITY_PROFILE_IDS } from "./contract";
-import {
-	accordionContract,
-	activityDialogContract,
-	alertContract,
-	alertDialogContract,
-	appShellContract,
-	asyncStateContract,
-	avatarContract,
-	badgeContract,
-	breadcrumbContract,
-	bulkActionBarContract,
-	buttonContract,
-	buttonGroupContract,
-	calendarContract,
-	cardContract,
-	changeDiffContract,
-	chartContract,
-	checkboxContract,
-	codeContract,
-	collapsibleContract,
-	columnVisibilityMenuContract,
-	comboboxContract,
-	commandContract,
-	commandMenuContract,
-	contextMenuContract,
-	dataTableContract,
-	datePickerContract,
-	dateTimePickerContract,
-	dialogContract,
-	drawerContract,
-	dropdownMenuContract,
-	emptyContract,
-	fieldContract,
-	fileUploadContract,
-	filterBarContract,
-	formErrorContract,
-	formFieldContract,
-	hoverCardContract,
-	inputContract,
-	inputGroupContract,
-	kbdContract,
-	keyValueContract,
-	labelContract,
-	masterDetailContract,
-	menubarContract,
-	metricCardContract,
-	nativeSelectContract,
-	notificationDropdownContract,
-	numericInputContract,
-	pageHeaderContract,
-	paginationContract,
-	popoverContract,
-	profileDropdownContract,
-	progressContract,
-	radioGroupContract,
-	resizableContract,
-	savedViewSelectContract,
-	scrollAreaContract,
-	searchFieldContract,
-	selectContract,
-	separatorContract,
-	sheetContract,
-	sidebarContract,
-	sidebarCookieContract,
-	skeletonContract,
-	sliderContract,
-	sonnerContract,
-	spinnerContract,
-	statusBadgeContract,
-	stepperContract,
-	switchContract,
-	tableContract,
-	tabsContract,
-	textareaContract,
-	timelineContract,
-	toggleContract,
-	toggleGroupContract,
-	toolbarContract,
-	tooltipContract,
-	treeViewContract,
-} from "./contracts";
+// Every contract export is intentionally registered. A named import list would
+// recreate the parallel registration ledger this projection exists to remove.
+// biome-ignore lint/performance/noNamespaceImport: exhaustive internal registry projection
+import * as componentContracts from "./contracts";
 
-const CANDIDATE_GOVERNANCE = defineComponentGovernance({
-	lifecycle: "candidate",
-});
+type ComponentGovernanceOverrides = Readonly<
+	Partial<
+		Record<UiComponentMetadata["id"], Omit<ComponentGovernance, "contract">>
+	>
+>;
 
-function candidateContractGovernance(
-	contract: GovernedComponentContract,
-): ComponentGovernance {
-	return defineComponentGovernance({ lifecycle: "candidate", contract });
+/**
+ * Canonical registration gateway for component governance. Contract identity is
+ * always derived from the manifest contract; the catalogue owns only lifecycle
+ * and additional governance policy.
+ */
+export function defineComponentGovernanceRegistry(
+	contracts: readonly GovernedComponentContract[],
+	overrides: ComponentGovernanceOverrides = {},
+): Readonly<Partial<Record<UiComponentMetadata["id"], ComponentGovernance>>> {
+	const registry: Partial<
+		Record<UiComponentMetadata["id"], ComponentGovernance>
+	> = {};
+	const registeredIds = new Set<UiComponentMetadata["id"]>();
+
+	for (const contract of contracts) {
+		if (registeredIds.has(contract.component)) {
+			throw new Error(
+				`Duplicate component governance registration: ${contract.component}`,
+			);
+		}
+		registeredIds.add(contract.component);
+		registry[contract.component] = Object.freeze(
+			defineComponentGovernance({
+				lifecycle: "candidate",
+				...overrides[contract.component],
+				contract,
+			}),
+		);
+	}
+
+	for (const componentId of Object.keys(overrides)) {
+		if (!(componentId in registry)) {
+			throw new Error(
+				`Governance override references an unregistered component: ${componentId}`,
+			);
+		}
+	}
+
+	return Object.freeze(registry);
 }
 
-function approvedContractGovernance(
-	contract: GovernedComponentContract,
-): ComponentGovernance {
-	return defineComponentGovernance({ lifecycle: "approved", contract });
-}
+const COMPONENT_GOVERNANCE_OVERRIDES = {
+	"ui.slider": { lifecycle: "approved" },
+	"ui.sonner": { lifecycle: "approved" },
+	"ui.spinner": { lifecycle: "approved" },
+	"ui.status-badge": { lifecycle: "approved" },
+	"ui.stepper": { lifecycle: "approved" },
+} as const satisfies ComponentGovernanceOverrides;
 
-export const componentGovernanceById: Readonly<
-	Partial<Record<UiComponentMetadata["id"], ComponentGovernance>>
-> = {
-	"ui.accordion": candidateContractGovernance(accordionContract),
-	"ui.activity-dialog": candidateContractGovernance(activityDialogContract),
-	"ui.alert-dialog": candidateContractGovernance(alertDialogContract),
-	"ui.alert": candidateContractGovernance(alertContract),
-	"ui.async-state": candidateContractGovernance(asyncStateContract),
-	"ui.app-shell": candidateContractGovernance(appShellContract),
-	"ui.avatar": candidateContractGovernance(avatarContract),
-	"ui.badge": candidateContractGovernance(badgeContract),
-	"ui.breadcrumb": candidateContractGovernance(breadcrumbContract),
-	"ui.bulk-action-bar": candidateContractGovernance(bulkActionBarContract),
-	"ui.button-group": candidateContractGovernance(buttonGroupContract),
-	"ui.button": candidateContractGovernance(buttonContract),
-	"ui.calendar": candidateContractGovernance(calendarContract),
-	"ui.card": candidateContractGovernance(cardContract),
-	"ui.change-diff": candidateContractGovernance(changeDiffContract),
-	"ui.chart": candidateContractGovernance(chartContract),
-	"ui.checkbox": candidateContractGovernance(checkboxContract),
-	"ui.code": candidateContractGovernance(codeContract),
-	"ui.collapsible": candidateContractGovernance(collapsibleContract),
-	"ui.column-visibility-menu": candidateContractGovernance(
-		columnVisibilityMenuContract,
-	),
-	"ui.combobox": candidateContractGovernance(comboboxContract),
-	"ui.command": candidateContractGovernance(commandContract),
-	"ui.command-menu": candidateContractGovernance(commandMenuContract),
-	"ui.context-menu": candidateContractGovernance(contextMenuContract),
-	"ui.data-table": candidateContractGovernance(dataTableContract),
-	"ui.date-picker": candidateContractGovernance(datePickerContract),
-	"ui.date-time-picker": candidateContractGovernance(dateTimePickerContract),
-	"ui.dialog": candidateContractGovernance(dialogContract),
-	"ui.dropdown-menu": candidateContractGovernance(dropdownMenuContract),
-	"ui.drawer": candidateContractGovernance(drawerContract),
-	"ui.empty": candidateContractGovernance(emptyContract),
-	"ui.field": candidateContractGovernance(fieldContract),
-	"ui.file-upload": candidateContractGovernance(fileUploadContract),
-	"ui.filter-bar": candidateContractGovernance(filterBarContract),
-	"ui.form-error": candidateContractGovernance(formErrorContract),
-	"ui.form-field": candidateContractGovernance(formFieldContract),
-	"ui.hover-card": candidateContractGovernance(hoverCardContract),
-	"ui.input-group": candidateContractGovernance(inputGroupContract),
-	"ui.input": candidateContractGovernance(inputContract),
-	"ui.kbd": candidateContractGovernance(kbdContract),
-	"ui.key-value": candidateContractGovernance(keyValueContract),
-	"ui.label": candidateContractGovernance(labelContract),
-	"ui.master-detail": candidateContractGovernance(masterDetailContract),
-	"ui.menubar": candidateContractGovernance(menubarContract),
-	"ui.metric-card": candidateContractGovernance(metricCardContract),
-	"ui.native-select": candidateContractGovernance(nativeSelectContract),
-	"ui.notification-dropdown": candidateContractGovernance(
-		notificationDropdownContract,
-	),
-	"ui.numeric-input": candidateContractGovernance(numericInputContract),
-	"ui.page-header": candidateContractGovernance(pageHeaderContract),
-	"ui.pagination": candidateContractGovernance(paginationContract),
-	"ui.popover": candidateContractGovernance(popoverContract),
-	"ui.progress": candidateContractGovernance(progressContract),
-	"ui.profile-dropdown": candidateContractGovernance(profileDropdownContract),
-	"ui.radio-group": candidateContractGovernance(radioGroupContract),
-	"ui.resizable": candidateContractGovernance(resizableContract),
-	"ui.saved-view-select": candidateContractGovernance(savedViewSelectContract),
-	"ui.scroll-area": candidateContractGovernance(scrollAreaContract),
-	"ui.search-field": candidateContractGovernance(searchFieldContract),
-	"ui.select": candidateContractGovernance(selectContract),
-	"ui.separator": candidateContractGovernance(separatorContract),
-	"ui.sheet": candidateContractGovernance(sheetContract),
-	"ui.sidebar-cookie": candidateContractGovernance(sidebarCookieContract),
-	"ui.sidebar": candidateContractGovernance(sidebarContract),
-	"ui.skeleton": candidateContractGovernance(skeletonContract),
-	"ui.slider": approvedContractGovernance(sliderContract),
-	"ui.sonner": approvedContractGovernance(sonnerContract),
-	"ui.spinner": approvedContractGovernance(spinnerContract),
-	"ui.status-badge": approvedContractGovernance(statusBadgeContract),
-	"ui.stepper": approvedContractGovernance(stepperContract),
-	"ui.switch": candidateContractGovernance(switchContract),
-	"ui.table": candidateContractGovernance(tableContract),
-	"ui.tabs": candidateContractGovernance(tabsContract),
-	"ui.textarea": candidateContractGovernance(textareaContract),
-	"ui.timeline": candidateContractGovernance(timelineContract),
-	"ui.toggle-group": candidateContractGovernance(toggleGroupContract),
-	"ui.toggle": candidateContractGovernance(toggleContract),
-	"ui.toolbar": candidateContractGovernance(toolbarContract),
-	"ui.tooltip": candidateContractGovernance(tooltipContract),
-	"ui.tree-view": candidateContractGovernance(treeViewContract),
-};
+const componentGovernanceById = defineComponentGovernanceRegistry(
+	Object.values(componentContracts),
+	COMPONENT_GOVERNANCE_OVERRIDES,
+);
 
-export function getComponentGovernance(
+function getComponentGovernance(
 	componentId: UiComponentMetadata["id"],
 ): ComponentGovernance {
-	return componentGovernanceById[componentId] ?? CANDIDATE_GOVERNANCE;
+	const governance = componentGovernanceById[componentId];
+	if (!governance) {
+		throw new Error(
+			`Missing component governance registration: ${componentId}`,
+		);
+	}
+	return governance;
 }
 
 const CONTRACT_TEST = "__tests__/consistency.test.ts";
@@ -798,11 +683,22 @@ const components = [
 	defineComponent({
 		id: "ui.form-field",
 		sourceModule: "src/components/ui/form-field.tsx",
-		publicExports: ["FormField", "FormInput", "FormTextarea"],
+		publicExports: [
+			"FormField",
+			"FormInput",
+			"FormTextarea",
+			"SelectField",
+			"TextField",
+		],
 		layer: "compound",
 		family: "forms",
 		renderMode: "client",
-		capabilities: ["ui.form.field", "ui.form.text", "ui.form.multiline"],
+		capabilities: [
+			"ui.form.field",
+			"ui.form.text",
+			"ui.form.multiline",
+			"ui.form.choice",
+		],
 		qualityProfile: "form-control",
 	}),
 	defineComponent({
@@ -1298,6 +1194,7 @@ const components = [
 			"ChartContainer",
 			"ChartLegend",
 			"ChartLegendContent",
+			"ChartSeries",
 			"ChartStyle",
 			"ChartTooltip",
 			"ChartTooltipContent",
@@ -1478,6 +1375,23 @@ const components = [
 		renderMode: "client",
 		capabilities: ["ui.data.tree"],
 		qualityProfile: "collection-navigation",
+	}),
+	defineComponent({
+		id: "ui.workspace-page",
+		sourceModule: "src/components/ui/workspace-page.tsx",
+		publicExports: [
+			"WorkspacePage",
+			"WorkspacePageContent",
+			"WorkspacePageContentProps",
+			"WorkspacePageHeader",
+			"WorkspacePageHeaderProps",
+			"WorkspacePageProps",
+		],
+		layer: "compound",
+		family: "layout",
+		renderMode: "server-compatible",
+		capabilities: ["ui.layout.workspace-page", "ui.layout.page-heading"],
+		qualityProfile: "static-display",
 	}),
 ] satisfies readonly UiComponentMetadata[];
 
@@ -1772,6 +1686,13 @@ const capabilities = [
 		providers: ["ui.chart"],
 	}),
 	capability({
+		id: "ui.layout.workspace-page",
+		family: "layout",
+		description:
+			"Canonical responsive page geometry and content rhythm for ERP workspaces.",
+		providers: ["ui.workspace-page"],
+	}),
+	capability({
 		id: "ui.layout.page-heading",
 		family: "layout",
 		description: "Consistent page identity and actions.",
@@ -1821,6 +1742,7 @@ const surfaceProfiles = [
 		capabilities: [
 			"ui.navigation.workspace",
 			"ui.navigation.breadcrumb",
+			"ui.layout.workspace-page",
 			"ui.layout.page-heading",
 		],
 	},

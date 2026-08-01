@@ -80,7 +80,7 @@
 		"check:tsconfig-governance": "node scripts/check-tsconfig-governance.mjs",
 		"test:tsconfig-governance": "vitest run --config testing/vitest.unit.config.ts --project repo-tooling",
 		"check:editor-biome": "node scripts/check-editor-biome.mjs",
-		"check:ui-system": "pnpm --filter @afenda/ui-system lint && pnpm --filter @afenda/ui-system typecheck && pnpm --filter @afenda/ui-system metadata:check && pnpm --filter @afenda/ui-system test && pnpm --filter @afenda/web exec vitest run --config ../../testing/vitest.unit.config.ts --project web tailwind-emit && pnpm --filter @afenda/web typecheck",
+		"check:ui-system": "node scripts/check-ui-system.mjs",
 		"generate:hr-compensation-actions": "node scripts/generate-hr-compensation-actions.mjs",
 		"check:hr-compensation-actions": "node scripts/generate-hr-compensation-actions.mjs --check",
 		"storybook": "pnpm --filter @afenda/storybook dev",

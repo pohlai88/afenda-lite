@@ -40,11 +40,11 @@ const receivablesByMonth = [
 const receivablesConfig = {
 	invoiced: {
 		label: "Invoiced",
-		color: "var(--chart-1)",
+		series: 1,
 	},
 	paid: {
 		label: "Paid",
-		color: "var(--chart-2)",
+		series: 2,
 	},
 } as const;
 

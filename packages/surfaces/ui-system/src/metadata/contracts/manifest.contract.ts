@@ -1,4 +1,5 @@
 import {
+	type ComponentConsumerEnforcement,
 	type ComponentContractInput,
 	type ComponentContractOwnership,
 	defineComponentContract,
@@ -77,6 +78,22 @@ function normalizeOwnership(
 	});
 }
 
+const TYPESCRIPT_IDENTIFIER_PATTERN = /^[A-Za-z_$][\w$]*$/;
+
+function normalizeConsumerEnforcement(
+	enforcement: ComponentConsumerEnforcement,
+): ComponentConsumerEnforcement {
+	const names = normalizeClauses(enforcement.forbiddenLocalComponentNames);
+	for (const name of names) {
+		if (!TYPESCRIPT_IDENTIFIER_PATTERN.test(name)) {
+			throw new Error(
+				`Forbidden local component name must be a TypeScript identifier: "${name}"`,
+			);
+		}
+	}
+	return Object.freeze({ forbiddenLocalComponentNames: names });
+}
+
 /**
  * Mandatory internal authoring gateway for Afenda UI component contracts.
  * Registration, lifecycle, evidence, discovery, and implementation parity remain
@@ -93,6 +110,13 @@ export function defineManifestContract<
 			purpose: normalizeClause(input.purpose),
 			ownership: normalizeOwnership(input.ownership),
 			semanticBoundaries: normalizeClauses(input.semanticBoundaries),
+			...(input.consumerEnforcement
+				? {
+						consumerEnforcement: normalizeConsumerEnforcement(
+							input.consumerEnforcement,
+						),
+					}
+				: {}),
 			...(input.approvedVariants
 				? { approvedVariants: normalizeUsageRules(input.approvedVariants) }
 				: {}),

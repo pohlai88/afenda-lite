@@ -17,6 +17,9 @@ import {
 	CardHeader,
 	CardTitle,
 	Code,
+	WorkspacePage,
+	WorkspacePageContent,
+	WorkspacePageHeader,
 } from "@afenda/ui-system";
 import Link from "next/link";
 
@@ -214,17 +217,10 @@ export async function InventoryShell({
 				};
 
 	return (
-		<section className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-6 py-10">
-			<div className="space-y-2">
-				<p className="text-muted-foreground text-sm">
-					{surface === "admin" ? "Operator" : "Client"} · Inventory
-					{mutationsEnabled ? "" : " · read-only"}
-				</p>
-				<h1 className="font-semibold text-2xl tracking-tight">
-					Stock movements
-				</h1>
-				<p className="max-w-2xl text-muted-foreground text-sm">
-					{mutationsEnabled ? (
+		<WorkspacePage>
+			<WorkspacePageHeader
+				description={
+					mutationsEnabled ? (
 						<>
 							Sole mutator of <Code>on_hand</Code> / <Code>available</Code> /{" "}
 							<Code>reserved</Code>, ledger, and movement tables. Masters via{" "}
@@ -237,302 +233,307 @@ export async function InventoryShell({
 							Read-only stock movements, availability, and reservations for this
 							organization. Mutations run on the operator inventory console.
 						</>
-					)}
-				</p>
-			</div>
+					)
+				}
+				scope={`${surface === "admin" ? "Operator" : "Client"} · Inventory${mutationsEnabled ? "" : " · read-only"}`}
+				title="Stock movements"
+			/>
+			<WorkspacePageContent>
+				{movementsResult.ok ? null : (
+					<Alert>
+						<AlertTitle>Could not load movements</AlertTitle>
+						<AlertDescription>{movementsResult.message}</AlertDescription>
+					</Alert>
+				)}
 
-			{movementsResult.ok ? null : (
-				<Alert>
-					<AlertTitle>Could not load movements</AlertTitle>
-					<AlertDescription>{movementsResult.message}</AlertDescription>
-				</Alert>
-			)}
-
-			{detailLoadFailed ? (
-				<Alert>
-					<AlertTitle>Movement not found</AlertTitle>
-					<AlertDescription>
-						No movement matches <Code>{movementId}</Code> in this organization.{" "}
-						<Link
-							className="underline underline-offset-4"
-							href={detailHrefBase}
-						>
-							Clear selection
-						</Link>
-					</AlertDescription>
-				</Alert>
-			) : null}
-
-			{detail === null ? null : (
-				<Card>
-					<CardHeader>
-						<CardTitle>
-							{detail.code} · {detail.movementType} · {detail.status}
-						</CardTitle>
-						<CardDescription>
-							v{detail.version} · {detail.source} · {detail.lines.length}{" "}
-							line(s) · id <Code>{detail.id}</Code>
-							{" · "}
+				{detailLoadFailed ? (
+					<Alert>
+						<AlertTitle>Movement not found</AlertTitle>
+						<AlertDescription>
+							No movement matches <Code>{movementId}</Code> in this
+							organization.{" "}
 							<Link
 								className="underline underline-offset-4"
 								href={detailHrefBase}
 							>
 								Clear selection
 							</Link>
+						</AlertDescription>
+					</Alert>
+				) : null}
+
+				{detail === null ? null : (
+					<Card>
+						<CardHeader>
+							<CardTitle>
+								{detail.code} · {detail.movementType} · {detail.status}
+							</CardTitle>
+							<CardDescription>
+								v{detail.version} · {detail.source} · {detail.lines.length}{" "}
+								line(s) · id <Code>{detail.id}</Code>
+								{" · "}
+								<Link
+									className="underline underline-offset-4"
+									href={detailHrefBase}
+								>
+									Clear selection
+								</Link>
+							</CardDescription>
+						</CardHeader>
+						<CardContent className="space-y-2 text-sm">
+							<p className="text-muted-foreground">
+								{warehouseLabel(detail)}
+								{detail.adjustmentReasonCode
+									? ` · reason ${detail.adjustmentReasonCode}`
+									: ""}
+							</p>
+							{detail.lines.length === 0 ? (
+								<p className="text-muted-foreground">No lines yet.</p>
+							) : (
+								<ul className="space-y-1">
+									{detail.lines.map((line) => (
+										<li key={line.id}>
+											#{line.lineNo} · {line.itemCode} · qty {line.quantity}
+										</li>
+									))}
+								</ul>
+							)}
+						</CardContent>
+					</Card>
+				)}
+
+				<Card>
+					<CardHeader>
+						<CardTitle>Movements</CardTitle>
+						<CardDescription>
+							{movements.length} movement(s) · pageSize ≤ 50 · open a row for
+							detail
 						</CardDescription>
 					</CardHeader>
-					<CardContent className="space-y-2 text-sm">
-						<p className="text-muted-foreground">
-							{warehouseLabel(detail)}
-							{detail.adjustmentReasonCode
-								? ` · reason ${detail.adjustmentReasonCode}`
-								: ""}
-						</p>
-						{detail.lines.length === 0 ? (
-							<p className="text-muted-foreground">No lines yet.</p>
+					<CardContent>
+						<StockMovementsTable
+							detailHrefBase={detailHrefBase}
+							rows={movements.map((movement) => ({
+								id: movement.id,
+								code: movement.code,
+								movementType: movement.movementType,
+								source: movement.source,
+								status: movement.status,
+								version: movement.version,
+								lineCount: movement.lines.length,
+								warehouseLabel: warehouseLabel(movement),
+							}))}
+						/>
+					</CardContent>
+				</Card>
+
+				<Card>
+					<CardHeader>
+						<CardTitle>Availability</CardTitle>
+						<CardDescription>
+							{canReadAvailability
+								? `${availability.length} availability row(s) · org-scoped`
+								: "Requires inventory.availability.read"}
+						</CardDescription>
+					</CardHeader>
+					<CardContent>
+						{canReadAvailability ? (
+							availabilityResult !== null && !availabilityResult.ok ? (
+								<p className="text-muted-foreground text-sm">
+									{availabilityResult.message}
+								</p>
+							) : (
+								<StockAvailabilityTable
+									rows={availability.map((row) => ({
+										id: `${row.warehouseId}:${row.itemId}`,
+										warehouseCode: row.warehouseCode,
+										itemCode: row.itemCode,
+										onHandQuantity: row.onHandQuantity,
+										reservedQuantity: row.reservedQuantity,
+										availableQuantity: row.availableQuantity,
+									}))}
+								/>
+							)
 						) : (
-							<ul className="space-y-1">
-								{detail.lines.map((line) => (
-									<li key={line.id}>
-										#{line.lineNo} · {line.itemCode} · qty {line.quantity}
-									</li>
-								))}
-							</ul>
+							<Alert role="status">
+								<AlertTitle>Availability unavailable</AlertTitle>
+								<AlertDescription>
+									Grant <Code>inventory.availability.read</Code> to view
+									on-hand, reserved, and available quantities.
+								</AlertDescription>
+							</Alert>
 						)}
 					</CardContent>
 				</Card>
-			)}
 
-			<Card>
-				<CardHeader>
-					<CardTitle>Movements</CardTitle>
-					<CardDescription>
-						{movements.length} movement(s) · pageSize ≤ 50 · open a row for
-						detail
-					</CardDescription>
-				</CardHeader>
-				<CardContent>
-					<StockMovementsTable
-						detailHrefBase={detailHrefBase}
-						rows={movements.map((movement) => ({
-							id: movement.id,
-							code: movement.code,
-							movementType: movement.movementType,
-							source: movement.source,
-							status: movement.status,
-							version: movement.version,
-							lineCount: movement.lines.length,
-							warehouseLabel: warehouseLabel(movement),
-						}))}
-					/>
-				</CardContent>
-			</Card>
-
-			<Card>
-				<CardHeader>
-					<CardTitle>Availability</CardTitle>
-					<CardDescription>
-						{canReadAvailability
-							? `${availability.length} availability row(s) · org-scoped`
-							: "Requires inventory.availability.read"}
-					</CardDescription>
-				</CardHeader>
-				<CardContent>
-					{canReadAvailability ? (
-						availabilityResult !== null && !availabilityResult.ok ? (
-							<p className="text-muted-foreground text-sm">
-								{availabilityResult.message}
-							</p>
-						) : (
-							<StockAvailabilityTable
-								rows={availability.map((row) => ({
-									id: `${row.warehouseId}:${row.itemId}`,
-									warehouseCode: row.warehouseCode,
-									itemCode: row.itemCode,
-									onHandQuantity: row.onHandQuantity,
-									reservedQuantity: row.reservedQuantity,
-									availableQuantity: row.availableQuantity,
+				<Card>
+					<CardHeader>
+						<CardTitle>Reservations</CardTitle>
+						<CardDescription>
+							{reservations.length} reservation(s) · pageSize ≤ 50
+						</CardDescription>
+					</CardHeader>
+					<CardContent>
+						{reservationsResult.ok ? (
+							<StockReservationsTable
+								rows={reservations.map((reservation) => ({
+									id: reservation.id,
+									code: reservation.code,
+									status: reservation.status,
+									warehouseCode: reservation.warehouseCode,
+									itemCode: reservation.itemCode,
+									quantity: reservation.quantity,
+									consumedQuantity: reservation.consumedQuantity,
+									version: reservation.version,
 								}))}
 							/>
-						)
-					) : (
-						<Alert role="status">
-							<AlertTitle>Availability unavailable</AlertTitle>
-							<AlertDescription>
-								Grant <Code>inventory.availability.read</Code> to view on-hand,
-								reserved, and available quantities.
-							</AlertDescription>
-						</Alert>
-					)}
-				</CardContent>
-			</Card>
+						) : (
+							<p className="text-muted-foreground text-sm">
+								{reservationsResult.message}
+							</p>
+						)}
+					</CardContent>
+				</Card>
 
-			<Card>
-				<CardHeader>
-					<CardTitle>Reservations</CardTitle>
-					<CardDescription>
-						{reservations.length} reservation(s) · pageSize ≤ 50
-					</CardDescription>
-				</CardHeader>
-				<CardContent>
-					{reservationsResult.ok ? (
-						<StockReservationsTable
-							rows={reservations.map((reservation) => ({
-								id: reservation.id,
-								code: reservation.code,
-								status: reservation.status,
-								warehouseCode: reservation.warehouseCode,
-								itemCode: reservation.itemCode,
-								quantity: reservation.quantity,
-								consumedQuantity: reservation.consumedQuantity,
-								version: reservation.version,
-							}))}
-						/>
-					) : (
-						<p className="text-muted-foreground text-sm">
-							{reservationsResult.message}
-						</p>
-					)}
-				</CardContent>
-			</Card>
+				{mutationsEnabled ? (
+					<>
+						<Card>
+							<CardHeader>
+								<CardTitle>Create draft</CardTitle>
+								<CardDescription>
+									Opening-balance receipt, transfer, or adjustment (peer sources
+									denied here).
+								</CardDescription>
+							</CardHeader>
+							<CardContent>
+								<CreateStockMovementForm
+									canAdjust={canAdjust}
+									canCreate={canCreate}
+									warehouses={masterWarehouseOptions}
+								/>
+							</CardContent>
+						</Card>
 
-			{mutationsEnabled ? (
-				<>
-					<Card>
-						<CardHeader>
-							<CardTitle>Create draft</CardTitle>
-							<CardDescription>
-								Opening-balance receipt, transfer, or adjustment (peer sources
-								denied here).
-							</CardDescription>
-						</CardHeader>
-						<CardContent>
-							<CreateStockMovementForm
-								canAdjust={canAdjust}
-								canCreate={canCreate}
-								warehouses={masterWarehouseOptions}
-							/>
-						</CardContent>
-					</Card>
+						<Card>
+							<CardHeader>
+								<CardTitle>Add line</CardTitle>
+							</CardHeader>
+							<CardContent>
+								<AddStockMovementLineForm
+									canCreate={canCreate}
+									defaultExpectedVersion={draftDefaults?.version}
+									defaultMovementId={draftDefaults?.movementId}
+									items={masterItemOptions}
+								/>
+							</CardContent>
+						</Card>
 
-					<Card>
-						<CardHeader>
-							<CardTitle>Add line</CardTitle>
-						</CardHeader>
-						<CardContent>
-							<AddStockMovementLineForm
-								canCreate={canCreate}
-								defaultExpectedVersion={draftDefaults?.version}
-								defaultMovementId={draftDefaults?.movementId}
-								items={masterItemOptions}
-							/>
-						</CardContent>
-					</Card>
+						<Card>
+							<CardHeader>
+								<CardTitle>Post movement</CardTitle>
+								<CardDescription>
+									Applies ledger and balance effects; optimistic version
+									required.
+								</CardDescription>
+							</CardHeader>
+							<CardContent>
+								<PostStockMovementForm
+									canPost={canPost}
+									defaultExpectedVersion={draftDefaults?.version}
+									defaultMovementId={draftDefaults?.movementId}
+								/>
+							</CardContent>
+						</Card>
 
-					<Card>
-						<CardHeader>
-							<CardTitle>Post movement</CardTitle>
-							<CardDescription>
-								Applies ledger and balance effects; optimistic version required.
-							</CardDescription>
-						</CardHeader>
-						<CardContent>
-							<PostStockMovementForm
-								canPost={canPost}
-								defaultExpectedVersion={draftDefaults?.version}
-								defaultMovementId={draftDefaults?.movementId}
-							/>
-						</CardContent>
-					</Card>
+						<Card>
+							<CardHeader>
+								<CardTitle>Cancel draft movement</CardTitle>
+							</CardHeader>
+							<CardContent>
+								<CancelStockMovementForm
+									canCancel={canCancel}
+									defaultExpectedVersion={draftDefaults?.version}
+									defaultMovementId={draftDefaults?.movementId}
+								/>
+							</CardContent>
+						</Card>
 
-					<Card>
-						<CardHeader>
-							<CardTitle>Cancel draft movement</CardTitle>
-						</CardHeader>
-						<CardContent>
-							<CancelStockMovementForm
-								canCancel={canCancel}
-								defaultExpectedVersion={draftDefaults?.version}
-								defaultMovementId={draftDefaults?.movementId}
-							/>
-						</CardContent>
-					</Card>
+						<Card>
+							<CardHeader>
+								<CardTitle>Create reversal movement</CardTitle>
+								<CardDescription>
+									Posts a compensating movement for a posted stock movement.
+								</CardDescription>
+							</CardHeader>
+							<CardContent>
+								<CreateReversalMovementForm
+									canPost={canPost}
+									defaultExpectedVersion={postedDefaults?.version}
+									defaultMovementId={postedDefaults?.movementId}
+								/>
+							</CardContent>
+						</Card>
 
-					<Card>
-						<CardHeader>
-							<CardTitle>Create reversal movement</CardTitle>
-							<CardDescription>
-								Posts a compensating movement for a posted stock movement.
-							</CardDescription>
-						</CardHeader>
-						<CardContent>
-							<CreateReversalMovementForm
-								canPost={canPost}
-								defaultExpectedVersion={postedDefaults?.version}
-								defaultMovementId={postedDefaults?.movementId}
-							/>
-						</CardContent>
-					</Card>
+						<Card>
+							<CardHeader>
+								<CardTitle>Reserve stock</CardTitle>
+							</CardHeader>
+							<CardContent>
+								<ReserveStockForm
+									canReserve={canReserve}
+									items={masterItemOptions}
+									warehouses={masterWarehouseOptions}
+								/>
+							</CardContent>
+						</Card>
 
-					<Card>
-						<CardHeader>
-							<CardTitle>Reserve stock</CardTitle>
-						</CardHeader>
-						<CardContent>
-							<ReserveStockForm
-								canReserve={canReserve}
-								items={masterItemOptions}
-								warehouses={masterWarehouseOptions}
-							/>
-						</CardContent>
-					</Card>
+						<Card>
+							<CardHeader>
+								<CardTitle>Release reservation</CardTitle>
+							</CardHeader>
+							<CardContent>
+								<ReleaseReservationForm
+									canRelease={canRelease}
+									defaultExpectedVersion={reservationDefaults?.version}
+									defaultReservationId={reservationDefaults?.reservationId}
+								/>
+							</CardContent>
+						</Card>
 
-					<Card>
-						<CardHeader>
-							<CardTitle>Release reservation</CardTitle>
-						</CardHeader>
-						<CardContent>
-							<ReleaseReservationForm
-								canRelease={canRelease}
-								defaultExpectedVersion={reservationDefaults?.version}
-								defaultReservationId={reservationDefaults?.reservationId}
-							/>
-						</CardContent>
-					</Card>
+						<Card>
+							<CardHeader>
+								<CardTitle>Expire reservation</CardTitle>
+								<CardDescription>
+									Marks active reservation expired and frees reserved quantity.
+								</CardDescription>
+							</CardHeader>
+							<CardContent>
+								<ExpireReservationForm
+									canRelease={canRelease}
+									defaultExpectedVersion={reservationDefaults?.version}
+									defaultReservationId={reservationDefaults?.reservationId}
+								/>
+							</CardContent>
+						</Card>
 
-					<Card>
-						<CardHeader>
-							<CardTitle>Expire reservation</CardTitle>
-							<CardDescription>
-								Marks active reservation expired and frees reserved quantity.
-							</CardDescription>
-						</CardHeader>
-						<CardContent>
-							<ExpireReservationForm
-								canRelease={canRelease}
-								defaultExpectedVersion={reservationDefaults?.version}
-								defaultReservationId={reservationDefaults?.reservationId}
-							/>
-						</CardContent>
-					</Card>
-
-					<Card>
-						<CardHeader>
-							<CardTitle>Cancel reservation</CardTitle>
-							<CardDescription>
-								Cancels active reservation and frees reserved quantity.
-							</CardDescription>
-						</CardHeader>
-						<CardContent>
-							<CancelReservationForm
-								canRelease={canRelease}
-								defaultExpectedVersion={reservationDefaults?.version}
-								defaultReservationId={reservationDefaults?.reservationId}
-							/>
-						</CardContent>
-					</Card>
-				</>
-			) : null}
-		</section>
+						<Card>
+							<CardHeader>
+								<CardTitle>Cancel reservation</CardTitle>
+								<CardDescription>
+									Cancels active reservation and frees reserved quantity.
+								</CardDescription>
+							</CardHeader>
+							<CardContent>
+								<CancelReservationForm
+									canRelease={canRelease}
+									defaultExpectedVersion={reservationDefaults?.version}
+									defaultReservationId={reservationDefaults?.reservationId}
+								/>
+							</CardContent>
+						</Card>
+					</>
+				) : null}
+			</WorkspacePageContent>
+		</WorkspacePage>
 	);
 }

@@ -123,4 +123,5 @@ export * from "./components/ui/toggle-group";
 export * from "./components/ui/toolbar";
 export * from "./components/ui/tooltip";
 export * from "./components/ui/tree-view";
+export * from "./components/ui/workspace-page";
 export { cn } from "./lib/utils";

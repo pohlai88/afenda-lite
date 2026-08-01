@@ -15,6 +15,7 @@ import { Field, FieldDescription, FieldGroup } from "./field";
 import { FormError } from "./form-error";
 import { Input } from "./input";
 import { Label } from "./label";
+import { NativeSelect, NativeSelectOption } from "./native-select";
 import { Textarea } from "./textarea";
 
 interface FormFieldProps extends HTMLAttributes<HTMLDivElement> {
@@ -103,4 +104,78 @@ const FormTextarea = ({
 }) => <Textarea ref={ref} {...props} />;
 FormTextarea.displayName = "FormTextarea";
 
-export { FormField, FormInput, FormTextarea };
+interface TextFieldProps extends ComponentProps<typeof Input> {
+	description?: string | undefined;
+	error?: string | undefined;
+	label: string;
+}
+
+/**
+ * Canonical single-line field projection. Domain validation and requirement
+ * policy remain consumer-owned; this component owns field composition and ARIA.
+ */
+const TextField = ({
+	className,
+	description,
+	error,
+	id,
+	label,
+	name,
+	required = false,
+	...props
+}: TextFieldProps) => (
+	<FormField
+		description={description}
+		error={error}
+		fieldId={id ?? name}
+		label={label}
+		required={required}
+	>
+		<Input
+			className={className}
+			name={name ?? id}
+			required={required}
+			{...props}
+		/>
+	</FormField>
+);
+TextField.displayName = "TextField";
+
+interface SelectFieldProps
+	extends Omit<ComponentProps<typeof NativeSelect>, "children"> {
+	description?: string | undefined;
+	error?: string | undefined;
+	label: string;
+	options: readonly (readonly [value: string, label: ReactNode])[];
+}
+
+/** Canonical bounded-choice field projection over the native select control. */
+const SelectField = ({
+	description,
+	error,
+	id,
+	label,
+	name,
+	options,
+	required = false,
+	...props
+}: SelectFieldProps) => (
+	<FormField
+		description={description}
+		error={error}
+		fieldId={id ?? name}
+		label={label}
+		required={required}
+	>
+		<NativeSelect name={name ?? id} required={required} {...props}>
+			{options.map(([value, optionLabel]) => (
+				<NativeSelectOption key={value} value={value}>
+					{optionLabel}
+				</NativeSelectOption>
+			))}
+		</NativeSelect>
+	</FormField>
+);
+SelectField.displayName = "SelectField";
+
+export { FormField, FormInput, FormTextarea, SelectField, TextField };

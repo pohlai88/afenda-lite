@@ -2,7 +2,10 @@ import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import ts from "typescript";
 import { describe, expect, expectTypeOf, it } from "vitest";
-import { UI_SYSTEM_CATALOG } from "../src/metadata/catalog";
+import {
+	defineComponentGovernanceRegistry,
+	UI_SYSTEM_CATALOG,
+} from "../src/metadata/catalog";
 import type {
 	GovernedCatalogComponent,
 	UiRepositorySnapshot,
@@ -201,6 +204,73 @@ function exportedNames(source: string, fileName: string): string[] {
 	return [...names].sort();
 }
 
+function sourceFiles(directory: string): string[] {
+	return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+		const absolutePath = path.join(directory, entry.name);
+		if (entry.isDirectory()) {
+			if (
+				[".next", "__tests__", "node_modules", "testing"].includes(entry.name)
+			) {
+				return [];
+			}
+			return sourceFiles(absolutePath);
+		}
+		return entry.isFile() && /\.tsx?$/.test(entry.name) ? [absolutePath] : [];
+	});
+}
+
+function topLevelDeclarationNames(source: string, fileName: string): string[] {
+	const sourceFile = ts.createSourceFile(
+		fileName,
+		source,
+		ts.ScriptTarget.Latest,
+		true,
+		fileName.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
+	);
+	const names = new Set<string>();
+	for (const statement of sourceFile.statements) {
+		if (
+			(ts.isFunctionDeclaration(statement) ||
+				ts.isClassDeclaration(statement)) &&
+			statement.name
+		) {
+			names.add(statement.name.text);
+			continue;
+		}
+		if (ts.isVariableStatement(statement)) {
+			for (const declaration of statement.declarationList.declarations) {
+				if (ts.isIdentifier(declaration.name)) {
+					names.add(declaration.name.text);
+				}
+			}
+		}
+	}
+	return [...names].sort();
+}
+
+function consumerDeclarationSnapshot(): Readonly<
+	Record<string, readonly string[]>
+> {
+	const repositoryRoot = path.resolve(packageRoot, "../../..");
+	const featureRoot = path.join(repositoryRoot, "apps/web");
+	return Object.fromEntries(
+		sourceFiles(featureRoot)
+			.sort((left, right) => left.localeCompare(right))
+			.map((absolutePath) => {
+				const relativePath = path
+					.relative(repositoryRoot, absolutePath)
+					.replaceAll(path.sep, "/");
+				return [
+					relativePath,
+					topLevelDeclarationNames(
+						readFileSync(absolutePath, "utf8"),
+						relativePath,
+					),
+				] as const;
+			}),
+	);
+}
+
 function repositorySnapshot(): UiRepositorySnapshot {
 	const componentDirectory = path.join(packageRoot, "src/components/ui");
 	const sourceNames = readdirSync(componentDirectory)
@@ -237,6 +307,7 @@ function repositorySnapshot(): UiRepositorySnapshot {
 	].map((match) => match[1] ?? "");
 	return {
 		componentSources,
+		consumerDeclarationsBySource: consumerDeclarationSnapshot(),
 		exportsBySource,
 		barrelSource: readFileSync(path.join(packageRoot, "src/index.ts"), "utf8"),
 		packageExportKeys,
@@ -301,6 +372,43 @@ describe("UI system metadata contract", () => {
 			Object.isFrozen(contract.approvedVariants?.default?.allowedWhen),
 		).toBe(true);
 		expect(Object.isFrozen(contract.rules)).toBe(true);
+	});
+
+	it("derives governance identity from contracts and rejects registry drift", () => {
+		const contract = defineManifestContract({
+			id: "ui.registry-fixture.contract",
+			component: "ui.registry-fixture",
+			purpose: "Prove canonical governance registration.",
+			ownership: {
+				componentOwns: ["Reusable presentation."],
+				consumerOwns: ["Domain policy."],
+			},
+			semanticBoundaries: ["Presentation does not imply authority."],
+			rules: ["Consume through the registered capability."],
+			accessibility: ["Preserve native semantics."],
+			prohibitedUsage: ["Do not duplicate registry identity."],
+		});
+		const registry = defineComponentGovernanceRegistry([contract], {
+			"ui.registry-fixture": { lifecycle: "approved" },
+		});
+
+		expect(registry).toEqual({
+			"ui.registry-fixture": { contract, lifecycle: "approved" },
+		});
+		expect(Object.isFrozen(registry)).toBe(true);
+		expect(Object.isFrozen(registry["ui.registry-fixture"])).toBe(true);
+		expect(() =>
+			defineComponentGovernanceRegistry([contract, contract]),
+		).toThrow(
+			"Duplicate component governance registration: ui.registry-fixture",
+		);
+		expect(() =>
+			defineComponentGovernanceRegistry([contract], {
+				"ui.unregistered-fixture": { lifecycle: "approved" },
+			}),
+		).toThrow(
+			"Governance override references an unregistered component: ui.unregistered-fixture",
+		);
 	});
 
 	it("rejects empty and normalized duplicate clauses at the authoring gateway", () => {
@@ -381,6 +489,23 @@ describe("UI system metadata contract", () => {
 		expect(validateUiCatalog(UI_SYSTEM_CATALOG, repositorySnapshot())).toEqual(
 			[],
 		);
+	});
+
+	it("rejects feature-local declarations that shadow a contract-owned capability", () => {
+		const snapshot = repositorySnapshot();
+		const source = "apps/web/features/example/editor.tsx";
+		const issues = validateUiCatalog(UI_SYSTEM_CATALOG, {
+			...snapshot,
+			consumerDeclarationsBySource: {
+				...snapshot.consumerDeclarationsBySource,
+				[source]: ["FormField"],
+			},
+		});
+
+		expect(issues).toContainEqual({
+			kind: "consumer-drift",
+			message: `${source} declares local FormField; consume the canonical ui.form-field capability instead`,
+		});
 	});
 
 	it("keeps component governance synchronized with catalog variants and sizes", () => {

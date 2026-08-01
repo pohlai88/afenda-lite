@@ -297,6 +297,19 @@ describe("@afenda/ui-system — APCA and WCAG color contracts", () => {
 
 	it.each(
 		Object.entries(modes),
+	)("keeps every %s ERP data series above 3:1 against the canvas", (_mode, palette) => {
+		const background = resolveColor(palette, "background");
+		for (let index = 1; index <= 5; index += 1) {
+			const series = resolveColor(palette, `data-series-${index}`);
+			expect(
+				wcagContrast(series, background),
+				`data-series-${index}`,
+			).toBeGreaterThanOrEqual(3);
+		}
+	});
+
+	it.each(
+		Object.entries(modes),
 	)("keeps the complete %s text ladder readable on approved surfaces", (_mode, palette) => {
 		const textRoles = [
 			["foreground", 400],

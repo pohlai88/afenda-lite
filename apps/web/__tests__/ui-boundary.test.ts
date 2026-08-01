@@ -58,6 +58,12 @@ const RETIRED_UI_PATTERN = /@afenda\/ui(?![\w-])(?:\/[\w.\-/]+)?/g;
 /** Product import of DNA staging (alias or relative). */
 const DNA_IMPORT_PATTERN =
 	/from\s+["']@\/shadcn-studio(?:\/[^"']*)?["']|from\s+["'][^"']*\/shadcn-studio\/[^"']*["']|import\s+["']@\/shadcn-studio(?:\/[^"']*)?["']/;
+const LEGACY_WORKSPACE_GEOMETRY_PATTERN =
+	/mx-auto\s+flex\s+w-full\s+max-w-(?:5xl|6xl)\s+flex-col\s+gap-(?:6|8)\s+px-6\s+py-10/;
+
+function normalizePath(file: string): string {
+	return path.relative(webRoot, file).split(path.sep).join("/");
+}
 
 describe("@afenda/web ui-system boundary", () => {
 	it("resolves representative primitives from the flat barrel", () => {
@@ -122,6 +128,59 @@ describe("@afenda/web ui-system boundary", () => {
 		expect(
 			offenders,
 			`product DNA imports found: ${offenders.join(", ")}`,
+		).toEqual([]);
+	});
+
+	it("keeps workspace geometry behind the ui-system capability", () => {
+		const offenders = collectSourceFiles(path.join(webRoot, "features"))
+			.filter((file) =>
+				LEGACY_WORKSPACE_GEOMETRY_PATTERN.test(readFileSync(file, "utf8")),
+			)
+			.map(normalizePath);
+
+		expect(
+			offenders,
+			`feature-owned workspace geometry found: ${offenders.join(", ")}`,
+		).toEqual([]);
+	});
+
+	it("keeps product shell page headings behind WorkspacePageHeader", () => {
+		const offenders = collectSourceFiles(path.join(webRoot, "features"))
+			.filter((file) => {
+				const relativePath = normalizePath(file);
+				if (!relativePath.endsWith("-shell.tsx")) {
+					return false;
+				}
+				if (relativePath.startsWith("features/auth/")) {
+					return false;
+				}
+				return /<h1(?:\s|>)/.test(readFileSync(file, "utf8"));
+			})
+			.map(normalizePath);
+
+		expect(
+			offenders,
+			`feature shell owns a raw page heading: ${offenders.join(", ")}`,
+		).toEqual([]);
+	});
+
+	it("uses the complete WorkspacePage compound wherever adopted", () => {
+		const offenders = collectSourceFiles(path.join(webRoot, "features"))
+			.filter((file) => {
+				const contents = readFileSync(file, "utf8");
+				if (!contents.includes("<WorkspacePage")) {
+					return false;
+				}
+				return !(
+					contents.includes("<WorkspacePageHeader") &&
+					contents.includes("<WorkspacePageContent")
+				);
+			})
+			.map(normalizePath);
+
+		expect(
+			offenders,
+			`incomplete WorkspacePage compound usage: ${offenders.join(", ")}`,
 		).toEqual([]);
 	});
 });

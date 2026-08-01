@@ -8,6 +8,9 @@ import {
 	CardTitle,
 	Code,
 	MetricGrid,
+	WorkspacePage,
+	WorkspacePageContent,
+	WorkspacePageHeader,
 } from "@afenda/ui-system";
 import { ClipboardList, Shield, Users } from "lucide-react";
 
@@ -199,98 +202,103 @@ export async function OrgAdminShell() {
 	const activeAssignments = assignments.filter((item) => item.active);
 
 	return (
-		<main className="flex flex-col gap-(--section-gap)">
-			<header className="flex flex-col gap-2">
-				<h1 className="font-semibold text-2xl tracking-tight">
-					Operator admin
-				</h1>
-				<p className="text-foreground-secondary text-sm">
-					Org-console and org-scoped RBAC for active org <Code>{orgId}</Code>.
-				</p>
-			</header>
+		<WorkspacePage width="full">
+			<WorkspacePageHeader
+				description={
+					<>
+						Org-console and org-scoped RBAC for active org <Code>{orgId}</Code>.
+					</>
+				}
+				scope="Organization administration"
+				title="Operator admin"
+			/>
+			<WorkspacePageContent>
+				<OrgConsolePanels activeOrgId={orgId} orgList={orgList} usage={usage} />
 
-			<OrgConsolePanels activeOrgId={orgId} orgList={orgList} usage={usage} />
+				{canManageRoles ? (
+					<MetricGrid
+						columns={3}
+						metrics={[
+							{
+								title: "Assignable roles",
+								value: roles.length,
+								description: "System templates and org-custom roles",
+								icon: <Shield aria-hidden className="size-4" />,
+							},
+							{
+								title: "Active assignments",
+								value: activeAssignments.length,
+								description: "Current org role bindings",
+								icon: <Users aria-hidden className="size-4" />,
+							},
+							{
+								title: "Audit events",
+								value: auditRows.length,
+								description: "Org-scoped RBAC history",
+								icon: <ClipboardList aria-hidden className="size-4" />,
+							},
+						]}
+					/>
+				) : null}
 
-			{canManageRoles ? (
-				<MetricGrid
-					columns={3}
-					metrics={[
-						{
-							title: "Assignable roles",
-							value: roles.length,
-							description: "System templates and org-custom roles",
-							icon: <Shield aria-hidden className="size-4" />,
-						},
-						{
-							title: "Active assignments",
-							value: activeAssignments.length,
-							description: "Current org role bindings",
-							icon: <Users aria-hidden className="size-4" />,
-						},
-						{
-							title: "Audit events",
-							value: auditRows.length,
-							description: "Org-scoped RBAC history",
-							icon: <ClipboardList aria-hidden className="size-4" />,
-						},
-					]}
-				/>
-			) : null}
+				{canInvite ? (
+					<Card>
+						<CardHeader>
+							<CardTitle>Invite member</CardTitle>
+							<CardDescription>
+								Neon Auth delivers the invitation email; success also writes an
+								org-scoped RBAC audit row. Invitees open{" "}
+								<Code>{authServer.paths.join.path}?invitationId=…</Code>.
+							</CardDescription>
+						</CardHeader>
+						<CardContent>
+							<InviteMemberForm
+								inviteableRoles={inviteableRoles}
+								joinPath={authServer.paths.join.path}
+							/>
+						</CardContent>
+					</Card>
+				) : null}
 
-			{canInvite ? (
-				<Card>
-					<CardHeader>
-						<CardTitle>Invite member</CardTitle>
-						<CardDescription>
-							Neon Auth delivers the invitation email; success also writes an
-							org-scoped RBAC audit row. Invitees open{" "}
-							<Code>{authServer.paths.join.path}?invitationId=…</Code>.
-						</CardDescription>
-					</CardHeader>
-					<CardContent>
-						<InviteMemberForm
-							inviteableRoles={inviteableRoles}
-							joinPath={authServer.paths.join.path}
-						/>
-					</CardContent>
-				</Card>
-			) : null}
-
-			{canManageRoles ? (
-				<OrgAdminPanels
-					assignments={activeAssignments.map((item) => ({
-						id: item.id,
-						userId: item.userId,
-						userLabel: resolveAssignmentUserLabel(memberDirectory, item.userId),
-						roleId: item.roleId,
-						roleName: roleNameById.get(item.roleId) ?? item.roleId,
-						scopeType: item.scopeType,
-					}))}
-					auditRows={auditRows.map((item) => ({
-						id: item.id,
-						action: item.action,
-						targetType: item.targetType ?? null,
-						targetId: item.targetId ?? null,
-						actorUserId: item.actorUserId,
-						actorLabel: resolveAssignmentUserLabel(
-							memberDirectory,
-							item.actorUserId,
-						),
-						roleId: item.roleId ?? null,
-						reason: item.reason ?? null,
-						createdAt: toAuditCreatedAtIso(item.createdAt),
-						oldValueJson: formatAuditJsonValue(item.oldValue),
-						newValueJson: formatAuditJsonValue(item.newValue),
-					}))}
-					memberDirectory={memberDirectory}
-					roles={roles.map((item) => ({
-						id: item.id,
-						name: item.name,
-						active: item.active,
-						isSystemTemplate: item.isSystemTemplate,
-					}))}
-				/>
-			) : null}
-		</main>
+				{canManageRoles ? (
+					<OrgAdminPanels
+						assignments={activeAssignments.map((item) => ({
+							id: item.id,
+							userId: item.userId,
+							userLabel: resolveAssignmentUserLabel(
+								memberDirectory,
+								item.userId,
+							),
+							roleId: item.roleId,
+							roleName: roleNameById.get(item.roleId) ?? item.roleId,
+							scopeType: item.scopeType,
+						}))}
+						auditRows={auditRows.map((item) => ({
+							id: item.id,
+							action: item.action,
+							targetType: item.targetType ?? null,
+							targetId: item.targetId ?? null,
+							actorUserId: item.actorUserId,
+							actorLabel: resolveAssignmentUserLabel(
+								memberDirectory,
+								item.actorUserId,
+							),
+							roleId: item.roleId ?? null,
+							reason: item.reason ?? null,
+							createdAt: toAuditCreatedAtIso(item.createdAt),
+							oldValueJson: formatAuditJsonValue(item.oldValue),
+							newValueJson: formatAuditJsonValue(item.newValue),
+						}))}
+						memberDirectory={memberDirectory}
+						roles={roles.map((item) => ({
+							id: item.id,
+							name: item.name,
+							active: item.active,
+							isSystemTemplate: item.isSystemTemplate,
+						}))}
+					/>
+				) : null}
+			</WorkspacePageContent>
+		</WorkspacePage>
 	);
 }

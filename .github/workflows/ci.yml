@@ -116,6 +116,9 @@ jobs:
       - name: Typecheck · unit test
         run: pnpm typecheck:root && pnpm exec turbo run typecheck test --concurrency=50%
 
+      - name: UI-system governance
+        run: pnpm check:ui-system
+
       - name: Install Storybook Chromium
         run: pnpm exec playwright install --with-deps chromium
 

@@ -17,15 +17,41 @@ import {
 } from "recharts";
 import { cn } from "../../lib/utils";
 
+const CHART_SERIES = [1, 2, 3, 4, 5] as const;
+
+type ChartSeries = (typeof CHART_SERIES)[number];
+
 type ChartConfig = Record<
 	string,
 	{
 		label?: ReactNode;
 		icon?: ComponentType;
-		color?: string;
-		theme?: { light: string; dark: string };
+		series: ChartSeries;
 	}
 >;
+
+const CSS_IDENTIFIER_PATTERN = /^[a-zA-Z0-9_-]+$/;
+
+function assertCssIdentifier(value: string, kind: string): string {
+	if (!CSS_IDENTIFIER_PATTERN.test(value)) {
+		throw new Error(
+			`${kind} must contain only CSS-safe identifier characters.`,
+		);
+	}
+	return value;
+}
+
+function normalizeChartId(value: string): string {
+	const normalized = value
+		.trim()
+		.replace(/[^a-zA-Z0-9_-]+/g, "-")
+		.replace(/^-+|-+$/g, "");
+	return `chart-${normalized || "generated"}`;
+}
+
+function seriesColor(series: ChartSeries): `var(--data-series-${ChartSeries})` {
+	return `var(--data-series-${series})`;
+}
 
 const ChartContext = createContext<ChartConfig | null>(null);
 
@@ -38,25 +64,18 @@ function useChart() {
 }
 
 function ChartStyle({ id, config }: { id: string; config: ChartConfig }) {
-	const entries = Object.entries(config).filter(
-		([, item]) => item.color || item.theme,
-	);
+	const entries = Object.entries(config);
 	if (entries.length === 0) {
 		return null;
 	}
-	const rules = (["light", "dark"] as const)
-		.map((theme) => {
-			const selector =
-				theme === "dark" ? `.dark [data-chart=${id}]` : `[data-chart=${id}]`;
-			const variables = entries
-				.map(
-					([key, item]) =>
-						`  --color-${key}: ${item.theme?.[theme] ?? item.color};`,
-				)
-				.join("\n");
-			return `${selector} {\n${variables}\n}`;
-		})
+	const selector = `[data-chart=${assertCssIdentifier(id, "Chart id")}]`;
+	const variables = entries
+		.map(
+			([key, item]) =>
+				`  --color-${assertCssIdentifier(key, "Chart series key")}: ${seriesColor(item.series)};`,
+		)
 		.join("\n");
+	const rules = `${selector} {\n${variables}\n}`;
 	return <style>{rules}</style>;
 }
 
@@ -71,7 +90,7 @@ function ChartContainer({
 	children: ComponentProps<typeof ResponsiveContainer>["children"];
 }) {
 	const generatedId = useId();
-	const chartId = `chart-${id ?? generatedId.replace(/:/g, "")}`;
+	const chartId = normalizeChartId(id ?? generatedId);
 	return (
 		<ChartContext.Provider value={config}>
 			<div
@@ -183,6 +202,7 @@ export {
 	ChartContainer,
 	ChartLegend,
 	ChartLegendContent,
+	type ChartSeries,
 	ChartStyle,
 	ChartTooltip,
 	ChartTooltipContent,
