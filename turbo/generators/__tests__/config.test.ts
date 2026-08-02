@@ -21,6 +21,7 @@ describe("generator registrations", () => {
 			"__tests__/config.test.ts",
 			"__tests__/contract-loader.test.ts",
 			"__tests__/diagnostic-protocol.test.ts",
+			"__tests__/repository-state.test.ts",
 			"__tests__/workspace-discovery.test.ts",
 		]);
 	});
@@ -83,6 +84,17 @@ describe("generator registrations", () => {
 			expect(report).toContain("schema=afenda.generator-diagnostics/v1");
 			expect(report).toContain("outcomes=completed");
 			expect(report).toContain("exit=0");
+		}
+		const jsonReports = await Promise.all(
+			generatorRegistrations.map((registration) =>
+				registration.doctor(process.cwd(), { format: "json" }),
+			),
+		);
+		for (const report of jsonReports) {
+			expect(report).toContain('"schema": "afenda.generator-doctor/v1"');
+			expect(report).toContain('"authoritativeCapabilities": 0');
+			expect(report).toContain('"reconciliation": "38=18+13+7"');
+			expect(report).toContain('"schema": "afenda.generator-diagnostics/v1"');
 		}
 	});
 });
