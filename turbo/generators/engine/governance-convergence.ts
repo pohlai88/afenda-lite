@@ -80,6 +80,15 @@ const REQUIRED_CONTRACT_DOCS = Object.freeze([
 	"docs-V2/monorepo/g6-kernel-package-adoption-contract.md",
 	"docs-V2/monorepo/g7-repo-documentation-governance-convergence-contract.md",
 	PHASE_EXIT_MATRIX_PATH,
+	"docs-V2/monorepo/g9-read-only-reconciliation-planner-contract.md",
+	"docs-V2/monorepo/g10-explicit-erp-create-package-contract.md",
+	"docs-V2/monorepo/g11-explicit-erp-add-feature-contract.md",
+	"docs-V2/monorepo/g12-erp-projection-lock-apply-contract.md",
+	"docs-V2/monorepo/g13-kernel-adoption-apply-contract.md",
+	"docs-V2/monorepo/g14-generator-transaction-safety-contract.md",
+	"docs-V2/monorepo/g15-local-generator-closure-governance-contract.md",
+	"docs-V2/monorepo/g16-local-generator-command-catalog-contract.md",
+	"docs-V2/monorepo/g17-generator-stop-boundary-contract.md",
 ] as const);
 
 const REQUIRED_AUTHORITY_SOURCES = Object.freeze([
@@ -90,6 +99,13 @@ const REQUIRED_AUTHORITY_SOURCES = Object.freeze([
 	"turbo/generators/erp-generator/treatment-authority.ts",
 	"turbo/generators/kernel-generator/adoption-authority.ts",
 	"turbo/generators/engine/governance-convergence.ts",
+	"turbo/generators/engine/reconciliation-planner.ts",
+	"turbo/generators/erp-generator/package-scaffold.ts",
+	"turbo/generators/erp-generator/feature-scaffold.ts",
+	"turbo/generators/erp-generator/projection-lock-apply.ts",
+	"turbo/generators/kernel-generator/adoption-apply.ts",
+	"turbo/generators/engine/file-transaction.ts",
+	"turbo/generators/engine/local-repo-governance.ts",
 ] as const);
 
 const REQUIRED_TESTS = Object.freeze([
@@ -100,6 +116,13 @@ const REQUIRED_TESTS = Object.freeze([
 	"turbo/generators/__tests__/erp-treatment-authority.test.ts",
 	"turbo/generators/__tests__/kernel-adoption-authority.test.ts",
 	"turbo/generators/__tests__/governance-convergence.test.ts",
+	"turbo/generators/__tests__/reconciliation-planner.test.ts",
+	"turbo/generators/__tests__/erp-package-scaffold.test.ts",
+	"turbo/generators/__tests__/erp-feature-scaffold.test.ts",
+	"turbo/generators/__tests__/erp-projection-lock-apply.test.ts",
+	"turbo/generators/__tests__/kernel-adoption-apply.test.ts",
+	"turbo/generators/__tests__/file-transaction.test.ts",
+	"turbo/generators/__tests__/local-repo-governance.test.ts",
 ] as const);
 
 const REQUIRED_DOCUMENTATION = Object.freeze([

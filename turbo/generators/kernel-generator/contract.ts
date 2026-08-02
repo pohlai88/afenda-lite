@@ -4,7 +4,10 @@ export const kernelContractDefinition = {
 	family: "kernel",
 	release: { state: "internal" },
 	engineCompatibility: 1,
-	modes: [{ id: "doctor", writes: false }],
+	modes: [
+		{ id: "doctor", writes: false },
+		{ id: "plan-upgrade", writes: false },
+	],
 	capabilities: [
 		{ id: "package-structure", status: "declared" },
 		{ id: "public-api-projection", status: "declared" },

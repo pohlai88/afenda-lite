@@ -4,6 +4,10 @@ import { cwd, stdout } from "node:process";
 import { generatorContracts } from "../contracts.ts";
 import { createGeneratorGovernanceConvergenceReport } from "./governance-convergence.ts";
 import {
+	createGeneratorLocalRepoGovernanceReport,
+	type GeneratorLocalRepoGovernanceReportV1,
+} from "./local-repo-governance.ts";
+import {
 	discoverWorkspaces,
 	type WorkspaceFamilyClassification,
 } from "./workspace-discovery.ts";
@@ -36,6 +40,12 @@ export interface GeneratorCheckReportV1 {
 		readonly modes: readonly string[];
 		readonly release: "internal" | "authoritative";
 	}[];
+	readonly localRepoGovernance: {
+		readonly ciRequired: false;
+		readonly commandCount: number;
+		readonly remainingSlices: number;
+		readonly report: GeneratorLocalRepoGovernanceReportV1;
+	};
 	readonly phaseExitGovernance: {
 		readonly blocked: number;
 		readonly issues: number;
@@ -156,6 +166,7 @@ export const runGeneratorCheck = async (
 		}),
 		createGeneratorGovernanceConvergenceReport({ repositoryRoot }),
 	]);
+	const localRepoGovernance = createGeneratorLocalRepoGovernanceReport();
 	if (governance.summary.issues > 0) {
 		throw new GeneratorCheckError(
 			`generator governance convergence failed with ${governance.summary.issues} issue(s)`,
@@ -178,6 +189,12 @@ export const runGeneratorCheck = async (
 	return Object.freeze({
 		schema: GENERATOR_CHECK_SCHEMA,
 		contractDigest: digestContracts(),
+		localRepoGovernance: Object.freeze({
+			ciRequired: localRepoGovernance.localOnly.ciRequired,
+			commandCount: localRepoGovernance.commandCatalog.length,
+			remainingSlices: localRepoGovernance.stopBoundary.remainingSlices.length,
+			report: localRepoGovernance,
+		}),
 		phaseExitGovernance: Object.freeze({
 			issues: governance.summary.issues,
 			warnings: governance.summary.warnings,

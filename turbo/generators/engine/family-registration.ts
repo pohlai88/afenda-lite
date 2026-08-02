@@ -6,6 +6,11 @@ import {
 	type GeneratorDiagnosticReportV1,
 	renderGeneratorDiagnosticReportText,
 } from "./diagnostic-protocol.ts";
+import {
+	createGeneratorReconciliationPlan,
+	type GeneratorReconciliationPlanV1,
+	renderGeneratorReconciliationPlanText,
+} from "./reconciliation-planner.ts";
 import type {
 	GeneratorContractRegistry,
 	GeneratorFamily,
@@ -30,6 +35,10 @@ export interface GeneratorDoctorOptions {
 	readonly format?: unknown;
 }
 
+export interface GeneratorPlanOptions {
+	readonly format?: unknown;
+}
+
 export interface GeneratorFamilyRegistration {
 	readonly contract: GeneratorFamilyContractDefinition;
 	readonly doctor: (
@@ -37,6 +46,12 @@ export interface GeneratorFamilyRegistration {
 		options?: GeneratorDoctorOptions,
 	) => Promise<string>;
 	readonly name: GeneratorName;
+	readonly planJsonName: `${GeneratorName}-plan-upgrade-json`;
+	readonly planName: `${GeneratorName}-plan-upgrade`;
+	readonly planUpgrade: (
+		repositoryRoot: string,
+		options?: GeneratorPlanOptions,
+	) => Promise<string>;
 	readonly register: (plop: GeneratorRegistrar) => void;
 }
 
@@ -83,6 +98,8 @@ interface GeneratorDoctorReportV1 {
 	readonly schema: "afenda.generator-doctor/v1";
 	readonly scope: "workspace-discovery-and-contract-diagnostics";
 }
+
+type GeneratorPlanOutputFormat = "json" | "text";
 
 interface CreateFamilyRegistrationOptions {
 	readonly createDoctorExtension?: (input: {
@@ -169,6 +186,9 @@ const renderDoctorReportText = (report: GeneratorDoctorReportV1): string => {
 const renderDoctorReportJson = (report: GeneratorDoctorReportV1): string =>
 	`${JSON.stringify(report, null, 2)}\n`;
 
+const renderPlanJson = (plan: GeneratorReconciliationPlanV1): string =>
+	`${JSON.stringify(plan, null, 2)}\n`;
+
 const renderDoctorReport = (
 	report: GeneratorDoctorReportV1,
 	format: GeneratorDoctorOutputFormat,
@@ -199,6 +219,30 @@ const parseDoctorOutputFormat = (
 		return format;
 	}
 	throw new GeneratorDoctorOutputFormatError(format);
+};
+
+const parsePlanOutputFormat = (format: unknown): GeneratorPlanOutputFormat => {
+	if (format === undefined) {
+		return "text";
+	}
+	if (format === "text" || format === "json") {
+		return format;
+	}
+	throw new GeneratorDoctorOutputFormatError(format);
+};
+
+const renderPlan = (
+	plan: GeneratorReconciliationPlanV1,
+	format: GeneratorPlanOutputFormat,
+): string => {
+	switch (format) {
+		case "json":
+			return renderPlanJson(plan);
+		case "text":
+			return renderGeneratorReconciliationPlanText(plan);
+		default:
+			return format satisfies never;
+	}
 };
 
 const createEmptyDoctorExtension = (
@@ -261,6 +305,16 @@ export const createFamilyRegistration = (
 	registrationOptions: CreateFamilyRegistrationOptions = {},
 ): GeneratorFamilyRegistration => {
 	const name = `${contract.family}-generator` as const;
+	const createExtension = async (
+		repositoryRoot: string,
+		workspaces: readonly DiscoveredWorkspace[],
+	): Promise<GeneratorDoctorExtension> =>
+		registrationOptions.createDoctorExtension === undefined
+			? createEmptyDoctorExtension(contract.family)
+			: registrationOptions.createDoctorExtension({
+					repositoryRoot,
+					workspaces,
+				});
 	const doctor = async (
 		repositoryRoot: string,
 		doctorOptions: GeneratorDoctorOptions = {},
@@ -268,13 +322,10 @@ export const createFamilyRegistration = (
 		const format = parseDoctorOutputFormat(doctorOptions.format);
 		const discovery = await discoverWorkspaces({ contracts, repositoryRoot });
 		const counts = summarizeWorkspaceCounts(discovery.workspaces);
-		const extension =
-			registrationOptions.createDoctorExtension === undefined
-				? createEmptyDoctorExtension(contract.family)
-				: await registrationOptions.createDoctorExtension({
-						repositoryRoot,
-						workspaces: discovery.workspaces,
-					});
+		const extension = await createExtension(
+			repositoryRoot,
+			discovery.workspaces,
+		);
 		const report = createDoctorReport(
 			contract,
 			discovery.workspaces,
@@ -283,17 +334,60 @@ export const createFamilyRegistration = (
 		);
 		return renderDoctorReport(report, format);
 	};
+	const planUpgrade = async (
+		repositoryRoot: string,
+		planOptions: GeneratorPlanOptions = {},
+	): Promise<string> => {
+		const format = parsePlanOutputFormat(planOptions.format);
+		const discovery = await discoverWorkspaces({ contracts, repositoryRoot });
+		const extension = await createExtension(
+			repositoryRoot,
+			discovery.workspaces,
+		);
+		return renderPlan(
+			createGeneratorReconciliationPlan({
+				family: contract.family,
+				diagnostics: extension.diagnostics,
+			}),
+			format,
+		);
+	};
+	const planName = `${name}-plan-upgrade` as const;
+	const planJsonName = `${name}-plan-upgrade-json` as const;
 	const runDoctor: PlopTypes.CustomActionFunction = (_answers, _config, plop) =>
 		doctor(plop.getDestBasePath());
+	const runPlanUpgrade: PlopTypes.CustomActionFunction = (
+		_answers,
+		_config,
+		plop,
+	) => planUpgrade(plop.getDestBasePath());
+	const runPlanUpgradeJson: PlopTypes.CustomActionFunction = (
+		_answers,
+		_config,
+		plop,
+	) => planUpgrade(plop.getDestBasePath(), { format: "json" });
 	return Object.freeze({
 		name,
+		planName,
+		planJsonName,
 		contract,
 		doctor,
+		planUpgrade,
 		register: (plop: GeneratorRegistrar): void => {
 			plop.setGenerator(name, {
 				description: `${contract.family} generator (${describeActiveModes(contract)}: internal discovery and contract diagnostics only)`,
 				prompts: [],
 				actions: [runDoctor],
+			});
+			plop.setGenerator(planName, {
+				description: `${contract.family} generator (${describeActiveModes(contract)}: read-only upgrade plan)`,
+				prompts: [],
+				actions: [runPlanUpgrade],
+			});
+			plop.setGenerator(planJsonName, {
+				description: `${contract.family} generator (${describeActiveModes(contract)}: read-only JSON upgrade plan)`,
+				prompts: [],
+				actions: [runPlanUpgradeJson],
 			});
 		},
 	});

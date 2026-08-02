@@ -22,13 +22,20 @@ describe("generator registrations", () => {
 			"__tests__/contract-loader.test.ts",
 			"__tests__/diagnostic-protocol.test.ts",
 			"__tests__/erp-explicit-spec.test.ts",
+			"__tests__/erp-feature-scaffold.test.ts",
 			"__tests__/erp-layout-authority.test.ts",
 			"__tests__/erp-manifest-authority.test.ts",
+			"__tests__/erp-package-scaffold.test.ts",
+			"__tests__/erp-projection-lock-apply.test.ts",
 			"__tests__/erp-projection-lock-authority.test.ts",
 			"__tests__/erp-treatment-authority.test.ts",
+			"__tests__/file-transaction.test.ts",
 			"__tests__/generator-check.test.ts",
 			"__tests__/governance-convergence.test.ts",
+			"__tests__/kernel-adoption-apply.test.ts",
 			"__tests__/kernel-adoption-authority.test.ts",
+			"__tests__/local-repo-governance.test.ts",
+			"__tests__/reconciliation-planner.test.ts",
 			"__tests__/repository-state.test.ts",
 			"__tests__/workspace-discovery.test.ts",
 		]);
@@ -46,7 +53,7 @@ describe("generator registrations", () => {
 		).toBe(true);
 	});
 
-	it("registers the frozen inventory without a second execution list", () => {
+	it("registers the frozen inventory and read-only plan generators without a second execution list", () => {
 		const registeredNames: string[] = [];
 		registerGenerators({
 			setGenerator(name) {
@@ -55,18 +62,39 @@ describe("generator registrations", () => {
 		});
 
 		expect(registeredNames).toEqual(
-			generatorRegistrations.map((registration) => registration.name),
+			generatorRegistrations.flatMap((registration) => [
+				registration.name,
+				registration.planName,
+				registration.planJsonName,
+				...(registration.contract.family === "erp"
+					? [
+							"erp-generator-create-package",
+							"erp-generator-add-feature",
+							"erp-generator-reconcile-projection-locks",
+						]
+					: ["kernel-generator-apply-adoption"]),
+			]),
 		);
-		expect(registeredNames).toHaveLength(generatorRegistrations.length);
+		expect(registeredNames).toHaveLength(generatorRegistrations.length * 3 + 4);
 		expect(new Set(registeredNames).size).toBe(registeredNames.length);
 	});
 
-	it("keeps both families internal and exposes only the read-only doctor mode", async () => {
+	it("keeps families internal and declares only governed modes", {
+		timeout: 15_000,
+	}, async () => {
 		for (const registration of generatorRegistrations) {
 			expect(registration.contract.release).toEqual({ state: "internal" });
-			expect(registration.contract.modes).toEqual([
-				{ id: "doctor", writes: false },
-			]);
+			if (registration.contract.family === "erp") {
+				expect(registration.contract.modes).toEqual([
+					{ id: "doctor", writes: false },
+					{ id: "plan-upgrade", writes: false },
+				]);
+			} else {
+				expect(registration.contract.modes).toEqual([
+					{ id: "doctor", writes: false },
+					{ id: "plan-upgrade", writes: false },
+				]);
+			}
 			expect(
 				registration.contract.capabilities.every(
 					(capability) => capability.status === "declared",

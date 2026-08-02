@@ -4,7 +4,10 @@ export const erpContractDefinition = {
 	family: "erp",
 	release: { state: "internal" },
 	engineCompatibility: 1,
-	modes: [{ id: "doctor", writes: false }],
+	modes: [
+		{ id: "doctor", writes: false },
+		{ id: "plan-upgrade", writes: false },
+	],
 	capabilities: [
 		{ id: "manifest-projection", status: "declared" },
 		{ id: "feature-first-layout", status: "declared" },

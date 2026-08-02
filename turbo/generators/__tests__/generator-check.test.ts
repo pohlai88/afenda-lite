@@ -67,16 +67,22 @@ describe("generator:check task contract", () => {
 				{
 					family: "kernel",
 					release: "internal",
-					modes: ["doctor"],
+					modes: ["doctor", "plan-upgrade"],
 					authoritativeCapabilities: 0,
 				},
 				{
 					family: "erp",
 					release: "internal",
-					modes: ["doctor"],
+					modes: ["doctor", "plan-upgrade"],
 					authoritativeCapabilities: 0,
 				},
 			],
+			localRepoGovernance: {
+				ciRequired: false,
+				commandCount: 10,
+				remainingSlices: 0,
+				report: first.localRepoGovernance.report,
+			},
 			phaseExitGovernance: {
 				issues: 0,
 				warnings: 0,
