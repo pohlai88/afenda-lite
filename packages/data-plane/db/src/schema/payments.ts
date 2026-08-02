@@ -39,6 +39,42 @@ export const paymentAccount = pgTable(
 	],
 );
 
+/** Org-scoped payment method master — how payment occurs. */
+export const paymentMethod = pgTable(
+	"payment_method",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		code: text("code").notNull(),
+		normalizedCode: text("normalized_code").notNull(),
+		name: text("name").notNull(),
+		/** cash | check | wire | ach | card | gateway | other */
+		kind: text("kind").notNull(),
+		/** forbidden | optional | required */
+		instrumentRequirement: text("instrument_requirement").notNull(),
+		/** JSON array of PaymentInstrumentKind */
+		allowedInstrumentKinds: text("allowed_instrument_kinds").notNull(),
+		/** JSON array of PaymentAccountKind */
+		allowedAccountKinds: text("allowed_account_kinds").notNull(),
+		active: boolean("active").notNull().default(true),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("payment_method_org_id_idx").on(t.organizationId, t.id),
+		uniqueIndex("payment_method_org_normalized_code_uidx").on(
+			t.organizationId,
+			t.normalizedCode,
+		),
+	],
+);
+
 /** Payments, application instructions, reversals, and refunds. */
 export const payment = pgTable(
 	"payment",
@@ -50,6 +86,20 @@ export const payment = pgTable(
 		paymentAccountId: uuid("payment_account_id")
 			.notNull()
 			.references(() => paymentAccount.id),
+		paymentMethodId: uuid("payment_method_id")
+			.notNull()
+			.references(() => paymentMethod.id),
+		/** PaymentMethodSnapshot JSON — frozen at post, null while draft. */
+		methodSnapshot: text("method_snapshot"),
+		/** PaymentInstrument JSON (discriminated union) or null. */
+		instrument: text("instrument"),
+		/** not-applicable | pending | cleared | rejected */
+		clearanceStatus: text("clearance_status")
+			.notNull()
+			.default("not-applicable"),
+		/** PaymentFxContext JSON or null (same-currency). */
+		fxContext: text("fx_context"),
+		functionalAmount: text("functional_amount").notNull(),
 		/** receipt | disbursement | refund — transfers are paired payments. */
 		direction: text("direction").notNull(),
 		purpose: text("purpose").notNull(),
@@ -141,6 +191,41 @@ export const paymentAllocation = pgTable(
 			t.organizationId,
 			t.targetModule,
 			t.targetDocumentId,
+		),
+	],
+);
+
+/** Aggregate-owned deduction lines — written only via Payment operations. */
+export const paymentDeduction = pgTable(
+	"payment_deduction",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		paymentId: uuid("payment_id")
+			.notNull()
+			.references(() => payment.id),
+		lineNo: integer("line_no").notNull(),
+		/** bank_charge | write_off | rounding | withholding | other */
+		kind: text("kind").notNull(),
+		/** reduces_application_only | reduces_cash_movement | informational */
+		effect: text("effect").notNull(),
+		amount: text("amount").notNull(),
+		functionalAmount: text("functional_amount"),
+		accountingPurposeCode: text("accounting_purpose_code").notNull(),
+		description: text("description"),
+		createdBy: text("created_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("payment_deduction_org_payment_idx").on(
+			t.organizationId,
+			t.paymentId,
+		),
+		uniqueIndex("payment_deduction_payment_line_uidx").on(
+			t.paymentId,
+			t.lineNo,
 		),
 	],
 );
