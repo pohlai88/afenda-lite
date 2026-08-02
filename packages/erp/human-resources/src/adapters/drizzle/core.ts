@@ -1308,10 +1308,10 @@ export const drizzleCoreMethods: DrizzleCoreMethods &
 			const [rows] = await afendaDatabase.transaction((sqlValue8) => [
 				sqlValue8`
 						WITH parent AS (
-							SELECT id, organization_id
-							FROM hr_employee
-							WHERE id = ${record.employeeId}
-								AND organization_id = ${record.organizationId}
+							SELECT employee.id, employee.organization_id
+							FROM hr_employee AS employee
+							WHERE employee.id = ${record.employeeId}
+								AND employee.organization_id = ${record.organizationId}
 						),
 						mutated AS (
 							INSERT INTO hr_employment (

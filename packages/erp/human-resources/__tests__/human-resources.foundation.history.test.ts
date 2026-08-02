@@ -29,7 +29,10 @@ function nextIsoDate(value: string): string {
 	return date.toISOString().slice(0, 10);
 }
 
-function defineFoundationHistorySuite(adapter: WorkforceStoreAdapter): void {
+// biome-ignore lint/suspicious/noExportsInTest: The parity wrapper reuses the exact same behavioral suite against the Drizzle adapter.
+export function defineFoundationHistorySuite(
+	adapter: WorkforceStoreAdapter,
+): void {
 	const suffix = `${adapter}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 	const neonOrgs = createNeonOrgTracker();
 	const ORG = neonOrgs.trackOrg(`org-hr-foundation-history-${suffix}`);

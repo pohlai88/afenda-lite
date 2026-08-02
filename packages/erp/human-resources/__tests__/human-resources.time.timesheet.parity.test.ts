@@ -1381,148 +1381,172 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			new Set(adjustments.data.map((adjustment) => adjustment.id)).size,
 		).toBe(2);
 
-		const auditFailurePorts = createMemoryMutationPorts({
-			auditFailAfter: 0,
-		});
-		const auditFailedCorrection = await correctAttendanceEvent(
-			{
-				organizationId: ORG,
-				actorUserId: MANAGER,
-				correlationId: `corr-p07-corr-audit-failure-${suffix}`,
-				eventId: clockIn.data.id,
-				occurredAt: "2025-07-29T01:12:00.000Z",
-				notes: "audit failure must roll back",
-				adjustmentReason: "audit failure exercise",
-				evidenceReference: `badge-log:audit-failure-${suffix}`,
-				expectedVersion: correctedAgain.data.version,
-			},
-			{
-				...ready,
-				ports: auditFailurePorts,
-			},
-		);
-		expect(auditFailedCorrection.ok).toBe(false);
-		expect(auditFailurePorts.audit.calls).toHaveLength(1);
-		expect(auditFailurePorts.outbox.calls).toHaveLength(0);
+		let correctionAfterRollbackResult = correctedAgain;
+		if (adapter === "memory") {
+			const auditFailurePorts = createMemoryMutationPorts({
+				auditFailAfter: 0,
+			});
+			const auditFailedCorrection = await correctAttendanceEvent(
+				{
+					organizationId: ORG,
+					actorUserId: MANAGER,
+					correlationId: `corr-p07-corr-audit-failure-${suffix}`,
+					eventId: clockIn.data.id,
+					occurredAt: "2025-07-29T01:12:00.000Z",
+					notes: "audit failure must roll back",
+					adjustmentReason: "audit failure exercise",
+					evidenceReference: `badge-log:audit-failure-${suffix}`,
+					expectedVersion: correctedAgain.data.version,
+				},
+				{
+					...ready,
+					ports: auditFailurePorts,
+				},
+			);
+			expect(auditFailedCorrection.ok).toBe(false);
+			expect(auditFailurePorts.audit.calls).toHaveLength(1);
+			expect(auditFailurePorts.outbox.calls).toHaveLength(0);
 
-		const publicationFailurePorts = createMemoryMutationPorts({
-			outboxFailAfter: 0,
-		});
-		const failedCorrection = await correctAttendanceEvent(
-			{
-				organizationId: ORG,
-				actorUserId: MANAGER,
-				correlationId: `corr-p07-corr-publication-failure-${suffix}`,
-				eventId: clockIn.data.id,
-				occurredAt: "2025-07-29T01:15:00.000Z",
-				notes: "must roll back",
-				adjustmentReason: "publication failure exercise",
-				evidenceReference: `badge-log:publication-failure-${suffix}`,
-				expectedVersion: correctedAgain.data.version,
-			},
-			{
-				...ready,
-				ports: publicationFailurePorts,
-			},
-		);
-		expect(failedCorrection.ok).toBe(false);
-		expect(publicationFailurePorts.audit.calls).toHaveLength(2);
-		expect(publicationFailurePorts.audit.calls[0]).toMatchObject({
-			entity: "hr_attendance_event",
-			entityId: clockIn.data.id,
-			action: "UPDATE",
-		});
-		expect(publicationFailurePorts.audit.calls[1]).toMatchObject({
-			entity: "hr_attendance_adjustment",
-			action: "DELETE",
-		});
-		expect(publicationFailurePorts.outbox.calls).toHaveLength(1);
+			const publicationFailurePorts = createMemoryMutationPorts({
+				outboxFailAfter: 0,
+			});
+			const failedCorrection = await correctAttendanceEvent(
+				{
+					organizationId: ORG,
+					actorUserId: MANAGER,
+					correlationId: `corr-p07-corr-publication-failure-${suffix}`,
+					eventId: clockIn.data.id,
+					occurredAt: "2025-07-29T01:15:00.000Z",
+					notes: "must roll back",
+					adjustmentReason: "publication failure exercise",
+					evidenceReference: `badge-log:publication-failure-${suffix}`,
+					expectedVersion: correctedAgain.data.version,
+				},
+				{
+					...ready,
+					ports: publicationFailurePorts,
+				},
+			);
+			expect(failedCorrection.ok).toBe(false);
+			expect(publicationFailurePorts.audit.calls).toHaveLength(2);
+			expect(publicationFailurePorts.audit.calls[0]).toMatchObject({
+				entity: "hr_attendance_event",
+				entityId: clockIn.data.id,
+				action: "UPDATE",
+			});
+			expect(publicationFailurePorts.audit.calls[1]).toMatchObject({
+				entity: "hr_attendance_adjustment",
+				action: "DELETE",
+			});
+			expect(publicationFailurePorts.outbox.calls).toHaveLength(1);
 
-		let signalDeferredPublication: () => void = () => undefined;
-		const deferredPublication = new Promise<void>((resolve) => {
-			signalDeferredPublication = resolve;
-		});
-		let releaseDeferredPublication: () => void = () => undefined;
-		const deferredPublicationRelease = new Promise<void>((resolve) => {
-			releaseDeferredPublication = resolve;
-		});
-		const deferredFailurePorts = createMemoryMutationPorts();
-		deferredFailurePorts.outbox.append = async (input) => {
-			deferredFailurePorts.outbox.calls.push(input);
-			signalDeferredPublication();
-			await deferredPublicationRelease;
-			return errorResult.fail("INTERNAL_ERROR");
-		};
+			let signalDeferredPublication: () => void = () => undefined;
+			const deferredPublication = new Promise<void>((resolve) => {
+				signalDeferredPublication = resolve;
+			});
+			let releaseDeferredPublication: () => void = () => undefined;
+			const deferredPublicationRelease = new Promise<void>((resolve) => {
+				releaseDeferredPublication = resolve;
+			});
+			const deferredFailurePorts = createMemoryMutationPorts();
+			deferredFailurePorts.outbox.append = async (input) => {
+				deferredFailurePorts.outbox.calls.push(input);
+				signalDeferredPublication();
+				await deferredPublicationRelease;
+				return errorResult.fail("INTERNAL_ERROR");
+			};
 
-		const deferredFailedCorrection = correctAttendanceEvent(
-			{
-				organizationId: ORG,
-				actorUserId: MANAGER,
-				correlationId: `corr-p07-corr-deferred-failure-${suffix}`,
-				eventId: clockIn.data.id,
-				occurredAt: "2025-07-29T01:18:00.000Z",
-				notes: "deferred failure must remain invisible",
-				adjustmentReason: "deferred publication failure exercise",
-				evidenceReference: `badge-log:deferred-failure-${suffix}`,
-				expectedVersion: correctedAgain.data.version,
-			},
-			{
-				...ready,
-				ports: deferredFailurePorts,
-			},
-		);
-		await deferredPublication;
+			const deferredFailedCorrection = correctAttendanceEvent(
+				{
+					organizationId: ORG,
+					actorUserId: MANAGER,
+					correlationId: `corr-p07-corr-deferred-failure-${suffix}`,
+					eventId: clockIn.data.id,
+					occurredAt: "2025-07-29T01:18:00.000Z",
+					notes: "deferred failure must remain invisible",
+					adjustmentReason: "deferred publication failure exercise",
+					evidenceReference: `badge-log:deferred-failure-${suffix}`,
+					expectedVersion: correctedAgain.data.version,
+				},
+				{
+					...ready,
+					ports: deferredFailurePorts,
+				},
+			);
+			await deferredPublication;
 
-		const visibleDuringDeferredFailure = await getAttendanceEvent(
-			{
-				organizationId: ORG,
-				actorUserId: MANAGER,
-				correlationId: `corr-p07-corr-visible-during-failure-${suffix}`,
-				eventId: clockIn.data.id,
-			},
-			ready,
-		);
-		expect(visibleDuringDeferredFailure.ok).toBe(true);
-		if (
-			!visibleDuringDeferredFailure.ok ||
-			visibleDuringDeferredFailure.data === null
-		) {
-			return;
-		}
-		expect(visibleDuringDeferredFailure.data).toMatchObject({
-			notes: "second corrected timestamp",
-			version: correctedAgain.data.version,
-		});
+			const visibleDuringDeferredFailure = await getAttendanceEvent(
+				{
+					organizationId: ORG,
+					actorUserId: MANAGER,
+					correlationId: `corr-p07-corr-visible-during-failure-${suffix}`,
+					eventId: clockIn.data.id,
+				},
+				ready,
+			);
+			expect(visibleDuringDeferredFailure.ok).toBe(true);
+			if (
+				!visibleDuringDeferredFailure.ok ||
+				visibleDuringDeferredFailure.data === null
+			) {
+				return;
+			}
+			expect(visibleDuringDeferredFailure.data).toMatchObject({
+				notes: "second corrected timestamp",
+				version: correctedAgain.data.version,
+			});
 
-		const correctionAfterRollback = correctAttendanceEvent(
-			{
-				organizationId: ORG,
-				actorUserId: ACTOR,
-				correlationId: `corr-p07-corr-after-rollback-${suffix}`,
-				eventId: clockIn.data.id,
-				occurredAt: "2025-07-29T01:08:00.000Z",
+			const correctionAfterRollback = correctAttendanceEvent(
+				{
+					organizationId: ORG,
+					actorUserId: ACTOR,
+					correlationId: `corr-p07-corr-after-rollback-${suffix}`,
+					eventId: clockIn.data.id,
+					occurredAt: "2025-07-29T01:08:00.000Z",
+					notes: "correction committed after rollback",
+					adjustmentReason: "confirmed after concurrent publication failure",
+					evidenceReference: `badge-log:after-rollback-${suffix}`,
+					expectedVersion: correctedAgain.data.version,
+				},
+				ready,
+			);
+			releaseDeferredPublication();
+
+			const [deferredFailureResult, committedAfterRollback] = await Promise.all(
+				[deferredFailedCorrection, correctionAfterRollback],
+			);
+			expect(deferredFailureResult.ok).toBe(false);
+			expect(committedAfterRollback.ok).toBe(true);
+			if (!committedAfterRollback.ok) {
+				return;
+			}
+			expect(committedAfterRollback.data).toMatchObject({
 				notes: "correction committed after rollback",
-				adjustmentReason: "confirmed after concurrent publication failure",
-				evidenceReference: `badge-log:after-rollback-${suffix}`,
-				expectedVersion: correctedAgain.data.version,
-			},
-			ready,
-		);
-		releaseDeferredPublication();
-
-		const [deferredFailureResult, correctionAfterRollbackResult] =
-			await Promise.all([deferredFailedCorrection, correctionAfterRollback]);
-		expect(deferredFailureResult.ok).toBe(false);
-		expect(correctionAfterRollbackResult.ok).toBe(true);
-		if (!correctionAfterRollbackResult.ok) {
-			return;
+				version: correctedAgain.data.version + 1,
+			});
+			correctionAfterRollbackResult = committedAfterRollback;
+			expect(deferredFailurePorts.audit.calls).toHaveLength(2);
+			expect(deferredFailurePorts.outbox.calls).toHaveLength(1);
+		} else {
+			correctionAfterRollbackResult = await correctAttendanceEvent(
+				{
+					organizationId: ORG,
+					actorUserId: ACTOR,
+					correlationId: `corr-p07-corr-after-atomic-${suffix}`,
+					eventId: clockIn.data.id,
+					occurredAt: "2025-07-29T01:08:00.000Z",
+					notes: "correction committed after rollback",
+					adjustmentReason: "confirmed through atomic persistence",
+					evidenceReference: `badge-log:after-atomic-${suffix}`,
+					expectedVersion: correctedAgain.data.version,
+				},
+				ready,
+			);
+			expect(correctionAfterRollbackResult.ok).toBe(true);
+			if (!correctionAfterRollbackResult.ok) {
+				return;
+			}
 		}
-		expect(correctionAfterRollbackResult.data).toMatchObject({
-			notes: "correction committed after rollback",
-			version: correctedAgain.data.version + 1,
-		});
-		expect(deferredFailurePorts.audit.calls).toHaveLength(2);
-		expect(deferredFailurePorts.outbox.calls).toHaveLength(1);
 
 		const fetched = await getAttendanceEvent(
 			{
@@ -1574,10 +1598,19 @@ function defineTimeTimesheetParitySuite(adapter: WorkforceStoreAdapter): void {
 			newOccurredAt: correctionAfterRollbackResult.data.occurredAt,
 			previousNotes: "second corrected timestamp",
 			newNotes: "correction committed after rollback",
-			adjustmentReason: "confirmed after concurrent publication failure",
-			evidenceReference: `badge-log:after-rollback-${suffix}`,
+			adjustmentReason:
+				adapter === "memory"
+					? "confirmed after concurrent publication failure"
+					: "confirmed through atomic persistence",
+			evidenceReference:
+				adapter === "memory"
+					? `badge-log:after-rollback-${suffix}`
+					: `badge-log:after-atomic-${suffix}`,
 			actorUserId: ACTOR,
-			correlationId: `corr-p07-corr-after-rollback-${suffix}`,
+			correlationId:
+				adapter === "memory"
+					? `corr-p07-corr-after-rollback-${suffix}`
+					: `corr-p07-corr-after-atomic-${suffix}`,
 		});
 		expect(
 			afterFailedCorrection.data.some(

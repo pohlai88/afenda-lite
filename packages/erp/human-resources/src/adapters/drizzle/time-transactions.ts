@@ -14,6 +14,7 @@ import {
 	type hrAttendanceException,
 	type hrAttendanceSession,
 	type hrEmploymentCalendarAssignment,
+	type hrOvertimeRequest,
 	type hrShift,
 	type hrShiftAssignment,
 	type hrShiftBreak,
@@ -22,6 +23,7 @@ import {
 	type hrTimePolicyAssignment,
 	type hrTimesheet,
 	type hrTimesheetApprovalDecision,
+	type hrTimesheetEntry,
 	type hrWorkCalendar,
 	type hrWorkCalendarHoliday,
 	type hrWorkCalendarScopeAssignment,
@@ -132,7 +134,7 @@ export function buildDetectedAttendanceExceptionInsert(
 		exceptionId: string;
 		organizationId: string;
 		remarks: string | null;
-		sessionId: string;
+		sessionId: string | null;
 		severity: string;
 		shiftAssignmentId: string | null;
 	},
@@ -172,7 +174,8 @@ export function buildDetectedAttendanceExceptionInsert(
 			WHERE NOT EXISTS (
 				SELECT 1 FROM hr_attendance_exception
 				WHERE organization_id = ${input.organizationId}
-					AND employee_id = ${input.employeeId} AND session_id = ${input.sessionId}
+					AND employee_id = ${input.employeeId}
+					AND session_id IS NOT DISTINCT FROM ${input.sessionId}
 					AND exception_type = ${input.eventType}
 					AND review_status IN ('open', 'in_review')
 					AND remarks IS NOT DISTINCT FROM ${input.remarks}
@@ -566,6 +569,57 @@ export interface TimesheetApprovalDecisionSqlRow {
 	submission_reference: string;
 	timesheet_id: string;
 	version_approved: number;
+}
+
+export interface TimesheetEntrySqlRow {
+	approval_reference: string | null;
+	approved_minutes: number;
+	cost_center_id: string | null;
+	created_at: Date;
+	created_by: string;
+	department_id: string | null;
+	employee_id: string;
+	ended_at: Date | null;
+	evidence_reference: string | null;
+	id: string;
+	location_id: string | null;
+	organization_id: string;
+	project_id: string | null;
+	recorded_minutes: number;
+	source_reference: string | null;
+	source_type: string;
+	started_at: Date | null;
+	time_type: string;
+	timesheet_id: string;
+	timezone: string;
+	updated_at: Date;
+	updated_by: string;
+	version: number;
+	work_date: string;
+}
+
+export interface OvertimeRequestSqlRow {
+	actual_minutes: number | null;
+	approved_maximum_minutes: number | null;
+	create_idempotency_key: string;
+	create_request_fingerprint: string;
+	created_at: Date;
+	created_by: string;
+	employee_id: string;
+	employment_id: string | null;
+	evidence_reference: string | null;
+	id: string;
+	organization_id: string;
+	overtime_type: string;
+	payroll_approved_minutes: number | null;
+	reason: string;
+	requested_ends_at: Date;
+	requested_minutes: number;
+	requested_starts_at: Date;
+	status: string;
+	updated_at: Date;
+	updated_by: string;
+	version: number;
 }
 
 export async function runTimeTransaction(
@@ -991,5 +1045,64 @@ export function timesheetApprovalDecisionFromSql(
 		correlationId: row.correlation_id,
 		decidedAt: parseDate(row.decided_at),
 		createdAt: parseDate(row.created_at),
+	};
+}
+
+export function timesheetEntryFromSql(
+	row: TimesheetEntrySqlRow,
+): typeof hrTimesheetEntry.$inferSelect {
+	return {
+		id: row.id,
+		organizationId: row.organization_id,
+		timesheetId: row.timesheet_id,
+		employeeId: row.employee_id,
+		workDate: row.work_date,
+		timezone: row.timezone,
+		sourceType: row.source_type,
+		sourceReference: row.source_reference,
+		timeType: row.time_type,
+		startedAt: parseNullableDate(row.started_at),
+		endedAt: parseNullableDate(row.ended_at),
+		recordedMinutes: row.recorded_minutes,
+		approvedMinutes: row.approved_minutes,
+		costCenterId: row.cost_center_id,
+		projectId: row.project_id,
+		locationId: row.location_id,
+		departmentId: row.department_id,
+		approvalReference: row.approval_reference,
+		evidenceReference: row.evidence_reference,
+		version: row.version,
+		createdBy: row.created_by,
+		updatedBy: row.updated_by,
+		createdAt: parseDate(row.created_at),
+		updatedAt: parseDate(row.updated_at),
+	};
+}
+
+export function overtimeRequestFromSql(
+	row: OvertimeRequestSqlRow,
+): typeof hrOvertimeRequest.$inferSelect {
+	return {
+		id: row.id,
+		organizationId: row.organization_id,
+		employeeId: row.employee_id,
+		employmentId: row.employment_id,
+		overtimeType: row.overtime_type,
+		requestedStartsAt: parseDate(row.requested_starts_at),
+		requestedEndsAt: parseDate(row.requested_ends_at),
+		requestedMinutes: row.requested_minutes,
+		approvedMaximumMinutes: row.approved_maximum_minutes,
+		actualMinutes: row.actual_minutes,
+		payrollApprovedMinutes: row.payroll_approved_minutes,
+		reason: row.reason,
+		evidenceReference: row.evidence_reference,
+		status: row.status,
+		version: row.version,
+		createIdempotencyKey: row.create_idempotency_key,
+		createRequestFingerprint: row.create_request_fingerprint,
+		createdBy: row.created_by,
+		updatedBy: row.updated_by,
+		createdAt: parseDate(row.created_at),
+		updatedAt: parseDate(row.updated_at),
 	};
 }

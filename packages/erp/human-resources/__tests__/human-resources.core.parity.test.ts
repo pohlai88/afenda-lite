@@ -24,7 +24,6 @@ import {
 	endAssignment,
 	getAssignmentAsOf,
 } from "../src/core/assignment";
-import { resolvePrimaryAssignmentAsOf } from "../src/core/assignment-management";
 import { createEmployee, updateEmployee } from "../src/core/employee";
 import {
 	amendEmployment,
@@ -1610,7 +1609,7 @@ function defineCoreParitySuite(adapter: WorkforceStoreAdapter): void {
 		expect(assignment.data.managerEmployeeIdSnapshot).toBe(manager.data.id);
 		expect(assignment.data.workCalendarIdSnapshot).toBe(calendar.data.id);
 
-		const primary = await resolvePrimaryAssignmentAsOf(
+		const primary = await getAssignmentAsOf(
 			{
 				organizationId: ORG_A,
 				actorUserId: ACTOR,

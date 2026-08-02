@@ -553,14 +553,14 @@ async function updatePersonScalarFieldDrizzle(input: {
 			input.field === "preferred_name"
 				? sqlTx`
 						WITH mutated AS (
-							UPDATE hr_person
+							UPDATE hr_person AS person
 							SET preferred_name = ${input.value},
 								version = ${nextVersion},
 								updated_by = ${input.actorUserId},
 								updated_at = now()
-							WHERE id = ${input.personId}
-								AND organization_id = ${input.organizationId}
-								AND version = ${input.expectedVersion}
+							WHERE person.id = ${input.personId}
+								AND person.organization_id = ${input.organizationId}
+								AND person.version = ${input.expectedVersion}
 							RETURNING *
 						),
 						audited AS (
@@ -1145,28 +1145,28 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 				const [rows] = await afendaDatabase.transaction((sqlValue4) => [
 					sqlValue4`
 						WITH mutated AS (
-							UPDATE hr_person
+							UPDATE hr_person AS person
 							SET legal_name = ${input.legalName},
 								version = ${nextVersion},
 								updated_by = ${input.actorUserId},
 								updated_at = now()
-							WHERE id = ${input.personId}
-								AND organization_id = ${input.organizationId}
-								AND version = ${input.expectedVersion}
+							WHERE person.id = ${input.personId}
+								AND person.organization_id = ${input.organizationId}
+								AND person.version = ${input.expectedVersion}
 							RETURNING *
 						),
 						closed AS (
-							UPDATE hr_person_identity_version
+							UPDATE hr_person_identity_version AS identity
 							SET effective_to = ${predecessorEnd},
 								lineage_status = 'superseded',
 								version = version + 1,
 								updated_by = ${input.actorUserId},
 								updated_at = now()
-							WHERE organization_id = ${input.organizationId}
-								AND person_id = ${input.personId}
-								AND id = ${openSegment.id}
-								AND effective_to IS NULL
-								AND lineage_status = 'active'
+							WHERE identity.organization_id = ${input.organizationId}
+								AND identity.person_id = ${input.personId}
+								AND identity.id = ${openSegment.id}
+								AND identity.effective_to IS NULL
+								AND identity.lineage_status = 'active'
 							RETURNING id
 						),
 						successor AS (
@@ -2612,30 +2612,30 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 				const [rows] = await afendaDatabase.transaction((sqlValue2) => [
 					sqlValue2`
 						WITH mutated AS (
-							UPDATE hr_worker
+							UPDATE hr_worker AS worker
 							SET worker_type = ${input.workerType},
 								employee_id = ${employeeId},
 								effective_from = ${input.effectiveOn},
 								version = ${nextVersion},
 								updated_by = ${input.actorUserId},
 								updated_at = now()
-							WHERE id = ${input.workerId}
-								AND organization_id = ${input.organizationId}
-								AND version = ${input.expectedVersion}
+							WHERE worker.id = ${input.workerId}
+								AND worker.organization_id = ${input.organizationId}
+								AND worker.version = ${input.expectedVersion}
 							RETURNING *
 						),
 						closed AS (
-							UPDATE hr_worker_classification_version
+							UPDATE hr_worker_classification_version AS classification
 							SET effective_to = ${predecessorEnd},
 								lineage_status = 'superseded',
 								version = version + 1,
 								updated_by = ${input.actorUserId},
 								updated_at = now()
-							WHERE organization_id = ${input.organizationId}
-								AND worker_id = ${input.workerId}
-								AND id = ${openSegment.id}
-								AND effective_to IS NULL
-								AND lineage_status = 'active'
+							WHERE classification.organization_id = ${input.organizationId}
+								AND classification.worker_id = ${input.workerId}
+								AND classification.id = ${openSegment.id}
+								AND classification.effective_to IS NULL
+								AND classification.lineage_status = 'active'
 							RETURNING id, worker_status
 						),
 						successor AS (
@@ -2816,29 +2816,29 @@ export const drizzleWorkforceFoundationMethods: HumanResourcesWorkforceFoundatio
 				const [rows] = await afendaDatabase.transaction((sqlValue) => [
 					sqlValue`
 						WITH mutated AS (
-							UPDATE hr_worker
+							UPDATE hr_worker AS worker
 							SET status = ${input.status},
 								effective_from = ${input.effectiveOn},
 								version = ${nextVersion},
 								updated_by = ${input.actorUserId},
 								updated_at = now()
-							WHERE id = ${input.workerId}
-								AND organization_id = ${input.organizationId}
-								AND version = ${input.expectedVersion}
+							WHERE worker.id = ${input.workerId}
+								AND worker.organization_id = ${input.organizationId}
+								AND worker.version = ${input.expectedVersion}
 							RETURNING *
 						),
 						closed AS (
-							UPDATE hr_worker_classification_version
+							UPDATE hr_worker_classification_version AS classification
 							SET effective_to = ${predecessorEnd},
 								lineage_status = 'superseded',
 								version = version + 1,
 								updated_by = ${input.actorUserId},
 								updated_at = now()
-							WHERE organization_id = ${input.organizationId}
-								AND worker_id = ${input.workerId}
-								AND id = ${openSegment.id}
-								AND effective_to IS NULL
-								AND lineage_status = 'active'
+							WHERE classification.organization_id = ${input.organizationId}
+								AND classification.worker_id = ${input.workerId}
+								AND classification.id = ${openSegment.id}
+								AND classification.effective_to IS NULL
+								AND classification.lineage_status = 'active'
 							RETURNING id, worker_type, employee_id
 						),
 						successor AS (

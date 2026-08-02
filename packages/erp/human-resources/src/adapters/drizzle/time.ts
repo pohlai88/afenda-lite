@@ -16,7 +16,6 @@ import {
 	hrEmployee,
 	hrEmployment,
 	hrEmploymentCalendarAssignment,
-	hrOvertimeApproval,
 	hrOvertimeRequest,
 	hrShift,
 	hrShiftAssignment,
@@ -109,6 +108,7 @@ import {
 } from "../../shared/time-guards";
 import type { HumanResourcesStore } from "../../store";
 import type {
+	AttendanceExceptionCreateRecord,
 	HumanResourcesTimeStore,
 	ShiftCreateRecord,
 	TimePolicyCreateRecord,
@@ -125,7 +125,6 @@ import {
 	ATTENDANCE_SESSION_DETECTION_SOURCE,
 	type ExceptionDetectionHost,
 	planAttendanceExceptionDetection,
-	runAttendanceExceptionDetection,
 	SCHEDULE_PUBLISH_DETECTION_SOURCE,
 } from "../../time/attendance/exception-detection";
 import {
@@ -192,6 +191,7 @@ import {
 	buildTimeOutboxInsert,
 	type EmploymentCalendarAssignmentSqlRow,
 	employmentCalendarAssignmentFromSql,
+	overtimeRequestFromSql,
 	prepareTimeAudit,
 	runTimeTransaction,
 	type ShiftBreakSqlRow,
@@ -204,6 +204,7 @@ import {
 	timePolicyAssignmentFromSql,
 	timePolicyFromSql,
 	timesheetApprovalDecisionFromSql,
+	timesheetEntryFromSql,
 	timesheetFromSql,
 	type WorkCalendarHolidaySqlRow,
 	type WorkCalendarScopeAssignmentSqlRow,
@@ -245,55 +246,6 @@ function requirePersistenceRow<T>(row: T | undefined): T {
 		throw new Error("Persistence operation returned no row");
 	}
 	return row;
-}
-
-async function audit(
-	ports: MutationPorts,
-	input: {
-		organizationId: string;
-		actorUserId: string;
-		correlationId?: string | undefined;
-		entity: string;
-		entityId: string;
-		action: "CREATE" | "UPDATE" | "DELETE";
-	},
-): Promise<Result<{ id: string }>> {
-	return await ports.audit.record({
-		organizationId: input.organizationId,
-		actorUserId: input.actorUserId,
-		correlationId:
-			input.correlationId ?? `hr-time-${input.entity}-${input.entityId}`,
-		entity: input.entity,
-		entityId: input.entityId,
-		action: input.action,
-		changes: [],
-	});
-}
-
-async function emitOutbox(
-	ports: MutationPorts,
-	input: {
-		organizationId: string;
-		actorUserId: string;
-		correlationId: string;
-		eventType: HumanResourcesEventType;
-		entityType: string;
-		entityId: string;
-	},
-): Promise<Result<{ id: string }>> {
-	return await ports.outbox.append({
-		organizationId: input.organizationId,
-		actorUserId: input.actorUserId,
-		correlationId: input.correlationId,
-		type: input.eventType,
-		payload: {
-			organizationId: input.organizationId,
-			entityType: input.entityType,
-			entityId: input.entityId,
-			actorId: input.actorUserId,
-			correlationId: input.correlationId,
-		},
-	});
 }
 
 function parseWorkWeek(value: unknown): readonly WorkWeekDayPatternJson[] {
@@ -1697,18 +1649,18 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 						)
 					),
 					superseded AS (
-						UPDATE hr_work_calendar
+						UPDATE hr_work_calendar AS calendar
 						SET status = 'superseded',
 							effective_to = ${input.predecessorEffectiveTo},
 							version = ${predecessorCalendar.version + 1},
 							updated_by = ${input.createdBy},
 							updated_at = ${now}
 						FROM locked
-						WHERE organization_id = ${input.organizationId}
-							AND id = ${input.calendarId}
-							AND status = 'active'
-							AND version = ${input.expectedVersion}
-						RETURNING *
+						WHERE calendar.organization_id = ${input.organizationId}
+							AND calendar.id = ${input.calendarId}
+							AND calendar.status = 'active'
+							AND calendar.version = ${input.expectedVersion}
+						RETURNING calendar.*
 					),
 					successor AS (
 						INSERT INTO hr_work_calendar (
@@ -3341,18 +3293,18 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 						)
 					),
 					superseded AS (
-						UPDATE hr_shift
+						UPDATE hr_shift AS shift
 						SET status = 'superseded',
 							effective_to = ${input.predecessorEffectiveTo},
 							version = ${predecessorShift.version + 1},
 							updated_by = ${input.createdBy},
 							updated_at = ${now}
 						FROM locked
-						WHERE organization_id = ${input.organizationId}
-							AND id = ${input.shiftId}
-							AND status = 'active'
-							AND version = ${input.expectedVersion}
-						RETURNING *
+						WHERE shift.organization_id = ${input.organizationId}
+							AND shift.id = ${input.shiftId}
+							AND shift.status = 'active'
+							AND shift.version = ${input.expectedVersion}
+						RETURNING shift.*
 					),
 					successor AS (
 						INSERT INTO hr_shift (
@@ -3895,35 +3847,31 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 		if (!before.ok) {
 			return before;
 		}
-		const previous = before.data;
-
-		const published = await transitionAssignment(
-			this,
-			ports,
-			input,
-			"published",
-		);
-		if (!published.ok) {
-			return published;
+		if (before.data === null) {
+			return notFound("Shift assignment not found");
 		}
+		const prospective: ShiftAssignment = {
+			...before.data,
+			publicationStatus: "published",
+			version: before.data.version + 1,
+			updatedBy: input.actorUserId,
+			updatedAt: new Date(),
+		};
 
 		const sessions = await this.listAttendanceSessions({
 			organizationId: input.organizationId,
-			employeeId: published.data.employeeId,
-			fromDate: published.data.scheduledDate,
-			toDate: published.data.scheduledDate,
+			employeeId: prospective.employeeId,
+			fromDate: prospective.scheduledDate,
+			toDate: prospective.scheduledDate,
 			page: 1,
 			pageSize: 10,
 		});
 		if (!sessions.ok) {
-			if (previous !== null) {
-				await restoreShiftAssignmentPublication(previous);
-			}
 			return sessions;
 		}
 		const [session] = sessions.data;
 		if (session === undefined) {
-			return published;
+			return await transitionAssignment(this, ports, input, "published");
 		}
 
 		const events = await this.listAttendanceEvents({
@@ -3935,32 +3883,36 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			pageSize: 500,
 		});
 		if (!events.ok) {
-			if (previous !== null) {
-				await restoreShiftAssignmentPublication(previous);
-			}
 			return events;
 		}
-
-		const detected = await runAttendanceExceptionDetection(
-			drizzleExceptionDetectionHost(this),
-			{
-				organizationId: input.organizationId,
-				employeeId: session.employeeId,
-				session,
-				events: events.data,
-				detectionSource: SCHEDULE_PUBLISH_DETECTION_SOURCE,
-				actorUserId: input.actorUserId,
-				correlationId: input.correlationId,
-			},
-			ports,
-		);
+		const baseHost = drizzleExceptionDetectionHost(this);
+		const planningHost: ExceptionDetectionHost = {
+			...baseHost,
+			getScheduledShiftForEmployeeDate: async (query) =>
+				query.employeeId === prospective.employeeId &&
+				query.scheduledDate === prospective.scheduledDate
+					? errorResult.ok(prospective)
+					: baseHost.getScheduledShiftForEmployeeDate(query),
+		};
+		const detected = await planAttendanceExceptionDetection(planningHost, {
+			organizationId: input.organizationId,
+			employeeId: session.employeeId,
+			session,
+			events: events.data,
+			detectionSource: SCHEDULE_PUBLISH_DETECTION_SOURCE,
+			actorUserId: input.actorUserId,
+			correlationId: input.correlationId,
+		});
 		if (!detected.ok) {
-			if (previous !== null) {
-				await restoreShiftAssignmentPublication(previous);
-			}
 			return detected;
 		}
-		return published;
+		return await transitionAssignment(
+			this,
+			ports,
+			input,
+			"published",
+			detected.data,
+		);
 	},
 	async cancelShiftAssignment(input, ports) {
 		return await transitionAssignment(this, ports, input, "cancelled");
@@ -5835,45 +5787,43 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 		}
 	},
 
-	async createTimesheet(input, ports) {
+	async createTimesheet(input, _ports) {
 		try {
 			const id = randomUUID();
-			const now = new Date();
-			const [row] = await afendaDatabase.client
-				.insert(hrTimesheet)
-				.values({
-					id,
+			const [rows] = await runTimeTransaction((sqlTag) => [
+				sqlTag`
+					INSERT INTO hr_timesheet (
+						id, organization_id, employee_id, employment_id, period_start,
+						period_end, status, total_recorded_minutes, total_approved_minutes,
+						version, create_idempotency_key, create_request_fingerprint,
+						created_by, updated_by
+					) VALUES (
+						${id}, ${input.organizationId}, ${input.employeeId}, ${input.employmentId ?? null},
+						${input.periodStart}, ${input.periodEnd}, 'draft', 0, 0, 1,
+						${input.idempotencyKey}, ${input.createRequestFingerprint},
+						${input.createdBy}, ${input.createdBy}
+					)
+					RETURNING *
+				`,
+				buildTimeAuditInsert(sqlTag, {
 					organizationId: input.organizationId,
-					employeeId: input.employeeId,
-					employmentId: input.employmentId ?? null,
-					periodStart: input.periodStart,
-					periodEnd: input.periodEnd,
-					status: "draft",
-					totalRecordedMinutes: 0,
-					totalApprovedMinutes: 0,
-					version: 1,
-					createIdempotencyKey: input.idempotencyKey,
-					createRequestFingerprint: input.createRequestFingerprint,
-					createdBy: input.createdBy,
-					updatedBy: input.createdBy,
-					createdAt: now,
-					updatedAt: now,
-				})
-				.returning();
-			const mapped = mapTimesheet(requirePersistenceRow(row));
+					actorUserId: input.createdBy,
+					correlationId: input.correlationId,
+					entity: "hr_timesheet",
+					entityId: id,
+					action: "CREATE",
+					reasonCode: "TIMESHEET_CREATE",
+				}),
+			]);
+			const mapped = mapTimesheet(
+				timesheetFromSql(
+					requirePersistenceRow(rows[0]) as Parameters<
+						typeof timesheetFromSql
+					>[0],
+				),
+			);
 			if (!mapped.ok) {
 				return mapped;
-			}
-			const recorded = await audit(ports, {
-				organizationId: input.organizationId,
-				actorUserId: input.createdBy,
-				correlationId: input.correlationId,
-				entity: "hr_timesheet",
-				entityId: mapped.data.id,
-				action: "CREATE",
-			});
-			if (!recorded.ok) {
-				return recorded;
 			}
 			return errorResult.ok(mapped.data);
 		} catch (error) {
@@ -5898,8 +5848,8 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 		}
 	},
 
-	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
-	async generateTimesheetEntries(input, ports, deps: TimesheetGenerationDeps) {
+	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Coordinates read-side planning before one atomic generation transaction; semantic sub-policies remain in dedicated helpers.
+	async generateTimesheetEntries(input, _ports, deps: TimesheetGenerationDeps) {
 		try {
 			const existing = await this.getTimesheet({
 				organizationId: input.organizationId,
@@ -5967,25 +5917,39 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			);
 			let totalRecorded = currentTimesheet.totalRecordedMinutes;
 			let totalApproved = currentTimesheet.totalApprovedMinutes;
+			const plannedEntries: Array<{
+				approvedMinutes: number;
+				createdBy: string;
+				employeeId: string;
+				endedAt: Date | null;
+				id: string;
+				organizationId: string;
+				recordedMinutes: number;
+				sourceReference: string | null;
+				sourceType: TimesheetEntry["sourceType"];
+				startedAt: Date | null;
+				timeType: TimesheetEntry["timeType"];
+				timesheetId: string;
+				timezone: string;
+				workDate: string;
+			}> = [];
 			const resolvedSessions = sessions.data.filter(
 				(session) => session.resolutionStatus === "resolved",
 			);
-			await runSequential(resolvedSessions, async (session) => {
+			for (const session of resolvedSessions) {
 				const entryPlans = buildAttendanceTimesheetEntryPlans(session);
-				await runSequential(entryPlans, async (plan) => {
+				for (const plan of entryPlans) {
 					if (
 						plan.workDate < currentTimesheet.periodStart ||
 						plan.workDate > currentTimesheet.periodEnd
 					) {
-						return sequentialContinue();
+						continue;
 					}
 					if (existingAttendanceRefs.has(plan.sourceReference)) {
-						return sequentialContinue();
+						continue;
 					}
-					const id = randomUUID();
-					const now = new Date();
-					await afendaDatabase.client.insert(hrTimesheetEntry).values({
-						id,
+					plannedEntries.push({
+						id: randomUUID(),
 						organizationId: input.organizationId,
 						timesheetId: input.timesheetId,
 						employeeId: currentTimesheet.employeeId,
@@ -5998,21 +5962,17 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 						endedAt: session.finalClockOutAt,
 						recordedMinutes: plan.recordedMinutes,
 						approvedMinutes: plan.approvedMinutes,
-						version: 1,
 						createdBy: input.actorUserId,
-						updatedBy: input.actorUserId,
-						createdAt: now,
-						updatedAt: now,
 					});
 					totalRecorded += plan.recordedMinutes;
 					totalApproved += plan.approvedMinutes;
 					existingAttendanceRefs.add(plan.sourceReference);
-				});
-			});
+				}
+			}
 
-			await runSequential(leaveFacts.data, async (fact) => {
+			for (const fact of leaveFacts.data) {
 				if (existingLeaveRefs.has(fact.segmentId)) {
-					return sequentialContinue();
+					continue;
 				}
 				const mapped = mapApprovedLeaveFactToEntryInput({
 					fact,
@@ -6020,10 +5980,8 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					actorUserId: input.actorUserId,
 					correlationId: input.correlationId,
 				});
-				const id = randomUUID();
-				const now = new Date();
-				await afendaDatabase.client.insert(hrTimesheetEntry).values({
-					id,
+				plannedEntries.push({
+					id: randomUUID(),
 					organizationId: mapped.organizationId,
 					timesheetId: mapped.timesheetId,
 					employeeId: mapped.employeeId,
@@ -6036,22 +5994,11 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					endedAt: mapped.endedAt,
 					recordedMinutes: mapped.recordedMinutes,
 					approvedMinutes: mapped.approvedMinutes,
-					version: 1,
 					createdBy: mapped.createdBy,
-					updatedBy: mapped.createdBy,
-					createdAt: now,
-					updatedAt: now,
 				});
 				totalRecorded += mapped.recordedMinutes;
 				totalApproved += mapped.approvedMinutes;
-			});
-
-			const periodEntries = await this.listTimesheetEntries({
-				organizationId: input.organizationId,
-				timesheetId: input.timesheetId,
-			});
-			if (!periodEntries.ok) {
-				return periodEntries;
+				existingLeaveRefs.add(fact.segmentId);
 			}
 
 			const fullStore = this as HumanResourcesStore;
@@ -6090,6 +6037,8 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				return existingExceptions;
 			}
 			const exceptionBucket = [...existingExceptions.data];
+			const plannedExceptions: AttendanceExceptionCreateRecord[] = [];
+			const plannedAbsenceDates = new Set<string>();
 
 			const sequentialOutcome4 = await runSequential(
 				iterDatesInclusive(
@@ -6116,7 +6065,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					const workedMinutes = qualifyingWorkedMinutesForDate(
 						workDate,
 						resolvedSessions,
-						periodEntries.data,
+						currentEntries.data,
 					);
 
 					if (
@@ -6131,6 +6080,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					}
 
 					if (
+						plannedAbsenceDates.has(workDate) ||
 						hasExistingTimesheetGenerationAbsence({
 							exceptions: exceptionBucket,
 							employeeId: currentTimesheet.employeeId,
@@ -6140,58 +6090,95 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 						return sequentialContinue();
 					}
 
-					const created = await this.createAttendanceException(
-						{
-							organizationId: input.organizationId,
-							employeeId: currentTimesheet.employeeId,
-							sessionId: null,
-							eventId: null,
+					plannedExceptions.push({
+						organizationId: input.organizationId,
+						employeeId: currentTimesheet.employeeId,
+						sessionId: null,
+						eventId: null,
+						shiftAssignmentId: expected.data.shiftAssignmentId,
+						exceptionType: "absence",
+						severity: "warning",
+						remarks: encodeAbsenceDetectionRemarks({
+							workDate,
+							expectedMinutes: expected.data.expectedWorkMinutes,
+							detectionSource: TIMESHEET_GENERATION_ABSENCE_SOURCE,
 							shiftAssignmentId: expected.data.shiftAssignmentId,
-							exceptionType: "absence",
-							severity: "warning",
-							remarks: encodeAbsenceDetectionRemarks({
-								workDate,
-								expectedMinutes: expected.data.expectedWorkMinutes,
-								detectionSource: TIMESHEET_GENERATION_ABSENCE_SOURCE,
-								shiftAssignmentId: expected.data.shiftAssignmentId,
-								timesheetId: currentTimesheet.id,
-							}),
-							createdBy: input.actorUserId,
-							correlationId: input.correlationId,
-						},
-						ports,
-					);
-					if (!created.ok) {
-						return sequentialReturn(created);
-					}
-					exceptionBucket.push(created.data);
+							timesheetId: currentTimesheet.id,
+						}),
+						createdBy: input.actorUserId,
+						correlationId: input.correlationId,
+					});
+					plannedAbsenceDates.add(workDate);
 				},
 			);
 			if (sequentialOutcome4.kind === "return") {
 				return sequentialOutcome4.value;
 			}
 
-			const [row] = await afendaDatabase.client
-				.update(hrTimesheet)
-				.set({
-					totalRecordedMinutes: totalRecorded,
-					totalApprovedMinutes: totalApproved,
-					version: currentTimesheet.version + 1,
-					updatedBy: input.actorUserId,
-					updatedAt: new Date(),
-				})
-				.where(
-					and(
-						eq(hrTimesheet.organizationId, input.organizationId),
-						eq(hrTimesheet.id, input.timesheetId),
-						eq(hrTimesheet.version, input.expectedVersion),
-					),
-				)
-				.returning();
+			const now = new Date();
+			const [rows] = await runTimeTransaction((sqlTag) => [
+				sqlTag`
+					UPDATE hr_timesheet SET
+						total_recorded_minutes = ${totalRecorded},
+						total_approved_minutes = ${totalApproved},
+						version = ${currentTimesheet.version + 1},
+						updated_by = ${input.actorUserId}, updated_at = ${now}
+					WHERE organization_id = ${input.organizationId} AND id = ${input.timesheetId}
+						AND version = ${input.expectedVersion}
+						AND status IN ('draft', 'returned')
+					RETURNING *
+				`,
+				sqlTag`
+					SELECT 1 / COUNT(*) AS mutation_guard FROM hr_timesheet
+					WHERE organization_id = ${input.organizationId} AND id = ${input.timesheetId}
+						AND version = ${currentTimesheet.version + 1} AND updated_at = ${now}
+				`,
+				...plannedEntries.map(
+					(entry) => sqlTag`
+						INSERT INTO hr_timesheet_entry (
+							id, organization_id, timesheet_id, employee_id, work_date, timezone,
+							source_type, source_reference, time_type, started_at, ended_at,
+							recorded_minutes, approved_minutes, version, created_by, updated_by,
+							created_at, updated_at
+						) VALUES (
+							${entry.id}, ${entry.organizationId}, ${entry.timesheetId}, ${entry.employeeId},
+							${entry.workDate}, ${entry.timezone}, ${entry.sourceType},
+							${entry.sourceReference}, ${entry.timeType}, ${entry.startedAt}, ${entry.endedAt},
+							${entry.recordedMinutes}, ${entry.approvedMinutes}, 1,
+							${entry.createdBy}, ${entry.createdBy}, ${now}, ${now}
+						) RETURNING id
+					`,
+				),
+				...plannedExceptions.map((exception) =>
+					buildDetectedAttendanceExceptionInsert(sqlTag, {
+						exceptionId: randomUUID(),
+						auditId: randomUUID(),
+						organizationId: exception.organizationId,
+						employeeId: exception.employeeId,
+						sessionId: null,
+						shiftAssignmentId: exception.shiftAssignmentId,
+						eventType: exception.exceptionType,
+						severity: exception.severity,
+						remarks: exception.remarks,
+						actorUserId: exception.createdBy,
+						correlationId: exception.correlationId,
+					}),
+				),
+				buildTimeAuditInsert(sqlTag, {
+					organizationId: input.organizationId,
+					actorUserId: input.actorUserId,
+					correlationId: input.correlationId,
+					entity: "hr_timesheet",
+					entityId: currentTimesheet.id,
+					action: "UPDATE",
+					reasonCode: "TIMESHEET_ENTRIES_GENERATE",
+				}),
+			]);
+			const row = rows[0] as Parameters<typeof timesheetFromSql>[0] | undefined;
 			if (!row) {
 				return notFound("Timesheet not found");
 			}
-			const timesheet = mapTimesheet(row);
+			const timesheet = mapTimesheet(timesheetFromSql(row));
 			if (!timesheet.ok) {
 				return timesheet;
 			}
@@ -6201,17 +6188,6 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			});
 			if (!entries.ok) {
 				return entries;
-			}
-			const recorded = await audit(ports, {
-				organizationId: input.organizationId,
-				actorUserId: input.actorUserId,
-				correlationId: input.correlationId,
-				entity: "hr_timesheet",
-				entityId: timesheet.data.id,
-				action: "UPDATE",
-			});
-			if (!recorded.ok) {
-				return recorded;
 			}
 			return errorResult.ok({
 				timesheet: timesheet.data,
@@ -6225,7 +6201,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 		}
 	},
 
-	async addTimesheetEntry(input, ports) {
+	async addTimesheetEntry(input, _ports) {
 		try {
 			const timesheet = await this.getTimesheet({
 				organizationId: input.organizationId,
@@ -6237,74 +6213,73 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (timesheet.data === null) {
 				return notFound("Timesheet not found");
 			}
+			const currentTimesheet = timesheet.data;
 			if (
-				timesheet.data.status !== "draft" &&
-				timesheet.data.status !== "returned"
+				currentTimesheet.status !== "draft" &&
+				currentTimesheet.status !== "returned"
 			) {
 				return invalidState("Timesheet is not editable");
 			}
 			const id = randomUUID();
 			const now = new Date();
-			const [row] = await afendaDatabase.client
-				.insert(hrTimesheetEntry)
-				.values({
-					id,
+			const [rows] = await runTimeTransaction((sqlTag) => [
+				sqlTag`
+					WITH inserted AS (
+						INSERT INTO hr_timesheet_entry (
+							id, organization_id, timesheet_id, employee_id, work_date, timezone,
+							source_type, source_reference, time_type, started_at, ended_at,
+							recorded_minutes, approved_minutes, cost_center_id, project_id,
+							location_id, department_id, approval_reference, evidence_reference,
+							version, created_by, updated_by, created_at, updated_at
+						) VALUES (
+							${id}, ${input.organizationId}, ${input.timesheetId}, ${input.employeeId},
+							${input.workDate}, ${input.timezone}, ${input.sourceType},
+							${input.sourceReference}, ${input.timeType}, ${input.startedAt},
+							${input.endedAt}, ${input.recordedMinutes}, ${input.approvedMinutes},
+							${input.costCenterId}, ${input.projectId}, ${input.locationId},
+							${input.departmentId}, ${input.approvalReference},
+							${input.evidenceReference}, 1, ${input.createdBy}, ${input.createdBy},
+							${now}, ${now}
+						) RETURNING *
+					), totals AS (
+						UPDATE hr_timesheet SET
+							total_recorded_minutes = ${currentTimesheet.totalRecordedMinutes + input.recordedMinutes},
+							total_approved_minutes = ${currentTimesheet.totalApprovedMinutes + input.approvedMinutes},
+							version = ${currentTimesheet.version + 1}, updated_by = ${input.createdBy},
+							updated_at = ${now}
+						FROM inserted
+						WHERE hr_timesheet.organization_id = ${input.organizationId}
+							AND hr_timesheet.id = ${input.timesheetId}
+							AND hr_timesheet.version = ${currentTimesheet.version}
+							AND hr_timesheet.status IN ('draft', 'returned')
+						RETURNING hr_timesheet.id
+					)
+					SELECT inserted.* FROM inserted, totals
+				`,
+				sqlTag`
+					SELECT 1 / COUNT(*) AS mutation_guard FROM hr_timesheet
+					WHERE organization_id = ${input.organizationId} AND id = ${input.timesheetId}
+						AND version = ${currentTimesheet.version + 1} AND updated_at = ${now}
+				`,
+				buildTimeAuditInsert(sqlTag, {
 					organizationId: input.organizationId,
-					timesheetId: input.timesheetId,
-					employeeId: input.employeeId,
-					workDate: input.workDate,
-					timezone: input.timezone,
-					sourceType: input.sourceType,
-					sourceReference: input.sourceReference,
-					timeType: input.timeType,
-					startedAt: input.startedAt,
-					endedAt: input.endedAt,
-					recordedMinutes: input.recordedMinutes,
-					approvedMinutes: input.approvedMinutes,
-					costCenterId: input.costCenterId,
-					projectId: input.projectId,
-					locationId: input.locationId,
-					departmentId: input.departmentId,
-					approvalReference: input.approvalReference,
-					evidenceReference: input.evidenceReference,
-					version: 1,
-					createdBy: input.createdBy,
-					updatedBy: input.createdBy,
-					createdAt: now,
-					updatedAt: now,
-				})
-				.returning();
-			await afendaDatabase.client
-				.update(hrTimesheet)
-				.set({
-					totalRecordedMinutes:
-						timesheet.data.totalRecordedMinutes + input.recordedMinutes,
-					totalApprovedMinutes:
-						timesheet.data.totalApprovedMinutes + input.approvedMinutes,
-					version: timesheet.data.version + 1,
-					updatedBy: input.createdBy,
-					updatedAt: now,
-				})
-				.where(
-					and(
-						eq(hrTimesheet.organizationId, input.organizationId),
-						eq(hrTimesheet.id, input.timesheetId),
-					),
-				);
-			const mapped = mapEntry(requirePersistenceRow(row));
+					actorUserId: input.createdBy,
+					correlationId: input.correlationId,
+					entity: "hr_timesheet_entry",
+					entityId: id,
+					action: "CREATE",
+					reasonCode: "TIMESHEET_ENTRY_ADD",
+				}),
+			]);
+			const mapped = mapEntry(
+				timesheetEntryFromSql(
+					requirePersistenceRow(rows[0]) as Parameters<
+						typeof timesheetEntryFromSql
+					>[0],
+				),
+			);
 			if (!mapped.ok) {
 				return mapped;
-			}
-			const recorded = await audit(ports, {
-				organizationId: input.organizationId,
-				actorUserId: input.createdBy,
-				correlationId: input.correlationId,
-				entity: "hr_timesheet_entry",
-				entityId: mapped.data.id,
-				action: "CREATE",
-			});
-			if (!recorded.ok) {
-				return recorded;
 			}
 			return errorResult.ok(mapped.data);
 		} catch (error) {
@@ -6313,7 +6288,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 	},
 
 	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
-	async updateTimesheetEntry(input, ports) {
+	async updateTimesheetEntry(input, _ports) {
 		try {
 			const rows = await afendaDatabase.client
 				.select()
@@ -6355,78 +6330,101 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			) {
 				return invalidState("Timesheet is not editable");
 			}
-			const [row] = await afendaDatabase.client
-				.update(hrTimesheetEntry)
-				.set({
-					workDate: input.workDate ?? existing.data.workDate,
-					timeType: input.timeType ?? existing.data.timeType,
-					startedAt:
-						input.startedAt === undefined
-							? existing.data.startedAt
-							: input.startedAt,
-					endedAt:
-						input.endedAt === undefined ? existing.data.endedAt : input.endedAt,
-					recordedMinutes:
-						input.recordedMinutes ?? existing.data.recordedMinutes,
-					approvedMinutes:
-						input.approvedMinutes ?? existing.data.approvedMinutes,
-					costCenterId:
-						input.costCenterId === undefined
-							? existing.data.costCenterId
-							: input.costCenterId,
-					projectId:
-						input.projectId === undefined
-							? existing.data.projectId
-							: input.projectId,
-					locationId:
-						input.locationId === undefined
-							? existing.data.locationId
-							: input.locationId,
-					departmentId:
-						input.departmentId === undefined
-							? existing.data.departmentId
-							: input.departmentId,
-					approvalReference:
-						input.approvalReference === undefined
-							? existing.data.approvalReference
-							: input.approvalReference,
-					evidenceReference:
-						input.evidenceReference === undefined
-							? existing.data.evidenceReference
-							: input.evidenceReference,
-					version: existing.data.version + 1,
-					updatedBy: input.actorUserId,
-					updatedAt: new Date(),
-				})
-				.where(
-					and(
-						eq(hrTimesheetEntry.organizationId, input.organizationId),
-						eq(hrTimesheetEntry.id, input.entryId),
-						eq(hrTimesheetEntry.version, input.expectedVersion),
-					),
-				)
-				.returning();
+			const currentEntry = existing.data;
+			const currentTimesheet = timesheet.data;
+			const nextEntry = {
+				workDate: input.workDate ?? currentEntry.workDate,
+				timeType: input.timeType ?? currentEntry.timeType,
+				startedAt:
+					input.startedAt === undefined
+						? currentEntry.startedAt
+						: input.startedAt,
+				endedAt:
+					input.endedAt === undefined ? currentEntry.endedAt : input.endedAt,
+				recordedMinutes: input.recordedMinutes ?? currentEntry.recordedMinutes,
+				approvedMinutes: input.approvedMinutes ?? currentEntry.approvedMinutes,
+				costCenterId:
+					input.costCenterId === undefined
+						? currentEntry.costCenterId
+						: input.costCenterId,
+				projectId:
+					input.projectId === undefined
+						? currentEntry.projectId
+						: input.projectId,
+				locationId:
+					input.locationId === undefined
+						? currentEntry.locationId
+						: input.locationId,
+				departmentId:
+					input.departmentId === undefined
+						? currentEntry.departmentId
+						: input.departmentId,
+				approvalReference:
+					input.approvalReference === undefined
+						? currentEntry.approvalReference
+						: input.approvalReference,
+				evidenceReference:
+					input.evidenceReference === undefined
+						? currentEntry.evidenceReference
+						: input.evidenceReference,
+			};
+			const updatedAt = new Date();
+			const [transactionRows] = await runTimeTransaction((sqlTag) => [
+				sqlTag`
+					WITH mutated AS (
+						UPDATE hr_timesheet_entry AS entry SET
+							work_date = ${nextEntry.workDate}, time_type = ${nextEntry.timeType},
+							started_at = ${nextEntry.startedAt}, ended_at = ${nextEntry.endedAt},
+							recorded_minutes = ${nextEntry.recordedMinutes},
+							approved_minutes = ${nextEntry.approvedMinutes},
+							cost_center_id = ${nextEntry.costCenterId}, project_id = ${nextEntry.projectId},
+							location_id = ${nextEntry.locationId}, department_id = ${nextEntry.departmentId},
+							approval_reference = ${nextEntry.approvalReference},
+							evidence_reference = ${nextEntry.evidenceReference},
+							version = ${currentEntry.version + 1}, updated_by = ${input.actorUserId},
+							updated_at = ${updatedAt}
+						WHERE entry.organization_id = ${input.organizationId} AND entry.id = ${input.entryId}
+							AND entry.version = ${input.expectedVersion}
+						RETURNING *
+					), totals AS (
+						UPDATE hr_timesheet SET
+							total_recorded_minutes = ${currentTimesheet.totalRecordedMinutes + nextEntry.recordedMinutes - currentEntry.recordedMinutes},
+							total_approved_minutes = ${currentTimesheet.totalApprovedMinutes + nextEntry.approvedMinutes - currentEntry.approvedMinutes},
+							version = ${currentTimesheet.version + 1}, updated_by = ${input.actorUserId},
+							updated_at = ${updatedAt}
+						FROM mutated
+						WHERE hr_timesheet.organization_id = ${input.organizationId}
+							AND hr_timesheet.id = ${currentEntry.timesheetId}
+							AND hr_timesheet.version = ${currentTimesheet.version}
+							AND hr_timesheet.status IN ('draft', 'returned')
+						RETURNING hr_timesheet.id
+					)
+					SELECT mutated.* FROM mutated, totals
+				`,
+				sqlTag`
+					SELECT 1 / COUNT(*) AS mutation_guard FROM hr_timesheet
+					WHERE organization_id = ${input.organizationId} AND id = ${currentEntry.timesheetId}
+						AND version = ${currentTimesheet.version + 1} AND updated_at = ${updatedAt}
+				`,
+				buildTimeAuditInsert(sqlTag, {
+					organizationId: input.organizationId,
+					actorUserId: input.actorUserId,
+					correlationId: input.correlationId,
+					entity: "hr_timesheet_entry",
+					entityId: input.entryId,
+					action: "UPDATE",
+					reasonCode: "TIMESHEET_ENTRY_UPDATE",
+				}),
+			]);
+			const row = transactionRows[0] as
+				| Parameters<typeof timesheetEntryFromSql>[0]
+				| undefined;
 			if (!row) {
 				return notFound("Timesheet entry not found");
 			}
-			await recomputeTimesheetTotals(
-				input.organizationId,
-				existing.data.timesheetId,
-			);
-			const mapped = mapEntry(row);
+			const mapped = mapEntry(timesheetEntryFromSql(row));
 			if (!mapped.ok) {
 				return mapped;
-			}
-			const recordedAudit = await audit(ports, {
-				organizationId: input.organizationId,
-				actorUserId: input.actorUserId,
-				correlationId: input.correlationId,
-				entity: "hr_timesheet_entry",
-				entityId: mapped.data.id,
-				action: "UPDATE",
-			});
-			if (!recordedAudit.ok) {
-				return recordedAudit;
 			}
 			return errorResult.ok(mapped.data);
 		} catch (error) {
@@ -6434,7 +6432,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 		}
 	},
 
-	async removeTimesheetEntry(input, ports) {
+	async removeTimesheetEntry(input, _ports) {
 		try {
 			const rows = await afendaDatabase.client
 				.select()
@@ -6476,29 +6474,41 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			) {
 				return invalidState("Timesheet is not editable");
 			}
-			await afendaDatabase.client
-				.delete(hrTimesheetEntry)
-				.where(
-					and(
-						eq(hrTimesheetEntry.organizationId, input.organizationId),
-						eq(hrTimesheetEntry.id, input.entryId),
-					),
-				);
-			await recomputeTimesheetTotals(
-				input.organizationId,
-				existing.data.timesheetId,
-			);
-			const recordedAudit = await audit(ports, {
-				organizationId: input.organizationId,
-				actorUserId: input.actorUserId,
-				correlationId: input.correlationId,
-				entity: "hr_timesheet_entry",
-				entityId: existing.data.id,
-				action: "DELETE",
-			});
-			if (!recordedAudit.ok) {
-				return recordedAudit;
-			}
+			const currentEntry = existing.data;
+			const currentTimesheet = timesheet.data;
+			const updatedAt = new Date();
+			await runTimeTransaction((sqlTag) => [
+				sqlTag`
+					WITH deleted AS (
+						DELETE FROM hr_timesheet_entry AS entry
+						WHERE entry.organization_id = ${input.organizationId} AND entry.id = ${input.entryId}
+							AND entry.version = ${input.expectedVersion}
+						RETURNING id
+					), totals AS (
+						UPDATE hr_timesheet SET
+							total_recorded_minutes = ${currentTimesheet.totalRecordedMinutes - currentEntry.recordedMinutes},
+							total_approved_minutes = ${currentTimesheet.totalApprovedMinutes - currentEntry.approvedMinutes},
+							version = ${currentTimesheet.version + 1}, updated_by = ${input.actorUserId},
+							updated_at = ${updatedAt}
+						FROM deleted
+						WHERE hr_timesheet.organization_id = ${input.organizationId}
+							AND hr_timesheet.id = ${currentEntry.timesheetId}
+							AND hr_timesheet.version = ${currentTimesheet.version}
+							AND hr_timesheet.status IN ('draft', 'returned')
+						RETURNING hr_timesheet.id
+					)
+					SELECT 1 / COUNT(*) AS mutation_guard FROM totals
+				`,
+				buildTimeAuditInsert(sqlTag, {
+					organizationId: input.organizationId,
+					actorUserId: input.actorUserId,
+					correlationId: input.correlationId,
+					entity: "hr_timesheet_entry",
+					entityId: input.entryId,
+					action: "DELETE",
+					reasonCode: "TIMESHEET_ENTRY_REMOVE",
+				}),
+			]);
 			return errorResult.ok(undefined);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to remove timesheet entry");
@@ -6521,7 +6531,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			approverNotes: input.approverNotes ?? null,
 		});
 	},
-	async approveTimesheet(input, ports) {
+	async approveTimesheet(input, _ports) {
 		const existing = await this.getTimesheet({
 			organizationId: input.organizationId,
 			timesheetId: input.timesheetId,
@@ -6610,6 +6620,31 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 						(SELECT row_to_json(updated_timesheet.*) FROM updated_timesheet) AS timesheet,
 						(SELECT row_to_json(inserted_decision.*) FROM inserted_decision) AS decision
 				`,
+				sqlTag`
+					SELECT 1 / COUNT(*) AS mutation_guard
+					FROM hr_timesheet_approval_decision
+					WHERE organization_id = ${input.organizationId} AND id = ${decisionId}
+				`,
+				buildTimeAuditInsert(sqlTag, {
+					organizationId: input.organizationId,
+					actorUserId: input.actorUserId,
+					correlationId: input.correlationId,
+					entity: "hr_timesheet_approval_decision",
+					entityId: decisionId,
+					action: "CREATE",
+					reasonCode: "TIMESHEET_APPROVAL_DECIDE",
+				}),
+				buildTimeOutboxInsert(sqlTag, {
+					eventId: randomUUID(),
+					organizationId: input.organizationId,
+					actorUserId: input.actorUserId,
+					correlationId: input.correlationId,
+					eventType: isFinal
+						? HUMAN_RESOURCES_TIMESHEET_APPROVED_EVENT
+						: HUMAN_RESOURCES_TIME_TIMESHEET_APPROVAL_STEP_RECORDED_EVENT,
+					entityType: "hr_timesheet",
+					entityId: input.timesheetId,
+				}),
 			]);
 			if (approvalRow.timesheet === null || approvalRow.decision === null) {
 				throw new Error("Concurrent timesheet approval");
@@ -6623,66 +6658,6 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			);
 			if (!decision.ok) {
 				return decision;
-			}
-			const compensate = async () => {
-				await runTimeTransaction((sqlTag) => [
-					sqlTag`
-						DELETE FROM hr_timesheet_approval_decision
-						WHERE organization_id = ${input.organizationId}
-							AND id = ${decision.data.id}
-					`,
-					sqlTag`
-						UPDATE hr_timesheet
-						SET status = ${current.status},
-							completed_approval_steps = ${current.completedApprovalSteps},
-							approved_at = ${current.approvedAt},
-							approved_by = ${current.approvedBy},
-							approver_notes = ${current.approverNotes},
-							version = ${current.version},
-							updated_by = ${current.updatedBy},
-							updated_at = ${current.updatedAt}
-						WHERE organization_id = ${input.organizationId}
-							AND id = ${input.timesheetId}
-							AND version = ${current.version + 1}
-					`,
-				]);
-			};
-			const recorded = await audit(ports, {
-				organizationId: input.organizationId,
-				actorUserId: input.actorUserId,
-				correlationId: input.correlationId,
-				entity: "hr_timesheet_approval_decision",
-				entityId: decision.data.id,
-				action: "CREATE",
-			});
-			if (!recorded.ok) {
-				await compensate();
-				return recorded;
-			}
-			const event = await emitOutbox(ports, {
-				organizationId: input.organizationId,
-				actorUserId: input.actorUserId,
-				correlationId: input.correlationId,
-				eventType: isFinal
-					? HUMAN_RESOURCES_TIMESHEET_APPROVED_EVENT
-					: HUMAN_RESOURCES_TIME_TIMESHEET_APPROVAL_STEP_RECORDED_EVENT,
-				entityType: "hr_timesheet",
-				entityId: input.timesheetId,
-			});
-			if (!event.ok) {
-				await compensate();
-				const compensationAudit = await audit(ports, {
-					organizationId: input.organizationId,
-					actorUserId: input.actorUserId,
-					correlationId: input.correlationId,
-					entity: "hr_timesheet_approval_decision",
-					entityId: decision.data.id,
-					action: "DELETE",
-				});
-				if (!compensationAudit.ok) {
-					return compensationAudit;
-				}
-				return event;
 			}
 			return errorResult.ok(mapped.data);
 		} catch (error) {
@@ -7031,47 +7006,44 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 		}
 	},
 
-	async createOvertimeRequest(input, ports) {
+	async createOvertimeRequest(input, _ports) {
 		try {
 			const id = randomUUID();
 			const now = new Date();
-			const [row] = await afendaDatabase.client
-				.insert(hrOvertimeRequest)
-				.values({
-					id,
+			const [rows] = await runTimeTransaction((sqlTag) => [
+				sqlTag`
+					INSERT INTO hr_overtime_request (
+						id, organization_id, employee_id, employment_id, overtime_type,
+						requested_starts_at, requested_ends_at, requested_minutes, reason,
+						evidence_reference, status, version, create_idempotency_key,
+						create_request_fingerprint, created_by, updated_by, created_at, updated_at
+					) VALUES (
+						${id}, ${input.organizationId}, ${input.employeeId}, ${input.employmentId},
+						${input.overtimeType}, ${input.requestedStartsAt}, ${input.requestedEndsAt},
+						${input.requestedMinutes}, ${input.reason}, ${input.evidenceReference},
+						'requested', 1, ${input.idempotencyKey}, ${input.createRequestFingerprint},
+						${input.createdBy}, ${input.createdBy}, ${now}, ${now}
+					) RETURNING *
+				`,
+				buildTimeAuditInsert(sqlTag, {
 					organizationId: input.organizationId,
-					employeeId: input.employeeId,
-					employmentId: input.employmentId,
-					overtimeType: input.overtimeType,
-					requestedStartsAt: input.requestedStartsAt,
-					requestedEndsAt: input.requestedEndsAt,
-					requestedMinutes: input.requestedMinutes,
-					reason: input.reason,
-					evidenceReference: input.evidenceReference,
-					status: "requested",
-					version: 1,
-					createIdempotencyKey: input.idempotencyKey,
-					createRequestFingerprint: input.createRequestFingerprint,
-					createdBy: input.createdBy,
-					updatedBy: input.createdBy,
-					createdAt: now,
-					updatedAt: now,
-				})
-				.returning();
-			const mapped = mapOvertime(requirePersistenceRow(row));
+					actorUserId: input.createdBy,
+					correlationId: input.correlationId,
+					entity: "hr_overtime_request",
+					entityId: id,
+					action: "CREATE",
+					reasonCode: "OVERTIME_REQUEST_CREATE",
+				}),
+			]);
+			const mapped = mapOvertime(
+				overtimeRequestFromSql(
+					requirePersistenceRow(rows[0]) as Parameters<
+						typeof overtimeRequestFromSql
+					>[0],
+				),
+			);
 			if (!mapped.ok) {
 				return mapped;
-			}
-			const recordedAudit = await audit(ports, {
-				organizationId: input.organizationId,
-				actorUserId: input.createdBy,
-				correlationId: input.correlationId,
-				entity: "hr_overtime_request",
-				entityId: mapped.data.id,
-				action: "CREATE",
-			});
-			if (!recordedAudit.ok) {
-				return recordedAudit;
 			}
 			return errorResult.ok(mapped.data);
 		} catch (error) {
@@ -7096,7 +7068,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 		}
 	},
 
-	async approveOvertimeRequest(input, ports) {
+	async approveOvertimeRequest(input, _ports) {
 		try {
 			const existing = await this.getOvertimeRequest({
 				organizationId: input.organizationId,
@@ -7108,24 +7080,23 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (existing.data === null) {
 				return notFound("Overtime request not found");
 			}
+			const current = existing.data;
 			const selfCheck = assertNoSelfApprove({
 				actorUserId: input.actorUserId,
-				createdBy: existing.data.createdBy,
+				createdBy: current.createdBy,
 			});
 			if (!selfCheck.ok) {
 				return selfCheck;
 			}
 			const versionCheck = assertExpectedVersion(
-				existing.data.version,
+				current.version,
 				input.expectedVersion,
 			);
 			if (!versionCheck.ok) {
 				return versionCheck;
 			}
-			if (existing.data.status === "approved") {
-				if (
-					existing.data.approvedMaximumMinutes === input.approvedMaximumMinutes
-				) {
+			if (current.status === "approved") {
+				if (current.approvedMaximumMinutes === input.approvedMaximumMinutes) {
 					return errorResult.ok(existing.data);
 				}
 				return conflict(
@@ -7133,71 +7104,71 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				);
 			}
 			const transition = assertOvertimeStatusTransition(
-				existing.data.status,
+				current.status,
 				"approved",
 			);
 			if (!transition.ok) {
 				return transition;
 			}
-			const [row] = await afendaDatabase.client
-				.update(hrOvertimeRequest)
-				.set({
-					status: "approved",
-					approvedMaximumMinutes: input.approvedMaximumMinutes,
-					version: existing.data.version + 1,
-					updatedBy: input.actorUserId,
-					updatedAt: new Date(),
-				})
-				.where(
-					and(
-						eq(hrOvertimeRequest.organizationId, input.organizationId),
-						eq(hrOvertimeRequest.id, input.requestId),
-						eq(hrOvertimeRequest.version, input.expectedVersion),
-					),
-				)
-				.returning();
+			const now = new Date();
+			const approvalId = randomUUID();
+			const correlationId =
+				input.correlationId ?? `hr-time-hr_overtime_request-${current.id}`;
+			const [rows] = await runTimeTransaction((sqlTag) => [
+				sqlTag`
+					WITH updated_request AS (
+						UPDATE hr_overtime_request SET status = 'approved',
+							approved_maximum_minutes = ${input.approvedMaximumMinutes},
+							version = ${current.version + 1}, updated_by = ${input.actorUserId},
+							updated_at = ${now}
+						WHERE organization_id = ${input.organizationId} AND id = ${input.requestId}
+							AND version = ${input.expectedVersion} AND status = ${current.status}
+						RETURNING *
+					), inserted_approval AS (
+						INSERT INTO hr_overtime_approval (
+							id, organization_id, overtime_request_id, decision,
+							approved_maximum_minutes, actor_user_id, authority, comment,
+							decided_at, version_approved
+						)
+						SELECT ${approvalId}, ${input.organizationId}, ${input.requestId}, 'approved',
+							${input.approvedMaximumMinutes}, ${input.actorUserId}, ${input.authority},
+							${input.comment ?? null}, ${now}, ${current.version + 1}
+						FROM updated_request RETURNING id
+					)
+					SELECT updated_request.* FROM updated_request, inserted_approval
+				`,
+				sqlTag`
+					SELECT 1 / COUNT(*) AS mutation_guard FROM hr_overtime_approval
+					WHERE organization_id = ${input.organizationId} AND id = ${approvalId}
+				`,
+				buildTimeAuditInsert(sqlTag, {
+					organizationId: input.organizationId,
+					actorUserId: input.actorUserId,
+					correlationId,
+					entity: "hr_overtime_request",
+					entityId: input.requestId,
+					action: "UPDATE",
+					reasonCode: "OVERTIME_REQUEST_APPROVE",
+				}),
+				buildTimeOutboxInsert(sqlTag, {
+					eventId: randomUUID(),
+					organizationId: input.organizationId,
+					actorUserId: input.actorUserId,
+					correlationId,
+					eventType: HUMAN_RESOURCES_TIME_OVERTIME_APPROVED_EVENT,
+					entityType: "hr_overtime_request",
+					entityId: input.requestId,
+				}),
+			]);
+			const row = rows[0] as
+				| Parameters<typeof overtimeRequestFromSql>[0]
+				| undefined;
 			if (!row) {
 				return notFound("Overtime request not found");
 			}
-			await afendaDatabase.client.insert(hrOvertimeApproval).values({
-				id: randomUUID(),
-				organizationId: input.organizationId,
-				overtimeRequestId: input.requestId,
-				decision: "approved",
-				approvedMaximumMinutes: input.approvedMaximumMinutes,
-				actorUserId: input.actorUserId,
-				authority: input.authority,
-				comment: input.comment ?? null,
-				decidedAt: new Date(),
-				versionApproved: existing.data.version + 1,
-			});
-			const mapped = mapOvertime(row);
+			const mapped = mapOvertime(overtimeRequestFromSql(row));
 			if (!mapped.ok) {
 				return mapped;
-			}
-			const correlationId =
-				input.correlationId ?? `hr-time-hr_overtime_request-${mapped.data.id}`;
-			const recordedAudit = await audit(ports, {
-				organizationId: input.organizationId,
-				actorUserId: input.actorUserId,
-				correlationId,
-				entity: "hr_overtime_request",
-				entityId: mapped.data.id,
-				action: "UPDATE",
-			});
-			if (!recordedAudit.ok) {
-				return recordedAudit;
-			}
-			const event = await emitOutbox(ports, {
-				organizationId: input.organizationId,
-				actorUserId: input.actorUserId,
-				correlationId,
-				eventType: HUMAN_RESOURCES_TIME_OVERTIME_APPROVED_EVENT,
-				entityType: "hr_overtime_request",
-				entityId: mapped.data.id,
-			});
-			if (!event.ok) {
-				return event;
 			}
 			return errorResult.ok(mapped.data);
 		} catch (error) {
@@ -7215,148 +7186,15 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 	},
 
 	async recordOvertimeActual(input, ports) {
-		try {
-			const existing = await this.getOvertimeRequest({
-				organizationId: input.organizationId,
-				requestId: input.requestId,
-			});
-			if (!existing.ok) {
-				return existing;
-			}
-			if (existing.data === null) {
-				return notFound("Overtime request not found");
-			}
-			const versionCheck = assertExpectedVersion(
-				existing.data.version,
-				input.expectedVersion,
-			);
-			if (!versionCheck.ok) {
-				return versionCheck;
-			}
-			const transition = assertOvertimeStatusTransition(
-				existing.data.status,
-				"worked",
-			);
-			if (!transition.ok) {
-				return transition;
-			}
-			const [row] = await afendaDatabase.client
-				.update(hrOvertimeRequest)
-				.set({
-					status: "worked",
-					actualMinutes: input.actualMinutes,
-					version: existing.data.version + 1,
-					updatedBy: input.actorUserId,
-					updatedAt: new Date(),
-				})
-				.where(
-					and(
-						eq(hrOvertimeRequest.organizationId, input.organizationId),
-						eq(hrOvertimeRequest.id, input.requestId),
-						eq(hrOvertimeRequest.version, input.expectedVersion),
-					),
-				)
-				.returning();
-			if (!row) {
-				return notFound("Overtime request not found");
-			}
-			const mapped = mapOvertime(row);
-			if (!mapped.ok) {
-				return mapped;
-			}
-			const recordedAudit = await audit(ports, {
-				organizationId: input.organizationId,
-				actorUserId: input.actorUserId,
-				correlationId: input.correlationId,
-				entity: "hr_overtime_request",
-				entityId: mapped.data.id,
-				action: "UPDATE",
-			});
-			if (!recordedAudit.ok) {
-				return recordedAudit;
-			}
-			return errorResult.ok(mapped.data);
-		} catch (error) {
-			return mapPersistenceFailure(error, "Failed to record overtime actual");
-		}
+		return await transitionOvertime(this, ports, input, "worked", {
+			actualMinutes: input.actualMinutes,
+		});
 	},
 
 	async verifyOvertimeRequest(input, ports) {
-		try {
-			const existing = await this.getOvertimeRequest({
-				organizationId: input.organizationId,
-				requestId: input.requestId,
-			});
-			if (!existing.ok) {
-				return existing;
-			}
-			if (existing.data === null) {
-				return notFound("Overtime request not found");
-			}
-			const versionCheck = assertExpectedVersion(
-				existing.data.version,
-				input.expectedVersion,
-			);
-			if (!versionCheck.ok) {
-				return versionCheck;
-			}
-			const transition = assertOvertimeStatusTransition(
-				existing.data.status,
-				"verified",
-			);
-			if (!transition.ok) {
-				return transition;
-			}
-			const [row] = await afendaDatabase.client
-				.update(hrOvertimeRequest)
-				.set({
-					status: "verified",
-					payrollApprovedMinutes: input.payrollApprovedMinutes,
-					version: existing.data.version + 1,
-					updatedBy: input.actorUserId,
-					updatedAt: new Date(),
-				})
-				.where(
-					and(
-						eq(hrOvertimeRequest.organizationId, input.organizationId),
-						eq(hrOvertimeRequest.id, input.requestId),
-						eq(hrOvertimeRequest.version, input.expectedVersion),
-					),
-				)
-				.returning();
-			if (!row) {
-				return notFound("Overtime request not found");
-			}
-			await afendaDatabase.client.insert(hrOvertimeApproval).values({
-				id: randomUUID(),
-				organizationId: input.organizationId,
-				overtimeRequestId: input.requestId,
-				decision: "verified",
-				approvedMaximumMinutes: input.payrollApprovedMinutes,
-				actorUserId: input.actorUserId,
-				comment: null,
-				decidedAt: new Date(),
-				versionApproved: existing.data.version + 1,
-			});
-			const mapped = mapOvertime(row);
-			if (!mapped.ok) {
-				return mapped;
-			}
-			const recordedAudit = await audit(ports, {
-				organizationId: input.organizationId,
-				actorUserId: input.actorUserId,
-				correlationId: input.correlationId,
-				entity: "hr_overtime_request",
-				entityId: mapped.data.id,
-				action: "UPDATE",
-			});
-			if (!recordedAudit.ok) {
-				return recordedAudit;
-			}
-			return errorResult.ok(mapped.data);
-		} catch (error) {
-			return mapPersistenceFailure(error, "Failed to verify overtime request");
-		}
+		return await transitionOvertime(this, ports, input, "verified", {
+			payrollApprovedMinutes: input.payrollApprovedMinutes,
+		});
 	},
 
 	async getOvertimeRequest(input) {
@@ -7412,54 +7250,6 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 		}
 	},
 };
-
-async function recomputeTimesheetTotals(
-	organizationId: string,
-	timesheetId: string,
-): Promise<void> {
-	const entries = await afendaDatabase.client
-		.select()
-		.from(hrTimesheetEntry)
-		.where(
-			and(
-				eq(hrTimesheetEntry.organizationId, organizationId),
-				eq(hrTimesheetEntry.timesheetId, timesheetId),
-			),
-		);
-	const totalRecordedMinutes = entries.reduce(
-		(sum, entry) => sum + entry.recordedMinutes,
-		0,
-	);
-	const totalApprovedMinutes = entries.reduce(
-		(sum, entry) => sum + entry.approvedMinutes,
-		0,
-	);
-	const current = await afendaDatabase.client
-		.select({ version: hrTimesheet.version })
-		.from(hrTimesheet)
-		.where(
-			and(
-				eq(hrTimesheet.organizationId, organizationId),
-				eq(hrTimesheet.id, timesheetId),
-			),
-		)
-		.limit(1);
-	const version = current[0]?.version ?? 1;
-	await afendaDatabase.client
-		.update(hrTimesheet)
-		.set({
-			totalRecordedMinutes,
-			totalApprovedMinutes,
-			version: version + 1,
-			updatedAt: new Date(),
-		})
-		.where(
-			and(
-				eq(hrTimesheet.organizationId, organizationId),
-				eq(hrTimesheet.id, timesheetId),
-			),
-		);
-}
 
 async function transitionShiftStatus(
 	store: HumanResourcesTimeStore,
@@ -7549,44 +7339,7 @@ function drizzleExceptionDetectionHost(
 			store.listUnresolvedAttendanceExceptions(input),
 		createAttendanceException: (input, ports) =>
 			store.createAttendanceException(input, ports),
-		async deleteAttendanceExceptionForRollback(input) {
-			try {
-				await afendaDatabase.client
-					.delete(hrAttendanceException)
-					.where(
-						and(
-							eq(hrAttendanceException.organizationId, input.organizationId),
-							eq(hrAttendanceException.id, input.exceptionId),
-						),
-					);
-				return errorResult.ok(undefined);
-			} catch (error) {
-				return mapPersistenceFailure(
-					error,
-					"Failed to roll back attendance exception",
-				);
-			}
-		},
 	};
-}
-
-async function restoreShiftAssignmentPublication(
-	previous: ShiftAssignment,
-): Promise<void> {
-	await afendaDatabase.client
-		.update(hrShiftAssignment)
-		.set({
-			publicationStatus: previous.publicationStatus,
-			version: previous.version,
-			updatedBy: previous.updatedBy,
-			updatedAt: previous.updatedAt,
-		})
-		.where(
-			and(
-				eq(hrShiftAssignment.organizationId, previous.organizationId),
-				eq(hrShiftAssignment.id, previous.id),
-			),
-		);
 }
 
 async function transitionAssignment(
@@ -7600,6 +7353,7 @@ async function transitionAssignment(
 		correlationId?: string;
 	},
 	next: ShiftAssignment["publicationStatus"],
+	detectedExceptions: readonly AttendanceExceptionCreateRecord[] = [],
 ): Promise<Result<ShiftAssignment>> {
 	const existing = await store.getShiftAssignment({
 		organizationId: input.organizationId,
@@ -7665,6 +7419,28 @@ async function transitionAssignment(
 						eventType: HUMAN_RESOURCES_TIME_SCHEDULE_PUBLISHED_EVENT,
 						entityType: "hr_shift_assignment",
 						entityId: input.assignmentId,
+					}),
+				);
+			}
+			for (const exception of detectedExceptions) {
+				if (exception.sessionId === null) {
+					throw new TypeError(
+						"Detected attendance exception requires a session ID",
+					);
+				}
+				queries.push(
+					buildDetectedAttendanceExceptionInsert(sqlTag, {
+						exceptionId: randomUUID(),
+						auditId: randomUUID(),
+						organizationId: exception.organizationId,
+						employeeId: exception.employeeId,
+						sessionId: exception.sessionId,
+						shiftAssignmentId: exception.shiftAssignmentId,
+						eventType: exception.exceptionType,
+						severity: exception.severity,
+						remarks: exception.remarks,
+						actorUserId: exception.createdBy,
+						correlationId: exception.correlationId ?? correlationId,
 					}),
 				);
 			}
@@ -7776,10 +7552,9 @@ async function transitionException(
 	}
 }
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
 async function transitionTimesheet(
 	store: HumanResourcesTimeStore,
-	ports: MutationPorts,
+	_ports: MutationPorts,
 	input: {
 		organizationId: string;
 		timesheetId: Timesheet["id"];
@@ -7826,69 +7601,15 @@ async function transitionTimesheet(
 		return transition;
 	}
 	try {
-		const [row] = await afendaDatabase.client
-			.update(hrTimesheet)
-			.set({
-				status: next,
-				submittedAt: extra?.submittedAt ?? existing.data.submittedAt,
-				submissionReference:
-					extra?.submissionReference ?? existing.data.submissionReference,
-				approvalPolicyId:
-					extra?.approvalPolicyId === undefined
-						? existing.data.approvalPolicyId
-						: extra.approvalPolicyId,
-				requiredApprovalSteps:
-					extra?.requiredApprovalSteps === undefined
-						? [...existing.data.requiredApprovalSteps]
-						: [...extra.requiredApprovalSteps],
-				completedApprovalSteps:
-					extra?.completedApprovalSteps ?? existing.data.completedApprovalSteps,
-				approvedAt: extra?.approvedAt ?? existing.data.approvedAt,
-				approvedBy:
-					extra?.approvedBy === undefined
-						? existing.data.approvedBy
-						: extra.approvedBy,
-				approverNotes:
-					extra?.approverNotes === undefined
-						? existing.data.approverNotes
-						: extra.approverNotes,
-				rejectionReason:
-					extra?.rejectionReason === undefined
-						? existing.data.rejectionReason
-						: extra.rejectionReason,
-				lockedAt: extra?.lockedAt ?? existing.data.lockedAt,
-				version: existing.data.version + 1,
-				updatedBy: input.actorUserId,
-				updatedAt: new Date(),
-			})
-			.where(
-				and(
-					eq(hrTimesheet.organizationId, input.organizationId),
-					eq(hrTimesheet.id, input.timesheetId),
-					eq(hrTimesheet.version, input.expectedVersion),
-				),
-			)
-			.returning();
-		if (!row) {
-			return notFound("Timesheet not found");
-		}
-		const mapped = mapTimesheet(row);
-		if (!mapped.ok) {
-			return mapped;
-		}
+		const current = existing.data;
+		const now = new Date();
 		const correlationId =
-			input.correlationId ?? `hr-time-hr_timesheet-${mapped.data.id}`;
-		const recorded = await audit(ports, {
-			organizationId: input.organizationId,
-			actorUserId: input.actorUserId,
-			correlationId,
-			entity: "hr_timesheet",
-			entityId: mapped.data.id,
-			action: "UPDATE",
-		});
-		if (!recorded.ok) {
-			return recorded;
-		}
+			input.correlationId ?? `hr-time-hr_timesheet-${current.id}`;
+		const requiredApprovalSteps = JSON.stringify(
+			extra?.requiredApprovalSteps === undefined
+				? [...current.requiredApprovalSteps]
+				: [...extra.requiredApprovalSteps],
+		);
 		const eventTypes: HumanResourcesEventType[] = [];
 		if (next === "submitted") {
 			eventTypes.push(HUMAN_RESOURCES_TIME_TIMESHEET_SUBMITTED_EVENT);
@@ -7902,24 +7623,62 @@ async function transitionTimesheet(
 				HUMAN_RESOURCES_TIME_PAYROLL_HANDOFF_READY_EVENT,
 			);
 		}
-		const sequentialOutcome1 = await runSequential(
-			eventTypes,
-			async (eventType) => {
-				const event = await emitOutbox(ports, {
+		const transactionRows = await runTimeTransaction((sqlTag) => [
+			sqlTag`
+				UPDATE hr_timesheet SET
+					status = ${next},
+					submitted_at = ${extra?.submittedAt ?? current.submittedAt},
+					submission_reference = ${extra?.submissionReference ?? current.submissionReference},
+					approval_policy_id = ${extra?.approvalPolicyId === undefined ? current.approvalPolicyId : extra.approvalPolicyId},
+					required_approval_steps = ${requiredApprovalSteps}::jsonb,
+					completed_approval_steps = ${extra?.completedApprovalSteps ?? current.completedApprovalSteps},
+					approved_at = ${extra?.approvedAt === undefined ? current.approvedAt : extra.approvedAt},
+					approved_by = ${extra?.approvedBy === undefined ? current.approvedBy : extra.approvedBy},
+					returned_at = CASE WHEN ${next === "returned"} THEN ${now} ELSE returned_at END,
+					rejected_at = CASE WHEN ${next === "rejected"} THEN ${now} ELSE rejected_at END,
+					approver_notes = ${extra?.approverNotes === undefined ? current.approverNotes : extra.approverNotes},
+					rejection_reason = ${extra?.rejectionReason === undefined ? current.rejectionReason : extra.rejectionReason},
+					locked_at = ${extra?.lockedAt ?? current.lockedAt},
+					version = ${current.version + 1}, updated_by = ${input.actorUserId}, updated_at = ${now}
+				WHERE organization_id = ${input.organizationId} AND id = ${input.timesheetId}
+					AND version = ${input.expectedVersion}
+				RETURNING *
+			`,
+			sqlTag`
+				SELECT 1 / COUNT(*) AS mutation_guard FROM hr_timesheet
+				WHERE organization_id = ${input.organizationId} AND id = ${input.timesheetId}
+					AND version = ${current.version + 1} AND updated_at = ${now}
+			`,
+			buildTimeAuditInsert(sqlTag, {
+				organizationId: input.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId,
+				entity: "hr_timesheet",
+				entityId: current.id,
+				action: "UPDATE",
+				reasonCode: `TIMESHEET_STATUS_${next.toUpperCase()}`,
+			}),
+			...eventTypes.map((eventType) =>
+				buildTimeOutboxInsert(sqlTag, {
+					eventId: randomUUID(),
 					organizationId: input.organizationId,
 					actorUserId: input.actorUserId,
 					correlationId,
 					eventType,
 					entityType: "hr_timesheet",
-					entityId: mapped.data.id,
-				});
-				if (!event.ok) {
-					return sequentialReturn(event);
-				}
-			},
-		);
-		if (sequentialOutcome1.kind === "return") {
-			return sequentialOutcome1.value;
+					entityId: current.id,
+				}),
+			),
+		]);
+		const row = transactionRows[0]?.[0] as
+			| Parameters<typeof timesheetFromSql>[0]
+			| undefined;
+		if (!row) {
+			return notFound("Timesheet not found");
+		}
+		const mapped = mapTimesheet(timesheetFromSql(row));
+		if (!mapped.ok) {
+			return mapped;
 		}
 		return errorResult.ok(mapped.data);
 	} catch (error) {
@@ -7929,7 +7688,7 @@ async function transitionTimesheet(
 
 async function transitionOvertime(
 	store: HumanResourcesTimeStore,
-	ports: MutationPorts,
+	_ports: MutationPorts,
 	input: {
 		organizationId: string;
 		requestId: OvertimeRequest["id"];
@@ -7939,7 +7698,11 @@ async function transitionOvertime(
 		comment?: string;
 	},
 	next: OvertimeRequest["status"],
-	extra?: { comment?: string },
+	extra?: {
+		actualMinutes?: number;
+		comment?: string;
+		payrollApprovedMinutes?: number;
+	},
 ): Promise<Result<OvertimeRequest>> {
 	const existing = await store.getOvertimeRequest({
 		organizationId: input.organizationId,
@@ -7963,52 +7726,61 @@ async function transitionOvertime(
 		return transition;
 	}
 	try {
-		const [row] = await afendaDatabase.client
-			.update(hrOvertimeRequest)
-			.set({
-				status: next,
-				version: existing.data.version + 1,
-				updatedBy: input.actorUserId,
-				updatedAt: new Date(),
-			})
-			.where(
-				and(
-					eq(hrOvertimeRequest.organizationId, input.organizationId),
-					eq(hrOvertimeRequest.id, input.requestId),
-					eq(hrOvertimeRequest.version, input.expectedVersion),
-				),
-			)
-			.returning();
+		const current = existing.data;
+		const now = new Date();
+		const approvalId = randomUUID();
+		const recordsDecision =
+			next === "rejected" || next === "cancelled" || next === "verified";
+		const [rows] = await runTimeTransaction((sqlTag) => [
+			sqlTag`
+				UPDATE hr_overtime_request SET status = ${next},
+					actual_minutes = ${extra?.actualMinutes ?? current.actualMinutes},
+					payroll_approved_minutes = ${extra?.payrollApprovedMinutes ?? current.payrollApprovedMinutes},
+					version = ${current.version + 1}, updated_by = ${input.actorUserId}, updated_at = ${now}
+				WHERE organization_id = ${input.organizationId} AND id = ${input.requestId}
+					AND version = ${input.expectedVersion} AND status = ${current.status}
+				RETURNING *
+			`,
+			sqlTag`
+				SELECT 1 / COUNT(*) AS mutation_guard FROM hr_overtime_request
+				WHERE organization_id = ${input.organizationId} AND id = ${input.requestId}
+					AND version = ${current.version + 1} AND updated_at = ${now}
+			`,
+			...(recordsDecision
+				? [
+						sqlTag`
+							INSERT INTO hr_overtime_approval (
+								id, organization_id, overtime_request_id, decision,
+								approved_maximum_minutes, actor_user_id, comment,
+								decided_at, version_approved
+							) VALUES (
+								${approvalId}, ${input.organizationId}, ${input.requestId}, ${next},
+								${next === "verified" ? extra?.payrollApprovedMinutes : null},
+								${input.actorUserId}, ${extra?.comment ?? input.comment ?? null},
+								${now}, ${current.version + 1}
+							) RETURNING id
+						`,
+					]
+				: []),
+			buildTimeAuditInsert(sqlTag, {
+				organizationId: input.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: input.correlationId,
+				entity: "hr_overtime_request",
+				entityId: current.id,
+				action: "UPDATE",
+				reasonCode: `OVERTIME_STATUS_${next.toUpperCase()}`,
+			}),
+		]);
+		const row = rows[0] as
+			| Parameters<typeof overtimeRequestFromSql>[0]
+			| undefined;
 		if (!row) {
 			return notFound("Overtime request not found");
 		}
-		if (next === "rejected" || next === "cancelled") {
-			await afendaDatabase.client.insert(hrOvertimeApproval).values({
-				id: randomUUID(),
-				organizationId: input.organizationId,
-				overtimeRequestId: input.requestId,
-				decision: next === "rejected" ? "rejected" : "cancelled",
-				approvedMaximumMinutes: null,
-				actorUserId: input.actorUserId,
-				comment: extra?.comment ?? input.comment ?? null,
-				decidedAt: new Date(),
-				versionApproved: existing.data.version + 1,
-			});
-		}
-		const mapped = mapOvertime(row);
+		const mapped = mapOvertime(overtimeRequestFromSql(row));
 		if (!mapped.ok) {
 			return mapped;
-		}
-		const recorded = await audit(ports, {
-			organizationId: input.organizationId,
-			actorUserId: input.actorUserId,
-			correlationId: input.correlationId,
-			entity: "hr_overtime_request",
-			entityId: mapped.data.id,
-			action: "UPDATE",
-		});
-		if (!recorded.ok) {
-			return recorded;
 		}
 		return errorResult.ok(mapped.data);
 	} catch (error) {
@@ -8018,4 +7790,3 @@ async function transitionOvertime(
 		);
 	}
 }
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        

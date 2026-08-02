@@ -1,5 +1,6 @@
 import {
 	database as afendaDatabase,
+	and,
 	eq,
 	hrAllowanceEntitlement,
 	hrAttendanceAdjustment,
@@ -184,17 +185,32 @@ async function deleteLeaveChildrenForOrganization(
 		.delete(hrLeaveAdjustment)
 		.where(eq(hrLeaveAdjustment.organizationId, organizationId));
 
-	// Request-id deletes catch mismatched organization_id and late writers.
+	// Request-id predicates catch late writers while retaining fail-closed tenant ownership.
 	if (leaveRequestIds.length > 0) {
 		await afendaDatabase.client
 			.delete(hrLeaveApprovalDecision)
-			.where(inArray(hrLeaveApprovalDecision.requestId, leaveRequestIds));
+			.where(
+				and(
+					eq(hrLeaveApprovalDecision.organizationId, organizationId),
+					inArray(hrLeaveApprovalDecision.requestId, leaveRequestIds),
+				),
+			);
 		await afendaDatabase.client
 			.delete(hrLeaveRequestSegment)
-			.where(inArray(hrLeaveRequestSegment.requestId, leaveRequestIds));
+			.where(
+				and(
+					eq(hrLeaveRequestSegment.organizationId, organizationId),
+					inArray(hrLeaveRequestSegment.requestId, leaveRequestIds),
+				),
+			);
 		await afendaDatabase.client
 			.delete(hrLeaveAdjustment)
-			.where(inArray(hrLeaveAdjustment.sourceRequestId, leaveRequestIds));
+			.where(
+				and(
+					eq(hrLeaveAdjustment.organizationId, organizationId),
+					inArray(hrLeaveAdjustment.sourceRequestId, leaveRequestIds),
+				),
+			);
 	}
 }
 

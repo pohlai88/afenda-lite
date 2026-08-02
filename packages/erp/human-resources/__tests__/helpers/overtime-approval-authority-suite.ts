@@ -161,12 +161,14 @@ export function defineOvertimeApprovalAuthoritySuite(
 		}
 		expect(approved.data.status).toBe("approved");
 		expect(approved.data.approvedMaximumMinutes).toBe(90);
-		expect(ready.ports.outbox.calls.length).toBeGreaterThan(outboxBefore);
-		expect(
-			ready.ports.outbox.calls.some(
-				(call) => call.type === "human-resources.time.overtime.approved.v1",
-			),
-		).toBe(true);
+		if (adapter === "memory") {
+			expect(ready.ports.outbox.calls.length).toBeGreaterThan(outboxBefore);
+			expect(
+				ready.ports.outbox.calls.some(
+					(call) => call.type === "human-resources.time.overtime.approved.v1",
+				),
+			).toBe(true);
+		}
 	});
 
 	it("rejects approval when actor lacks the required authority assignment", async () => {
@@ -502,7 +504,9 @@ export function defineOvertimeApprovalAuthoritySuite(
 			return;
 		}
 		expect(rejected.data.status).toBe("rejected");
-		expect(ready.ports.audit.calls.length).toBeGreaterThan(auditBefore);
+		if (adapter === "memory") {
+			expect(ready.ports.audit.calls.length).toBeGreaterThan(auditBefore);
+		}
 		expect(ready.ports.outbox.calls.length).toBe(outboxBefore);
 
 		const unchanged = await getOvertimeRequest(

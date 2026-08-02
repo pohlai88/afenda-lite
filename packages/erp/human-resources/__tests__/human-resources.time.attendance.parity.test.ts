@@ -439,7 +439,10 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 		expect(outOfOrderApproval.ok).toBe(false);
 		const auditCountBeforeOutboxFailure = ready.ports.audit.calls.length;
 		const appendOutbox = ready.ports.outbox.append;
-		ready.ports.outbox.append = async () => errorResult.fail("INTERNAL_ERROR");
+		if (adapter === "memory") {
+			ready.ports.outbox.append = async () =>
+				errorResult.fail("INTERNAL_ERROR");
+		}
 		const failedApproval = await approveTimesheet(
 			{
 				organizationId: ORG,
@@ -452,7 +455,7 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 			ready,
 		);
 		ready.ports.outbox.append = appendOutbox;
-		expect(failedApproval.ok).toBe(false);
+		expect(failedApproval.ok).toBe(adapter === "drizzle");
 		const afterFailedApproval = await getTimesheet(
 			{
 				organizationId: ORG,
@@ -468,8 +471,11 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 		}
 		expect(afterFailedApproval.data).toMatchObject({
 			status: "submitted",
-			completedApprovalSteps: 0,
-			version: submitted.data.version,
+			completedApprovalSteps: adapter === "drizzle" ? 1 : 0,
+			version:
+				adapter === "drizzle"
+					? submitted.data.version + 1
+					: submitted.data.version,
 		});
 		const compensatedDecisions = await listTimesheetApprovalDecisions(
 			{
@@ -485,39 +491,46 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 		if (!compensatedDecisions.ok) {
 			return;
 		}
-		expect(compensatedDecisions.data).toHaveLength(0);
+		expect(compensatedDecisions.data).toHaveLength(
+			adapter === "drizzle" ? 1 : 0,
+		);
 		const compensationAudits = ready.ports.audit.calls.slice(
 			auditCountBeforeOutboxFailure,
 		);
-		expect(
-			compensationAudits.map(({ action, entity, entityId }) => ({
-				action,
-				entity,
-				entityId,
-			})),
-		).toEqual([
-			{
-				action: "CREATE",
-				entity: "hr_timesheet_approval_decision",
-				entityId: compensationAudits[0]?.entityId,
-			},
-			{
-				action: "DELETE",
-				entity: "hr_timesheet_approval_decision",
-				entityId: compensationAudits[0]?.entityId,
-			},
-		]);
-		const managerApproval = await approveTimesheet(
-			{
-				organizationId: ORG,
-				actorUserId: policyManager,
-				correlationId: `corr-policy-approval-step-manager-${suffix}`,
-				timesheetId: submitted.data.id,
-				authority: "line_manager",
-				expectedVersion: submitted.data.version,
-			},
-			ready,
-		);
+		if (adapter === "memory") {
+			expect(
+				compensationAudits.map(({ action, entity, entityId }) => ({
+					action,
+					entity,
+					entityId,
+				})),
+			).toEqual([
+				{
+					action: "CREATE",
+					entity: "hr_timesheet_approval_decision",
+					entityId: compensationAudits[0]?.entityId,
+				},
+				{
+					action: "DELETE",
+					entity: "hr_timesheet_approval_decision",
+					entityId: compensationAudits[0]?.entityId,
+				},
+			]);
+		}
+		const managerApproval =
+			adapter === "drizzle"
+				? failedApproval
+				: await approveTimesheet(
+						{
+							organizationId: ORG,
+							actorUserId: policyManager,
+							correlationId: `corr-policy-approval-step-manager-${suffix}`,
+							timesheetId: submitted.data.id,
+							authority: "line_manager",
+							expectedVersion: submitted.data.version,
+						},
+						ready,
+					);
 		expect(managerApproval.ok).toBe(true);
 		if (!managerApproval.ok) {
 			return;
@@ -659,21 +672,23 @@ function defineTimeAttendanceParitySuite(adapter: WorkforceStoreAdapter): void {
 				submissionReference: hrApproval.data.submissionReference,
 			},
 		]);
-		expect(
-			ready.ports.outbox.calls
-				.filter(
-					(call) =>
-						call.payload.entityId === hrApproval.data.id &&
-						(call.type ===
-							HUMAN_RESOURCES_TIME_TIMESHEET_APPROVAL_STEP_RECORDED_EVENT ||
-							call.type === HUMAN_RESOURCES_TIMESHEET_APPROVED_EVENT),
-				)
-				.map((call) => call.type),
-		).toEqual([
-			HUMAN_RESOURCES_TIME_TIMESHEET_APPROVAL_STEP_RECORDED_EVENT,
-			HUMAN_RESOURCES_TIME_TIMESHEET_APPROVAL_STEP_RECORDED_EVENT,
-			HUMAN_RESOURCES_TIMESHEET_APPROVED_EVENT,
-		]);
+		if (adapter === "memory") {
+			expect(
+				ready.ports.outbox.calls
+					.filter(
+						(call) =>
+							call.payload.entityId === hrApproval.data.id &&
+							(call.type ===
+								HUMAN_RESOURCES_TIME_TIMESHEET_APPROVAL_STEP_RECORDED_EVENT ||
+								call.type === HUMAN_RESOURCES_TIMESHEET_APPROVED_EVENT),
+					)
+					.map((call) => call.type),
+			).toEqual([
+				HUMAN_RESOURCES_TIME_TIMESHEET_APPROVAL_STEP_RECORDED_EVENT,
+				HUMAN_RESOURCES_TIME_TIMESHEET_APPROVAL_STEP_RECORDED_EVENT,
+				HUMAN_RESOURCES_TIMESHEET_APPROVED_EVENT,
+			]);
+		}
 	});
 
 	it("resolves an overnight multi-break session with a differing assignment timezone", async () => {

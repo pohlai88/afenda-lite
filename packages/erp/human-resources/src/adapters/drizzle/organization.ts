@@ -3079,16 +3079,16 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			const [rows] = await afendaDatabase.transaction((sqlValue3) => [
 				sqlValue3`
 							WITH employee AS (
-								SELECT id, organization_id
-								FROM hr_employee
-								WHERE id = ${record.employeeId}
-									AND organization_id = ${record.organizationId}
+								SELECT subject_employee.id, subject_employee.organization_id
+								FROM hr_employee AS subject_employee
+								WHERE subject_employee.id = ${record.employeeId}
+									AND subject_employee.organization_id = ${record.organizationId}
 							),
 							manager AS (
-								SELECT id
-								FROM hr_employee
-								WHERE id = ${record.managerEmployeeId}
-									AND organization_id = ${record.organizationId}
+								SELECT manager_employee.id
+								FROM hr_employee AS manager_employee
+								WHERE manager_employee.id = ${record.managerEmployeeId}
+									AND manager_employee.organization_id = ${record.organizationId}
 							),
 							mutated AS (
 								INSERT INTO hr_reporting_line (
