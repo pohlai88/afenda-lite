@@ -3,7 +3,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { SALES_EVENT_IDS } from "@afenda/events/schemas";
 import { describe, expect, it } from "vitest";
-import { salesModuleManifest } from "../src/module.manifest";
+import { salesModuleManifest } from "../src/composition/module.manifest";
 import { SALES_COMMAND_IDS, SALES_QUERY_IDS } from "../src/module-ids";
 import { SALES_PERMISSION_CODES } from "../src/permissions";
 

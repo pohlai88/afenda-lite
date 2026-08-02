@@ -14,6 +14,10 @@ import type {
 import { neon } from "@neondatabase/serverless";
 
 import { requireProductDatabaseUrl } from "./env";
+import {
+	assertSystemSqlSafety,
+	type SystemSqlOperation,
+} from "./system-sql-policy";
 import { assertTenantSqlSafety } from "./tenant-sql-policy";
 
 export type NeonHttpIsolationLevel = NonNullable<
@@ -37,9 +41,14 @@ export interface NeonHttpSql {
 	): NeonQueryPromise<false, false>;
 }
 
-let cachedSql: NeonDriverSql | undefined;
+let cachedDriverSql: NeonDriverSql | undefined;
+let cachedTenantSql: NeonDriverSql | undefined;
 
-function createTenantGovernedSql(sql: NeonDriverSql): NeonDriverSql {
+function createGovernedSql(
+	sql: NeonDriverSql,
+	assertStatement: (statement: string) => void,
+	label: string,
+): NeonDriverSql {
 	return new Proxy(sql, {
 		apply(target, thisArgument, argumentsList) {
 			const [templateParts] = argumentsList;
@@ -47,7 +56,7 @@ function createTenantGovernedSql(sql: NeonDriverSql): NeonDriverSql {
 				Array.isArray(templateParts) &&
 				templateParts.every((part) => typeof part === "string")
 			) {
-				assertTenantSqlSafety(templateParts.join(" ? "));
+				assertStatement(templateParts.join(" ? "));
 			}
 			return Reflect.apply(target, thisArgument, argumentsList);
 		},
@@ -55,7 +64,7 @@ function createTenantGovernedSql(sql: NeonDriverSql): NeonDriverSql {
 			if (property === "unsafe") {
 				return () => {
 					throw new Error(
-						"Tenant-governed Neon SQL: sql.unsafe is not permitted",
+						`${label} Neon SQL: sql.unsafe is not permitted`,
 					);
 				};
 			}
@@ -65,7 +74,7 @@ function createTenantGovernedSql(sql: NeonDriverSql): NeonDriverSql {
 					queryWithPlaceholders: string,
 					...queryArguments: unknown[]
 				) => {
-					assertTenantSqlSafety(queryWithPlaceholders);
+					assertStatement(queryWithPlaceholders);
 					return Reflect.apply(value, target, [
 						queryWithPlaceholders,
 						...queryArguments,
@@ -87,8 +96,13 @@ export function getNeonSql(): NeonHttpSql {
 
 /** Internal full driver surface for Drizzle and the transaction submitter. */
 export function getNeonDriverSql(): NeonDriverSql {
-	cachedSql ??= createTenantGovernedSql(neon(requireProductDatabaseUrl()));
-	return cachedSql;
+	cachedDriverSql ??= neon(requireProductDatabaseUrl());
+	cachedTenantSql ??= createGovernedSql(
+		cachedDriverSql,
+		assertTenantSqlSafety,
+		"Tenant-governed",
+	);
+	return cachedTenantSql;
 }
 
 export type NeonHttpTransactionQuery = ReturnType<NeonHttpSql>;
@@ -182,6 +196,42 @@ export async function runNeonHttpTransaction<
 	const results: unknown = await sql.transaction(
 		[...queries],
 		transactionOptions,
+	);
+	assertTransactionResults(results, queries);
+	return results;
+}
+
+/**
+ * Run one closed-registry cross-organization infrastructure operation.
+ * Product code must use the tenant-governed transaction capability instead.
+ */
+export async function runNeonHttpSystemTransaction<
+	const TQueries extends NeonHttpTransactionQueries,
+>(
+	operation: SystemSqlOperation,
+	buildQueries: NeonHttpTransactionBuilder<TQueries>,
+	options?: NeonHttpTransactionOptions,
+): Promise<NeonHttpTransactionResults<TQueries>> {
+	if (typeof buildQueries !== "function") {
+		throw new TypeError(
+			"runNeonHttpSystemTransaction requires a synchronous query builder",
+		);
+	}
+	cachedDriverSql ??= neon(requireProductDatabaseUrl());
+	const sql = createGovernedSql(
+		cachedDriverSql,
+		(statement) => assertSystemSqlSafety(operation, statement),
+		"System-governed",
+	);
+	const queries = buildQueries(sql);
+	if (!Array.isArray(queries) || queries.length !== 1) {
+		throw new Error(
+			"runNeonHttpSystemTransaction requires exactly one registered statement",
+		);
+	}
+	const results: unknown = await sql.transaction(
+		[...queries],
+		normalizeTransactionOptions(options),
 	);
 	assertTransactionResults(results, queries);
 	return results;

@@ -1,6 +1,6 @@
 import { errorResult, type Result } from "@afenda/errors";
 
-import { fulfillmentModuleManifest } from "./module.manifest";
+import { fulfillmentModuleManifest } from "./composition/module.manifest";
 import type { FulfillmentCommandId, FulfillmentQueryId } from "./module-ids";
 import type { FULFILLMENT_PERMISSION_CODES } from "./permissions";
 

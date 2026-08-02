@@ -9,7 +9,7 @@ import {
 	taxRegistrationLifecyclePolicy,
 	warehouseLifecyclePolicy,
 } from "../src/capabilities/lifecycle-governance";
-import { masterDataModuleManifest } from "../src/module.manifest";
+import { masterDataModuleManifest } from "../src/composition/module.manifest";
 import {
 	MASTER_COMMAND_ITEM_ACTIVATE,
 	MASTER_COMMAND_ITEM_GROUP_RETIRE,

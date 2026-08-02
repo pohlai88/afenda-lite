@@ -15,7 +15,7 @@ const requiredPackageFiles = [
 	"src/index.ts",
 	"src/types.ts",
 	"src/module-ids.ts",
-	"src/module.manifest.ts",
+	"src/composition/module.manifest.ts",
 	"src/permissions.ts",
 	"src/authorization.ts",
 	"src/command-options.ts",

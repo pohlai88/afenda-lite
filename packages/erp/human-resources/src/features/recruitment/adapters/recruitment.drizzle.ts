@@ -3008,18 +3008,18 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			const [rows] = await afendaDatabase.transaction((sqlValue11) => [
 				sqlValue11`
 							WITH candidate_ref AS (
-								SELECT id, organization_id
-								FROM hr_candidate
-								WHERE id = ${record.candidateId}
-									AND organization_id = ${record.organizationId}
-									AND status = 'active'
+								SELECT candidate.id, candidate.organization_id
+								FROM hr_candidate AS candidate
+								WHERE candidate.id = ${record.candidateId}
+									AND candidate.organization_id = ${record.organizationId}
+									AND candidate.status = 'active'
 							),
 							requisition_ref AS (
-								SELECT id, organization_id
-								FROM hr_job_requisition
-								WHERE id = ${record.requisitionId}
-									AND organization_id = ${record.organizationId}
-									AND status = 'open'
+								SELECT requisition.id, requisition.organization_id
+								FROM hr_job_requisition AS requisition
+								WHERE requisition.id = ${record.requisitionId}
+									AND requisition.organization_id = ${record.organizationId}
+									AND requisition.status = 'open'
 							),
 							mutated AS (
 								INSERT INTO hr_candidate_application (
@@ -4624,17 +4624,17 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 				const [rows] = await afendaDatabase.transaction((sqlValue3) => [
 					sqlValue3`
 								WITH updated_offer AS (
-									UPDATE hr_employment_offer
+									UPDATE hr_employment_offer AS employment_offer
 									SET status = 'issued',
 										issued_at = now(),
 										version = ${nextVersion},
 										updated_by = ${input.actorUserId},
 										updated_at = now()
-									WHERE id = ${input.offerId}
-										AND organization_id = ${input.organizationId}
-										AND version = ${input.expectedVersion}
-										AND status = 'approved'
-									RETURNING *
+									WHERE employment_offer.id = ${input.offerId}
+										AND employment_offer.organization_id = ${input.organizationId}
+										AND employment_offer.version = ${input.expectedVersion}
+										AND employment_offer.status = 'approved'
+									RETURNING employment_offer.*
 								),
 								offer_audited AS (
 									INSERT INTO platform_audit_log (
@@ -4910,7 +4910,7 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 			const [rows] = await afendaDatabase.transaction((sqlValue) => [
 				sqlValue`
 						WITH updated_offer AS (
-							UPDATE hr_employment_offer
+							UPDATE hr_employment_offer AS employment_offer
 							SET status = 'accepted',
 								responded_at = now(),
 								accept_idempotency_key = ${input.idempotencyKey},
@@ -4918,12 +4918,12 @@ export const drizzleRecruitmentMethods: DrizzleRecruitmentMethods &
 								version = ${nextOfferVersion},
 								updated_by = ${input.actorUserId},
 								updated_at = now()
-							WHERE id = ${input.offerId}
-								AND organization_id = ${input.organizationId}
-								AND version = ${input.expectedVersion}
-								AND status = 'issued'
-								AND expires_on >= ${input.asOfDate}::date
-							RETURNING *
+							WHERE employment_offer.id = ${input.offerId}
+								AND employment_offer.organization_id = ${input.organizationId}
+								AND employment_offer.version = ${input.expectedVersion}
+								AND employment_offer.status = 'issued'
+								AND employment_offer.expires_on >= ${input.asOfDate}::date
+							RETURNING employment_offer.*
 						),
 						offer_audited AS (
 							INSERT INTO platform_audit_log (

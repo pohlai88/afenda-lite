@@ -1,6 +1,6 @@
 import { errorResult, type Result } from "@afenda/errors";
 
-import { receivablesModuleManifest } from "./module.manifest";
+import { receivablesModuleManifest } from "./composition/module.manifest";
 import type { ReceivablesCommandId, ReceivablesQueryId } from "./module-ids";
 import type { RECEIVABLES_PERMISSION_CODES } from "./permissions";
 

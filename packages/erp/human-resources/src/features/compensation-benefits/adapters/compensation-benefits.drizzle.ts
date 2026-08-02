@@ -1300,23 +1300,23 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 				sqlTag`
 						WITH active_bands AS (
 							SELECT 1 AS exists
-							FROM hr_salary_band
-							WHERE organization_id = ${input.organizationId}
-								AND grade_id = ${input.gradeId}
-								AND status = 'active'
+							FROM hr_salary_band AS salary_band
+							WHERE salary_band.organization_id = ${input.organizationId}
+								AND salary_band.grade_id = ${input.gradeId}
+								AND salary_band.status = 'active'
 							LIMIT 1
 						),
 						mutated AS (
-							UPDATE hr_compensation_grade
+							UPDATE hr_compensation_grade AS compensation_grade
 							SET status = 'archived',
 								version = ${nextVersion},
 								updated_by = ${input.actorUserId},
 								updated_at = now()
-							WHERE id = ${input.gradeId}
-								AND organization_id = ${input.organizationId}
-								AND version = ${input.expectedVersion}
+							WHERE compensation_grade.id = ${input.gradeId}
+								AND compensation_grade.organization_id = ${input.organizationId}
+								AND compensation_grade.version = ${input.expectedVersion}
 								AND NOT EXISTS (SELECT 1 FROM active_bands)
-							RETURNING *
+							RETURNING compensation_grade.*
 						),
 						audited AS (
 							INSERT INTO platform_audit_log (
@@ -2401,19 +2401,19 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 
 		try {
 			const [rows] = await afendaDatabase.transaction((sqlTag) => [
-				sqlTag`
+					sqlTag`
 						WITH employment AS (
-							SELECT id, organization_id, employee_id
-							FROM hr_employment
-							WHERE id = ${record.employmentId}
-								AND organization_id = ${record.organizationId}
+							SELECT employment_root.id, employment_root.organization_id, employment_root.employee_id
+							FROM hr_employment AS employment_root
+							WHERE employment_root.id = ${record.employmentId}
+								AND employment_root.organization_id = ${record.organizationId}
 						),
 						draft_check AS (
 							SELECT 1 AS exists
-							FROM hr_employee_compensation
-							WHERE organization_id = ${record.organizationId}
-								AND employment_id = ${record.employmentId}
-								AND status = 'draft'
+							FROM hr_employee_compensation AS compensation_draft
+							WHERE compensation_draft.organization_id = ${record.organizationId}
+								AND compensation_draft.employment_id = ${record.employmentId}
+								AND compensation_draft.status = 'draft'
 							LIMIT 1
 						),
 						mutated AS (
@@ -3354,26 +3354,27 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 
 		try {
 			const [rows] = await afendaDatabase.transaction((sqlTag) => [
-				sqlTag`
+					sqlTag`
 						WITH active_comp AS (
-							SELECT id, version
-							FROM hr_employee_compensation
-							WHERE organization_id = ${input.organizationId}
-								AND employment_id = ${reviewData.employmentId}
-								AND status = 'active'
+							SELECT active_compensation.id, active_compensation.version
+							FROM hr_employee_compensation AS active_compensation
+							WHERE active_compensation.organization_id = ${input.organizationId}
+								AND active_compensation.employment_id = ${reviewData.employmentId}
+								AND active_compensation.status = 'active'
 							FOR UPDATE
 						),
 						ended_comp AS (
-							UPDATE hr_employee_compensation
+							UPDATE hr_employee_compensation AS compensation
 							SET status = 'ended',
 								effective_to = ${reviewData.effectiveFrom},
-								version = hr_employee_compensation.version + 1,
+								version = compensation.version + 1,
 								updated_by = ${input.actorUserId},
 								updated_at = now()
 							FROM active_comp
-							WHERE hr_employee_compensation.id = active_comp.id
-								AND hr_employee_compensation.version = active_comp.version
-							RETURNING hr_employee_compensation.id, hr_employee_compensation.organization_id
+							WHERE compensation.id = active_comp.id
+								AND compensation.organization_id = ${input.organizationId}
+								AND compensation.version = active_comp.version
+							RETURNING compensation.id, compensation.organization_id
 						),
 						audit_ended AS (
 							INSERT INTO platform_audit_log (

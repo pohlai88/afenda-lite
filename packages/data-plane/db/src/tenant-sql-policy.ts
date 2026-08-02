@@ -153,7 +153,8 @@ function consumeQuotedOrComment(
 	}
 }
 
-function removeCommentsAndLiterals(statement: string): string {
+/** Internal normalized projection shared by tenant and approved system policies. */
+export function normalizeSqlForPolicy(statement: string): string {
 	const output: string[] = [];
 	let index = 0;
 	while (index < statement.length) {
@@ -250,7 +251,7 @@ function collectPredicateOwnership(statement: string): {
  * checker remains the complementary source-level control.
  */
 export function assertTenantSqlSafety(rawStatement: string): void {
-	const statement = removeCommentsAndLiterals(rawStatement);
+	const statement = normalizeSqlForPolicy(rawStatement);
 	const mentionedTables = new Set(
 		statement.match(HARD_TENANT_ROOT_MENTION_PATTERN),
 	);

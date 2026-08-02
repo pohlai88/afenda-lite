@@ -474,24 +474,25 @@ export async function drizzleApproveEmployeeCompensation(
 			nextStatus === "active"
 				? sqlTag`
 						WITH active_comp AS (
-							SELECT id, version
-							FROM hr_employee_compensation
-							WHERE organization_id = ${input.organizationId}
-								AND employment_id = ${comp.employmentId}
-								AND status = 'active'
+							SELECT active_compensation.id, active_compensation.version
+							FROM hr_employee_compensation AS active_compensation
+							WHERE active_compensation.organization_id = ${input.organizationId}
+								AND active_compensation.employment_id = ${comp.employmentId}
+								AND active_compensation.status = 'active'
 							FOR UPDATE
 						),
 						ended_comp AS (
-							UPDATE hr_employee_compensation
+							UPDATE hr_employee_compensation AS compensation
 							SET status = 'ended',
 								effective_to = ${predecessorEffectiveTo},
-								version = hr_employee_compensation.version + 1,
+								version = compensation.version + 1,
 								updated_by = ${input.actorUserId},
 								updated_at = now()
 							FROM active_comp
-							WHERE hr_employee_compensation.id = active_comp.id
-								AND hr_employee_compensation.version = active_comp.version
-							RETURNING hr_employee_compensation.id, hr_employee_compensation.organization_id
+							WHERE compensation.id = active_comp.id
+								AND compensation.organization_id = ${input.organizationId}
+								AND compensation.version = active_comp.version
+							RETURNING compensation.id, compensation.organization_id
 						),
 						audit_ended AS (
 							INSERT INTO platform_audit_log (
@@ -525,18 +526,18 @@ export async function drizzleApproveEmployeeCompensation(
 							RETURNING id
 						),
 						mutated AS (
-							UPDATE hr_employee_compensation
+							UPDATE hr_employee_compensation AS approved_compensation
 							SET status = ${nextStatus},
 								approved_at = now(),
 								approved_by = ${input.actorUserId},
 								version = ${nextVersion},
 								updated_by = ${input.actorUserId},
 								updated_at = now()
-							WHERE id = ${input.compensationId}
-								AND organization_id = ${input.organizationId}
-								AND version = ${input.expectedVersion}
-								AND status = 'draft'
-							RETURNING *
+							WHERE approved_compensation.id = ${input.compensationId}
+								AND approved_compensation.organization_id = ${input.organizationId}
+								AND approved_compensation.version = ${input.expectedVersion}
+								AND approved_compensation.status = 'draft'
+							RETURNING approved_compensation.*
 						),
 						audited AS (
 							INSERT INTO platform_audit_log (
@@ -809,24 +810,25 @@ export async function drizzleActivateEmployeeCompensation(
 		const [, rows] = await afendaDatabase.transaction((sqlTag) => [
 			sqlTag`
 					WITH active_comp AS (
-						SELECT id, version
-						FROM hr_employee_compensation
-						WHERE organization_id = ${input.organizationId}
-							AND employment_id = ${comp.employmentId}
-							AND status = 'active'
+						SELECT active_compensation.id, active_compensation.version
+						FROM hr_employee_compensation AS active_compensation
+						WHERE active_compensation.organization_id = ${input.organizationId}
+							AND active_compensation.employment_id = ${comp.employmentId}
+							AND active_compensation.status = 'active'
 						FOR UPDATE
 					),
 					ended_comp AS (
-						UPDATE hr_employee_compensation
+						UPDATE hr_employee_compensation AS compensation
 						SET status = 'ended',
 							effective_to = ${predecessorEffectiveTo},
-							version = hr_employee_compensation.version + 1,
+							version = compensation.version + 1,
 							updated_by = ${input.actorUserId},
 							updated_at = now()
 						FROM active_comp
-						WHERE hr_employee_compensation.id = active_comp.id
-							AND hr_employee_compensation.version = active_comp.version
-						RETURNING hr_employee_compensation.id, hr_employee_compensation.organization_id
+						WHERE compensation.id = active_comp.id
+							AND compensation.organization_id = ${input.organizationId}
+							AND compensation.version = active_comp.version
+						RETURNING compensation.id, compensation.organization_id
 					),
 					audit_ended AS (
 						INSERT INTO platform_audit_log (
@@ -860,19 +862,19 @@ export async function drizzleActivateEmployeeCompensation(
 					SELECT ended_comp.id
 					FROM ended_comp, audit_ended, outbox_ended
 				`,
-			sqlTag`
+				sqlTag`
 					WITH
 					mutated AS (
-						UPDATE hr_employee_compensation
+						UPDATE hr_employee_compensation AS scheduled_compensation
 						SET status = 'active',
 							version = ${nextVersion},
 							updated_by = ${input.actorUserId},
 							updated_at = now()
-						WHERE id = ${input.compensationId}
-							AND organization_id = ${input.organizationId}
-							AND version = ${input.expectedVersion}
-							AND status = 'scheduled'
-						RETURNING *
+						WHERE scheduled_compensation.id = ${input.compensationId}
+							AND scheduled_compensation.organization_id = ${input.organizationId}
+							AND scheduled_compensation.version = ${input.expectedVersion}
+							AND scheduled_compensation.status = 'scheduled'
+						RETURNING scheduled_compensation.*
 					),
 					audited AS (
 						INSERT INTO platform_audit_log (
@@ -1138,18 +1140,18 @@ export async function drizzleCorrectEmployeeCompensation(
 
 	try {
 		const [, rows] = await afendaDatabase.transaction((sqlTag) => [
-			successorStatus === "active"
-				? sqlTag`
+				successorStatus === "active"
+					? sqlTag`
 						WITH superseded AS (
-							UPDATE hr_employee_compensation
+							UPDATE hr_employee_compensation AS corrected_predecessor
 							SET status = 'superseded',
 								effective_to = ${predecessorEffectiveTo},
-								version = hr_employee_compensation.version + 1,
+								version = corrected_predecessor.version + 1,
 								updated_by = ${input.actorUserId},
 								updated_at = now()
-							WHERE id = ${input.compensationId}
-								AND organization_id = ${input.organizationId}
-							RETURNING *
+							WHERE corrected_predecessor.id = ${input.compensationId}
+								AND corrected_predecessor.organization_id = ${input.organizationId}
+							RETURNING corrected_predecessor.*
 						),
 						audit_superseded AS (
 							INSERT INTO platform_audit_log (
@@ -1181,25 +1183,26 @@ export async function drizzleCorrectEmployeeCompensation(
 							RETURNING id
 						),
 						active_comp AS (
-							SELECT id, version
-							FROM hr_employee_compensation
-							WHERE organization_id = ${input.organizationId}
-								AND employment_id = ${predecessor.employmentId}
-								AND id <> ${input.compensationId}
-								AND status = 'active'
+							SELECT active_compensation.id, active_compensation.version
+							FROM hr_employee_compensation AS active_compensation
+							WHERE active_compensation.organization_id = ${input.organizationId}
+								AND active_compensation.employment_id = ${predecessor.employmentId}
+								AND active_compensation.id <> ${input.compensationId}
+								AND active_compensation.status = 'active'
 							FOR UPDATE
 						),
 						ended_comp AS (
-							UPDATE hr_employee_compensation
+							UPDATE hr_employee_compensation AS compensation_to_end
 							SET status = 'ended',
 								effective_to = ${predecessorEffectiveToForActiveEnd},
-								version = hr_employee_compensation.version + 1,
+								version = compensation_to_end.version + 1,
 								updated_by = ${input.actorUserId},
 								updated_at = now()
 							FROM active_comp
-							WHERE hr_employee_compensation.id = active_comp.id
-								AND hr_employee_compensation.version = active_comp.version
-							RETURNING hr_employee_compensation.id, hr_employee_compensation.organization_id
+							WHERE compensation_to_end.id = active_comp.id
+								AND compensation_to_end.organization_id = ${input.organizationId}
+								AND compensation_to_end.version = active_comp.version
+							RETURNING compensation_to_end.id, compensation_to_end.organization_id
 						),
 						audit_ended AS (
 							INSERT INTO platform_audit_log (

@@ -4,6 +4,7 @@ import test from "node:test";
 import {
 	analyzeTenantSqlSafety,
 	loadHardTenantTableIdentifiers,
+	loadSystemSqlOperationOwners,
 } from "./check-tenant-sql-safety.mjs";
 
 const hardTenantTables = new Set(["platformRoleAssignment", "joinedTenant"]);
@@ -95,4 +96,66 @@ test("accepts organization predicates for every tenant table in a join", () => {
 			.where(afendaDatabase.tenancy.where(platformRoleAssignment.organizationId, organizationId));
 	`);
 	assert.deepEqual(findings, []);
+});
+
+test("loads system SQL operation owners from the canonical registry", () => {
+	const operations = loadSystemSqlOperationOwners(`
+		export const SYSTEM_SQL_OPERATION_POLICIES = {
+			"human-resources.reliability.claim-due": {
+				ownerSource: "packages/erp/human-resources/src/kernel/reliability/adapters/drizzle.ts",
+				hardTenantTables: ["hr_reliability_work_item"],
+			},
+		} as const;
+	`);
+	assert.equal(
+		operations.get("human-resources.reliability.claim-due"),
+		"packages/erp/human-resources/src/kernel/reliability/adapters/drizzle.ts",
+	);
+});
+
+test("rejects an unscoped raw SQL tagged template", () => {
+	const findings = analyzeTenantSqlSafety({
+		file: "fixture.ts",
+		hardTenantTables,
+		hardTenantTableNames: new Set(["platform_role_assignment"]),
+		source: `database.transaction((sqlTag) => [
+			sqlTag\`SELECT * FROM platform_role_assignment\`,
+		]);`,
+	});
+	assert.equal(findings[0]?.rule, "raw-tenant-sql-missing-organization");
+});
+
+test("accepts explicitly scoped raw SQL", () => {
+	const findings = analyzeTenantSqlSafety({
+		file: "fixture.ts",
+		hardTenantTables,
+		hardTenantTableNames: new Set(["platform_role_assignment"]),
+		source: `database.transaction((sqlTag) => [
+			sqlTag\`SELECT * FROM platform_role_assignment AS assignment WHERE assignment.organization_id = \${organizationId}\`,
+		]);`,
+	});
+	assert.deepEqual(findings, []);
+});
+
+test("restricts registered system SQL to its canonical owner source", () => {
+	const systemSqlOperationOwners = new Map([
+		[
+			"human-resources.reliability.claim-due",
+			"packages/erp/human-resources/src/kernel/reliability/adapters/drizzle.ts",
+		],
+	]);
+	const findings = analyzeTenantSqlSafety({
+		file: "packages/erp/other/src/drizzle.ts",
+		hardTenantTables,
+		hardTenantTableNames: new Set(["hr_reliability_work_item"]),
+		systemSqlOperationOwners,
+		source: `database.system.transaction(
+			"human-resources.reliability.claim-due",
+			(sqlTag) => [sqlTag\`SELECT * FROM hr_reliability_work_item\`],
+		);`,
+	});
+	assert.equal(
+		findings[0]?.rule,
+		"system-sql-operation-owner-mismatch",
+	);
 });

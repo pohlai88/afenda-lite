@@ -1,5 +1,5 @@
 import { errorResult, type Result } from "@afenda/errors";
-import { purchasingModuleManifest } from "./module.manifest";
+import { purchasingModuleManifest } from "./composition/module.manifest";
 import type { PurchasingCommandId, PurchasingQueryId } from "./module-ids";
 import type { PURCHASING_PERMISSION_CODES } from "./permissions";
 

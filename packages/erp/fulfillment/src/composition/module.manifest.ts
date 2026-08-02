@@ -24,7 +24,7 @@ import {
 	FULFILLMENT_QUERY_GET,
 	FULFILLMENT_QUERY_IDS,
 	FULFILLMENT_QUERY_LIST,
-} from "./module-ids";
+} from "../module-ids";
 import {
 	FULFILLMENT_PERMISSION_CODES,
 	FULFILLMENT_PERMISSION_DELIVERY_CANCEL,
@@ -36,7 +36,7 @@ import {
 	FULFILLMENT_PERMISSION_PACKING_CONFIRM,
 	FULFILLMENT_PERMISSION_PICKING_CONFIRM,
 	FULFILLMENT_PERMISSION_POD_RECORD,
-} from "./permissions";
+} from "../permissions";
 
 export const fulfillmentModuleManifest = {
 	id: "fulfillment",

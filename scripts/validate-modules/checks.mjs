@@ -6,6 +6,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, sep } from "node:path";
 import { database } from "@afenda/db";
 import { parse as parseYaml } from "yaml";
+import { listErpManifestPackageAuthority } from "../../turbo/generators/erp-generator/manifest-authority.ts";
 
 /** @typedef {import("@afenda/db/module-manifest").AfendaModuleManifest} AfendaModuleManifest */
 
@@ -21,92 +22,7 @@ const IMPORT_ALIAS_SPLIT_PATTERN = /\s+as\s+/;
 const PACKAGE_PATH_SEPARATOR_PATTERN = /[/\\]/;
 const TS_SOURCE_FILENAME_PATTERN = /\.(ts|tsx|mts|cts)$/;
 
-export const LIVING_ERP_MANIFEST_PACKAGES = [
-	{
-		id: "master-data",
-		packageName: "@afenda/master-data",
-		dir: "packages/erp/master-data",
-		manifestExport: "masterDataModuleManifest",
-	},
-	{
-		id: "sales",
-		packageName: "@afenda/sales",
-		dir: "packages/erp/sales",
-		manifestExport: "salesModuleManifest",
-	},
-	{
-		id: "purchasing",
-		packageName: "@afenda/purchasing",
-		dir: "packages/erp/purchasing",
-		manifestExport: "purchasingModuleManifest",
-	},
-	{
-		id: "inventory",
-		packageName: "@afenda/inventory",
-		dir: "packages/erp/inventory",
-		manifestExport: "inventoryModuleManifest",
-	},
-	{
-		id: "receiving",
-		packageName: "@afenda/receiving",
-		dir: "packages/erp/receiving",
-		manifestExport: "receivingModuleManifest",
-	},
-	{
-		id: "fulfillment",
-		packageName: "@afenda/fulfillment",
-		dir: "packages/erp/fulfillment",
-		manifestExport: "fulfillmentModuleManifest",
-	},
-	{
-		id: "receivables",
-		packageName: "@afenda/receivables",
-		dir: "packages/erp/receivables",
-		manifestExport: "receivablesModuleManifest",
-	},
-	{
-		id: "payables",
-		packageName: "@afenda/payables",
-		dir: "packages/erp/payables",
-		manifestExport: "payablesModuleManifest",
-	},
-	{
-		id: "payments",
-		packageName: "@afenda/payments",
-		dir: "packages/erp/payments",
-		manifestExport: "paymentsModuleManifest",
-	},
-	{
-		id: "accounting",
-		packageName: "@afenda/accounting",
-		dir: "packages/erp/accounting",
-		manifestExport: "accountingModuleManifest",
-	},
-	{
-		id: "human-resources",
-		packageName: "@afenda/human-resources",
-		dir: "packages/erp/human-resources",
-		manifestPath: "src/composition/module.manifest.ts",
-		authorizationPath: "src/kernel/authorization/contextual-authorization.ts",
-		manifestExport: "humanResourcesModuleManifest",
-	},
-	{
-		id: "payroll",
-		packageName: "@afenda/payroll",
-		dir: "packages/erp/payroll",
-		manifestPath: "src/composition/module.manifest.ts",
-		authorizationPath: "src/kernel/execution/authorization.ts",
-		manifestExport: "payrollModuleManifest",
-	},
-	{
-		id: "corporate-administration",
-		packageName: "@afenda/corporate-administration",
-		dir: "packages/erp/corporate-administration",
-		manifestPath: "src/composition/module.manifest.ts",
-		authorizationPath: "src/kernel/authorization/authorization.ts",
-		manifestExport: "corporateAdministrationModuleManifest",
-	},
-];
+export const loadLivingErpManifestPackages = listErpManifestPackageAuthority;
 
 export const FORBIDDEN_PHASE_PACKAGE_DIRS = [
 	"module-catalog",
@@ -429,8 +345,9 @@ export function validateDependencyDag(manifests) {
 /**
  * @param {string} root
  * @param {string} edgeRegisterPath
+ * @param {{ packageName: string }[]} erpPackages
  */
-export function validateWorkspaceEdges(root, edgeRegisterPath) {
+export function validateWorkspaceEdges(root, edgeRegisterPath, erpPackages) {
 	const raw = readFileSync(edgeRegisterPath, "utf8");
 	const doc = parseYaml(raw);
 	const edges = Array.isArray(doc?.edges) ? doc.edges : [];
@@ -473,7 +390,7 @@ export function validateWorkspaceEdges(root, edgeRegisterPath) {
 	return reconcileWorkspaceEdges({
 		approved,
 		realized,
-		erpPackages: LIVING_ERP_MANIFEST_PACKAGES.map((p) => p.packageName),
+		erpPackages: erpPackages.map((p) => p.packageName),
 		governedOnly: true,
 	});
 }
@@ -483,11 +400,13 @@ export function validateWorkspaceEdges(root, edgeRegisterPath) {
  * composition-root adapters (Phase 2 operating law §4).
  *
  * @param {string} root
+ * @param {AfendaModuleManifest[]} manifests
+ * @param {{ id: string, authorizationPath: string | null, dir: string }[]} erpPackages
  */
-export function validateErpAuthorizationPorts(root, manifests = []) {
+export function validateErpAuthorizationPorts(root, manifests, erpPackages) {
 	/** @type {string[]} */
 	const errors = [];
-	for (const meta of LIVING_ERP_MANIFEST_PACKAGES) {
+	for (const meta of erpPackages) {
 		const manifest = manifests.find((candidate) => candidate.id === meta.id);
 		if (
 			manifest &&
@@ -496,10 +415,14 @@ export function validateErpAuthorizationPorts(root, manifests = []) {
 		) {
 			continue;
 		}
-		const packageAuth = join(
-			meta.dir,
-			meta.authorizationPath ?? "src/authorization.ts",
-		);
+		const packageAuth =
+			meta.authorizationPath === null
+				? null
+				: join(meta.dir, meta.authorizationPath);
+		if (packageAuth === null) {
+			errors.push(`missing ERP authorization.ts: ${meta.dir}`);
+			continue;
+		}
 		if (!existsSync(join(root, packageAuth))) {
 			errors.push(`missing ERP authorization.ts: ${packageAuth}`);
 		}
@@ -660,11 +583,12 @@ export function validateOpenApiImports(root) {
 /**
  * @param {string} root
  * @param {AfendaModuleManifest[]} manifests
+ * @param {{ id: string, dir: string }[]} erpPackages
  */
-export function validateForeignSchemaImports(root, manifests) {
+export function validateForeignSchemaImports(root, manifests, erpPackages) {
 	const tableOwner = buildTableOwnerMap(manifests);
 	const errors = [];
-	for (const meta of LIVING_ERP_MANIFEST_PACKAGES) {
+	for (const meta of erpPackages) {
 		const manifest = manifests.find((m) => m.id === meta.id);
 		if (!manifest) {
 			continue;
@@ -1201,11 +1125,16 @@ function isTestFile(file) {
 /**
  * @param {string} root
  * @param {{ id: string }[]} roadmapModules
+ * @param {{ id: string }[]} erpPackages
  */
-export function validateCandidatePackagesAbsent(root, roadmapModules) {
+export function validateCandidatePackagesAbsent(
+	root,
+	roadmapModules,
+	erpPackages,
+) {
 	/** @type {Set<string>} */
 	const errors = new Set();
-	const livingIds = new Set(LIVING_ERP_MANIFEST_PACKAGES.map((p) => p.id));
+	const livingIds = new Set(erpPackages.map((p) => p.id));
 	const packageDirs = listPackageDirs(root);
 	const packageLeafNames = new Set(
 		packageDirs.map(

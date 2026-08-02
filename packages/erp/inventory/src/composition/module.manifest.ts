@@ -5,8 +5,8 @@ import {
 	INVENTORY_EMITTED_EVENT_IDS,
 	INVENTORY_QUERY_AUTHORIZATION,
 	INVENTORY_QUERY_IDS,
-} from "./operation-registry";
-import { INVENTORY_PERMISSION_CODES } from "./permissions";
+} from "../operation-registry";
+import { INVENTORY_PERMISSION_CODES } from "../permissions";
 
 export const inventoryModuleManifest = {
 	id: "inventory",

@@ -1821,32 +1821,32 @@ async function submitAssessment(
 
 	try {
 		const [rows] = await afendaDatabase.transaction((sqlTag) => [
-			sqlTag`
+				sqlTag`
 				WITH updated_assessment AS (
-					UPDATE hr_performance_assessment
+					UPDATE hr_performance_assessment AS performance_assessment
 					SET rating = ${input.rating},
 						comments_sensitive = ${input.commentsSensitive},
 						submitted_at = ${submittedAt},
 						version = ${nextAssessmentVersion},
 						updated_by = ${input.actorUserId},
 						updated_at = now()
-					WHERE id = ${assessment.id}
-						AND organization_id = ${input.organizationId}
-						AND review_id = ${input.reviewId}
-						AND kind = ${kind}
-					RETURNING review_id
+					WHERE performance_assessment.id = ${assessment.id}
+						AND performance_assessment.organization_id = ${input.organizationId}
+						AND performance_assessment.review_id = ${input.reviewId}
+						AND performance_assessment.kind = ${kind}
+					RETURNING performance_assessment.review_id
 				),
 				mutated AS (
-					UPDATE hr_performance_review
+					UPDATE hr_performance_review AS performance_review
 					SET status = ${nextStatus},
 						version = ${nextReviewVersion},
 						updated_by = ${input.actorUserId},
 						updated_at = now()
-					WHERE id = ${input.reviewId}
-						AND organization_id = ${input.organizationId}
-						AND version = ${input.expectedVersion}
-						AND status = ${currentReviewStatus}
-					RETURNING *
+					WHERE performance_review.id = ${input.reviewId}
+						AND performance_review.organization_id = ${input.organizationId}
+						AND performance_review.version = ${input.expectedVersion}
+						AND performance_review.status = ${currentReviewStatus}
+					RETURNING performance_review.*
 				),
 				updated_assessment_audited AS (
 					INSERT INTO platform_audit_log (
@@ -2770,21 +2770,21 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 				const statements = [
 					sqlTag`
 						WITH mutated AS (
-							UPDATE hr_performance_cycle
+							UPDATE hr_performance_cycle AS performance_cycle
 							SET version = ${nextVersion},
 								updated_by = ${input.actorUserId},
 								updated_at = now()
-							WHERE id = ${input.cycleId}
-								AND organization_id = ${input.organizationId}
-								AND version = ${input.expectedVersion}
-								AND status = 'draft'
-							RETURNING *
+							WHERE performance_cycle.id = ${input.cycleId}
+								AND performance_cycle.organization_id = ${input.organizationId}
+								AND performance_cycle.version = ${input.expectedVersion}
+								AND performance_cycle.status = 'draft'
+							RETURNING performance_cycle.*
 						),
 						deleted AS (
-							DELETE FROM hr_performance_cycle_review_period
-							WHERE organization_id = ${input.organizationId}
-								AND cycle_id = ${input.cycleId}
-							RETURNING id
+							DELETE FROM hr_performance_cycle_review_period AS review_period
+							WHERE review_period.organization_id = ${input.organizationId}
+								AND review_period.cycle_id = ${input.cycleId}
+							RETURNING review_period.id
 						),
 						deleted_periods_audited AS (
 							INSERT INTO platform_audit_log (
@@ -3539,15 +3539,18 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 
 	async listPerformanceCycles(input) {
 		try {
-			let query = afendaDatabase.client
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrPerformanceCycle)
-				.where(eq(hrPerformanceCycle.organizationId, input.organizationId))
-				.$dynamic();
-			if (input.status !== undefined) {
-				query = query.where(eq(hrPerformanceCycle.status, input.status));
-			}
-			const rows = await query.orderBy(desc(hrPerformanceCycle.createdAt));
+				.where(
+					and(
+						eq(hrPerformanceCycle.organizationId, input.organizationId),
+						input.status === undefined
+							? undefined
+							: eq(hrPerformanceCycle.status, input.status),
+					),
+				)
+				.orderBy(desc(hrPerformanceCycle.createdAt));
 			const totalCount = rows.length;
 			const start = (input.page - 1) * input.pageSize;
 			const paged = rows.slice(start, start + input.pageSize);
@@ -4540,20 +4543,19 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 
 	async listEmployeeGoals(input) {
 		try {
-			let query = afendaDatabase.client
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrPerformanceGoal)
 				.where(
 					and(
 						eq(hrPerformanceGoal.organizationId, input.organizationId),
 						eq(hrPerformanceGoal.employeeId, input.employeeId),
+						input.status === undefined
+							? undefined
+							: eq(hrPerformanceGoal.status, input.status),
 					),
 				)
-				.$dynamic();
-			if (input.status !== undefined) {
-				query = query.where(eq(hrPerformanceGoal.status, input.status));
-			}
-			const rows = await query.orderBy(desc(hrPerformanceGoal.createdAt));
+				.orderBy(desc(hrPerformanceGoal.createdAt));
 			const totalCount = rows.length;
 			const start = (input.page - 1) * input.pageSize;
 			const paged = rows.slice(start, start + input.pageSize);
@@ -5182,28 +5184,28 @@ export const drizzlePerformanceMethods: DrizzlePerformanceMethods &
 			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH updated_assessment AS (
-						UPDATE hr_performance_assessment
+						UPDATE hr_performance_assessment AS performance_assessment
 						SET rating = ${input.rating},
 							comments_sensitive = ${input.commentsSensitive},
 							submitted_at = ${submittedAt},
 							version = ${nextAssessmentVersion},
 							updated_by = ${input.actorUserId},
 							updated_at = now()
-						WHERE id = ${assessment.id}
-							AND organization_id = ${input.organizationId}
-							AND review_id = ${input.reviewId}
-							AND participant_id = ${participant.id}
-						RETURNING review_id
+						WHERE performance_assessment.id = ${assessment.id}
+							AND performance_assessment.organization_id = ${input.organizationId}
+							AND performance_assessment.review_id = ${input.reviewId}
+							AND performance_assessment.participant_id = ${participant.id}
+						RETURNING performance_assessment.review_id
 					),
 				mutated AS (
-					UPDATE hr_performance_review
+					UPDATE hr_performance_review AS performance_review
 					SET version = ${nextReviewVersion},
 							updated_by = ${input.actorUserId},
 							updated_at = now()
-						WHERE id = ${input.reviewId}
-							AND organization_id = ${input.organizationId}
-						AND version = ${input.expectedVersion}
-					RETURNING *
+						WHERE performance_review.id = ${input.reviewId}
+							AND performance_review.organization_id = ${input.organizationId}
+						AND performance_review.version = ${input.expectedVersion}
+					RETURNING performance_review.*
 				),
 				updated_assessment_audited AS (
 					INSERT INTO platform_audit_log (

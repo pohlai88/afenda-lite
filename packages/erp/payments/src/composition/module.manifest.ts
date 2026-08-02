@@ -10,7 +10,7 @@ import {
 	PAYMENTS_TRANSFER_POSTED_EVENT,
 } from "@afenda/events/schemas";
 
-import { PAYMENTS_PERMISSION_CODES } from "./permissions";
+import { PAYMENTS_PERMISSION_CODES } from "../permissions";
 
 export const paymentsModuleManifest = {
 	id: "payments",

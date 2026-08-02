@@ -1258,7 +1258,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 						)
 						SELECT mutated.* FROM mutated JOIN audited ON true
 					`,
-				sqlValue5`
+					sqlValue5`
 						INSERT INTO hr_headcount_plan_line (
 							id, organization_id, plan_id, department_id, job_id, position_id,
 							location_code, employment_type, planned_fte, planned_headcount,
@@ -1270,12 +1270,13 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 							position_id, location_code, employment_type, planned_fte, planned_headcount,
 							cost_envelope_amount, cost_envelope_currency_code, 1,
 							${record.createdBy}, ${record.createdBy}
-						FROM hr_headcount_plan_line
-						WHERE plan_id = ${record.sourcePlanId}
-							AND organization_id = ${record.organizationId}
+						FROM hr_headcount_plan_line AS source_line
+						WHERE source_line.plan_id = ${record.sourcePlanId}
+							AND source_line.organization_id = ${record.organizationId}
 							AND EXISTS (
-								SELECT 1 FROM hr_headcount_plan
-								WHERE id = ${brandedId.data} AND organization_id = ${record.organizationId}
+								SELECT 1 FROM hr_headcount_plan AS target_plan
+								WHERE target_plan.id = ${brandedId.data}
+									AND target_plan.organization_id = ${record.organizationId}
 							)
 					`,
 			]);
@@ -1622,9 +1623,10 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 							FROM hr_headcount_plan p
 							WHERE l.id = ${input.planLineId}
 								AND l.organization_id = ${input.organizationId}
-								AND l.version = ${input.expectedVersion}
-								AND p.id = l.plan_id
-								AND p.status IN ('draft', 'submitted')
+							AND l.version = ${input.expectedVersion}
+							AND p.id = l.plan_id
+							AND p.organization_id = l.organization_id
+							AND p.status IN ('draft', 'submitted')
 							RETURNING l.*
 						),
 						audited AS (
@@ -1729,9 +1731,10 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 							USING hr_headcount_plan p
 							WHERE l.id = ${input.planLineId}
 								AND l.organization_id = ${input.organizationId}
-								AND l.version = ${input.expectedVersion}
-								AND p.id = l.plan_id
-								AND p.status IN ('draft', 'submitted')
+							AND l.version = ${input.expectedVersion}
+							AND p.id = l.plan_id
+							AND p.organization_id = l.organization_id
+							AND p.status IN ('draft', 'submitted')
 							RETURNING l.id, l.organization_id
 						),
 						audited AS (

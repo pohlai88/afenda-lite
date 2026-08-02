@@ -210,7 +210,9 @@ export function createDrizzleReliabilityStore(): ReliabilityStorePort {
 		},
 		async claimDueWork(input) {
 			try {
-				const [claimed] = await afendaDatabase.transaction((sqlTag) => [
+				const [claimed] = await afendaDatabase.system.transaction(
+					"human-resources.reliability.claim-due",
+					(sqlTag) => [
 					sqlTag`
 						WITH ranked AS (
 							SELECT id, organization_id,
@@ -242,7 +244,8 @@ export function createDrizzleReliabilityStore(): ReliabilityStorePort {
 						WHERE work.id = eligible.id AND work.organization_id = eligible.organization_id
 						RETURNING work.id, work.organization_id AS "organizationId"
 					`,
-				]);
+					],
+				);
 				const items: ReliabilityWorkItem[] = [];
 				const sequentialOutcome1 = await runSequential(
 					claimed,

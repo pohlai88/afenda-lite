@@ -1,5 +1,5 @@
 import { errorResult, type Result } from "@afenda/errors";
-import { receivingModuleManifest } from "./module.manifest";
+import { receivingModuleManifest } from "./composition/module.manifest";
 import type { ReceivingCommandId, ReceivingQueryId } from "./module-ids";
 import type { RECEIVING_PERMISSION_CODES } from "./permissions";
 

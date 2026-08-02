@@ -1130,24 +1130,24 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 				sqlTag`
 						WITH check_assignments AS (
 							SELECT COUNT(*) AS active_count
-							FROM hr_learning_assignment
-							WHERE organization_id = ${input.organizationId}
-								AND course_id = ${input.courseId}
-								AND status IN ('pending', 'in_progress')
+							FROM hr_learning_assignment AS learning_assignment
+							WHERE learning_assignment.organization_id = ${input.organizationId}
+								AND learning_assignment.course_id = ${input.courseId}
+								AND learning_assignment.status IN ('pending', 'in_progress')
 						),
 						mutated AS (
-							UPDATE hr_learning_course
+							UPDATE hr_learning_course AS learning_course
 							SET status = 'archived',
 								version = ${nextVersion},
 								updated_by = ${input.actorUserId},
 								updated_at = now()
 							FROM check_assignments
-							WHERE hr_learning_course.id = ${input.courseId}
-								AND hr_learning_course.organization_id = ${input.organizationId}
-								AND hr_learning_course.version = ${input.expectedVersion}
-								AND hr_learning_course.status IN ('active', 'archived')
+							WHERE learning_course.id = ${input.courseId}
+								AND learning_course.organization_id = ${input.organizationId}
+								AND learning_course.version = ${input.expectedVersion}
+								AND learning_course.status IN ('active', 'archived')
 								AND check_assignments.active_count = 0
-							RETURNING hr_learning_course.*
+							RETURNING learning_course.*
 						),
 						audited AS (
 							INSERT INTO platform_audit_log (
@@ -1192,17 +1192,18 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 
 	async listCourses(input) {
 		try {
-			let query = afendaDatabase.client
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrLearningCourse)
-				.where(eq(hrLearningCourse.organizationId, input.organizationId))
-				.$dynamic();
-
-			if (input.status !== undefined) {
-				query = query.where(eq(hrLearningCourse.status, input.status));
-			}
-
-			const rows = await query.orderBy(hrLearningCourse.code);
+				.where(
+					and(
+						eq(hrLearningCourse.organizationId, input.organizationId),
+						input.status === undefined
+							? undefined
+							: eq(hrLearningCourse.status, input.status),
+					),
+				)
+				.orderBy(hrLearningCourse.code);
 			const totalCount = rows.length;
 			const start = (input.page - 1) * input.pageSize;
 			const paged = rows.slice(start, start + input.pageSize);
@@ -1834,20 +1835,21 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 
 	async listSessions(input) {
 		try {
-			let query = afendaDatabase.client
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrLearningSession)
-				.where(eq(hrLearningSession.organizationId, input.organizationId))
-				.$dynamic();
-
-			if (input.status !== undefined) {
-				query = query.where(eq(hrLearningSession.status, input.status));
-			}
-			if (input.courseId !== undefined) {
-				query = query.where(eq(hrLearningSession.courseId, input.courseId));
-			}
-
-			const rows = await query.orderBy(
+				.where(
+					and(
+						eq(hrLearningSession.organizationId, input.organizationId),
+						input.status === undefined
+							? undefined
+							: eq(hrLearningSession.status, input.status),
+						input.courseId === undefined
+							? undefined
+							: eq(hrLearningSession.courseId, input.courseId),
+					),
+				)
+				.orderBy(
 				desc(hrLearningSession.scheduledStartsAt),
 			);
 			const totalCount = rows.length;
@@ -2067,17 +2069,17 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH employee AS (
-						SELECT id
-						FROM hr_employee
-						WHERE id = ${record.employeeId}
-							AND organization_id = ${record.organizationId}
+						SELECT employee_root.id
+						FROM hr_employee AS employee_root
+						WHERE employee_root.id = ${record.employeeId}
+							AND employee_root.organization_id = ${record.organizationId}
 					),
 					course AS (
-						SELECT id
-						FROM hr_learning_course
-						WHERE id = ${record.courseId}
-							AND organization_id = ${record.organizationId}
-							AND status = 'active'
+						SELECT learning_course.id
+						FROM hr_learning_course AS learning_course
+						WHERE learning_course.id = ${record.courseId}
+							AND learning_course.organization_id = ${record.organizationId}
+							AND learning_course.status = 'active'
 					),
 					session_ok AS (
 						SELECT 1 AS ok
@@ -2271,38 +2273,39 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 						SELECT
 							COALESCE(
 								(SELECT COUNT(*)
-								FROM hr_learning_assignment
-								WHERE organization_id = ${input.organizationId}
-									AND session_id = ${sessionId}
-									AND status = 'in_progress'
-									AND session_id IS NOT NULL),
+								FROM hr_learning_assignment AS enrolled_assignment
+								WHERE enrolled_assignment.organization_id = ${input.organizationId}
+									AND enrolled_assignment.session_id = ${sessionId}
+									AND enrolled_assignment.status = 'in_progress'
+									AND enrolled_assignment.session_id IS NOT NULL),
 								0
 							) AS enrolled_count,
 							COALESCE(
-								(SELECT capacity
-								FROM hr_learning_session
-								WHERE id = ${sessionId}),
+								(SELECT learning_session.capacity
+								FROM hr_learning_session AS learning_session
+								WHERE learning_session.id = ${sessionId}
+									AND learning_session.organization_id = ${input.organizationId}),
 								NULL
 							) AS capacity
 					),
 					mutated AS (
-						UPDATE hr_learning_assignment
+						UPDATE hr_learning_assignment AS learning_assignment
 						SET status = 'in_progress',
 							session_id = ${sessionId},
 							version = ${nextVersion},
 							updated_by = ${input.actorUserId},
 							updated_at = now()
 						FROM check_session
-						WHERE hr_learning_assignment.id = ${input.assignmentId}
-							AND hr_learning_assignment.organization_id = ${input.organizationId}
-							AND hr_learning_assignment.version = ${input.expectedVersion}
-							AND hr_learning_assignment.status = 'pending'
+						WHERE learning_assignment.id = ${input.assignmentId}
+							AND learning_assignment.organization_id = ${input.organizationId}
+							AND learning_assignment.version = ${input.expectedVersion}
+							AND learning_assignment.status = 'pending'
 							AND (
 								${sessionId}::uuid IS NULL
 								OR check_session.capacity IS NULL
 								OR check_session.enrolled_count < check_session.capacity
 							)
-						RETURNING hr_learning_assignment.*
+						RETURNING learning_assignment.*
 					),
 					audited AS (
 						INSERT INTO platform_audit_log (
@@ -2442,25 +2445,24 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 
 	async listLearningAssignments(input) {
 		try {
-			let query = afendaDatabase.client
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrLearningAssignment)
-				.where(eq(hrLearningAssignment.organizationId, input.organizationId))
-				.$dynamic();
-
-			if (input.status !== undefined) {
-				query = query.where(eq(hrLearningAssignment.status, input.status));
-			}
-			if (input.employeeId !== undefined) {
-				query = query.where(
-					eq(hrLearningAssignment.employeeId, input.employeeId),
-				);
-			}
-			if (input.courseId !== undefined) {
-				query = query.where(eq(hrLearningAssignment.courseId, input.courseId));
-			}
-
-			const rows = await query.orderBy(desc(hrLearningAssignment.assignedAt));
+				.where(
+					and(
+						eq(hrLearningAssignment.organizationId, input.organizationId),
+						input.status === undefined
+							? undefined
+							: eq(hrLearningAssignment.status, input.status),
+						input.employeeId === undefined
+							? undefined
+							: eq(hrLearningAssignment.employeeId, input.employeeId),
+						input.courseId === undefined
+							? undefined
+							: eq(hrLearningAssignment.courseId, input.courseId),
+					),
+				)
+				.orderBy(desc(hrLearningAssignment.assignedAt));
 			const totalCount = rows.length;
 			const start = (input.page - 1) * input.pageSize;
 			const paged = rows.slice(start, start + input.pageSize);
@@ -2706,11 +2708,13 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH assignment AS (
-							SELECT id, organization_id, employee_id, course_id, session_id, version
-							FROM hr_learning_assignment
-							WHERE id = ${record.assignmentId}
-								AND organization_id = ${record.organizationId}
-								AND status IN ('pending', 'in_progress')
+							SELECT learning_assignment.id, learning_assignment.organization_id,
+								learning_assignment.employee_id, learning_assignment.course_id,
+								learning_assignment.session_id, learning_assignment.version
+							FROM hr_learning_assignment AS learning_assignment
+							WHERE learning_assignment.id = ${record.assignmentId}
+								AND learning_assignment.organization_id = ${record.organizationId}
+								AND learning_assignment.status IN ('pending', 'in_progress')
 						),
 						session_ok AS (
 							SELECT 1 AS ok
@@ -2830,22 +2834,21 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 
 	async listCompletions(input) {
 		try {
-			let query = afendaDatabase.client
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrLearningCompletion)
-				.where(eq(hrLearningCompletion.organizationId, input.organizationId))
-				.$dynamic();
-
-			if (input.employeeId !== undefined) {
-				query = query.where(
-					eq(hrLearningCompletion.employeeId, input.employeeId),
-				);
-			}
-			if (input.courseId !== undefined) {
-				query = query.where(eq(hrLearningCompletion.courseId, input.courseId));
-			}
-
-			const rows = await query.orderBy(desc(hrLearningCompletion.completedAt));
+				.where(
+					and(
+						eq(hrLearningCompletion.organizationId, input.organizationId),
+						input.employeeId === undefined
+							? undefined
+							: eq(hrLearningCompletion.employeeId, input.employeeId),
+						input.courseId === undefined
+							? undefined
+							: eq(hrLearningCompletion.courseId, input.courseId),
+					),
+				)
+				.orderBy(desc(hrLearningCompletion.completedAt));
 			const totalCount = rows.length;
 			const start = (input.page - 1) * input.pageSize;
 			const paged = rows.slice(start, start + input.pageSize);
@@ -3059,20 +3062,22 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH assignment AS (
-							SELECT id, organization_id, employee_id, session_id, status
-							FROM hr_learning_assignment
-							WHERE id = ${record.assignmentId}
-								AND organization_id = ${record.organizationId}
-								AND employee_id = ${record.employeeId}
-								AND status = 'in_progress'
-								AND session_id = ${record.sessionId}
+							SELECT learning_assignment.id, learning_assignment.organization_id,
+								learning_assignment.employee_id, learning_assignment.session_id,
+								learning_assignment.status
+							FROM hr_learning_assignment AS learning_assignment
+							WHERE learning_assignment.id = ${record.assignmentId}
+								AND learning_assignment.organization_id = ${record.organizationId}
+								AND learning_assignment.employee_id = ${record.employeeId}
+								AND learning_assignment.status = 'in_progress'
+								AND learning_assignment.session_id = ${record.sessionId}
 						),
 						session_ok AS (
-							SELECT id
-							FROM hr_learning_session
-							WHERE id = ${record.sessionId}
-								AND organization_id = ${record.organizationId}
-								AND status IN ('in_progress', 'completed')
+							SELECT learning_session.id
+							FROM hr_learning_session AS learning_session
+							WHERE learning_session.id = ${record.sessionId}
+								AND learning_session.organization_id = ${record.organizationId}
+								AND learning_session.status IN ('in_progress', 'completed')
 						),
 						mutated AS (
 							INSERT INTO hr_learning_attendance (
@@ -3168,24 +3173,21 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 
 	async listLearningAttendance(input) {
 		try {
-			let query = afendaDatabase.client
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrLearningAttendance)
-				.where(eq(hrLearningAttendance.organizationId, input.organizationId))
-				.$dynamic();
-
-			if (input.sessionId !== undefined) {
-				query = query.where(
-					eq(hrLearningAttendance.sessionId, input.sessionId),
-				);
-			}
-			if (input.employeeId !== undefined) {
-				query = query.where(
-					eq(hrLearningAttendance.employeeId, input.employeeId),
-				);
-			}
-
-			const rows = await query.orderBy(desc(hrLearningAttendance.recordedAt));
+				.where(
+					and(
+						eq(hrLearningAttendance.organizationId, input.organizationId),
+						input.sessionId === undefined
+							? undefined
+							: eq(hrLearningAttendance.sessionId, input.sessionId),
+						input.employeeId === undefined
+							? undefined
+							: eq(hrLearningAttendance.employeeId, input.employeeId),
+					),
+				)
+				.orderBy(desc(hrLearningAttendance.recordedAt));
 			const totalCount = rows.length;
 			const start = (input.page - 1) * input.pageSize;
 			const paged = rows.slice(start, start + input.pageSize);
@@ -3376,22 +3378,22 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH employee AS (
-							SELECT id
-							FROM hr_employee
-							WHERE id = ${record.employeeId}
-								AND organization_id = ${record.organizationId}
+							SELECT employee_root.id
+							FROM hr_employee AS employee_root
+							WHERE employee_root.id = ${record.employeeId}
+								AND employee_root.organization_id = ${record.organizationId}
 						),
 						course AS (
-							SELECT id
-							FROM hr_learning_course
-							WHERE id = ${record.courseId}
-								AND organization_id = ${record.organizationId}
+							SELECT learning_course.id
+							FROM hr_learning_course AS learning_course
+							WHERE learning_course.id = ${record.courseId}
+								AND learning_course.organization_id = ${record.organizationId}
 						),
 						completion AS (
-							SELECT id, course_id
-							FROM hr_learning_completion
-							WHERE id = ${record.completionId}
-								AND organization_id = ${record.organizationId}
+							SELECT learning_completion.id, learning_completion.course_id
+							FROM hr_learning_completion AS learning_completion
+							WHERE learning_completion.id = ${record.completionId}
+								AND learning_completion.organization_id = ${record.organizationId}
 						),
 						mutated AS (
 							INSERT INTO hr_employee_certification (
@@ -3774,19 +3776,22 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH prior_cert AS (
-							SELECT id, organization_id, employee_id, course_id, status, version
-							FROM hr_employee_certification
-							WHERE id = ${record.certificationId}
-								AND organization_id = ${record.organizationId}
-								AND version = ${record.expectedVersion}
-								AND status = 'expired'
+							SELECT prior_certification.id, prior_certification.organization_id,
+								prior_certification.employee_id, prior_certification.course_id,
+								prior_certification.status, prior_certification.version
+							FROM hr_employee_certification AS prior_certification
+							WHERE prior_certification.id = ${record.certificationId}
+								AND prior_certification.organization_id = ${record.organizationId}
+								AND prior_certification.version = ${record.expectedVersion}
+								AND prior_certification.status = 'expired'
 						),
 						completion AS (
-							SELECT id, employee_id, course_id, outcome
-							FROM hr_learning_completion
-							WHERE id = ${record.completionId}
-								AND organization_id = ${record.organizationId}
-								AND outcome = 'passed'
+							SELECT learning_completion.id, learning_completion.employee_id,
+								learning_completion.course_id, learning_completion.outcome
+							FROM hr_learning_completion AS learning_completion
+							WHERE learning_completion.id = ${record.completionId}
+								AND learning_completion.organization_id = ${record.organizationId}
+								AND learning_completion.outcome = 'passed'
 						),
 						mutated AS (
 							INSERT INTO hr_employee_certification (
@@ -3869,27 +3874,24 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 
 	async listCertifications(input) {
 		try {
-			let query = afendaDatabase.client
+			const rows = await afendaDatabase.client
 				.select()
 				.from(hrEmployeeCertification)
-				.where(eq(hrEmployeeCertification.organizationId, input.organizationId))
-				.$dynamic();
-
-			if (input.status !== undefined) {
-				query = query.where(eq(hrEmployeeCertification.status, input.status));
-			}
-			if (input.employeeId !== undefined) {
-				query = query.where(
-					eq(hrEmployeeCertification.employeeId, input.employeeId),
-				);
-			}
-			if (input.courseId !== undefined) {
-				query = query.where(
-					eq(hrEmployeeCertification.courseId, input.courseId),
-				);
-			}
-
-			const rows = await query.orderBy(desc(hrEmployeeCertification.issuedOn));
+				.where(
+					and(
+						eq(hrEmployeeCertification.organizationId, input.organizationId),
+						input.status === undefined
+							? undefined
+							: eq(hrEmployeeCertification.status, input.status),
+						input.employeeId === undefined
+							? undefined
+							: eq(hrEmployeeCertification.employeeId, input.employeeId),
+						input.courseId === undefined
+							? undefined
+							: eq(hrEmployeeCertification.courseId, input.courseId),
+					),
+				)
+				.orderBy(desc(hrEmployeeCertification.issuedOn));
 			const totalCount = rows.length;
 			const start = (input.page - 1) * input.pageSize;
 			const paged = rows.slice(start, start + input.pageSize);

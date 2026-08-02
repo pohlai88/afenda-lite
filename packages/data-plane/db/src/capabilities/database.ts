@@ -15,7 +15,10 @@ import {
 	HARD_TENANT_ROOT_TABLES,
 	type HardTenantRootTableName,
 } from "../hard-tenant-roots";
-import { runNeonHttpTransaction } from "../http-transaction";
+import {
+	runNeonHttpSystemTransaction,
+	runNeonHttpTransaction,
+} from "../http-transaction";
 import {
 	ensurePlatformPermissionCatalog,
 	isPlatformPermissionCodeV1,
@@ -70,6 +73,10 @@ const databasePermissions = Object.freeze({
 	roles: PLATFORM_ROLE_TEMPLATES_V1,
 });
 
+const databaseSystem = Object.freeze({
+	transaction: runNeonHttpSystemTransaction,
+});
+
 /**
  * Permanent consumer facade for database runtime infrastructure.
  *
@@ -79,6 +86,7 @@ const databasePermissions = Object.freeze({
 export const database = Object.freeze({
 	client: db,
 	permissions: databasePermissions,
+	system: databaseSystem,
 	tenancy: databaseTenancy,
 	transaction: runNeonHttpTransaction,
 });

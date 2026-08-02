@@ -22,7 +22,7 @@ import {
 	RECEIVING_QUERY_IDS,
 	RECEIVING_QUERY_INVENTORY_EXCEPTIONS,
 	RECEIVING_QUERY_LIST,
-} from "./module-ids";
+} from "../module-ids";
 import {
 	RECEIVING_PERMISSION_CODES,
 	RECEIVING_PERMISSION_DISCREPANCY_RECORD,
@@ -33,7 +33,7 @@ import {
 	RECEIVING_PERMISSION_RECEIPT_READ,
 	RECEIVING_PERMISSION_RECEIPT_REVERSE,
 	RECEIVING_PERMISSION_RECEIPT_UPDATE,
-} from "./permissions";
+} from "../permissions";
 
 export const receivingModuleManifest = {
 	id: "receiving",

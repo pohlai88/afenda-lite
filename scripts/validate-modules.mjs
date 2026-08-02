@@ -12,7 +12,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { database } from "@afenda/db";
 import {
-	LIVING_ERP_MANIFEST_PACKAGES,
+	loadLivingErpManifestPackages,
 	loadRoadmapModules,
 	SCHEMA_SYMBOL_TO_TABLE,
 	validateCandidatePackagesAbsent,
@@ -56,20 +56,14 @@ function fail(message, code = 1) {
 	process.exit(code);
 }
 
-async function loadLivingManifests() {
-	const entries = LIVING_ERP_MANIFEST_PACKAGES.map((meta) => ({
+async function loadLivingManifests(erpPackages) {
+	const entries = erpPackages.map((meta) => ({
 		meta,
-		manifestPath: join(
-			root,
-			meta.dir,
-			meta.manifestPath ?? "src/module.manifest.ts",
-		),
+		manifestPath: join(root, meta.dir, meta.manifestPath),
 	}));
 	for (const entry of entries) {
 		if (!existsSync(entry.manifestPath)) {
-			fail(
-				`missing manifest: ${entry.meta.dir}/${entry.meta.manifestPath ?? "src/module.manifest.ts"}`,
-			);
+			fail(`missing manifest: ${entry.meta.dir}/${entry.meta.manifestPath}`);
 		}
 	}
 	const modules = await Promise.all(
@@ -81,7 +75,7 @@ async function loadLivingManifests() {
 		const manifest = mod[meta.manifestExport];
 		if (!manifest || typeof manifest !== "object") {
 			fail(
-				`manifest export ${meta.manifestExport} missing from ${meta.dir}/${meta.manifestPath ?? "src/module.manifest.ts"}`,
+				`manifest export ${meta.manifestExport} missing from ${meta.dir}/${meta.manifestPath}`,
 			);
 		}
 		return manifest;
@@ -102,7 +96,8 @@ async function main() {
 		return;
 	}
 
-	const manifests = await loadLivingManifests();
+	const erpPackages = await loadLivingErpManifestPackages(root);
+	const manifests = await loadLivingManifests(erpPackages);
 	const platformCodes = loadPlatformPermissionCodes();
 	const roadmap = loadRoadmapModules(join(modulesDir, "MODULE-ROADMAP.yaml"));
 	const knownTables = new Set(Object.values(SCHEMA_SYMBOL_TO_TABLE));
@@ -128,12 +123,13 @@ async function main() {
 		...validateWorkspaceEdges(
 			root,
 			join(modulesDir, "WORKSPACE-EDGE-REGISTER.yaml"),
+			erpPackages,
 		),
 	);
 	errors.push(...validateDeepImports(root));
 	errors.push(...validateMetricsImports(root));
 	errors.push(...validateOpenApiImports(root));
-	errors.push(...validateForeignSchemaImports(root, manifests));
+	errors.push(...validateForeignSchemaImports(root, manifests, erpPackages));
 	errors.push(
 		...validateSoleMutatorBoundary(
 			root,
@@ -148,8 +144,8 @@ async function main() {
 		),
 	);
 	errors.push(...validateCatalogDiskParity(root));
-	errors.push(...validateErpAuthorizationPorts(root, manifests));
-	errors.push(...validateCandidatePackagesAbsent(root, roadmap));
+	errors.push(...validateErpAuthorizationPorts(root, manifests, erpPackages));
+	errors.push(...validateCandidatePackagesAbsent(root, roadmap, erpPackages));
 
 	const rendered = buildGeneratedRegisters(manifests, modulesDir, { write });
 	errors.push(

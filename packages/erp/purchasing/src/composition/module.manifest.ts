@@ -17,7 +17,7 @@ import {
 	PURCHASING_QUERY_GET,
 	PURCHASING_QUERY_IDS,
 	PURCHASING_QUERY_LIST,
-} from "./module-ids";
+} from "../module-ids";
 import {
 	PURCHASING_PERMISSION_CODES,
 	PURCHASING_PERMISSION_ORDER_CANCEL,
@@ -27,7 +27,7 @@ import {
 	PURCHASING_PERMISSION_ORDER_POST,
 	PURCHASING_PERMISSION_ORDER_READ,
 	PURCHASING_PERMISSION_ORDER_UPDATE,
-} from "./permissions";
+} from "../permissions";
 
 export const purchasingModuleManifest = {
 	id: "purchasing",

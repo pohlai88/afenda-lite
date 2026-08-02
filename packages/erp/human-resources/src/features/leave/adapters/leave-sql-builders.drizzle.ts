@@ -521,42 +521,56 @@ export function buildAmendLeaveRequestSql(params: {
 		params.segments.length,
 	);
 
-	const segmentInserts = params.segments
+	const segmentValues = params.segments
 		.map(
 			(segment) => `
-		('${segment.id}', '${params.organizationId}', '${params.requestId}', 
-		 '${segment.segmentDate}', '${segment.quantity}', '${segment.dayPortion}')
+		('${segment.id}'::uuid, '${params.organizationId}', '${params.requestId}'::uuid,
+		 '${segment.segmentDate}'::date, '${segment.quantity}'::numeric, '${segment.dayPortion}')
 	`,
 		)
 		.join(", ");
 
 	return `
-		WITH deleted_segments AS (
-			DELETE FROM hr_leave_request_segment 
-			WHERE request_id = '${params.requestId}'
-			AND organization_id = '${params.organizationId}'
-			RETURNING request_id
-		),
-		updated_request AS (
-			UPDATE hr_leave_request 
+		WITH updated_request AS (
+			UPDATE hr_leave_request AS request
 			SET 
 				start_date = '${params.startDate}',
 				end_date = '${params.endDate}',
 				requested_quantity = '${params.requestedQuantity}',
 				is_backdated = ${params.isBackdated},
 				backdate_justification = ${params.backdateJustification ? `'${params.backdateJustification}'` : "NULL"},
-				version = version + 1,
+				version = request.version + 1,
 				updated_by = '${params.actorUserId}',
 				updated_at = NOW()
-			WHERE id = '${params.requestId}'
-			AND organization_id = '${params.organizationId}'
-			AND version = ${params.expectedVersion}
-			RETURNING *
+			WHERE request.id = '${params.requestId}'
+			AND request.organization_id = '${params.organizationId}'
+			AND request.version = ${params.expectedVersion}
+			RETURNING request.*
 		),
+		deleted_segments AS (
+			DELETE FROM hr_leave_request_segment AS segment
+			USING updated_request
+			WHERE segment.request_id = updated_request.id
+			AND segment.organization_id = updated_request.organization_id
+			RETURNING segment.request_id
+		),
+		segments_cleared AS (
+			SELECT count(*) AS deleted_count FROM deleted_segments
+		),
+		segment_values (
+			id, organization_id, request_id, segment_date, quantity, day_portion
+		) AS (VALUES ${segmentValues}),
 		inserted_segments AS (
 			INSERT INTO hr_leave_request_segment (
 				id, organization_id, request_id, segment_date, quantity, day_portion
-			) VALUES ${segmentInserts}
+			)
+			SELECT
+				segment_values.id, segment_values.organization_id,
+				segment_values.request_id, segment_values.segment_date,
+				segment_values.quantity, segment_values.day_portion
+			FROM segment_values, updated_request, segments_cleared
+			WHERE segment_values.request_id = updated_request.id
+			AND segment_values.organization_id = updated_request.organization_id
 			RETURNING *
 		),
 		${buildAuditCte({

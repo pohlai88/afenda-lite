@@ -26,6 +26,8 @@ const SKIP_DIR_NAMES = new Set([
 	"testing",
 ]);
 const HARD_ROOTS_PATH = "packages/data-plane/db/src/hard-tenant-roots.ts";
+const SYSTEM_SQL_POLICY_PATH =
+	"packages/data-plane/db/src/system-sql-policy.ts";
 
 function normalizePath(path) {
 	return path.replaceAll("\\", "/");
@@ -63,6 +65,37 @@ export function loadHardTenantTableIdentifiers(source) {
 	return new Set(
 		parseHardTenantRootEntries(source).map((entry) => entry.tableIdentifier),
 	);
+}
+
+export function loadSystemSqlOperationOwners(source) {
+	const sourceFile = ts.createSourceFile(
+		SYSTEM_SQL_POLICY_PATH,
+		source,
+		ts.ScriptTarget.Latest,
+		true,
+		ts.ScriptKind.TS,
+	);
+	const operations = new Map();
+	function visit(node) {
+		if (
+			ts.isPropertyAssignment(node) &&
+			(ts.isStringLiteral(node.name) || ts.isIdentifier(node.name)) &&
+			ts.isObjectLiteralExpression(node.initializer)
+		) {
+			const owner = node.initializer.properties.find(
+				(property) =>
+					ts.isPropertyAssignment(property) &&
+					property.name.getText(sourceFile) === "ownerSource" &&
+					ts.isStringLiteral(property.initializer),
+			);
+			if (owner && ts.isPropertyAssignment(owner)) {
+				operations.set(node.name.text, owner.initializer.text);
+			}
+		}
+		ts.forEachChild(node, visit);
+	}
+	visit(sourceFile);
+	return operations;
 }
 
 function propertyCallName(node) {
@@ -169,7 +202,9 @@ function lineOf(sourceFile, node) {
 export function analyzeTenantSqlSafety({
 	file = "fixture.ts",
 	hardTenantTables,
+	hardTenantTableNames = new Set(),
 	source,
+	systemSqlOperationOwners = new Map(),
 }) {
 	const sourceFile = ts.createSourceFile(
 		file,
@@ -277,7 +312,135 @@ export function analyzeTenantSqlSafety({
 		}
 	}
 
+	function rawTemplateText(node) {
+		if (ts.isNoSubstitutionTemplateLiteral(node.template)) {
+			return node.template.text;
+		}
+		return [
+			node.template.head.text,
+			...node.template.templateSpans.flatMap((span) => [
+				" ? ",
+				span.literal.text,
+			]),
+		].join("");
+	}
+
+	function enclosingSystemOperation(node) {
+		let current = node.parent;
+		while (current && current !== sourceFile) {
+			if (
+				ts.isCallExpression(current) &&
+				ts.isPropertyAccessExpression(current.expression) &&
+				current.expression.name.text === "transaction" &&
+				ts.isPropertyAccessExpression(current.expression.expression) &&
+				current.expression.expression.name.text === "system"
+			) {
+				const operation = current.arguments[0];
+				return operation && ts.isStringLiteral(operation)
+					? operation.text
+					: "";
+			}
+			current = current.parent;
+		}
+		return null;
+	}
+
+	function analyzeRawTemplate(node) {
+		const statement = rawTemplateText(node).toLowerCase();
+		const mentionedTables = [...hardTenantTableNames].filter((table) =>
+			new RegExp(`\\b${table}\\b`).test(statement),
+		);
+		if (mentionedTables.length === 0) {
+			return;
+		}
+
+		const systemOperation = enclosingSystemOperation(node);
+		if (systemOperation !== null) {
+			const ownerSource = systemSqlOperationOwners.get(systemOperation);
+			if (ownerSource !== file) {
+				addFinding(
+					node,
+					"system-sql-operation-owner-mismatch",
+					systemOperation || "unknown",
+					"Cross-organization SQL must use a registered operation from its declared owner source",
+				);
+			}
+			return;
+		}
+
+		const aliasStopWords = new Set([
+			"cross",
+			"full",
+			"group",
+			"inner",
+			"join",
+			"left",
+			"limit",
+			"offset",
+			"on",
+			"order",
+			"outer",
+			"returning",
+			"right",
+			"set",
+			"union",
+			"values",
+			"where",
+		]);
+		const references = [];
+		for (const table of mentionedTables) {
+			const escapedTable = table.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+			const insert = statement.match(
+				new RegExp(`\\binsert\\s+into\\s+${escapedTable}\\s*\\(([^)]*)\\)`),
+			);
+			if (insert && !/\borganization_id\b/.test(insert[1] ?? "")) {
+				addFinding(
+					node,
+					"raw-tenant-insert-missing-organization",
+					table,
+					"Raw INSERT must stamp organization_id",
+				);
+			}
+
+			const referencePattern = new RegExp(
+				`\\b(?:from|join|using|update|delete\\s+from)\\s+${escapedTable}\\b(?:\\s+(?:as\\s+)?([a-z_][a-z0-9_$]*))?`,
+				"g",
+			);
+			for (const reference of statement.matchAll(referencePattern)) {
+				const candidateAlias = reference[1];
+				const alias =
+					candidateAlias && !aliasStopWords.has(candidateAlias)
+						? candidateAlias
+						: table;
+				references.push({ alias, node, table });
+			}
+		}
+
+		const hasUnqualifiedOwnership =
+			/\b(?:where|on)\b[\s\S]*\borganization_id\b/.test(statement);
+		for (const reference of references) {
+			const { alias, table } = reference;
+				if (
+					new RegExp(`\\b${alias}\\s*\\.\\s*organization_id\\b`).test(
+						statement,
+					) ||
+					(references.length === 1 && hasUnqualifiedOwnership)
+				) {
+					continue;
+				}
+				addFinding(
+					node,
+					"raw-tenant-sql-missing-organization",
+					table,
+					`Raw SQL reference ${alias} must carry an explicit organization_id predicate`,
+				);
+		}
+	}
+
 	function visit(node) {
+		if (ts.isTaggedTemplateExpression(node)) {
+			analyzeRawTemplate(node);
+		}
 		if (!ts.isCallExpression(node)) {
 			ts.forEachChild(node, visit);
 			return;
@@ -312,7 +475,16 @@ export function analyzeTenantSqlSafety({
 
 export function runTenantSqlSafetyCheck(cwd = process.cwd()) {
 	const hardRootsSource = readFileSync(join(cwd, HARD_ROOTS_PATH), "utf8");
-	const hardTenantTables = loadHardTenantTableIdentifiers(hardRootsSource);
+	const hardTenantRootEntries = parseHardTenantRootEntries(hardRootsSource);
+	const hardTenantTables = new Set(
+		hardTenantRootEntries.map((entry) => entry.tableIdentifier),
+	);
+	const hardTenantTableNames = new Set(
+		hardTenantRootEntries.map((entry) => entry.sqlName),
+	);
+	const systemSqlOperationOwners = loadSystemSqlOperationOwners(
+		readFileSync(join(cwd, SYSTEM_SQL_POLICY_PATH), "utf8"),
+	);
 	const files = [];
 	for (const root of ROOTS) {
 		walk(join(cwd, root), files);
@@ -331,8 +503,10 @@ export function runTenantSqlSafetyCheck(cwd = process.cwd()) {
 		findings.push(
 			...analyzeTenantSqlSafety({
 				file,
+				hardTenantTableNames,
 				hardTenantTables,
 				source: readFileSync(absoluteFile, "utf8"),
+				systemSqlOperationOwners,
 			}),
 		);
 	}

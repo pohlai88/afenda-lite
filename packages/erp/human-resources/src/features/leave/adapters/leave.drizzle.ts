@@ -878,7 +878,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			const [updatedRows] = await runLeaveTransaction((sqlTag) => [
 				sqlTag`
 					WITH mutated AS (
-						UPDATE hr_leave_policy SET
+						UPDATE hr_leave_policy AS leave_policy SET
 							name = ${input.name ?? currentPolicy.name},
 							paid = ${input.paid ?? currentPolicy.paid},
 							sensitive = ${input.sensitive ?? currentPolicy.sensitive},
@@ -894,17 +894,20 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 							entitlement_expiry_days = ${balanceRules.entitlementExpiryDays},
 							effective_to = ${input.effectiveTo === undefined ? currentPolicy.effectiveTo : input.effectiveTo},
 							version = ${nextVersion}, updated_by = ${input.actorUserId}, updated_at = NOW()
-						WHERE id = ${input.policyId} AND organization_id = ${input.organizationId}
-							AND version = ${input.expectedVersion} AND status = 'draft'
-						RETURNING id
+						WHERE leave_policy.id = ${input.policyId}
+							AND leave_policy.organization_id = ${input.organizationId}
+							AND leave_policy.version = ${input.expectedVersion}
+							AND leave_policy.status = 'draft'
+						RETURNING leave_policy.id
 					),
 					eligibility_updated AS (
-						UPDATE hr_leave_policy_eligibility SET
+						UPDATE hr_leave_policy_eligibility AS policy_eligibility SET
 							min_tenure_days = CASE WHEN ${updateEligibility && input.minTenureDays !== undefined} THEN ${minTenureDays} ELSE min_tenure_days END,
 							allowed_employment_statuses = CASE WHEN ${updateEligibility && input.allowedEmploymentStatuses !== undefined} THEN ${allowedEmploymentStatuses} ELSE allowed_employment_statuses END,
 							updated_by = ${input.actorUserId}, updated_at = NOW()
-						WHERE organization_id = ${input.organizationId} AND policy_id IN (SELECT id FROM mutated)
-						RETURNING id
+						WHERE policy_eligibility.organization_id = ${input.organizationId}
+							AND policy_eligibility.policy_id IN (SELECT id FROM mutated)
+						RETURNING policy_eligibility.id
 					),
 					audited AS (
 						INSERT INTO platform_audit_log (

@@ -258,12 +258,26 @@ export function runNegativeFixtures() {
 
 	const tmpRoot = mkdtempSync(join(tmpdir(), "afenda-validate-modules-"));
 	try {
+		const fixtureErpPackages = [
+			{
+				id: "sales",
+				packageName: "@afenda/sales",
+				dir: "packages/erp/sales",
+				authorizationPath: "src/authorization.ts",
+			},
+			{
+				id: "master-data",
+				packageName: "@afenda/master-data",
+				dir: "packages/erp/master-data",
+				authorizationPath: "src/authorization.ts",
+			},
+		];
 		mkdirSync(join(tmpRoot, "packages", "treasury"), { recursive: true });
 		misses.push(
 			expectFail(
 				"candidate module represented as an on-disk package",
 				"candidate module represented as an on-disk package: packages/treasury",
-				validateCandidatePackagesAbsent(tmpRoot, [{ id: "treasury" }]),
+				validateCandidatePackagesAbsent(tmpRoot, [{ id: "treasury" }], []),
 			) ?? "",
 		);
 
@@ -297,18 +311,22 @@ export function runNegativeFixtures() {
 			expectFail(
 				"foreign DB schema write-surface import",
 				"foreign DB schema write-surface import",
-				validateForeignSchemaImports(tmpRoot, [
-					baseManifest({
-						id: "sales",
-						packageName: "@afenda/sales",
-						mutationTables: ["sales_order"],
-					}),
-					baseManifest({
-						id: "master-data",
-						packageName: "@afenda/master-data",
-						mutationTables: ["md_party"],
-					}),
-				]),
+				validateForeignSchemaImports(
+					tmpRoot,
+					[
+						baseManifest({
+							id: "sales",
+							packageName: "@afenda/sales",
+							mutationTables: ["sales_order"],
+						}),
+						baseManifest({
+							id: "master-data",
+							packageName: "@afenda/master-data",
+							mutationTables: ["md_party"],
+						}),
+					],
+					fixtureErpPackages,
+				),
 			) ?? "",
 		);
 
@@ -327,7 +345,21 @@ export function runNegativeFixtures() {
 			expectFail(
 				"missing ERP authorization port",
 				"missing ERP authorization",
-				validateErpAuthorizationPorts(tmpRoot),
+				validateErpAuthorizationPorts(
+					tmpRoot,
+					[
+						baseManifest({
+							id: "sales",
+							packageName: "@afenda/sales",
+							commands: ["sales.order.create"],
+							authorizationCommands: {
+								"sales.order.create": "sales.manage",
+							},
+							permissions: ["sales.manage"],
+						}),
+					],
+					fixtureErpPackages,
+				),
 			) ?? "",
 		);
 

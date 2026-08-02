@@ -21,8 +21,8 @@
 			"default": "./src/testing/index.ts"
 		},
 		"./module-manifest": {
-			"types": "./src/module.manifest.ts",
-			"default": "./src/module.manifest.ts"
+			"types": "./src/composition/module.manifest.ts",
+			"default": "./src/composition/module.manifest.ts"
 		}
 	},
 	"scripts": {

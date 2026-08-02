@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
@@ -11,6 +11,8 @@ import type { DiscoveredWorkspace } from "../engine/workspace-discovery.ts";
 import {
 	createErpManifestAuthorityDoctorExtension,
 	createErpManifestAuthorityReport,
+	discoverErpManifestAuthorityReport,
+	projectErpManifestAuthority,
 } from "../erp-generator/manifest-authority.ts";
 
 const createWorkspace = (
@@ -121,11 +123,13 @@ describe("ERP manifest authority discovery", () => {
 				},
 				workspaces: [
 					{
+						id: "canonical",
 						name: "@afenda/canonical",
 						packagePath: "packages/erp/canonical",
 						expectedExportName: "canonicalModuleManifest",
 						manifestPath:
 							"packages/erp/canonical/src/composition/module.manifest.ts",
+						packageAuthorizationPath: null,
 						state: "canonical",
 						semanticInputs: {
 							moduleDefinition: [
@@ -143,11 +147,13 @@ describe("ERP manifest authority discovery", () => {
 						},
 					},
 					{
+						id: "duplicate-conflict",
 						name: "@afenda/duplicate-conflict",
 						packagePath: "packages/erp/duplicate-conflict",
 						expectedExportName: "duplicateConflictModuleManifest",
 						manifestPath:
 							"packages/erp/duplicate-conflict/src/composition/module.manifest.ts",
+						packageAuthorizationPath: null,
 						state: "duplicate-conflict",
 						semanticInputs: {
 							moduleDefinition: [],
@@ -159,11 +165,13 @@ describe("ERP manifest authority discovery", () => {
 						},
 					},
 					{
+						id: "duplicate-identical",
 						name: "@afenda/duplicate-identical",
 						packagePath: "packages/erp/duplicate-identical",
 						expectedExportName: "duplicateIdenticalModuleManifest",
 						manifestPath:
 							"packages/erp/duplicate-identical/src/composition/module.manifest.ts",
+						packageAuthorizationPath: null,
 						state: "duplicate-identical",
 						semanticInputs: {
 							moduleDefinition: [],
@@ -175,10 +183,12 @@ describe("ERP manifest authority discovery", () => {
 						},
 					},
 					{
+						id: "historical",
 						name: "@afenda/historical",
 						packagePath: "packages/erp/historical",
 						expectedExportName: "historicalModuleManifest",
 						manifestPath: "packages/erp/historical/src/module.manifest.ts",
+						packageAuthorizationPath: null,
 						state: "historical",
 						semanticInputs: {
 							moduleDefinition: [],
@@ -190,10 +200,12 @@ describe("ERP manifest authority discovery", () => {
 						},
 					},
 					{
+						id: "missing",
 						name: "@afenda/missing",
 						packagePath: "packages/erp/missing",
 						expectedExportName: "missingModuleManifest",
 						manifestPath: null,
+						packageAuthorizationPath: null,
 						state: "missing",
 						semanticInputs: {
 							moduleDefinition: [],
@@ -332,5 +344,122 @@ describe("ERP manifest authority discovery", () => {
 		} finally {
 			await rm(repositoryRoot, { force: true, recursive: true });
 		}
+	});
+
+	it("projects historical manifests into the canonical composition path", async () => {
+		const repositoryRoot = await mkdtemp(
+			join(tmpdir(), "afenda-erp-manifest-projection-"),
+		);
+		try {
+			await writeFixtureFile(
+				repositoryRoot,
+				"package.json",
+				'{"private":true}\n',
+			);
+			await writeFixtureFile(
+				repositoryRoot,
+				"pnpm-workspace.yaml",
+				'packages:\n  - "packages/erp/*"\n',
+			);
+			await writeFixtureFile(repositoryRoot, "turbo.json", "{}\n");
+			await writeFixtureFile(
+				repositoryRoot,
+				"docs-V2/modules/WORKSPACE-EDGE-REGISTER.yaml",
+				"edges: []\n",
+			);
+			await writeFixtureFile(
+				repositoryRoot,
+				"packages/erp/inventory/package.json",
+				'{"name":"@afenda/inventory","private":true,"type":"module","exports":{"./module-manifest":{"types":"./src/module.manifest.ts","default":"./src/module.manifest.ts"}}}\n',
+			);
+			await writeFixtureFile(
+				repositoryRoot,
+				"packages/erp/inventory/src/module.manifest.ts",
+				'import type { AfendaModuleManifest } from "@afenda/db/module-manifest";\nimport { INVENTORY_COMMAND_IDS } from "./operation-registry";\nexport const inventoryModuleManifest = { id: "inventory", packageName: "@afenda/inventory", commands: [...INVENTORY_COMMAND_IDS] } as const satisfies AfendaModuleManifest;\n',
+			);
+			await writeFixtureFile(
+				repositoryRoot,
+				"packages/erp/inventory/src/authorization.ts",
+				'import { inventoryModuleManifest } from "./module.manifest";\n',
+			);
+			await writeFixtureFile(
+				repositoryRoot,
+				"packages/erp/inventory/__tests__/manifest.test.ts",
+				'import { inventoryModuleManifest } from "../src/module.manifest";\nconst path = "src/module.manifest.ts";\n',
+			);
+
+			const first = await projectErpManifestAuthority({
+				repositoryRoot,
+				write: true,
+			});
+			const second = await projectErpManifestAuthority({
+				repositoryRoot,
+				write: false,
+			});
+
+			expect(first.changed).toEqual([
+				"packages/erp/inventory/__tests__/manifest.test.ts",
+				"packages/erp/inventory/package.json",
+				"packages/erp/inventory/src/authorization.ts",
+				"packages/erp/inventory/src/composition/module.manifest.ts",
+				"packages/erp/inventory/src/module.manifest.ts",
+			]);
+			expect(second.changed).toEqual([]);
+			await expect(
+				readFile(
+					resolve(
+						repositoryRoot,
+						"packages/erp/inventory/src/module.manifest.ts",
+					),
+					"utf8",
+				),
+			).rejects.toThrow();
+			await expect(
+				readFile(
+					resolve(
+						repositoryRoot,
+						"packages/erp/inventory/src/composition/module.manifest.ts",
+					),
+					"utf8",
+				),
+			).resolves.toContain('from "../operation-registry"');
+			await expect(
+				readFile(
+					resolve(
+						repositoryRoot,
+						"packages/erp/inventory/src/authorization.ts",
+					),
+					"utf8",
+				),
+			).resolves.toContain('from "./composition/module.manifest"');
+		} finally {
+			await rm(repositoryRoot, { force: true, recursive: true });
+		}
+	});
+
+	it("proves live projection is byte-stable for inventory, human-resources, corporate-administration, and all compatible ERP packages", async () => {
+		const repositoryRoot = process.cwd();
+		const report = await discoverErpManifestAuthorityReport(repositoryRoot);
+		const projection = await projectErpManifestAuthority({
+			repositoryRoot,
+			write: false,
+		});
+		const byId = new Map(
+			report.workspaces.map((workspace) => [workspace.id, workspace]),
+		);
+
+		expect(byId.get("inventory")?.state).toBe("canonical");
+		expect(byId.get("human-resources")?.state).toBe("canonical");
+		expect(byId.get("corporate-administration")?.state).toBe("canonical");
+		expect(report.summary).toEqual({
+			total: 13,
+			canonical: 13,
+			historical: 0,
+			missing: 0,
+			duplicateIdentical: 0,
+			duplicateConflict: 0,
+		});
+		expect(projection.changed).toEqual([]);
+		expect(projection.unchanged).toHaveLength(13);
 	});
 });

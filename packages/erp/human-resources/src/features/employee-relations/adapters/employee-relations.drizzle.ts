@@ -878,14 +878,15 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH employee AS (
-						SELECT id FROM hr_employee
-						WHERE id = ${record.employeeId} AND organization_id = ${record.organizationId}
+						SELECT employee_root.id FROM hr_employee AS employee_root
+						WHERE employee_root.id = ${record.employeeId}
+							AND employee_root.organization_id = ${record.organizationId}
 					),
 					employment AS (
-						SELECT id FROM hr_employment
-						WHERE id = ${record.employmentId}
-							AND organization_id = ${record.organizationId}
-							AND employee_id = ${record.employeeId}
+						SELECT employment_root.id FROM hr_employment AS employment_root
+						WHERE employment_root.id = ${record.employmentId}
+							AND employment_root.organization_id = ${record.organizationId}
+							AND employment_root.employee_id = ${record.employeeId}
 					),
 					mutated AS (
 						INSERT INTO hr_employee_case (
@@ -1088,22 +1089,23 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH next_seq AS (
-						SELECT COALESCE(MAX(sequence_no), 0) + 1 AS seq
-						FROM hr_employee_case_event
-						WHERE organization_id = ${input.organizationId} AND case_id = ${input.caseId}
+						SELECT COALESCE(MAX(case_event.sequence_no), 0) + 1 AS seq
+						FROM hr_employee_case_event AS case_event
+						WHERE case_event.organization_id = ${input.organizationId}
+							AND case_event.case_id = ${input.caseId}
 					),
 					mutated AS (
-						UPDATE hr_employee_case
+						UPDATE hr_employee_case AS employee_case
 						SET classification_code = ${input.classificationCode},
 							status = CASE WHEN status = 'open' THEN 'investigating' ELSE status END,
 							version = ${nextVersion},
 							updated_by = ${input.actorUserId},
 							updated_at = now()
-						WHERE id = ${input.caseId}
-							AND organization_id = ${input.organizationId}
-							AND version = ${input.expectedVersion}
-							AND status <> 'closed'
-						RETURNING *
+						WHERE employee_case.id = ${input.caseId}
+							AND employee_case.organization_id = ${input.organizationId}
+							AND employee_case.version = ${input.expectedVersion}
+							AND employee_case.status <> 'closed'
+						RETURNING employee_case.*
 					),
 					inserted_event AS (
 						INSERT INTO hr_employee_case_event (
@@ -1212,22 +1214,23 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH next_seq AS (
-						SELECT COALESCE(MAX(sequence_no), 0) + 1 AS seq
-						FROM hr_employee_case_event
-						WHERE organization_id = ${input.organizationId} AND case_id = ${input.caseId}
+						SELECT COALESCE(MAX(case_event.sequence_no), 0) + 1 AS seq
+						FROM hr_employee_case_event AS case_event
+						WHERE case_event.organization_id = ${input.organizationId}
+							AND case_event.case_id = ${input.caseId}
 					),
 					mutated AS (
-						UPDATE hr_employee_case
+						UPDATE hr_employee_case AS employee_case
 						SET owner_actor_user_id = ${input.ownerActorUserId},
 							status = CASE WHEN status = 'open' THEN 'investigating' ELSE status END,
 							version = ${nextVersion},
 							updated_by = ${input.actorUserId},
 							updated_at = now()
-						WHERE id = ${input.caseId}
-							AND organization_id = ${input.organizationId}
-							AND version = ${input.expectedVersion}
-							AND status <> 'closed'
-						RETURNING *
+						WHERE employee_case.id = ${input.caseId}
+							AND employee_case.organization_id = ${input.organizationId}
+							AND employee_case.version = ${input.expectedVersion}
+							AND employee_case.status <> 'closed'
+						RETURNING employee_case.*
 					),
 					inserted_event AS (
 						INSERT INTO hr_employee_case_event (
@@ -1355,22 +1358,23 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH next_seq AS (
-						SELECT COALESCE(MAX(sequence_no), 0) + 1 AS seq
-						FROM hr_employee_case_event
-						WHERE organization_id = ${input.organizationId} AND case_id = ${input.caseId}
+						SELECT COALESCE(MAX(case_event.sequence_no), 0) + 1 AS seq
+						FROM hr_employee_case_event AS case_event
+						WHERE case_event.organization_id = ${input.organizationId}
+							AND case_event.case_id = ${input.caseId}
 					),
 					mutated AS (
-						UPDATE hr_employee_case
+						UPDATE hr_employee_case AS employee_case
 						SET participants = participants || ${participantJson}::jsonb,
 							status = CASE WHEN status = 'open' THEN 'investigating' ELSE status END,
 							version = ${nextVersion},
 							updated_by = ${input.actorUserId},
 							updated_at = now()
-						WHERE id = ${input.caseId}
-							AND organization_id = ${input.organizationId}
-							AND version = ${input.expectedVersion}
-							AND status <> 'closed'
-						RETURNING *
+						WHERE employee_case.id = ${input.caseId}
+							AND employee_case.organization_id = ${input.organizationId}
+							AND employee_case.version = ${input.expectedVersion}
+							AND employee_case.status <> 'closed'
+						RETURNING employee_case.*
 					),
 					inserted_event AS (
 						INSERT INTO hr_employee_case_event (
@@ -1462,28 +1466,29 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH next_seq AS (
-						SELECT COALESCE(MAX(sequence_no), 0) + 1 AS seq
-						FROM hr_employee_case_event
-						WHERE organization_id = ${input.organizationId} AND case_id = ${input.caseId}
+						SELECT COALESCE(MAX(case_event.sequence_no), 0) + 1 AS seq
+						FROM hr_employee_case_event AS case_event
+						WHERE case_event.organization_id = ${input.organizationId}
+							AND case_event.case_id = ${input.caseId}
 					),
 					case_row AS (
-						SELECT id, organization_id
-						FROM hr_employee_case
-						WHERE id = ${input.caseId}
-							AND organization_id = ${input.organizationId}
-							AND status <> 'closed'
+						SELECT employee_case.id, employee_case.organization_id
+						FROM hr_employee_case AS employee_case
+						WHERE employee_case.id = ${input.caseId}
+							AND employee_case.organization_id = ${input.organizationId}
+							AND employee_case.status <> 'closed'
 					),
 					case_update AS (
-						UPDATE hr_employee_case
+						UPDATE hr_employee_case AS employee_case_update
 						SET status = CASE WHEN status = 'open' THEN 'investigating' ELSE status END,
 							version = ${nextVersion},
 							updated_by = ${input.actorUserId},
 							updated_at = now()
-						WHERE id = ${input.caseId}
-							AND organization_id = ${input.organizationId}
-							AND status <> 'closed'
+						WHERE employee_case_update.id = ${input.caseId}
+							AND employee_case_update.organization_id = ${input.organizationId}
+							AND employee_case_update.status <> 'closed'
 							AND ${bumpCase}
-						RETURNING id
+						RETURNING employee_case_update.id
 					),
 					inserted_event AS (
 						INSERT INTO hr_employee_case_event (
@@ -1570,20 +1575,21 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH next_seq AS (
-						SELECT COALESCE(MAX(sequence_no), 0) + 1 AS seq
-						FROM hr_employee_case_event
-						WHERE organization_id = ${input.organizationId} AND case_id = ${input.caseId}
+						SELECT COALESCE(MAX(case_event.sequence_no), 0) + 1 AS seq
+						FROM hr_employee_case_event AS case_event
+						WHERE case_event.organization_id = ${input.organizationId}
+							AND case_event.case_id = ${input.caseId}
 					),
 					case_update AS (
-						UPDATE hr_employee_case
+						UPDATE hr_employee_case AS employee_case
 						SET status = CASE WHEN status = 'open' THEN 'investigating' ELSE status END,
 							version = ${nextVersion},
 							updated_by = ${input.actorUserId},
 							updated_at = now()
-						WHERE id = ${input.caseId}
-							AND organization_id = ${input.organizationId}
-							AND status <> 'closed'
-						RETURNING id, organization_id
+						WHERE employee_case.id = ${input.caseId}
+							AND employee_case.organization_id = ${input.organizationId}
+							AND employee_case.status <> 'closed'
+						RETURNING employee_case.id, employee_case.organization_id
 					),
 					inserted_event AS (
 						INSERT INTO hr_employee_case_event (
@@ -1682,16 +1688,17 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH next_seq AS (
-						SELECT COALESCE(MAX(sequence_no), 0) + 1 AS seq
-						FROM hr_employee_case_event
-						WHERE organization_id = ${input.organizationId} AND case_id = ${input.caseId}
+						SELECT COALESCE(MAX(case_event.sequence_no), 0) + 1 AS seq
+						FROM hr_employee_case_event AS case_event
+						WHERE case_event.organization_id = ${input.organizationId}
+							AND case_event.case_id = ${input.caseId}
 					),
 					case_row AS (
-						SELECT id, organization_id
-						FROM hr_employee_case
-						WHERE id = ${input.caseId}
-							AND organization_id = ${input.organizationId}
-							AND status <> 'closed'
+						SELECT employee_case.id, employee_case.organization_id
+						FROM hr_employee_case AS employee_case
+						WHERE employee_case.id = ${input.caseId}
+							AND employee_case.organization_id = ${input.organizationId}
+							AND employee_case.status <> 'closed'
 					),
 					inserted_event AS (
 						INSERT INTO hr_employee_case_event (
@@ -1808,12 +1815,13 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH next_seq AS (
-						SELECT COALESCE(MAX(sequence_no), 0) + 1 AS seq
-						FROM hr_employee_case_event
-						WHERE organization_id = ${input.organizationId} AND case_id = ${input.caseId}
+						SELECT COALESCE(MAX(case_event.sequence_no), 0) + 1 AS seq
+						FROM hr_employee_case_event AS case_event
+						WHERE case_event.organization_id = ${input.organizationId}
+							AND case_event.case_id = ${input.caseId}
 					),
 					mutated AS (
-						UPDATE hr_employee_case
+						UPDATE hr_employee_case AS employee_case
 						SET interim_authority = ${input.interimAuthority},
 							interim_reason = ${input.interimReason},
 							interim_starts_on = ${input.interimStartsOn},
@@ -1823,11 +1831,11 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 							version = ${nextVersion},
 							updated_by = ${input.actorUserId},
 							updated_at = now()
-						WHERE id = ${input.caseId}
-							AND organization_id = ${input.organizationId}
-							AND version = ${input.expectedVersion}
-							AND status <> 'closed'
-						RETURNING *
+						WHERE employee_case.id = ${input.caseId}
+							AND employee_case.organization_id = ${input.organizationId}
+							AND employee_case.version = ${input.expectedVersion}
+							AND employee_case.status <> 'closed'
+						RETURNING employee_case.*
 					),
 					inserted_event AS (
 						INSERT INTO hr_employee_case_event (
@@ -1952,12 +1960,13 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH next_seq AS (
-						SELECT COALESCE(MAX(sequence_no), 0) + 1 AS seq
-						FROM hr_employee_case_event
-						WHERE organization_id = ${input.organizationId} AND case_id = ${input.caseId}
+						SELECT COALESCE(MAX(case_event.sequence_no), 0) + 1 AS seq
+						FROM hr_employee_case_event AS case_event
+						WHERE case_event.organization_id = ${input.organizationId}
+							AND case_event.case_id = ${input.caseId}
 					),
 					mutated AS (
-						UPDATE hr_employee_case
+						UPDATE hr_employee_case AS employee_case
 						SET finding_code = ${input.findingCode},
 							finding_summary = ${input.findingSummary},
 							finding_recorded_by = ${input.actorUserId},
@@ -1966,11 +1975,11 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 							version = ${nextVersion},
 							updated_by = ${input.actorUserId},
 							updated_at = now()
-						WHERE id = ${input.caseId}
-							AND organization_id = ${input.organizationId}
-							AND version = ${input.expectedVersion}
-							AND status <> 'closed'
-						RETURNING *
+						WHERE employee_case.id = ${input.caseId}
+							AND employee_case.organization_id = ${input.organizationId}
+							AND employee_case.version = ${input.expectedVersion}
+							AND employee_case.status <> 'closed'
+						RETURNING employee_case.*
 					),
 					inserted_event AS (
 						INSERT INTO hr_employee_case_event (
@@ -2136,17 +2145,18 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH next_seq AS (
-						SELECT COALESCE(MAX(sequence_no), 0) + 1 AS seq
-						FROM hr_employee_case_event
-						WHERE organization_id = ${record.organizationId} AND case_id = ${record.caseId}
+						SELECT COALESCE(MAX(case_event.sequence_no), 0) + 1 AS seq
+						FROM hr_employee_case_event AS case_event
+						WHERE case_event.organization_id = ${record.organizationId}
+							AND case_event.case_id = ${record.caseId}
 					),
 					case_row AS (
-						SELECT id, organization_id
-						FROM hr_employee_case
-						WHERE id = ${record.caseId}
-							AND organization_id = ${record.organizationId}
-							AND version = ${record.expectedVersion}
-							AND status <> 'closed'
+						SELECT employee_case.id, employee_case.organization_id
+						FROM hr_employee_case AS employee_case
+						WHERE employee_case.id = ${record.caseId}
+							AND employee_case.organization_id = ${record.organizationId}
+							AND employee_case.version = ${record.expectedVersion}
+							AND employee_case.status <> 'closed'
 					),
 					inserted_action AS (
 						INSERT INTO hr_employee_case_action (
@@ -2165,16 +2175,16 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 						RETURNING *
 					),
 					case_update AS (
-						UPDATE hr_employee_case
+						UPDATE hr_employee_case AS employee_case_update
 						SET status = 'action_pending',
 							version = ${nextCaseVersion},
 							updated_by = ${record.recommendedBy},
 							updated_at = now()
-						WHERE id = ${record.caseId}
-							AND organization_id = ${record.organizationId}
-							AND version = ${record.expectedVersion}
-							AND status <> 'closed'
-						RETURNING id
+						WHERE employee_case_update.id = ${record.caseId}
+							AND employee_case_update.organization_id = ${record.organizationId}
+							AND employee_case_update.version = ${record.expectedVersion}
+							AND employee_case_update.status <> 'closed'
+						RETURNING employee_case_update.id
 					),
 					inserted_event AS (
 						INSERT INTO hr_employee_case_event (
@@ -2321,35 +2331,36 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH next_seq AS (
-						SELECT COALESCE(MAX(sequence_no), 0) + 1 AS seq
-						FROM hr_employee_case_event
-						WHERE organization_id = ${input.organizationId} AND case_id = ${input.caseId}
+						SELECT COALESCE(MAX(case_event.sequence_no), 0) + 1 AS seq
+						FROM hr_employee_case_event AS case_event
+						WHERE case_event.organization_id = ${input.organizationId}
+							AND case_event.case_id = ${input.caseId}
 					),
 					case_update AS (
-						UPDATE hr_employee_case
+						UPDATE hr_employee_case AS employee_case
 						SET status = 'action_approved',
 							version = ${nextCaseVersion},
 							updated_by = ${input.actorUserId},
 							updated_at = now()
-						WHERE id = ${input.caseId}
-							AND organization_id = ${input.organizationId}
-							AND version = ${input.expectedVersion}
-							AND status = 'action_pending'
-						RETURNING id, organization_id
+						WHERE employee_case.id = ${input.caseId}
+							AND employee_case.organization_id = ${input.organizationId}
+							AND employee_case.version = ${input.expectedVersion}
+							AND employee_case.status = 'action_pending'
+						RETURNING employee_case.id, employee_case.organization_id
 					),
 					mutated_action AS (
-						UPDATE hr_employee_case_action
+						UPDATE hr_employee_case_action AS employee_case_action
 						SET status = 'approved',
 							approved_by = ${input.actorUserId},
 							policy_validation_recorded = ${input.policyValidationRecorded},
 							version = ${nextActionVersion},
 							updated_by = ${input.actorUserId},
 							updated_at = now()
-						WHERE id = ${input.actionId}
-							AND organization_id = ${input.organizationId}
-							AND case_id = ${input.caseId}
-							AND status = 'recommended'
-						RETURNING *
+						WHERE employee_case_action.id = ${input.actionId}
+							AND employee_case_action.organization_id = ${input.organizationId}
+							AND employee_case_action.case_id = ${input.caseId}
+							AND employee_case_action.status = 'recommended'
+						RETURNING employee_case_action.*
 					),
 					inserted_event AS (
 						INSERT INTO hr_employee_case_event (
@@ -2528,19 +2539,21 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH next_seq AS (
-						SELECT COALESCE(MAX(sequence_no), 0) + 1 AS seq
-						FROM hr_employee_case_event
-						WHERE organization_id = ${record.organizationId} AND case_id = ${record.caseId}
+						SELECT COALESCE(MAX(case_event.sequence_no), 0) + 1 AS seq
+						FROM hr_employee_case_event AS case_event
+						WHERE case_event.organization_id = ${record.organizationId}
+							AND case_event.case_id = ${record.caseId}
 					),
 					case_row AS (
-						SELECT id, organization_id, finding_code, finding_recorded_at
-						FROM hr_employee_case
-						WHERE id = ${record.caseId}
-							AND organization_id = ${record.organizationId}
-							AND version = ${record.expectedVersion}
-							AND status <> 'closed'
-							AND finding_code IS NOT NULL
-							AND finding_recorded_at IS NOT NULL
+						SELECT employee_case.id, employee_case.organization_id,
+							employee_case.finding_code, employee_case.finding_recorded_at
+						FROM hr_employee_case AS employee_case
+						WHERE employee_case.id = ${record.caseId}
+							AND employee_case.organization_id = ${record.organizationId}
+							AND employee_case.version = ${record.expectedVersion}
+							AND employee_case.status <> 'closed'
+							AND employee_case.finding_code IS NOT NULL
+							AND employee_case.finding_recorded_at IS NOT NULL
 					),
 					inserted_appeal AS (
 						INSERT INTO hr_employee_case_appeal (
@@ -2559,15 +2572,15 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 						RETURNING *
 					),
 					case_update AS (
-						UPDATE hr_employee_case
+						UPDATE hr_employee_case AS employee_case_update
 						SET status = 'under_appeal',
 							version = ${nextCaseVersion},
 							updated_by = ${record.createdBy},
 							updated_at = now()
-						WHERE id = ${record.caseId}
-							AND organization_id = ${record.organizationId}
-							AND version = ${record.expectedVersion}
-						RETURNING id
+						WHERE employee_case_update.id = ${record.caseId}
+							AND employee_case_update.organization_id = ${record.organizationId}
+							AND employee_case_update.version = ${record.expectedVersion}
+						RETURNING employee_case_update.id
 					),
 					inserted_event AS (
 						INSERT INTO hr_employee_case_event (
@@ -2718,24 +2731,25 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH next_seq AS (
-						SELECT COALESCE(MAX(sequence_no), 0) + 1 AS seq
-						FROM hr_employee_case_event
-						WHERE organization_id = ${input.organizationId} AND case_id = ${input.caseId}
+						SELECT COALESCE(MAX(case_event.sequence_no), 0) + 1 AS seq
+						FROM hr_employee_case_event AS case_event
+						WHERE case_event.organization_id = ${input.organizationId}
+							AND case_event.case_id = ${input.caseId}
 					),
 					case_update AS (
-						UPDATE hr_employee_case
+						UPDATE hr_employee_case AS employee_case
 						SET status = 'action_approved',
 							version = ${nextCaseVersion},
 							updated_by = ${input.actorUserId},
 							updated_at = now()
-						WHERE id = ${input.caseId}
-							AND organization_id = ${input.organizationId}
-							AND version = ${input.expectedVersion}
-							AND status = 'under_appeal'
-						RETURNING id, organization_id
+						WHERE employee_case.id = ${input.caseId}
+							AND employee_case.organization_id = ${input.organizationId}
+							AND employee_case.version = ${input.expectedVersion}
+							AND employee_case.status = 'under_appeal'
+						RETURNING employee_case.id, employee_case.organization_id
 					),
 					mutated_appeal AS (
-						UPDATE hr_employee_case_appeal
+						UPDATE hr_employee_case_appeal AS employee_case_appeal
 						SET status = 'resolved',
 							appeal_outcome_code = ${input.appealOutcomeCode},
 							resolved_by = ${input.actorUserId},
@@ -2743,11 +2757,11 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 							version = ${nextAppealVersion},
 							updated_by = ${input.actorUserId},
 							updated_at = now()
-						WHERE id = ${input.appealId}
-							AND organization_id = ${input.organizationId}
-							AND case_id = ${input.caseId}
-							AND status = 'open'
-						RETURNING *
+						WHERE employee_case_appeal.id = ${input.appealId}
+							AND employee_case_appeal.organization_id = ${input.organizationId}
+							AND employee_case_appeal.case_id = ${input.caseId}
+							AND employee_case_appeal.status = 'open'
+						RETURNING employee_case_appeal.*
 					),
 					inserted_event AS (
 						INSERT INTO hr_employee_case_event (
@@ -2870,12 +2884,13 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH next_seq AS (
-						SELECT COALESCE(MAX(sequence_no), 0) + 1 AS seq
-						FROM hr_employee_case_event
-						WHERE organization_id = ${input.organizationId} AND case_id = ${input.caseId}
+						SELECT COALESCE(MAX(case_event.sequence_no), 0) + 1 AS seq
+						FROM hr_employee_case_event AS case_event
+						WHERE case_event.organization_id = ${input.organizationId}
+							AND case_event.case_id = ${input.caseId}
 					),
 					mutated AS (
-						UPDATE hr_employee_case
+						UPDATE hr_employee_case AS employee_case
 						SET status = 'closed',
 							outcome_code = ${input.outcomeCode},
 							closed_at = now(),
@@ -2883,11 +2898,11 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 							version = ${nextVersion},
 							updated_by = ${input.actorUserId},
 							updated_at = now()
-						WHERE id = ${input.caseId}
-							AND organization_id = ${input.organizationId}
-							AND version = ${input.expectedVersion}
-							AND status IN ('finding_recorded', 'action_approved')
-						RETURNING *
+						WHERE employee_case.id = ${input.caseId}
+							AND employee_case.organization_id = ${input.organizationId}
+							AND employee_case.version = ${input.expectedVersion}
+							AND employee_case.status IN ('finding_recorded', 'action_approved')
+						RETURNING employee_case.*
 					),
 					inserted_event AS (
 						INSERT INTO hr_employee_case_event (
@@ -3004,12 +3019,13 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH next_seq AS (
-						SELECT COALESCE(MAX(sequence_no), 0) + 1 AS seq
-						FROM hr_employee_case_event
-						WHERE organization_id = ${input.organizationId} AND case_id = ${input.caseId}
+						SELECT COALESCE(MAX(case_event.sequence_no), 0) + 1 AS seq
+						FROM hr_employee_case_event AS case_event
+						WHERE case_event.organization_id = ${input.organizationId}
+							AND case_event.case_id = ${input.caseId}
 					),
 					mutated AS (
-						UPDATE hr_employee_case
+						UPDATE hr_employee_case AS employee_case
 						SET status = 'open',
 							outcome_code = NULL,
 							closed_at = NULL,
@@ -3017,11 +3033,11 @@ export const drizzleEmployeeRelationsMethods: DrizzleEmployeeRelationsMethods &
 							version = ${nextVersion},
 							updated_by = ${input.actorUserId},
 							updated_at = now()
-						WHERE id = ${input.caseId}
-							AND organization_id = ${input.organizationId}
-							AND version = ${input.expectedVersion}
-							AND status = 'closed'
-						RETURNING *
+						WHERE employee_case.id = ${input.caseId}
+							AND employee_case.organization_id = ${input.organizationId}
+							AND employee_case.version = ${input.expectedVersion}
+							AND employee_case.status = 'closed'
+						RETURNING employee_case.*
 					),
 					inserted_event AS (
 						INSERT INTO hr_employee_case_event (

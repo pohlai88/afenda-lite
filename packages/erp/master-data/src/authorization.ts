@@ -1,5 +1,5 @@
 import { errorResult, type Result } from "@afenda/errors";
-import { masterDataModuleManifest } from "./module.manifest";
+import { masterDataModuleManifest } from "./composition/module.manifest";
 import type { MasterCommandId, MasterQueryId } from "./module-ids";
 import {
 	type MASTER_DATA_PERMISSION_CODES,

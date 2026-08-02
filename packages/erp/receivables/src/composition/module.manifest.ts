@@ -9,7 +9,7 @@ import {
 	RECEIVABLES_INVOICE_POSTED_EVENT,
 } from "@afenda/events/schemas";
 
-import { RECEIVABLES_PERMISSION_CODES } from "./permissions";
+import { RECEIVABLES_PERMISSION_CODES } from "../permissions";
 
 export const receivablesModuleManifest = {
 	id: "receivables",

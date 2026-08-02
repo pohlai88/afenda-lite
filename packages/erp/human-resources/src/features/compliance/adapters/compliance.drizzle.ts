@@ -1210,9 +1210,9 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH employee AS (
-							SELECT id FROM hr_employee
-							WHERE id = ${record.employeeId}
-								AND organization_id = ${record.organizationId}
+							SELECT employee_root.id FROM hr_employee AS employee_root
+							WHERE employee_root.id = ${record.employeeId}
+								AND employee_root.organization_id = ${record.organizationId}
 						),
 						requirement_ok AS (
 							SELECT 1 AS ok
@@ -3323,11 +3323,11 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH existing AS (
-							SELECT *
-							FROM hr_policy_acknowledgement
-							WHERE id = ${input.acknowledgementId}
-								AND organization_id = ${input.organizationId}
-								AND version = ${input.expectedVersion}
+							SELECT policy_acknowledgement.*
+							FROM hr_policy_acknowledgement AS policy_acknowledgement
+							WHERE policy_acknowledgement.id = ${input.acknowledgementId}
+								AND policy_acknowledgement.organization_id = ${input.organizationId}
+								AND policy_acknowledgement.version = ${input.expectedVersion}
 						),
 						superseded AS (
 							UPDATE hr_policy_acknowledgement pa
@@ -3337,6 +3337,7 @@ export const drizzleComplianceMethods: DrizzleComplianceMethods &
 								updated_at = now()
 							FROM existing e
 							WHERE pa.id = e.id
+								AND pa.organization_id = e.organization_id
 								AND e.requirement_status = 'outstanding'
 							RETURNING pa.id
 						),

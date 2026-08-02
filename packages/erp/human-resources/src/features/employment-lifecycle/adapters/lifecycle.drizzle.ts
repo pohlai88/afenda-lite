@@ -1390,11 +1390,12 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH employment AS (
-							SELECT id, organization_id, employee_id, status
-							FROM hr_employment
-							WHERE id = ${record.employmentId}
-								AND organization_id = ${record.organizationId}
-								AND status = 'active'
+							SELECT employment_root.id, employment_root.organization_id,
+								employment_root.employee_id, employment_root.status
+							FROM hr_employment AS employment_root
+							WHERE employment_root.id = ${record.employmentId}
+								AND employment_root.organization_id = ${record.organizationId}
+								AND employment_root.status = 'active'
 						),
 						offer_ok AS (
 							SELECT 1 AS ok
@@ -1555,12 +1556,12 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH task_row AS (
-							SELECT *
-							FROM hr_onboarding_task
-							WHERE id = ${input.taskId}
-								AND organization_id = ${input.organizationId}
-								AND version = ${input.expectedVersion}
-								AND status = 'pending'
+							SELECT onboarding_task.*
+							FROM hr_onboarding_task AS onboarding_task
+							WHERE onboarding_task.id = ${input.taskId}
+								AND onboarding_task.organization_id = ${input.organizationId}
+								AND onboarding_task.version = ${input.expectedVersion}
+								AND onboarding_task.status = 'pending'
 						),
 						case_row AS (
 							SELECT c.*
@@ -1659,12 +1660,12 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH case_row AS (
-							SELECT *
-							FROM hr_onboarding_case
-							WHERE id = ${input.onboardingCaseId}
-								AND organization_id = ${input.organizationId}
-								AND version = ${input.expectedVersion}
-								AND status = 'in_progress'
+							SELECT onboarding_case.*
+							FROM hr_onboarding_case AS onboarding_case
+							WHERE onboarding_case.id = ${input.onboardingCaseId}
+								AND onboarding_case.organization_id = ${input.organizationId}
+								AND onboarding_case.version = ${input.expectedVersion}
+								AND onboarding_case.status = 'in_progress'
 						),
 						ready AS (
 							SELECT 1 AS ok
@@ -2549,11 +2550,12 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH employment AS (
-							SELECT id, organization_id, employee_id
-							FROM hr_employment
-							WHERE id = ${record.employmentId}
-								AND organization_id = ${record.organizationId}
-								AND status = 'active'
+							SELECT employment_root.id, employment_root.organization_id,
+								employment_root.employee_id
+							FROM hr_employment AS employment_root
+							WHERE employment_root.id = ${record.employmentId}
+								AND employment_root.organization_id = ${record.organizationId}
+								AND employment_root.status = 'active'
 						),
 						mutated AS (
 							INSERT INTO hr_probation_review (
@@ -3453,81 +3455,81 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH employment AS (
-							SELECT id, organization_id, employee_id
-							FROM hr_employment
-							WHERE id = ${input.employmentId}
-								AND organization_id = ${input.organizationId}
+							SELECT employment_root.id, employment_root.organization_id, employment_root.employee_id
+							FROM hr_employment AS employment_root
+							WHERE employment_root.id = ${input.employmentId}
+								AND employment_root.organization_id = ${input.organizationId}
 						),
 						position AS (
-							SELECT id
-							FROM hr_position
-							WHERE id = ${input.toPositionId}
-								AND organization_id = ${input.organizationId}
-								AND status = 'active'
+							SELECT target_position.id
+							FROM hr_position AS target_position
+							WHERE target_position.id = ${input.toPositionId}
+								AND target_position.organization_id = ${input.organizationId}
+								AND target_position.status = 'active'
 						),
 						legal_entity AS (
-							SELECT id, key, name
-							FROM md_organization_dimension
-							WHERE id = ${input.organizationDimensions.legal_entity.id}
-								AND organization_id = ${input.organizationId}
-								AND kind = 'legal_entity'
-								AND key = ${input.organizationDimensions.legal_entity.key}
-								AND effective_from <= ${input.effectiveOn}
-								AND (effective_to IS NULL OR effective_to >= ${input.effectiveOn})
+							SELECT legal_entity_dimension.id, legal_entity_dimension.key, legal_entity_dimension.name
+							FROM md_organization_dimension AS legal_entity_dimension
+							WHERE legal_entity_dimension.id = ${input.organizationDimensions.legal_entity.id}
+								AND legal_entity_dimension.organization_id = ${input.organizationId}
+								AND legal_entity_dimension.kind = 'legal_entity'
+								AND legal_entity_dimension.key = ${input.organizationDimensions.legal_entity.key}
+								AND legal_entity_dimension.effective_from <= ${input.effectiveOn}
+								AND (legal_entity_dimension.effective_to IS NULL OR legal_entity_dimension.effective_to >= ${input.effectiveOn})
 						),
 						business_unit AS (
-							SELECT id, key, name
-							FROM md_organization_dimension
-							WHERE id = ${input.organizationDimensions.business_unit.id}
-								AND organization_id = ${input.organizationId}
-								AND kind = 'business_unit'
-								AND key = ${input.organizationDimensions.business_unit.key}
-								AND effective_from <= ${input.effectiveOn}
-								AND (effective_to IS NULL OR effective_to >= ${input.effectiveOn})
+							SELECT business_unit_dimension.id, business_unit_dimension.key, business_unit_dimension.name
+							FROM md_organization_dimension AS business_unit_dimension
+							WHERE business_unit_dimension.id = ${input.organizationDimensions.business_unit.id}
+								AND business_unit_dimension.organization_id = ${input.organizationId}
+								AND business_unit_dimension.kind = 'business_unit'
+								AND business_unit_dimension.key = ${input.organizationDimensions.business_unit.key}
+								AND business_unit_dimension.effective_from <= ${input.effectiveOn}
+								AND (business_unit_dimension.effective_to IS NULL OR business_unit_dimension.effective_to >= ${input.effectiveOn})
 						),
 						location AS (
-							SELECT id, key, name
-							FROM md_organization_dimension
-							WHERE id = ${input.organizationDimensions.location.id}
-								AND organization_id = ${input.organizationId}
-								AND kind = 'location'
-								AND key = ${input.organizationDimensions.location.key}
-								AND effective_from <= ${input.effectiveOn}
-								AND (effective_to IS NULL OR effective_to >= ${input.effectiveOn})
+							SELECT location_dimension.id, location_dimension.key, location_dimension.name
+							FROM md_organization_dimension AS location_dimension
+							WHERE location_dimension.id = ${input.organizationDimensions.location.id}
+								AND location_dimension.organization_id = ${input.organizationId}
+								AND location_dimension.kind = 'location'
+								AND location_dimension.key = ${input.organizationDimensions.location.key}
+								AND location_dimension.effective_from <= ${input.effectiveOn}
+								AND (location_dimension.effective_to IS NULL OR location_dimension.effective_to >= ${input.effectiveOn})
 						),
 						cost_centre AS (
-							SELECT id, key, name
-							FROM md_organization_dimension
-							WHERE id = ${input.organizationDimensions.cost_centre.id}
-								AND organization_id = ${input.organizationId}
-								AND kind = 'cost_centre'
-								AND key = ${input.organizationDimensions.cost_centre.key}
-								AND effective_from <= ${input.effectiveOn}
-								AND (effective_to IS NULL OR effective_to >= ${input.effectiveOn})
+							SELECT cost_centre_dimension.id, cost_centre_dimension.key, cost_centre_dimension.name
+							FROM md_organization_dimension AS cost_centre_dimension
+							WHERE cost_centre_dimension.id = ${input.organizationDimensions.cost_centre.id}
+								AND cost_centre_dimension.organization_id = ${input.organizationId}
+								AND cost_centre_dimension.kind = 'cost_centre'
+								AND cost_centre_dimension.key = ${input.organizationDimensions.cost_centre.key}
+								AND cost_centre_dimension.effective_from <= ${input.effectiveOn}
+								AND (cost_centre_dimension.effective_to IS NULL OR cost_centre_dimension.effective_to >= ${input.effectiveOn})
 						),
 						project AS (
-							SELECT id, key, name
-							FROM md_organization_dimension
-							WHERE id = ${input.organizationDimensions.project.id}
-								AND organization_id = ${input.organizationId}
-								AND kind = 'project'
-								AND key = ${input.organizationDimensions.project.key}
-								AND effective_from <= ${input.effectiveOn}
-								AND (effective_to IS NULL OR effective_to >= ${input.effectiveOn})
+							SELECT project_dimension.id, project_dimension.key, project_dimension.name
+							FROM md_organization_dimension AS project_dimension
+							WHERE project_dimension.id = ${input.organizationDimensions.project.id}
+								AND project_dimension.organization_id = ${input.organizationId}
+								AND project_dimension.kind = 'project'
+								AND project_dimension.key = ${input.organizationDimensions.project.key}
+								AND project_dimension.effective_from <= ${input.effectiveOn}
+								AND (project_dimension.effective_to IS NULL OR project_dimension.effective_to >= ${input.effectiveOn})
 						),
 						ended AS (
-							UPDATE hr_work_assignment
+							UPDATE hr_work_assignment AS current_assignment
 							SET ends_on = ${previousIsoDate(input.effectiveOn)},
 								successor_assignment_id = ${brandedAssignmentId.data},
 								transfer_movement_id = ${brandedMovementId.data},
 								version = ${nextAssignmentVersion},
 								updated_by = ${input.actorUserId},
 								updated_at = now()
-							WHERE id = ${currentAssignment.id}
-								AND organization_id = ${input.organizationId}
-								AND version = ${currentAssignment.version}
-								AND ends_on IS NULL
-							RETURNING *
+							WHERE current_assignment.id = ${currentAssignment.id}
+								AND current_assignment.organization_id = ${input.organizationId}
+								AND current_assignment.version = ${currentAssignment.version}
+								AND current_assignment.ends_on IS NULL
+							RETURNING current_assignment.*
 						),
 						created_assignment AS (
 							INSERT INTO hr_work_assignment (
@@ -3762,10 +3764,11 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH employment AS (
-							SELECT id, organization_id, employee_id, starts_on
-							FROM hr_employment
-							WHERE id = ${record.employmentId}
-								AND organization_id = ${record.organizationId}
+							SELECT employment_root.id, employment_root.organization_id,
+								employment_root.employee_id, employment_root.starts_on
+							FROM hr_employment AS employment_root
+							WHERE employment_root.id = ${record.employmentId}
+								AND employment_root.organization_id = ${record.organizationId}
 						),
 						mutated AS (
 							INSERT INTO hr_termination (
@@ -4022,11 +4025,13 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH employment AS (
-							SELECT id, organization_id, employee_id, starts_on, status, version
-							FROM hr_employment
-							WHERE id = ${terminationEmploymentId}
-								AND organization_id = ${record.organizationId}
-								AND version = ${expectedEmploymentVersion}
+							SELECT employment_root.id, employment_root.organization_id,
+								employment_root.employee_id, employment_root.starts_on,
+								employment_root.status, employment_root.version
+							FROM hr_employment AS employment_root
+							WHERE employment_root.id = ${terminationEmploymentId}
+								AND employment_root.organization_id = ${record.organizationId}
+								AND employment_root.version = ${expectedEmploymentVersion}
 						),
 						mutated AS (
 							UPDATE hr_termination t
@@ -4299,10 +4304,11 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH employment AS (
-							SELECT id, organization_id, employee_id, status
-							FROM hr_employment
-							WHERE id = ${record.employmentId}
-								AND organization_id = ${record.organizationId}
+							SELECT employment_root.id, employment_root.organization_id,
+								employment_root.employee_id, employment_root.status
+							FROM hr_employment AS employment_root
+							WHERE employment_root.id = ${record.employmentId}
+								AND employment_root.organization_id = ${record.organizationId}
 						),
 						termination_ok AS (
 							SELECT 1 AS ok
@@ -4771,12 +4777,12 @@ export const drizzleLifecycleMethods: DrizzleLifecycleMethods &
 			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 						WITH case_row AS (
-							SELECT *
-							FROM hr_offboarding_case
-							WHERE id = ${input.offboardingCaseId}
-								AND organization_id = ${input.organizationId}
-								AND version = ${input.expectedVersion}
-								AND status = 'in_progress'
+							SELECT offboarding_case.*
+							FROM hr_offboarding_case AS offboarding_case
+							WHERE offboarding_case.id = ${input.offboardingCaseId}
+								AND offboarding_case.organization_id = ${input.organizationId}
+								AND offboarding_case.version = ${input.expectedVersion}
+								AND offboarding_case.status = 'in_progress'
 						),
 						ready AS (
 							SELECT 1 AS ok

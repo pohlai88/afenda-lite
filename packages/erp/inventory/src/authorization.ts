@@ -1,5 +1,5 @@
 import { errorResult, type Result } from "@afenda/errors";
-import { inventoryModuleManifest } from "./module.manifest";
+import { inventoryModuleManifest } from "./composition/module.manifest";
 import type {
 	InventoryCommandId,
 	InventoryQueryId,

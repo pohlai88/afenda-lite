@@ -1224,30 +1224,30 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			const [rows] = await afendaDatabase.transaction((sqlValue11) => [
 				sqlValue11`
 							WITH mutated AS (
-								UPDATE hr_department
+								UPDATE hr_department AS department
 								SET name = ${nextName},
 									parent_department_id = ${parentValue},
 									version = ${nextVersion},
 									updated_by = ${input.actorUserId},
 									updated_at = now()
-								WHERE id = ${input.departmentId}
-									AND organization_id = ${input.organizationId}
-									AND version = ${input.expectedVersion}
-								RETURNING *
+								WHERE department.id = ${input.departmentId}
+									AND department.organization_id = ${input.organizationId}
+									AND department.version = ${input.expectedVersion}
+								RETURNING department.*
 							),
 							closed AS (
-								UPDATE hr_department_structure_version
+								UPDATE hr_department_structure_version AS structure_version
 								SET effective_to = ${predecessorEnd},
 									lineage_status = 'superseded',
-									version = version + 1,
+									version = structure_version.version + 1,
 									updated_by = ${input.actorUserId},
 									updated_at = now()
-								WHERE organization_id = ${input.organizationId}
-									AND department_id = ${input.departmentId}
-									AND id = ${openSegment.id}
-									AND effective_to IS NULL
-									AND lineage_status = 'active'
-								RETURNING id
+								WHERE structure_version.organization_id = ${input.organizationId}
+									AND structure_version.department_id = ${input.departmentId}
+									AND structure_version.id = ${openSegment.id}
+									AND structure_version.effective_to IS NULL
+									AND structure_version.lineage_status = 'active'
+								RETURNING structure_version.id
 							),
 							successor AS (
 								INSERT INTO hr_department_structure_version (
@@ -1819,29 +1819,29 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			const [rows] = await afendaDatabase.transaction((sqlValue8) => [
 				sqlValue8`
 						WITH mutated AS (
-							UPDATE hr_job
+							UPDATE hr_job AS job
 							SET title = ${input.title},
 								version = ${nextVersion},
 								updated_by = ${input.actorUserId},
 								updated_at = now()
-							WHERE id = ${input.jobId}
-								AND organization_id = ${input.organizationId}
-								AND version = ${input.expectedVersion}
-							RETURNING *
+							WHERE job.id = ${input.jobId}
+								AND job.organization_id = ${input.organizationId}
+								AND job.version = ${input.expectedVersion}
+							RETURNING job.*
 						),
 						closed AS (
-							UPDATE hr_job_definition_version
+							UPDATE hr_job_definition_version AS definition_version
 							SET effective_to = ${predecessorEnd},
 								lineage_status = 'superseded',
-								version = version + 1,
+								version = definition_version.version + 1,
 								updated_by = ${input.actorUserId},
 								updated_at = now()
-							WHERE organization_id = ${input.organizationId}
-								AND job_id = ${input.jobId}
-								AND id = ${openSegment.id}
-								AND effective_to IS NULL
-								AND lineage_status = 'active'
-							RETURNING id
+							WHERE definition_version.organization_id = ${input.organizationId}
+								AND definition_version.job_id = ${input.jobId}
+								AND definition_version.id = ${openSegment.id}
+								AND definition_version.effective_to IS NULL
+								AND definition_version.lineage_status = 'active'
+							RETURNING definition_version.id
 						),
 						successor AS (
 							INSERT INTO hr_job_definition_version (
@@ -2464,31 +2464,31 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			const [rows] = await afendaDatabase.transaction((sqlValue5) => [
 				sqlValue5`
 						WITH mutated AS (
-							UPDATE hr_position
+							UPDATE hr_position AS position
 							SET title = ${nextTitle},
 								department_id = ${nextDepartmentId},
 								job_id = ${nextJobId},
 								version = ${nextVersion},
 								updated_by = ${input.actorUserId},
 								updated_at = now()
-							WHERE id = ${input.positionId}
-								AND organization_id = ${input.organizationId}
-								AND version = ${input.expectedVersion}
-							RETURNING *
+							WHERE position.id = ${input.positionId}
+								AND position.organization_id = ${input.organizationId}
+								AND position.version = ${input.expectedVersion}
+							RETURNING position.*
 						),
 						closed AS (
-							UPDATE hr_position_definition_version
+							UPDATE hr_position_definition_version AS definition_version
 							SET effective_to = ${predecessorEnd},
 								lineage_status = 'superseded',
-								version = version + 1,
+								version = definition_version.version + 1,
 								updated_by = ${input.actorUserId},
 								updated_at = now()
-							WHERE organization_id = ${input.organizationId}
-								AND position_id = ${input.positionId}
-								AND id = ${openSegment.id}
-								AND effective_to IS NULL
-								AND lineage_status = 'active'
-							RETURNING id
+							WHERE definition_version.organization_id = ${input.organizationId}
+								AND definition_version.position_id = ${input.positionId}
+								AND definition_version.id = ${openSegment.id}
+								AND definition_version.effective_to IS NULL
+								AND definition_version.lineage_status = 'active'
+							RETURNING definition_version.id
 						),
 						successor AS (
 							INSERT INTO hr_position_definition_version (
@@ -3391,17 +3391,17 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 			const [rows] = await afendaDatabase.transaction((sqlValue) => [
 				sqlValue`
 							WITH closed AS (
-								UPDATE hr_reporting_line
+								UPDATE hr_reporting_line AS prior_reporting_line
 								SET ends_on = ${input.closePriorOn},
 									superseded_by_reporting_line_id = ${brandedId.data},
 									version = ${nextPriorVersion},
 									updated_by = ${input.createdBy},
 									updated_at = now()
-								WHERE id = ${priorLine.id}
-									AND organization_id = ${input.organizationId}
-									AND version = ${priorLine.version}
-									AND ends_on IS NULL
-								RETURNING *
+								WHERE prior_reporting_line.id = ${priorLine.id}
+									AND prior_reporting_line.organization_id = ${input.organizationId}
+									AND prior_reporting_line.version = ${priorLine.version}
+									AND prior_reporting_line.ends_on IS NULL
+								RETURNING prior_reporting_line.*
 							),
 							closed_audit AS (
 								INSERT INTO platform_audit_log (
@@ -3419,16 +3419,16 @@ export const drizzleOrganizationMethods: DrizzleOrganizationMethods &
 								RETURNING id
 							),
 							employee AS (
-								SELECT id, organization_id
-								FROM hr_employee
-								WHERE id = ${input.employeeId}
-									AND organization_id = ${input.organizationId}
+								SELECT employee_root.id, employee_root.organization_id
+								FROM hr_employee AS employee_root
+								WHERE employee_root.id = ${input.employeeId}
+									AND employee_root.organization_id = ${input.organizationId}
 							),
 							manager AS (
-								SELECT id
-								FROM hr_employee
-								WHERE id = ${input.managerEmployeeId}
-									AND organization_id = ${input.organizationId}
+								SELECT manager_root.id
+								FROM hr_employee AS manager_root
+								WHERE manager_root.id = ${input.managerEmployeeId}
+									AND manager_root.organization_id = ${input.organizationId}
 							),
 							mutated AS (
 								INSERT INTO hr_reporting_line (

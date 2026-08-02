@@ -1,12 +1,23 @@
-import { readFile, stat } from "node:fs/promises";
+import {
+	mkdir,
+	readdir,
+	readFile,
+	rm,
+	stat,
+	writeFile,
+} from "node:fs/promises";
 import { resolve } from "node:path";
 
+import { generatorContracts } from "../contracts.ts";
 import {
 	createGeneratorDiagnostic,
 	type GeneratorDiagnostic,
 } from "../engine/diagnostic-protocol.ts";
 import type { GeneratorDoctorExtension } from "../engine/family-registration.ts";
-import type { DiscoveredWorkspace } from "../engine/workspace-discovery.ts";
+import {
+	type DiscoveredWorkspace,
+	discoverWorkspaces,
+} from "../engine/workspace-discovery.ts";
 
 export const ERP_MANIFEST_AUTHORITY_SCHEMA =
 	"afenda.erp-manifest-authority/v1" as const;
@@ -16,6 +27,12 @@ const HISTORICAL_MANIFEST_PATH = "src/module.manifest.ts";
 const PACKAGE_NAME_PREFIX = /^@afenda\//;
 const WORKSPACE_EDGE_REGISTER_PATH =
 	"docs-V2/modules/WORKSPACE-EDGE-REGISTER.yaml";
+const RELATIVE_DOT_IMPORT_PATTERN = /(from\s+["'])\.\//g;
+const HISTORICAL_MANIFEST_REFERENCE_PATTERN = /src\/module\.manifest/g;
+const ROOT_LOCAL_MANIFEST_IMPORT_PATTERN = /(["'])\.\/module\.manifest(["'])/g;
+const ROOT_SOURCE_MANIFEST_IMPORT_PATTERN =
+	/(["'])\.\.\/src\/module\.manifest(["'])/g;
+const LEADING_PATH_SEPARATOR_PATTERN = /^[/\\]/;
 
 const SEMANTIC_INPUT_CANDIDATES = Object.freeze({
 	moduleDefinition: Object.freeze(["src/composition/module-definition.ts"]),
@@ -44,8 +61,10 @@ export interface ErpManifestSemanticInputAvailability {
 
 export interface ErpManifestAuthorityWorkspace {
 	readonly expectedExportName: string;
+	readonly id: string;
 	readonly manifestPath: string | null;
 	readonly name: string;
+	readonly packageAuthorizationPath: string | null;
 	readonly packagePath: string;
 	readonly semanticInputs: ErpManifestSemanticInputAvailability;
 	readonly state: ErpManifestAuthorityState;
@@ -76,6 +95,32 @@ interface CreateErpManifestAuthorityReportInput {
 interface ExistingFile {
 	readonly contents: string;
 	readonly path: string;
+}
+
+interface FileUpdate {
+	readonly contents: string;
+	readonly path: string;
+}
+
+export interface ErpManifestPackageAuthority {
+	readonly authorizationPath: string | null;
+	readonly dir: string;
+	readonly id: string;
+	readonly manifestExport: string;
+	readonly manifestPath: string;
+	readonly packageName: string;
+	readonly state: ErpManifestAuthorityState;
+}
+
+export interface ErpManifestProjectionResult {
+	readonly changed: readonly string[];
+	readonly report: ErpManifestAuthorityReportV1;
+	readonly unchanged: readonly string[];
+}
+
+interface ProjectErpManifestAuthorityInput {
+	readonly repositoryRoot: string;
+	readonly write: boolean;
 }
 
 const compareText = (left: string, right: string): number => {
@@ -145,6 +190,26 @@ const toManifestExportName = (packageName: string): string => {
 	return `${firstSegment}${suffix}ModuleManifest`;
 };
 
+const toModuleId = (packageName: string): string =>
+	packageName.replace(PACKAGE_NAME_PREFIX, "");
+
+const resolveManifestPath = (
+	workspace: DiscoveredWorkspace,
+	state: ErpManifestAuthorityState,
+): string | null => {
+	if (
+		state === "canonical" ||
+		state === "duplicate-identical" ||
+		state === "duplicate-conflict"
+	) {
+		return `${workspace.path}/${CANONICAL_MANIFEST_PATH}`;
+	}
+	if (state === "historical") {
+		return `${workspace.path}/${HISTORICAL_MANIFEST_PATH}`;
+	}
+	return null;
+};
+
 const classifyManifestState = (
 	canonical: ExistingFile | null,
 	historical: ExistingFile | null,
@@ -212,22 +277,48 @@ const createSemanticInputAvailability = async (
 	});
 };
 
+const findPackageAuthorizationPath = async (
+	repositoryRoot: string,
+	workspacePath: string,
+): Promise<string | null> => {
+	const candidates = [
+		"src/authorization.ts",
+		"src/kernel/authorization/contextual-authorization.ts",
+		"src/kernel/authorization/authorization.ts",
+		"src/kernel/execution/authorization.ts",
+	];
+	const existing = await listExistingPaths(
+		repositoryRoot,
+		workspacePath,
+		candidates,
+	);
+	return existing[0] ?? null;
+};
+
 const inspectWorkspace = async (
 	repositoryRoot: string,
 	workspace: DiscoveredWorkspace,
 ): Promise<ErpManifestAuthorityWorkspace> => {
-	const [canonical, historical, semanticInputs] = await Promise.all([
-		readExistingFile(repositoryRoot, workspace.path, CANONICAL_MANIFEST_PATH),
-		readExistingFile(repositoryRoot, workspace.path, HISTORICAL_MANIFEST_PATH),
-		createSemanticInputAvailability(repositoryRoot, workspace.path),
-	]);
+	const [canonical, historical, semanticInputs, packageAuthorizationPath] =
+		await Promise.all([
+			readExistingFile(repositoryRoot, workspace.path, CANONICAL_MANIFEST_PATH),
+			readExistingFile(
+				repositoryRoot,
+				workspace.path,
+				HISTORICAL_MANIFEST_PATH,
+			),
+			createSemanticInputAvailability(repositoryRoot, workspace.path),
+			findPackageAuthorizationPath(repositoryRoot, workspace.path),
+		]);
 	const manifest = classifyManifestState(canonical, historical);
 	return Object.freeze({
+		id: toModuleId(workspace.name),
 		name: workspace.name,
 		packagePath: workspace.path,
 		expectedExportName: toManifestExportName(workspace.name),
-		manifestPath: manifest.manifestPath,
+		manifestPath: resolveManifestPath(workspace, manifest.state),
 		state: manifest.state,
+		packageAuthorizationPath,
 		semanticInputs,
 	});
 };
@@ -268,6 +359,265 @@ export const createErpManifestAuthorityReport = async ({
 		historicalManifestPath: HISTORICAL_MANIFEST_PATH,
 		summary: createSummary(authorityWorkspaces),
 		workspaces: authorityWorkspaces,
+	});
+};
+
+export const discoverErpManifestAuthorityReport = async (
+	repositoryRoot: string,
+): Promise<ErpManifestAuthorityReportV1> => {
+	const discovery = await discoverWorkspaces({
+		repositoryRoot,
+		contracts: generatorContracts,
+	});
+	return createErpManifestAuthorityReport({
+		repositoryRoot,
+		workspaces: discovery.workspaces,
+	});
+};
+
+export const listErpManifestPackageAuthority = async (
+	repositoryRoot: string,
+): Promise<readonly ErpManifestPackageAuthority[]> => {
+	const report = await discoverErpManifestAuthorityReport(repositoryRoot);
+	if (report.summary.missing > 0 || report.summary.duplicateConflict > 0) {
+		const blocked = report.workspaces
+			.filter(
+				(workspace) =>
+					workspace.state === "missing" ||
+					workspace.state === "duplicate-conflict",
+			)
+			.map((workspace) => `${workspace.packagePath}:${workspace.state}`)
+			.join(", ");
+		throw new Error(`ERP manifest authority is blocked: ${blocked}`);
+	}
+	return Object.freeze(
+		report.workspaces
+			.filter((workspace) => workspace.manifestPath !== null)
+			.map((workspace) =>
+				Object.freeze({
+					id: workspace.id,
+					packageName: workspace.name,
+					dir: workspace.packagePath,
+					manifestPath:
+						workspace.state === "canonical" ||
+						workspace.state === "duplicate-identical" ||
+						workspace.state === "duplicate-conflict"
+							? CANONICAL_MANIFEST_PATH
+							: HISTORICAL_MANIFEST_PATH,
+					manifestExport: workspace.expectedExportName,
+					authorizationPath:
+						workspace.packageAuthorizationPath === null
+							? null
+							: workspace.packageAuthorizationPath.replace(
+									`${workspace.packagePath}/`,
+									"",
+								),
+					state: workspace.state,
+				}),
+			),
+	);
+};
+
+const renderCanonicalProjectionFromHistorical = (contents: string): string =>
+	contents.replaceAll(RELATIVE_DOT_IMPORT_PATTERN, "$1../");
+
+const readPackageJson = async (repositoryRoot: string, packagePath: string) => {
+	const path = resolve(repositoryRoot, packagePath, "package.json");
+	const parsed: unknown = JSON.parse(await readFile(path, "utf8"));
+	if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+		throw new Error(`${packagePath}/package.json must be a JSON object`);
+	}
+	return parsed;
+};
+
+const projectHistoricalWorkspace = async (
+	repositoryRoot: string,
+	workspace: ErpManifestAuthorityWorkspace,
+	write: boolean,
+): Promise<readonly string[]> => {
+	if (workspace.state !== "historical") {
+		return Object.freeze([]);
+	}
+	const historicalPath = `${workspace.packagePath}/${HISTORICAL_MANIFEST_PATH}`;
+	const canonicalPath = `${workspace.packagePath}/${CANONICAL_MANIFEST_PATH}`;
+	const historicalContents = await readFile(
+		resolve(repositoryRoot, historicalPath),
+		"utf8",
+	);
+	const canonicalContents =
+		renderCanonicalProjectionFromHistorical(historicalContents);
+	const packageJson = await readPackageJson(
+		repositoryRoot,
+		workspace.packagePath,
+	);
+	const serializedPackageJson = `${JSON.stringify(
+		updatePackageManifestExport(packageJson),
+		null,
+		"\t",
+	)}\n`;
+	const referenceUpdates = await listManifestReferenceUpdates(
+		repositoryRoot,
+		workspace.packagePath,
+	);
+	const changed = [
+		canonicalPath,
+		historicalPath,
+		`${workspace.packagePath}/package.json`,
+		...referenceUpdates.map((update) => update.path),
+	].sort(compareText);
+	if (write) {
+		await mkdir(
+			resolve(repositoryRoot, workspace.packagePath, "src", "composition"),
+			{
+				recursive: true,
+			},
+		);
+		await writeFile(
+			resolve(repositoryRoot, canonicalPath),
+			canonicalContents,
+			"utf8",
+		);
+		await writeFile(
+			resolve(repositoryRoot, workspace.packagePath, "package.json"),
+			serializedPackageJson,
+			"utf8",
+		);
+		await Promise.all(
+			referenceUpdates.map((update) =>
+				writeFile(
+					resolve(repositoryRoot, update.path),
+					update.contents,
+					"utf8",
+				),
+			),
+		);
+		await rm(resolve(repositoryRoot, historicalPath), { force: true });
+	}
+	return Object.freeze(changed);
+};
+
+const listManifestReferenceUpdates = async (
+	repositoryRoot: string,
+	packagePath: string,
+): Promise<readonly FileUpdate[]> => {
+	const absolutePackagePath = resolve(repositoryRoot, packagePath);
+	const files = await walkPackageFiles(absolutePackagePath);
+	const updates = await Promise.all(
+		files.map(async (absolutePath) => {
+			const contents = await readFile(absolutePath, "utf8");
+			const packageRelativePath = absolutePath
+				.replace(absolutePackagePath, "")
+				.replace(LEADING_PATH_SEPARATOR_PATTERN, "")
+				.replaceAll("\\", "/");
+			const rootImportRepaired = isPackageRootSourceFile(packageRelativePath)
+				? contents.replaceAll(
+						ROOT_LOCAL_MANIFEST_IMPORT_PATTERN,
+						"$1./composition/module.manifest$2",
+					)
+				: contents;
+			const nextContents = rootImportRepaired
+				.replaceAll(
+					ROOT_SOURCE_MANIFEST_IMPORT_PATTERN,
+					"$1../src/composition/module.manifest$2",
+				)
+				.replaceAll(
+					HISTORICAL_MANIFEST_REFERENCE_PATTERN,
+					"src/composition/module.manifest",
+				);
+			if (nextContents === contents) {
+				return null;
+			}
+			return Object.freeze({
+				path: absolutePath
+					.replace(resolve(repositoryRoot), "")
+					.replace(LEADING_PATH_SEPARATOR_PATTERN, "")
+					.replaceAll("\\", "/"),
+				contents: nextContents,
+			});
+		}),
+	);
+	return Object.freeze(
+		updates
+			.filter((update) => update !== null)
+			.sort((left, right) => compareText(left.path, right.path)),
+	);
+};
+
+const isPackageRootSourceFile = (packageRelativePath: string): boolean =>
+	packageRelativePath.startsWith("src/") &&
+	!packageRelativePath.slice("src/".length).includes("/");
+
+const walkPackageFiles = async (root: string): Promise<readonly string[]> => {
+	const entries = await readdir(root, { withFileTypes: true });
+	const nested = await Promise.all(
+		entries.map((entry) => {
+			const path = resolve(root, entry.name);
+			if (entry.isDirectory()) {
+				if (
+					entry.name === "node_modules" ||
+					entry.name === "dist" ||
+					entry.name === ".turbo"
+				) {
+					return [];
+				}
+				return walkPackageFiles(path);
+			}
+			if (entry.isFile() && entry.name.endsWith(".ts")) {
+				return [path];
+			}
+			return [];
+		}),
+	);
+	return Object.freeze(nested.flat().sort(compareText));
+};
+
+const updatePackageManifestExport = (packageJson: object): object => {
+	const exportsValue = Reflect.get(packageJson, "exports");
+	if (
+		typeof exportsValue !== "object" ||
+		exportsValue === null ||
+		Array.isArray(exportsValue)
+	) {
+		return packageJson;
+	}
+	const manifestExport = Reflect.get(exportsValue, "./module-manifest");
+	if (
+		typeof manifestExport !== "object" ||
+		manifestExport === null ||
+		Array.isArray(manifestExport)
+	) {
+		return packageJson;
+	}
+	Reflect.set(manifestExport, "types", `./${CANONICAL_MANIFEST_PATH}`);
+	Reflect.set(manifestExport, "default", `./${CANONICAL_MANIFEST_PATH}`);
+	return packageJson;
+};
+
+export const projectErpManifestAuthority = async ({
+	repositoryRoot,
+	write,
+}: ProjectErpManifestAuthorityInput): Promise<ErpManifestProjectionResult> => {
+	const report = await discoverErpManifestAuthorityReport(repositoryRoot);
+	if (report.summary.missing > 0 || report.summary.duplicateConflict > 0) {
+		throw new Error(
+			"ERP manifest authority projection is blocked by missing or duplicate-conflict manifests",
+		);
+	}
+	const changes = await Promise.all(
+		report.workspaces.map((workspace) =>
+			projectHistoricalWorkspace(repositoryRoot, workspace, write),
+		),
+	);
+	const changed = Object.freeze(changes.flat().sort(compareText));
+	return Object.freeze({
+		report,
+		changed,
+		unchanged: Object.freeze(
+			report.workspaces
+				.filter((workspace) => workspace.state === "canonical")
+				.map((workspace) => workspace.packagePath)
+				.sort(compareText),
+		),
 	});
 };
 

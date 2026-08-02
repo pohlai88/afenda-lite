@@ -48,6 +48,26 @@ export type OpenApiDocument = ReturnType<
 	OpenApiGeneratorV3["generateDocument"]
 >;
 
+type AfendaOpenApiMediaTypeObject = Readonly<{
+	encoding?: unknown;
+	example?: unknown;
+	examples?: unknown;
+	schema?: unknown;
+}>;
+
+type AfendaOpenApiResponse = Readonly<{
+	content?: Readonly<Record<string, AfendaOpenApiMediaTypeObject>>;
+	description: string;
+	headers?: Readonly<Record<string, unknown>>;
+	links?: unknown;
+}>;
+
+type AfendaRouteConfig = Omit<RouteConfig, "responses"> & {
+	responses: Readonly<
+		Record<string, AfendaOpenApiResponse | RouteConfig["responses"][string]>
+	>;
+};
+
 interface OpenApiOperation {
 	operationId?: string;
 	"x-afenda-status"?: AfendaOperationStatus;
@@ -131,8 +151,8 @@ function createRegistry() {
 			document["x-afenda-document"] = { ...input.meta };
 			return document;
 		},
-		path(route: RouteConfig): void {
-			registry.registerPath(route);
+		path(route: AfendaRouteConfig): void {
+			registry.registerPath(route as unknown as RouteConfig);
 		},
 		schema<T extends ZodType>(name: string, schema: T): T {
 			return registry.register(name, schema);

@@ -1,7 +1,7 @@
 import type { AfendaModuleManifest } from "@afenda/db/module-manifest";
 import { MASTER_DATA_EVENT_IDS } from "@afenda/events/schemas";
 
-import { extensionPermissionForCommand } from "./capabilities/extensions/extension-authorization-policy";
+import { extensionPermissionForCommand } from "../capabilities/extensions/extension-authorization-policy";
 import {
 	MASTER_COMMAND_ITEM_ACTIVATE,
 	MASTER_COMMAND_ITEM_GROUP_ACTIVATE,
@@ -33,7 +33,7 @@ import {
 	MASTER_DATA_COMMAND_IDS,
 	MASTER_DATA_QUERY_IDS,
 	type MasterCommandId,
-} from "./module-ids";
+} from "../module-ids";
 import {
 	MASTER_DATA_PERMISSION_CHANGE_REQUEST_APPROVE,
 	MASTER_DATA_PERMISSION_CHANGE_REQUEST_READ,
@@ -77,7 +77,7 @@ import {
 	MASTER_DATA_PERMISSION_VARIANT_MANAGE,
 	MASTER_DATA_PERMISSION_WAREHOUSE_MANAGE,
 	MASTER_DATA_PERMISSION_WAREHOUSE_READ,
-} from "./permissions";
+} from "../permissions";
 
 const MASTER_DATA_MUTATION_TABLES = [
 	"md_organization_dimension",

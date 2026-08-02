@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { masterDataModuleManifest } from "../src/module.manifest";
+import { masterDataModuleManifest } from "../src/composition/module.manifest";
 import {
 	MASTER_COMMAND_CHANGE_REQUEST_APPROVE,
 	MASTER_COMMAND_CHANGE_REQUEST_SUBMIT,

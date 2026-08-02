@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 
 import { describe, expect, it } from "vitest";
 
-import { inventoryModuleManifest } from "../src/module.manifest";
+import { inventoryModuleManifest } from "../src/composition/module.manifest";
 import {
 	INVENTORY_COMMAND_AUTHORIZATION,
 	INVENTORY_COMMAND_IDS,

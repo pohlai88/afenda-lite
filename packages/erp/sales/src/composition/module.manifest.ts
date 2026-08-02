@@ -3,9 +3,9 @@ import { SALES_EVENT_IDS } from "@afenda/events/schemas";
 import {
 	SALES_COMMAND_PERMISSION,
 	SALES_QUERY_PERMISSION,
-} from "./authorization";
-import { SALES_COMMAND_IDS, SALES_QUERY_IDS } from "./module-ids";
-import { SALES_PERMISSION_CODES } from "./permissions";
+} from "../authorization";
+import { SALES_COMMAND_IDS, SALES_QUERY_IDS } from "../module-ids";
+import { SALES_PERMISSION_CODES } from "../permissions";
 
 export const salesModuleManifest = {
 	id: "sales",
