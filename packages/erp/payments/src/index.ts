@@ -19,6 +19,7 @@ export {
 	postRefund,
 	reversePayment,
 	seedDefaultPaymentMethods,
+	updateInstrumentClearance,
 	updatePaymentMethod,
 } from "./facade/capabilities";
 export type { PaymentsCommandOptions } from "./facade/contracts";

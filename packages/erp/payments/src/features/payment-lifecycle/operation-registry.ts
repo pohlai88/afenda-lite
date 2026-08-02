@@ -3,6 +3,7 @@ import {
 	PAYMENTS_PERMISSION_PAYMENT_POST,
 	PAYMENTS_PERMISSION_PAYMENT_READ,
 	PAYMENTS_PERMISSION_PAYMENT_REVERSE,
+	PAYMENTS_PERMISSION_PAYMENT_UPDATE,
 	PAYMENTS_PERMISSION_REFUND_CREATE,
 	PAYMENTS_PERMISSION_REFUND_POST,
 	PAYMENTS_PERMISSION_TRANSFER_CREATE,
@@ -33,6 +34,13 @@ export const PAYMENTS_LIFECYCLE_COMMANDS = definePaymentsOperationRegistry({
 		owner: OWNER,
 		permission: PAYMENTS_PERMISSION_PAYMENT_REVERSE,
 		publicName: "reversePayment",
+	},
+	updateInstrumentClearance: {
+		id: "payments.payment.update_instrument_clearance",
+		kind: "command",
+		owner: OWNER,
+		permission: PAYMENTS_PERMISSION_PAYMENT_UPDATE,
+		publicName: "updateInstrumentClearance",
 	},
 	createAndPostPaymentTransfer: {
 		id: "payments.transfer.create_and_post",

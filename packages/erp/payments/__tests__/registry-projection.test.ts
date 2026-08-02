@@ -20,6 +20,7 @@ const EXPECTED_COMMANDS = {
 	"payments.payment.create": "payments.payment.create",
 	"payments.payment.post": "payments.payment.post",
 	"payments.payment.reverse": "payments.payment.reverse",
+	"payments.payment.update_instrument_clearance": "payments.payment.update",
 	"payments.transfer.create_and_post": "payments.transfer.post",
 	"payments.refund.post": "payments.refund.post",
 	"payments.application_instruction.add":

@@ -19,6 +19,7 @@ import {
 	postPaymentOperation,
 	postRefundOperation,
 	reversePaymentOperation,
+	updateInstrumentClearanceOperation,
 } from "../features/payment-lifecycle/lifecycle.operations";
 import {
 	createPaymentMethodOperation,
@@ -159,6 +160,13 @@ export function postRefund(
 	options: PaymentsCommandOptions = {},
 ): Promise<Result<Payment>> {
 	return postRefundOperation(input, lifecycleDeps(options));
+}
+
+export function updateInstrumentClearance(
+	input: unknown,
+	options: PaymentsCommandOptions = {},
+): Promise<Result<Payment>> {
+	return updateInstrumentClearanceOperation(input, lifecycleDeps(options));
 }
 
 export function markApplicationInstructionApplied(
