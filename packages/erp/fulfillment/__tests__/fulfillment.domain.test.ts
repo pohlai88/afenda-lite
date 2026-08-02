@@ -11,9 +11,9 @@ import {
 	postDelivery,
 	recordProofOfDelivery,
 	startPicking,
-} from "../src/delivery";
-import { createMemoryFulfillmentStore } from "../src/memory-store";
-import { FULFILLMENT_PERMISSION_CODES } from "../src/permissions";
+} from "../src/facade/capabilities";
+import { createMemoryFulfillmentStore } from "../src/features/deliveries/deliveries.memory";
+import { FULFILLMENT_PERMISSION_CODES } from "../src/kernel/execution/permissions";
 import { createGrantingFulfillmentAuthorization } from "./helpers/memory-authorization";
 import {
 	createInventoryCommandTestOptions,

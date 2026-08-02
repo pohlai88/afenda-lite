@@ -1,22 +1,7 @@
 import "server-only";
 
-export type {
-	FulfillmentAuthorizationPort,
-	FulfillmentPermission,
-} from "./authorization";
-export {
-	type DeliveryId,
-	type DeliveryLineId,
-	type DeliveryPackId,
-	type DeliveryPickId,
-	deliveryIdSchema,
-	deliveryLineIdSchema,
-	deliveryPackIdSchema,
-	deliveryPickIdSchema,
-	type ProofOfDeliveryId,
-	proofOfDeliveryIdSchema,
-} from "./brands";
-export type { FulfillmentCommandOptions } from "./command-options";
+export { createMasterDataLookupPort } from "./composition/master-lookup";
+export { createProductionMutationPorts } from "./composition/production-ports";
 export {
 	addDeliveryLine,
 	cancelDelivery,
@@ -30,28 +15,16 @@ export {
 	postDelivery,
 	recordProofOfDelivery,
 	startPicking,
-} from "./delivery";
+} from "./facade/capabilities";
+export type { FulfillmentCommandOptions } from "./facade/contracts";
 export {
 	createDrizzleFulfillmentStore,
 	DrizzleFulfillmentStore,
-} from "./drizzle-store";
-export { createMasterDataLookupPort } from "./master-lookup";
+} from "./features/deliveries/deliveries.drizzle";
 export {
 	createMemoryFulfillmentStore,
 	MemoryFulfillmentStore,
-} from "./memory-store";
-export type {
-	AuditFactInput,
-	AuditFactPort,
-	FulfillableSalesOrder,
-	FulfillableSalesOrderLine,
-	MasterLookupPort,
-	MutationPorts,
-	OutboxFactInput,
-	OutboxPort,
-	SalesFulfillmentQueryPort,
-} from "./ports";
-export { createProductionMutationPorts } from "./production-ports";
+} from "./features/deliveries/deliveries.memory";
 export {
 	addDeliveryLineInputSchema,
 	cancelDeliveryInputSchema,
@@ -64,7 +37,7 @@ export {
 	postDeliveryInputSchema,
 	recordProofOfDeliveryInputSchema,
 	startPickingInputSchema,
-} from "./schemas";
+} from "./features/deliveries/deliveries.schema";
 export type {
 	DeliveryCreateRecord,
 	DeliveryLineCreateRecord,
@@ -74,7 +47,7 @@ export type {
 	DeliveryStateRecord,
 	FulfillmentStore,
 	ProofOfDeliveryCreateRecord,
-} from "./store";
+} from "./features/deliveries/deliveries.store";
 export {
 	DELIVERY_STATUSES,
 	type Delivery,
@@ -85,4 +58,31 @@ export {
 	POD_OUTCOMES,
 	type PodOutcome,
 	type ProofOfDelivery,
-} from "./types";
+} from "./kernel/contracts/domain";
+export type {
+	AuditFactInput,
+	AuditFactPort,
+	FulfillableSalesOrder,
+	FulfillableSalesOrderLine,
+	MasterLookupPort,
+	MutationPorts,
+	OutboxFactInput,
+	OutboxPort,
+	SalesFulfillmentQueryPort,
+} from "./kernel/contracts/ports";
+export type {
+	FulfillmentAuthorizationPort,
+	FulfillmentPermission,
+} from "./kernel/execution/authorization";
+export {
+	type DeliveryId,
+	type DeliveryLineId,
+	type DeliveryPackId,
+	type DeliveryPickId,
+	deliveryIdSchema,
+	deliveryLineIdSchema,
+	deliveryPackIdSchema,
+	deliveryPickIdSchema,
+	type ProofOfDeliveryId,
+	proofOfDeliveryIdSchema,
+} from "./kernel/identity/brands";

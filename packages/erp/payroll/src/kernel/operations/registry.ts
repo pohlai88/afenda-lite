@@ -1,305 +1,56 @@
 import {
-	PAYROLL_PERMISSION_INPUT_MANAGE,
-	PAYROLL_PERMISSION_PAYSLIP_READ_ALL,
-	PAYROLL_PERMISSION_PAYSLIP_READ_OWN,
-	PAYROLL_PERMISSION_RECONCILIATION_MANAGE,
-	PAYROLL_PERMISSION_RUN_CALCULATE,
-	PAYROLL_PERMISSION_RUN_CREATE,
-	PAYROLL_PERMISSION_RUN_FINALIZE,
-	PAYROLL_PERMISSION_RUN_REVERSE,
-	PAYROLL_PERMISSION_RUN_REVIEW,
-	PAYROLL_PERMISSION_SETUP_MANAGE,
-	type PayrollPermission,
-} from "../execution/permissions";
+	PAYROLL_ASSIGNMENT_COMMANDS,
+	PAYROLL_ASSIGNMENT_QUERIES,
+} from "../../features/employee-assignments/operation-registry";
+import {
+	PAYROLL_RUN_COMMANDS,
+	PAYROLL_RUN_QUERIES,
+} from "../../features/payroll-runs/operation-registry";
+import {
+	PAYROLL_SETUP_COMMANDS,
+	PAYROLL_SETUP_QUERIES,
+} from "../../features/payroll-setup/operation-registry";
+import { PAYROLL_PAYSLIP_QUERIES } from "../../features/payslips/operation-registry";
+import {
+	PAYROLL_RECONCILIATION_COMMANDS,
+	PAYROLL_RECONCILIATION_QUERIES,
+} from "../../features/reconciliation/operation-registry";
+import {
+	PAYROLL_VARIABLE_INPUT_COMMANDS,
+	PAYROLL_VARIABLE_INPUT_QUERIES,
+} from "../../features/variable-inputs/operation-registry";
+import type { PayrollPermission } from "../execution/permissions";
+import { composePayrollOperationRegistries } from "./define-registry";
 
-const PAYROLL_OPERATION_OWNER = "payroll" as const;
+// Fail-closed cross-feature validation (duplicate ids/public names throw).
+composePayrollOperationRegistries(
+	PAYROLL_SETUP_COMMANDS,
+	PAYROLL_ASSIGNMENT_COMMANDS,
+	PAYROLL_VARIABLE_INPUT_COMMANDS,
+	PAYROLL_RUN_COMMANDS,
+	PAYROLL_RECONCILIATION_COMMANDS,
+	PAYROLL_SETUP_QUERIES,
+	PAYROLL_ASSIGNMENT_QUERIES,
+	PAYROLL_VARIABLE_INPUT_QUERIES,
+	PAYROLL_RUN_QUERIES,
+	PAYROLL_PAYSLIP_QUERIES,
+	PAYROLL_RECONCILIATION_QUERIES,
+);
 
-interface PayrollOperationDefinition {
-	readonly id: `payroll.${string}`;
-	readonly kind: "command" | "query";
-	readonly owner: typeof PAYROLL_OPERATION_OWNER;
-	readonly permission: PayrollPermission;
-}
-
-/** Canonical Payroll operation identity and authorization policy. */
+/** Canonical Payroll operation identity, composed from feature registries. */
 export const PAYROLL_OPERATION_DEFINITIONS = {
-	createCalendar: {
-		id: "payroll.setup.calendar.create",
-		kind: "command",
-		owner: PAYROLL_OPERATION_OWNER,
-		permission: PAYROLL_PERMISSION_SETUP_MANAGE,
-	},
-	updateCalendar: {
-		id: "payroll.setup.calendar.update",
-		kind: "command",
-		owner: PAYROLL_OPERATION_OWNER,
-		permission: PAYROLL_PERMISSION_SETUP_MANAGE,
-	},
-	archiveCalendar: {
-		id: "payroll.setup.calendar.archive",
-		kind: "command",
-		owner: PAYROLL_OPERATION_OWNER,
-		permission: PAYROLL_PERMISSION_SETUP_MANAGE,
-	},
-	createPayGroup: {
-		id: "payroll.setup.pay-group.create",
-		kind: "command",
-		owner: PAYROLL_OPERATION_OWNER,
-		permission: PAYROLL_PERMISSION_SETUP_MANAGE,
-	},
-	updatePayGroup: {
-		id: "payroll.setup.pay-group.update",
-		kind: "command",
-		owner: PAYROLL_OPERATION_OWNER,
-		permission: PAYROLL_PERMISSION_SETUP_MANAGE,
-	},
-	archivePayGroup: {
-		id: "payroll.setup.pay-group.archive",
-		kind: "command",
-		owner: PAYROLL_OPERATION_OWNER,
-		permission: PAYROLL_PERMISSION_SETUP_MANAGE,
-	},
-	createPeriod: {
-		id: "payroll.setup.period.create",
-		kind: "command",
-		owner: PAYROLL_OPERATION_OWNER,
-		permission: PAYROLL_PERMISSION_SETUP_MANAGE,
-	},
-	updatePeriod: {
-		id: "payroll.setup.period.update",
-		kind: "command",
-		owner: PAYROLL_OPERATION_OWNER,
-		permission: PAYROLL_PERMISSION_SETUP_MANAGE,
-	},
-	closePeriod: {
-		id: "payroll.setup.period.close",
-		kind: "command",
-		owner: PAYROLL_OPERATION_OWNER,
-		permission: PAYROLL_PERMISSION_SETUP_MANAGE,
-	},
-	createEarningRule: {
-		id: "payroll.setup.earning-rule.create",
-		kind: "command",
-		owner: PAYROLL_OPERATION_OWNER,
-		permission: PAYROLL_PERMISSION_SETUP_MANAGE,
-	},
-	updateEarningRule: {
-		id: "payroll.setup.earning-rule.update",
-		kind: "command",
-		owner: PAYROLL_OPERATION_OWNER,
-		permission: PAYROLL_PERMISSION_SETUP_MANAGE,
-	},
-	archiveEarningRule: {
-		id: "payroll.setup.earning-rule.archive",
-		kind: "command",
-		owner: PAYROLL_OPERATION_OWNER,
-		permission: PAYROLL_PERMISSION_SETUP_MANAGE,
-	},
-	supersedeEarningRule: {
-		id: "payroll.setup.earning-rule.supersede",
-		kind: "command",
-		owner: PAYROLL_OPERATION_OWNER,
-		permission: PAYROLL_PERMISSION_SETUP_MANAGE,
-	},
-	createDeductionRule: {
-		id: "payroll.setup.deduction-rule.create",
-		kind: "command",
-		owner: PAYROLL_OPERATION_OWNER,
-		permission: PAYROLL_PERMISSION_SETUP_MANAGE,
-	},
-	updateDeductionRule: {
-		id: "payroll.setup.deduction-rule.update",
-		kind: "command",
-		owner: PAYROLL_OPERATION_OWNER,
-		permission: PAYROLL_PERMISSION_SETUP_MANAGE,
-	},
-	archiveDeductionRule: {
-		id: "payroll.setup.deduction-rule.archive",
-		kind: "command",
-		owner: PAYROLL_OPERATION_OWNER,
-		permission: PAYROLL_PERMISSION_SETUP_MANAGE,
-	},
-	supersedeDeductionRule: {
-		id: "payroll.setup.deduction-rule.supersede",
-		kind: "command",
-		owner: PAYROLL_OPERATION_OWNER,
-		permission: PAYROLL_PERMISSION_SETUP_MANAGE,
-	},
-	createStatutoryRule: {
-		id: "payroll.setup.statutory-rule.create",
-		kind: "command",
-		owner: PAYROLL_OPERATION_OWNER,
-		permission: PAYROLL_PERMISSION_SETUP_MANAGE,
-	},
-	updateStatutoryRule: {
-		id: "payroll.setup.statutory-rule.update",
-		kind: "command",
-		owner: PAYROLL_OPERATION_OWNER,
-		permission: PAYROLL_PERMISSION_SETUP_MANAGE,
-	},
-	archiveStatutoryRule: {
-		id: "payroll.setup.statutory-rule.archive",
-		kind: "command",
-		owner: PAYROLL_OPERATION_OWNER,
-		permission: PAYROLL_PERMISSION_SETUP_MANAGE,
-	},
-	supersedeStatutoryRule: {
-		id: "payroll.setup.statutory-rule.supersede",
-		kind: "command",
-		owner: PAYROLL_OPERATION_OWNER,
-		permission: PAYROLL_PERMISSION_SETUP_MANAGE,
-	},
-	createAssignment: {
-		id: "payroll.assignment.create",
-		kind: "command",
-		owner: PAYROLL_OPERATION_OWNER,
-		permission: PAYROLL_PERMISSION_SETUP_MANAGE,
-	},
-	createRecurringEarning: {
-		id: "payroll.assignment.recurring-earning.create",
-		kind: "command",
-		owner: PAYROLL_OPERATION_OWNER,
-		permission: PAYROLL_PERMISSION_SETUP_MANAGE,
-	},
-	createRecurringDeduction: {
-		id: "payroll.assignment.recurring-deduction.create",
-		kind: "command",
-		owner: PAYROLL_OPERATION_OWNER,
-		permission: PAYROLL_PERMISSION_SETUP_MANAGE,
-	},
-	createVariableInput: {
-		id: "payroll.input.variable.create",
-		kind: "command",
-		owner: PAYROLL_OPERATION_OWNER,
-		permission: PAYROLL_PERMISSION_INPUT_MANAGE,
-	},
-	createRun: {
-		id: PAYROLL_PERMISSION_RUN_CREATE,
-		kind: "command",
-		owner: PAYROLL_OPERATION_OWNER,
-		permission: PAYROLL_PERMISSION_RUN_CREATE,
-	},
-	calculateRun: {
-		id: PAYROLL_PERMISSION_RUN_CALCULATE,
-		kind: "command",
-		owner: PAYROLL_OPERATION_OWNER,
-		permission: PAYROLL_PERMISSION_RUN_CALCULATE,
-	},
-	finalizeRun: {
-		id: PAYROLL_PERMISSION_RUN_FINALIZE,
-		kind: "command",
-		owner: PAYROLL_OPERATION_OWNER,
-		permission: PAYROLL_PERMISSION_RUN_FINALIZE,
-	},
-	reverseRun: {
-		id: PAYROLL_PERMISSION_RUN_REVERSE,
-		kind: "command",
-		owner: PAYROLL_OPERATION_OWNER,
-		permission: PAYROLL_PERMISSION_RUN_REVERSE,
-	},
-	recordReconciliation: {
-		id: "payroll.reconciliation.record",
-		kind: "command",
-		owner: PAYROLL_OPERATION_OWNER,
-		permission: PAYROLL_PERMISSION_RECONCILIATION_MANAGE,
-	},
-	resolveReconciliation: {
-		id: "payroll.reconciliation.resolve",
-		kind: "command",
-		owner: PAYROLL_OPERATION_OWNER,
-		permission: PAYROLL_PERMISSION_RECONCILIATION_MANAGE,
-	},
-	getCalendar: {
-		id: "payroll.setup.calendar.get",
-		kind: "query",
-		owner: PAYROLL_OPERATION_OWNER,
-		permission: PAYROLL_PERMISSION_SETUP_MANAGE,
-	},
-	listCalendars: {
-		id: "payroll.setup.calendar.list",
-		kind: "query",
-		owner: PAYROLL_OPERATION_OWNER,
-		permission: PAYROLL_PERMISSION_SETUP_MANAGE,
-	},
-	getPayGroup: {
-		id: "payroll.setup.pay-group.get",
-		kind: "query",
-		owner: PAYROLL_OPERATION_OWNER,
-		permission: PAYROLL_PERMISSION_SETUP_MANAGE,
-	},
-	listPayGroups: {
-		id: "payroll.setup.pay-group.list",
-		kind: "query",
-		owner: PAYROLL_OPERATION_OWNER,
-		permission: PAYROLL_PERMISSION_SETUP_MANAGE,
-	},
-	getPeriod: {
-		id: "payroll.setup.period.get",
-		kind: "query",
-		owner: PAYROLL_OPERATION_OWNER,
-		permission: PAYROLL_PERMISSION_SETUP_MANAGE,
-	},
-	listPeriods: {
-		id: "payroll.setup.period.list",
-		kind: "query",
-		owner: PAYROLL_OPERATION_OWNER,
-		permission: PAYROLL_PERMISSION_SETUP_MANAGE,
-	},
-	getEarningRule: {
-		id: "payroll.setup.earning-rule.get",
-		kind: "query",
-		owner: PAYROLL_OPERATION_OWNER,
-		permission: PAYROLL_PERMISSION_SETUP_MANAGE,
-	},
-	getDeductionRule: {
-		id: "payroll.setup.deduction-rule.get",
-		kind: "query",
-		owner: PAYROLL_OPERATION_OWNER,
-		permission: PAYROLL_PERMISSION_SETUP_MANAGE,
-	},
-	getStatutoryRule: {
-		id: "payroll.setup.statutory-rule.get",
-		kind: "query",
-		owner: PAYROLL_OPERATION_OWNER,
-		permission: PAYROLL_PERMISSION_SETUP_MANAGE,
-	},
-	getAssignment: {
-		id: "payroll.assignment.get",
-		kind: "query",
-		owner: PAYROLL_OPERATION_OWNER,
-		permission: PAYROLL_PERMISSION_SETUP_MANAGE,
-	},
-	getVariableInput: {
-		id: "payroll.input.variable.get",
-		kind: "query",
-		owner: PAYROLL_OPERATION_OWNER,
-		permission: PAYROLL_PERMISSION_INPUT_MANAGE,
-	},
-	getRun: {
-		id: "payroll.run.get",
-		kind: "query",
-		owner: PAYROLL_OPERATION_OWNER,
-		permission: PAYROLL_PERMISSION_RUN_REVIEW,
-	},
-	readOwnPayslip: {
-		id: PAYROLL_PERMISSION_PAYSLIP_READ_OWN,
-		kind: "query",
-		owner: PAYROLL_OPERATION_OWNER,
-		permission: PAYROLL_PERMISSION_PAYSLIP_READ_OWN,
-	},
-	readAllPayslips: {
-		id: PAYROLL_PERMISSION_PAYSLIP_READ_ALL,
-		kind: "query",
-		owner: PAYROLL_OPERATION_OWNER,
-		permission: PAYROLL_PERMISSION_PAYSLIP_READ_ALL,
-	},
-	listReconciliations: {
-		id: "payroll.reconciliation.list",
-		kind: "query",
-		owner: PAYROLL_OPERATION_OWNER,
-		permission: PAYROLL_PERMISSION_RECONCILIATION_MANAGE,
-	},
-} as const satisfies Record<string, PayrollOperationDefinition>;
+	...PAYROLL_SETUP_COMMANDS,
+	...PAYROLL_ASSIGNMENT_COMMANDS,
+	...PAYROLL_VARIABLE_INPUT_COMMANDS,
+	...PAYROLL_RUN_COMMANDS,
+	...PAYROLL_RECONCILIATION_COMMANDS,
+	...PAYROLL_SETUP_QUERIES,
+	...PAYROLL_ASSIGNMENT_QUERIES,
+	...PAYROLL_VARIABLE_INPUT_QUERIES,
+	...PAYROLL_RUN_QUERIES,
+	...PAYROLL_PAYSLIP_QUERIES,
+	...PAYROLL_RECONCILIATION_QUERIES,
+} as const;
 
 type PayrollOperation =
 	(typeof PAYROLL_OPERATION_DEFINITIONS)[keyof typeof PAYROLL_OPERATION_DEFINITIONS];

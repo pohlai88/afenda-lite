@@ -1,0 +1,77 @@
+import { errorResult, type Result } from "@afenda/errors";
+
+import type {
+	ReceivablesCommandId,
+	ReceivablesQueryId,
+} from "../operations/module-ids";
+import {
+	RECEIVABLES_COMMAND_AUTHORIZATION,
+	RECEIVABLES_QUERY_AUTHORIZATION,
+} from "../operations/registry";
+import type { RECEIVABLES_PERMISSION_CODES } from "./permissions";
+
+export type ReceivablesPermission =
+	(typeof RECEIVABLES_PERMISSION_CODES)[number];
+
+export interface ReceivablesAuthorizationPort {
+	can: (input: {
+		organizationId: string;
+		actorUserId: string;
+		permission: ReceivablesPermission;
+	}) => Promise<boolean>;
+}
+
+async function requirePermission(
+	authorization: ReceivablesAuthorizationPort | undefined,
+	input: {
+		organizationId: string;
+		actorUserId: string;
+		permission: ReceivablesPermission;
+	},
+): Promise<Result<void>> {
+	if (authorization === undefined) {
+		return errorResult.fail("UNAUTHORIZED");
+	}
+	if (!(await authorization.can(input))) {
+		return errorResult.fail("FORBIDDEN");
+	}
+	return errorResult.ok(undefined);
+}
+
+export function requireReceivablesCommandPermission(
+	authorization: ReceivablesAuthorizationPort | undefined,
+	input: {
+		organizationId: string;
+		actorUserId: string;
+		command: ReceivablesCommandId;
+	},
+): Promise<Result<void>> {
+	const permission = RECEIVABLES_COMMAND_AUTHORIZATION[input.command];
+	if (permission === undefined) {
+		return Promise.resolve(errorResult.fail("UNAUTHORIZED"));
+	}
+	return requirePermission(authorization, {
+		organizationId: input.organizationId,
+		actorUserId: input.actorUserId,
+		permission,
+	});
+}
+
+export function requireReceivablesQueryPermission(
+	authorization: ReceivablesAuthorizationPort | undefined,
+	input: {
+		organizationId: string;
+		actorUserId: string;
+		query: ReceivablesQueryId;
+	},
+): Promise<Result<void>> {
+	const permission = RECEIVABLES_QUERY_AUTHORIZATION[input.query];
+	if (permission === undefined) {
+		return Promise.resolve(errorResult.fail("UNAUTHORIZED"));
+	}
+	return requirePermission(authorization, {
+		organizationId: input.organizationId,
+		actorUserId: input.actorUserId,
+		permission,
+	});
+}

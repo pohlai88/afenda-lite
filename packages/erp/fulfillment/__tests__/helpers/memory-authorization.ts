@@ -1,7 +1,7 @@
 import type {
 	FulfillmentAuthorizationPort,
 	FulfillmentPermission,
-} from "../../src/authorization";
+} from "../../src/kernel/execution/authorization";
 
 export function createGrantingFulfillmentAuthorization(
 	permissions: FulfillmentPermission[],

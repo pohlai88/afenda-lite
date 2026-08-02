@@ -8,7 +8,7 @@ import {
 	type Warehouse,
 } from "@afenda/master-data";
 
-import type { MasterLookupPort } from "../../src/ports";
+import type { MasterLookupPort } from "../../src/kernel/contracts/ports";
 
 export function createMemoryMasterLookup(
 	seed: { items?: Item[]; uoms?: RefUom[]; warehouses?: Warehouse[] } = {},

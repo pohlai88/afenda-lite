@@ -1,10 +1,16 @@
 import { errorResult, type Result } from "@afenda/errors";
 import { describe, expect, it } from "vitest";
 
-import { createDraftDelivery, listDeliveries } from "../src/delivery";
-import { createMemoryFulfillmentStore } from "../src/memory-store";
-import { FULFILLMENT_PERMISSION_CODES } from "../src/permissions";
-import type { MutationPorts, OutboxFactInput } from "../src/ports";
+import {
+	createDraftDelivery,
+	listDeliveries,
+} from "../src/facade/capabilities";
+import { createMemoryFulfillmentStore } from "../src/features/deliveries/deliveries.memory";
+import type {
+	MutationPorts,
+	OutboxFactInput,
+} from "../src/kernel/contracts/ports";
+import { FULFILLMENT_PERMISSION_CODES } from "../src/kernel/execution/permissions";
 import { createGrantingFulfillmentAuthorization } from "./helpers/memory-authorization";
 import {
 	createMemoryMasterLookup,

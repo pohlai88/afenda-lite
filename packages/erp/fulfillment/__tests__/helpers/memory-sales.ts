@@ -1,5 +1,5 @@
 import { errorResult, type Result } from "@afenda/errors";
-import type { SalesFulfillmentQueryPort } from "../../src/ports";
+import type { SalesFulfillmentQueryPort } from "../../src/kernel/contracts/ports";
 
 export function createMemorySalesFulfillmentQueryPort(
 	orders: Map<

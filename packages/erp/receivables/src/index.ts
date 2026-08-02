@@ -1,17 +1,6 @@
 import "server-only";
 
 export {
-	type ReceivablesAuthorizationPort,
-	type ReceivablesPermission,
-	requireReceivablesCommandPermission,
-	requireReceivablesQueryPermission,
-} from "./authorization";
-export type { ReceivablesCommandOptions } from "./command-options";
-export {
-	createDrizzleReceivablesStore,
-	DrizzleReceivablesStore,
-} from "./drizzle-store";
-export {
 	addSalesInvoiceLine,
 	applyCustomerReceipt,
 	cancelDraftSalesInvoice,
@@ -26,18 +15,32 @@ export {
 	postSalesInvoice,
 	reverseCustomerAllocationsByPayment,
 	reverseCustomerReceiptApplication,
-} from "./invoice";
-export {
-	createMemoryReceivablesStore,
-	MemoryReceivablesStore,
-} from "./memory-store";
-export * from "./permissions";
-export type * from "./ports";
+} from "./facade/capabilities";
+export type { ReceivablesCommandOptions } from "./facade/contracts";
 export {
 	type ReceivablesReconcileFacts,
 	type ReceivablesReconcileResult,
 	reconcileReceivables,
-} from "./reconcile";
-export * from "./schemas";
-export type { InvoiceCreateRecord, ReceivablesStore } from "./store";
-export type * from "./types";
+} from "./facade/reconcile";
+export {
+	createDrizzleReceivablesStore,
+	DrizzleReceivablesStore,
+} from "./features/invoices/invoices.drizzle";
+export {
+	createMemoryReceivablesStore,
+	MemoryReceivablesStore,
+} from "./features/invoices/invoices.memory";
+export * from "./features/invoices/invoices.schema";
+export type {
+	InvoiceCreateRecord,
+	ReceivablesStore,
+} from "./features/invoices/invoices.store";
+export type * from "./kernel/contracts/domain";
+export type * from "./kernel/contracts/ports";
+export {
+	type ReceivablesAuthorizationPort,
+	type ReceivablesPermission,
+	requireReceivablesCommandPermission,
+	requireReceivablesQueryPermission,
+} from "./kernel/execution/authorization";
+export * from "./kernel/execution/permissions";

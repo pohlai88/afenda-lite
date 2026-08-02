@@ -10,11 +10,10 @@
 		}
 	},
 	"scripts": {
-		"layout": "node scripts/feature-first-layout.mjs",
 		"lint": "biome check .",
 		"typecheck": "tsc --noEmit -p tsconfig.json",
 		"test": "vitest run --config ../../../testing/vitest.unit.config.ts --project payroll",
-		"check": "pnpm layout && pnpm lint && pnpm typecheck && pnpm test"
+		"check": "pnpm lint && pnpm typecheck && pnpm test"
 	},
 	"dependencies": {
 		"@afenda/audit": "workspace:*",

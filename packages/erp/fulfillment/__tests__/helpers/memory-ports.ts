@@ -7,7 +7,7 @@ import type {
 	MutationPorts,
 	OutboxFactInput,
 	OutboxPort,
-} from "../../src/ports";
+} from "../../src/kernel/contracts/ports";
 
 export function createMemoryMutationPorts(): MutationPorts & {
 	audit: AuditFactPort & { calls: AuditFactInput[] };

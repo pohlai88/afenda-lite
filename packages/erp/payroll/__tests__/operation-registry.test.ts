@@ -38,10 +38,18 @@ describe("Payroll operation registry", () => {
 		const permissionCodes = new Set<string>(PAYROLL_PERMISSION_CODES);
 		const operationIds = definitions.map(({ id }) => id);
 
+		const featureOwners = new Set([
+			"payroll-setup",
+			"employee-assignments",
+			"variable-inputs",
+			"payroll-runs",
+			"payslips",
+			"reconciliation",
+		]);
 		expect(definitions).toHaveLength(46);
 		expect(new Set(operationIds).size).toBe(operationIds.length);
 		for (const definition of definitions) {
-			expect(definition.owner).toBe("payroll");
+			expect(featureOwners).toContain(definition.owner);
 			expect(permissionCodes).toContain(definition.permission);
 		}
 	});
@@ -83,16 +91,18 @@ describe("Payroll operation registry", () => {
 	});
 
 	it("forbids raw operation IDs outside their canonical owner", () => {
-		const allowedSources = new Set([
-			"kernel/execution/permissions.ts",
-			"kernel/operations/registry.ts",
-		]);
+		const allowedSources = new Set(["kernel/execution/permissions.ts"]);
+		const featureRegistryPattern =
+			/^features\/[a-z-]+\/operation-registry\.ts$/;
 		const sourceRoot = path.resolve(import.meta.dirname, "../src");
 		for (const filePath of typescriptSources(sourceRoot)) {
 			const relativePath = path
 				.relative(sourceRoot, filePath)
 				.replaceAll("\\", "/");
-			if (allowedSources.has(relativePath)) {
+			if (
+				allowedSources.has(relativePath) ||
+				featureRegistryPattern.test(relativePath)
+			) {
 				continue;
 			}
 			const content = readFileSync(filePath, "utf8");

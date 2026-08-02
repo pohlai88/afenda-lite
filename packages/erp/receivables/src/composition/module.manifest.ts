@@ -9,7 +9,17 @@ import {
 	RECEIVABLES_INVOICE_POSTED_EVENT,
 } from "@afenda/events/schemas";
 
-import { RECEIVABLES_PERMISSION_CODES } from "../permissions";
+import {
+	RECEIVABLES_AGGREGATES,
+	RECEIVABLES_MUTATION_TABLES,
+} from "../kernel/emissions/mutation-tables";
+import { RECEIVABLES_PERMISSION_CODES } from "../kernel/execution/permissions";
+import {
+	RECEIVABLES_COMMAND_AUTHORIZATION,
+	RECEIVABLES_QUERY_AUTHORIZATION,
+	RECEIVABLES_REGISTRY_COMMAND_IDS,
+	RECEIVABLES_REGISTRY_QUERY_IDS,
+} from "../kernel/operations/registry";
 
 export const receivablesModuleManifest = {
 	id: "receivables",
@@ -19,40 +29,15 @@ export const receivablesModuleManifest = {
 	lifecycle: "active",
 	activationMode: "organization_toggle",
 	owns: {
-		aggregates: [
-			"sales_invoice",
-			"sales_credit_note",
-			"customer_allocation",
-			"customer_balance_projection",
-		],
+		aggregates: [...RECEIVABLES_AGGREGATES],
 		commandNamespace: "receivables",
-		commands: [
-			"receivables.invoice.create",
-			"receivables.invoice.line.add",
-			"receivables.invoice.post",
-			"receivables.credit_note.issue",
-			"receivables.receipt.apply",
-			"receivables.receipt_application.reverse",
-			"receivables.invoice.cancel",
-			"receivables.invoice.close",
-		],
+		commands: [...RECEIVABLES_REGISTRY_COMMAND_IDS],
 		queryNamespace: "receivables",
-		queries: [
-			"receivables.invoice.get",
-			"receivables.invoice.list",
-			"receivables.balance.get",
-			"receivables.aging.get",
-		],
+		queries: [...RECEIVABLES_REGISTRY_QUERY_IDS],
 	},
 	persistence: {
 		schemaOwner: "@afenda/db",
-		mutationTables: [
-			"sales_invoice",
-			"sales_invoice_line",
-			"sales_credit_note",
-			"customer_allocation",
-			"customer_balance_projection",
-		],
+		mutationTables: [...RECEIVABLES_MUTATION_TABLES],
 	},
 	events: {
 		namespace: "receivables",
@@ -72,23 +57,8 @@ export const receivablesModuleManifest = {
 		codes: [...RECEIVABLES_PERMISSION_CODES],
 	},
 	authorization: {
-		commands: {
-			"receivables.invoice.create": "receivables.invoice.create",
-			"receivables.invoice.line.add": "receivables.invoice.update",
-			"receivables.invoice.post": "receivables.invoice.post",
-			"receivables.credit_note.issue": "receivables.credit_note.issue",
-			"receivables.receipt.apply": "receivables.receipt.apply",
-			"receivables.receipt_application.reverse":
-				"receivables.receipt_application.reverse",
-			"receivables.invoice.cancel": "receivables.invoice.cancel",
-			"receivables.invoice.close": "receivables.invoice.close",
-		},
-		queries: {
-			"receivables.invoice.get": "receivables.invoice.read",
-			"receivables.invoice.list": "receivables.invoice.read",
-			"receivables.balance.get": "receivables.balance.read",
-			"receivables.aging.get": "receivables.aging.read",
-		},
+		commands: RECEIVABLES_COMMAND_AUTHORIZATION,
+		queries: RECEIVABLES_QUERY_AUTHORIZATION,
 	},
 	moduleDependencies: {
 		required: ["master-data"],

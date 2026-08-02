@@ -18,7 +18,7 @@
 		"typecheck": "tsc --noEmit -p tsconfig.json",
 		"test": "vitest run --config ../../../testing/vitest.unit.config.ts --project receivables",
 		"check": "pnpm typecheck && pnpm test",
-		"reconcile": "tsx src/reconcile-cli.ts"
+		"reconcile": "tsx src/composition/reconcile-cli.ts"
 	},
 	"dependencies": {
 		"@afenda/audit": "workspace:*",
