@@ -1,6 +1,7 @@
 import type {
 	Payment,
 	PaymentApplicationInstruction,
+	PaymentInstrument,
 } from "../../kernel/contracts/domain";
 
 interface ReconcileInput {
@@ -21,6 +22,72 @@ function intendedTotal(instructions: PaymentApplicationInstruction[]): number {
 			ACTIVE_INSTRUCTION_STATUSES.has(instruction.status),
 		)
 		.reduce((sum, instruction) => sum + Number(instruction.intendedAmount), 0);
+}
+
+function deductionTotal(payment: Payment, effect: string): number {
+	return payment.deductions
+		.filter((deduction) => deduction.effect === effect)
+		.reduce((sum, deduction) => sum + Number(deduction.amount), 0);
+}
+
+function instrumentReference(
+	instrument: PaymentInstrument | null,
+): string | null {
+	if (instrument === null) {
+		return null;
+	}
+	switch (instrument.kind) {
+		case "check":
+			return instrument.number;
+		case "bank-transfer":
+			return instrument.bankReference;
+		case "card":
+			return (
+				instrument.settlementReference ??
+				instrument.authorizationReference ??
+				null
+			);
+		case "gateway":
+			return instrument.providerReference;
+		case "other":
+			return instrument.reference ?? null;
+		default:
+			throw new Error("Unreachable instrument kind");
+	}
+}
+
+/**
+ * Widened matching contract for external (bank-line) reconciliation.
+ * Bank lines match against cashMovement, not the gross amount.
+ */
+export interface PaymentMatchingProjection {
+	cashMovement: string;
+	deductionsTotal: string;
+	functionalAmount: string;
+	instrumentReference: string | null;
+	paymentId: string;
+	paymentMethodId: string;
+	transactionAmount: string;
+	transactionCurrency: string;
+}
+
+export function paymentMatchingProjection(
+	payment: Payment,
+): PaymentMatchingProjection {
+	return {
+		paymentId: payment.id,
+		paymentMethodId: payment.paymentMethodId,
+		instrumentReference: instrumentReference(payment.instrument),
+		transactionCurrency: payment.currencyCode,
+		transactionAmount: payment.amount,
+		functionalAmount: payment.functionalAmount,
+		deductionsTotal: String(
+			deductionTotal(payment, "reduces_application_only"),
+		),
+		cashMovement: String(
+			Number(payment.amount) - deductionTotal(payment, "reduces_cash_movement"),
+		),
+	};
 }
 
 function findTransferDrift(
@@ -87,7 +154,9 @@ export function reconcilePayments(input: ReconcileInput): ReconcileResult {
 		}
 		const intended = intendedTotal(payment.applicationInstructions);
 		const refunded = refundedByOriginal.get(payment.id) ?? 0;
-		const posted = Number(payment.amount);
+		const posted =
+			Number(payment.amount) -
+			deductionTotal(payment, "reduces_application_only");
 		if (intended + refunded > posted + 1e-9) {
 			findings.push(
 				`Payment ${payment.id} over-applied (posted=${posted}, intended=${intended}, refunded=${refunded})`,

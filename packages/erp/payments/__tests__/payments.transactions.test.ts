@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type { PaymentsStore } from "../src/composition/store/contract";
-import { reconcilePayments } from "../src/features/reconciliation/reconcile";
+import {
+	paymentMatchingProjection,
+	reconcilePayments,
+} from "../src/features/reconciliation/reconcile";
 import {
 	addPaymentApplicationInstruction,
 	createAndPostPaymentTransfer,
@@ -320,6 +323,73 @@ describe("payments domain conflicts", () => {
 		if (!creditTarget.ok) {
 			expect(creditTarget.code).toBe("VALIDATION_ERROR");
 		}
+	});
+
+	it("projects cash movement for bank-line matching", async () => {
+		const store = createMemoryPaymentsStore();
+		const options = { store, authorization };
+		const method = await seedMethod(store);
+		const account = await createPaymentAccount(
+			{
+				organizationId,
+				actorUserId,
+				correlationId: "match-account",
+				idempotencyKey: "match-account",
+				code: "BANK-MATCH",
+				name: "Bank",
+				kind: "bank",
+				currencyCode: "USD",
+			},
+			options,
+		);
+		if (!account.ok) {
+			throw new Error("account seed failed");
+		}
+		const created = await createDraftPayment(
+			{
+				organizationId,
+				actorUserId,
+				correlationId: "match-create",
+				idempotencyKey: "match-pay",
+				code: "PAY-MATCH",
+				paymentAccountId: account.data.id,
+				paymentMethodId: method.id,
+				direction: "receipt",
+				purpose: "customer_receipt",
+				currencyCode: "USD",
+				amount: "100",
+				deductions: [
+					{
+						kind: "bank_charge",
+						amount: "2",
+						accountingPurposeCode: "bank-fees",
+					},
+				],
+			},
+			options,
+		);
+		if (!created.ok) {
+			throw new Error("draft failed");
+		}
+		const posted = await postPayment(
+			{
+				organizationId,
+				actorUserId,
+				correlationId: "match-post",
+				idempotencyKey: "match-post",
+				paymentId: created.data.id,
+				expectedVersion: 1,
+			},
+			options,
+		);
+		expect(posted.ok).toBe(true);
+		if (!posted.ok) {
+			return;
+		}
+		const projection = paymentMatchingProjection(posted.data);
+		expect(projection.cashMovement).toBe("98");
+		expect(projection.deductionsTotal).toBe("0");
+		expect(projection.paymentMethodId).toBe(method.id);
 	});
 
 	it("reconciles paired transfers as consistent", async () => {

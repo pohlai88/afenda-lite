@@ -811,6 +811,12 @@ permissions:
   - code: payments.availability.read
     moduleId: payments
     namespace: payments
+  - code: payments.method.manage
+    moduleId: payments
+    namespace: payments
+  - code: payments.method.read
+    moduleId: payments
+    namespace: payments
   - code: payroll.setup.manage
     moduleId: payroll
     namespace: payroll

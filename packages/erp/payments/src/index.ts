@@ -27,7 +27,11 @@ export * from "./features/application-instructions/instructions.schema";
 export * from "./features/payment-accounts/accounts.schema";
 export * from "./features/payment-lifecycle/lifecycle.schema";
 export * from "./features/payment-methods/methods.schema";
-export { reconcilePayments } from "./features/reconciliation/reconcile";
+export {
+	type PaymentMatchingProjection,
+	paymentMatchingProjection,
+	reconcilePayments,
+} from "./features/reconciliation/reconcile";
 export type {
 	InstrumentClearanceStatus,
 	InstrumentRequirement,

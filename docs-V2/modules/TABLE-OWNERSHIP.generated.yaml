@@ -908,11 +908,19 @@ tables:
   - moduleId: payments
     packageName: "@afenda/payments"
     schemaOwner: "@afenda/db"
+    table: payment_method
+  - moduleId: payments
+    packageName: "@afenda/payments"
+    schemaOwner: "@afenda/db"
     table: payment
   - moduleId: payments
     packageName: "@afenda/payments"
     schemaOwner: "@afenda/db"
     table: payment_allocation
+  - moduleId: payments
+    packageName: "@afenda/payments"
+    schemaOwner: "@afenda/db"
+    table: payment_deduction
   - moduleId: payments
     packageName: "@afenda/payments"
     schemaOwner: "@afenda/db"

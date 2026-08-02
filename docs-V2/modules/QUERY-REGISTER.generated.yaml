@@ -10,12 +10,12 @@ queries:
   - id: accounting.trial-balance.get
     moduleId: accounting
     permission: accounting.trial_balance.read
-  - id: accounting.ledger_account.list
-    moduleId: accounting
-    permission: accounting.account.read
   - id: accounting.ledger_activity.get
     moduleId: accounting
     permission: accounting.ledger.read
+  - id: accounting.ledger_account.list
+    moduleId: accounting
+    permission: accounting.account.read
   - id: accounting.source_trace.get
     moduleId: accounting
     permission: accounting.journal.read
@@ -970,6 +970,9 @@ queries:
   - id: payments.account.list
     moduleId: payments
     permission: payments.account.read
+  - id: payments.method.list
+    moduleId: payments
+    permission: payments.method.read
   - id: payments.payment.get
     moduleId: payments
     permission: payments.payment.read

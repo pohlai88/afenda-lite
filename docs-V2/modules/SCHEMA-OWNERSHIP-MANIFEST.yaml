@@ -357,10 +357,16 @@ tables:
   - table: payment_account
     writeOwner: "@afenda/payments"
     kind: erp
+  - table: payment_method
+    writeOwner: "@afenda/payments"
+    kind: erp
   - table: payment
     writeOwner: "@afenda/payments"
     kind: erp
   - table: payment_allocation
+    writeOwner: "@afenda/payments"
+    kind: erp
+  - table: payment_deduction
     writeOwner: "@afenda/payments"
     kind: erp
   - table: payment_reversal

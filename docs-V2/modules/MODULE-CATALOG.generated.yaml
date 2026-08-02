@@ -161,8 +161,10 @@ modules:
   - activationMode: organization_toggle
     aggregates:
       - payment_account
+      - payment_method
       - payment
       - payment_allocation
+      - payment_deduction
       - payment_reversal
     band: R1-F
     category: commercial

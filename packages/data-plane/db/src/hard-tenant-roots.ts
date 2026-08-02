@@ -244,6 +244,8 @@ import {
 	payment,
 	paymentAccount,
 	paymentAllocation,
+	paymentDeduction,
+	paymentMethod,
 	paymentReversal,
 } from "./schema/payments";
 import {
@@ -397,8 +399,10 @@ export const HARD_TENANT_ROOT_ENTRIES = [
 	["three_way_match_result", threeWayMatchResult],
 	["supplier_balance_projection", supplierBalanceProjection],
 	["payment_account", paymentAccount],
+	["payment_method", paymentMethod],
 	["payment", payment],
 	["payment_allocation", paymentAllocation],
+	["payment_deduction", paymentDeduction],
 	["payment_reversal", paymentReversal],
 	["payroll_calendar", payrollCalendar],
 	["payroll_pay_group", payrollPayGroup],

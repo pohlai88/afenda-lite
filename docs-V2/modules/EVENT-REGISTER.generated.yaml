@@ -902,6 +902,18 @@ events:
     id: payments.payment.reversed.v1
     moduleId: payments
   - direction: emits
+    id: payments.payment.instrument_clearance_updated.v1
+    moduleId: payments
+  - direction: emits
+    id: payments.payment_method.created.v1
+    moduleId: payments
+  - direction: emits
+    id: payments.payment_method.updated.v1
+    moduleId: payments
+  - direction: emits
+    id: payments.payment_method.deactivated.v1
+    moduleId: payments
+  - direction: emits
     id: payments.refund.posted.v1
     moduleId: payments
   - direction: emits

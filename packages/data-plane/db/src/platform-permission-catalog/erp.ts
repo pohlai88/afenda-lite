@@ -474,6 +474,18 @@ export const ERP_PLATFORM_PERMISSIONS = [
 		sensitive: false,
 	},
 	{
+		code: "payments.method.manage",
+		module: "payments",
+		description: "Manage payment methods",
+		sensitive: true,
+	},
+	{
+		code: "payments.method.read",
+		module: "payments",
+		description: "Read payment methods",
+		sensitive: false,
+	},
+	{
 		code: "accounting.journal.read",
 		module: "accounting",
 		description: "Read organization journals and ledger postings",

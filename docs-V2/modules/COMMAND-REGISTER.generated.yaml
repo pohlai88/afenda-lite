@@ -1657,6 +1657,18 @@ commands:
   - id: payments.account.create
     moduleId: payments
     permission: payments.account.manage
+  - id: payments.method.create
+    moduleId: payments
+    permission: payments.method.manage
+  - id: payments.method.update
+    moduleId: payments
+    permission: payments.method.manage
+  - id: payments.method.deactivate
+    moduleId: payments
+    permission: payments.method.manage
+  - id: payments.method.seed_defaults
+    moduleId: payments
+    permission: payments.method.manage
   - id: payments.payment.create
     moduleId: payments
     permission: payments.payment.create
@@ -1666,6 +1678,9 @@ commands:
   - id: payments.payment.reverse
     moduleId: payments
     permission: payments.payment.reverse
+  - id: payments.payment.update_instrument_clearance
+    moduleId: payments
+    permission: payments.payment.update
   - id: payments.transfer.create_and_post
     moduleId: payments
     permission: payments.transfer.post
