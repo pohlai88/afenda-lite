@@ -102,6 +102,8 @@
 				"$TURBO_ROOT$/turbo/generators/engine/**",
 				"$TURBO_ROOT$/turbo/generators/erp-generator/**",
 				"$TURBO_ROOT$/turbo/generators/kernel-generator/**",
+				"$TURBO_ROOT$/docs-V2/monorepo/**",
+				"$TURBO_ROOT$/docs-V2/modules/PACKAGE-GOVERNANCE.md",
 				"$TURBO_ROOT$/pnpm-workspace.yaml",
 				"$TURBO_ROOT$/package.json",
 				"$TURBO_ROOT$/pnpm-lock.yaml",

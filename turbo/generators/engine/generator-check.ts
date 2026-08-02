@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { cwd, stdout } from "node:process";
 
 import { generatorContracts } from "../contracts.ts";
+import { createGeneratorGovernanceConvergenceReport } from "./governance-convergence.ts";
 import {
 	discoverWorkspaces,
 	type WorkspaceFamilyClassification,
@@ -18,6 +19,8 @@ export const GENERATOR_CHECK_TASK_INPUTS = Object.freeze([
 	"$TURBO_ROOT$/turbo/generators/engine/**",
 	"$TURBO_ROOT$/turbo/generators/erp-generator/**",
 	"$TURBO_ROOT$/turbo/generators/kernel-generator/**",
+	"$TURBO_ROOT$/docs-V2/monorepo/**",
+	"$TURBO_ROOT$/docs-V2/modules/PACKAGE-GOVERNANCE.md",
 	"$TURBO_ROOT$/pnpm-workspace.yaml",
 	"$TURBO_ROOT$/package.json",
 	"$TURBO_ROOT$/pnpm-lock.yaml",
@@ -33,6 +36,11 @@ export interface GeneratorCheckReportV1 {
 		readonly modes: readonly string[];
 		readonly release: "internal" | "authoritative";
 	}[];
+	readonly phaseExitGovernance: {
+		readonly blocked: number;
+		readonly issues: number;
+		readonly warnings: number;
+	};
 	readonly schema: typeof GENERATOR_CHECK_SCHEMA;
 	readonly task: {
 		readonly inputs: readonly string[];
@@ -141,10 +149,18 @@ export class GeneratorCheckError extends Error {
 export const runGeneratorCheck = async (
 	repositoryRoot = cwd(),
 ): Promise<GeneratorCheckReportV1> => {
-	const discovery = await discoverWorkspaces({
-		contracts: generatorContracts,
-		repositoryRoot,
-	});
+	const [discovery, governance] = await Promise.all([
+		discoverWorkspaces({
+			contracts: generatorContracts,
+			repositoryRoot,
+		}),
+		createGeneratorGovernanceConvergenceReport({ repositoryRoot }),
+	]);
+	if (governance.summary.issues > 0) {
+		throw new GeneratorCheckError(
+			`generator governance convergence failed with ${governance.summary.issues} issue(s)`,
+		);
+	}
 	let kernelCandidates = 0;
 	let erpCandidates = 0;
 	let outsideFamilyScope = 0;
@@ -162,6 +178,11 @@ export const runGeneratorCheck = async (
 	return Object.freeze({
 		schema: GENERATOR_CHECK_SCHEMA,
 		contractDigest: digestContracts(),
+		phaseExitGovernance: Object.freeze({
+			issues: governance.summary.issues,
+			warnings: governance.summary.warnings,
+			blocked: governance.summary.blocked,
+		}),
 		families: Object.freeze(
 			[generatorContracts.kernel, generatorContracts.erp].map((contract) =>
 				Object.freeze({

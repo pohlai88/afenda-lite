@@ -19,7 +19,12 @@
 | [MODULE-ROADMAP.yaml](./MODULE-ROADMAP.yaml) | Manual candidate/approved authority; Corporate Administration is the current approved incremental module |
 | `MODULE-*.generated.yaml` · `*-REGISTER.generated.yaml` | Generated from on-disk ERP manifests; CI-diffed |
 | `@afenda/db/module-manifest` | `AfendaModuleManifest` contract |
-| `packages/erp/*/src/module.manifest.ts` | Living and scaffolded ERP manifests validated through `LIVING_ERP_MANIFEST_PACKAGES` |
+| `packages/erp/*/src/composition/module.manifest.ts` | Canonical ERP manifest projection derived from generator-owned manifest authority |
+| `packages/erp/*/src/module.manifest.ts` | Historical ERP manifest location; accepted only as retired migration input when classified by generator-owned manifest authority |
+
+ERP manifest package authority is derived from the generator-owned manifest
+authority projection. `LIVING_ERP_MANIFEST_PACKAGES` is retired and must not be
+reintroduced as an implementation or validation authority.
 
 ## Dual control
 

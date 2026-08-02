@@ -77,6 +77,11 @@ describe("generator:check task contract", () => {
 					authoritativeCapabilities: 0,
 				},
 			],
+			phaseExitGovernance: {
+				issues: 0,
+				warnings: 0,
+				blocked: 0,
+			},
 			task: {
 				name: GENERATOR_CHECK_TASK_NAME,
 				rootTaskName: GENERATOR_CHECK_ROOT_TASK_NAME,
@@ -118,6 +123,8 @@ describe("generator:check task contract", () => {
 			"$TURBO_ROOT$/turbo/generators/engine/**",
 			"$TURBO_ROOT$/turbo/generators/erp-generator/**",
 			"$TURBO_ROOT$/turbo/generators/kernel-generator/**",
+			"$TURBO_ROOT$/docs-V2/monorepo/**",
+			"$TURBO_ROOT$/docs-V2/modules/PACKAGE-GOVERNANCE.md",
 			"$TURBO_ROOT$/pnpm-workspace.yaml",
 			"$TURBO_ROOT$/package.json",
 			"$TURBO_ROOT$/pnpm-lock.yaml",
