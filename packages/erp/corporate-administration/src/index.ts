@@ -1,45 +1,8 @@
 import "server-only";
 
-export type {
-	CorporateAdministrationApprovalDecision,
-	CorporateAdministrationApprovalDecisionPort,
-	CorporateAdministrationAuthorizationContext,
-	CorporateAdministrationAuthorizationInput,
-} from "./authorization";
-export { corporateAdministrationPermissionFor } from "./authorization";
-export type {
-	CorporateAdministrationCommandFingerprintEnvelope,
-	CorporateAdministrationCommandIdentity,
-} from "./command-identity";
-export { createCorporateAdministrationCommandFingerprint } from "./command-identity";
-export type {
-	CorporateAdministrationApprovalCommandOptions,
-	CorporateAdministrationCommandOptions,
-	CorporateAdministrationExecutionContext,
-	CorporateAdministrationPaginatedQueryOptions,
-	CorporateAdministrationQueryOptions,
-} from "./command-options";
-export * from "./company";
-export type {
-	CorporateAdministrationDomainEventEnvelope,
-	CorporateAdministrationPendingEvent,
-} from "./domain-events";
-export { createCorporateAdministrationDomainEventEnvelope } from "./domain-events";
-export type {
-	CorporateAdministrationErrorCode,
-	CorporateAdministrationFailureDetails,
-	CorporateAdministrationFailureMetadata,
-} from "./error-codes";
-export {
-	CORPORATE_ADMINISTRATION_ERROR_CODES,
-	CORPORATE_ADMINISTRATION_RESULT_CODE_BY_REASON,
-	corporateAdministrationErrorCodeSchema,
-	corporateAdministrationErrorDetails,
-	corporateAdministrationFailureDetailsSchema,
-	corporateAdministrationFailureMetadataSchema,
-	corporateAdministrationResultCode,
-} from "./error-codes";
-export type * from "./establishments";
+export { corporateAdministrationModuleManifest } from "./composition/module.manifest";
+export * from "./features/company/index";
+export type * from "./features/establishments/index";
 export {
 	activateLegalEstablishment,
 	activateLegalEstablishmentInputSchema,
@@ -81,17 +44,8 @@ export {
 	validateEstablishmentChronology,
 	validateEstablishmentStatusTransition,
 	visibleAtKnownTime,
-} from "./establishments";
-export type {
-	CorporateAdministrationEventType,
-	CreateCorporateAdministrationEventTypeInput,
-} from "./event-types";
-export {
-	CORPORATE_ADMINISTRATION_EVENT_TYPES,
-	corporateAdministrationEventTypeSchema,
-	createCorporateAdministrationEventType,
-} from "./event-types";
-export type * from "./governance";
+} from "./features/establishments/index";
+export type * from "./features/governance/index";
 export {
 	amendGovernanceBody,
 	amendGovernanceBodyInputSchema,
@@ -124,15 +78,169 @@ export {
 	retireGovernanceBody,
 	retireGovernanceBodyInputSchema,
 	validateMembershipWithinBody,
-} from "./governance";
+} from "./features/governance/index";
+export type * from "./features/meetings/index";
+export {
+	adjournMeeting,
+	adjournMeetingInputSchema,
+	calculateMeetingQuorum,
+	canCloseMeeting,
+	closeMeeting,
+	closeMeetingInputSchema,
+	datePart,
+	getGovernanceMeeting,
+	getGovernanceMeetingInputSchema,
+	getMeetingAttendance,
+	getMeetingAttendanceInputSchema,
+	getMeetingQuorumStatus,
+	getMeetingQuorumStatusInputSchema,
+	governanceMeetingListPageSchema,
+	governanceMeetingProcedureTypeSchema,
+	governanceMeetingSchema,
+	governanceMeetingStatusSchema,
+	hasNoticeSatisfied,
+	isNoticeTimely,
+	issueMeetingNotice,
+	issueMeetingNoticeInputSchema,
+	listGovernanceMeetings,
+	listGovernanceMeetingsInputSchema,
+	meetingNoticeSchema,
+	meetingNoticeStatusSchema,
+	meetingParticipantAttendanceStatusSchema,
+	meetingParticipantSchema,
+	meetingQuorumResultSchema,
+	openMeeting,
+	openMeetingInputSchema,
+	quorumRuleSnapshotSchema,
+	recordMeetingParticipant,
+	recordMeetingParticipantInputSchema,
+	recordNoticeDelivery,
+	recordNoticeDeliveryInputSchema,
+	recordQuorum,
+	recordQuorumInputSchema,
+	scheduleGovernanceMeeting,
+	scheduleGovernanceMeetingInputSchema,
+	waiveNotice,
+	waiveNoticeInputSchema,
+} from "./features/meetings/index";
+export type * from "./features/officers/index";
+export {
+	amendOfficerAppointment,
+	amendOfficerAppointmentInputSchema,
+	appointOfficer,
+	appointOfficerInputSchema,
+	assertAppointmentWithinOffice,
+	assertNoOfficerAppointmentConflict,
+	assertOfficerQualificationCurrent,
+	calculateOfficerEligibilityAsOf,
+	calculateOfficerVacancyStatus,
+	conflictDisclosureListPageSchema,
+	conflictDisclosureSchema,
+	conflictDisclosureStatusSchema,
+	conflictMatterTypeSchema,
+	defineStatutoryOffice,
+	defineStatutoryOfficeInputSchema,
+	discloseConflict,
+	discloseConflictInputSchema,
+	endOfficerDisqualification,
+	endOfficerDisqualificationInputSchema,
+	getOfficerAppointment,
+	getOfficerAppointmentInputSchema,
+	getOfficerEligibilityAsOf,
+	getOfficerEligibilityAsOfInputSchema,
+	getOfficerVacancyStatus,
+	getOfficerVacancyStatusInputSchema,
+	listActiveDisqualifications,
+	listActiveDisqualificationsInputSchema,
+	listConflictsForMatter,
+	listConflictsForMatterInputSchema,
+	listExpiringDeclarations,
+	listExpiringDeclarationsInputSchema,
+	listOfficersAsOf,
+	listOfficersAsOfInputSchema,
+	listRequiredStatutoryOffices,
+	listRequiredStatutoryOfficesInputSchema,
+	officerAppointingAuthorityTypeSchema,
+	officerAppointmentMatchesAsOf,
+	officerAppointmentMethodSchema,
+	officerAppointmentSchema,
+	officerAppointmentStatusSchema,
+	officerDeclarationSchema,
+	officerDeclarationStatusSchema,
+	officerDeclarationTypeSchema,
+	officerDisqualificationMatchesAsOf,
+	officerDisqualificationSchema,
+	officerDisqualificationStatusSchema,
+	officerQualificationMatchesAsOf,
+	officerQualificationSchema,
+	officerQualificationVerificationStatusSchema,
+	recordOfficerDeclaration,
+	recordOfficerDeclarationInputSchema,
+	recordOfficerDisqualification,
+	recordOfficerDisqualificationInputSchema,
+	recordOfficerQualification,
+	recordOfficerQualificationInputSchema,
+	recordRecusal,
+	recordRecusalInputSchema,
+	removeOfficer,
+	removeOfficerInputSchema,
+	resignOfficer,
+	resignOfficerInputSchema,
+	statutoryOfficeMatchesAsOf,
+	statutoryOfficeSchema,
+	statutoryOfficeStatusSchema,
+	supersedeOfficerDeclaration,
+	supersedeOfficerDeclarationInputSchema,
+} from "./features/officers/index";
+export type * from "./features/resolutions/index";
+export {
+	adoptResolution,
+	adoptResolutionInputSchema,
+	assignResolutionAction,
+	assignResolutionActionInputSchema,
+	calculateResolutionExecutionStatus,
+	calculateVoteOutcome,
+	completeResolutionAction,
+	completeResolutionActionInputSchema,
+	getResolution,
+	getResolutionExecutionStatus,
+	getResolutionExecutionStatusInputSchema,
+	getResolutionInputSchema,
+	isResolutionActionOverdue,
+	listOverdueResolutionActions,
+	listOverdueResolutionActionsInputSchema,
+	listResolutionsAsOf,
+	listResolutionsAsOfInputSchema,
+	meetingVoteSchema,
+	recordMeetingVote,
+	recordMeetingVoteInputSchema,
+	recordMinutesDocument,
+	recordMinutesDocumentInputSchema,
+	recordWrittenResolution,
+	recordWrittenResolutionInputSchema,
+	rejectResolution,
+	rejectResolutionInputSchema,
+	requiredVotesForThreshold,
+	resolutionActionSchema,
+	resolutionActionStatusSchema,
+	resolutionApprovalBasisSchema,
+	resolutionMatchesAsOf,
+	resolutionSchema,
+	resolutionStatusSchema,
+	supersedeResolution,
+	supersedeResolutionInputSchema,
+	voteOutcomeSchema,
+	voteThresholdTypeSchema,
+} from "./features/resolutions/index";
 export type {
-	CorporateAdministrationIdempotencyBeginInput,
-	CorporateAdministrationIdempotencyBeginOutcome,
-	CorporateAdministrationIdempotencyCompletionInput,
-	CorporateAdministrationIdempotencyPort,
-	CorporateAdministrationIdempotencyReleaseInput,
-	CorporateAdministrationIdempotencyScope,
-} from "./idempotency";
+	CorporateAdministrationApprovalDecision,
+	CorporateAdministrationApprovalDecisionPort,
+	CorporateAdministrationAuthorizationContext,
+	CorporateAdministrationAuthorizationInput,
+} from "./kernel/authorization/authorization";
+export { corporateAdministrationPermissionFor } from "./kernel/authorization/authorization";
+export type { CorporateAdministrationPermission } from "./kernel/authorization/permissions";
+export { CORPORATE_ADMINISTRATION_PERMISSION_CODES } from "./kernel/authorization/permissions";
 export type {
 	CausationId,
 	CommandFingerprint,
@@ -190,153 +298,55 @@ export {
 	isOpenEffectiveRange,
 } from "./kernel/effective-range";
 export type {
-	NormalizedCode,
-	NormalizedCodeValue,
-} from "./kernel/normalization";
-export {
-	MAX_CORPORATE_ADMINISTRATION_CODE_LENGTH,
-	normalizeCorporateAdministrationCode,
-	normalizedCodeSchema,
-} from "./kernel/normalization";
+	CorporateAdministrationDomainEventEnvelope,
+	CorporateAdministrationPendingEvent,
+} from "./kernel/emissions/domain-events";
+export { createCorporateAdministrationDomainEventEnvelope } from "./kernel/emissions/domain-events";
 export type {
-	CursorPage,
-	CursorPagination,
-	OpaqueCursor,
-} from "./kernel/pagination";
+	CorporateAdministrationEventType,
+	CreateCorporateAdministrationEventTypeInput,
+} from "./kernel/emissions/event-types";
 export {
-	cursorPaginationSchema,
-	DEFAULT_CURSOR_PAGE_SIZE,
-	MAX_CURSOR_PAGE_SIZE,
-	MAX_OPAQUE_CURSOR_LENGTH,
-	opaqueCursorSchema,
-} from "./kernel/pagination";
-export type * from "./meetings";
-export {
-	adjournMeeting,
-	adjournMeetingInputSchema,
-	calculateMeetingQuorum,
-	canCloseMeeting,
-	closeMeeting,
-	closeMeetingInputSchema,
-	datePart,
-	getGovernanceMeeting,
-	getGovernanceMeetingInputSchema,
-	getMeetingAttendance,
-	getMeetingAttendanceInputSchema,
-	getMeetingQuorumStatus,
-	getMeetingQuorumStatusInputSchema,
-	governanceMeetingProcedureTypeSchema,
-	governanceMeetingSchema,
-	governanceMeetingStatusSchema,
-	hasNoticeSatisfied,
-	isNoticeTimely,
-	issueMeetingNotice,
-	issueMeetingNoticeInputSchema,
-	listGovernanceMeetings,
-	listGovernanceMeetingsInputSchema,
-	meetingNoticeSchema,
-	meetingNoticeStatusSchema,
-	meetingParticipantAttendanceStatusSchema,
-	meetingParticipantSchema,
-	meetingQuorumResultSchema,
-	openMeeting,
-	openMeetingInputSchema,
-	quorumRuleSnapshotSchema,
-	recordMeetingParticipant,
-	recordMeetingParticipantInputSchema,
-	recordNoticeDelivery,
-	recordNoticeDeliveryInputSchema,
-	recordQuorum,
-	recordQuorumInputSchema,
-	scheduleGovernanceMeeting,
-	scheduleGovernanceMeetingInputSchema,
-	waiveNotice,
-	waiveNoticeInputSchema,
-} from "./meetings";
-export { corporateAdministrationModuleManifest } from "./module.manifest";
+	CORPORATE_ADMINISTRATION_EVENT_TYPES,
+	corporateAdministrationEventTypeSchema,
+	createCorporateAdministrationEventType,
+} from "./kernel/emissions/event-types";
+export type { CorporateAdministrationMutationTable } from "./kernel/emissions/mutation-tables";
+export { CORPORATE_ADMINISTRATION_MUTATION_TABLES } from "./kernel/emissions/mutation-tables";
 export type {
-	CorporateAdministrationCommandId,
-	CorporateAdministrationQueryId,
-} from "./module-ids";
+	CorporateAdministrationCommandFingerprintEnvelope,
+	CorporateAdministrationCommandIdentity,
+} from "./kernel/execution/command-identity";
+export { createCorporateAdministrationCommandFingerprint } from "./kernel/execution/command-identity";
+export type {
+	CorporateAdministrationApprovalCommandOptions,
+	CorporateAdministrationCommandOptions,
+	CorporateAdministrationExecutionContext,
+	CorporateAdministrationPaginatedQueryOptions,
+	CorporateAdministrationQueryOptions,
+} from "./kernel/execution/command-options";
+export type {
+	CorporateAdministrationErrorCode,
+	CorporateAdministrationFailureDetails,
+	CorporateAdministrationFailureMetadata,
+} from "./kernel/execution/error-codes";
 export {
-	CORPORATE_ADMINISTRATION_COMMAND_IDS,
-	CORPORATE_ADMINISTRATION_MODULE_ID,
-	CORPORATE_ADMINISTRATION_PACKAGE_NAME,
-	CORPORATE_ADMINISTRATION_QUERY_IDS,
-} from "./module-ids";
-export type { CorporateAdministrationMutationTable } from "./mutation-tables";
-export { CORPORATE_ADMINISTRATION_MUTATION_TABLES } from "./mutation-tables";
-export type * from "./officers";
-export {
-	amendOfficerAppointment,
-	amendOfficerAppointmentInputSchema,
-	appointOfficer,
-	appointOfficerInputSchema,
-	assertAppointmentWithinOffice,
-	assertNoOfficerAppointmentConflict,
-	assertOfficerQualificationCurrent,
-	calculateOfficerEligibilityAsOf,
-	calculateOfficerVacancyStatus,
-	conflictDisclosureSchema,
-	conflictDisclosureStatusSchema,
-	conflictMatterTypeSchema,
-	defineStatutoryOffice,
-	defineStatutoryOfficeInputSchema,
-	discloseConflict,
-	discloseConflictInputSchema,
-	endOfficerDisqualification,
-	endOfficerDisqualificationInputSchema,
-	getOfficerAppointment,
-	getOfficerAppointmentInputSchema,
-	getOfficerEligibilityAsOf,
-	getOfficerEligibilityAsOfInputSchema,
-	getOfficerVacancyStatus,
-	getOfficerVacancyStatusInputSchema,
-	listActiveDisqualifications,
-	listActiveDisqualificationsInputSchema,
-	listConflictsForMatter,
-	listConflictsForMatterInputSchema,
-	listExpiringDeclarations,
-	listExpiringDeclarationsInputSchema,
-	listOfficersAsOf,
-	listOfficersAsOfInputSchema,
-	listRequiredStatutoryOffices,
-	listRequiredStatutoryOfficesInputSchema,
-	officerAppointingAuthorityTypeSchema,
-	officerAppointmentMatchesAsOf,
-	officerAppointmentMethodSchema,
-	officerAppointmentSchema,
-	officerAppointmentStatusSchema,
-	officerDeclarationSchema,
-	officerDeclarationStatusSchema,
-	officerDeclarationTypeSchema,
-	officerDisqualificationMatchesAsOf,
-	officerDisqualificationSchema,
-	officerDisqualificationStatusSchema,
-	officerQualificationMatchesAsOf,
-	officerQualificationSchema,
-	officerQualificationVerificationStatusSchema,
-	recordOfficerDeclaration,
-	recordOfficerDeclarationInputSchema,
-	recordOfficerDisqualification,
-	recordOfficerDisqualificationInputSchema,
-	recordOfficerQualification,
-	recordOfficerQualificationInputSchema,
-	recordRecusal,
-	recordRecusalInputSchema,
-	removeOfficer,
-	removeOfficerInputSchema,
-	resignOfficer,
-	resignOfficerInputSchema,
-	statutoryOfficeMatchesAsOf,
-	statutoryOfficeSchema,
-	statutoryOfficeStatusSchema,
-	supersedeOfficerDeclaration,
-	supersedeOfficerDeclarationInputSchema,
-} from "./officers";
-export { parseCorporateAdministrationInput } from "./parse-input";
-export type { CorporateAdministrationPermission } from "./permissions";
-export { CORPORATE_ADMINISTRATION_PERMISSION_CODES } from "./permissions";
+	CORPORATE_ADMINISTRATION_ERROR_CODES,
+	CORPORATE_ADMINISTRATION_RESULT_CODE_BY_REASON,
+	corporateAdministrationErrorCodeSchema,
+	corporateAdministrationErrorDetails,
+	corporateAdministrationFailureDetailsSchema,
+	corporateAdministrationFailureMetadataSchema,
+	corporateAdministrationResultCode,
+} from "./kernel/execution/error-codes";
+export type {
+	CorporateAdministrationIdempotencyBeginInput,
+	CorporateAdministrationIdempotencyBeginOutcome,
+	CorporateAdministrationIdempotencyCompletionInput,
+	CorporateAdministrationIdempotencyPort,
+	CorporateAdministrationIdempotencyReleaseInput,
+	CorporateAdministrationIdempotencyScope,
+} from "./kernel/execution/idempotency";
 export type {
 	ActivityClassificationResolution,
 	ClockPort,
@@ -365,7 +375,7 @@ export type {
 	StatutoryNameReconciliationFact,
 	TaxRegistrationReadModel,
 	TaxRegistrationReadPort,
-} from "./ports";
+} from "./kernel/execution/ports";
 export {
 	CORPORATE_ADMINISTRATION_AUDIT_OPERATION_TYPES,
 	CORPORATE_ADMINISTRATION_AUDIT_OUTCOMES,
@@ -374,44 +384,36 @@ export {
 	corporateAdministrationSafeAuditMetadataSchema,
 	createCorporateAdministrationRuntime,
 	rollbackCorporateAdministrationTransaction,
-} from "./ports";
-export type * from "./resolutions";
+} from "./kernel/execution/ports";
+export type {
+	NormalizedCode,
+	NormalizedCodeValue,
+} from "./kernel/normalization";
 export {
-	adoptResolution,
-	adoptResolutionInputSchema,
-	assignResolutionAction,
-	assignResolutionActionInputSchema,
-	calculateResolutionExecutionStatus,
-	calculateVoteOutcome,
-	completeResolutionAction,
-	completeResolutionActionInputSchema,
-	getResolution,
-	getResolutionExecutionStatus,
-	getResolutionExecutionStatusInputSchema,
-	getResolutionInputSchema,
-	isResolutionActionOverdue,
-	listOverdueResolutionActions,
-	listOverdueResolutionActionsInputSchema,
-	listResolutionsAsOf,
-	listResolutionsAsOfInputSchema,
-	meetingVoteSchema,
-	recordMeetingVote,
-	recordMeetingVoteInputSchema,
-	recordMinutesDocument,
-	recordMinutesDocumentInputSchema,
-	recordWrittenResolution,
-	recordWrittenResolutionInputSchema,
-	rejectResolution,
-	rejectResolutionInputSchema,
-	requiredVotesForThreshold,
-	resolutionActionSchema,
-	resolutionActionStatusSchema,
-	resolutionApprovalBasisSchema,
-	resolutionMatchesAsOf,
-	resolutionSchema,
-	resolutionStatusSchema,
-	supersedeResolution,
-	supersedeResolutionInputSchema,
-	voteOutcomeSchema,
-	voteThresholdTypeSchema,
-} from "./resolutions";
+	MAX_CORPORATE_ADMINISTRATION_CODE_LENGTH,
+	normalizeCorporateAdministrationCode,
+	normalizedCodeSchema,
+} from "./kernel/normalization";
+export type {
+	CorporateAdministrationCommandId,
+	CorporateAdministrationQueryId,
+} from "./kernel/operations/module-ids";
+export {
+	CORPORATE_ADMINISTRATION_COMMAND_IDS,
+	CORPORATE_ADMINISTRATION_MODULE_ID,
+	CORPORATE_ADMINISTRATION_PACKAGE_NAME,
+	CORPORATE_ADMINISTRATION_QUERY_IDS,
+} from "./kernel/operations/module-ids";
+export type {
+	CursorPage,
+	CursorPagination,
+	OpaqueCursor,
+} from "./kernel/pagination";
+export {
+	cursorPaginationSchema,
+	DEFAULT_CURSOR_PAGE_SIZE,
+	MAX_CURSOR_PAGE_SIZE,
+	MAX_OPAQUE_CURSOR_LENGTH,
+	opaqueCursorSchema,
+} from "./kernel/pagination";
+export { parseCorporateAdministrationInput } from "./kernel/validation/parse-input";

@@ -148,14 +148,16 @@ describe("CA-1.4 memory establishment store", () => {
 			organizationId,
 			legalCompanyId,
 			asOf: canonicalDateSchema.parse("2026-02-28"),
+			pagination: { limit: 50 },
 		});
 		const after = await store.listLegalEstablishmentsAsOf({
 			organizationId,
 			legalCompanyId,
 			asOf: canonicalDateSchema.parse("2026-03-01"),
+			pagination: { limit: 50 },
 		});
-		expect(before.ok && before.data[0]?.currentStatus).toBe("registered");
-		expect(after.ok && after.data[0]?.currentStatus).toBe("active");
+		expect(before.ok && before.data.items[0]?.currentStatus).toBe("registered");
+		expect(after.ok && after.data.items[0]?.currentStatus).toBe("active");
 	});
 	it("reconstructs distinct address and premise facts without mutating party address", async () => {
 		const store = createMemoryCorporateAdministrationEstablishmentStore();

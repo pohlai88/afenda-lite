@@ -4,7 +4,7 @@ import {
 	findCompanyLegalFormAsOfInputSchema,
 	setCompanyLegalFormInputSchema,
 	supersedeCompanyLegalFormInputSchema,
-} from "../../src/company";
+} from "../../src/features/company/index";
 
 const legalCompanyId = "11111111-1111-4111-8111-111111111111";
 const companyLegalFormHistoryId = "33333333-3333-4333-8333-333333333333";

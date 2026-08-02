@@ -4,6 +4,9 @@ import {
 	canonicalDateSchema,
 	canonicalInstantSchema,
 	conflictDisclosureSchema,
+	listActiveDisqualificationsInputSchema,
+	listConflictsForMatterInputSchema,
+	listExpiringDeclarationsInputSchema,
 	officerAppointmentIdSchema,
 	organizationIdSchema,
 	recordOfficerDeclarationInputSchema,
@@ -35,6 +38,62 @@ describe("CA-2.3 officer compliance contracts and rules", () => {
 			actorUserId,
 		});
 		expect(parsed.success).toBe(false);
+	});
+	it("bounds expiring-declaration page sizes at the public query contract", () => {
+		const base = {
+			legalCompanyId,
+			asOf: "2026-04-01",
+			windowDays: 30,
+		};
+		expect(
+			listExpiringDeclarationsInputSchema.safeParse({
+				...base,
+				pageSize: 100,
+			}).success,
+		).toBe(true);
+		expect(
+			listExpiringDeclarationsInputSchema.safeParse({
+				...base,
+				pageSize: 101,
+			}).success,
+		).toBe(false);
+	});
+	it("bounds active-disqualification page sizes at the public query contract", () => {
+		const base = {
+			legalCompanyId,
+			asOf: "2026-04-15",
+		};
+		expect(
+			listActiveDisqualificationsInputSchema.safeParse({
+				...base,
+				pageSize: 100,
+			}).success,
+		).toBe(true);
+		expect(
+			listActiveDisqualificationsInputSchema.safeParse({
+				...base,
+				pageSize: 101,
+			}).success,
+		).toBe(false);
+	});
+	it("bounds conflict-for-matter page sizes at the public query contract", () => {
+		const base = {
+			legalCompanyId,
+			matterType: "resolution",
+			matterId: "resolution-1",
+		};
+		expect(
+			listConflictsForMatterInputSchema.safeParse({
+				...base,
+				pageSize: 100,
+			}).success,
+		).toBe(true);
+		expect(
+			listConflictsForMatterInputSchema.safeParse({
+				...base,
+				pageSize: 101,
+			}).success,
+		).toBe(false);
 	});
 	it("resolves eligibility from current declarations and active disqualifications", () => {
 		const eligibility = calculateOfficerEligibilityAsOf({
@@ -139,7 +198,7 @@ describe("CA-2.3 memory officer compliance store", () => {
 			asOf: canonicalDateSchema.parse("2026-04-01"),
 			windowDays: 30,
 		});
-		expect(expiring.ok && expiring.data).toHaveLength(1);
+		expect(expiring.ok && expiring.data.items).toHaveLength(1);
 		const disqualification = await store.recordOfficerDisqualification({
 			organizationId,
 			legalCompanyId,
@@ -160,7 +219,7 @@ describe("CA-2.3 memory officer compliance store", () => {
 			asOf: canonicalDateSchema.parse("2026-04-15"),
 			officerAppointmentId,
 		});
-		expect(active.ok && active.data).toHaveLength(1);
+		expect(active.ok && active.data.items).toHaveLength(1);
 		const conflict = await store.discloseConflict({
 			organizationId,
 			legalCompanyId,
@@ -196,7 +255,7 @@ describe("CA-2.3 memory officer compliance store", () => {
 			matterType: "resolution",
 			matterId: "resolution-1",
 		});
-		expect(conflicts.ok && conflicts.data[0]?.status).toBe("recused");
+		expect(conflicts.ok && conflicts.data.items[0]?.status).toBe("recused");
 	});
 });
 function makeDeclaration(

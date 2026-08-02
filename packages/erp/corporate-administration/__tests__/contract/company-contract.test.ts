@@ -131,8 +131,17 @@ describe("Corporate Administration company input and output contracts", () => {
 			}).success,
 		).toBe(true);
 		expect(
-			getLegalCompanyTimelineInputSchema.safeParse({ legalCompanyId }).success,
+			getLegalCompanyTimelineInputSchema.safeParse({
+				legalCompanyId,
+				pageSize: 100,
+			}).success,
 		).toBe(true);
+		expect(
+			getLegalCompanyTimelineInputSchema.safeParse({
+				legalCompanyId,
+				pageSize: 101,
+			}).success,
+		).toBe(false);
 	});
 
 	it("fails invalid effective dates at the contract boundary", () => {

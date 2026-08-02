@@ -1,29 +1,62 @@
 # `@afenda/corporate-administration`
 
-Corporate Administration is an organization-scoped greenfield bounded context.
-Phase 0 is closed. The package remains governed by the greenfield roadmap under
-`docs-V2/_scratch/erp/corporate-administration/greenfield`.
+Corporate Administration is the organization-scoped statutory and
+corporate-secretarial system of record. Product scope, architecture constraints,
+delivery order, and enterprise acceptance are defined in [PRD.md](PRD.md).
 
-## Slice position
+## Capability position
 
-- CA-0.1 established package identity, authority, exports and the reserved
-  `ca_*` namespace.
-- CA-0.2 established canonical kernel contracts and fail-closed execution
-  context contracts.
-- CA-0.3 established application runtime infrastructure.
-- CA-0.4 established durable idempotency, transaction, shared audit/outbox and
-  the first narrow draft-company persistence path. Required Neon parity ran on
-  demo branch `br-fragrant-morning-aoywrnzr`.
-- CA-1.1 established legal-company registry and jurisdiction-profile behavior.
-- CA-1.2 implements effective legal names and legal forms, but the slice is not
-  `DONE` until current demo-branch Neon parity is re-established.
-- CA-1.3 implements authority-aware identifiers, financial-year history and
-  activity classifications, but the slice is not `DONE` until current
-  demo-branch Neon parity is re-established.
-- CA-1.4 implements registered offices, legal establishments and premises. Its
-  CA-owned backend lanes are green against the repaired demo branch, and the
-  demo ledger is proven through `0026_ca_recorded_range_zero_width` as recorded
-  in `CA-1.4-EVIDENCE.md`.
+- Implemented: canonical operation registry, authorization, durable command
+  execution, idempotency, transaction, audit, outbox, observability, and memory
+  and Drizzle adapter foundations.
+- Implemented: legal-company registry and lifecycle, jurisdiction profiles,
+  legal names/forms, identifiers, financial years, activities, establishments,
+  registered offices, governance bodies, officers, meetings, voting,
+  resolutions, minutes references, and implementation actions.
+- Verified: the supported inherited 13-table Neon parity cohort passes 21 files
+  and 36 tests on preview branch `br-still-cloud-aof2rkqv`.
+- Verified for the supported legal-company cohort: database-backed adversarial
+  tenant isolation for reads, writes, tenant-scoped natural keys, and relational
+  references.
+- Implemented and preview-verified for legal-company, status-filtered company,
+  legal-name, identifier, company-activity as-of, legal-company timeline,
+  legal-establishment, and premise lists: scope-bound versioned opaque cursors,
+  bounded keyset pagination, stable ordering, invalid-cursor rejection,
+  supporting-index inventory, and bounded query-plan evidence. Status-filtered
+  company pagination covers both current state and historical as-of/known-at
+  resolution without N+1 reads. The timeline merges company, jurisdiction, and
+  status history through three bounded tenant-scoped reads with one canonical
+  cross-source order. Activity overlap validation uses a dedicated
+  tenant-scoped limit-one capability, so paginating the operational list does
+  not weaken the effective-range invariant.
+- Implemented for governance-body, governance-membership as-of, required
+  statutory-office, officer-appointment as-of, and expiring officer-declaration
+  lists, as well as active officer-disqualification, conflict-for-matter, and
+  governance-meeting lists: the
+  same internal cursor codec, scope- and filter-bound keysets, stable canonical
+  ordering, and bounded Drizzle queries. The membership facade pages operational
+  reads without weakening complete-set retirement and quorum decisions;
+  officer appointment conflict, vacancy, and eligibility decisions likewise
+  retain their distinct complete-set capabilities. Preview parity and EXPLAIN
+  evidence remain
+  blocked because the isolated branch does not yet contain the governance tables
+  owned by migration
+  `0034_ca_governance_bodies_memberships.sql` or the statutory-office table
+  and officer-appointment table owned by migration
+  `0035_ca_statutory_offices_officers.sql`. The declaration,
+  disqualification, and conflict-disclosure tables are likewise absent because
+  migration `0036_ca_officer_compliance.sql` is not deployed. The meeting table
+  is absent because migration `0037_ca_governance_meetings.sql` is not deployed.
+  The preview suite records 20 passing files and 42 passing tests; eight
+  database tests stop only on the absent 0034–0037 tables. This package mission
+  did not apply any migration.
+- Pending evidence: production approval integration, broader adapter parity,
+  broader failure injection and tenant isolation (including approvals and
+  exports), migration integrity, recovery, and operational readiness.
+
+Securities, capital, investors, shareholders, holdings, certificates,
+beneficial ownership, and distributions are excluded. They belong to a separate
+Investor Relations ERP bounded context.
 
 ## Lifecycle
 
@@ -43,6 +76,12 @@ Corporate Administration uses the composed-service model. Runtime ports are
 constructed at the app composition root and validated by the package. Per-call
 options carry request facts only: organization, actor, correlation,
 authorization, idempotency key and optional causation.
+
+Internally, business behavior is organized under `src/features/<feature>`.
+Each feature owns its schema, rules, commands, queries, narrow store contract,
+and memory/Drizzle adapters. Cross-feature semantics live under `src/kernel`,
+while production assembly and the module manifest live under `src/composition`.
+These internal paths are not consumer APIs.
 
 The root exposes one runtime factory, `createCorporateAdministrationRuntime`.
 After parsing and before any domain read, a private command capability derives
@@ -107,11 +146,11 @@ pnpm --filter @afenda/corporate-administration typecheck
 pnpm --filter @afenda/corporate-administration test
 ```
 
-Required Neon parity uses the documented CA demo branch from `.env.local`:
+Required Neon parity must use an explicitly isolated non-production target:
 
 ```powershell
-$env:DATABASE_URL=$env:NEON_CA_0_4_DEMO_DATABASE_URL
-$env:AFENDA_DATABASE_TEST_TARGET="demo"
+$env:DATABASE_URL="<isolated-preview-connection>"
+$env:AFENDA_DATABASE_TEST_TARGET="preview"
 $env:REQUIRE_DATABASE_TESTS="1"
-pnpm --filter @afenda/corporate-administration test
+pnpm test:corporate-administration:parity
 ```

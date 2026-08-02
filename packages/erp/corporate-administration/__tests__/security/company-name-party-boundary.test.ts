@@ -5,10 +5,10 @@ import { describe, expect, it } from "vitest";
 const packageRoot = join(process.cwd(), "src");
 
 const boundaryFiles = [
-	"company/commands/add-company-name.ts",
-	"company/commands/supersede-company-name.ts",
-	"company/commands/retire-company-name.ts",
-	"ports.ts",
+	"features/company/commands/add-company-name.ts",
+	"features/company/commands/supersede-company-name.ts",
+	"features/company/commands/retire-company-name.ts",
+	"kernel/execution/ports.ts",
 ] as const;
 
 describe("company-name party boundary", () => {
@@ -22,7 +22,10 @@ describe("company-name party boundary", () => {
 	});
 
 	it("keeps party reconciliation behind public package ports", () => {
-		const ports = readFileSync(join(packageRoot, "ports.ts"), "utf8");
+		const ports = readFileSync(
+			join(packageRoot, "kernel", "execution", "ports.ts"),
+			"utf8",
+		);
 		expect(ports).toContain("PartyReferencePort");
 		expect(ports).toContain("MasterDataReconciliationPort");
 		expect(ports).toContain("statutoryName");

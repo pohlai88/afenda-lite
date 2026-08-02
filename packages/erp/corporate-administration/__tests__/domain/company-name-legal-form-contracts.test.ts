@@ -2,8 +2,6 @@
 // biome-ignore-all lint/suspicious/useAwait: Contract fixtures implement asynchronous store ports.
 import { errorResult } from "@afenda/errors";
 import { describe, expect, it } from "vitest";
-
-import type { CorporateAdministrationQueryOptions } from "../../src/command-options";
 import {
 	addCompanyNameInputSchema,
 	type CompanyNameQueryDependencies,
@@ -25,12 +23,13 @@ import {
 	validateCompanyNameType,
 	validateLegalFormCompatibility,
 	validateLegalFormEffectiveRange,
-} from "../../src/company";
+} from "../../src/features/company/index";
 import {
 	correlationIdSchema,
 	organizationIdSchema,
 	userIdSchema,
 } from "../../src/kernel/brands";
+import type { CorporateAdministrationQueryOptions } from "../../src/kernel/execution/command-options";
 import { createMemoryCorporateAdministrationObservabilityPort } from "../../src/testing/observability";
 
 const organizationId = organizationIdSchema.parse("org-ca-name");

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { authorizeCorporateAdministrationCommand } from "../src/internal/durable-command";
+import { authorizeCorporateAdministrationCommand } from "../src/kernel/internal/durable-command";
 import { caCommandOptions } from "./helpers/legal-company-test-kit";
 
 describe("Corporate Administration command authorization kernel", () => {

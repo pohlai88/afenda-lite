@@ -1,9 +1,9 @@
 import { errorResult } from "@afenda/errors";
-import type { JurisdictionEntityTypeRule } from "../company/rules";
+import type { JurisdictionEntityTypeRule } from "../features/company/rules";
 import type {
 	CompanyPartyReferencePort,
 	CompanyReferenceDataPort,
-} from "../company/store";
+} from "../features/company/store";
 import {
 	correlationIdSchema,
 	idempotencyKeySchema,

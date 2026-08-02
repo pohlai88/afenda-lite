@@ -15,21 +15,21 @@ const packageDirectory = path.resolve(
 const repositoryDirectory = path.resolve(packageDirectory, "../../..");
 const sourceDirectory = path.join(packageDirectory, "src");
 const approvedDatabaseImportFiles = new Set([
-	"src/adapters/drizzle/audit.ts",
-	"src/adapters/drizzle/dependencies.ts",
-	"src/adapters/drizzle/errors.ts",
-	"src/adapters/drizzle/company.ts",
-	"src/adapters/drizzle/establishments.ts",
-	"src/adapters/drizzle/governance.ts",
-	"src/adapters/drizzle/idempotency.ts",
-	"src/adapters/drizzle/index.ts",
-	"src/adapters/drizzle/meetings.ts",
-	"src/adapters/drizzle/officer-compliance.ts",
-	"src/adapters/drizzle/officers.ts",
-	"src/adapters/drizzle/outbox.ts",
-	"src/adapters/drizzle/resolutions.ts",
-	"src/adapters/drizzle/transaction.ts",
-	"src/module.manifest.ts",
+	"src/composition/adapters/drizzle/audit.ts",
+	"src/kernel/infrastructure/drizzle-dependencies.ts",
+	"src/kernel/infrastructure/translate-infrastructure-error.ts",
+	"src/features/company/adapters/company.drizzle.ts",
+	"src/features/establishments/adapters/establishments.drizzle.ts",
+	"src/features/governance/adapters/governance.drizzle.ts",
+	"src/composition/adapters/drizzle/idempotency.ts",
+	"src/composition/adapters/drizzle/index.ts",
+	"src/features/meetings/adapters/meetings.drizzle.ts",
+	"src/features/officers/adapters/officer-compliance.drizzle.ts",
+	"src/features/officers/adapters/officers.drizzle.ts",
+	"src/composition/adapters/drizzle/outbox.ts",
+	"src/features/resolutions/adapters/resolutions.drizzle.ts",
+	"src/composition/adapters/drizzle/transaction.ts",
+	"src/composition/module.manifest.ts",
 ]);
 
 function sourceFiles(directory: string): string[] {
@@ -60,63 +60,16 @@ function readPackageSource(relativeFile: string): string {
 	return readFileSync(path.join(packageDirectory, relativeFile), "utf8");
 }
 
-describe("Corporate Administration CA-0.4 package boundary", () => {
-	it("keeps Phase 0 execution controllers and skill authority aligned", () => {
-		const greenfieldDirectory = path.join(
-			repositoryDirectory,
-			"docs-V2/_scratch/erp/corporate-administration/greenfield",
-		);
-		const phase = readFileSync(
-			path.join(
-				greenfieldDirectory,
-				"phase/PHASE-0-ARCHITECTURE-AND-FOUNDATION.md",
-			),
+describe("Corporate Administration package boundary", () => {
+	it("keeps the forward requirements authority and skill routing aligned", () => {
+		const requirementsPath = "packages/erp/corporate-administration/PRD.md";
+		const requirements = readFileSync(
+			path.join(repositoryDirectory, requirementsPath),
 			"utf8",
 		);
-		const roadmapIndex = readFileSync(
-			path.join(greenfieldDirectory, "03-ROADMAP-INDEX.md"),
+		const packageReadme = readFileSync(
+			path.join(packageDirectory, "README.md"),
 			"utf8",
-		);
-		const roadmapYaml = readFileSync(
-			path.join(greenfieldDirectory, "ROADMAP.yaml"),
-			"utf8",
-		);
-		const roadmapTracker = readFileSync(
-			path.join(greenfieldDirectory, "ROADMAP-TRACKER.tsv"),
-			"utf8",
-		);
-		const serializedControllers = [
-			phase,
-			roadmapIndex,
-			roadmapYaml,
-			roadmapTracker,
-		].join("\n");
-
-		for (const status of [
-			["CA-0.1", "DONE"],
-			["CA-0.2", "DONE"],
-			["CA-0.3", "DONE"],
-			["CA-0.4", "DONE"],
-		] as const) {
-			for (const controller of [
-				phase,
-				roadmapIndex,
-				roadmapYaml,
-				roadmapTracker,
-			]) {
-				expect(controller).toMatch(
-					new RegExp(`${status[0]}[\\s\\S]{0,220}${status[1]}`),
-				);
-			}
-			const evidence = readFileSync(
-				path.join(greenfieldDirectory, `evidence/${status[0]}-EVIDENCE.md`),
-				"utf8",
-			);
-			expect(evidence).toContain(`\`${status[1]}\``);
-		}
-
-		expect(serializedControllers).not.toMatch(
-			/first thin vertical|draft legal-company|thin draft root/i,
 		);
 		const skillReference = readFileSync(
 			path.join(
@@ -125,8 +78,24 @@ describe("Corporate Administration CA-0.4 package boundary", () => {
 			),
 			"utf8",
 		);
-		expect(skillReference).toContain("01-DOMAIN-MODEL-AND-DATA-AUTHORITY.md");
-		expect(skillReference).not.toContain("01-DATA-MODEL-AND-TABLE-CATALOG.md");
+
+		expect(requirements).toContain(
+			"# Corporate Administration Product Requirements",
+		);
+		expect(requirements).toContain("CA-FR-001");
+		expect(requirements).toContain("## Investor Relations exclusion");
+		const closureRows = requirements.match(
+			/^\| \d+ \|.*\| (?:DONE|PARTIAL|GAP|BLOCKED|NOT_APPLICABLE) \|.*\|$/gm,
+		);
+		expect(closureRows).toHaveLength(14);
+		expect(closureRows?.filter((row) => row.includes("| DONE |")).length).toBe(
+			5,
+		);
+		expect(packageReadme).toContain("PRD.md");
+		expect(skillReference).toContain(requirementsPath);
+		expect(skillReference).not.toContain(
+			"docs-V2/_scratch/erp/corporate-administration",
+		);
 	});
 
 	it("resolves the root and manifest exports with the approved identity", () => {
@@ -216,6 +185,26 @@ describe("Corporate Administration CA-0.4 package boundary", () => {
 		}
 	});
 
+	it("keeps opaque cursor serialization in one internal semantic owner", () => {
+		const cursorSerializationOwners = normalizedRelativeSourceFiles().filter(
+			(relativeFile) => {
+				const source = readPackageSource(relativeFile);
+				return (
+					source.includes('toString("base64url")') ||
+					source.includes('Buffer.from(cursor, "base64url")')
+				);
+			},
+		);
+
+		expect(cursorSerializationOwners).toEqual([
+			"src/kernel/internal/pagination-cursor.ts",
+		]);
+		expect(Object.keys(packageRoot)).not.toContain("encodeLegalCompanyCursor");
+		expect(Object.keys(packageRoot)).not.toContain(
+			"encodeLegalEstablishmentCursor",
+		);
+	});
+
 	it("publishes Drizzle adapters only through the adapter subpath", () => {
 		expect(drizzleAdapters).toHaveProperty(
 			"createDrizzleCorporateAdministrationIdempotencyPort",
@@ -253,14 +242,16 @@ describe("Corporate Administration CA-0.4 package boundary", () => {
 			"DrizzleCorporateAdministrationTransactionPort",
 		]) {
 			expect(drizzleAdapters).not.toHaveProperty(implementationClass);
-			expect(readPackageSource("src/adapters/drizzle/index.ts")).not.toMatch(
+			expect(
+				readPackageSource("src/composition/adapters/drizzle/index.ts"),
+			).not.toMatch(
 				new RegExp(`export\\s*\\{[^}]*\\b${implementationClass}\\b`),
 			);
 		}
 		for (const implementationSource of [
-			"src/adapters/drizzle/idempotency.ts",
-			"src/adapters/drizzle/outbox.ts",
-			"src/adapters/drizzle/transaction.ts",
+			"src/composition/adapters/drizzle/idempotency.ts",
+			"src/composition/adapters/drizzle/outbox.ts",
+			"src/composition/adapters/drizzle/transaction.ts",
 		]) {
 			expect(readPackageSource(implementationSource)).not.toMatch(
 				/export class DrizzleCorporateAdministration\w+Port/,
@@ -759,12 +750,22 @@ describe("Corporate Administration CA-0.4 package boundary", () => {
 				dependencyImportPattern(forbiddenDependency).test(shippedSource),
 			).toBe(false);
 		}
-		expect(existsSync(path.join(sourceDirectory, "ports.ts"))).toBe(true);
+		expect(
+			existsSync(path.join(sourceDirectory, "kernel", "execution", "ports.ts")),
+		).toBe(true);
 		expect(existsSync(path.join(sourceDirectory, "production-ports.ts"))).toBe(
 			false,
 		);
 		expect(
-			existsSync(path.join(sourceDirectory, "adapters", "drizzle", "index.ts")),
+			existsSync(
+				path.join(
+					sourceDirectory,
+					"composition",
+					"adapters",
+					"drizzle",
+					"index.ts",
+				),
+			),
 		).toBe(true);
 	});
 
@@ -875,22 +876,22 @@ describe("Corporate Administration CA-0.4 package boundary", () => {
 		expect(appCompositionSource).not.toContain("outboxAppender:");
 
 		for (const relativeFile of [
-			"src/adapters/drizzle/idempotency.ts",
-			"src/adapters/drizzle/outbox.ts",
-			"src/adapters/drizzle/transaction.ts",
+			"src/composition/adapters/drizzle/idempotency.ts",
+			"src/composition/adapters/drizzle/outbox.ts",
+			"src/composition/adapters/drizzle/transaction.ts",
 		]) {
 			const source = readPackageSource(relativeFile);
 			expect(source).not.toMatch(/\bdb\s*\./);
 			expect(source).toContain("dependencies:");
 		}
-		expect(readPackageSource("src/adapters/drizzle/audit.ts")).not.toContain(
-			"createDrizzleAuditStore",
-		);
+		expect(
+			readPackageSource("src/composition/adapters/drizzle/audit.ts"),
+		).not.toContain("createDrizzleAuditStore");
 	});
 
 	it("keeps runtime ports limited to CA-0.4 infrastructure", () => {
 		const portsSource = readFileSync(
-			path.join(sourceDirectory, "ports.ts"),
+			path.join(sourceDirectory, "kernel", "execution", "ports.ts"),
 			"utf8",
 		);
 
@@ -939,7 +940,23 @@ describe("Corporate Administration CA-0.4 package boundary", () => {
 	});
 
 	it("does not create legacy business implementation directories", () => {
-		for (const directory of ["aggregates", "commands", "queries", "actions"]) {
+		for (const directory of [
+			"adapters",
+			"aggregates",
+			"commands",
+			"queries",
+			"actions",
+			"company",
+			"establishments",
+			"governance",
+			"internal",
+			"meetings",
+			"officers",
+			"operation-registry",
+			"resolutions",
+			"schemas",
+			"store",
+		]) {
 			const target = path.join(sourceDirectory, directory);
 			expect(existsSync(target) ? sourceFiles(target) : []).toEqual([]);
 		}
@@ -957,48 +974,52 @@ describe("Corporate Administration CA-0.4 package boundary", () => {
 			"filing",
 		];
 		const approvedCompanyPaths = [
-			"src/company/commands/add-company-name.ts",
-			"src/company/commands/change-legal-company-status.ts",
-			"src/company/commands/end-company-activity.ts",
-			"src/company/commands/index.ts",
-			"src/company/commands/register-company-activity.ts",
-			"src/company/commands/register-company-identifier.ts",
-			"src/company/commands/register-legal-company-draft.ts",
-			"src/company/commands/retire-company-identifier.ts",
-			"src/company/commands/retire-company-name.ts",
-			"src/company/commands/set-company-financial-year.ts",
-			"src/company/commands/set-company-jurisdiction-profile.ts",
-			"src/company/commands/set-company-legal-form.ts",
-			"src/company/commands/supersede-company-identifier.ts",
-			"src/company/commands/supersede-company-jurisdiction-profile.ts",
-			"src/company/commands/supersede-company-legal-form.ts",
-			"src/company/commands/supersede-company-name.ts",
-			"src/company/commands/update-legal-company-profile.ts",
-			"src/company/queries/find-company-financial-year-as-of.ts",
-			"src/company/queries/find-company-identifier-as-of.ts",
-			"src/company/queries/find-company-jurisdiction-profile-as-of.ts",
-			"src/company/queries/find-company-legal-form-as-of.ts",
-			"src/company/queries/find-company-name-as-of.ts",
-			"src/company/queries/find-company-status-as-of.ts",
-			"src/company/queries/get-company-completeness-for-activation.ts",
-			"src/company/queries/get-legal-company-timeline.ts",
-			"src/company/queries/get-legal-company.ts",
-			"src/company/queries/index.ts",
-			"src/company/queries/list-companies-by-status.ts",
-			"src/company/queries/list-company-activities-as-of.ts",
-			"src/company/queries/list-company-identifiers.ts",
-			"src/company/queries/list-company-names.ts",
-			"src/company/queries/list-legal-companies.ts",
+			"src/features/company/commands/add-company-name.ts",
+			"src/features/company/commands/change-legal-company-status.ts",
+			"src/features/company/commands/end-company-activity.ts",
+			"src/features/company/commands/index.ts",
+			"src/features/company/commands/register-company-activity.ts",
+			"src/features/company/commands/register-company-identifier.ts",
+			"src/features/company/commands/register-legal-company-draft.ts",
+			"src/features/company/commands/retire-company-identifier.ts",
+			"src/features/company/commands/retire-company-name.ts",
+			"src/features/company/commands/set-company-financial-year.ts",
+			"src/features/company/commands/set-company-jurisdiction-profile.ts",
+			"src/features/company/commands/set-company-legal-form.ts",
+			"src/features/company/commands/supersede-company-identifier.ts",
+			"src/features/company/commands/supersede-company-jurisdiction-profile.ts",
+			"src/features/company/commands/supersede-company-legal-form.ts",
+			"src/features/company/commands/supersede-company-name.ts",
+			"src/features/company/commands/update-legal-company-profile.ts",
+			"src/features/company/queries/find-company-financial-year-as-of.ts",
+			"src/features/company/queries/find-company-identifier-as-of.ts",
+			"src/features/company/queries/find-company-jurisdiction-profile-as-of.ts",
+			"src/features/company/queries/find-company-legal-form-as-of.ts",
+			"src/features/company/queries/find-company-name-as-of.ts",
+			"src/features/company/queries/find-company-status-as-of.ts",
+			"src/features/company/queries/get-company-completeness-for-activation.ts",
+			"src/features/company/queries/get-legal-company-timeline.ts",
+			"src/features/company/queries/get-legal-company.ts",
+			"src/features/company/queries/index.ts",
+			"src/features/company/queries/list-companies-by-status.ts",
+			"src/features/company/queries/list-company-activities-as-of.ts",
+			"src/features/company/queries/list-company-identifiers.ts",
+			"src/features/company/queries/list-company-names.ts",
+			"src/features/company/queries/list-legal-companies.ts",
 		];
 		const approvedGovernancePaths = [
-			"src/governance/commands/index.ts",
-			"src/governance/index.ts",
-			"src/governance/operations.ts",
-			"src/governance/queries/index.ts",
-			"src/governance/rules.ts",
-			"src/governance/schemas.ts",
-			"src/governance/store.ts",
-			"src/governance/types.ts",
+			"src/features/governance/adapters/governance.drizzle.ts",
+			"src/features/governance/adapters/governance.memory.ts",
+			"src/features/governance/capabilities.ts",
+			"src/features/governance/commands/index.ts",
+			"src/features/governance/index.ts",
+			"src/features/governance/operations.ts",
+			"src/features/governance/pagination.ts",
+			"src/features/governance/queries/index.ts",
+			"src/features/governance/rules.ts",
+			"src/features/governance/schemas.ts",
+			"src/features/governance/store.ts",
+			"src/features/governance/types.ts",
 		];
 		const findings = normalizedRelativeSourceFiles().flatMap((relativeFile) => {
 			const segments = relativeFile.split("/");
@@ -1006,12 +1027,12 @@ describe("Corporate Administration CA-0.4 package boundary", () => {
 				segments.length > 1 &&
 				(segments[1] === "commands" || segments[1] === "queries");
 			const isUnexpectedCompanyCommandOrQuery =
-				relativeFile.startsWith("src/company/commands/") ||
-				relativeFile.startsWith("src/company/queries/")
+				relativeFile.startsWith("src/features/company/commands/") ||
+				relativeFile.startsWith("src/features/company/queries/")
 					? !approvedCompanyPaths.includes(relativeFile)
 					: false;
 			const isUnexpectedGovernancePath = relativeFile.startsWith(
-				"src/governance/",
+				"src/features/governance/",
 			)
 				? !approvedGovernancePaths.includes(relativeFile)
 				: false;
@@ -1038,26 +1059,50 @@ describe("Corporate Administration CA-0.4 package boundary", () => {
 			expect(existsSync(path.join(sourceDirectory, rootFile))).toBe(false);
 		}
 
-		expect(existsSync(path.join(sourceDirectory, "company", "index.ts"))).toBe(
-			true,
-		);
+		expect(
+			existsSync(path.join(sourceDirectory, "features", "company", "index.ts")),
+		).toBe(true);
 		expect(
 			existsSync(
-				path.join(sourceDirectory, "adapters", "drizzle", "company.ts"),
+				path.join(
+					sourceDirectory,
+					"features",
+					"company",
+					"adapters",
+					"company.drizzle.ts",
+				),
 			),
 		).toBe(true);
 		expect(
 			existsSync(
-				path.join(sourceDirectory, "adapters", "drizzle", "idempotency.ts"),
+				path.join(
+					sourceDirectory,
+					"composition",
+					"adapters",
+					"drizzle",
+					"idempotency.ts",
+				),
 			),
 		).toBe(true);
 		expect(
 			existsSync(
-				path.join(sourceDirectory, "adapters", "drizzle", "transaction.ts"),
+				path.join(
+					sourceDirectory,
+					"composition",
+					"adapters",
+					"drizzle",
+					"transaction.ts",
+				),
 			),
 		).toBe(true);
 		const transactionAdapterSource = readFileSync(
-			path.join(sourceDirectory, "adapters", "drizzle", "transaction.ts"),
+			path.join(
+				sourceDirectory,
+				"composition",
+				"adapters",
+				"drizzle",
+				"transaction.ts",
+			),
 			"utf8",
 		);
 		expect(transactionAdapterSource).toContain(
@@ -1074,7 +1119,13 @@ describe("Corporate Administration CA-0.4 package boundary", () => {
 		expect(transactionAdapterSource).not.toContain("AnyPgTransaction");
 		expect(transactionAdapterSource).not.toContain("savepoint");
 		const idempotencyAdapterSource = readFileSync(
-			path.join(sourceDirectory, "adapters", "drizzle", "idempotency.ts"),
+			path.join(
+				sourceDirectory,
+				"composition",
+				"adapters",
+				"drizzle",
+				"idempotency.ts",
+			),
 			"utf8",
 		);
 		expect(idempotencyAdapterSource).toContain('status: "in_progress"');
@@ -1107,10 +1158,24 @@ describe("Corporate Administration CA-0.4 package boundary", () => {
 		);
 		expect(idempotencyAdapterSource).not.toContain('status: "reserved"');
 		expect(
-			existsSync(path.join(sourceDirectory, "adapters", "drizzle", "audit.ts")),
+			existsSync(
+				path.join(
+					sourceDirectory,
+					"composition",
+					"adapters",
+					"drizzle",
+					"audit.ts",
+				),
+			),
 		).toBe(true);
 		const auditAdapterSource = readFileSync(
-			path.join(sourceDirectory, "adapters", "drizzle", "audit.ts"),
+			path.join(
+				sourceDirectory,
+				"composition",
+				"adapters",
+				"drizzle",
+				"audit.ts",
+			),
 			"utf8",
 		);
 		expect(auditAdapterSource).toContain("oldValue: null");
@@ -1118,11 +1183,23 @@ describe("Corporate Administration CA-0.4 package boundary", () => {
 		expect(auditAdapterSource).not.toContain("ca_audit_fact");
 		expect(
 			existsSync(
-				path.join(sourceDirectory, "adapters", "drizzle", "outbox.ts"),
+				path.join(
+					sourceDirectory,
+					"composition",
+					"adapters",
+					"drizzle",
+					"outbox.ts",
+				),
 			),
 		).toBe(true);
 		const outboxAdapterSource = readFileSync(
-			path.join(sourceDirectory, "adapters", "drizzle", "outbox.ts"),
+			path.join(
+				sourceDirectory,
+				"composition",
+				"adapters",
+				"drizzle",
+				"outbox.ts",
+			),
 			"utf8",
 		);
 		expect(outboxAdapterSource).not.toContain("platformDomainEvent");
@@ -1245,12 +1322,16 @@ describe("Corporate Administration CA-0.4 package boundary", () => {
 			const source = readFileSync(file, "utf8");
 			const relativeFile = path.relative(packageDirectory, file);
 			const normalizedFile = relativeFile.replaceAll("\\", "/");
-			const isDrizzleAdapter = normalizedFile.startsWith(
-				"src/adapters/drizzle/",
-			);
+			const isPersistenceInfrastructure =
+				normalizedFile.startsWith("src/composition/adapters/drizzle/") ||
+				normalizedFile ===
+					"src/kernel/infrastructure/drizzle-dependencies.ts" ||
+				/^src\/features\/[^/]+\/adapters\/[^/]+\.drizzle\.ts$/.test(
+					normalizedFile,
+				);
 			const forbiddenPersistenceImport =
 				/from\s+["'](?:drizzle-orm|@afenda\/db)["']/.test(source) &&
-				!isDrizzleAdapter;
+				!isPersistenceInfrastructure;
 			return forbiddenPersistenceImport ||
 				forbiddenImports.test(source) ||
 				forbiddenApplicationSurface.test(source) ||

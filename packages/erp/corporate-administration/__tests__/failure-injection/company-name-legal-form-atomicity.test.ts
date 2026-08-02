@@ -5,7 +5,7 @@ import {
 	type CompanyNameStore,
 	type LegalCompanyStore,
 	registerLegalCompanyDraft,
-} from "../../src";
+} from "../../src/index";
 import {
 	caCommandOptions,
 	caDraftInput,

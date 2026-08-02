@@ -13,7 +13,7 @@ import {
 	registerLegalCompanyDraft,
 	setCompanyFinancialYear,
 	type TaxRegistrationReadPort,
-} from "../../src";
+} from "../../src/index";
 import {
 	caCommandOptions,
 	caDraftInput,
@@ -106,7 +106,10 @@ describe("tax and reference boundary", () => {
 		}
 	});
 	it("keeps TaxRegistrationReadPort read-only", () => {
-		const source = readFileSync(join(process.cwd(), "src", "ports.ts"), "utf8");
+		const source = readFileSync(
+			join(process.cwd(), "src", "kernel", "execution", "ports.ts"),
+			"utf8",
+		);
 		expect(source).toContain("export type TaxRegistrationReadPort");
 		expect(source).toContain("getTaxRegistrationById");
 		expect(source).toContain("findTaxRegistrationsForParty");

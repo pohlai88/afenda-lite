@@ -3,18 +3,18 @@ import { errorResult, type Result } from "@afenda/errors";
 import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 
-import type { CorporateAdministrationApprovalDecisionPort } from "../src/authorization";
-import type { CorporateAdministrationCommandOptions } from "../src/command-options";
-import {
-	authorizeCorporateAdministrationCommand,
-	executeCorporateAdministrationCommand,
-} from "../src/internal/durable-command";
+import type { CorporateAdministrationApprovalDecisionPort } from "../src/kernel/authorization/authorization";
 import {
 	approvalDecisionIdSchema,
 	approvalRequestIdSchema,
 	userIdSchema,
 } from "../src/kernel/brands";
-import type { CorporateAdministrationCommandId } from "../src/operation-registry/registry";
+import type { CorporateAdministrationCommandOptions } from "../src/kernel/execution/command-options";
+import {
+	authorizeCorporateAdministrationCommand,
+	executeCorporateAdministrationCommand,
+} from "../src/kernel/internal/durable-command";
+import type { CorporateAdministrationCommandId } from "../src/kernel/operations/registry";
 import { createFixedCorporateAdministrationClock } from "./helpers/fixed-clock";
 import { createInlineCorporateAdministrationTransactionPort } from "./helpers/inline-transaction";
 import { caCommandOptions } from "./helpers/legal-company-test-kit";

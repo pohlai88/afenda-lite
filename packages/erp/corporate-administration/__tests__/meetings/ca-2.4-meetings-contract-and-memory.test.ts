@@ -4,6 +4,7 @@ import {
 	canonicalInstantSchema,
 	governanceMeetingProcedureTypeSchema,
 	issueMeetingNoticeInputSchema,
+	listGovernanceMeetingsInputSchema,
 	organizationIdSchema,
 	recordMeetingParticipantInputSchema,
 	userIdSchema,
@@ -50,6 +51,22 @@ describe("CA-2.4 meeting contracts and rules", () => {
 				expectedMeetingVersion: 1,
 			}).success,
 		).toBe(true);
+	});
+
+	it("bounds governance-meeting page sizes at the public query contract", () => {
+		const base = { legalCompanyId };
+		expect(
+			listGovernanceMeetingsInputSchema.safeParse({
+				...base,
+				pageSize: 100,
+			}).success,
+		).toBe(true);
+		expect(
+			listGovernanceMeetingsInputSchema.safeParse({
+				...base,
+				pageSize: 101,
+			}).success,
+		).toBe(false);
 	});
 });
 

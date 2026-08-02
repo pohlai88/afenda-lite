@@ -411,11 +411,14 @@ describe("agent-authority-preflight", () => {
 });
 
 describe("corporate-administration-source-placement", () => {
-	it("allows approved root contracts and decomposed homes", () => {
+	it("allows feature-first Corporate Administration homes", () => {
 		for (const filePath of [
-			"packages/erp/corporate-administration/src/ports.ts",
-			"packages/erp/corporate-administration/src/production-ports.ts",
-			"packages/erp/corporate-administration/src/adapters/drizzle/idempotency.ts",
+			"packages/erp/corporate-administration/src/index.ts",
+			"packages/erp/corporate-administration/src/kernel/execution/ports.ts",
+			"packages/erp/corporate-administration/src/composition/adapters/drizzle/idempotency.ts",
+			"packages/erp/corporate-administration/src/features/company/adapters/company.drizzle.ts",
+			"packages/erp/corporate-administration/__tests__/helpers/legal-company-store.ts",
+			"apps/web/features/corporate-administration/corporate-administration-shell.tsx",
 		]) {
 			const out = runHook("corporate-administration-source-placement.mjs", {
 				tool_name: "Write",
@@ -436,12 +439,7 @@ describe("corporate-administration-source-placement", () => {
 			"packages/erp/corporate-administration/src/repository.ts",
 			"packages/erp/corporate-administration/src/company/index.ts",
 			"packages/erp/corporate-administration/src/adapters/drizzle/company.ts",
-			"packages/erp/corporate-administration/__tests__/helpers/legal-company-store.ts",
-			"apps/web/app/actions/register-legal-company-draft.ts",
-			"apps/web/app/(operator)/admin/corporate-administration/page.tsx",
-			"apps/web/features/corporate-administration/corporate-administration-shell.tsx",
-			"apps/web/lib/erp/corporate-administration-command-options.ts",
-			"apps/web/lib/erp/corporate-administration-authorization-port.ts",
+			"packages/erp/corporate-administration/src/ports.ts",
 		]) {
 			const out = runHook("corporate-administration-source-placement.mjs", {
 				tool_name: "Write",
@@ -458,7 +456,7 @@ describe("corporate-administration-source-placement", () => {
 		const out = runHook("corporate-administration-source-placement.mjs", {
 			tool_name: "Write",
 			tool_input: {
-				path: "packages/erp/corporate-administration/src/adapters/drizzle/idempotency.ts",
+				path: "packages/erp/corporate-administration/src/composition/adapters/drizzle/idempotency.ts",
 				contents:
 					'import { pgTable } from "drizzle-orm/pg-core";\nexport const local = pgTable("ca_local", {});\n',
 			},
@@ -538,7 +536,7 @@ describe("corporate-administration-lifecycle-position", () => {
 		const out = runHook("corporate-administration-lifecycle-position.mjs", {
 			tool_name: "Write",
 			tool_input: {
-				path: "packages/erp/corporate-administration/src/module.manifest.ts",
+			path: "packages/erp/corporate-administration/src/composition/module.manifest.ts",
 				contents:
 					'export const manifest = { lifecycle: "scaffolded", activationMode: "organization_toggle" };\n',
 			},
@@ -551,7 +549,7 @@ describe("corporate-administration-lifecycle-position", () => {
 			const out = runHook("corporate-administration-lifecycle-position.mjs", {
 				tool_name: "Write",
 				tool_input: {
-					path: "packages/erp/corporate-administration/src/module.manifest.ts",
+			path: "packages/erp/corporate-administration/src/composition/module.manifest.ts",
 					contents: `export const manifest = { lifecycle: "${lifecycle}", activationMode: "organization_toggle" };\n`,
 				},
 			});
@@ -563,7 +561,7 @@ describe("corporate-administration-lifecycle-position", () => {
 			{
 				tool_name: "Write",
 				tool_input: {
-					path: "packages/erp/corporate-administration/src/module.manifest.ts",
+			path: "packages/erp/corporate-administration/src/composition/module.manifest.ts",
 					contents:
 						'export const manifest = { lifecycle: "scaffolded", activationMode: "manual" };\n',
 				},

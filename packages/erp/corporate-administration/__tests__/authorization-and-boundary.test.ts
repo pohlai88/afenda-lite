@@ -21,11 +21,11 @@ import {
 } from "@afenda/corporate-administration";
 import type { CanonicalErrorCode } from "@afenda/errors";
 import { describe, expect, expectTypeOf, it, vi } from "vitest";
-import { requireCorporateAdministrationPermission } from "../src/authorization";
+import { requireCorporateAdministrationPermission } from "../src/kernel/authorization/authorization";
 import {
 	CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS,
 	CORPORATE_ADMINISTRATION_QUERY_PERMISSIONS,
-} from "../src/operation-registry/registry";
+} from "../src/kernel/operations/registry";
 
 describe("Corporate Administration authorization and boundary contracts", () => {
 	const input: CorporateAdministrationAuthorizationInput = {

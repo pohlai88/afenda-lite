@@ -3,8 +3,8 @@ import {
 	corporateAdministrationPermissionFor,
 } from "@afenda/corporate-administration";
 import { describe, expect, it } from "vitest";
-
-import { CORPORATE_ADMINISTRATION_EVENT_TYPES } from "../src/event-types";
+import { CORPORATE_ADMINISTRATION_PERMISSION_CODES } from "../src/kernel/authorization/permissions";
+import { CORPORATE_ADMINISTRATION_EVENT_TYPES } from "../src/kernel/emissions/event-types";
 import {
 	CORPORATE_ADMINISTRATION_COMMAND_IDS,
 	CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS,
@@ -12,8 +12,7 @@ import {
 	CORPORATE_ADMINISTRATION_QUERY_IDS,
 	CORPORATE_ADMINISTRATION_QUERY_PERMISSIONS,
 	getCorporateAdministrationOperationDefinition,
-} from "../src/operation-registry/registry";
-import { CORPORATE_ADMINISTRATION_PERMISSION_CODES } from "../src/permissions";
+} from "../src/kernel/operations/registry";
 
 describe("Corporate Administration operation registry", () => {
 	it("is the singular source for every command and query projection", () => {

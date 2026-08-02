@@ -8,7 +8,7 @@ import type {
 	CompanyLegalFormStore,
 	CompanyNameStore,
 	LegalCompanyStore,
-} from "../company/store";
+} from "../features/company/store";
 
 export type CorporateAdministrationParityStore = LegalCompanyStore &
 	CompanyNameStore &

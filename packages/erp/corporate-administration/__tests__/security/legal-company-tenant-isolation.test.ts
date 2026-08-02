@@ -125,6 +125,6 @@ describe("Corporate Administration legal-company tenant isolation", () => {
 		);
 
 		expectOk(timeline);
-		expect(timeline.data).toEqual([]);
+		expect(timeline.data).toEqual({ items: [], nextCursor: null });
 	});
 });

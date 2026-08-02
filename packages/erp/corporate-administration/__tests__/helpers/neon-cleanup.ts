@@ -25,8 +25,8 @@ import { errorIngress, errorProject, errorResult } from "@afenda/errors";
 import type {
 	CorporateAdministrationPendingEventAppender,
 	CorporateAdministrationPendingOutboxEvent,
-} from "../../src/adapters/drizzle/outbox";
-import type { CorporateAdministrationIdempotencyScope } from "../../src/idempotency";
+} from "../../src/composition/adapters/drizzle/outbox";
+import type { CorporateAdministrationIdempotencyScope } from "../../src/kernel/execution/idempotency";
 
 const CORPORATE_ADMINISTRATION_MODULE = "corporate-administration" as const;
 

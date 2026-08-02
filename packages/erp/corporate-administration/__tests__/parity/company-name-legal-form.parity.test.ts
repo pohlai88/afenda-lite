@@ -4,7 +4,7 @@ import type {
 	CompanyLegalFormStore,
 	CompanyNameStore,
 	LegalCompanyStore,
-} from "../../src/company";
+} from "../../src/features/company/index";
 import {
 	correlationIdSchema,
 	organizationIdSchema,

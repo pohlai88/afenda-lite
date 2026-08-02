@@ -1,11 +1,11 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { CORPORATE_ADMINISTRATION_QUERY_IDS } from "../src/operation-registry/registry";
+import { CORPORATE_ADMINISTRATION_QUERY_IDS } from "../src/kernel/operations/registry";
 
 const sourceDirectory = fileURLToPath(new URL("../src/", import.meta.url));
 const queryKernelPath = fileURLToPath(
-	new URL("../src/internal/query.ts", import.meta.url),
+	new URL("../src/kernel/internal/query.ts", import.meta.url),
 );
 
 describe("Corporate Administration query kernel boundary", () => {

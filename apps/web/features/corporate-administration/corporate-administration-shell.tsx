@@ -338,7 +338,7 @@ async function loadGovernanceDecisions(input: {
 	const asOf = canonicalDateSchema.parse(new Date().toISOString().slice(0, 10));
 	const [meetings, resolutions, overdueActions] = await Promise.all([
 		listGovernanceMeetings(
-			{ legalCompanyId: input.legalCompanyId },
+			{ legalCompanyId: input.legalCompanyId, pageSize: 50 },
 			input.queryOptions,
 			dependencies,
 		),
@@ -364,7 +364,7 @@ async function loadGovernanceDecisions(input: {
 	}
 	return {
 		ok: true,
-		meetings: meetings.data.map((meeting) => ({
+		meetings: meetings.data.items.map((meeting) => ({
 			id: meeting.id,
 			title: meeting.title,
 			status: meeting.status,
@@ -475,7 +475,7 @@ async function loadLegalPresence(input: {
 		"service_address",
 		"place_of_business",
 	] as const;
-	const scopes = [null, ...establishments.data.map((item) => item.id)];
+	const scopes = [null, ...establishments.data.items.map((item) => item.id)];
 	const [addressResults, premises] = await Promise.all([
 		Promise.all(
 			scopes.flatMap((legalEstablishmentId) =>
@@ -508,7 +508,7 @@ async function loadLegalPresence(input: {
 	}
 	return {
 		ok: true as const,
-		establishments: establishments.data.map((item) => ({
+		establishments: establishments.data.items.map((item) => ({
 			id: item.id,
 			type: item.establishmentType,
 			jurisdictionCode: item.jurisdictionCode,
@@ -537,7 +537,7 @@ async function loadLegalPresence(input: {
 					]
 				: [],
 		),
-		premises: premises.data.map((item) => ({
+		premises: premises.data.items.map((item) => ({
 			id: item.id,
 			type: item.premiseType,
 			displayName: item.displayName,
@@ -602,7 +602,11 @@ async function loadLegalCompanyIdentity(input: {
 				input.dependencies,
 			),
 			listCompanyActivitiesAsOf(
-				{ legalCompanyId: input.legalCompanyId, asOf: today },
+				{
+					legalCompanyId: input.legalCompanyId,
+					asOf: today,
+					pageSize: 100,
+				},
 				input.queryOptions,
 				input.dependencies,
 			),
@@ -683,7 +687,7 @@ async function loadLegalCompanyIdentity(input: {
 							version: financialYear.data.version,
 						},
 					],
-		activities: activities.data.map((activity) => ({
+		activities: activities.data.items.map((activity) => ({
 			companyActivityId: activity.id,
 			activityCode: activity.activityCode,
 			classification: activity.classification,

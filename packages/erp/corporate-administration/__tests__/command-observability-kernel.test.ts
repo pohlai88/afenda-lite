@@ -1,11 +1,11 @@
 import { errorResult, type Result } from "@afenda/errors";
 import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
+import type { CorporateAdministrationOperationObservation } from "../src/kernel/execution/ports";
 import {
 	authorizeCorporateAdministrationCommand,
 	executeCorporateAdministrationCommand,
-} from "../src/internal/durable-command";
-import type { CorporateAdministrationOperationObservation } from "../src/ports";
+} from "../src/kernel/internal/durable-command";
 import { createFixedCorporateAdministrationClock } from "./helpers/fixed-clock";
 import { createInlineCorporateAdministrationTransactionPort } from "./helpers/inline-transaction";
 import { caCommandOptions } from "./helpers/legal-company-test-kit";

@@ -6,4 +6,4 @@ export {
 	createMemoryCorporateAdministrationOfficerComplianceStore,
 	createMemoryCorporateAdministrationOfficerStore,
 	createMemoryCorporateAdministrationResolutionStore,
-} from "../adapters/memory";
+} from "../composition/adapters/memory/index";

@@ -5,7 +5,7 @@ import {
 	isTaxIdentifierType,
 	normalizeCompanyIdentifier,
 	validateIdentifierEffectiveRange,
-} from "../../src/company";
+} from "../../src/features/company/index";
 
 describe("company identifier rules", () => {
 	it("rejects tax-owned identifier types with Master Data ownership metadata", () => {

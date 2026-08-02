@@ -15,7 +15,7 @@ import {
 import { readHookPayload } from "./hook-stdin.mjs";
 
 const MANIFEST_PATH =
-	"packages/erp/corporate-administration/src/module.manifest.ts";
+	"packages/erp/corporate-administration/src/composition/module.manifest.ts";
 const FORBIDDEN_LIFECYCLES = /\blifecycle:\s*["'](?:active|preview|beta|production)["']/i;
 const REQUIRED_LIFECYCLE = /\blifecycle:\s*["']scaffolded["']/;
 const REQUIRED_ACTIVATION_MODE =
@@ -75,7 +75,7 @@ try {
 		permission: "deny",
 		user_message:
 			"Blocked: Corporate Administration must remain lifecycle scaffolded with organization_toggle activation mode.",
-		agent_message: `DENIED by corporate-administration-lifecycle-position hook: ${violation}. CA-0.4 durable infrastructure does not activate the module. Keep lifecycle: "scaffolded" and activationMode: "organization_toggle".`,
+		agent_message: `DENIED by corporate-administration-lifecycle-position hook: ${violation}. Implemented capabilities do not satisfy enterprise activation requirements. Keep lifecycle: "scaffolded" and activationMode: "organization_toggle".`,
 	});
 	process.exit(0);
 } catch (err) {

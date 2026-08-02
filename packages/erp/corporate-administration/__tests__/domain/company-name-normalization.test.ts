@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { normalizeCompanyName } from "../../src/company";
+import { normalizeCompanyName } from "../../src/features/company/index";
 
 describe("company name normalization", () => {
 	it("normalizes composed and decomposed accents to the same NFC comparison value", () => {

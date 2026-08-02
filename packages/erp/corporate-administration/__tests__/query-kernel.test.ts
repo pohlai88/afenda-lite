@@ -1,8 +1,7 @@
 import { errorResult, type Result } from "@afenda/errors";
 import { describe, expect, it, vi } from "vitest";
-
-import { executeCorporateAdministrationQuery } from "../src/internal/query";
-import type { CorporateAdministrationOperationObservation } from "../src/ports";
+import type { CorporateAdministrationOperationObservation } from "../src/kernel/execution/ports";
+import { executeCorporateAdministrationQuery } from "../src/kernel/internal/query";
 import { caQueryOptions } from "./helpers/legal-company-test-kit";
 
 describe("Corporate Administration query kernel", () => {

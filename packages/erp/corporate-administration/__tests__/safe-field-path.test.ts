@@ -1,7 +1,7 @@
 import { corporateAdministrationErrorDetails } from "@afenda/corporate-administration";
 import { describe, expect, it } from "vitest";
 
-import { normalizeSafeFieldPath } from "../src/internal/safe-field-path";
+import { normalizeSafeFieldPath } from "../src/kernel/internal/safe-field-path";
 
 describe("normalizeSafeFieldPath", () => {
 	it.each([

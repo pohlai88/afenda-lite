@@ -4,7 +4,7 @@ import {
 	type CompanyName,
 	resolveCompanyNameAsOf,
 	validateCompanyNameEffectiveRange,
-} from "../../src/company";
+} from "../../src/features/company/index";
 import { organizationIdSchema, userIdSchema } from "../../src/kernel/brands";
 
 const organizationId = organizationIdSchema.parse("org-ca-name-history");

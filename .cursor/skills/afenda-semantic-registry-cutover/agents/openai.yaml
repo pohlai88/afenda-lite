@@ -1,4 +1,4 @@
 interface:
   display_name: "Afenda Semantic Registry Cutover"
-  short_description: "Centralize package semantics behind one owner"
-  default_prompt: "Use $afenda-semantic-registry-cutover to centralize a duplicated package concept behind one canonical registry and stable facade."
+  short_description: "Build feature-first semantics behind one facade"
+  default_prompt: "Use $afenda-semantic-registry-cutover to code or refactor an ERP package with uniform feature-first capsules, one-way composition dependencies, narrow capabilities, one root business facade, and atomic persistence when applicable."

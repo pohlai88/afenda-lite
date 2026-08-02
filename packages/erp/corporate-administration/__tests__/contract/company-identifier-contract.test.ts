@@ -14,7 +14,7 @@ import type {
 	CompanyIdentifierListPage,
 	CompanyIdentifierStatus,
 	CompanyIdentifierType,
-} from "../../src/company";
+} from "../../src/features/company/index";
 import {
 	assertNonTaxCompanyIdentifierType,
 	companyActivityTypeSchema,
@@ -31,7 +31,7 @@ import {
 	setCompanyFinancialYearInputSchema,
 	sourceEvidenceSchema,
 	supersedeCompanyIdentifierInputSchema,
-} from "../../src/company";
+} from "../../src/features/company/index";
 
 const legalCompanyId = "11111111-1111-4111-8111-111111111111";
 const companyIdentifierId = "22222222-2222-4222-8222-222222222222";

@@ -2,7 +2,7 @@ import { describe, expect, expectTypeOf, it } from "vitest";
 import {
 	CORPORATE_ADMINISTRATION_PERMISSION_CODES,
 	type CorporateAdministrationPermission,
-} from "../src/permissions";
+} from "../src/kernel/authorization/permissions";
 
 describe("Corporate Administration permissions", () => {
 	it("ships the CA-1.4 company and establishment permissions", () => {

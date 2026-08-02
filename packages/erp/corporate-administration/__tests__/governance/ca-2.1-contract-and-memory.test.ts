@@ -5,6 +5,8 @@ import {
 	createGovernanceBodyInputSchema,
 	governanceBodyIdSchema,
 	governanceMembershipIdSchema,
+	listGovernanceBodiesAsOfInputSchema,
+	listGovernanceMembershipsAsOfInputSchema,
 	normalizeGovernanceBodyCode,
 	organizationIdSchema,
 	userIdSchema,
@@ -37,6 +39,46 @@ describe("CA-2.1 governance contracts and rules", () => {
 			actorUserId,
 		});
 		expect(parsed.success).toBe(false);
+	});
+
+	it("bounds governance-body page sizes at the public query contract", () => {
+		const base = {
+			legalCompanyId,
+			asOf: "2026-06-01",
+		};
+		expect(
+			listGovernanceBodiesAsOfInputSchema.safeParse({
+				...base,
+				pageSize: 100,
+			}).success,
+		).toBe(true);
+		expect(
+			listGovernanceBodiesAsOfInputSchema.safeParse({
+				...base,
+				pageSize: 101,
+			}).success,
+		).toBe(false);
+	});
+
+	it("bounds governance-membership page sizes at the public query contract", () => {
+		const base = {
+			governanceBodyId: governanceBodyIdSchema.parse(
+				"00000000-0000-4000-8000-000000000217",
+			),
+			asOf: "2026-06-01",
+		};
+		expect(
+			listGovernanceMembershipsAsOfInputSchema.safeParse({
+				...base,
+				pageSize: 100,
+			}).success,
+		).toBe(true);
+		expect(
+			listGovernanceMembershipsAsOfInputSchema.safeParse({
+				...base,
+				pageSize: 101,
+			}).success,
+		).toBe(false);
 	});
 
 	it("normalizes governance body codes and constrains membership terms to body existence", () => {
@@ -210,6 +252,70 @@ describe("CA-2.1 memory governance store", () => {
 		expect(before).toEqual({ ok: true, data: [] });
 		expect(after.ok && after.data).toHaveLength(1);
 
+		const additional = await Promise.all(
+			["Alpha Director", "Zulu Director"].map((seatLabel, index) =>
+				store.appointGovernanceMember({
+					organizationId,
+					legalCompanyId,
+					governanceBodyId: body.data.id,
+					memberKind: "party",
+					memberPartyId: `party-director-${index + 2}`,
+					roleSeatCode: null,
+					seatLabel,
+					membershipRole: "member",
+					votingEntitlement: "voting",
+					isChair: false,
+					termFrom: canonicalDateSchema.parse("2026-02-15"),
+					termTo: null,
+					recordedAt,
+					recordedBy: actorUserId,
+					sourceDocumentId: `doc-appointment-${index + 2}`,
+					expectedBodyVersion: 1,
+				}),
+			),
+		);
+		expect(additional.every((result) => result.ok)).toBe(true);
+		const firstPage = await store.listGovernanceMembershipPageAsOf({
+			organizationId,
+			governanceBodyId: body.data.id,
+			asOf: canonicalDateSchema.parse("2026-05-01"),
+			pageSize: 2,
+		});
+		expect(firstPage.ok).toBe(true);
+		if (!firstPage.ok || firstPage.data.nextCursor === null) {
+			return;
+		}
+		expect(firstPage.data.items.map((item) => item.seatLabel)).toEqual([
+			"Chair",
+			"Alpha Director",
+		]);
+		const secondPage = await store.listGovernanceMembershipPageAsOf({
+			organizationId,
+			governanceBodyId: body.data.id,
+			asOf: canonicalDateSchema.parse("2026-05-01"),
+			pageSize: 2,
+			cursor: firstPage.data.nextCursor,
+		});
+		expect(
+			secondPage.ok
+				? {
+						seats: secondPage.data.items.map((item) => item.seatLabel),
+						nextCursor: secondPage.data.nextCursor,
+					}
+				: secondPage,
+		).toEqual({ seats: ["Zulu Director"], nextCursor: null });
+		const crossScope = await store.listGovernanceMembershipPageAsOf({
+			organizationId,
+			governanceBodyId: body.data.id,
+			asOf: canonicalDateSchema.parse("2026-05-01"),
+			memberPartyId: "party-director-1",
+			pageSize: 2,
+			cursor: firstPage.data.nextCursor,
+		});
+		expect(crossScope.ok ? "unexpected-success" : crossScope.code).toBe(
+			"VALIDATION_ERROR",
+		);
+
 		const ended = await store.endGovernanceMembership({
 			organizationId,
 			governanceMembershipId: appointed.data.id,
@@ -226,6 +332,10 @@ describe("CA-2.1 memory governance store", () => {
 			governanceBodyId: body.data.id,
 			asOf: canonicalDateSchema.parse("2026-06-01"),
 		});
-		expect(endedAsOf).toEqual({ ok: true, data: [] });
+		expect(
+			endedAsOf.ok
+				? endedAsOf.data.map((membership) => membership.seatLabel)
+				: endedAsOf,
+		).toEqual(["Alpha Director", "Zulu Director"]);
 	});
 });

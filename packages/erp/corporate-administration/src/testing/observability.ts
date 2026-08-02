@@ -1,7 +1,7 @@
 import type {
 	CorporateAdministrationObservabilityPort,
 	CorporateAdministrationOperationObservation,
-} from "../ports";
+} from "../kernel/execution/ports";
 
 export function createMemoryCorporateAdministrationObservabilityPort(): CorporateAdministrationObservabilityPort &
 	Readonly<{ observations: CorporateAdministrationOperationObservation[] }> {

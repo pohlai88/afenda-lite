@@ -4,7 +4,7 @@ import {
 	companyActivityTypeSchema,
 	listCompanyActivitiesAsOfInputSchema,
 	registerCompanyActivityInputSchema,
-} from "../../src/company";
+} from "../../src/features/company/index";
 
 const legalCompanyId = "11111111-1111-4111-8111-111111111111";
 
@@ -43,7 +43,15 @@ describe("company activity contracts", () => {
 				jurisdictionCode: "MY",
 				regulatorCode: "sc",
 				primaryOnly: true,
+				pageSize: 100,
 			}).success,
 		).toBe(true);
+		expect(
+			listCompanyActivitiesAsOfInputSchema.safeParse({
+				legalCompanyId,
+				asOf: "2025-01-01",
+				pageSize: 101,
+			}).success,
+		).toBe(false);
 	});
 });

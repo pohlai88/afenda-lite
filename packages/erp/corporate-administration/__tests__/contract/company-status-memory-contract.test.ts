@@ -4,8 +4,8 @@ import {
 	canonicalInstantSchema,
 	organizationIdSchema,
 	userIdSchema,
-} from "../../src";
-import { createMemoryCorporateAdministrationLegalCompanyStore } from "../../src/testing";
+} from "../../src/index";
+import { createMemoryCorporateAdministrationLegalCompanyStore } from "../../src/testing/index";
 
 describe("company status memory contract", () => {
 	it("records status history, updates legal company state and resolves as-of status", async () => {

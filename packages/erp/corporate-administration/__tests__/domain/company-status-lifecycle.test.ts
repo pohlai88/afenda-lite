@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
 	legalCompanyStatusRequiresApproval,
 	validateLegalCompanyStatusTransition,
-} from "../../src/company";
+} from "../../src/features/company/index";
 
 describe("legal company status lifecycle", () => {
 	it("allows the approved Phase 1 transition path", () => {

@@ -31,6 +31,9 @@ const corporateAdministrationMocks = vi.hoisted(() => ({
 	findRegisteredAddressAsOf: vi.fn(),
 	listPremisesAsOf: vi.fn(),
 	getCompanyCompletenessForActivation: vi.fn(),
+	listGovernanceMeetings: vi.fn(),
+	listResolutionsAsOf: vi.fn(),
+	listOverdueResolutionActions: vi.fn(),
 }));
 
 const compositionMocks = vi.hoisted(() => ({
@@ -38,6 +41,7 @@ const compositionMocks = vi.hoisted(() => ({
 	createCorporateAdministrationQueryOptions: vi.fn(),
 	createCorporateAdministrationLegalCompanyDependencies: vi.fn(),
 	createCorporateAdministrationCompanyDependencies: vi.fn(),
+	createCorporateAdministrationGovernanceDependencies: vi.fn(),
 	listCorporateAdministrationActiveOrganizationParties: vi.fn(),
 	listCorporateAdministrationPartyAddresses: vi.fn(),
 }));
@@ -95,6 +99,10 @@ vi.mock("@afenda/corporate-administration", async (importOriginal) => ({
 	listPremisesAsOf: corporateAdministrationMocks.listPremisesAsOf,
 	getCompanyCompletenessForActivation:
 		corporateAdministrationMocks.getCompanyCompletenessForActivation,
+	listGovernanceMeetings: corporateAdministrationMocks.listGovernanceMeetings,
+	listResolutionsAsOf: corporateAdministrationMocks.listResolutionsAsOf,
+	listOverdueResolutionActions:
+		corporateAdministrationMocks.listOverdueResolutionActions,
 }));
 
 vi.mock("@/lib/erp/corporate-administration-command-options", () => ({
@@ -106,6 +114,8 @@ vi.mock("@/lib/erp/corporate-administration-command-options", () => ({
 		compositionMocks.createCorporateAdministrationLegalCompanyDependencies,
 	createCorporateAdministrationCompanyDependencies:
 		compositionMocks.createCorporateAdministrationCompanyDependencies,
+	createCorporateAdministrationGovernanceDependencies:
+		compositionMocks.createCorporateAdministrationGovernanceDependencies,
 	listCorporateAdministrationActiveOrganizationParties:
 		compositionMocks.listCorporateAdministrationActiveOrganizationParties,
 	listCorporateAdministrationPartyAddresses:
@@ -181,6 +191,14 @@ describe("Corporate Administration legal-company Server Actions", () => {
 		compositionMocks.createCorporateAdministrationCompanyDependencies.mockReturnValue(
 			{ store: "ca-store" },
 		);
+		compositionMocks.createCorporateAdministrationGovernanceDependencies.mockReturnValue(
+			{
+				store: "ca-store",
+				governanceStore: "ca-governance-store",
+				meetingStore: "ca-meeting-store",
+				resolutionStore: "ca-resolution-store",
+			},
+		);
 		compositionMocks.listCorporateAdministrationActiveOrganizationParties.mockResolvedValue(
 			[
 				{
@@ -220,11 +238,11 @@ describe("Corporate Administration legal-company Server Actions", () => {
 		);
 		corporateAdministrationMocks.listCompanyActivitiesAsOf.mockResolvedValue({
 			ok: true,
-			data: [],
+			data: { items: [], nextCursor: null },
 		});
 		corporateAdministrationMocks.listLegalEstablishmentsAsOf.mockResolvedValue({
 			ok: true,
-			data: [],
+			data: { items: [], nextCursor: null },
 		});
 		corporateAdministrationMocks.findRegisteredAddressAsOf.mockResolvedValue({
 			ok: true,
@@ -232,7 +250,7 @@ describe("Corporate Administration legal-company Server Actions", () => {
 		});
 		corporateAdministrationMocks.listPremisesAsOf.mockResolvedValue({
 			ok: true,
-			data: [],
+			data: { items: [], nextCursor: null },
 		});
 		corporateAdministrationMocks.getCompanyCompletenessForActivation.mockResolvedValue(
 			{
@@ -258,6 +276,18 @@ describe("Corporate Administration legal-company Server Actions", () => {
 				},
 			},
 		);
+		corporateAdministrationMocks.listGovernanceMeetings.mockResolvedValue({
+			ok: true,
+			data: { items: [], nextCursor: null },
+		});
+		corporateAdministrationMocks.listResolutionsAsOf.mockResolvedValue({
+			ok: true,
+			data: [],
+		});
+		corporateAdministrationMocks.listOverdueResolutionActions.mockResolvedValue({
+			ok: true,
+			data: [],
+		});
 	});
 
 	it("denies register when company manage permission is missing", async () => {

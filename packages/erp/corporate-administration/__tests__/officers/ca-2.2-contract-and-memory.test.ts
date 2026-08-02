@@ -7,6 +7,8 @@ import {
 	canonicalInstantSchema,
 	commandFingerprintSchema,
 	defineStatutoryOfficeInputSchema,
+	listOfficersAsOfInputSchema,
+	listRequiredStatutoryOfficesInputSchema,
 	officerAppointmentIdSchema,
 	officerQualificationIdSchema,
 	officerQualificationMatchesAsOf,
@@ -16,7 +18,7 @@ import {
 } from "@afenda/corporate-administration";
 import { createMemoryCorporateAdministrationOfficerStore } from "@afenda/corporate-administration/testing";
 import { describe, expect, it } from "vitest";
-import { verifyCorporateAdministrationApproval } from "../../src/authorization";
+import { verifyCorporateAdministrationApproval } from "../../src/kernel/authorization/authorization";
 import {
 	approvalDecisionIdSchema,
 	approvalRequestIdSchema,
@@ -51,6 +53,38 @@ describe("CA-2.2 statutory office contracts and rules", () => {
 			actorUserId,
 		});
 		expect(parsed.success).toBe(false);
+	});
+
+	it("bounds statutory-office page sizes at the public query contract", () => {
+		const base = {
+			legalCompanyId,
+			asOf: "2026-06-01",
+		};
+		expect(
+			listRequiredStatutoryOfficesInputSchema.safeParse({
+				...base,
+				pageSize: 100,
+			}).success,
+		).toBe(true);
+		expect(
+			listRequiredStatutoryOfficesInputSchema.safeParse({
+				...base,
+				pageSize: 101,
+			}).success,
+		).toBe(false);
+	});
+
+	it("bounds officer-appointment page sizes at the public query contract", () => {
+		const base = {
+			legalCompanyId,
+			asOf: "2026-06-01",
+		};
+		expect(
+			listOfficersAsOfInputSchema.safeParse({ ...base, pageSize: 100 }).success,
+		).toBe(true);
+		expect(
+			listOfficersAsOfInputSchema.safeParse({ ...base, pageSize: 101 }).success,
+		).toBe(false);
 	});
 
 	it("computes deterministic vacancy and overfill status from office rules", () => {
@@ -226,6 +260,74 @@ describe("CA-2.2 memory officer store", () => {
 		});
 		expect(crossTenant).toEqual({ ok: true, data: null });
 
+		const additionalOffices = await Promise.all(
+			[
+				["SECRETARY", "MY", "Company Secretary"],
+				["AUDITOR", "SG", "Auditor"],
+			].map(([officeTypeCode, jurisdictionCode, displayName], index) =>
+				store.defineStatutoryOffice({
+					organizationId,
+					legalCompanyId,
+					officeTypeCode,
+					jurisdictionCode,
+					displayName,
+					description: null,
+					required: true,
+					minimumHolders: 1,
+					maximumHolders: 3,
+					vacancyGraceDays: 30,
+					protectedRole: false,
+					effectiveFrom: canonicalDateSchema.parse("2026-02-15"),
+					recordedAt,
+					recordedBy: actorUserId,
+					sourceDocumentId: `doc-office-${index + 2}`,
+					expectedCompanyVersion: 1,
+				}),
+			),
+		);
+		expect(additionalOffices.every((result) => result.ok)).toBe(true);
+		const firstOfficePage = await store.listRequiredStatutoryOffices({
+			organizationId,
+			legalCompanyId,
+			asOf: canonicalDateSchema.parse("2026-06-01"),
+			pageSize: 2,
+		});
+		expect(firstOfficePage.ok).toBe(true);
+		if (!firstOfficePage.ok || firstOfficePage.data.nextCursor === null) {
+			return;
+		}
+		expect(
+			firstOfficePage.data.items.map((item) => item.officeTypeCode),
+		).toEqual(["DIRECTOR", "SECRETARY"]);
+		const secondOfficePage = await store.listRequiredStatutoryOffices({
+			organizationId,
+			legalCompanyId,
+			asOf: canonicalDateSchema.parse("2026-06-01"),
+			pageSize: 2,
+			cursor: firstOfficePage.data.nextCursor,
+		});
+		expect(
+			secondOfficePage.ok
+				? {
+						codes: secondOfficePage.data.items.map(
+							(item) => item.officeTypeCode,
+						),
+						nextCursor: secondOfficePage.data.nextCursor,
+					}
+				: secondOfficePage,
+		).toEqual({ codes: ["AUDITOR"], nextCursor: null });
+		const crossScope = await store.listRequiredStatutoryOffices({
+			organizationId,
+			legalCompanyId,
+			asOf: canonicalDateSchema.parse("2026-06-01"),
+			includeOptional: true,
+			pageSize: 2,
+			cursor: firstOfficePage.data.nextCursor,
+		});
+		expect(crossScope.ok ? "unexpected-success" : crossScope.code).toBe(
+			"VALIDATION_ERROR",
+		);
+
 		const appointment = await store.appointOfficer({
 			organizationId,
 			legalCompanyId,
@@ -257,8 +359,11 @@ describe("CA-2.2 memory officer store", () => {
 			legalCompanyId,
 			asOf: canonicalDateSchema.parse("2026-03-01"),
 		});
-		expect(before).toEqual({ ok: true, data: [] });
-		expect(after.ok && after.data).toHaveLength(1);
+		expect(before).toEqual({
+			ok: true,
+			data: { items: [], nextCursor: null },
+		});
+		expect(after.ok && after.data.items).toHaveLength(1);
 
 		const qualification = await store.recordOfficerQualification({
 			organizationId,
@@ -297,7 +402,10 @@ describe("CA-2.2 memory officer store", () => {
 			legalCompanyId,
 			asOf: canonicalDateSchema.parse("2026-06-01"),
 		});
-		expect(afterResignation).toEqual({ ok: true, data: [] });
+		expect(afterResignation).toEqual({
+			ok: true,
+			data: { items: [], nextCursor: null },
+		});
 	});
 });
 

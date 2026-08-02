@@ -4,10 +4,10 @@ import { describe, expect, it } from "vitest";
 
 const sourceDirectory = fileURLToPath(new URL("../src/", import.meta.url));
 const commandKernelPath = fileURLToPath(
-	new URL("../src/internal/durable-command.ts", import.meta.url),
+	new URL("../src/kernel/internal/durable-command.ts", import.meta.url),
 );
 const queryKernelPath = fileURLToPath(
-	new URL("../src/internal/query.ts", import.meta.url),
+	new URL("../src/kernel/internal/query.ts", import.meta.url),
 );
 
 describe("Corporate Administration command kernel boundary", () => {

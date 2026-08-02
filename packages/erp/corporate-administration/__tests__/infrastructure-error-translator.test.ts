@@ -4,7 +4,7 @@ import {
 	idempotencyConflictResult,
 	staleReservationResult,
 	translateCorporateAdministrationInfrastructureError,
-} from "../src/adapters/drizzle/errors";
+} from "../src/kernel/infrastructure/translate-infrastructure-error";
 
 describe("Corporate Administration infrastructure error translation", () => {
 	it("keeps domain-owned idempotency outcomes canonical", () => {

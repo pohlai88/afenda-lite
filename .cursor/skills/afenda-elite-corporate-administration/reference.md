@@ -1,98 +1,45 @@
 # Corporate Administration — reference
 
-Progressive companion for [SKILL.md](SKILL.md). Full prose lives in Scratch — load slice-specific docs only when executing that slice.
-
-## Scratch pack (operative authority)
+## Authority
 
 | Path | Role |
-|------|------|
-| `docs-V2/_scratch/erp/corporate-administration/greenfield/README.md` | Pack entry · mission · phase count |
-| `greenfield/00-CORPORATE-ADMINISTRATION-AUTHORITY.md` | Mission · greenfield reset · identity · ownership |
-| `greenfield/01-DOMAIN-MODEL-AND-DATA-AUTHORITY.md` | Aggregate map · data authority · proposed table inventory |
-| `greenfield/02-PACKAGE-ARCHITECTURE-AND-CONTRACTS.md` | Layout · deps · command options · ports |
-| `greenfield/03-ROADMAP-INDEX.md` | Slice register · status vocabulary |
-| `greenfield/90-VERIFICATION-ACCEPTANCE-AND-HANDOFF.md` | 14 boundaries · lanes · handoff |
-| `greenfield/SOURCE-PLACEMENT.md` | Where new source files land |
-| `greenfield/phase/PHASE-<N>-*.md` | Phase execution controls + slice prompts |
-| `greenfield/evidence/CA-<X.Y>-EVIDENCE.md` | Per-slice completion evidence |
-
-## Package on disk
-
-| Path | Role |
-|------|------|
-| `packages/erp/corporate-administration/` | `@afenda/corporate-administration` |
-| `packages/erp/corporate-administration/README.md` | **Current slice position** — read before coding |
-| `packages/erp/corporate-administration/src/module.manifest.ts` | Governed manifest |
-| `packages/erp/corporate-administration/src/mutation-tables.ts` | Sole-mutator registration |
+| --- | --- |
+| `packages/erp/corporate-administration/PRD.md` | Permanent product requirements, ownership boundary, status, evidence, and delivery order |
+| `packages/erp/corporate-administration/README.md` | Living package capability and runtime summary |
+| `packages/erp/corporate-administration/src/composition/module.manifest.ts` | Governed module projection |
+| `packages/erp/corporate-administration/src/kernel/emissions/mutation-tables.ts` | CA sole-mutator inventory |
 | `packages/data-plane/db/src/schema/corporate-administration.ts` | Drizzle schema host |
-| `packages/data-plane/db/drizzle/*corporate*` | Migrations |
 
-## App composition
+## Capability map
 
-| Path | Role |
-|------|------|
-| `apps/web/lib/erp/corporate-administration-runtime.ts` | Model B composition root |
-| `apps/web/lib/erp/corporate-administration-command-options.ts` | Future request context factory; add with first command slice |
-| `apps/web/lib/erp/corporate-administration-action-schemas.ts` | Future Action input schemas; add with first Action |
-| `apps/web/lib/erp/corporate-administration-authorization-port.ts` | Future authz injection; add with first live permission |
-| `apps/web/app/actions/*legal-company*` · `*corporate-administration*` | Future business Server Actions |
-| `apps/web/features/corporate-administration/` | Future UI panels · forms · shell |
-| `apps/web/app/(client)/client/(workspace)/corporate-administration/` | Future client route |
-| `apps/web/app/(operator)/admin/corporate-administration/` | Future operator route |
+| Capability group | CA ownership |
+| --- | --- |
+| Legal-company registry | statutory identity, jurisdiction, names, forms, identifiers, activities, financial year, lifecycle |
+| Establishments | registered offices, branches, representative offices, foreign registrations, premises |
+| Governance | bodies, memberships, statutory officers, declarations, conflicts, meetings, quorum, voting, resolutions, actions |
+| Corporate authority | delegation rules, mandates, signatories, powers of attorney, company seal |
+| Entity instruments | property, administrative assets, intellectual property, insurance, charges, licences, permits, masked bank registrations |
+| Structure and agreements | legal-entity group graph, related parties, material agreements, non-securities corporate actions |
+| Documents and compliance | document metadata, versions, legal holds, statutory registers, jurisdiction rule packs, filings |
+| Enterprise operations | search, reminders, imports, exports, reconciliation, entity health, observability, recovery |
 
-## Phase map (47 slices)
+## Explicit Investor Relations ownership
 
-| Phase | Name | Slices |
-|------:|------|--------|
-| 0 | Architecture and Foundation | CA-0.1 … CA-0.4 |
-| 1 | Legal Company and Establishments | CA-1.1 … CA-1.5 |
-| 2 | Governance and Statutory Offices | CA-2.1 … CA-2.5 |
-| 3 | Authority, Approvals and Company Seal | CA-3.1 … CA-3.4 |
-| 4 | Capital, Ownership and Beneficial Control | CA-4.1 … CA-4.6 |
-| 5 | Assets, Licences, Insurance, Charges and Banking | CA-5.1 … CA-5.6 |
-| 6 | Group Structure, Agreements and Corporate Actions | CA-6.1 … CA-6.5 |
-| 7 | Documents, Statutory Registers, Compliance and Filings | CA-7.1 … CA-7.6 |
-| 8 | Operational Services and Enterprise Activation | CA-8.1 … CA-8.6 |
+Investor Relations—not Corporate Administration—owns securities, capital, investors, shareholders, holdings, certificates, beneficial ownership, and distributions. No CA command, table, or adapter may become a second implementation of those concepts.
 
-Full register: scratch `03-ROADMAP-INDEX.md` § Slice register.
+## Execution model
+
+- Package exports durable domain capabilities and validates one composed runtime.
+- Application composition builds production ports once.
+- Per-command options carry trusted organization, actor, correlation, idempotency, causation, and authorization facts.
+- Command/query semantics derive from the domain operation registry.
+- No production fallback adapter is resolved inside the package.
+- Foreign facts arrive through approved public ports, registered events, or governed projections.
+- Features own their schemas, rules, commands, queries, narrow store contracts, and adapters under `src/features`; shared semantics live in `src/kernel`; application-facing assembly lives in `src/composition`.
 
 ## Status vocabulary
 
-| Status | Meaning |
-|--------|---------|
-| `OPEN` | Approved; not started |
-| `IN_PROGRESS` | Active work — not completion evidence |
-| `DONE` | All deliverables + lanes + boundaries evidenced |
-| `PARTIAL` | Some implementation; boundary incomplete |
-| `BLOCKED` | Required external lane unavailable |
-| `NOT_APPLICABLE` | Phase explicitly excludes boundary |
-
-**Drift rule:** `03-ROADMAP-INDEX`, phase docs, package README, and evidence may disagree during parallel work. Before editing, read package README + run tests; treat evidence files as slice-close truth.
-
-## Target subdomain folders (scratch `02-*`)
-
-When a slice introduces behavior, land code under the owning subdomain — not the package root:
-
-`company/` · `establishments/` · `governance/` · `officers/` · `authority/` · `capital/` · `ownership/` · `beneficial-ownership/` · `distributions/` · `assets/` · `compliance-instruments/` · `banking/` · `group/` · `agreements/` · `corporate-actions/` · `documents/` · `registers/` · `compliance-rules/` · `filings/` · `operations/`
-
-Adapters: `adapters/drizzle/<subdomain>.ts` composed from `adapters/drizzle/index.ts`.
-
-## Execution model — Model B
-
-- Package exports contracts + domain; validates runtime shape.
-- App builds `CorporateAdministrationRuntimePorts` once via `createCorporateAdministrationRuntime`.
-- Per command: `CorporateAdministrationCommandOptions` (org, actor, correlation, idempotency, authorization).
-- No optional production adapter resolution inside the package.
-- Sibling ERP packages may use Model A; CA does not maintain both.
-
-## Pre-greenfield retirement
-
-Migration `0050_drop_corporate_administration_module.sql` defined the forward
-retirement of legacy `ca_*`. The current dirty worktree has removed the earlier
-migration chain, including 0050; do not reconstruct it from legacy history.
-Fresh/upgrade verification remains blocked until the owning DB lane resolves
-that pre-existing migration-chain change.
-
-## Related program docs
-
-`docs-V2/_scratch/00.hrm.md` tracks cross-program HR + CA phase status when coordinating with Human Resources workstreams.
+- `Implemented`: living behavior exists but acceptance may remain incomplete.
+- `Verified`: the named evidence has passed.
+- `Pending evidence`: behavior or required proof remains incomplete.
+- `BLOCKED`: an external prerequisite prevents safe implementation or verification.

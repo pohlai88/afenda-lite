@@ -1,12 +1,10 @@
 /**
  * Cursor preToolUse hook — keep @afenda/corporate-administration source files
- * in the greenfield decomposed layout.
+ * in its requirements-driven decomposed layout.
  *
  * Stdin: { tool_name, tool_input, ... }
  * @see https://cursor.com/docs/hooks
  */
-import path from "node:path";
-
 import {
 	WRITE_TOOLS,
 	extractPathAndText,
@@ -18,77 +16,59 @@ import { readHookPayload } from "./hook-stdin.mjs";
 
 const CA_SRC_PREFIX = "packages/erp/corporate-administration/src/";
 
-const CA_04_FORBIDDEN_BUSINESS_PATTERNS = [
-	/(?:^|\/)packages\/erp\/corporate-administration\/src\/company(?:\/|$)/,
-	/(?:^|\/)packages\/erp\/corporate-administration\/src\/adapters\/drizzle\/company\.ts$/,
-	/(?:^|\/)packages\/erp\/corporate-administration\/__tests__\/helpers\/legal-company-store\.ts$/,
-	/(?:^|\/)apps\/web\/app\/actions\/.*legal-company.*\.ts$/,
-	/(?:^|\/)apps\/web\/app\/.*corporate-administration.*$/,
-	/(?:^|\/)apps\/web\/features\/corporate-administration(?:\/|$)/,
-	/(?:^|\/)apps\/web\/lib\/erp\/corporate-administration-command-options\.ts$/,
-	/(?:^|\/)apps\/web\/lib\/erp\/corporate-administration-authorization-port\.ts$/,
-];
-
-const APPROVED_ROOT_FILES = new Set([
-	"authorization.ts",
-	"command-identity.ts",
-	"command-options.ts",
-	"domain-events.ts",
-	"error-codes.ts",
-	"event-types.ts",
-	"idempotency.ts",
-	"index.ts",
-	"module-ids.ts",
-	"module.manifest.ts",
-	"mutation-tables.ts",
-	"parse-input.ts",
-	"permissions.ts",
-	"ports.ts",
-	"production-ports.ts",
+const APPROVED_TOP_LEVEL_DIRECTORIES = new Set([
+	"composition",
+	"features",
+	"kernel",
+	"testing",
 ]);
-
-const FORBIDDEN_ROOT_PATTERNS = [
-	/^legal-company\.ts$/,
-	/^drizzle-.*\.ts$/,
-	/^memory-.*\.ts$/,
-	/^.*-store\.ts$/,
-	/^(common|utils?|repository|repositories)\.ts$/,
-];
+const FORBIDDEN_LAYER_ROOTS = new Set([
+	"adapters",
+	"company",
+	"establishments",
+	"governance",
+	"internal",
+	"meetings",
+	"officers",
+	"operation-registry",
+	"resolutions",
+	"schemas",
+	"store",
+]);
 
 /**
  * @param {string} filePath
  */
 function sourcePlacementViolation(filePath) {
 	const normalized = normalizePath(filePath).toLowerCase();
-	const ca04BusinessPath = CA_04_FORBIDDEN_BUSINESS_PATTERNS.find((pattern) =>
-		pattern.test(normalized),
-	);
-	if (ca04BusinessPath !== undefined) {
-		return `CA-0.4 business-surface path '${normalized}'`;
-	}
-
 	const prefixIndex = normalized.indexOf(CA_SRC_PREFIX);
 	if (prefixIndex === -1) {
 		return null;
 	}
 
 	const relativePath = normalized.slice(prefixIndex + CA_SRC_PREFIX.length);
-	if (!relativePath || relativePath.includes("/")) {
+	if (!relativePath) {
 		return null;
 	}
-
-	const baseName = path.posix.basename(relativePath);
-	if (APPROVED_ROOT_FILES.has(baseName)) {
-		return null;
+	const segments = relativePath.split("/");
+	if (segments.length === 1) {
+		return relativePath === "index.ts"
+			? null
+			: `unapproved Corporate Administration root source file '${relativePath}'`;
 	}
-
-	const isForbiddenRoot = FORBIDDEN_ROOT_PATTERNS.some((pattern) =>
-		pattern.test(baseName),
-	);
-
-	return isForbiddenRoot
-		? `root Corporate Administration implementation file '${baseName}'`
-		: `unapproved Corporate Administration root source file '${baseName}'`;
+	if (FORBIDDEN_LAYER_ROOTS.has(segments[0])) {
+		return `forbidden layer-first Corporate Administration root '${segments[0]}'`;
+	}
+	if (!APPROVED_TOP_LEVEL_DIRECTORIES.has(segments[0])) {
+		return `unapproved Corporate Administration source root '${segments[0]}'`;
+	}
+	if (
+		segments[0] === "features" &&
+		["composition", "facade", "testing"].includes(segments[1])
+	) {
+		return `reserved Corporate Administration feature name '${segments[1]}'`;
+	}
+	return null;
 }
 
 /**
@@ -142,8 +122,8 @@ try {
 	respond({
 		permission: "deny",
 		user_message:
-			"Blocked: Corporate Administration source must use the decomposed greenfield layout.",
-		agent_message: `DENIED by corporate-administration-source-placement hook: ${violation}. Put domain files under src/<subdomain>/, Drizzle under src/adapters/drizzle/, and test-only memory helpers under __tests__/helpers/.`,
+			"Blocked: Corporate Administration source must use the requirements-driven decomposed layout.",
+		agent_message: `DENIED by corporate-administration-source-placement hook: ${violation}. Put domain files and their adapters under src/features/<feature>/, shared semantics under src/kernel/, assembly under src/composition/, and non-production capabilities under src/testing/.`,
 	});
 	process.exit(0);
 } catch (err) {

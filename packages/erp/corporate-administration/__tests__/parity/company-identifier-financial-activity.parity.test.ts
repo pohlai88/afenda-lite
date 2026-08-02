@@ -5,7 +5,7 @@ import type {
 	CompanyFinancialYearStore,
 	CompanyIdentifierStore,
 	LegalCompanyStore,
-} from "../../src/company";
+} from "../../src/features/company/index";
 import {
 	correlationIdSchema,
 	organizationIdSchema,
@@ -125,7 +125,10 @@ describe("company identifier, financial and activity parity surface", () => {
 			}),
 		).resolves.toMatchObject({
 			ok: true,
-			data: [{ activityCode: "holding_company" }],
+			data: {
+				items: [{ activityCode: "holding_company" }],
+				nextCursor: null,
+			},
 		});
 	});
 });

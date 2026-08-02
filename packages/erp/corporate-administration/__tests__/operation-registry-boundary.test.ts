@@ -51,7 +51,10 @@ describe("Corporate Administration operation registry boundary", () => {
 			}
 			if (
 				!(
-					isOperationOwner || normalized.endsWith("/adapters/drizzle/errors.ts")
+					isOperationOwner ||
+					normalized.endsWith(
+						"/kernel/infrastructure/translate-infrastructure-error.ts",
+					)
 				) &&
 				/['"`]corporate-administration\.[a-z0-9.-]+['"`]/.test(source)
 			) {

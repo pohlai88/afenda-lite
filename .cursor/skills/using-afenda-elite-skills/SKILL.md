@@ -62,7 +62,7 @@ Task arrives (this repo / Afenda-Lite)
     ├── Workspace MCP server config / config sprawl? ───────→ update-mcp-config (`.cursor/mcp.json` SSOT; preserve unrelated servers and secrets references)
     ├── Cross-package import / DAG / new packages/*? ───────→ afenda-elite-monorepo-discipline
     ├── Reusable kernel scaffold / apply / semantic cutover / deterministic upgrade / readiness seal · registered config / errors / env / testing / db / audit / events / search / notifications / logger / HTTP / security / metrics / OpenAPI / rate-limit / cache / auth / admin integration or upgrade? → afenda-elite-kernel (load target kernel contract; orchestrates owning farms; digest-scoped seal ≠ Module Enterprise Readiness)
-    ├── Internal semantic registry / derived projections / narrow package capabilities / final duplicate-source deletion after the public facade is fixed? → afenda-semantic-registry-cutover (after owning farm + kernel boundary; never a runtime registry package)
+    ├── ERP package coding/refactor / feature-first capsules / internal semantic registry / derived projections / narrow package capabilities / final duplicate-source deletion after the public facade is fixed? → afenda-semantic-registry-cutover (after owning farm + kernel boundary; load feature-first-erp.md; never a runtime registry package)
     ├── Cross-package move / extract / Slice D delete? ─────→ afenda-elite-monorepo-refactor
     ├── ARCH-028 residual / GUIDE-018 Phase I / Neon Auth optimisation (S* / I* / N* / command-sheet / neon-command-sheet)? → afenda-elite-implementation-slices (then farms from slice-map or neon-auth-slice-map; N* → Neon Slice Score + independent audit)
     ├── FE scaffold / wipe / app routes? ───────────────────→ afenda-elite-frontend-scaffold (consume `@afenda/ui-system` barrel per ADR-010)
@@ -81,7 +81,7 @@ Task arrives (this repo / Afenda-Lite)
     ├── TS / coding discipline (brands · unions · any/as · boundary hygiene) after farm fixed? → afenda-coding-discipline (not PR review / simplify / API SSOT / React perf)
     ├── Generic engineering lifecycle? ─────────────────────→ using-agent-skills
     ├── `@afenda/payroll` domain farm? ─────────────────────→ afenda-elite-payroll
-    ├── `@afenda/corporate-administration` greenfield farm? → afenda-elite-corporate-administration
+    ├── `@afenda/corporate-administration` product requirements / capability work? → afenda-elite-corporate-administration
     └── Domain farm (Neon tenancy)? ────────────────────────→ neon-tenancy-efficiency
 ```
 
@@ -167,14 +167,14 @@ Local skills must remain operable if `afenda-Xerp` is deleted **and** if Living 
 - Housekeeping: [afenda-elite-repo-housekeeping](../afenda-elite-repo-housekeeping/SKILL.md)
 - Discipline: [afenda-elite-monorepo-discipline](../afenda-elite-monorepo-discipline/SKILL.md) — ARCH-024 import/DAG/export surface
 - Kernel lifecycle: [afenda-elite-kernel](../afenda-elite-kernel/SKILL.md) — deterministic lifecycle orchestration for reusable package capabilities; registered config, errors, env, testing, db, audit, events, search, notifications, logger, HTTP, security, metrics, OpenAPI, rate-limit, cache, auth, and admin contracts
-- Internal semantic registries: [afenda-semantic-registry-cutover](../afenda-semantic-registry-cutover/SKILL.md) — domain-owned definitions, derived projections, narrow internal capabilities, stable public facade, and one final deletion cutover
+- Internal semantic registries: [afenda-semantic-registry-cutover](../afenda-semantic-registry-cutover/SKILL.md) — uniform ERP feature capsules, domain-owned definitions, derived projections, narrow internal capabilities, stable public facade, and one final deletion cutover
 - Refactor: [afenda-elite-monorepo-refactor](../afenda-elite-monorepo-refactor/SKILL.md)
 - Phase I / residual scaffold / Neon Auth N*: [afenda-elite-implementation-slices](../afenda-elite-implementation-slices/SKILL.md) — [command-sheet](../afenda-elite-implementation-slices/command-sheet.md) · [neon-command-sheet](../afenda-elite-implementation-slices/neon-command-sheet.md)
 - FE scaffold: [afenda-elite-frontend-scaffold](../afenda-elite-frontend-scaffold/SKILL.md)
 - Next.js App Router: [afenda-elite-nextjs-best-practice](../afenda-elite-nextjs-best-practice/SKILL.md) — Accelint + Cache Components Mode A default / Mode B ADR-gated
 - Modules: [afenda-elite-backend-modules](../afenda-elite-backend-modules/SKILL.md)
 - Payroll package: [afenda-elite-payroll](../afenda-elite-payroll/SKILL.md) — `@afenda/payroll` domain farms · schemas · store · adapters · boundaries/domain/testing/security companions · phased [workflow](../afenda-elite-payroll/workflow.md); Plan → [payroll-architect](../../agents/payroll-architect.md); phase gate → [payroll-verifier](../../agents/payroll-verifier.md)
-- Corporate Administration: [afenda-elite-corporate-administration](../afenda-elite-corporate-administration/SKILL.md) — `@afenda/corporate-administration` greenfield · CA-GREENFIELD-ENTERPRISE-01 · slice CA-X.Y · [reference](../afenda-elite-corporate-administration/reference.md) · [verification](../afenda-elite-corporate-administration/verification.md); Scratch `docs-V2/_scratch/erp/corporate-administration/greenfield`
+- Corporate Administration: [afenda-elite-corporate-administration](../afenda-elite-corporate-administration/SKILL.md) — `@afenda/corporate-administration` requirements-driven statutory/entity-management capabilities · Investor Relations exclusion · one requirement group per mission · [reference](../afenda-elite-corporate-administration/reference.md) · [verification](../afenda-elite-corporate-administration/verification.md); permanent authority `packages/erp/corporate-administration/PRD.md`
 - API contract: [afenda-elite-api-contract](../afenda-elite-api-contract/SKILL.md) — `docs-V2/api` Scratch + disk + companions; `pnpm check:openapi`
 - Module readiness: [afenda-elite-module-readiness](../afenda-elite-module-readiness/SKILL.md) — MOD-002 evidence + Module Enterprise Readiness claims (`*-MOD-009` / `*-MOD-010`)
 - Focused verification: [afenda-focused-verification](../afenda-focused-verification/SKILL.md) — package-local checks first; broad root gates require explicit approval / `AFENDA_ALLOW_BROAD_VERIFY=1`

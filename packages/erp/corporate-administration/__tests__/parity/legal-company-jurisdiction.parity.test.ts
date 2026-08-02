@@ -83,16 +83,32 @@ async function runJurisdictionScenario(input: {
 	expectOk(asOf);
 	expect(asOf.data).toMatchObject(profileIdentity(set.data));
 
-	const timeline = await getLegalCompanyTimeline(
-		{ legalCompanyId: registered.data.legalCompanyId },
+	const timelineFirst = await getLegalCompanyTimeline(
+		{ legalCompanyId: registered.data.legalCompanyId, pageSize: 1 },
 		queryOptions,
 		input.dependencies,
 	);
-	expectOk(timeline);
-	expect(timeline.data.map((entry) => entry.kind)).toEqual([
-		"profile",
-		"jurisdiction_profile",
-	]);
+	expectOk(timelineFirst);
+	expect(timelineFirst.data.nextCursor).not.toBeNull();
+	if (timelineFirst.data.nextCursor === null) {
+		throw new Error("Legal-company timeline parity expected a second page.");
+	}
+	const timelineSecond = await getLegalCompanyTimeline(
+		{
+			legalCompanyId: registered.data.legalCompanyId,
+			pageSize: 1,
+			cursor: timelineFirst.data.nextCursor,
+		},
+		queryOptions,
+		input.dependencies,
+	);
+	expectOk(timelineSecond);
+	expect(
+		[timelineFirst, timelineSecond]
+			.flatMap((result) => result.data.items)
+			.map((entry) => entry.kind),
+	).toEqual(["profile", "jurisdiction_profile"]);
+	expect(timelineSecond.data.nextCursor).toBeNull();
 }
 
 describe("Corporate Administration legal-company jurisdiction parity", () => {

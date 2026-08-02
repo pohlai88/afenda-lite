@@ -5,12 +5,12 @@ import type {
 	CompanyFinancialYearStore,
 	CompanyIdentifierStore,
 	LegalCompanyStore,
-} from "../../src/company";
+} from "../../src/features/company/index";
 import {
 	assertNonTaxCompanyIdentifierType,
 	normalizeCompanyIdentifier,
 	validateActivityAuthority,
-} from "../../src/company";
+} from "../../src/features/company/index";
 import {
 	correlationIdSchema,
 	organizationIdSchema,

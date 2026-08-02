@@ -1,30 +1,35 @@
 ---
-description: Corporate Administration source placement guard — no root bloat, adapters behind subpaths, test helpers out of package root
+description: Corporate Administration source placement and bounded-context guard
 alwaysApply: true
 ---
 
 # Corporate Administration source placement
 
-`@afenda/corporate-administration` follows the greenfield decomposed layout in `docs-V2/_scratch/erp/corporate-administration/greenfield/02-PACKAGE-ARCHITECTURE-AND-CONTRACTS.md`.
-
-CA-0.4 is infrastructure-only. It may own `ca_mutation_receipt`, idempotency/transaction runtime composition, and Drizzle infrastructure adapters. It must not introduce legal-company commands, queries, Actions, UI, permissions, events, or `ca_legal_company`.
+`@afenda/corporate-administration` follows the capability boundary in `packages/erp/corporate-administration/PRD.md` and the living package structure on disk.
 
 ## Required placement
 
-- Domain behavior lands under the owning subdomain only in a later governed business slice; CA-0.4 has no domain subdomain implementation.
-- Drizzle persistence lands under `packages/erp/corporate-administration/src/adapters/drizzle/**` and is consumed through the declared adapter subpath.
-- Drizzle table schema definitions never land in this package. Schema belongs in the repository-authoritative `@afenda/db` location, currently `packages/data-plane/db/src/schema/**`.
-- Test-only memory helpers land under `packages/erp/corporate-administration/__tests__/helpers/**`, not `src/` root and not the public root barrel.
-- Root `src/*.ts` is reserved for approved package contracts: manifest, module IDs, permissions, authorization, command options/identity, runtime ports, idempotency contracts, events, parsing, errors, mutation tables, root exports, and future approved root contract files.
+- Domain behavior lands under `src/features/<feature>`, including `company`, `establishments`, `governance`, `officers`, `meetings`, `resolutions`, `authority`, `assets`, `compliance-instruments`, `banking`, `group`, `agreements`, `corporate-actions`, `documents`, `registers`, `compliance-rules`, `filings`, and `operations` as requirements are implemented.
+- Each feature owns its schema, rules, commands, queries, narrow store contract, and memory/Drizzle adapters.
+- Shared kernel primitives exist only for cross-feature semantics; composition owns infrastructure assembly and the module manifest.
+- Drizzle composition lands under `src/composition/adapters/drizzle`; feature Drizzle adapters land beside their feature and remain exposed only through the declared composition subpath.
+- Drizzle schema definitions remain in the repository-authoritative `@afenda/db` schema host.
+- Test-only helpers remain under package tests or the declared testing subpath and never leak through the package root.
+- Root `src/*.ts` contains only the stable `index.ts` facade. Features must not import `src/composition`, `src/testing`, or the root facade.
+
+## Bounded-context exclusions
+
+- Securities, capital transactions, investors, shareholders, holdings, certificates, beneficial ownership, and distributions belong to Investor Relations.
+- Corporate Administration must not create shadow Investor Relations tables, commands, stores, or projections that reinterpret those concepts.
+- Master Data, Payments, Accounting, documents, approvals, search, notifications, and signatures remain external owners consumed through approved ports or events.
 
 ## Forbidden
 
-- Recreating root business files such as `src/legal-company.ts`.
-- Recreating CA-0.4 business-surface files such as `src/company/**`, `src/adapters/drizzle/company.ts`, `apps/web/app/actions/*legal-company*`, `apps/web/features/corporate-administration/**`, app authorization/command-option factories, or app routes for Corporate Administration.
-- Recreating root adapter files such as `src/drizzle-legal-company-store.ts` or `src/drizzle-idempotency.ts`.
-- Defining `pgTable`, `mysqlTable`, `sqliteTable`, or importing `drizzle-orm/pg-core` under `packages/erp/corporate-administration/src/**`.
-- Recreating root memory/test helper files such as `src/memory-legal-company-store.ts`.
-- Adding new generic root dumps such as `src/common.ts`, `src/utils.ts`, `src/repository.ts`, or root `src/*-store.ts`.
+- Layer-first roots such as `src/company`, `src/adapters`, `src/schemas`, `src/store`, `src/common.ts`, `src/utils.ts`, or root `src/*-store.ts`.
+- Root adapter implementations such as `src/drizzle-*.ts` or root memory stores.
+- `pgTable`, `mysqlTable`, `sqliteTable`, or `drizzle-orm/pg-core` under the CA package source.
+- Consumer deep imports, peer ERP `/src` imports, or lateral writes to another bounded context.
+- A CA-local generic approval engine or CA-local Investor Relations implementation.
 
 ## Hook enforcement
 

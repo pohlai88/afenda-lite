@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
 	CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS,
 	CORPORATE_ADMINISTRATION_QUERY_PERMISSIONS,
-} from "../../src/authorization";
+} from "../../src/kernel/authorization/authorization";
 
 describe("company identity permission coverage", () => {
 	it("maps CA-1.3 identity commands and queries to manage/read permissions", () => {

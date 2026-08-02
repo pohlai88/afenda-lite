@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { corporateAdministrationModuleManifest } from "../../src";
+import { corporateAdministrationModuleManifest } from "../../src/index";
 import {
 	CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS,
 	CORPORATE_ADMINISTRATION_QUERY_PERMISSIONS,
-} from "../../src/operation-registry/registry";
+} from "../../src/kernel/operations/registry";
 
 describe("company name and legal-form permission coverage", () => {
 	it("maps every CA-1.2 mutation to manage and read-only query to read", () => {

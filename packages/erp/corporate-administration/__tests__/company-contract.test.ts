@@ -220,7 +220,8 @@ function createStore(input?: {
 			),
 		lockLegalCompany: async () =>
 			errorResult.ok(input?.currentCompany ?? company()),
-		getLegalCompanyTimeline: async () => errorResult.ok([]),
+		getLegalCompanyTimeline: async () =>
+			errorResult.ok({ items: [], nextCursor: null }),
 	} satisfies LegalCompanyStore & {
 		lastSet?: InsertJurisdictionProfileStoreInput;
 		lastUpdate?: UpdateLegalCompanyProfileStoreInput;

@@ -12,7 +12,9 @@ lifecycle: "scaffolded",
 activationMode: "organization_toggle",
 ```
 
-CA-0.4 durable infrastructure, Drizzle adapters, command/query declarations, permissions, events, or UI wiring do not make the module active business capability.
+Implemented domain behavior, Drizzle adapters, command/query declarations,
+permissions, events, or UI wiring do not by themselves satisfy the enterprise
+activation requirements in the Corporate Administration PRD.
 
 ## Forbidden lifecycle values
 
@@ -25,8 +27,8 @@ Do not set Corporate Administration lifecycle to:
 
 ## Required behavior
 
-Keep final activation semantics for the governed activation slice only. Until then, contract tests, generated module registers, and prose must describe Corporate Administration as scaffolded.
+Keep final activation semantics for the verified enterprise-activation requirement group only. Until then, contract tests, generated module registers, and prose must describe Corporate Administration as scaffolded.
 
 ## Hook enforcement
 
-`preToolUse` -> `.cursor/hooks/corporate-administration-lifecycle-position.mjs` denies edits to `packages/erp/corporate-administration/src/module.manifest.ts` that change lifecycle away from `scaffolded` or activation mode away from `organization_toggle`.
+`preToolUse` -> `.cursor/hooks/corporate-administration-lifecycle-position.mjs` denies edits to `packages/erp/corporate-administration/src/composition/module.manifest.ts` that change lifecycle away from `scaffolded` or activation mode away from `organization_toggle`.
