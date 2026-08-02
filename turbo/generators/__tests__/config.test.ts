@@ -21,6 +21,7 @@ describe("generator registrations", () => {
 			"__tests__/config.test.ts",
 			"__tests__/contract-loader.test.ts",
 			"__tests__/diagnostic-protocol.test.ts",
+			"__tests__/generator-check.test.ts",
 			"__tests__/repository-state.test.ts",
 			"__tests__/workspace-discovery.test.ts",
 		]);
