@@ -63,7 +63,10 @@ export default mergeConfig(
 					...repoToolingProject,
 					test: {
 						...repoToolingProject.test,
-						include: ["scripts/check-tsconfig-governance.test.mjs"],
+						include: [
+							"scripts/check-tsconfig-governance.test.mjs",
+							"turbo/generators/__tests__/**/*.test.ts",
+						],
 					},
 				},
 				{

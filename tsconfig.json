@@ -9,7 +9,13 @@
 			"@afenda/config/*": ["./packages/foundation/config/*"]
 		}
 	},
-	"include": ["scripts/**/*.mts", "scripts/**/*.ts", "*.mts", "*.ts"],
+	"include": [
+		"scripts/**/*.mts",
+		"scripts/**/*.ts",
+		"turbo/generators/**/*.ts",
+		"*.mts",
+		"*.ts"
+	],
 	"exclude": [
 		"node_modules",
 		"apps",

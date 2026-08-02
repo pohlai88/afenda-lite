@@ -1,0 +1,33 @@
+{
+	"slice": "GEN-0.1",
+	"implementation": "complete",
+	"closure": "approved",
+	"authorityIntroduced": [],
+	"repositoryPackageMutations": [],
+	"contractState": {
+		"kernel": "internal",
+		"erp": "internal",
+		"authoritativeCapabilities": 0
+	},
+	"verification": {
+		"registrationCount": 2,
+		"registrationsImmutable": true,
+		"singleExecutableRegistrationInventory": true,
+		"contractLoaderDeterministic": true,
+		"uniqueStructuralListsValidated": true,
+		"contractValidationWritesFilesystem": false,
+		"futureModesExposed": false,
+		"generatorTestLayout": "turbo/generators/__tests__",
+		"generatorScopeTypecheck": "pass",
+		"repositoryToolingTests": "pass",
+		"biome": "pass"
+	},
+	"repositoryTypecheckBaseline": {
+		"status": "blocked-by-pre-existing-unrelated-failure",
+		"owner": "OpenAPI generation lane",
+		"location": "scripts/generate-openapi.mts:136",
+		"typescriptCode": "TS2322",
+		"generatorRegressionAttribution": "none"
+	},
+	"nextEligibleSlice": "GEN-0.2"
+}
