@@ -8,7 +8,7 @@
 | Updated | 2026-07-25 |
 | Version | `monorepo-governance/2026-07-25` |
 | Promoted from | [`packages_refactor_v2.3.md`](../_scratch/packages_refactor_v2.3.md) (historical stamp) · consolidated: [`packages_governance.md`](../_scratch/packages_governance.md) |
-| Companion | [LAYERS.md](../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) · [packages/README.md](../../packages/README.md) · [WORKSPACE-EDGE-REGISTER.yaml](../modules/WORKSPACE-EDGE-REGISTER.yaml) |
+| Companion | [Generator architecture PRD](generator-architecture-prd.md) · [G1 ERP manifest authority contract](g1-erp-manifest-authority-contract.md) · [LAYERS.md](../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) · [packages/README.md](../../packages/README.md) · [WORKSPACE-EDGE-REGISTER.yaml](../modules/WORKSPACE-EDGE-REGISTER.yaml) |
 
 Re-probe after package add/rename or DAG change. Controlled Living `docs/` remains dormant until Docs-lane reopen — this pack + LAYERS.md are the named promotion targets.
 
