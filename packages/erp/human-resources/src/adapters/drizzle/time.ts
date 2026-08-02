@@ -1402,6 +1402,168 @@ function resolveShiftUpdate(
 	};
 }
 
+async function persistResolvedAttendanceSession(input: {
+	command: Parameters<HumanResourcesTimeStore["resolveAttendanceSession"]>[0];
+	current: AttendanceSession | null;
+	events: readonly AttendanceEvent[];
+	policyMinutes: ReturnType<typeof applyAutomaticBreakPolicy>;
+	resolved: ReturnType<typeof resolveSessionFromEvents>;
+	store: HumanResourcesTimeStore;
+}): Promise<Result<AttendanceSession>> {
+	const now = new Date();
+	const sessionId =
+		input.current?.id ?? parseHumanResourcesAttendanceSessionId(randomUUID());
+	if (typeof sessionId !== "string" && !sessionId.ok) {
+		return sessionId;
+	}
+	const id = typeof sessionId === "string" ? sessionId : sessionId.data;
+	const { current } = input;
+	const prospective: AttendanceSession = {
+		id,
+		organizationId: input.command.organizationId,
+		employeeId: input.command.employeeId,
+		employmentId: input.command.employmentId,
+		shiftAssignmentId:
+			current?.shiftAssignmentId ?? input.events[0]?.shiftAssignmentId ?? null,
+		localWorkDate: input.command.localWorkDate,
+		timezone: input.command.timezone,
+		firstClockInAt: input.resolved.firstClockInAt,
+		finalClockOutAt: input.resolved.finalClockOutAt,
+		breakMinutes: input.policyMinutes.breakMinutes,
+		workedMinutes: input.policyMinutes.workedMinutes,
+		grossMinutes: input.policyMinutes.grossMinutes,
+		provenance: input.policyMinutes.provenance,
+		resolutionStatus: input.resolved.resolutionStatus,
+		requiresReview: input.resolved.requiresReview,
+		version: (current?.version ?? 0) + 1,
+		createdBy: current?.createdBy ?? input.command.createdBy,
+		updatedBy: input.command.createdBy,
+		createdAt: current?.createdAt ?? now,
+		updatedAt: now,
+	};
+	const detection = await planAttendanceExceptionDetection(
+		drizzleExceptionDetectionHost(input.store),
+		{
+			organizationId: input.command.organizationId,
+			employeeId: input.command.employeeId,
+			session: prospective,
+			events: input.events,
+			detectionSource: ATTENDANCE_SESSION_DETECTION_SOURCE,
+			actorUserId: input.command.createdBy,
+			correlationId: input.command.correlationId,
+		},
+	);
+	if (!detection.ok) {
+		return detection;
+	}
+
+	const provenanceJson = JSON.stringify(input.policyMinutes.provenance);
+	const lockKey = `${input.command.employeeId}:${input.command.localWorkDate}`;
+	const results = await runTimeTransaction((sqlTag) => {
+		const mutation =
+			current === null
+				? sqlTag`
+					WITH locked AS (
+						SELECT pg_advisory_xact_lock(
+							hashtext(${input.command.organizationId}),
+							hashtext(${lockKey})
+						)
+					), inserted AS (
+						INSERT INTO hr_attendance_session (
+							id, organization_id, employee_id, employment_id, shift_assignment_id,
+							local_work_date, timezone, first_clock_in_at, final_clock_out_at,
+							break_minutes, worked_minutes, gross_minutes, provenance,
+							resolution_status, requires_review, version, create_idempotency_key,
+							create_request_fingerprint, created_by, updated_by, created_at, updated_at
+						)
+						SELECT ${id}, ${input.command.organizationId}, ${input.command.employeeId},
+							${input.command.employmentId}, ${prospective.shiftAssignmentId},
+							${input.command.localWorkDate}, ${input.command.timezone},
+							${input.resolved.firstClockInAt}, ${input.resolved.finalClockOutAt},
+							${input.policyMinutes.breakMinutes}, ${input.policyMinutes.workedMinutes},
+							${input.policyMinutes.grossMinutes}, ${provenanceJson}::jsonb,
+							${input.resolved.resolutionStatus}, ${input.resolved.requiresReview}, 1,
+							${input.command.idempotencyKey}, ${input.command.createRequestFingerprint},
+							${input.command.createdBy}, ${input.command.createdBy}, ${now}, ${now}
+						FROM locked RETURNING *
+					)
+					SELECT * FROM inserted
+				`
+				: sqlTag`
+					WITH locked AS (
+						SELECT pg_advisory_xact_lock(
+							hashtext(${input.command.organizationId}),
+							hashtext(${lockKey})
+						)
+					), mutated AS (
+						UPDATE hr_attendance_session SET
+							employment_id = ${input.command.employmentId}, timezone = ${input.command.timezone},
+							first_clock_in_at = ${input.resolved.firstClockInAt},
+							final_clock_out_at = ${input.resolved.finalClockOutAt},
+							break_minutes = ${input.policyMinutes.breakMinutes},
+							worked_minutes = ${input.policyMinutes.workedMinutes},
+							gross_minutes = ${input.policyMinutes.grossMinutes},
+							provenance = ${provenanceJson}::jsonb,
+							resolution_status = ${input.resolved.resolutionStatus},
+							requires_review = ${input.resolved.requiresReview},
+							version = ${current.version + 1},
+							create_idempotency_key = ${input.command.idempotencyKey},
+							create_request_fingerprint = ${input.command.createRequestFingerprint},
+							updated_by = ${input.command.createdBy}, updated_at = ${now}
+						FROM locked
+						WHERE organization_id = ${input.command.organizationId} AND id = ${current.id}
+							AND version = ${current.version}
+						RETURNING *
+					)
+					SELECT * FROM mutated
+				`;
+		const queries = [mutation];
+		if (current !== null) {
+			queries.push(sqlTag`
+				SELECT 1 / COUNT(*) AS mutation_guard FROM hr_attendance_session
+				WHERE organization_id = ${input.command.organizationId} AND id = ${current.id}
+					AND version = ${current.version + 1} AND updated_at = ${now}
+			`);
+		}
+		queries.push(
+			buildTimeAuditInsert(sqlTag, {
+				organizationId: input.command.organizationId,
+				actorUserId: input.command.createdBy,
+				correlationId: input.command.correlationId,
+				entity: "hr_attendance_session",
+				entityId: id,
+				action: current === null ? "CREATE" : "UPDATE",
+				reasonCode: "ATTENDANCE_SESSION_RESOLVE",
+			}),
+		);
+		for (const exception of detection.data) {
+			queries.push(
+				buildDetectedAttendanceExceptionInsert(sqlTag, {
+					exceptionId: randomUUID(),
+					auditId: randomUUID(),
+					organizationId: exception.organizationId,
+					employeeId: exception.employeeId,
+					sessionId: id,
+					shiftAssignmentId: exception.shiftAssignmentId,
+					eventType: exception.exceptionType,
+					severity: exception.severity,
+					remarks: exception.remarks,
+					actorUserId: exception.createdBy,
+					correlationId: exception.correlationId ?? input.command.correlationId,
+				}),
+			);
+		}
+		return queries;
+	});
+	const row = results[0]?.[0] as
+		| Parameters<typeof attendanceSessionFromSql>[0]
+		| undefined;
+	if (row === undefined) {
+		return conflict("Attendance session changed concurrently");
+	}
+	return mapSession(attendanceSessionFromSql(row));
+}
+
 export const drizzleTimeMethods: HumanResourcesTimeStore = {
 	async findWorkCalendarByIdempotencyKey(input) {
 		try {
@@ -5026,8 +5188,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 		}
 	},
 
-	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
-	async resolveAttendanceSession(input, ports) {
+	async resolveAttendanceSession(input, _ports) {
 		try {
 			const eventRows = await afendaDatabase.client
 				.select()
@@ -5075,142 +5236,22 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				)
 				.limit(1);
 
+			let current: AttendanceSession | null = null;
 			if (existingRows.length > 0) {
-				const current = mapSession(requirePersistenceRow(existingRows[0]));
-				if (!current.ok) {
-					return current;
-				}
-				const previous = current.data;
-				const [row] = await afendaDatabase.client
-					.update(hrAttendanceSession)
-					.set({
-						timezone: input.timezone,
-						employmentId: input.employmentId,
-						firstClockInAt: resolved.firstClockInAt,
-						finalClockOutAt: resolved.finalClockOutAt,
-						breakMinutes: policyMinutes.breakMinutes,
-						workedMinutes: policyMinutes.workedMinutes,
-						grossMinutes: policyMinutes.grossMinutes,
-						provenance: policyMinutes.provenance,
-						resolutionStatus: resolved.resolutionStatus,
-						requiresReview: resolved.requiresReview,
-						version: current.data.version + 1,
-						createIdempotencyKey: input.idempotencyKey,
-						createRequestFingerprint: input.createRequestFingerprint,
-						updatedBy: input.createdBy,
-						updatedAt: new Date(),
-					})
-					.where(
-						and(
-							eq(hrAttendanceSession.organizationId, input.organizationId),
-							eq(hrAttendanceSession.id, current.data.id),
-						),
-					)
-					.returning();
-				const mapped = mapSession(requirePersistenceRow(row));
+				const mapped = mapSession(requirePersistenceRow(existingRows[0]));
 				if (!mapped.ok) {
 					return mapped;
 				}
-				const recorded = await audit(ports, {
-					organizationId: input.organizationId,
-					actorUserId: input.createdBy,
-					correlationId: input.correlationId,
-					entity: "hr_attendance_session",
-					entityId: mapped.data.id,
-					action: "UPDATE",
-				});
-				if (!recorded.ok) {
-					return recorded;
-				}
-				const detected = await runAttendanceExceptionDetection(
-					drizzleExceptionDetectionHost(this),
-					{
-						organizationId: input.organizationId,
-						employeeId: input.employeeId,
-						session: mapped.data,
-						events,
-						detectionSource: ATTENDANCE_SESSION_DETECTION_SOURCE,
-						actorUserId: input.createdBy,
-						correlationId: input.correlationId,
-					},
-					ports,
-				);
-				if (!detected.ok) {
-					await restoreAttendanceSession(previous);
-					return detected;
-				}
-				return errorResult.ok(mapped.data);
+				current = mapped.data;
 			}
-
-			const id = randomUUID();
-			const now = new Date();
-			const [row] = await afendaDatabase.client
-				.insert(hrAttendanceSession)
-				.values({
-					id,
-					organizationId: input.organizationId,
-					employeeId: input.employeeId,
-					employmentId: input.employmentId,
-					shiftAssignmentId: events[0]?.shiftAssignmentId ?? null,
-					localWorkDate: input.localWorkDate,
-					timezone: input.timezone,
-					firstClockInAt: resolved.firstClockInAt,
-					finalClockOutAt: resolved.finalClockOutAt,
-					breakMinutes: policyMinutes.breakMinutes,
-					workedMinutes: policyMinutes.workedMinutes,
-					grossMinutes: policyMinutes.grossMinutes,
-					provenance: policyMinutes.provenance,
-					resolutionStatus: resolved.resolutionStatus,
-					requiresReview: resolved.requiresReview,
-					version: 1,
-					createIdempotencyKey: input.idempotencyKey,
-					createRequestFingerprint: input.createRequestFingerprint,
-					createdBy: input.createdBy,
-					updatedBy: input.createdBy,
-					createdAt: now,
-					updatedAt: now,
-				})
-				.returning();
-			const mapped = mapSession(requirePersistenceRow(row));
-			if (!mapped.ok) {
-				return mapped;
-			}
-			const recorded = await audit(ports, {
-				organizationId: input.organizationId,
-				actorUserId: input.createdBy,
-				correlationId: input.correlationId,
-				entity: "hr_attendance_session",
-				entityId: mapped.data.id,
-				action: "CREATE",
+			return await persistResolvedAttendanceSession({
+				command: input,
+				current,
+				events,
+				policyMinutes,
+				resolved,
+				store: this,
 			});
-			if (!recorded.ok) {
-				return recorded;
-			}
-			const detected = await runAttendanceExceptionDetection(
-				drizzleExceptionDetectionHost(this),
-				{
-					organizationId: input.organizationId,
-					employeeId: input.employeeId,
-					session: mapped.data,
-					events,
-					detectionSource: ATTENDANCE_SESSION_DETECTION_SOURCE,
-					actorUserId: input.createdBy,
-					correlationId: input.correlationId,
-				},
-				ports,
-			);
-			if (!detected.ok) {
-				await afendaDatabase.client
-					.delete(hrAttendanceSession)
-					.where(
-						and(
-							eq(hrAttendanceSession.organizationId, input.organizationId),
-							eq(hrAttendanceSession.id, mapped.data.id),
-						),
-					);
-				return detected;
-			}
-			return errorResult.ok(mapped.data);
 		} catch (error) {
 			if (isCreateIdempotencyUniqueViolation(error)) {
 				const replay = await this.findAttendanceSessionByIdempotencyKey({
@@ -7529,32 +7570,6 @@ function drizzleExceptionDetectionHost(
 	};
 }
 
-async function restoreAttendanceSession(
-	previous: AttendanceSession,
-): Promise<void> {
-	await afendaDatabase.client
-		.update(hrAttendanceSession)
-		.set({
-			timezone: previous.timezone,
-			firstClockInAt: previous.firstClockInAt,
-			finalClockOutAt: previous.finalClockOutAt,
-			breakMinutes: previous.breakMinutes,
-			workedMinutes: previous.workedMinutes,
-			grossMinutes: previous.grossMinutes,
-			resolutionStatus: previous.resolutionStatus,
-			requiresReview: previous.requiresReview,
-			version: previous.version,
-			updatedBy: previous.updatedBy,
-			updatedAt: previous.updatedAt,
-		})
-		.where(
-			and(
-				eq(hrAttendanceSession.organizationId, previous.organizationId),
-				eq(hrAttendanceSession.id, previous.id),
-			),
-		);
-}
-
 async function restoreShiftAssignmentPublication(
 	previous: ShiftAssignment,
 ): Promise<void> {
@@ -8003,3 +8018,4 @@ async function transitionOvertime(
 		);
 	}
 }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        

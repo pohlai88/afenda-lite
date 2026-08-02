@@ -215,6 +215,33 @@ identifier-successor attempts, and two lifecycle atomicity cases that fail
 closed with `FORBIDDEN` before reaching their intended transaction assertions.
 Adapter-parity closure is therefore still not claimed.
 
+The five executable failures were then resolved without changing the semantic
+command kernel or weakening approval policy. Jurisdiction overlap now has one
+CA-owned outcome factory used by rule checks, command prechecks and an exact,
+allowlisted `23P01` constraint normalization; unknown exclusion constraints
+still fail closed as `INTERNAL_ERROR` and database details remain private.
+Identifier supersession now serializes on the shared predecessor and performs
+its predecessor CAS plus replacement insert in one guarded statement. A stale
+CAS deliberately selects the already-existing predecessor primary key, causing
+canonical `23505` conflict translation and whole-transaction rollback even
+when the intended successor-once index is absent. The activation scenarios now
+assert the authoritative behavior: both single and simultaneous activation
+attempts without a real external approval verifier return `FORBIDDEN` and leave
+status, outbox and receipt state unchanged.
+
+A read-only preview catalog probe found a separate deployment-integrity defect:
+the migration journal contains entry `26`, but
+`ca_company_identifier_recorded_range_check` still uses strict `<` instead of
+the migration/living-schema `<=`, and
+`ca_company_identifier_supersedes_once_uidx` is absent. No migration was applied
+or repaired here. The successor concurrency fixture advances the command clock
+by one second so adapter locking/CAS behavior is proven independently of that
+known schema drift. The final isolated-preview parity run is green for the
+supported 13-table cohort: 16 files and 27 tests passed. Boundary 11 remains
+`BLOCKED` because broader governance/officer/meeting/resolution database parity
+is absent and the deployment-integrity defect belongs to the prohibited
+migration-review lane.
+
 ## Event contract additions
 
 - `corporate_administration.legal_company.name_retired.v1`
@@ -242,6 +269,10 @@ identifier fields.
 | focused cleanup boundary contract | 0 | 1 file / 20 tests passed; deployed cohort excludes migration-0034 governance tables, cleanup remains scoped/non-destructive, duplicate status deletion rejected |
 | `pnpm --filter @afenda/corporate-administration typecheck` (cleanup repair) | 0 | TypeScript clean after cleanup import/sequence correction |
 | `pnpm test:corporate-administration:parity` (preview rerun) | 1 | branch `br-still-cloud-aof2rkqv`; 16 files selected; 12 passed / 4 failed; 27 tests total; 22 passed / 5 failed; duration 115.47s; failures are jurisdiction overlap normalization, identifier successor concurrency and lifecycle authorization/atomicity expectations |
+| preview identifier schema probe | 0 | journal entry `26` present, but deployed recorded-range constraint remains strict `<` and `ca_company_identifier_supersedes_once_uidx` is absent; read-only, secrets redacted |
+| focused infrastructure translator | 0 | 1 file / 14 tests passed; exact jurisdiction exclusion constraint maps to the CA-owned overlap outcome, unknown `23P01` remains `INTERNAL_ERROR` |
+| focused preview parity repair | 0 | 3 files / 7 tests passed; jurisdiction race, guarded identifier successor CAS and approval fail-closed/no-residue behavior green |
+| `pnpm test:corporate-administration:parity` (final preview rerun) | 0 | branch `br-still-cloud-aof2rkqv`; 16 files / 27 tests passed; duration 73.49s; supported inherited 13-table cohort green |
 | `pnpm validate:neon-env` | 124 | read-only validation timed out without a summary; not recorded as passing |
 | `pnpm --filter @afenda/testing lint` | 0 | 18 files checked |
 | `pnpm --filter @afenda/testing typecheck` | 0 | TypeScript clean |
@@ -281,9 +312,9 @@ summary. It is not recorded as passing.
 | 6 | Tenancy and data isolation | PARTIAL | session-stamped web consumers and existing package tenant contracts | no new Neon cross-tenant execution in this mission |
 | 7 | Authorization, approvals and SoD | PARTIAL | exhaustive permission projections; registry-driven command-token and query authorization; fail-closed approval kernels; SoD, denial-before-work and binding tests; external-owner inventory | no external approval owner, endpoint/configuration or production verifier exists; required operations remain denied rather than bypassed |
 | 8 | Domain behavior and historical truth | PARTIAL | existing package domain suite remains green | mission did not re-prove every CA historical-truth scenario |
-| 9 | Idempotency, concurrency and atomicity | PARTIAL | durable handlers share the private application kernel; preview rerun executes the selected Neon concurrency/failure-injection cohort | identifier successor, jurisdiction overlap and two lifecycle atomicity/concurrency expectations remain red |
+| 9 | Idempotency, concurrency and atomicity | PARTIAL | durable handlers share the private application kernel; preview proves jurisdiction overlap and identifier-successor serialization/CAS rollback; approval-required activation fails closed with no residue | activation rollback/race after a valid external approval remains blocked by `PLATFORM-APPROVALS-01`; broader failure-injection evidence remains incomplete |
 | 10 | Events, audit and privacy | DONE | 59-event parity, strict schemas, events 58/58, redaction rejection and exception-observation leakage tests | none for this concept |
-| 11 | Adapter parity and database semantics | BLOCKED | canonical fail-closed parity lane ran on isolated preview `br-still-cloud-aof2rkqv`; cleanup now matches the inherited 13-table cohort; 12/16 files and 22/27 tests pass | five real scenario failures remain; broader governance/officer/meeting/resolution parity scenarios also remain absent |
+| 11 | Adapter parity and database semantics | BLOCKED | canonical fail-closed parity lane ran on isolated preview `br-still-cloud-aof2rkqv`; supported inherited 13-table cohort is green at 16/16 files and 27/27 tests | broader governance/officer/meeting/resolution parity remains absent; preview catalog proves recorded-range/successor-index deployment drift that must be handled by the separate migration-review lane |
 | 12 | App composition and Server Actions | DONE | app consumers pass the composed runtime capability instead of store-only projections; command/query logger projection, focused app contract and web typecheck pass | none for this semantic cutover; legacy CA-2.5 closure remains a separate lane |
 | 13 | UI, journeys and accessibility | NOT_APPLICABLE | no UI behavior introduced by the registry cutover | CA phase UI closure remains separate |
 | 14 | Operations and production readiness | BLOCKED | registry-driven structured operation diagnostics, logger boundaries, docs-trunk and diff gates are green | Prometheus domain-operation metrics, repository governance, Neon, migration/recovery and production lanes are not green |
