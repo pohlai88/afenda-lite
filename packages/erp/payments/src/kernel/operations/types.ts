@@ -3,6 +3,7 @@ import type { PaymentsPermission } from "../execution/permissions";
 /** Feature ids that may own Payments operations. */
 export const PAYMENTS_OPERATION_OWNERS = [
 	"payment-accounts",
+	"payment-methods",
 	"payment-lifecycle",
 	"application-instructions",
 ] as const;
