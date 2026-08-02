@@ -182,8 +182,24 @@ export async function runNeonHttpTransaction<
 	}
 
 	const transactionOptions = normalizeTransactionOptions(options);
-	const sql = getNeonDriverSql();
-	const queries = buildQueries(sql);
+	// Resolve the query list without eagerly connecting to Neon. The lazy
+	// Proxy defers requireProductDatabaseUrl() until the builder actually
+	// touches `sql`, so a builder that returns [] hits the empty-list guard
+	// before any connection or env requirement. The Proxy target must be a
+	// function because the Neon sql object is itself callable.
+	const lazySql = new Proxy((() => {}) as unknown as NeonHttpSql, {
+		get(_, prop) {
+			return Reflect.get(getNeonDriverSql() as object, prop);
+		},
+		apply(_, thisArg, argList) {
+			return Reflect.apply(
+				getNeonDriverSql() as unknown as (...args: unknown[]) => unknown,
+				thisArg,
+				argList,
+			);
+		},
+	});
+	const queries = buildQueries(lazySql);
 	if (!Array.isArray(queries)) {
 		throw new TypeError(
 			"runNeonHttpTransaction builder must synchronously return a query array",
@@ -193,7 +209,7 @@ export async function runNeonHttpTransaction<
 		throw new Error("runNeonHttpTransaction requires at least one query");
 	}
 
-	const results: unknown = await sql.transaction(
+	const results: unknown = await getNeonDriverSql().transaction(
 		[...queries],
 		transactionOptions,
 	);
