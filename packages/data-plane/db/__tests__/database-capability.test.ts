@@ -25,7 +25,7 @@ describe("@afenda/db database capability", () => {
 	});
 
 	it("projects the canonical hard-tenant registry", () => {
-		expect(database.tenancy.rootNames).toHaveLength(274);
-		expect(Object.keys(database.tenancy.rootTables)).toHaveLength(274);
+		expect(database.tenancy.rootNames).toHaveLength(276);
+		expect(Object.keys(database.tenancy.rootTables)).toHaveLength(276);
 	});
 });
