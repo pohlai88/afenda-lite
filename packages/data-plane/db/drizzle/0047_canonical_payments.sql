@@ -37,6 +37,10 @@ ALTER TABLE "payment"
 --> statement-breakpoint
 ALTER TABLE "payment" ADD CONSTRAINT "payment_payment_method_id_payment_method_id_fk" FOREIGN KEY ("payment_method_id") REFERENCES "public"."payment_method"("id") ON DELETE no action ON UPDATE no action;
 --> statement-breakpoint
+ALTER TABLE "payment_allocation"
+	ADD COLUMN "fx_context" text,
+	ADD COLUMN "realized_fx" text;
+--> statement-breakpoint
 CREATE TABLE "payment_deduction" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"organization_id" text NOT NULL,

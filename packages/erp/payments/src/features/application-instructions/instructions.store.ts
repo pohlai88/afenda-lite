@@ -1,6 +1,7 @@
 import type { Result } from "@afenda/errors";
 
 import type {
+	ApplicationFxContext,
 	PaymentApplicationAvailability,
 	PaymentApplicationInstruction,
 } from "../../kernel/contracts/domain";
@@ -15,6 +16,8 @@ export interface PaymentApplicationInstructionsStore {
 			| "appliedAmount"
 			| "status"
 			| "rejectionCode"
+			| "fx"
+			| "realizedFx"
 		> & {
 			idempotencyKey: string;
 			actorUserId: string;
@@ -29,6 +32,7 @@ export interface PaymentApplicationInstructionsStore {
 		organizationId: string;
 		instructionId: string;
 		appliedAmount: string;
+		fx: ApplicationFxContext | null;
 		actorUserId: string;
 		correlationId: string;
 		idempotencyKey: string;

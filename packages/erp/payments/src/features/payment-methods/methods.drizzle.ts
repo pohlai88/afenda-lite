@@ -91,58 +91,107 @@ function mapMethod(row: typeof paymentMethod.$inferSelect): PaymentMethod {
 	};
 }
 
+function methodEventPayload(record: {
+	organizationId: string;
+	paymentMethodId: string;
+	code: string;
+	kind: string;
+	active: boolean;
+	actorUserId: string;
+}): string {
+	return JSON.stringify({
+		organizationId: record.organizationId,
+		paymentMethodId: record.paymentMethodId,
+		code: record.code,
+		kind: record.kind,
+		active: record.active,
+		actorId: record.actorUserId,
+		correlationId: `payment-method:${record.paymentMethodId}`,
+	});
+}
+
+async function loadMethodById(
+	organizationId: string,
+	id: string,
+): Promise<Result<PaymentMethod | null>> {
+	try {
+		const [row] = await afendaDatabase.client
+			.select()
+			.from(paymentMethod)
+			.where(
+				and(
+					eq(paymentMethod.organizationId, organizationId),
+					eq(paymentMethod.id, id),
+				),
+			)
+			.limit(1);
+		return errorResult.ok(row === undefined ? null : mapMethod(row));
+	} catch (error) {
+		return failFromPersistence(error);
+	}
+}
+
 export const drizzlePaymentMethodMethods: PaymentMethodsStore = {
 	async createPaymentMethod(
 		record: Omit<PaymentMethod, "id" | "createdAt" | "updatedAt">,
 	): Promise<Result<PaymentMethod>> {
 		const id = randomUUID();
+		const eventId = randomUUID();
+		const payload = methodEventPayload({
+			organizationId: record.organizationId,
+			paymentMethodId: id,
+			code: record.code,
+			kind: record.kind,
+			active: record.active,
+			actorUserId: record.createdBy,
+		});
 		try {
-			const [row] = await afendaDatabase.client
-				.insert(paymentMethod)
-				.values({
-					id,
-					organizationId: record.organizationId,
-					code: record.code,
-					normalizedCode: record.normalizedCode,
-					name: record.name,
-					kind: record.kind,
-					instrumentRequirement: record.instrumentRequirement,
-					allowedInstrumentKinds: JSON.stringify(record.allowedInstrumentKinds),
-					allowedAccountKinds: JSON.stringify(record.allowedAccountKinds),
-					active: record.active,
-					createdBy: record.createdBy,
-					updatedBy: record.updatedBy,
-				})
-				.returning();
-			if (row === undefined) {
+			const [rows] = await afendaDatabase.transaction((sql) => [
+				sql`
+					WITH mutated AS (
+						INSERT INTO payment_method (
+							id, organization_id, code, normalized_code, name, kind,
+							instrument_requirement, allowed_instrument_kinds,
+							allowed_account_kinds, active, created_by, updated_by
+						)
+						VALUES (
+							${id}, ${record.organizationId}, ${record.code},
+							${record.normalizedCode}, ${record.name}, ${record.kind},
+							${record.instrumentRequirement},
+							${JSON.stringify(record.allowedInstrumentKinds)},
+							${JSON.stringify(record.allowedAccountKinds)}, ${record.active},
+							${record.createdBy}, ${record.updatedBy}
+						)
+						RETURNING id
+					)
+					INSERT INTO platform_domain_event (
+						id, organization_id, type, source_module, correlation_id,
+						actor_user_id, payload, status, attempts
+					)
+					SELECT ${eventId}, ${record.organizationId},
+						'payments.payment_method.created.v1', 'payments',
+						${`payment-method:${id}`}, ${record.createdBy},
+						${payload}::jsonb, 'pending', 0
+					FROM mutated
+					RETURNING id
+				`,
+			]);
+			if (rows[0] === undefined) {
 				return errorResult.fail("INTERNAL_ERROR");
 			}
-			return errorResult.ok(mapMethod(row));
+			const loaded = await loadMethodById(record.organizationId, id);
+			if (!loaded.ok) {
+				return loaded;
+			}
+			return loaded.data === null
+				? errorResult.fail("INTERNAL_ERROR")
+				: errorResult.ok(loaded.data);
 		} catch (error) {
 			return failFromPersistence(error);
 		}
 	},
 
-	async getPaymentMethodById(
-		organizationId: string,
-		id: string,
-	): Promise<Result<PaymentMethod | null>> {
-		try {
-			const [row] = await afendaDatabase.client
-				.select()
-				.from(paymentMethod)
-				.where(
-					and(
-						eq(paymentMethod.organizationId, organizationId),
-						eq(paymentMethod.id, id),
-					),
-				)
-				.limit(1);
-			return errorResult.ok(row === undefined ? null : mapMethod(row));
-		} catch (error) {
-			return failFromPersistence(error);
-		}
-	},
+	getPaymentMethodById: loadMethodById,
 
 	async listPaymentMethods(
 		organizationId: string,
@@ -198,7 +247,34 @@ export const drizzlePaymentMethodMethods: PaymentMethodsStore = {
 					publicMessage: "Payment method not found",
 				});
 			}
-			return errorResult.ok(mapMethod(row));
+			const method = mapMethod(row);
+			const eventType =
+				record.active === false
+					? "payments.payment_method.deactivated.v1"
+					: "payments.payment_method.updated.v1";
+			const eventId = randomUUID();
+			const payload = methodEventPayload({
+				organizationId: method.organizationId,
+				paymentMethodId: method.id,
+				code: method.code,
+				kind: method.kind,
+				active: method.active,
+				actorUserId: record.updatedBy,
+			});
+			await afendaDatabase.transaction((sql) => [
+				sql`
+					INSERT INTO platform_domain_event (
+						id, organization_id, type, source_module, correlation_id,
+						actor_user_id, payload, status, attempts
+					)
+					VALUES (
+						${eventId}, ${method.organizationId}, ${eventType}, 'payments',
+						${`payment-method:${method.id}`}, ${record.updatedBy},
+						${payload}::jsonb, 'pending', 0
+					)
+				`,
+			]);
+			return errorResult.ok(method);
 		} catch (error) {
 			return failFromPersistence(error);
 		}

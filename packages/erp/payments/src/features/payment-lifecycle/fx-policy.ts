@@ -1,6 +1,9 @@
 import { errorResult, type Result } from "@afenda/errors";
 
-import type { PaymentFxContext } from "../../kernel/contracts/domain";
+import type {
+	ApplicationFxContext,
+	PaymentFxContext,
+} from "../../kernel/contracts/domain";
 import {
 	decimal,
 	formatDecimal,
@@ -67,6 +70,41 @@ export function deriveFunctionalAmount(
 function subtract(a: string, b: string): string {
 	const diff = decimal(a) - decimal(b);
 	return diff < 0n ? `-${formatDecimal(-diff)}` : formatDecimal(diff);
+}
+
+/**
+ * Application-time FX gate shared by every store implementation:
+ * a cross-currency payment demands a complete context (reject, never
+ * infer); a supplied context is validated and produces the realized fact.
+ */
+export function resolveApplicationFx(input: {
+	appliedAmount: string;
+	applicationFx: ApplicationFxContext | null;
+	paymentFx: PaymentFxContext | null;
+}): Result<{ fx: ApplicationFxContext | null; realizedFx: string | null }> {
+	if (input.paymentFx !== null && input.applicationFx === null) {
+		return errorResult.fail("CONFLICT", {
+			publicMessage:
+				"Cross-currency application requires a complete fx context",
+		});
+	}
+	if (input.applicationFx === null) {
+		return errorResult.ok({ fx: null, realizedFx: null });
+	}
+	const realized = computeRealizedFx({
+		appliedTransactionAmount: input.appliedAmount,
+		paymentRate: input.paymentFx?.exchangeRate ?? null,
+		appliedDocumentAmount: input.applicationFx.appliedDocumentAmount,
+		documentBookedRate: input.applicationFx.documentBookedRate,
+		appliedFunctionalAmount: input.applicationFx.appliedFunctionalAmount,
+	});
+	if (!realized.ok) {
+		return realized;
+	}
+	return errorResult.ok({
+		fx: input.applicationFx,
+		realizedFx: realized.data.realizedFx,
+	});
 }
 
 /**

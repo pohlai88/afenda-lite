@@ -8,7 +8,25 @@ import type {
 	PaymentApplicationInstruction,
 } from "../../kernel/contracts/domain";
 import { decimal, formatDecimal } from "../../kernel/money";
+import { resolveApplicationFx } from "../payment-lifecycle/fx-policy";
 import type { PaymentApplicationInstructionsStore } from "./instructions.store";
+
+/** Per-effect deduction totals in transaction currency. */
+export function deductionTotals(payment: Payment): {
+	applicationOnly: bigint;
+	cashMovementReduction: bigint;
+} {
+	let applicationOnly = 0n;
+	let cashMovementReduction = 0n;
+	for (const deduction of payment.deductions) {
+		if (deduction.effect === "reduces_application_only") {
+			applicationOnly += decimal(deduction.amount);
+		} else if (deduction.effect === "reduces_cash_movement") {
+			cashMovementReduction += decimal(deduction.amount);
+		}
+	}
+	return { applicationOnly, cashMovementReduction };
+}
 
 export interface ApplicationInstructionsMemoryState {
 	mutationKeys: Map<string, string>;
@@ -32,6 +50,25 @@ function find(
 	return found === undefined || found.organizationId !== organizationId
 		? errorResult.fail("NOT_FOUND", { publicMessage: "Payment not found" })
 		: errorResult.ok(found);
+}
+
+function findInstruction(
+	state: ApplicationInstructionsMemoryState,
+	organizationId: string,
+	instructionId: string,
+): { payment: Payment; instruction: PaymentApplicationInstruction } | null {
+	for (const payment of state.payments.values()) {
+		if (payment.organizationId !== organizationId) {
+			continue;
+		}
+		const instruction = payment.applicationInstructions.find(
+			(candidate) => candidate.id === instructionId,
+		);
+		if (instruction !== undefined) {
+			return { payment, instruction };
+		}
+	}
+	return null;
 }
 
 function idempotent(
@@ -94,7 +131,7 @@ export function createMemoryApplicationInstructionMethods(
 					);
 				if (
 					allocated + decimal(record.intendedAmount) >
-					decimal(payment.amount)
+					decimal(payment.amount) - deductionTotals(payment).applicationOnly
 				) {
 					return errorResult.fail("CONFLICT", {
 						publicMessage: "Application exceeds payment amount",
@@ -110,6 +147,8 @@ export function createMemoryApplicationInstructionMethods(
 					intendedAmount: record.intendedAmount,
 					appliedAmount: "0",
 					currencyCode: record.currencyCode,
+					fx: null,
+					realizedFx: null,
 					status: "pending",
 					rejectionCode: null,
 					createdBy: record.actorUserId,
@@ -139,35 +178,41 @@ export function createMemoryApplicationInstructionMethods(
 			>[0],
 		): Promise<Result<PaymentApplicationInstruction>> {
 			return resolveOperation(() => {
-				for (const payment of state.payments.values()) {
-					const instruction = payment.applicationInstructions.find(
-						(candidate) => candidate.id === record.instructionId,
-					);
-					if (
-						instruction !== undefined &&
-						payment.organizationId === record.organizationId
-					) {
-						if (
-							decimal(record.appliedAmount) >
-							decimal(instruction.intendedAmount)
-						) {
-							return errorResult.fail("CONFLICT", {
-								publicMessage: "Applied amount exceeds intended amount",
-							});
-						}
-						instruction.appliedAmount = record.appliedAmount;
-						instruction.status =
-							decimal(record.appliedAmount) ===
-							decimal(instruction.intendedAmount)
-								? "applied"
-								: "partially_applied";
-						instruction.updatedAt = new Date();
-						return errorResult.ok({ ...instruction });
-					}
+				const found = findInstruction(
+					state,
+					record.organizationId,
+					record.instructionId,
+				);
+				if (found === null) {
+					return errorResult.fail("NOT_FOUND", {
+						publicMessage: "Payment application instruction not found",
+					});
 				}
-				return errorResult.fail("NOT_FOUND", {
-					publicMessage: "Payment application instruction not found",
+				const { payment, instruction } = found;
+				if (
+					decimal(record.appliedAmount) > decimal(instruction.intendedAmount)
+				) {
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "Applied amount exceeds intended amount",
+					});
+				}
+				const applicationFx = resolveApplicationFx({
+					appliedAmount: record.appliedAmount,
+					applicationFx: record.fx,
+					paymentFx: payment.fxContext,
 				});
+				if (!applicationFx.ok) {
+					return applicationFx;
+				}
+				instruction.fx = applicationFx.data.fx;
+				instruction.realizedFx = applicationFx.data.realizedFx;
+				instruction.appliedAmount = record.appliedAmount;
+				instruction.status =
+					decimal(record.appliedAmount) === decimal(instruction.intendedAmount)
+						? "applied"
+						: "partially_applied";
+				instruction.updatedAt = new Date();
+				return errorResult.ok({ ...instruction });
 			});
 		},
 
@@ -241,14 +286,22 @@ export function createMemoryApplicationInstructionMethods(
 							payment.status === "posted",
 					)
 					.reduce((sum, payment) => sum + decimal(payment.amount), 0n);
+				const totals = deductionTotals(found.data);
 				return errorResult.ok({
 					paymentId,
 					currencyCode: found.data.currencyCode,
 					postedAmount: found.data.amount,
 					intendedAmount: formatDecimal(intended),
 					refundedAmount: formatDecimal(refunded),
+					deductionsTotal: formatDecimal(totals.applicationOnly),
+					cashMovement: formatDecimal(
+						decimal(found.data.amount) - totals.cashMovementReduction,
+					),
 					availableToApply: formatDecimal(
-						decimal(found.data.amount) - intended - refunded,
+						decimal(found.data.amount) -
+							intended -
+							refunded -
+							totals.applicationOnly,
 					),
 				});
 			});

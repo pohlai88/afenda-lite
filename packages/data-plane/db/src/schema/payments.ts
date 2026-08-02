@@ -172,6 +172,10 @@ export const paymentAllocation = pgTable(
 		intendedAmount: text("intended_amount").notNull(),
 		appliedAmount: text("applied_amount").notNull().default("0"),
 		currencyCode: text("currency_code").notNull(),
+		/** ApplicationFxContext JSON or null (same-currency application). */
+		fxContext: text("fx_context"),
+		/** Signed functional-currency realized FX fact, set at application. */
+		realizedFx: text("realized_fx"),
 		status: text("status").notNull().default("pending"),
 		rejectionCode: text("rejection_code"),
 		createdBy: text("created_by").notNull(),

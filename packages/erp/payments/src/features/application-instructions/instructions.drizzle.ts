@@ -1,6 +1,12 @@
 import { randomUUID } from "node:crypto";
 
-import { database as afendaDatabase, and, eq, payment } from "@afenda/db";
+import {
+	database as afendaDatabase,
+	and,
+	eq,
+	payment,
+	paymentAllocation,
+} from "@afenda/db";
 import {
 	errorIngress,
 	errorProject,
@@ -9,6 +15,7 @@ import {
 } from "@afenda/errors";
 
 import type {
+	ApplicationFxContext,
 	Payment,
 	PaymentApplicationAvailability,
 	PaymentApplicationInstruction,
@@ -16,12 +23,20 @@ import type {
 	PaymentApplicationTargetDocumentType,
 	PaymentApplicationTargetModule,
 } from "../../kernel/contracts/domain";
+import { resolveApplicationFx } from "../payment-lifecycle/fx-policy";
 import type { PaymentApplicationInstructionsStore } from "./instructions.store";
 
 function failFromPersistence(error: unknown, _fallbackMessage: string) {
 	return errorProject.result(
 		errorIngress.postgres(error, { operation: "persistence.postgres" }),
 	);
+}
+
+function parseApplicationFx(value: string | null): ApplicationFxContext | null {
+	if (value === null || value.trim().length === 0) {
+		return null;
+	}
+	return JSON.parse(value) as ApplicationFxContext;
 }
 
 export interface DrizzleInstructionDeps {
@@ -63,7 +78,12 @@ export function createDrizzleApplicationInstructionMethods(
 									WHERE a.payment_id = p.id
 										AND a.organization_id = p.organization_id
 										AND a.status IN ('pending', 'applied', 'partially_applied')
-								) + ${record.intendedAmount}::numeric <= p.amount::numeric
+								) + ${record.intendedAmount}::numeric <= p.amount::numeric - (
+									SELECT COALESCE(SUM(d.amount::numeric), 0)
+									FROM payment_deduction d
+									WHERE d.payment_id = p.id
+										AND d.effect = 'reduces_application_only'
+								)
 						),
 						allocated AS (
 							INSERT INTO payment_allocation (
@@ -134,6 +154,8 @@ export function createDrizzleApplicationInstructionMethods(
 					intendedAmount: row.intended_amount,
 					appliedAmount: row.applied_amount,
 					currencyCode: row.currency_code,
+					fx: parseApplicationFx(row.fx_context),
+					realizedFx: row.realized_fx,
 					status: row.status as PaymentApplicationInstructionStatus,
 					rejectionCode: row.rejection_code,
 					createdBy: row.created_by,
@@ -155,11 +177,54 @@ export function createDrizzleApplicationInstructionMethods(
 		): Promise<Result<PaymentApplicationInstruction>> {
 			const eventId = randomUUID();
 			try {
+				const [allocationRow] = await afendaDatabase.client
+					.select({ paymentId: paymentAllocation.paymentId })
+					.from(paymentAllocation)
+					.where(
+						and(
+							eq(paymentAllocation.organizationId, record.organizationId),
+							eq(paymentAllocation.id, record.instructionId),
+						),
+					)
+					.limit(1);
+				if (allocationRow === undefined) {
+					return errorResult.fail("NOT_FOUND", {
+						publicMessage: "Payment application instruction not found",
+					});
+				}
+				const owner = await deps.getPaymentById(
+					record.organizationId,
+					allocationRow.paymentId,
+				);
+				if (!owner.ok) {
+					return owner;
+				}
+				if (owner.data === null) {
+					return errorResult.fail("NOT_FOUND", {
+						publicMessage: "Payment not found",
+					});
+				}
+				const ownerPayment = owner.data;
+				const applicationFx = resolveApplicationFx({
+					appliedAmount: record.appliedAmount,
+					applicationFx: record.fx,
+					paymentFx: ownerPayment.fxContext,
+				});
+				if (!applicationFx.ok) {
+					return applicationFx;
+				}
+				const { realizedFx } = applicationFx.data;
+				const fxJson =
+					applicationFx.data.fx === null
+						? null
+						: JSON.stringify(applicationFx.data.fx);
 				const [rows] = await afendaDatabase.transaction((sql) => [
 					sql`
 						WITH mutated AS (
 							UPDATE payment_allocation
 							SET applied_amount = ${record.appliedAmount},
+								fx_context = ${fxJson},
+								realized_fx = ${realizedFx},
 								status = CASE
 									WHEN ${record.appliedAmount}::numeric = intended_amount::numeric THEN 'applied'
 									ELSE 'partially_applied'
@@ -192,6 +257,9 @@ export function createDrizzleApplicationInstructionMethods(
 									'currencyCode', currency_code,
 									'status', status,
 									'rejectionCode', rejection_code,
+									'realizedFx', ${realizedFx},
+									'paymentRate', ${ownerPayment.fxContext?.exchangeRate ?? null},
+									'documentBookedRate', ${record.fx?.documentBookedRate ?? null},
 									'actorId', ${record.actorUserId},
 									'correlationId', ${record.correlationId}
 								), 'pending', 0
@@ -218,6 +286,8 @@ export function createDrizzleApplicationInstructionMethods(
 					intendedAmount: row.intended_amount,
 					appliedAmount: row.applied_amount,
 					currencyCode: row.currency_code,
+					fx: parseApplicationFx(row.fx_context),
+					realizedFx: row.realized_fx,
 					status: row.status as PaymentApplicationInstructionStatus,
 					rejectionCode: row.rejection_code,
 					createdBy: row.created_by,
@@ -300,6 +370,8 @@ export function createDrizzleApplicationInstructionMethods(
 					intendedAmount: row.intended_amount,
 					appliedAmount: row.applied_amount,
 					currencyCode: row.currency_code,
+					fx: parseApplicationFx(row.fx_context),
+					realizedFx: row.realized_fx,
 					status: row.status as PaymentApplicationInstructionStatus,
 					rejectionCode: row.rejection_code,
 					createdBy: row.created_by,
@@ -358,13 +430,26 @@ export function createDrizzleApplicationInstructionMethods(
 					0,
 				);
 				const posted = Number(loaded.data.amount);
+				let deductionsTotal = 0;
+				let cashMovementReduction = 0;
+				for (const deduction of loaded.data.deductions) {
+					if (deduction.effect === "reduces_application_only") {
+						deductionsTotal += Number(deduction.amount);
+					} else if (deduction.effect === "reduces_cash_movement") {
+						cashMovementReduction += Number(deduction.amount);
+					}
+				}
 				return errorResult.ok({
 					paymentId,
 					currencyCode: loaded.data.currencyCode,
 					postedAmount: loaded.data.amount,
 					intendedAmount: String(intended),
 					refundedAmount: String(refunded),
-					availableToApply: String(posted - intended - refunded),
+					deductionsTotal: String(deductionsTotal),
+					cashMovement: String(posted - cashMovementReduction),
+					availableToApply: String(
+						posted - intended - refunded - deductionsTotal,
+					),
 				});
 			} catch (error) {
 				return failFromPersistence(

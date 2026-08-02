@@ -25,7 +25,7 @@ describe("@afenda/events schemas", () => {
 		const livingTypes = Object.keys(AllEventSchemas).toSorted();
 
 		expect(new Set(livingTypes).size).toBe(livingTypes.length);
-		expect(livingTypes).toHaveLength(374);
+		expect(livingTypes).toHaveLength(378);
 		expect(livingTypes).toEqual([...livingTypes].toSorted());
 		expect(livingTypes).toEqual(
 			expect.arrayContaining([
@@ -508,6 +508,26 @@ describe("@afenda/events schemas", () => {
 				organizationId: "org-1",
 				paymentId: "00000000-0000-4000-8000-000000000001",
 				paymentAccountId: "00000000-0000-4000-8000-000000000002",
+				paymentMethodId: "00000000-0000-4000-8000-000000000003",
+				methodSnapshot: {
+					paymentMethodId: "00000000-0000-4000-8000-000000000003",
+					code: "bank-transfer",
+					kind: "wire",
+				},
+				instrument: { kind: "bank-transfer", reference: "STMT-1" },
+				fx: null,
+				functionalAmount: "125.50",
+				cashMovement: "123.50",
+				deductions: [
+					{
+						kind: "bank_charge",
+						effect: "reduces_cash_movement",
+						accountingPurposeCode: "bank-fees",
+						amount: "2",
+						functionalAmount: "2",
+					},
+				],
+				roundingDifferenceFunctionalAmount: null,
 				direction: "receipt",
 				purpose: "customer_receipt",
 				status: "posted",

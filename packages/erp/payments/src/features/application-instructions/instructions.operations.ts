@@ -88,7 +88,15 @@ export async function markApplicationInstructionAppliedOperation(
 	if (!allowed.ok) {
 		return allowed;
 	}
-	return deps.store.markInstructionApplied(parsed.data);
+	return deps.store.markInstructionApplied({
+		organizationId: parsed.data.organizationId,
+		instructionId: parsed.data.instructionId,
+		appliedAmount: parsed.data.appliedAmount,
+		fx: parsed.data.fx ?? null,
+		actorUserId: parsed.data.actorUserId,
+		correlationId: parsed.data.correlationId,
+		idempotencyKey: parsed.data.idempotencyKey,
+	});
 }
 
 export async function markApplicationInstructionRejectedOperation(

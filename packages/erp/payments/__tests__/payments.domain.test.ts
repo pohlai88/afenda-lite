@@ -8,6 +8,7 @@ import {
 	getPaymentApplicationAvailability,
 	getPaymentById,
 	listPayments,
+	markApplicationInstructionApplied,
 	postPayment,
 	postRefund,
 	reversePayment,
@@ -463,6 +464,171 @@ describe("payments lifecycle", () => {
 		});
 		expect(posted.data.functionalAmount).toBe("110");
 		expect(posted.data.deductions[0]?.functionalAmount).toBe("2.2");
+	});
+
+	it("availability subtracts only reduces_application_only deductions", async () => {
+		const store = createMemoryPaymentsStore();
+		const options = { store, authorization };
+		const account = await seedAccount(store);
+		const method = await seedMethod(store);
+		const created = await createDraftPayment(
+			{
+				organizationId,
+				actorUserId,
+				correlationId: "ded-create",
+				idempotencyKey: "ded-pay-1",
+				code: "PAY-DED-1",
+				paymentAccountId: account.id,
+				paymentMethodId: method.id,
+				direction: "receipt",
+				purpose: "customer_receipt",
+				counterpartyId,
+				currencyCode: "USD",
+				amount: "100",
+				deductions: [
+					{
+						kind: "bank_charge",
+						amount: "2",
+						accountingPurposeCode: "bank-fees",
+					},
+					{
+						kind: "rounding",
+						amount: "0.5",
+						accountingPurposeCode: "rounding",
+					},
+				],
+			},
+			options,
+		);
+		expect(created.ok).toBe(true);
+		if (!created.ok) {
+			return;
+		}
+		const posted = await postPayment(
+			{
+				organizationId,
+				actorUserId,
+				correlationId: "ded-post",
+				idempotencyKey: "ded-post-1",
+				paymentId: created.data.id,
+				expectedVersion: 1,
+			},
+			options,
+		);
+		expect(posted.ok).toBe(true);
+
+		const availability = await getPaymentApplicationAvailability(
+			{ organizationId, actorUserId, paymentId: created.data.id },
+			options,
+		);
+		expect(availability.ok).toBe(true);
+		if (availability.ok) {
+			expect(availability.data.postedAmount).toBe("100");
+			expect(availability.data.deductionsTotal).toBe("0.5");
+			expect(availability.data.availableToApply).toBe("99.5");
+			expect(availability.data.cashMovement).toBe("98");
+		}
+	});
+
+	it("computes realized fx when applying a cross-currency payment", async () => {
+		const store = createMemoryPaymentsStore();
+		const options = { store, authorization };
+		const method = await seedMethod(store, "bank-transfer");
+		const account = await createPaymentAccount(
+			{
+				organizationId,
+				actorUserId,
+				correlationId: "fx-app-account",
+				idempotencyKey: "fx-app-account-1",
+				code: "BANK-EUR-2",
+				name: "Bank EUR",
+				kind: "bank",
+				currencyCode: "EUR",
+			},
+			options,
+		);
+		if (!account.ok) {
+			throw new Error("account seed failed");
+		}
+		const created = await createDraftPayment(
+			{
+				organizationId,
+				actorUserId,
+				correlationId: "fx-app-create",
+				idempotencyKey: "fx-app-pay-1",
+				code: "PAY-FX-APP-1",
+				paymentAccountId: account.data.id,
+				paymentMethodId: method.id,
+				direction: "receipt",
+				purpose: "customer_receipt",
+				counterpartyId,
+				currencyCode: "EUR",
+				amount: "100",
+				fxContext: {
+					transactionCurrency: "EUR",
+					functionalCurrency: "USD",
+					exchangeRate: "1.1",
+					rateDate: "2026-08-01",
+				},
+			},
+			options,
+		);
+		if (!created.ok) {
+			throw new Error("draft failed");
+		}
+		const instruction = await addPaymentApplicationInstruction(
+			{
+				organizationId,
+				actorUserId,
+				correlationId: "fx-app-instr",
+				idempotencyKey: "fx-app-instr-1",
+				paymentId: created.data.id,
+				targetModule: "receivables",
+				targetDocumentType: "customer_invoice",
+				targetDocumentId: targetId,
+				intendedAmount: "100",
+				currencyCode: "EUR",
+			},
+			options,
+		);
+		if (!instruction.ok) {
+			throw new Error("instruction failed");
+		}
+
+		const withoutFx = await markApplicationInstructionApplied(
+			{
+				organizationId,
+				actorUserId,
+				correlationId: "fx-app-no-fx",
+				idempotencyKey: "fx-app-no-fx",
+				instructionId: instruction.data.id,
+				appliedAmount: "100",
+			},
+			options,
+		);
+		expect(withoutFx.ok).toBe(false);
+
+		const applied = await markApplicationInstructionApplied(
+			{
+				organizationId,
+				actorUserId,
+				correlationId: "fx-app-apply",
+				idempotencyKey: "fx-app-apply",
+				instructionId: instruction.data.id,
+				appliedAmount: "100",
+				fx: {
+					documentCurrency: "USD",
+					appliedDocumentAmount: "100",
+					documentBookedRate: "1.05",
+					appliedFunctionalAmount: "105",
+				},
+			},
+			options,
+		);
+		expect(applied.ok).toBe(true);
+		if (applied.ok) {
+			expect(applied.data.realizedFx).toBe("5");
+		}
 	});
 
 	it("returns original payment for identical create idempotency key", async () => {

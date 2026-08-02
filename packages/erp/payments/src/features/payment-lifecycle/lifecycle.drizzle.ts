@@ -18,6 +18,7 @@ import {
 } from "@afenda/errors";
 
 import type {
+	ApplicationFxContext,
 	Payment,
 	PaymentApplicationInstruction,
 	PaymentDeduction,
@@ -40,6 +41,10 @@ import {
 	PAYMENT_PURPOSES,
 	PAYMENT_STATUSES,
 } from "../../kernel/contracts/domain";
+import {
+	decimal as decimalOf,
+	formatDecimal as formatDecimalOf,
+} from "../../kernel/money";
 import { deriveFunctionalAmount } from "./fx-policy";
 import type {
 	PaymentCreateRecord,
@@ -101,6 +106,11 @@ function mapInstruction(
 		intendedAmount: row.intendedAmount,
 		appliedAmount: row.appliedAmount,
 		currencyCode: row.currencyCode,
+		fx:
+			row.fxContext === null || row.fxContext.trim().length === 0
+				? null
+				: (JSON.parse(row.fxContext) as ApplicationFxContext),
+		realizedFx: row.realizedFx,
 		status: parseEnum(
 			row.status,
 			APPLICATION_STATUSES,
@@ -262,10 +272,58 @@ function mapPayment(
 	};
 }
 
+function instrumentSummary(
+	instrument: PaymentInstrument | null,
+): { kind: string; reference: string | null } | null {
+	if (instrument === null) {
+		return null;
+	}
+	switch (instrument.kind) {
+		case "check":
+			return { kind: instrument.kind, reference: instrument.number };
+		case "bank-transfer":
+			return { kind: instrument.kind, reference: instrument.bankReference };
+		case "card":
+			return {
+				kind: instrument.kind,
+				reference:
+					instrument.settlementReference ??
+					instrument.authorizationReference ??
+					null,
+			};
+		case "gateway":
+			return { kind: instrument.kind, reference: instrument.providerReference };
+		case "other":
+			return { kind: instrument.kind, reference: instrument.reference ?? null };
+		default:
+			throw new Error("Unreachable instrument kind");
+	}
+}
+
+interface PaymentEventDeductionFact {
+	accountingPurposeCode: string;
+	amount: string;
+	effect: string;
+	functionalAmount: string | null;
+	kind: string;
+}
+
+function negate(value: string): string {
+	return value.startsWith("-") ? value.slice(1) : `-${value}`;
+}
+
+/** Serialized economic-facts payload for payment.* events. */
 function paymentPayload(record: {
 	organizationId: string;
 	paymentId: string;
 	paymentAccountId: string;
+	paymentMethodId: string;
+	methodSnapshot: PaymentMethodSnapshot | null;
+	instrument: PaymentInstrument | null;
+	fxContext: PaymentFxContext | null;
+	functionalAmount: string;
+	deductions: readonly PaymentEventDeductionFact[];
+	negateDeductions?: boolean;
 	direction: PaymentDirection;
 	purpose: PaymentPurpose;
 	status: PaymentStatus;
@@ -276,11 +334,47 @@ function paymentPayload(record: {
 	originalPaymentId: string | null;
 	actorUserId: string;
 	correlationId: string;
+	extra?: Record<string, unknown>;
 }): string {
+	const cashMovementReduction = record.deductions
+		.filter((deduction) => deduction.effect === "reduces_cash_movement")
+		.reduce((sum, deduction) => sum + decimalOf(deduction.amount), 0n);
+	const deductions = record.deductions.map((deduction) =>
+		record.negateDeductions === true
+			? {
+					...deduction,
+					amount: negate(deduction.amount),
+					functionalAmount:
+						deduction.functionalAmount === null
+							? null
+							: negate(deduction.functionalAmount),
+				}
+			: deduction,
+	);
 	return JSON.stringify({
 		organizationId: record.organizationId,
 		paymentId: record.paymentId,
 		paymentAccountId: record.paymentAccountId,
+		paymentMethodId: record.paymentMethodId,
+		methodSnapshot: record.methodSnapshot,
+		instrument: instrumentSummary(record.instrument),
+		fx:
+			record.fxContext === null
+				? null
+				: {
+						transactionCurrency: record.fxContext.transactionCurrency,
+						functionalCurrency: record.fxContext.functionalCurrency,
+						exchangeRate: record.fxContext.exchangeRate,
+						rateDate: record.fxContext.rateDate,
+						transactionAmount: record.amount,
+						functionalAmount: record.functionalAmount,
+					},
+		functionalAmount: record.functionalAmount,
+		cashMovement: formatDecimalOf(
+			decimalOf(record.amount) - cashMovementReduction,
+		),
+		deductions,
+		roundingDifferenceFunctionalAmount: null,
 		direction: record.direction,
 		purpose: record.purpose,
 		status: record.status,
@@ -291,6 +385,7 @@ function paymentPayload(record: {
 		originalPaymentId: record.originalPaymentId,
 		actorId: record.actorUserId,
 		correlationId: record.correlationId,
+		...record.extra,
 	});
 }
 
@@ -404,6 +499,18 @@ export const drizzlePaymentLifecycleMethods: PaymentsLifecycleStore = {
 			organizationId: record.organizationId,
 			paymentId: id,
 			paymentAccountId: record.paymentAccountId,
+			paymentMethodId: record.paymentMethodId,
+			methodSnapshot: record.methodSnapshot,
+			instrument: record.instrument,
+			fxContext: record.fxContext,
+			functionalAmount: record.functionalAmount,
+			deductions: record.deductions.map((line) => ({
+				kind: line.kind,
+				effect: line.effect,
+				accountingPurposeCode: line.accountingPurposeCode,
+				amount: line.amount,
+				functionalAmount: null,
+			})),
 			direction: record.direction,
 			purpose: record.purpose,
 			status: "draft",
@@ -495,15 +602,40 @@ export const drizzlePaymentLifecycleMethods: PaymentsLifecycleStore = {
 		}
 		const draft = current.data;
 		const methodSnapshotJson = JSON.stringify(record.methodSnapshot);
+		const frozenDeductions = draft.deductions.map((deduction) => ({
+			...deduction,
+			functionalAmount: deriveFunctionalAmount(
+				deduction.amount,
+				draft.fxContext,
+			),
+		}));
 		const frozenDeductionsJson = JSON.stringify(
-			draft.deductions.map((deduction) => ({
+			frozenDeductions.map((deduction) => ({
 				lineNo: deduction.lineNo,
-				functionalAmount: deriveFunctionalAmount(
-					deduction.amount,
-					draft.fxContext,
-				),
+				functionalAmount: deduction.functionalAmount,
 			})),
 		);
+		const postedPayload = paymentPayload({
+			organizationId: record.organizationId,
+			paymentId: draft.id,
+			paymentAccountId: draft.paymentAccountId,
+			paymentMethodId: draft.paymentMethodId,
+			methodSnapshot: record.methodSnapshot,
+			instrument: draft.instrument,
+			fxContext: draft.fxContext,
+			functionalAmount: draft.functionalAmount,
+			deductions: frozenDeductions,
+			direction: draft.direction,
+			purpose: draft.purpose,
+			status: "posted",
+			amount: draft.amount,
+			currencyCode: draft.currencyCode,
+			transferGroupId: draft.transferGroupId,
+			linkedPaymentId: draft.linkedPaymentId,
+			originalPaymentId: draft.originalPaymentId,
+			actorUserId: record.actorUserId,
+			correlationId: record.correlationId,
+		});
 		try {
 			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
@@ -538,21 +670,7 @@ export const drizzlePaymentLifecycleMethods: PaymentsLifecycleStore = {
 						)
 						SELECT ${eventId}, organization_id, 'payments.payment.posted.v1',
 							'payments', ${record.correlationId}, ${record.actorUserId},
-							jsonb_build_object(
-								'organizationId', organization_id,
-								'paymentId', id,
-								'paymentAccountId', payment_account_id,
-								'direction', direction,
-								'purpose', purpose,
-								'status', status,
-								'amount', amount,
-								'currencyCode', currency_code,
-								'transferGroupId', transfer_group_id,
-								'linkedPaymentId', linked_payment_id,
-								'originalPaymentId', original_payment_id,
-								'actorId', ${record.actorUserId},
-								'correlationId', ${record.correlationId}
-							), 'pending', 0
+							${postedPayload}::jsonb, 'pending', 0
 						FROM mutated
 						RETURNING id
 					)
@@ -579,6 +697,39 @@ export const drizzlePaymentLifecycleMethods: PaymentsLifecycleStore = {
 	): Promise<Result<Payment>> {
 		const reversalId = randomUUID();
 		const eventId = randomUUID();
+		const current = await getById(record.organizationId, record.paymentId);
+		if (!current.ok) {
+			return current;
+		}
+		if (current.data === null) {
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Payment not found",
+			});
+		}
+		const posted = current.data;
+		const reversedPayload = paymentPayload({
+			organizationId: record.organizationId,
+			paymentId: posted.id,
+			paymentAccountId: posted.paymentAccountId,
+			paymentMethodId: posted.paymentMethodId,
+			methodSnapshot: posted.methodSnapshot,
+			instrument: posted.instrument,
+			fxContext: posted.fxContext,
+			functionalAmount: posted.functionalAmount,
+			deductions: posted.deductions,
+			negateDeductions: true,
+			direction: posted.direction,
+			purpose: posted.purpose,
+			status: "reversed",
+			amount: posted.amount,
+			currencyCode: posted.currencyCode,
+			transferGroupId: posted.transferGroupId,
+			linkedPaymentId: posted.linkedPaymentId,
+			originalPaymentId: posted.originalPaymentId,
+			actorUserId: record.actorUserId,
+			correlationId: record.correlationId,
+			extra: { reversalId, reason: record.reason },
+		});
 		try {
 			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
@@ -613,23 +764,7 @@ export const drizzlePaymentLifecycleMethods: PaymentsLifecycleStore = {
 						)
 						SELECT ${eventId}, organization_id, 'payments.payment.reversed.v1',
 							'payments', ${record.correlationId}, ${record.actorUserId},
-							jsonb_build_object(
-								'organizationId', organization_id,
-								'paymentId', id,
-								'paymentAccountId', payment_account_id,
-								'direction', direction,
-								'purpose', purpose,
-								'status', status,
-								'amount', amount,
-								'currencyCode', currency_code,
-								'transferGroupId', transfer_group_id,
-								'linkedPaymentId', linked_payment_id,
-								'originalPaymentId', original_payment_id,
-								'actorId', ${record.actorUserId},
-								'correlationId', ${record.correlationId},
-								'reversalId', ${reversalId},
-								'reason', ${record.reason}
-							), 'pending', 0
+							${reversedPayload}::jsonb, 'pending', 0
 						FROM mutated
 						RETURNING id
 					)
@@ -792,6 +927,13 @@ export const drizzlePaymentLifecycleMethods: PaymentsLifecycleStore = {
 				record.instrument.kind === "bank-transfer")
 				? "pending"
 				: "not-applicable";
+		const refundDeductions = record.deductions.map((line) => ({
+			kind: line.kind,
+			effect: line.effect,
+			accountingPurposeCode: line.accountingPurposeCode,
+			amount: line.amount,
+			functionalAmount: deriveFunctionalAmount(line.amount, record.fxContext),
+		}));
 		const deductionsJson = JSON.stringify(
 			record.deductions.map((line) => ({
 				lineNo: line.lineNo,
@@ -803,6 +945,43 @@ export const drizzlePaymentLifecycleMethods: PaymentsLifecycleStore = {
 				description: line.description,
 			})),
 		);
+		const original = await getById(
+			record.organizationId,
+			record.originalPaymentId,
+		);
+		if (!original.ok) {
+			return original;
+		}
+		if (original.data === null) {
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Original payment not found",
+			});
+		}
+		const refundPayload = paymentPayload({
+			organizationId: record.organizationId,
+			paymentId: id,
+			paymentAccountId: record.paymentAccountId,
+			paymentMethodId: record.paymentMethodId,
+			methodSnapshot: record.methodSnapshot,
+			instrument: record.instrument,
+			fxContext: record.fxContext,
+			functionalAmount: record.functionalAmount,
+			deductions: refundDeductions,
+			direction: "refund",
+			purpose:
+				original.data.direction === "receipt"
+					? "customer_refund"
+					: "supplier_refund_receipt",
+			status: "posted",
+			amount: record.amount,
+			currencyCode: original.data.currencyCode,
+			transferGroupId: null,
+			linkedPaymentId: null,
+			originalPaymentId: record.originalPaymentId,
+			actorUserId: record.actorUserId,
+			correlationId: record.correlationId,
+			extra: { refundSource: record.refundSource },
+		});
 		try {
 			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
@@ -872,22 +1051,7 @@ export const drizzlePaymentLifecycleMethods: PaymentsLifecycleStore = {
 						)
 						SELECT ${eventId}, organization_id, 'payments.refund.posted.v1',
 							'payments', ${record.correlationId}, ${record.actorUserId},
-							jsonb_build_object(
-								'organizationId', organization_id,
-								'paymentId', id,
-								'paymentAccountId', payment_account_id,
-								'direction', direction,
-								'purpose', purpose,
-								'status', status,
-								'amount', amount,
-								'currencyCode', currency_code,
-								'transferGroupId', transfer_group_id,
-								'linkedPaymentId', linked_payment_id,
-								'originalPaymentId', original_payment_id,
-								'refundSource', refund_source,
-								'actorId', ${record.actorUserId},
-								'correlationId', ${record.correlationId}
-							), 'pending', 0
+							${refundPayload}::jsonb, 'pending', 0
 						FROM mutated
 						RETURNING id
 					)

@@ -19,10 +19,23 @@ export const addPaymentApplicationInstructionInputSchema = z.object({
 	currencyCode,
 });
 
+const rate = z
+	.string()
+	.trim()
+	.regex(/^\d+(?:\.\d{1,6})?$/);
+
+export const applicationFxContextSchema = z.object({
+	documentCurrency: currencyCode,
+	appliedDocumentAmount: money,
+	documentBookedRate: rate,
+	appliedFunctionalAmount: money,
+});
+
 export const markApplicationInstructionAppliedInputSchema = z.object({
 	...mutation,
 	instructionId: uuid,
 	appliedAmount: money,
+	fx: applicationFxContextSchema.nullable().optional(),
 });
 
 export const markApplicationInstructionRejectedInputSchema = z.object({

@@ -188,15 +188,30 @@ export interface PaymentAccount {
 	updatedAt: Date;
 }
 
+/**
+ * Caller-supplied FX facts for a cross-currency application. The document
+ * rate direction is document → functional; payments validates the
+ * arithmetic and never infers missing values.
+ */
+export interface ApplicationFxContext {
+	appliedDocumentAmount: string;
+	appliedFunctionalAmount: string;
+	documentBookedRate: string;
+	documentCurrency: string;
+}
+
 export interface PaymentApplicationInstruction {
 	appliedAmount: string;
 	createdAt: Date;
 	createdBy: string;
 	currencyCode: string;
+	fx: ApplicationFxContext | null;
 	id: string;
 	intendedAmount: string;
 	organizationId: string;
 	paymentId: string;
+	/** Signed functional-currency fact computed at application time. */
+	realizedFx: string | null;
 	rejectionCode: string | null;
 	status: PaymentApplicationInstructionStatus;
 	targetDocumentId: string;
@@ -259,7 +274,11 @@ export interface Payment {
 
 export interface PaymentApplicationAvailability {
 	availableToApply: string;
+	/** Gross amount minus deductions that reduce cash movement. */
+	cashMovement: string;
 	currencyCode: string;
+	/** Sum of deductions with effect "reduces_application_only". */
+	deductionsTotal: string;
 	intendedAmount: string;
 	paymentId: string;
 	postedAmount: string;
