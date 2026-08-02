@@ -4,7 +4,7 @@ import {
 	calculateEmployeePayroll,
 	normalizeCalcOutput,
 	verifyAccountingIdentities,
-} from "../src/runs/calculation";
+} from "../src/features/calculation/calculation";
 import { buildSyntheticCalcSnapshot } from "./helpers/calc-snapshot";
 
 describe("payroll calculation pipeline", () => {

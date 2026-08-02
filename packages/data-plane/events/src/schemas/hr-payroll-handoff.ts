@@ -21,6 +21,12 @@ export const handoffPayFrequencySchema = z.enum([
 	"annual",
 ]);
 
+export const handoffEmploymentStatusSchema = z.enum([
+	"active",
+	"notice",
+	"terminated",
+]);
+
 export const handoffLeaveUnitSchema = z.enum(["days", "hours"]);
 
 export const handoffOvertimeTypeSchema = z.enum([
@@ -143,6 +149,7 @@ export const approvedPayrollHandoffSchema = z
 		organizationId: z.string().trim().min(1),
 		employeeId: z.string().trim().min(1).max(128),
 		employmentId: z.string().trim().min(1).max(128),
+		employmentStatus: handoffEmploymentStatusSchema.optional(),
 		assignment: handoffAssignmentSchema,
 		effectiveDate: handoffIsoDateSchema,
 		currencyCode: z.string().trim().length(3),

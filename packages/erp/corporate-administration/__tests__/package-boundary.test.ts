@@ -63,8 +63,20 @@ function readPackageSource(relativeFile: string): string {
 describe("Corporate Administration package boundary", () => {
 	it("keeps the forward requirements authority and skill routing aligned", () => {
 		const requirementsPath = "packages/erp/corporate-administration/PRD.md";
+		const roadmapPath =
+			"packages/erp/corporate-administration/DEVELOPMENT-ROADMAP.md";
+		const slicesPath =
+			"packages/erp/corporate-administration/IMPLEMENTATION-SLICES.md";
 		const requirements = readFileSync(
 			path.join(repositoryDirectory, requirementsPath),
+			"utf8",
+		);
+		const roadmap = readFileSync(
+			path.join(repositoryDirectory, roadmapPath),
+			"utf8",
+		);
+		const slices = readFileSync(
+			path.join(repositoryDirectory, slicesPath),
 			"utf8",
 		);
 		const packageReadme = readFileSync(
@@ -78,12 +90,39 @@ describe("Corporate Administration package boundary", () => {
 			),
 			"utf8",
 		);
+		const skill = readFileSync(
+			path.join(
+				repositoryDirectory,
+				".cursor/skills/afenda-elite-corporate-administration/SKILL.md",
+			),
+			"utf8",
+		);
 
 		expect(requirements).toContain(
 			"# Corporate Administration Product Requirements",
 		);
-		expect(requirements).toContain("CA-FR-001");
-		expect(requirements).toContain("## Investor Relations exclusion");
+		const requirementRows = requirements.match(/^\| CA-FR-\d{3} \|.*\|$/gm);
+		expect(requirementRows).toHaveLength(14);
+		for (const requirementNumber of Array.from(
+			{ length: 14 },
+			(_, index) => index + 1,
+		)) {
+			const requirementId = `CA-FR-${String(requirementNumber).padStart(3, "0")}`;
+			expect(
+				requirementRows?.filter((row) =>
+					row.startsWith(`| ${requirementId} |`),
+				),
+			).toHaveLength(1);
+		}
+		expect(roadmap).toContain("CA-FR-001 through CA-FR-005");
+		for (const requirementNumber of Array.from(
+			{ length: 8 },
+			(_, index) => index + 6,
+		)) {
+			const requirementId = `CA-FR-${String(requirementNumber).padStart(3, "0")}`;
+			expect(roadmap).toContain(requirementId);
+		}
+		expect(requirements).toContain("| Securities, capital, investors");
 		const closureRows = requirements.match(
 			/^\| \d+ \|.*\| (?:DONE|PARTIAL|GAP|BLOCKED|NOT_APPLICABLE) \|.*\|$/gm,
 		);
@@ -91,11 +130,59 @@ describe("Corporate Administration package boundary", () => {
 		expect(closureRows?.filter((row) => row.includes("| DONE |")).length).toBe(
 			5,
 		);
+		expect(closureRows?.filter((row) => !row.includes("| DONE |")).length).toBe(
+			9,
+		);
 		expect(packageReadme).toContain("PRD.md");
+		expect(packageReadme).toContain("DEVELOPMENT-ROADMAP.md");
+		expect(packageReadme).toContain("IMPLEMENTATION-SLICES.md");
 		expect(skillReference).toContain(requirementsPath);
+		expect(skillReference).toContain(roadmapPath);
+		expect(skillReference).toContain(slicesPath);
+		expect(skill).toContain(slicesPath);
+		expect(roadmap).toContain(
+			"Current authorization | `CA-APP-01` plus closure evidence for CA-FR-001 through CA-FR-005",
+		);
+		expect(slices).toContain("Authorized product slice | `CA-APP-01`");
+		expect(slices).toContain("## CA-APP-01 — Corporate Entity Workspace");
+		expect(slices.match(/^\| CA-CL-0[1-5] .+\|$/gm)).toHaveLength(5);
+		expect(slices).toContain("CA-FR-006 through CA-FR-013");
+		expect(slices).toContain(
+			"migration, a package dependency, a public export, or a cross-domain write",
+		);
+		expect(slices).toContain("cannot claim an enterprise seal");
 		expect(skillReference).not.toContain(
 			"docs-V2/_scratch/erp/corporate-administration",
 		);
+	});
+
+	it("keeps the implemented feature inventory aligned with the PRD and roadmap", () => {
+		const packageReadme = readFileSync(
+			path.join(packageDirectory, "README.md"),
+			"utf8",
+		);
+		const slices = readFileSync(
+			path.join(packageDirectory, "IMPLEMENTATION-SLICES.md"),
+			"utf8",
+		);
+		const featureNames = readdirSync(path.join(sourceDirectory, "features"))
+			.filter((entry) =>
+				statSync(path.join(sourceDirectory, "features", entry)).isDirectory(),
+			)
+			.sort();
+
+		expect(featureNames).toEqual([
+			"company",
+			"establishments",
+			"governance",
+			"meetings",
+			"officers",
+			"resolutions",
+		]);
+		for (const featureName of featureNames) {
+			expect(packageReadme).toContain(`\`${featureName}\``);
+			expect(slices).toContain(featureName);
+		}
 	});
 
 	it("resolves the root and manifest exports with the approved identity", () => {

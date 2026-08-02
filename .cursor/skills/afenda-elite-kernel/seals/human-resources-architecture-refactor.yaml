@@ -1,0 +1,95 @@
+kernel_seal:
+  version: 1
+  id: HR-ARCHITECTURE-REFACTOR-01
+  target: packages/erp/human-resources
+  capability: internal Human Resources capability architecture
+  owner: "@afenda/human-resources"
+  compatibility: internal
+  content_digest: 7d8213147d978b115c018c78810f7a073dce016fc7c2ff6a8491cd7c330da162
+  prior_seal: HR-KERNEL-CUTOVER-01
+  reopen_record: human-resources-architecture-refactor-reopen.yaml
+  authority:
+    - User approval in the active task on 2026-08-02
+    - AGENTS.md
+    - packages/erp/human-resources/README.md
+    - .cursor/skills/afenda-elite-monorepo-refactor/SKILL.md
+    - .cursor/skills/afenda-elite-kernel/SKILL.md
+    - .cursor/skills/afenda-semantic-registry-cutover/SKILL.md
+  scope:
+    includes:
+      - permanent production facade under src/facade
+      - canonical authorization, event, and operation registries under src/kernel
+      - capability-owned statuses, guards, histories, policies, and projections
+      - recruitment-local compensation proposal lookup port
+      - recurrence checks for deleted and misplaced surfaces
+      - documented internal architecture tree
+    excludes:
+      - public API or package export changes
+      - database schema or migration changes
+      - application consumer behavior changes
+      - unrelated dirty-worktree changes
+  invariants:
+    - Production consumers import only from @afenda/human-resources.
+    - The package root remains the sole production entrypoint and ./testing remains test-only.
+    - Facade consumers cannot inspect stores, adapters, transactions, or composition wiring.
+    - Package-wide authorization, event, and operation registries have one canonical kernel owner.
+    - Capability statuses, guards, histories, policies, and projections live with their semantic owner.
+    - Cross-capability shared primitives cannot become a second capability-semantic owner.
+    - Recruitment depends on a narrow compensation proposal lookup capability, not HumanResourcesStore.
+  deleted_surfaces:
+    - src/public-capabilities.ts
+    - src/public-contracts.ts
+    - src/public-execution-context.ts
+    - src/production-capabilities.ts
+    - src/event-catalog
+    - src/operation-registry
+    - src/shared/authorization-policy-registry.ts
+    - capability-owned status, guard, history, policy, and projection files under src/shared
+  gates:
+    - name: target structure
+      command: node .cursor/skills/afenda-elite-kernel/scripts/inspect-target.mjs packages/erp/human-resources
+      outcome: PASS
+      evidence: 723 files, 510 source files, 215 test files; digest matches this record.
+    - name: target lint
+      command: pnpm --filter @afenda/human-resources lint
+      outcome: PASS
+      evidence: Biome checked 713 files with no fixes required.
+    - name: target typecheck
+      command: pnpm --filter @afenda/human-resources typecheck -- --pretty false
+      outcome: PASS
+      evidence: TypeScript completed without diagnostics.
+    - name: complete unit project
+      command: vitest human-resources-unit in four native shards
+      outcome: PASS
+      evidence: 133 files and 1101 tests passed across all four shards.
+    - name: changed-boundary contracts
+      command: vitest focused facade, kernel, and relocated capability files
+      outcome: PASS
+      evidence: 16 files and 413 tests passed; final authorization-kernel slice added 5 files and 48 passing tests.
+    - name: parity project
+      command: vitest human-resources-parity in two native sequential shards
+      outcome: PASS
+      evidence: 29 files and 164 tests passed; 9 files and 206 tests remained intentionally skipped by parity conditions.
+    - name: module governance
+      command: pnpm validate:modules
+      outcome: PASS
+      evidence: All manifests and seven generated registers matched; all 22 negative fixtures proved expected failures.
+    - name: production consumer containment
+      command: rg -n '@afenda/human-resources/' apps/web packages/erp/payroll --glob '!**/__tests__/**'
+      outcome: PASS
+      evidence: No production consumer imports an HR implementation subpath.
+    - name: superseded-path enforcement
+      command: pnpm exec vitest run --config testing/vitest.unit.config.ts --project human-resources-unit packages/erp/human-resources/__tests__/public-kernel-cutover.test.ts
+      outcome: PASS
+      evidence: Canonical homes exist; old facade and registry paths are absent; capability-owned shared vocabulary is rejected.
+    - name: final diff integrity
+      command: git diff --check -- packages/erp/human-resources .cursor/skills/afenda-elite-kernel/seals
+      outcome: PASS
+      evidence: No whitespace or patch-integrity errors.
+  consumer_blast_radius:
+    production_consumers_changed: 0
+    reason: Internal representation and ownership changed behind the existing package-root facade.
+  working_tree:
+    state: dirty
+    note: Target changes are limited to the approved Human Resources refactor and its kernel seal records; unrelated pre-existing changes remain unstaged.
+  sealed_at: 2026-08-02T03:47:43.7158544Z

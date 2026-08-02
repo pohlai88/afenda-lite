@@ -13,8 +13,8 @@ import {
 	payrollDeliveryStatusIsTerminal,
 	queuePayrollDelivery,
 	recordPayrollDeliveryFeedback,
-} from "../src/integrations/payroll-delivery";
-import { runSequential } from "../src/shared/run-sequential";
+} from "../src/features/payroll-handoff/delivery/index";
+import { runSequential } from "../src/kernel/execution/run-sequential";
 
 const ORGANIZATION_ID = "org-payroll-delivery";
 const CORRELATION_ID = "corr-payroll-delivery";

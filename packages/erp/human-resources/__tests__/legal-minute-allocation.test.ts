@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
 	allocateWorkedMinutesByCivilDate,
 	civilDateInTimeZone,
-} from "../src/time/legal-minute-allocation";
+} from "../src/features/time/legal-minute-allocation";
 
 describe("legal-minute-allocation", () => {
 	it("allocates worked minutes across civil dates for overnight sessions", () => {

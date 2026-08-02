@@ -1,20 +1,20 @@
 import { describe, expect, it } from "vitest";
 
-import { createPayrollEmployeeAssignment } from "../src/assignments/employee-payroll-assignment";
-import { createPayrollRecurringDeduction } from "../src/assignments/recurring-deduction";
-import { createPayrollRecurringEarning } from "../src/assignments/recurring-earning";
-import type { PayrollAuthorizationPort } from "../src/authorization";
-import { createPayrollVariableInput } from "../src/inputs/variable-input";
+import { createPayrollEmployeeAssignment } from "../src/features/employee-assignments/employee-payroll-assignment";
+import { createPayrollRecurringDeduction } from "../src/features/employee-assignments/recurring-deduction";
+import { createPayrollRecurringEarning } from "../src/features/employee-assignments/recurring-earning";
+import { createPayrollPeriod } from "../src/features/payroll-runs/payroll-period";
+import { createPayrollCalendar } from "../src/features/payroll-setup/calendar";
+import { createPayrollDeductionRule } from "../src/features/payroll-setup/deduction-rule";
+import { createPayrollEarningRule } from "../src/features/payroll-setup/earning-rule";
+import { createPayrollPayGroup } from "../src/features/payroll-setup/pay-group";
+import { createPayrollVariableInput } from "../src/features/variable-inputs/variable-input";
+import type { PayrollAuthorizationPort } from "../src/kernel/execution/authorization";
 import {
 	PAYROLL_PERMISSION_INPUT_MANAGE,
 	PAYROLL_PERMISSION_SETUP_MANAGE,
-} from "../src/permissions";
-import { createPayrollPeriod } from "../src/runs/payroll-period";
-import { createPayrollCalendar } from "../src/setup/calendar";
-import { createPayrollDeductionRule } from "../src/setup/deduction-rule";
-import { createPayrollEarningRule } from "../src/setup/earning-rule";
-import { createPayrollPayGroup } from "../src/setup/pay-group";
-import { createMemoryPayrollStore } from "../src/testing";
+} from "../src/kernel/execution/permissions";
+import { createMemoryPayrollStore } from "../src/testing/index";
 import { createMemoryPayrollEmployeeQueryPort } from "./helpers/memory-employee-port";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
 

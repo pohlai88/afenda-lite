@@ -1,12 +1,12 @@
-import type { HumanResourcesCommandOptions } from "../../src/command-options";
-import { createPosition } from "../../src/organization/position";
-import { createCandidate } from "../../src/recruitment/candidate";
+import { createPosition } from "../../src/features/organization/position";
+import { createCandidate } from "../../src/features/recruitment/candidate";
 import {
 	approveRequisition,
 	createDraftRequisition,
 	openRequisition,
 	submitRequisition,
-} from "../../src/recruitment/requisition";
+} from "../../src/features/recruitment/requisition";
+import type { HumanResourcesCommandOptions } from "../../src/kernel/execution/command-options";
 import { candidateConsentFixture } from "./candidate-consent-fixture";
 import { seedDefaultHiringManager } from "./recruitment-requisition-fixture";
 import { seedDepartmentAndJob } from "./seed-department-and-job";

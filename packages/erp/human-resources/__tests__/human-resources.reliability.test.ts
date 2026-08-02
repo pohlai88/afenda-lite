@@ -1,6 +1,6 @@
 import { errorResult, type Result } from "@afenda/errors";
 import { describe, expect, it } from "vitest";
-
+import { runSequential } from "../src/kernel/execution/run-sequential";
 import {
 	acknowledgeReliabilityWork,
 	checkpointConnectorCursor,
@@ -15,8 +15,7 @@ import {
 	registerReliabilityWork,
 	replayDeadLetter,
 	retryDelayMs,
-} from "../src/reliability";
-import { runSequential } from "../src/shared/run-sequential";
+} from "../src/kernel/reliability/index";
 
 const ORGANIZATION_ID = "org-reliability";
 

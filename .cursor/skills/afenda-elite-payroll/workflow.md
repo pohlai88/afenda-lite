@@ -2,11 +2,18 @@
 
 Use one prompt per phase. Review the plan and diff before proceeding. Do not build the entire package in one task.
 
-**Authority:** [SKILL.md](SKILL.md) · [package-tree.md](package-tree.md) · Scratch pack [`docs-V2/_scratch/payroll-cursor-agent-pack/docs/payroll/IMPLEMENTATION_PLAN.md`](../../../docs-V2/_scratch/payroll-cursor-agent-pack/docs/payroll/IMPLEMENTATION_PLAN.md)
+**Authority:** [SKILL.md](SKILL.md) · [package-tree.md](package-tree.md) ·
+[`feature-first-erp.md`](../afenda-semantic-registry-cutover/references/feature-first-erp.md)
+· Scratch PRD
+[`PAYROLL-PRD-MY-VN.md`](../../../docs-V2/_scratch/payroll/PAYROLL-PRD-MY-VN.md)
 
 **Subagents:** Plan / discovery → [payroll-architect](../../agents/payroll-architect.md) · Phase gate / pre-merge → [payroll-verifier](../../agents/payroll-verifier.md)
 
-**Structural rule:** Use sliced `schemas/`, `store/`, `adapters/` farms — never root `schemas.ts`, `store.ts`, `drizzle-store.ts`, or `memory-store.ts`.
+**Structural rule:** Use the uniform ERP `facade/kernel/composition/features/testing`
+topology. Business contracts, behavior, store capabilities, and adapters belong
+to `src/features/<feature>/`; features never import facade, composition, or
+testing and never depend on the composite Payroll store. The current shallow
+farms are migration sources until the final structural cutover is verified.
 
 ## Prompt 00 — Repository discovery only
 
@@ -60,7 +67,7 @@ Required manifest:
 - moduleDependencies: [human-resources]
 - optionalIntegratesWith: [payments, accounting, payables]
 
-Implement payroll permissions, stable error codes, PayrollEmployeeQueryPort, infrastructure ports discovered in the repository, and intentional public exports. Use sliced schemas/store/adapters per package-tree.md — not root monoliths. Do not implement calculations or database tables yet.
+Implement payroll permissions, stable error codes, the private workforce boundary, infrastructure capabilities discovered in the repository, and intentional opaque root exports. Use the uniform feature capsule from package-tree.md; keep facade, kernel, composition, and feature ownership distinct. Do not implement calculations or database tables yet.
 
 Add focused tests for manifest identity, permission uniqueness, exports and package-boundary rules. Run typecheck, lint and tests. Summarize changed files and any deviations.
 ```
@@ -83,7 +90,7 @@ Explain which suggested tables can be deferred from the first migration and why.
 ```text
 Implement only the reviewed first migration and store foundation from the schema design.
 
-Create sliced store contracts, memory store, Drizzle store and resolver following canonical repository patterns. Keep store methods aggregate-oriented rather than exposing generic table mutation.
+Create feature-owned store contracts and colocated memory/Drizzle adapters following package-tree.md. Compose them only under `composition/`; feature handlers and adapters must not depend on that aggregate. Keep store methods aggregate-oriented rather than exposing generic table mutation.
 
 Add shared contract tests that run against memory and Drizzle stores, plus database tests for organization isolation, unique run identity, effective-date overlap prevention, monetary precision, optimistic versioning and finalized immutability.
 
@@ -93,7 +100,7 @@ Do not implement calculation behavior. Run migration checks, typecheck, lint and
 ## Prompt 04 — Setup slice
 
 ```text
-Implement setup/calendar.ts, setup/pay-group.ts, setup/earning-rule.ts, setup/deduction-rule.ts and setup/statutory-rule.ts as a coherent slice.
+Implement the calendar, pay-group, earning-rule, deduction-rule, and statutory-rule use cases inside `features/payroll-setup/` as one owned vertical slice.
 
 Requirements:
 - validate inputs at the package boundary;

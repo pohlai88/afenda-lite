@@ -1,3 +1,4 @@
+import { errorResult } from "@afenda/errors";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const session = {
@@ -98,11 +99,7 @@ describe("HR employee self-service journey Actions", () => {
 
 		const result = await createOwnLeaveDraftAction(null, formData);
 
-		expect(result).toEqual({
-			ok: false,
-			code: "FORBIDDEN",
-			message: "Your account is not linked to an active employee record.",
-		});
+		expect(result).toEqual(errorResult.fail("FORBIDDEN"));
 		expect(mocks.getLeaveEntitlementById).not.toHaveBeenCalled();
 	});
 

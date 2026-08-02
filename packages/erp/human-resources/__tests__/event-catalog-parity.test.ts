@@ -5,6 +5,8 @@ import {
 	type HumanResourcesEventType,
 } from "@afenda/events/schemas";
 import { describe, expect, it } from "vitest";
+import { humanResourcesModuleManifest } from "../src/composition/module.manifest";
+import { HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY } from "../src/kernel/emissions/mutation-emission-registry";
 import {
 	CLASSIFIED_HUMAN_RESOURCES_DOMAIN_EVENT_TYPES,
 	type ClassifiedHumanResourcesDomainEventType,
@@ -12,9 +14,7 @@ import {
 	HUMAN_RESOURCES_EVENT_CATALOG,
 	listDomainEventTypesFromRegistry,
 	validateHumanResourcesEventCatalog,
-} from "../src/event-catalog";
-import { humanResourcesModuleManifest } from "../src/module.manifest";
-import { HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY } from "../src/mutation-emission-registry";
+} from "../src/kernel/events/index";
 
 const goldenPayload = {
 	organizationId: "org-1",

@@ -104,41 +104,6 @@ const MIGRATION_DDL_PROBES = new Map([
 			]),
 	],
 	[
-		"0017_hr_candidate_consent",
-		(sql) =>
-			allExist([
-				columnExists(sql, "hr_candidate", "consent_policy_version"),
-				constraintExists(sql, "hr_candidate_consent_source_check"),
-			]),
-	],
-	[
-		"0040_hr_compensation_benefits_ddl",
-		(sql) => tableExists(sql, "hr_benefit_enrollment"),
-	],
-	["0041_hr_learning_ddl", (sql) => tableExists(sql, "hr_learning_course")],
-	[
-		"0042_hr_learning_idempotency_columns",
-		(sql) => columnExists(sql, "hr_learning_course", "idempotency_key"),
-	],
-	["0043_hr_leave_ddl", (sql) => tableExists(sql, "hr_leave_policy")],
-	[
-		"0044_hr_performance_ddl",
-		(sql) => tableExists(sql, "hr_performance_cycle"),
-	],
-	["0045_hr_talent_ddl", (sql) => tableExists(sql, "hr_competency")],
-	[
-		"0046_hr_workforce_planning_ddl",
-		(sql) => tableExists(sql, "hr_headcount_plan"),
-	],
-	[
-		"0047_hr_employee_relations_ddl",
-		(sql) => tableExists(sql, "hr_employee_case"),
-	],
-	[
-		"0048_hr_compliance_ddl",
-		(sql) => tableExists(sql, "hr_document_requirement"),
-	],
-	[
 		"0032_hr_bulk_reliability_durability",
 		(sql) =>
 			allExist([
@@ -147,7 +112,123 @@ const MIGRATION_DDL_PROBES = new Map([
 				tableExists(sql, "hr_connector_cursor"),
 			]),
 	],
+	[
+		"0034_ca_governance_bodies_memberships",
+		(sql) =>
+			allExist([
+				tableExists(sql, "ca_governance_body"),
+				tableExists(sql, "ca_governance_membership"),
+				indexExists(sql, "ca_governance_membership_body_as_of_idx"),
+			]),
+	],
+	[
+		"0035_ca_statutory_offices_officers",
+		(sql) =>
+			allExist([
+				tableExists(sql, "ca_statutory_office"),
+				tableExists(sql, "ca_officer_appointment"),
+				tableExists(sql, "ca_officer_qualification"),
+				indexExists(sql, "ca_officer_qualification_appointment_idx"),
+			]),
+	],
+	[
+		"0036_ca_officer_compliance",
+		(sql) =>
+			allExist([
+				tableExists(sql, "ca_officer_declaration"),
+				tableExists(sql, "ca_officer_disqualification"),
+				tableExists(sql, "ca_conflict_disclosure"),
+				indexExists(sql, "ca_conflict_disclosure_matter_idx"),
+			]),
+	],
+	[
+		"0037_ca_governance_meetings",
+		(sql) =>
+			allExist([
+				tableExists(sql, "ca_governance_meeting"),
+				tableExists(sql, "ca_meeting_notice"),
+				tableExists(sql, "ca_meeting_participant"),
+				tableExists(sql, "ca_meeting_quorum_result"),
+				indexExists(sql, "ca_meeting_quorum_result_meeting_idx"),
+			]),
+	],
+	[
+		"0038_ca_resolutions",
+		(sql) =>
+			allExist([
+				tableExists(sql, "ca_meeting_vote"),
+				tableExists(sql, "ca_resolution"),
+				tableExists(sql, "ca_resolution_action"),
+				indexExists(sql, "ca_resolution_action_due_idx"),
+			]),
+	],
+	[
+		"0039_hr_reliability_scheduler",
+		(sql) =>
+			allExist([
+				columnExists(sql, "hr_reliability_work_item", "target_type"),
+				columnExists(sql, "hr_reliability_work_item", "lease_owner"),
+				columnExists(sql, "hr_reliability_dead_letter", "target_id"),
+				constraintExists(sql, "hr_reliability_work_item_ack_check"),
+			]),
+	],
+	[
+		"0040_hr_bulk_jobs",
+		(sql) =>
+			allExist([
+				tableExists(sql, "hr_bulk_import_job"),
+				tableExists(sql, "hr_bulk_import_job_row"),
+				tableExists(sql, "hr_bulk_export_job"),
+				tableExists(sql, "hr_bulk_export_artifact_chunk"),
+				indexExists(sql, "hr_bulk_export_artifact_chunk_org_job_index_uidx"),
+			]),
+	],
+	[
+		"0042_platform_tenant_access_indexes",
+		(sql) =>
+			allExist([
+				indexExists(sql, "platform_rbac_audit_org_created_id_idx"),
+				indexExists(sql, "platform_role_assignment_org_active_user_idx"),
+			]),
+	],
+	[
+		"0043_event_claim_lease",
+		(sql) =>
+			allExist([
+				columnExists(sql, "platform_domain_event", "claim_token"),
+				columnExists(sql, "platform_domain_event", "claimed_at"),
+			]),
+	],
+	[
+		"0044_payroll_setup_rule_ranges",
+		(sql) =>
+			allExist([
+				constraintExists(sql, "payroll_earning_rule_non_archived_range_excl"),
+				constraintExists(sql, "payroll_deduction_rule_non_archived_range_excl"),
+				constraintExists(sql, "payroll_statutory_rule_non_archived_range_excl"),
+			]),
+	],
+	[
+		"0045_payroll_assignment_ranges",
+		(sql) =>
+			constraintExists(sql, "payroll_employee_assignment_active_range_excl"),
+	],
+	[
+		"0046_payroll_outputs_reconciliation_adjustments",
+		(sql) =>
+			allExist([
+				columnExists(sql, "payroll_run", "reversal_reason_code"),
+				columnExists(sql, "payroll_payslip", "run_employee_id"),
+				columnExists(sql, "payroll_adjustment", "original_run_id"),
+				columnExists(sql, "payroll_reconciliation", "run_id"),
+				constraintExists(sql, "payroll_reconciliation_org_run_fk"),
+			]),
+	],
 ]);
+
+export function listMigrationDdlProbeTags() {
+	return Object.freeze([...MIGRATION_DDL_PROBES.keys()]);
+}
 
 /**
  * @param {import("@neondatabase/serverless").NeonQueryFunction} sql

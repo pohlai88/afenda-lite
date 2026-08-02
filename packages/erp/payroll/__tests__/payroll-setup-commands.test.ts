@@ -1,16 +1,16 @@
 import { describe, expect, it } from "vitest";
-import type { PayrollAuthorizationPort } from "../src/authorization";
-import { PAYROLL_PERMISSION_SETUP_MANAGE } from "../src/permissions";
 import {
 	createPayrollCalendar,
 	getPayrollCalendar,
-} from "../src/setup/calendar";
+} from "../src/features/payroll-setup/calendar";
 import {
 	createPayrollEarningRule,
 	updatePayrollEarningRule,
-} from "../src/setup/earning-rule";
-import { createPayrollPayGroup } from "../src/setup/pay-group";
-import { createMemoryPayrollStore } from "../src/testing";
+} from "../src/features/payroll-setup/earning-rule";
+import { createPayrollPayGroup } from "../src/features/payroll-setup/pay-group";
+import type { PayrollAuthorizationPort } from "../src/kernel/execution/authorization";
+import { PAYROLL_PERMISSION_SETUP_MANAGE } from "../src/kernel/execution/permissions";
+import { createMemoryPayrollStore } from "../src/testing/index";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
 
 function createGrantingAuthorization(
@@ -87,6 +87,55 @@ async function seedCalendarPayGroup(
 }
 
 describe("payroll setup commands", () => {
+	it("does not resolve unrelated run or workforce capabilities", async () => {
+		const options = {
+			store: createMemoryPayrollStore(),
+			ports: createMemoryMutationPorts(),
+			authorization: createGrantingAuthorization([
+				PAYROLL_PERMISSION_SETUP_MANAGE,
+			]),
+			get calculator(): never {
+				throw new Error("setup commands must not resolve the run calculator");
+			},
+			get employees(): never {
+				throw new Error("setup commands must not resolve workforce queries");
+			},
+		};
+
+		const result = await createPayrollCalendar(
+			{
+				...baseContext("org-narrow", "user-narrow"),
+				code: "CAL-NARROW",
+				name: "Narrow capability calendar",
+				timezone: "UTC",
+				effectiveFrom: "2025-01-01",
+				idempotencyKey: "idem-narrow-capabilities",
+			},
+			options,
+		);
+
+		expect(result.ok).toBe(true);
+		if (!result.ok) {
+			return;
+		}
+
+		const queryOptions = {
+			store: options.store,
+			authorization: options.authorization,
+			get ports(): never {
+				throw new Error("setup queries must not resolve mutation ports");
+			},
+		};
+		const queryResult = await getPayrollCalendar(
+			{
+				...baseContext("org-narrow", "user-narrow"),
+				calendarId: result.data.id,
+			},
+			queryOptions,
+		);
+		expect(queryResult.ok).toBe(true);
+	});
+
 	it("denies mutations without payroll.setup.manage", async () => {
 		const result = await createPayrollCalendar(
 			{

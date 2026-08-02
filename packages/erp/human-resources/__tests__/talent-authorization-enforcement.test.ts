@@ -3,14 +3,14 @@
  */
 
 import { describe, expect, it } from "vitest";
-
-import type { HumanResourcesEmployeeId } from "../src/brands";
-import { createEmployee } from "../src/core/employee";
-import { createEmployment } from "../src/core/employment";
 import {
-	HUMAN_RESOURCES_ERROR_AUTHORIZATION_DENIED,
-	HUMAN_RESOURCES_ERROR_FORBIDDEN,
-} from "../src/error-codes";
+	createCareerPlan,
+	getCareerPlanById,
+	listEmployeeCareerPlans,
+} from "../src/features/talent/career-plan";
+import { listSuccessionPlans } from "../src/features/talent/succession-plan";
+import { createEmployee } from "../src/features/workforce-records/employment/employee";
+import { createEmployment } from "../src/features/workforce-records/employment/employment";
 import {
 	HUMAN_RESOURCES_PERMISSION_CAREER_PLAN_MANAGE,
 	HUMAN_RESOURCES_PERMISSION_CAREER_PLAN_OWN_READ,
@@ -18,14 +18,13 @@ import {
 	HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE,
 	HUMAN_RESOURCES_PERMISSION_SUCCESSION_EXECUTIVE_READ,
 	HUMAN_RESOURCES_PERMISSION_TALENT_ADMIN,
-} from "../src/permissions";
+} from "../src/kernel/authorization/permissions";
 import {
-	createCareerPlan,
-	getCareerPlanById,
-	listEmployeeCareerPlans,
-} from "../src/talent/career-plan";
-import { listSuccessionPlans } from "../src/talent/succession-plan";
-import { createMemoryHumanResourcesStore } from "../src/testing";
+	HUMAN_RESOURCES_ERROR_AUTHORIZATION_DENIED,
+	HUMAN_RESOURCES_ERROR_FORBIDDEN,
+} from "../src/kernel/execution/error-codes";
+import type { HumanResourcesEmployeeId } from "../src/kernel/identity/brands";
+import { createMemoryHumanResourcesStore } from "../src/testing/index";
 import { createTestHumanResourcesCommandOptions } from "./helpers/command-options";
 import {
 	createMappingIdentityResolver,

@@ -1,11 +1,14 @@
 import { afterAll, describe, expect, it } from "vitest";
-import { createAssignment, endAssignment } from "../src/core/assignment";
-import { createEmployee } from "../src/core/employee";
-import { createEmployment } from "../src/core/employment";
 import {
 	createPosition,
 	getPositionOccupancyAsOf,
-} from "../src/organization/position";
+} from "../src/features/organization/position";
+import {
+	createAssignment,
+	endAssignment,
+} from "../src/features/workforce-records/employment/assignment";
+import { createEmployee } from "../src/features/workforce-records/employment/employee";
+import { createEmployment } from "../src/features/workforce-records/employment/employment";
 import { TEST_ORGANIZATION_DIMENSION_KEYS } from "./helpers/command-options";
 import { runDrizzleParity } from "./helpers/database-gate";
 import {

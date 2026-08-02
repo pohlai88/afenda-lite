@@ -3,50 +3,36 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { createAssignment } from "../src/core/assignment";
-import { createEmployee } from "../src/core/employee";
-import { createEmployment } from "../src/core/employment";
-import {
-	HUMAN_RESOURCES_ERROR_CONFLICT,
-	HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
-	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
-	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
-	HUMAN_RESOURCES_ERROR_NOT_FOUND,
-} from "../src/error-codes";
-import { createPosition } from "../src/organization/position";
-import {
-	HUMAN_RESOURCES_PERMISSION_WORKFORCE_PLAN_PREPARE,
-	HUMAN_RESOURCES_PERMISSION_WORKFORCE_PLAN_READ,
-} from "../src/permissions";
+import { createPosition } from "../src/features/organization/position";
 import {
 	createApplication,
 	moveApplicationToInReview,
-} from "../src/recruitment/application";
-import { createCandidate } from "../src/recruitment/candidate";
+} from "../src/features/recruitment/application";
+import { createCandidate } from "../src/features/recruitment/candidate";
 import {
 	acceptOffer,
 	declineOffer,
 	expireOffer,
 	withdrawOffer,
-} from "../src/recruitment/offer";
+} from "../src/features/recruitment/offer";
 import {
 	cancelRequisition,
 	closeRequisition,
 	createDraftRequisition,
 	placeRequisitionOnHold,
 	submitRequisition,
-} from "../src/recruitment/requisition";
+} from "../src/features/recruitment/requisition";
 import {
 	approveHeadcountPlan,
 	createHeadcountPlan,
 	getWorkforcePlanVariance,
 	submitHeadcountPlan,
 	updateHeadcountPlan,
-} from "../src/workforce-planning/headcount-plan";
+} from "../src/features/workforce-planning/headcount-plan";
 import {
 	addHeadcountPlanLine,
 	updateHeadcountPlanLine,
-} from "../src/workforce-planning/headcount-plan-line";
+} from "../src/features/workforce-planning/headcount-plan-line";
 import {
 	consumeHeadcountReservation,
 	getHeadcountAvailability,
@@ -54,7 +40,21 @@ import {
 	listHeadcountReservations,
 	releaseHeadcountReservation,
 	reserveHeadcount,
-} from "../src/workforce-planning/headcount-reservation";
+} from "../src/features/workforce-planning/headcount-reservation";
+import { createAssignment } from "../src/features/workforce-records/employment/assignment";
+import { createEmployee } from "../src/features/workforce-records/employment/employee";
+import { createEmployment } from "../src/features/workforce-records/employment/employment";
+import {
+	HUMAN_RESOURCES_PERMISSION_WORKFORCE_PLAN_PREPARE,
+	HUMAN_RESOURCES_PERMISSION_WORKFORCE_PLAN_READ,
+} from "../src/kernel/authorization/permissions";
+import {
+	HUMAN_RESOURCES_ERROR_CONFLICT,
+	HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+	HUMAN_RESOURCES_ERROR_NOT_FOUND,
+} from "../src/kernel/execution/error-codes";
 import { candidateConsentFixture } from "./helpers/candidate-consent-fixture";
 import { createHrParityHarness } from "./helpers/hr-parity-harness";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";

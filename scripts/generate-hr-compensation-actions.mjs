@@ -301,6 +301,7 @@ const pkgFns = [...new Set(actions.map((a) => a[0]))].sort();
 const schemaImports = [
 	...new Set(actions.map((a) => a[1].replace("ActionSchema", "InputSchema"))),
 ].sort();
+const hrImports = [...pkgFns, ...schemaImports].sort();
 const schemaConsts = [...new Set(actions.map((a) => a[1]))]
 	.map(
 		(s) =>
@@ -360,10 +361,7 @@ import type {
 	SalaryBandListPage,
 } from "@afenda/human-resources";
 import {
-	${pkgFns.join(",\n\t")},
-} from "@afenda/human-resources";
-import {
-	${schemaImports.join(",\n\t")},
+	${hrImports.join(",\n\t")},
 } from "@afenda/human-resources";
 
 import {

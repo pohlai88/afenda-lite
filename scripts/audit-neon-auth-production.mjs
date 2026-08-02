@@ -7,12 +7,12 @@
  * This script focuses on the production Auth redirect allowlist.
  */
 
-import { execFileSync } from "node:child_process";
 import { getEnvValue, loadLocalEnv } from "./lib/env-files.mjs";
 import {
 	evaluateTrustedDomains,
 	extractTrustedOrigins,
 } from "./lib/neon-auth-trusted-domains.mjs";
+import { runNeonCliJson } from "./lib/neon-cli.mjs";
 
 const env = loadLocalEnv();
 const apiKey = env.NEON_API_KEY || getEnvValue("NEON_API_KEY", env);
@@ -64,10 +64,8 @@ if (!(apiKey?.startsWith("napi_") && projectId && branchId)) {
 }
 
 try {
-	const raw = execFileSync(
-		"npx",
+	const raw = runNeonCliJson(
 		[
-			"neon@latest",
 			"neon-auth",
 			"domain",
 			"list",
@@ -75,14 +73,9 @@ try {
 			projectId,
 			"--branch",
 			branchId,
-			"-o",
-			"json",
 		],
 		{
-			env: { ...process.env, NEON_API_KEY: apiKey },
-			encoding: "utf8",
-			shell: true,
-			maxBuffer: 10 * 1024 * 1024,
+			apiKey,
 		},
 	);
 	const trustedOrigins = extractTrustedOrigins(JSON.parse(raw));
@@ -110,7 +103,7 @@ console.log(
 	"\n[note] Env/recovery/perf: pnpm validate:neon-env · Deploy health: pnpm check:production:post-deploy",
 );
 console.log(
-	"[note] Domain add: neon neon-auth domain add <origin> — see docs/architecture/ARCH-026-auth-session.md + AGENTS.md Neon Auth",
+	"[note] Domain add: neon neon-auth domain add <origin> — see docs-V2/auth/README.md + AGENTS.md Neon Auth",
 );
 console.log(`\nResult: ${passed} passed, ${failed} failed`);
 process.exit(failed > 0 ? 1 : 0);

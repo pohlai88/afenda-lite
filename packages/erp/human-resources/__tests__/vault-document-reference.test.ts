@@ -1,7 +1,7 @@
 import { errorResult } from "@afenda/errors";
 import { describe, expect, it } from "vitest";
 
-import { createVaultDocumentReferenceAdapter } from "../src/compliance/vault-document-reference-adapter";
+import { createVaultDocumentReferenceAdapter } from "../src/features/compliance/vault-document-reference-adapter";
 
 const ORG = "org-vault-a";
 

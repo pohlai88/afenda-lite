@@ -1,21 +1,21 @@
 import { errorResult } from "@afenda/errors";
 import { beforeEach, describe, expect, it } from "vitest";
-import { createMemoryHumanResourcesStore } from "../src/adapters/memory/store";
-import type { HumanResourcesAuthorizationPort } from "../src/authorization";
-import type { HumanResourcesEmployeeId } from "../src/brands";
-import { requireComplianceEmployeeReadScope } from "../src/compliance/run-operation";
-import type { HumanResourcesIdentityResolverPort } from "../src/identity-resolver";
-import { listEmployeeGoals } from "../src/performance/goal";
+import { createMemoryHumanResourcesStore } from "../src/composition/adapters/memory/store";
+import type { HumanResourcesStore } from "../src/composition/store/index";
+import { requireComplianceEmployeeReadScope } from "../src/features/compliance/run-operation";
+import { listEmployeeGoals } from "../src/features/performance/goal";
+import type { HumanResourcesIdentityResolverPort } from "../src/features/workforce-records/identity-resolution/identity-resolver";
+import type { HumanResourcesAuthorizationPort } from "../src/kernel/authorization/authorize";
 import {
 	HUMAN_RESOURCES_PERMISSION_PERFORMANCE_MANAGER_MANAGE,
 	HUMAN_RESOURCES_PERMISSION_PERFORMANCE_OWN_READ,
-} from "../src/permissions";
-import { runSequential } from "../src/shared/run-sequential";
+} from "../src/kernel/authorization/permissions";
 import {
 	requireManagerResourceAccess,
 	requireOwnResourceAccess,
-} from "../src/shared/subject-aware-authorization";
-import type { HumanResourcesStore } from "../src/store";
+} from "../src/kernel/authorization/subject-aware-authorization";
+import { runSequential } from "../src/kernel/execution/run-sequential";
+import type { HumanResourcesEmployeeId } from "../src/kernel/identity/brands";
 
 describe("Security Boundary Tests", () => {
 	const organizationId = "org-123";

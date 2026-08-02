@@ -1,0 +1,54 @@
+import { errorResult, type Result } from "@afenda/errors";
+import type { WorkCalendar } from "../../kernel/contracts";
+import type { HumanResourcesWorkCalendarId } from "../../kernel/identity/brands";
+import { selectEffectiveLineageRecord } from "../../kernel/temporal/effective-lineage";
+import type { HumanResourcesTimeCapabilityStore } from "./store";
+
+export function lineageEligibleWorkCalendar(calendar: WorkCalendar): boolean {
+	return calendar.status === "active" || calendar.status === "superseded";
+}
+
+export type WorkCalendarLineageStoreSlice = Pick<
+	HumanResourcesTimeCapabilityStore,
+	"getWorkCalendar" | "listWorkCalendars"
+>;
+
+export async function resolveWorkCalendarLineageAtAsOf(
+	input: {
+		organizationId: string;
+		calendarId: HumanResourcesWorkCalendarId;
+		asOf: string;
+	},
+	store: WorkCalendarLineageStoreSlice,
+): Promise<Result<WorkCalendar | null>> {
+	const calendar = await store.getWorkCalendar({
+		organizationId: input.organizationId,
+		calendarId: input.calendarId,
+	});
+	if (!calendar.ok) {
+		return calendar;
+	}
+	if (calendar.data === null) {
+		return errorResult.ok(null);
+	}
+
+	const selectedCalendar = calendar.data;
+	const calendarFamily = await store.listWorkCalendars({
+		organizationId: input.organizationId,
+	});
+	if (!calendarFamily.ok) {
+		return calendarFamily;
+	}
+
+	return errorResult.ok(
+		selectEffectiveLineageRecord({
+			assignedId: selectedCalendar.id,
+			records: calendarFamily.data.filter(
+				(record) => record.code === selectedCalendar.code,
+			),
+			asOf: input.asOf,
+			getPredecessorId: (record) => record.supersedesCalendarId,
+			isEligible: lineageEligibleWorkCalendar,
+		}),
+	);
+}

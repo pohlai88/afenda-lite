@@ -1,19 +1,18 @@
 import type { Result } from "@afenda/errors";
-
-import type {
-	HumanResourcesEmployeeId,
-	HumanResourcesEmploymentId,
-} from "../../src/brands";
-import type { HumanResourcesCommandOptions } from "../../src/command-options";
 import {
 	addCycleParticipant,
 	openPerformanceCycle,
 	publishPerformanceCycle,
 	setPerformanceCycleEligibility,
 	setPerformanceCycleReviewPeriods,
-} from "../../src/performance/performance-cycle";
-import type { MutationPorts } from "../../src/ports";
-import type { PerformanceCycle } from "../../src/types";
+} from "../../src/features/performance/performance-cycle";
+import type { PerformanceCycle } from "../../src/kernel/contracts";
+import type { HumanResourcesCommandOptions } from "../../src/kernel/execution/command-options";
+import type { MutationPorts } from "../../src/kernel/execution/ports";
+import type {
+	HumanResourcesEmployeeId,
+	HumanResourcesEmploymentId,
+} from "../../src/kernel/identity/brands";
 
 export const DEFAULT_PERFORMANCE_CYCLE_REVIEW_PERIODS = [
 	{

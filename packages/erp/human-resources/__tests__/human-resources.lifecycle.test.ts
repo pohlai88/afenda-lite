@@ -16,20 +16,7 @@ import {
 	HUMAN_RESOURCES_PROBATION_REVIEWED_EVENT,
 } from "@afenda/events/schemas";
 import { describe, expect, it } from "vitest";
-
-import type { HumanResourcesPermission } from "../src/authorization";
-import { createAssignment } from "../src/core/assignment";
-import { createEmployee } from "../src/core/employee";
-import { amendEmployment, createEmployment } from "../src/core/employment";
-import {
-	HUMAN_RESOURCES_ERROR_CONFLICT,
-	HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
-	HUMAN_RESOURCES_ERROR_FORBIDDEN,
-	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
-	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
-	HUMAN_RESOURCES_ERROR_STALE_VERSION,
-} from "../src/error-codes";
-import { confirmEmployment } from "../src/lifecycle/confirmation";
+import { confirmEmployment } from "../src/features/employment-lifecycle/confirmation";
 import {
 	completeOffboarding,
 	completeOffboardingTask,
@@ -42,19 +29,19 @@ import {
 	recordOffboardingAccessRevocation,
 	recordOffboardingPayrollHandoff,
 	startOffboarding,
-} from "../src/lifecycle/offboarding";
+} from "../src/features/employment-lifecycle/offboarding";
 import {
 	completeOnboarding,
 	completeOnboardingTask,
 	listOnboardingTasks,
 	startOnboarding,
-} from "../src/lifecycle/onboarding";
+} from "../src/features/employment-lifecycle/onboarding";
 import {
 	GOVERNED_ONBOARDING_CHECKLIST,
 	ONBOARDING_TASK_CODE_IDENTITY_DOCUMENTS,
 	ONBOARDING_TASK_CODE_ORIENTATION,
 	ONBOARDING_TASK_CODE_WORK_ELIGIBILITY,
-} from "../src/lifecycle/onboarding-checklist";
+} from "../src/features/employment-lifecycle/onboarding-checklist";
 import {
 	extendProbation,
 	listProbationAssessments,
@@ -62,32 +49,50 @@ import {
 	openProbation,
 	recordProbationAssessment,
 	recordProbationOutcome,
-} from "../src/lifecycle/probation";
+} from "../src/features/employment-lifecycle/probation";
 import {
 	approveTermination,
 	finalizeTermination,
 	proposeTermination,
-} from "../src/lifecycle/termination";
-import { transferAssignment } from "../src/lifecycle/transfer";
-import { createPosition, freezePosition } from "../src/organization/position";
+} from "../src/features/employment-lifecycle/termination";
+import { transferAssignment } from "../src/features/employment-lifecycle/transfer";
+import {
+	createPosition,
+	freezePosition,
+} from "../src/features/organization/position";
 import {
 	assignPrimaryReportingLine,
 	replacePrimaryReportingLine,
-} from "../src/organization/reporting-line";
-import {
-	HUMAN_RESOURCES_PERMISSION_CODES,
-	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,
-} from "../src/permissions";
-import {
-	runSequential,
-	sequentialContinue,
-} from "../src/shared/run-sequential";
-import { createMemoryHumanResourcesStore } from "../src/testing";
+} from "../src/features/organization/reporting-line";
 import {
 	assignEmploymentCalendar,
 	createWorkCalendar,
 	endWorkCalendarAssignment,
-} from "../src/time/calendar";
+} from "../src/features/time/calendar";
+import { createAssignment } from "../src/features/workforce-records/employment/assignment";
+import { createEmployee } from "../src/features/workforce-records/employment/employee";
+import {
+	amendEmployment,
+	createEmployment,
+} from "../src/features/workforce-records/employment/employment";
+import type { HumanResourcesPermission } from "../src/kernel/authorization/authorize";
+import {
+	HUMAN_RESOURCES_PERMISSION_CODES,
+	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,
+} from "../src/kernel/authorization/permissions";
+import {
+	HUMAN_RESOURCES_ERROR_CONFLICT,
+	HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+	HUMAN_RESOURCES_ERROR_FORBIDDEN,
+	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+	HUMAN_RESOURCES_ERROR_STALE_VERSION,
+} from "../src/kernel/execution/error-codes";
+import {
+	runSequential,
+	sequentialContinue,
+} from "../src/kernel/execution/run-sequential";
+import { createMemoryHumanResourcesStore } from "../src/testing/index";
 import {
 	createTestHumanResourcesCommandOptions,
 	TEST_ORGANIZATION_DIMENSION_KEYS,
@@ -2445,7 +2450,8 @@ describe("human-resources lifecycle", () => {
 			path.dirname(fileURLToPath(import.meta.url)),
 			"..",
 			"src",
-			"lifecycle",
+			"features",
+			"employment-lifecycle",
 		);
 		const files = await fs.readdir(lifecycleDir);
 		await runSequential(files, async (file) => {

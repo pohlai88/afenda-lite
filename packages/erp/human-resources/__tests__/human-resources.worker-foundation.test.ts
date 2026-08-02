@@ -1,11 +1,9 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
-
 import {
-	type HumanResourcesPersonId,
-	type HumanResourcesWorkerId,
-	humanResourcesPersonIdSchema,
-	humanResourcesWorkerIdSchema,
-} from "../src/brands";
+	NON_EMPLOYEE_WORKER_TYPES,
+	WORKER_STATUSES,
+	WORKER_TYPES,
+} from "../src/features/workforce-records/identity/classification";
 import {
 	changeWorkerStatusInputSchema,
 	changeWorkerTypeInputSchema,
@@ -13,13 +11,17 @@ import {
 	createWorkerInputSchema,
 	workerStatusSchema,
 	workerTypeSchema,
-} from "../src/schemas/workforce-foundation";
+} from "../src/features/workforce-records/identity/schema";
+import type {
+	Person,
+	Worker,
+} from "../src/features/workforce-records/identity/types";
 import {
-	NON_EMPLOYEE_WORKER_TYPES,
-	WORKER_STATUSES,
-	WORKER_TYPES,
-} from "../src/workforce-foundation/classification";
-import type { Person, Worker } from "../src/workforce-foundation/types";
+	type HumanResourcesPersonId,
+	type HumanResourcesWorkerId,
+	humanResourcesPersonIdSchema,
+	humanResourcesWorkerIdSchema,
+} from "../src/kernel/identity/brands";
 
 const PERSON_ID = "10000000-0000-4000-8000-000000000001";
 const WORKER_ID = "20000000-0000-4000-8000-000000000001";

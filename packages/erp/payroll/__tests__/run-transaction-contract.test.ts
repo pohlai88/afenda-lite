@@ -4,24 +4,30 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 const source = readFileSync(
-	fileURLToPath(new URL("../src/adapters/drizzle/runs.ts", import.meta.url)),
+	fileURLToPath(
+		new URL("../src/features/payroll-runs/runs.drizzle.ts", import.meta.url),
+	),
 	"utf8",
 );
 const resolverSource = readFileSync(
-	fileURLToPath(new URL("../src/resolve-store.ts", import.meta.url)),
+	fileURLToPath(
+		new URL("../src/composition/store/resolve-store.ts", import.meta.url),
+	),
 	"utf8",
 );
 const setupSource = readFileSync(
 	fileURLToPath(
 		new URL(
-			"../src/adapters/drizzle/setup-extended-methods.ts",
+			"../src/features/payroll-setup/setup-extended.drizzle.ts",
 			import.meta.url,
 		),
 	),
 	"utf8",
 );
 const outputSource = readFileSync(
-	fileURLToPath(new URL("../src/adapters/drizzle/outputs.ts", import.meta.url)),
+	fileURLToPath(
+		new URL("../src/features/calculation/outputs.drizzle.ts", import.meta.url),
+	),
 	"utf8",
 );
 

@@ -4,11 +4,11 @@ import { describe, expect, it } from "vitest";
 import {
 	HUMAN_RESOURCES_EFFECTIVE_TRUTH_ADOPTION,
 	validateEffectiveTruthAdoptionMatrix,
-} from "../src/effective-truth-adoption";
+} from "../src/kernel/temporal/effective-truth-adoption";
 import {
 	adoptionDecisionToClassificationCategory,
 	HUMAN_RESOURCES_EFFECTIVE_TRUTH_CLASSIFICATION,
-} from "../src/effective-truth-classification";
+} from "../src/kernel/temporal/effective-truth-classification";
 
 describe("HR effective-truth adoption matrix", () => {
 	it("classifies every inventoried mutable definition and assignment", () => {

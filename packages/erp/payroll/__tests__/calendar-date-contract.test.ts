@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
 	isoDateSchema,
 	payrollDecimalStringSchema,
-} from "../src/schemas/common";
+} from "../src/kernel/validation/common.schema";
 
 describe("payroll calendar-date contract", () => {
 	it.each(["2026-01-31", "2028-02-29"])("accepts %s", (value) => {

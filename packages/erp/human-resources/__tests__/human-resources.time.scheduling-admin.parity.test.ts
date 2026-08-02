@@ -3,8 +3,6 @@
  */
 
 import { afterAll, describe, expect, it } from "vitest";
-
-import { HUMAN_RESOURCES_ERROR_CONFLICT } from "../src/error-codes";
 import {
 	assignShift,
 	cancelShiftAssignment,
@@ -12,7 +10,7 @@ import {
 	getScheduledShiftForEmployeeDate,
 	listShiftAssignments,
 	publishShiftAssignment,
-} from "../src/time/scheduling";
+} from "../src/features/time/scheduling";
 import {
 	activateShift,
 	addShiftBreak,
@@ -21,7 +19,8 @@ import {
 	removeShiftBreak,
 	supersedeShift,
 	updateShift,
-} from "../src/time/shift";
+} from "../src/features/time/shift";
+import { HUMAN_RESOURCES_ERROR_CONFLICT } from "../src/kernel/execution/error-codes";
 import { runDrizzleParity } from "./helpers/database-gate";
 import {
 	createHrParityHarness,

@@ -7,66 +7,56 @@ import {
 	HUMAN_RESOURCES_COMPENSATION_CHANGED_EVENT,
 } from "@afenda/events/schemas";
 import { describe, expect, it } from "vitest";
-
-import type { HumanResourcesPermission } from "../src/authorization";
-import {
-	humanResourcesCompensationReviewIdSchema,
-	humanResourcesEmploymentIdSchema,
-} from "../src/brands";
 import {
 	addBenefitEnrollmentDependent,
 	endBenefitEnrollmentDependent,
-} from "../src/compensation-benefits/benefit-dependent";
+} from "../src/features/compensation-benefits/benefit-dependent";
 import {
 	getBenefitPlanEligibility,
 	setBenefitPlanEligibility,
-} from "../src/compensation-benefits/benefit-eligibility";
+} from "../src/features/compensation-benefits/benefit-eligibility";
 import {
 	enrolBenefit,
 	getApprovedCompensationHandoff,
 	waiveBenefit,
-} from "../src/compensation-benefits/benefit-enrollment";
-import { createBenefitPlan } from "../src/compensation-benefits/benefit-plan";
+} from "../src/features/compensation-benefits/benefit-enrollment";
+import { createBenefitPlan } from "../src/features/compensation-benefits/benefit-plan";
 import {
 	archiveCompensationGrade,
 	createCompensationGrade,
 	getCompensationGrade,
 	listCompensationGrades,
 	updateCompensationGrade,
-} from "../src/compensation-benefits/compensation-grade";
+} from "../src/features/compensation-benefits/compensation-grade";
 import {
 	archiveCompensationGradeProgressionRule,
 	createCompensationGradeProgressionRule,
 	listCompensationGradeProgressionRulesFromGrade,
 	listEligibleProgressionTargets,
-} from "../src/compensation-benefits/compensation-grade-progression-rule";
+} from "../src/features/compensation-benefits/compensation-grade-progression-rule";
 import {
 	applyApprovedCompensationResult,
 	createCompensationReviewDraft,
 	finalizeCompensationReview,
 	getCompensationReview,
 	recordCompensationRecommendation,
-} from "../src/compensation-benefits/compensation-review";
-import { createMemoryCurrencyLookup } from "../src/compensation-benefits/currency-lookup";
+} from "../src/features/compensation-benefits/compensation-review";
+import { createMemoryCurrencyLookup } from "../src/features/compensation-benefits/currency-lookup";
 import {
 	approveEmployeeCompensation,
 	createEmployeeCompensation,
-} from "../src/compensation-benefits/employee-compensation";
+} from "../src/features/compensation-benefits/employee-compensation";
+import { assertCompensationReviewWithinBudget } from "../src/features/compensation-benefits/review-budget";
 import {
 	createSalaryBand,
 	findSalaryBandByGradeAndCurrencyAsOf,
 	getSalaryBand,
 	listSalaryBandsByGrade,
 	supersedeSalaryBand,
-} from "../src/compensation-benefits/salary-band";
-import { createEmployee } from "../src/core/employee";
-import { createEmployment } from "../src/core/employment";
-import {
-	HUMAN_RESOURCES_ERROR_CONFLICT,
-	HUMAN_RESOURCES_ERROR_FORBIDDEN,
-	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
-	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
-} from "../src/error-codes";
+} from "../src/features/compensation-benefits/salary-band";
+import { createEmployee } from "../src/features/workforce-records/employment/employee";
+import { createEmployment } from "../src/features/workforce-records/employment/employment";
+import type { HumanResourcesPermission } from "../src/kernel/authorization/authorize";
 import {
 	HUMAN_RESOURCES_PERMISSION_BENEFITS_MANAGE,
 	HUMAN_RESOURCES_PERMISSION_CODES,
@@ -75,14 +65,23 @@ import {
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CREATE,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE,
-} from "../src/permissions";
-import { assertCompensationReviewWithinBudget } from "../src/shared/compensation-review-budget";
+} from "../src/kernel/authorization/permissions";
+import {
+	HUMAN_RESOURCES_ERROR_CONFLICT,
+	HUMAN_RESOURCES_ERROR_FORBIDDEN,
+	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+} from "../src/kernel/execution/error-codes";
+import {
+	humanResourcesCompensationReviewIdSchema,
+	humanResourcesEmploymentIdSchema,
+} from "../src/kernel/identity/brands";
 import {
 	addExactDecimals,
 	compareExactDecimals,
 	parseExactDecimal,
-} from "../src/shared/exact-decimal";
-import { createMemoryHumanResourcesStore } from "../src/testing";
+} from "../src/kernel/numeric/exact-decimal";
+import { createMemoryHumanResourcesStore } from "../src/testing/index";
 import { seedOpenCompensationReviewCycle } from "./helpers/compensation-review-cycle-seed";
 import { createMappingIdentityResolver } from "./helpers/identity-resolver";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
@@ -813,6 +812,8 @@ describe("compensation & benefits (HR-07)", () => {
 				actorUserId: ACTOR,
 				correlationId: "corr-handoff-deny",
 				employeeId: seeded.employee.id,
+				employmentId: seeded.employment.id,
+				effectiveDate: "2025-01-01",
 			},
 			readOnlyReady,
 		);
@@ -839,6 +840,8 @@ describe("compensation & benefits (HR-07)", () => {
 				actorUserId: ACTOR,
 				correlationId: "corr-handoff-allow",
 				employeeId: seeded.employee.id,
+				employmentId: seeded.employment.id,
+				effectiveDate: "2025-01-01",
 			},
 			compensationReadReady,
 		);
@@ -869,6 +872,8 @@ describe("compensation & benefits (HR-07)", () => {
 				actorUserId: ACTOR,
 				correlationId: "corr-handoff-null",
 				employeeId: seeded.employee.id,
+				employmentId: seeded.employment.id,
+				effectiveDate: "2025-01-01",
 			},
 			subjectReady,
 		);
@@ -968,6 +973,8 @@ describe("compensation & benefits (HR-07)", () => {
 				actorUserId: ACTOR,
 				correlationId: "corr-handoff-full",
 				employeeId: seeded.employee.id,
+				employmentId: seeded.employment.id,
+				effectiveDate: "2025-01-01",
 			},
 			ready,
 		);
@@ -1702,15 +1709,15 @@ describe("compensation & benefits (HR-07)", () => {
 	it("does not import @afenda/payroll from compensation-benefits modules", () => {
 		const root = join(fileURLToPath(new URL(".", import.meta.url)), "..");
 		const modules = [
-			"src/compensation-benefits/compensation-grade.ts",
-			"src/compensation-benefits/compensation-grade-progression-rule.ts",
-			"src/compensation-benefits/salary-band.ts",
-			"src/compensation-benefits/employee-compensation.ts",
-			"src/compensation-benefits/compensation-review.ts",
-			"src/compensation-benefits/benefit-plan.ts",
-			"src/compensation-benefits/benefit-enrollment.ts",
-			"src/compensation-benefits/run-operation.ts",
-			"src/adapters/drizzle/compensation-benefits.ts",
+			"src/features/compensation-benefits/compensation-grade.ts",
+			"src/features/compensation-benefits/compensation-grade-progression-rule.ts",
+			"src/features/compensation-benefits/salary-band.ts",
+			"src/features/compensation-benefits/employee-compensation.ts",
+			"src/features/compensation-benefits/compensation-review.ts",
+			"src/features/compensation-benefits/benefit-plan.ts",
+			"src/features/compensation-benefits/benefit-enrollment.ts",
+			"src/features/compensation-benefits/run-operation.ts",
+			"src/features/compensation-benefits/adapters/compensation-benefits.drizzle.ts",
 		];
 
 		for (const relativePath of modules) {

@@ -1,13 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { createEmployee } from "../src/core/employee";
+import { createEmployee } from "../src/features/workforce-records/employment/employee";
 import {
 	amendEmployment,
 	createEmployment,
 	getEmployment,
-} from "../src/core/employment";
-import { HUMAN_RESOURCES_PERMISSION_CODES } from "../src/permissions";
-import { createMemoryHumanResourcesStore } from "../src/testing";
+} from "../src/features/workforce-records/employment/employment";
+import { HUMAN_RESOURCES_PERMISSION_CODES } from "../src/kernel/authorization/permissions";
+import { createMemoryHumanResourcesStore } from "../src/testing/index";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
 

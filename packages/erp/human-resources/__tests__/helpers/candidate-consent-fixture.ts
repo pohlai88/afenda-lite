@@ -1,4 +1,4 @@
-import type { CreateCandidateInput } from "../../src/schemas/recruitment";
+import type { CreateCandidateInput } from "../../src/features/recruitment/schema";
 
 type CandidateConsentFixtureInput = Pick<
 	CreateCandidateInput,

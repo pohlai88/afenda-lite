@@ -3,16 +3,16 @@
  */
 
 import { afterAll, describe, expect, it } from "vitest";
-import { createEmployee } from "../src/core/employee";
-import { createEmployment } from "../src/core/employment";
 import {
 	approveEmployeeCaseAction,
 	recommendEmployeeCaseAction,
-} from "../src/employee-relations/case-action";
+} from "../src/features/employee-relations/case-action";
 import {
 	openEmployeeCase,
 	recordEmployeeCaseFinding,
-} from "../src/employee-relations/employee-case";
+} from "../src/features/employee-relations/employee-case";
+import { createEmployee } from "../src/features/workforce-records/employment/employee";
+import { createEmployment } from "../src/features/workforce-records/employment/employment";
 import {
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CASE_ACTION_APPROVE,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CASE_FINDING,
@@ -20,7 +20,7 @@ import {
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CASE_OPEN,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CREATE,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE,
-} from "../src/permissions";
+} from "../src/kernel/authorization/permissions";
 import { runDrizzleParity } from "./helpers/database-gate";
 import {
 	createHrParityHarness,

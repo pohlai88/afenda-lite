@@ -10,16 +10,6 @@ import {
 	HUMAN_RESOURCES_PERFORMANCE_REVIEW_REOPENED_EVENT,
 } from "@afenda/events/schemas";
 import { describe, expect, it } from "vitest";
-import type { HumanResourcesPermission } from "../src/authorization";
-import { createEmployee } from "../src/core/employee";
-import { amendEmployment, createEmployment } from "../src/core/employment";
-import {
-	HUMAN_RESOURCES_ERROR_CONFLICT,
-	HUMAN_RESOURCES_ERROR_FORBIDDEN,
-	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
-	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
-	HUMAN_RESOURCES_ERROR_STALE_VERSION,
-} from "../src/error-codes";
 import {
 	activatePerformanceGoal,
 	alignPerformanceGoal,
@@ -29,7 +19,7 @@ import {
 	listGoalProgress,
 	recordGoalProgress,
 	submitPerformanceGoal,
-} from "../src/performance/goal";
+} from "../src/features/performance/goal";
 import {
 	acknowledgeImprovementPlan,
 	amendImprovementPlan,
@@ -41,7 +31,7 @@ import {
 	listImprovementPlanCheckpoints,
 	openImprovementPlan,
 	recordImprovementCheckpoint,
-} from "../src/performance/improvement-plan";
+} from "../src/features/performance/improvement-plan";
 import {
 	addCycleParticipant,
 	closePerformanceCycle,
@@ -56,7 +46,7 @@ import {
 	removeCycleParticipant,
 	setPerformanceCycleReviewPeriods,
 	updatePerformanceCycle,
-} from "../src/performance/performance-cycle";
+} from "../src/features/performance/performance-cycle";
 import {
 	acknowledgePerformanceReview,
 	addDelegatedReviewer,
@@ -70,7 +60,13 @@ import {
 	submitDelegatedAssessment,
 	submitManagerAssessment,
 	submitSelfAssessment,
-} from "../src/performance/review";
+} from "../src/features/performance/review";
+import { createEmployee } from "../src/features/workforce-records/employment/employee";
+import {
+	amendEmployment,
+	createEmployment,
+} from "../src/features/workforce-records/employment/employment";
+import type { HumanResourcesPermission } from "../src/kernel/authorization/authorize";
 import {
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CREATE,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE,
@@ -81,10 +77,20 @@ import {
 	HUMAN_RESOURCES_PERMISSION_PERFORMANCE_MANAGER_MANAGE,
 	HUMAN_RESOURCES_PERMISSION_PERFORMANCE_OWN_READ,
 	HUMAN_RESOURCES_PERMISSION_PERFORMANCE_REVIEW_REOPEN,
-} from "../src/permissions";
-import { runSequential, sequentialReturn } from "../src/shared/run-sequential";
-import { createMemoryHumanResourcesStore } from "../src/testing";
-import type { PerformanceReview } from "../src/types";
+} from "../src/kernel/authorization/permissions";
+import type { PerformanceReview } from "../src/kernel/contracts";
+import {
+	HUMAN_RESOURCES_ERROR_CONFLICT,
+	HUMAN_RESOURCES_ERROR_FORBIDDEN,
+	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+	HUMAN_RESOURCES_ERROR_STALE_VERSION,
+} from "../src/kernel/execution/error-codes";
+import {
+	runSequential,
+	sequentialReturn,
+} from "../src/kernel/execution/run-sequential";
+import { createMemoryHumanResourcesStore } from "../src/testing/index";
 import { createTestHumanResourcesCommandOptions } from "./helpers/command-options";
 import { helperAssert as assert } from "./helpers/helper-assert";
 import {

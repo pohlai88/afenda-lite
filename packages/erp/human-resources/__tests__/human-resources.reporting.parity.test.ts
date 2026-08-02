@@ -3,11 +3,10 @@ import {
 	HUMAN_RESOURCES_REPORTING_FACT_KINDS,
 } from "@afenda/human-resources";
 import { describe, expect, it } from "vitest";
-
-import { createDrizzleHumanResourcesReportingSource } from "../src/adapters/drizzle/reporting";
-import { createMemoryHumanResourcesReportingSource } from "../src/adapters/memory/reporting";
-import { createMemoryHumanResourcesStore } from "../src/adapters/memory/store";
-import { runSequential } from "../src/shared/run-sequential";
+import { createMemoryHumanResourcesStore } from "../src/composition/adapters/memory/store";
+import { createDrizzleHumanResourcesReportingSource } from "../src/features/reporting/adapters/reporting.drizzle";
+import { createMemoryHumanResourcesReportingSource } from "../src/features/reporting/adapters/reporting.memory";
+import { runSequential } from "../src/kernel/execution/run-sequential";
 import { runDrizzleParity } from "./helpers/database-gate";
 
 const EMPTY_ORGANIZATION_ID = `reporting-empty-${crypto.randomUUID()}`;

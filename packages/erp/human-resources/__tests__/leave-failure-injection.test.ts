@@ -26,9 +26,9 @@ import {
 	it,
 	vi,
 } from "vitest";
-import { drizzleLeave } from "../src/adapters/drizzle/leave";
+import { drizzleLeave } from "../src/features/leave/adapters/leave.drizzle";
 // biome-ignore lint/performance/noNamespaceImport: vi.spyOn requires the live module namespace.
-import * as leaveTransactions from "../src/adapters/drizzle/leave-transactions";
+import * as leaveTransactions from "../src/features/leave/adapters/leave-transactions.drizzle";
 import { runDrizzleParity } from "./helpers/database-gate";
 import type {
 	TestEmployee,

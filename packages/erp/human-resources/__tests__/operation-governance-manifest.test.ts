@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD } from "../src/emissions/registry";
-import type { HumanResourcesEmissionRegistry } from "../src/emissions/types";
+import { HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD } from "../src/kernel/emissions/registry";
+import type { HumanResourcesEmissionRegistry } from "../src/kernel/emissions/types";
 import {
 	composeHumanResourcesOperationGovernanceManifest,
 	HUMAN_RESOURCES_OPERATION_GOVERNANCE_MANIFEST,
-} from "../src/operation-registry/governance-manifest";
-import { HUMAN_RESOURCES_REGISTERED_OPERATION_DEFINITIONS } from "../src/operation-registry/registry";
+} from "../src/kernel/operations/governance-manifest";
+import { HUMAN_RESOURCES_REGISTERED_OPERATION_DEFINITIONS } from "../src/kernel/operations/registry";
 
 describe("Human Resources operation governance manifest", () => {
 	it("joins every operation to one explicit emission disposition", () => {
@@ -26,8 +26,20 @@ describe("Human Resources operation governance manifest", () => {
 					HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD[definition.id],
 				);
 				expect(governed.emission.idempotencyRequired).toBe(true);
+				expect(governed.execution).toEqual({
+					audit: "required",
+					emission: "required",
+					idempotency: "required",
+					transaction: "required",
+				});
 			} else {
 				expect(governed?.emission.emissionMode).toBe("not_applicable");
+				expect(governed?.execution).toEqual({
+					audit: "none",
+					emission: "none",
+					idempotency: "none",
+					transaction: "none",
+				});
 			}
 		}
 	});

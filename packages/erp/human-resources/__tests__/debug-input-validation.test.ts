@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
-import type { HumanResourcesEmployeeId } from "../src/brands";
-import { parseHumanResourcesEmployeeId } from "../src/brands";
-import { listEmployeeGoalsInputSchema } from "../src/schemas/performance";
+import { listEmployeeGoalsInputSchema } from "../src/features/performance/schema";
+import type { HumanResourcesEmployeeId } from "../src/kernel/identity/brands";
+import { parseHumanResourcesEmployeeId } from "../src/kernel/identity/brands";
 
 describe("Debug Input Validation", () => {
 	it("should validate the input schema correctly", () => {

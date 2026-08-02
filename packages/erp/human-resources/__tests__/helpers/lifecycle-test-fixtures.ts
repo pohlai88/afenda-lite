@@ -1,9 +1,7 @@
-import type { HumanResourcesEmploymentId } from "../../src/brands";
-import type { HumanResourcesCommandOptions } from "../../src/command-options";
 import {
 	recordWorkEligibility,
 	verifyWorkEligibility,
-} from "../../src/compliance/work-eligibility";
+} from "../../src/features/compliance/work-eligibility";
 import {
 	completeOnboarding,
 	completeOnboardingTask,
@@ -16,18 +14,20 @@ import {
 	recordOnboardingEquipmentHandoff,
 	recordOnboardingOrientation,
 	startOnboarding,
-} from "../../src/lifecycle/onboarding";
+} from "../../src/features/employment-lifecycle/onboarding";
 import {
 	GOVERNED_ONBOARDING_CHECKLIST,
 	ONBOARDING_TASK_CODE_IDENTITY_DOCUMENTS,
 	ONBOARDING_TASK_CODE_WORK_ELIGIBILITY,
-} from "../../src/lifecycle/onboarding-checklist";
+} from "../../src/features/employment-lifecycle/onboarding-checklist";
 import {
 	approveTermination,
 	finalizeTermination,
 	proposeTermination,
-} from "../../src/lifecycle/termination";
-import type { OnboardingCase, Termination } from "../../src/types";
+} from "../../src/features/employment-lifecycle/termination";
+import type { OnboardingCase, Termination } from "../../src/kernel/contracts";
+import type { HumanResourcesCommandOptions } from "../../src/kernel/execution/command-options";
+import type { HumanResourcesEmploymentId } from "../../src/kernel/identity/brands";
 import { helperAssert as assert } from "./helper-assert";
 
 type LifecycleTestReady = HumanResourcesCommandOptions & {

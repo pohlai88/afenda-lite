@@ -3,9 +3,6 @@
  */
 
 import { afterAll, describe, expect, it } from "vitest";
-import { createEmployee } from "../src/core/employee";
-import { createEmployment } from "../src/core/employment";
-import { HUMAN_RESOURCES_ERROR_EFFECTIVE_RANGE_OVERLAP } from "../src/error-codes";
 import {
 	accrueLeaveEntitlement,
 	carryForwardLeaveEntitlement,
@@ -13,14 +10,14 @@ import {
 	getLeaveBalance,
 	grantLeaveEntitlement,
 	reconcileLeaveBalance,
-} from "../src/leave/entitlement";
+} from "../src/features/leave/entitlement";
 import {
 	createLeavePolicy,
 	getLeavePolicy,
 	publishLeavePolicy,
 	resolveApplicableLeavePolicy,
 	supersedeLeavePolicy,
-} from "../src/leave/leave-policy";
+} from "../src/features/leave/leave-policy";
 import {
 	amendLeaveRequest,
 	approveLeaveRequest,
@@ -31,8 +28,11 @@ import {
 	returnLeaveRequest,
 	submitLeaveRequest,
 	withdrawLeaveRequest,
-} from "../src/leave/leave-request";
-import { assignPrimaryReportingLine } from "../src/organization/reporting-line";
+} from "../src/features/leave/leave-request";
+import { assignPrimaryReportingLine } from "../src/features/organization/reporting-line";
+import { createEmployee } from "../src/features/workforce-records/employment/employee";
+import { createEmployment } from "../src/features/workforce-records/employment/employment";
+import { HUMAN_RESOURCES_ERROR_EFFECTIVE_RANGE_OVERLAP } from "../src/kernel/execution/error-codes";
 import { runDrizzleParity } from "./helpers/database-gate";
 import {
 	createHrParityHarness,

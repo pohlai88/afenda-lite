@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { createProductionWorkCalendar } from "../src/production-work-calendar";
-import { createMemoryWorkCalendarLookup } from "../src/testing";
-import { resolveWorkCalendarCivilDay } from "../src/time/calendar-resolution";
+import { createProductionWorkCalendar } from "../src/composition/production/work-calendar";
+import { resolveWorkCalendarCivilDay } from "../src/features/time/calendar-resolution";
+import { createMemoryWorkCalendarLookup } from "../src/testing/index";
 
 describe("createProductionWorkCalendar", () => {
 	it("skips weekends for day-based leave using timezone weekday", async () => {

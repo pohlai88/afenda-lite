@@ -1,7 +1,7 @@
 import type { DomainEvent } from "@afenda/events";
 import { describe, expect, it } from "vitest";
 
-import { projectHumanResourcesPlatformFacts } from "../src/integrations/platform-facts";
+import { projectHumanResourcesPlatformFacts } from "../src/composition/integrations/platform-facts";
 
 function event(
 	type: string,

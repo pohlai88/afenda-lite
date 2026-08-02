@@ -1,31 +1,26 @@
 import { afterAll, describe, expect, it } from "vitest";
-
-import { createEmployee } from "../src/core/employee";
-import { amendEmployment, createEmployment } from "../src/core/employment";
-import { HUMAN_RESOURCES_ERROR_CONFLICT } from "../src/error-codes";
-import { grantLeaveEntitlement } from "../src/leave/entitlement";
+import { createProductionWorkCalendar } from "../src/composition/production/work-calendar";
+import { grantLeaveEntitlement } from "../src/features/leave/entitlement";
 import {
 	createLeavePolicy,
 	publishLeavePolicy,
-} from "../src/leave/leave-policy";
+} from "../src/features/leave/leave-policy";
 import {
 	approveLeaveRequest,
 	createDraftLeaveRequest,
 	submitLeaveRequest,
-} from "../src/leave/leave-request";
-import { assignPrimaryReportingLine } from "../src/organization/reporting-line";
-import { createProductionWorkCalendar } from "../src/production-work-calendar";
-import { createStoreApprovedLeaveQuery } from "../src/testing/approved-leave-query";
+} from "../src/features/leave/leave-request";
+import { assignPrimaryReportingLine } from "../src/features/organization/reporting-line";
 import {
 	recordBreakEnd,
 	recordBreakStart,
 	recordClockIn,
 	recordClockOut,
-} from "../src/time/attendance/events";
+} from "../src/features/time/attendance/events";
 import {
 	ATTENDANCE_SESSION_DETECTION_SOURCE,
 	parseExceptionDetectionRemarks,
-} from "../src/time/attendance/exception-detection";
+} from "../src/features/time/attendance/exception-detection";
 import {
 	createAttendanceException,
 	excuseAttendanceException,
@@ -34,31 +29,41 @@ import {
 	rejectAttendanceException,
 	resolveAttendanceException,
 	reviewAttendanceException,
-} from "../src/time/attendance/exceptions";
-import { resolveAttendanceSession } from "../src/time/attendance/sessions";
+} from "../src/features/time/attendance/exceptions";
+import { resolveAttendanceSession } from "../src/features/time/attendance/sessions";
 import {
 	assignEmploymentCalendar,
 	createWorkCalendar,
-} from "../src/time/calendar";
-import { getApprovedTimeHandoff } from "../src/time/handoff/approved-time-handoff";
+} from "../src/features/time/calendar";
+import { getApprovedTimeHandoff } from "../src/features/time/handoff/approved-time-handoff";
 import {
 	activateTimePolicy,
 	assignTimeApprovalAuthority,
 	assignTimePolicy,
 	createTimePolicy,
-} from "../src/time/policy";
-import { assignShift, publishShiftAssignment } from "../src/time/scheduling";
-import { activateShift, createShift } from "../src/time/shift";
+} from "../src/features/time/policy";
+import {
+	assignShift,
+	publishShiftAssignment,
+} from "../src/features/time/scheduling";
+import { activateShift, createShift } from "../src/features/time/shift";
 import {
 	approveTimesheet,
 	createTimesheet,
 	generateTimesheetEntries,
 	submitTimesheet,
-} from "../src/time/timesheet";
+} from "../src/features/time/timesheet";
 import {
 	parseAbsenceDetectionRemarks,
 	TIMESHEET_GENERATION_ABSENCE_SOURCE,
-} from "../src/time/timesheet-generation";
+} from "../src/features/time/timesheet-generation";
+import { createEmployee } from "../src/features/workforce-records/employment/employee";
+import {
+	amendEmployment,
+	createEmployment,
+} from "../src/features/workforce-records/employment/employment";
+import { HUMAN_RESOURCES_ERROR_CONFLICT } from "../src/kernel/execution/error-codes";
+import { createStoreApprovedLeaveQuery } from "../src/testing/approved-leave-query";
 import {
 	createHrParityHarness,
 	type WorkforceStoreAdapter,

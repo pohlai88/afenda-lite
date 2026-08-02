@@ -1,27 +1,32 @@
 import { HUMAN_RESOURCES_LEAVE_ENTITLEMENT_ADJUSTED_EVENT } from "@afenda/events/schemas";
 import { describe, expect, it } from "vitest";
 
-import { composeHumanResourcesEmissionRegistry } from "../src/emissions/compose-registry";
-import { HUMAN_RESOURCES_COMPENSATION_EMISSIONS } from "../src/emissions/domains/compensation";
-import { HUMAN_RESOURCES_COMPLIANCE_EMISSIONS } from "../src/emissions/domains/compliance";
-import { HUMAN_RESOURCES_EMPLOYEE_RELATIONS_EMISSIONS } from "../src/emissions/domains/employee-relations";
-import { HUMAN_RESOURCES_EMPLOYMENT_LIFECYCLE_EMISSIONS } from "../src/emissions/domains/employment-lifecycle";
-import { HUMAN_RESOURCES_EMPLOYMENT_WORKFLOW_EMISSIONS } from "../src/emissions/domains/employment-workflow";
-import { HUMAN_RESOURCES_HIRE_ORCHESTRATION_EMISSIONS } from "../src/emissions/domains/hire-orchestration";
-import { HUMAN_RESOURCES_LEARNING_EMISSIONS } from "../src/emissions/domains/learning";
-import { HUMAN_RESOURCES_LEAVE_EMISSIONS } from "../src/emissions/domains/leave";
-import { HUMAN_RESOURCES_ORGANIZATION_EMISSIONS } from "../src/emissions/domains/organization";
-import { HUMAN_RESOURCES_PERFORMANCE_EMISSIONS } from "../src/emissions/domains/performance";
-import { HUMAN_RESOURCES_PRIVACY_EMISSIONS } from "../src/emissions/domains/privacy";
-import { HUMAN_RESOURCES_RECRUITMENT_EMISSIONS } from "../src/emissions/domains/recruitment";
-import { HUMAN_RESOURCES_TALENT_EMISSIONS } from "../src/emissions/domains/talent";
-import { HUMAN_RESOURCES_TIME_EMISSIONS } from "../src/emissions/domains/time";
-import { HUMAN_RESOURCES_WORKFORCE_FOUNDATION_EMISSIONS } from "../src/emissions/domains/workforce-foundation";
-import { HUMAN_RESOURCES_WORKFORCE_PLANNING_EMISSIONS } from "../src/emissions/domains/workforce-planning";
-import { HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD } from "../src/emissions/registry";
-import { getRegistryDomainEventType } from "../src/emissions/resolve-emission";
-import { planLeaveMutationOutboxEventType } from "../src/emissions/sql-side-effects";
-import { validateHumanResourcesMutationEmissionRegistry } from "../src/emissions/validate-emission";
+import { composeHumanResourcesEmissionRegistry } from "../src/kernel/emissions/compose-registry";
+import { HUMAN_RESOURCES_COMPENSATION_EMISSIONS } from "../src/kernel/emissions/domains/compensation";
+import { HUMAN_RESOURCES_COMPLIANCE_EMISSIONS } from "../src/kernel/emissions/domains/compliance";
+import { HUMAN_RESOURCES_EMPLOYEE_RELATIONS_EMISSIONS } from "../src/kernel/emissions/domains/employee-relations";
+import { HUMAN_RESOURCES_EMPLOYMENT_LIFECYCLE_EMISSIONS } from "../src/kernel/emissions/domains/employment-lifecycle";
+import { HUMAN_RESOURCES_EMPLOYMENT_WORKFLOW_EMISSIONS } from "../src/kernel/emissions/domains/employment-workflow";
+import { HUMAN_RESOURCES_HIRE_ORCHESTRATION_EMISSIONS } from "../src/kernel/emissions/domains/hire-orchestration";
+import { HUMAN_RESOURCES_LEARNING_EMISSIONS } from "../src/kernel/emissions/domains/learning";
+import { HUMAN_RESOURCES_LEAVE_EMISSIONS } from "../src/kernel/emissions/domains/leave";
+import { HUMAN_RESOURCES_ORGANIZATION_EMISSIONS } from "../src/kernel/emissions/domains/organization";
+import { HUMAN_RESOURCES_PERFORMANCE_EMISSIONS } from "../src/kernel/emissions/domains/performance";
+import { HUMAN_RESOURCES_PRIVACY_EMISSIONS } from "../src/kernel/emissions/domains/privacy";
+import { HUMAN_RESOURCES_RECRUITMENT_EMISSIONS } from "../src/kernel/emissions/domains/recruitment";
+import { HUMAN_RESOURCES_TALENT_EMISSIONS } from "../src/kernel/emissions/domains/talent";
+import { HUMAN_RESOURCES_TIME_EMISSIONS } from "../src/kernel/emissions/domains/time";
+import { HUMAN_RESOURCES_WORKFORCE_FOUNDATION_EMISSIONS } from "../src/kernel/emissions/domains/workforce-foundation";
+import { HUMAN_RESOURCES_WORKFORCE_PLANNING_EMISSIONS } from "../src/kernel/emissions/domains/workforce-planning";
+import {
+	getMutationEmissionEntry,
+	HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY,
+} from "../src/kernel/emissions/mutation-emission-registry";
+import { buildMutationMeta } from "../src/kernel/emissions/mutation-meta";
+import { HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD } from "../src/kernel/emissions/registry";
+import { getRegistryDomainEventType } from "../src/kernel/emissions/resolve-emission";
+import { planLeaveMutationOutboxEventType } from "../src/kernel/emissions/sql-side-effects";
+import { validateHumanResourcesMutationEmissionRegistry } from "../src/kernel/emissions/validate-emission";
 import {
 	HUMAN_RESOURCES_COMMAND_IDS,
 	HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_ADJUST,
@@ -33,12 +38,7 @@ import {
 	HUMAN_RESOURCES_PERFORMANCE_COMMAND_IDS,
 	HUMAN_RESOURCES_RECRUITMENT_COMMAND_IDS,
 	HUMAN_RESOURCES_WORKFORCE_FOUNDATION_COMMAND_IDS,
-} from "../src/module-ids";
-import {
-	getMutationEmissionEntry,
-	HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY,
-} from "../src/mutation-emission-registry";
-import { buildMutationMeta } from "../src/shared/mutation-meta";
+} from "../src/kernel/operations/module-ids";
 import mutationInventoryFixture from "./fixtures/mutation-inventory.json";
 
 describe("emission registry infrastructure", () => {

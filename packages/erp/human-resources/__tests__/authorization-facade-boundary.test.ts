@@ -24,8 +24,8 @@ const FORBIDDEN_IMPORTS = [
 ] as const;
 
 const ALLOWED_RELATIVE_PATHS = new Set([
-	"shared/contextual-authorization.ts",
-	"employee-relations/case-authorization-policy.ts",
+	"kernel/authorization/contextual-authorization.ts",
+	"features/employee-relations/case-authorization-policy.ts",
 ]);
 
 function collectSourceFiles(dir: string): string[] {
@@ -116,7 +116,7 @@ describe("@afenda/human-resources authorization facade boundary (Slice 2.10)", (
 
 	it("does not allow talent domain files to import subject-aware authorization", () => {
 		const violations = findImportViolations({
-			root: path.join(srcRoot, "talent"),
+			root: path.join(srcRoot, "features/talent"),
 			forbiddenImports: [
 				"../shared/subject-aware-authorization",
 				"./subject-aware-authorization",
@@ -130,8 +130,8 @@ describe("@afenda/human-resources authorization facade boundary (Slice 2.10)", (
 	it("does not allow WFP or compensation runners to restore parity shells", () => {
 		const violations = findForbiddenSourceMarkers({
 			files: [
-				"workforce-planning/run-operation.ts",
-				"compensation-benefits/run-operation.ts",
+				"features/workforce-planning/run-operation.ts",
+				"features/compensation-benefits/run-operation.ts",
 			],
 			markers: [
 				"parityResourceKind",

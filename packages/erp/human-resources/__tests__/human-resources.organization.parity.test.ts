@@ -3,33 +3,40 @@
  */
 
 import { afterAll, describe, expect, it } from "vitest";
-import { createEmployee } from "../src/core/employee";
-import {
-	HUMAN_RESOURCES_ERROR_CONFLICT,
-	HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
-	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
-	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
-	HUMAN_RESOURCES_ERROR_STALE_VERSION,
-} from "../src/error-codes";
 import {
 	archiveDepartment,
 	createDepartment,
 	getDepartmentAsOf,
 	getOrganizationTree,
 	updateDepartment,
-} from "../src/organization/department";
-import { createJob, getJobAsOf, updateJob } from "../src/organization/job";
+} from "../src/features/organization/department";
+import {
+	createJob,
+	getJobAsOf,
+	updateJob,
+} from "../src/features/organization/job";
 import {
 	createPosition,
 	getPositionAsOf,
 	updatePosition,
-} from "../src/organization/position";
+} from "../src/features/organization/position";
 import {
 	assignPrimaryReportingLine,
 	replacePrimaryReportingLine,
 	resolvePrimaryManager,
-} from "../src/organization/reporting-line";
-import { runSequential, sequentialReturn } from "../src/shared/run-sequential";
+} from "../src/features/organization/reporting-line";
+import { createEmployee } from "../src/features/workforce-records/employment/employee";
+import {
+	HUMAN_RESOURCES_ERROR_CONFLICT,
+	HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+	HUMAN_RESOURCES_ERROR_STALE_VERSION,
+} from "../src/kernel/execution/error-codes";
+import {
+	runSequential,
+	sequentialReturn,
+} from "../src/kernel/execution/run-sequential";
 import { runDrizzleParity } from "./helpers/database-gate";
 import { helperAssert as assert } from "./helpers/helper-assert";
 import {

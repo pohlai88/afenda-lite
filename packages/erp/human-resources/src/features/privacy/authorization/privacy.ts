@@ -1,0 +1,23 @@
+import {
+	HUMAN_RESOURCES_PERMISSION_PRIVACY_ANONYMIZE_EVALUATE,
+	HUMAN_RESOURCES_PERMISSION_PRIVACY_ANONYMIZE_EXECUTE,
+	HUMAN_RESOURCES_PERMISSION_PRIVACY_EXPORT,
+	HUMAN_RESOURCES_PERMISSION_PRIVACY_LEGAL_HOLD_MANAGE,
+	HUMAN_RESOURCES_PERMISSION_PRIVACY_RETENTION_EVALUATE,
+} from "../../../kernel/authorization/permissions";
+import { createScopedPolicy } from "../../../kernel/authorization/policies/create-scoped-policy";
+
+export const privacyPolicy = createScopedPolicy({
+	id: "hr.privacy",
+	mode: "privileged_only",
+	resourceRequired: true,
+	subjectPolicy: "privileged_only",
+	fieldClasses: ["personal_identifiers"],
+	privilegedPermissions: [
+		HUMAN_RESOURCES_PERMISSION_PRIVACY_EXPORT,
+		HUMAN_RESOURCES_PERMISSION_PRIVACY_ANONYMIZE_EVALUATE,
+		HUMAN_RESOURCES_PERMISSION_PRIVACY_RETENTION_EVALUATE,
+		HUMAN_RESOURCES_PERMISSION_PRIVACY_LEGAL_HOLD_MANAGE,
+		HUMAN_RESOURCES_PERMISSION_PRIVACY_ANONYMIZE_EXECUTE,
+	],
+});

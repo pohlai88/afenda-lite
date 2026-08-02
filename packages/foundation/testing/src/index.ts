@@ -11,6 +11,8 @@ export { testingVitest } from "#testing/capabilities/vitest";
 export type {
 	TestingCacheClass,
 	TestingRunner,
+	TestingWorkspaceRun,
+	TestingWorkspaceRunOptions,
 } from "#testing/contracts";
 export type { TestingLane, TestingLaneId } from "#testing/lanes";
 export type {

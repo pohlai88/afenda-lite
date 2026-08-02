@@ -1,15 +1,13 @@
 import { describe, expect, expectTypeOf, it } from "vitest";
-import { payrollModuleManifest } from "../src/module.manifest";
-import { PAYROLL_COMMAND_IDS, PAYROLL_QUERY_IDS } from "../src/module-ids";
-import { getPayrollPayslip } from "../src/outputs/payslip";
-import type { PayrollObservabilityPort } from "../src/ports";
-import type { createProductionPayrollRunCalculator } from "../src/runs/production-run-calculator";
-import { buildPayrollCreateFingerprint } from "../src/shared/create-fingerprint";
+import type { createProductionPayrollRunCalculator } from "../src/features/calculation/production-run-calculator";
+import { getPayrollPayslip } from "../src/features/payslips/payslip";
 import {
 	getStatutoryCalculatorReadiness,
 	isStatutoryProductionReady,
-} from "../src/statutory/calculators/registry";
-import { createMemoryPayrollStore } from "../src/testing";
+} from "../src/features/statutory-rules/calculator-registry";
+import type { PayrollObservabilityPort } from "../src/kernel/execution/ports";
+import { buildPayrollCreateFingerprint } from "../src/kernel/identity/create-fingerprint";
+import { createMemoryPayrollStore } from "../src/testing/index";
 
 describe("payroll production hardening", () => {
 	it("uses bounded canonical digests for request fingerprints", () => {
@@ -27,15 +25,6 @@ describe("payroll production hardening", () => {
 		expect(first).toBe(reordered);
 		expect(first).toHaveLength(64);
 		expect(first).not.toContain(detailedReason);
-	});
-
-	it("maps every command and query to explicit authorization", () => {
-		expect(
-			Object.keys(payrollModuleManifest.authorization.commands).sort(),
-		).toEqual([...PAYROLL_COMMAND_IDS].sort());
-		expect(
-			Object.keys(payrollModuleManifest.authorization.queries).sort(),
-		).toEqual([...PAYROLL_QUERY_IDS].sort());
 	});
 
 	it("records bounded telemetry with tokenized identities and no payroll payload", async () => {

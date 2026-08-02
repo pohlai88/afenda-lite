@@ -5,46 +5,45 @@
 import { errorResult } from "@afenda/errors";
 import { HUMAN_RESOURCES_HIRE_FROM_ACCEPTED_OFFER_COMPLETED_EVENT } from "@afenda/events/schemas";
 import { describe, expect, it } from "vitest";
-
-import { createEmployee } from "../src/core/employee";
-import { getEmployment } from "../src/core/employment";
-import { hireEmployment } from "../src/core/employment-management";
-import {
-	HUMAN_RESOURCES_ERROR_CONFLICT,
-	HUMAN_RESOURCES_ERROR_NOT_FOUND,
-} from "../src/error-codes";
-import { hireFromAcceptedOffer } from "../src/hire-orchestration/hire-from-accepted-offer";
-import { hireStepIdempotencyKey } from "../src/hire-orchestration/types";
 import {
 	getOnboardingCase,
 	listOnboardingTasks,
-} from "../src/lifecycle/onboarding";
-import { GOVERNED_ONBOARDING_CHECKLIST } from "../src/lifecycle/onboarding-checklist";
-import { HUMAN_RESOURCES_COMMAND_HIRE_FROM_ACCEPTED_OFFER } from "../src/module-ids";
-import { createPosition } from "../src/organization/position";
+} from "../src/features/employment-lifecycle/onboarding";
+import { GOVERNED_ONBOARDING_CHECKLIST } from "../src/features/employment-lifecycle/onboarding-checklist";
+import { hireFromAcceptedOffer } from "../src/features/hire-to-employee/hire-from-accepted-offer.ts";
+import { hireStepIdempotencyKey } from "../src/features/hire-to-employee/types";
+import { createPosition } from "../src/features/organization/position";
 import {
 	createApplication,
 	moveApplicationToInReview,
-} from "../src/recruitment/application";
-import { createCandidate } from "../src/recruitment/candidate";
-import { acceptOffer } from "../src/recruitment/offer";
-import { fingerprintHireFromAcceptedOffer } from "../src/shared/fingerprint";
-import { buildMutationMeta } from "../src/shared/mutation-meta";
-import { createPerson } from "../src/workforce-foundation/person";
-import {
-	createWorker,
-	getWorkerById,
-} from "../src/workforce-foundation/worker";
+} from "../src/features/recruitment/application";
+import { createCandidate } from "../src/features/recruitment/candidate";
+import { acceptOffer } from "../src/features/recruitment/offer";
 import {
 	approveHeadcountPlan,
 	createHeadcountPlan,
 	submitHeadcountPlan,
-} from "../src/workforce-planning/headcount-plan";
-import { addHeadcountPlanLine } from "../src/workforce-planning/headcount-plan-line";
+} from "../src/features/workforce-planning/headcount-plan";
+import { addHeadcountPlanLine } from "../src/features/workforce-planning/headcount-plan-line";
 import {
 	listHeadcountReservations,
 	reserveHeadcount,
-} from "../src/workforce-planning/headcount-reservation";
+} from "../src/features/workforce-planning/headcount-reservation";
+import { createEmployee } from "../src/features/workforce-records/employment/employee";
+import { getEmployment } from "../src/features/workforce-records/employment/employment";
+import { hireEmployment } from "../src/features/workforce-records/employment/employment-management";
+import { createPerson } from "../src/features/workforce-records/identity/person";
+import {
+	createWorker,
+	getWorkerById,
+} from "../src/features/workforce-records/identity/worker";
+import { buildMutationMeta } from "../src/kernel/emissions/mutation-meta";
+import {
+	HUMAN_RESOURCES_ERROR_CONFLICT,
+	HUMAN_RESOURCES_ERROR_NOT_FOUND,
+} from "../src/kernel/execution/error-codes";
+import { fingerprintHireFromAcceptedOffer } from "../src/kernel/identity/fingerprint";
+import { HUMAN_RESOURCES_COMMAND_HIRE_FROM_ACCEPTED_OFFER } from "../src/kernel/operations/module-ids";
 import { candidateConsentFixture } from "./helpers/candidate-consent-fixture";
 import { TEST_ORGANIZATION_DIMENSION_KEYS } from "./helpers/command-options";
 import { createFailingOrganizationDimensionDirectory } from "./helpers/failing-organization-dimension-directory";

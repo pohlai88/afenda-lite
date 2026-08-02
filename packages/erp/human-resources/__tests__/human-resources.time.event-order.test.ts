@@ -1,27 +1,27 @@
 import { describe, expect, it } from "vitest";
 import {
-	parseHumanResourcesAttendanceEventId,
-	parseHumanResourcesEmployeeId,
-	parseHumanResourcesEmploymentId,
-} from "../src/brands";
-import { createEmployee } from "../src/core/employee";
-import { createEmployment } from "../src/core/employment";
-import { HUMAN_RESOURCES_PERMISSION_CODES } from "../src/permissions";
-import {
-	createMemoryHumanResourcesStore,
-	createStoreAssignmentContextQuery,
-} from "../src/testing";
-import {
 	compareAttendanceEventsForSession,
 	resolveAttendanceEventSourceSequence,
 	sortAttendanceEventsForSession,
-} from "../src/time/attendance/event-order";
-import { listAttendanceEvents } from "../src/time/attendance/events";
-import { importAttendanceEvents } from "../src/time/attendance/import";
-import { namespacedImportSourceReference } from "../src/time/attendance/import-keys";
-import { resolveSessionFromEvents } from "../src/time/attendance/session-resolution";
-import { resolveAttendanceSession } from "../src/time/attendance/sessions";
-import type { AttendanceEvent } from "../src/types";
+} from "../src/features/time/attendance/event-order";
+import { listAttendanceEvents } from "../src/features/time/attendance/events";
+import { importAttendanceEvents } from "../src/features/time/attendance/import";
+import { namespacedImportSourceReference } from "../src/features/time/attendance/import-keys";
+import { resolveSessionFromEvents } from "../src/features/time/attendance/session-resolution";
+import { resolveAttendanceSession } from "../src/features/time/attendance/sessions";
+import { createEmployee } from "../src/features/workforce-records/employment/employee";
+import { createEmployment } from "../src/features/workforce-records/employment/employment";
+import { HUMAN_RESOURCES_PERMISSION_CODES } from "../src/kernel/authorization/permissions";
+import type { AttendanceEvent } from "../src/kernel/contracts";
+import {
+	parseHumanResourcesAttendanceEventId,
+	parseHumanResourcesEmployeeId,
+	parseHumanResourcesEmploymentId,
+} from "../src/kernel/identity/brands";
+import {
+	createMemoryHumanResourcesStore,
+	createStoreAssignmentContextQuery,
+} from "../src/testing/index";
 import { createTestHumanResourcesCommandOptions } from "./helpers/command-options";
 import { helperAssert as assert } from "./helpers/helper-assert";
 import { createStoreBackedIdentityResolver } from "./helpers/identity-resolver";

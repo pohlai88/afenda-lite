@@ -1,6 +1,4 @@
 import { afterAll, expect, it } from "vitest";
-
-import { HUMAN_RESOURCES_ERROR_DUPLICATE } from "../../src/error-codes";
 import {
 	anonymizeCandidate,
 	changeCandidateRetention,
@@ -10,13 +8,14 @@ import {
 	listCandidates,
 	updateCandidateProfile,
 	withdrawCandidateConsent,
-} from "../../src/recruitment/candidate";
-import { ANONYMIZED_CANDIDATE_DISPLAY_NAME } from "../../src/shared/recruitment-guards";
-import { CANDIDATE_CONSENT_SOURCES } from "../../src/shared/recruitment-status";
+} from "../../src/features/recruitment/candidate";
+import { ANONYMIZED_CANDIDATE_DISPLAY_NAME } from "../../src/features/recruitment/guards";
+import { CANDIDATE_CONSENT_SOURCES } from "../../src/features/recruitment/status";
+import { HUMAN_RESOURCES_ERROR_DUPLICATE } from "../../src/kernel/execution/error-codes";
 import {
 	runSequential,
 	sequentialReturn,
-} from "../../src/shared/run-sequential";
+} from "../../src/kernel/execution/run-sequential";
 import { candidateConsentFixture } from "./candidate-consent-fixture";
 import {
 	createHrParityHarness,

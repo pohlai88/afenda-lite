@@ -2,32 +2,31 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 
 import { describe, expect, it } from "vitest";
-
-import { HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD } from "../src/emissions/registry";
+import { humanResourcesModuleManifest } from "../src/composition/module.manifest";
 import {
 	HUMAN_RESOURCES_EMPLOYEE_RELATIONS_COMMAND_AUTHORIZATION,
 	HUMAN_RESOURCES_EMPLOYEE_RELATIONS_COMMANDS,
 	HUMAN_RESOURCES_EMPLOYEE_RELATIONS_QUERIES,
 	HUMAN_RESOURCES_EMPLOYEE_RELATIONS_QUERY_AUTHORIZATION,
-} from "../src/employee-relations/operation-registry";
-import { humanResourcesModuleManifest } from "../src/module.manifest";
+} from "../src/features/employee-relations/operation-registry";
+import { resolveHumanResourcesAuthorizationPolicy } from "../src/kernel/authorization/registry";
+import { HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD } from "../src/kernel/emissions/registry";
 import {
 	HUMAN_RESOURCES_EMPLOYEE_RELATIONS_COMMAND_IDS,
 	HUMAN_RESOURCES_EMPLOYEE_RELATIONS_QUERY_IDS,
-} from "../src/module-ids";
-import { HUMAN_RESOURCES_REGISTERED_OPERATION_DEFINITIONS } from "../src/operation-registry/registry";
-import { resolveHumanResourcesAuthorizationPolicy } from "../src/shared/authorization-policy-registry";
+} from "../src/kernel/operations/module-ids";
+import { HUMAN_RESOURCES_REGISTERED_OPERATION_DEFINITIONS } from "../src/kernel/operations/registry";
 
 const definitions = [
 	...Object.values(HUMAN_RESOURCES_EMPLOYEE_RELATIONS_COMMANDS),
 	...Object.values(HUMAN_RESOURCES_EMPLOYEE_RELATIONS_QUERIES),
 ];
 const publicCapabilitiesSource = readFileSync(
-	path.resolve(import.meta.dirname, "../src/public-capabilities.ts"),
+	path.resolve(import.meta.dirname, "../src/facade/capabilities.ts"),
 	"utf8",
 );
 const moduleIdsSource = readFileSync(
-	path.resolve(import.meta.dirname, "../src/module-ids.ts"),
+	path.resolve(import.meta.dirname, "../src/kernel/operations/module-ids.ts"),
 	"utf8",
 );
 const handlerSources = [
@@ -37,19 +36,25 @@ const handlerSources = [
 	"case-appeal.ts",
 ].map((fileName) =>
 	readFileSync(
-		path.resolve(import.meta.dirname, `../src/employee-relations/${fileName}`),
+		path.resolve(
+			import.meta.dirname,
+			`../src/features/employee-relations/${fileName}`,
+		),
 		"utf8",
 	),
 );
 const runnerSource = readFileSync(
 	path.resolve(
 		import.meta.dirname,
-		"../src/employee-relations/run-operation.ts",
+		"../src/features/employee-relations/run-operation.ts",
 	),
 	"utf8",
 );
 const storeSource = readFileSync(
-	path.resolve(import.meta.dirname, "../src/employee-relations/store.ts"),
+	path.resolve(
+		import.meta.dirname,
+		"../src/features/employee-relations/store.ts",
+	),
 	"utf8",
 );
 

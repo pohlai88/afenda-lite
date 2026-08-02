@@ -1,18 +1,21 @@
 import { describe, expect, it } from "vitest";
 
-import { createEmployee, getEmployeeById } from "../src/core/employee";
+import {
+	createEmployee,
+	getEmployeeById,
+} from "../src/features/workforce-records/employment/employee";
+import {
+	HUMAN_RESOURCES_PERMISSION_CODES,
+	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,
+} from "../src/kernel/authorization/permissions";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
 	HUMAN_RESOURCES_ERROR_DUPLICATE,
 	HUMAN_RESOURCES_ERROR_FORBIDDEN,
 	HUMAN_RESOURCES_ERROR_NOT_FOUND,
 	HUMAN_RESOURCES_ERROR_UNAUTHORIZED,
-} from "../src/error-codes";
-import {
-	HUMAN_RESOURCES_PERMISSION_CODES,
-	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,
-} from "../src/permissions";
-import { createMemoryHumanResourcesStore } from "../src/testing";
+} from "../src/kernel/execution/error-codes";
+import { createMemoryHumanResourcesStore } from "../src/testing/index";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
 import { humanResourcesCodeFromResult } from "./helpers/result-details";

@@ -34,6 +34,13 @@ The horizontal surfaces are permissions, not mandatory empty folders. Create onl
 those justified by the package. Never restore root `adapters/`, `schemas/`,
 `store/`, `shared/`, `types.ts`, or `ports.ts` as parallel business layers.
 
+An owning ERP farm refines business feature names, invariants, and justified
+capsule contents; it does not authorize a competing root topology. If a
+package-specific skill and this reference disagree about `facade`, `kernel`,
+`composition`, `features`, `testing`, root layer bans, or dependency direction,
+synchronize that skill before changing product code. Do not preserve the
+conflict as a package-specific architectural variant.
+
 ## 2. Uniform feature capsule
 
 Every feature uses the same dispositions. Omit files that have no real semantic

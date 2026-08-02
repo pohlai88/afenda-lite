@@ -6,40 +6,40 @@ import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 import {
 	addBenefitEnrollmentDependent,
 	endBenefitEnrollmentDependent,
-} from "../src/compensation-benefits/benefit-dependent";
+} from "../src/features/compensation-benefits/benefit-dependent";
 import {
 	getBenefitPlanEligibility,
 	setBenefitPlanEligibility,
-} from "../src/compensation-benefits/benefit-eligibility";
+} from "../src/features/compensation-benefits/benefit-eligibility";
 import {
 	enrolBenefit,
 	waiveBenefit,
-} from "../src/compensation-benefits/benefit-enrollment";
-import { createBenefitPlan } from "../src/compensation-benefits/benefit-plan";
-import { createCompensationGrade } from "../src/compensation-benefits/compensation-grade";
-import { createCompensationGradeProgressionRule } from "../src/compensation-benefits/compensation-grade-progression-rule";
+} from "../src/features/compensation-benefits/benefit-enrollment";
+import { createBenefitPlan } from "../src/features/compensation-benefits/benefit-plan";
+import { createCompensationGrade } from "../src/features/compensation-benefits/compensation-grade";
+import { createCompensationGradeProgressionRule } from "../src/features/compensation-benefits/compensation-grade-progression-rule";
 import {
 	applyApprovedCompensationResult,
 	createCompensationReviewDraft,
 	finalizeCompensationReview,
 	getCompensationReview,
 	recordCompensationRecommendation,
-} from "../src/compensation-benefits/compensation-review";
-import { createMemoryCurrencyLookup } from "../src/compensation-benefits/currency-lookup";
+} from "../src/features/compensation-benefits/compensation-review";
+import { createMemoryCurrencyLookup } from "../src/features/compensation-benefits/currency-lookup";
 import {
 	activateEmployeeCompensation,
 	approveEmployeeCompensation,
 	correctEmployeeCompensation,
 	createEmployeeCompensation,
 	scheduleEmployeeCompensationChange,
-} from "../src/compensation-benefits/employee-compensation";
+} from "../src/features/compensation-benefits/employee-compensation";
 import {
 	createSalaryBand,
 	findSalaryBandByGradeAndCurrencyAsOf,
 	supersedeSalaryBand,
-} from "../src/compensation-benefits/salary-band";
-import { createEmployee } from "../src/core/employee";
-import { createEmployment } from "../src/core/employment";
+} from "../src/features/compensation-benefits/salary-band";
+import { createEmployee } from "../src/features/workforce-records/employment/employee";
+import { createEmployment } from "../src/features/workforce-records/employment/employment";
 import { seedOpenCompensationReviewCycle } from "./helpers/compensation-review-cycle-seed";
 import { runDrizzleParity } from "./helpers/database-gate";
 import {

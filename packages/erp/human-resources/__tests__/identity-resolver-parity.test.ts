@@ -1,19 +1,18 @@
 import { beforeEach, describe, expect, it } from "vitest";
-
-import { createMemoryHumanResourcesIdentityStore } from "../src/adapters/memory/identity";
+import { createMemoryHumanResourcesStore } from "../src/composition/adapters/memory/store";
 import {
 	createOrganizationMemoryState,
 	type OrganizationMemoryState,
-} from "../src/adapters/memory/organization";
-import { createMemoryHumanResourcesStore } from "../src/adapters/memory/store";
-import type { HumanResourcesEmployeeId } from "../src/brands";
-import { createEmployee } from "../src/core/employee";
-import { assignPrimaryReportingLine } from "../src/organization/reporting-line";
+} from "../src/features/organization/adapters/organization.memory";
+import { assignPrimaryReportingLine } from "../src/features/organization/reporting-line";
+import { createEmployee } from "../src/features/workforce-records/employment/employee";
+import { createMemoryHumanResourcesIdentityStore } from "../src/features/workforce-records/identity-resolution/adapters/identity.memory";
+import type { HumanResourcesIdentityStore } from "../src/features/workforce-records/identity-resolution/store-contract";
 import {
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CREATE,
 	HUMAN_RESOURCES_PERMISSION_ORGANIZATION_MANAGE,
-} from "../src/permissions";
-import type { HumanResourcesIdentityStore } from "../src/store/identity";
+} from "../src/kernel/authorization/permissions";
+import type { HumanResourcesEmployeeId } from "../src/kernel/identity/brands";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
 

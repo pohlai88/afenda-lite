@@ -1,0 +1,35 @@
+kernel_reopen:
+  version: 1
+  id: HR-ARCHITECTURE-REFACTOR-01
+  target: packages/erp/human-resources
+  capability: internal Human Resources capability architecture
+  owner: "@afenda/human-resources"
+  prior_seal: HR-KERNEL-CUTOVER-01
+  prior_digest: 1bbac13d99c5454b2be2c4f51fa2a5b197971558292625a3609fe7c1f792a59c
+  observed_before_digest: 115fb5c5001e084e450352bbb35e77bef22d21b24332535ac60302c0562afc21
+  compatibility: internal
+  accepted_delta:
+    - Reorganize private source around capability-owned semantics.
+    - Preserve the @afenda/human-resources production facade.
+    - Preserve the test-only @afenda/human-resources/testing entrypoint.
+    - Keep public inputs, outputs, errors, authorization, tenancy, and behavior unchanged.
+    - Derive package-wide projections from canonical capability registries.
+    - Delete superseded private aggregation and misplaced shared surfaces after parity.
+  affected_evidence:
+    - target structure
+    - target lint
+    - target typecheck
+    - package unit and parity contracts
+    - facade and auxiliary-entrypoint boundaries
+    - semantic registry ownership and projections
+    - direct consumer contracts
+    - module governance
+    - final inspector snapshot
+  next_mode: upgrade
+  authority:
+    - User approval in the active task on 2026-08-02
+    - AGENTS.md
+    - .cursor/skills/afenda-elite-monorepo-refactor/SKILL.md
+    - .cursor/skills/afenda-elite-kernel/SKILL.md
+    - .cursor/skills/afenda-semantic-registry-cutover/SKILL.md
+    - packages/erp/human-resources/README.md

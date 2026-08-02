@@ -3,8 +3,8 @@ import { describe, expect, it } from "vitest";
 import {
 	assertPayrollRunTransition,
 	isPayrollRunTransitionAllowed,
-} from "../src/runs/transitions";
-import type { PayrollRunStatus } from "../src/types";
+} from "../src/features/payroll-runs/transitions";
+import type { PayrollRunStatus } from "../src/kernel/contracts/projected-types";
 
 const ALL_STATUSES: PayrollRunStatus[] = [
 	"draft",

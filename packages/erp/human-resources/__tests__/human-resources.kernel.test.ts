@@ -4,7 +4,9 @@ import { fileURLToPath } from "node:url";
 
 import { describe, expect, it } from "vitest";
 
-import { createEmployee } from "../src/core/employee";
+import { createEmployee } from "../src/features/workforce-records/employment/employee";
+import { HUMAN_RESOURCES_PERMISSION_CODES } from "../src/kernel/authorization/permissions";
+import { assertExpectedVersion } from "../src/kernel/execution/concurrency";
 import {
 	HUMAN_RESOURCES_ERROR_CODE_LIST,
 	HUMAN_RESOURCES_ERROR_CODES,
@@ -12,14 +14,7 @@ import {
 	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
 	HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
 	HUMAN_RESOURCES_ERROR_STALE_VERSION,
-} from "../src/error-codes";
-import { parseHumanResourcesInput } from "../src/parse-input";
-import { HUMAN_RESOURCES_PERMISSION_CODES } from "../src/permissions";
-import {
-	createEmployeeInputSchema,
-	getEmployeeByIdInputSchema,
-} from "../src/schemas";
-import { assertExpectedVersion } from "../src/shared/concurrency";
+} from "../src/kernel/execution/error-codes";
 import {
 	isCreateIdempotencyUniqueViolation,
 	isEmployeeNumberUniqueViolation,
@@ -28,8 +23,13 @@ import {
 	mapEmployeeNumberDuplicate,
 	mapPersistenceFailure,
 	postgresErrorMessage,
-} from "../src/shared/persistence-errors";
-import { createMemoryHumanResourcesStore } from "../src/testing";
+} from "../src/kernel/execution/persistence-errors";
+import {
+	createEmployeeInputSchema,
+	getEmployeeByIdInputSchema,
+} from "../src/kernel/validation/index";
+import { parseHumanResourcesInput } from "../src/kernel/validation/parse-input";
+import { createMemoryHumanResourcesStore } from "../src/testing/index";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
 import {

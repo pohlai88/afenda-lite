@@ -1,1 +1,1 @@
-export { createStoreWorkCalendarLookup } from "../../src/time/store-work-calendar-lookup";
+export { createStoreWorkCalendarLookup } from "../../src/features/time/store-work-calendar-lookup";

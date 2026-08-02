@@ -3,13 +3,13 @@ import { errorResult, type Result } from "@afenda/errors";
 import {
 	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
 	humanResourcesErrorDetails,
-} from "../error-codes";
+} from "../kernel/execution/error-codes";
 import {
 	type DocumentKind,
 	type DocumentReferencePort,
 	HUMAN_RESOURCES_DOCUMENT_KINDS,
 	type ValidatedDocumentReference,
-} from "../ports";
+} from "../kernel/execution/ports";
 
 const MAX_DOCUMENT_REF_LENGTH = 2048;
 const DOCUMENT_KIND_SET = new Set<string>(HUMAN_RESOURCES_DOCUMENT_KINDS);

@@ -4,23 +4,14 @@
 
 import { errorResult } from "@afenda/errors";
 import { afterAll, describe, expect, it } from "vitest";
-
-import { createEmployee } from "../src/core/employee";
-import { createEmployment } from "../src/core/employment";
-import {
-	HUMAN_RESOURCES_ERROR_FORBIDDEN,
-	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
-	HUMAN_RESOURCES_ERROR_NOT_FOUND,
-	HUMAN_RESOURCES_ERROR_STALE_VERSION,
-} from "../src/error-codes";
 import {
 	correctAttendanceEvent,
 	getAttendanceEvent,
 	listAttendanceAdjustments,
 	recordClockIn,
-} from "../src/time/attendance/events";
-import { getApprovedTimeHandoff } from "../src/time/handoff/approved-time-handoff";
-import { assignTimeApprovalAuthority } from "../src/time/policy";
+} from "../src/features/time/attendance/events";
+import { getApprovedTimeHandoff } from "../src/features/time/handoff/approved-time-handoff";
+import { assignTimeApprovalAuthority } from "../src/features/time/policy";
 import {
 	addTimesheetEntry,
 	approveTimesheet,
@@ -36,7 +27,15 @@ import {
 	submitTimesheet,
 	supersedeTimesheet,
 	updateTimesheetEntry,
-} from "../src/time/timesheet";
+} from "../src/features/time/timesheet";
+import { createEmployee } from "../src/features/workforce-records/employment/employee";
+import { createEmployment } from "../src/features/workforce-records/employment/employment";
+import {
+	HUMAN_RESOURCES_ERROR_FORBIDDEN,
+	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+	HUMAN_RESOURCES_ERROR_NOT_FOUND,
+	HUMAN_RESOURCES_ERROR_STALE_VERSION,
+} from "../src/kernel/execution/error-codes";
 import {
 	createHrParityHarness,
 	type WorkforceStoreAdapter,

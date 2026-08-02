@@ -9,9 +9,9 @@
 	"ignoreIssues": {
 		"__tests__/helpers/**": ["exports", "types"],
 		"src/**": ["exports", "types"],
-		"src/brands.ts": ["duplicates"],
-		"src/schemas/recruitment.ts": ["duplicates"],
-		"src/schemas/time.ts": ["duplicates"]
+		"src/kernel/identity/brands.ts": ["duplicates"],
+		"src/features/recruitment/schema.ts": ["duplicates"],
+		"src/features/time/schema.ts": ["duplicates"]
 	},
 	"ignoreDependencies": ["vitest"],
 	"ignoreBinaries": ["biome", "vitest"]

@@ -1,0 +1,8 @@
+# Validation report
+
+- Composed schema exports (`src/kernel/validation/index.ts`): **411** (246 runtime values + 165 `export type`)
+- Compliance schema exports (`src/features/compliance/schema.ts`): **29**
+- TypeScript syntax diagnostics: **0** (`pnpm --filter @afenda/human-resources typecheck`)
+- Full package tests: `pnpm --filter @afenda/human-resources test`
+
+Cutover procedure: [INTEGRATION.md](./INTEGRATION.md).

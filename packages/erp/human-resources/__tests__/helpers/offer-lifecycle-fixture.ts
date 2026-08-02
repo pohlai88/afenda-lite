@@ -1,24 +1,26 @@
 import { randomUUID } from "node:crypto";
 
 import type { Result } from "@afenda/errors";
-
-import type {
-	HumanResourcesApplicationId,
-	HumanResourcesCompensationProposalId,
-} from "../../src/brands";
-import type { HumanResourcesCommandOptions } from "../../src/command-options";
 import {
 	approveCompensationProposal,
 	createCompensationProposal,
-} from "../../src/compensation-benefits/compensation-proposal";
-import { createMemoryCurrencyLookup } from "../../src/compensation-benefits/currency-lookup";
+} from "../../src/features/compensation-benefits/compensation-proposal";
+import { createMemoryCurrencyLookup } from "../../src/features/compensation-benefits/currency-lookup";
 import {
 	amendOfferDraft,
 	approveOffer,
 	createOffer,
 	issueOffer,
-} from "../../src/recruitment/offer";
-import type { CompensationProposal, EmploymentOffer } from "../../src/types";
+} from "../../src/features/recruitment/offer";
+import type {
+	CompensationProposal,
+	EmploymentOffer,
+} from "../../src/kernel/contracts";
+import type { HumanResourcesCommandOptions } from "../../src/kernel/execution/command-options";
+import type {
+	HumanResourcesApplicationId,
+	HumanResourcesCompensationProposalId,
+} from "../../src/kernel/identity/brands";
 
 export function withOfferLifecycleDeps(
 	ready: HumanResourcesCommandOptions,

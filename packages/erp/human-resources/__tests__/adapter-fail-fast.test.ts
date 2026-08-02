@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { registerEmployeeDocument } from "../src/compliance/employee-document";
-import { HUMAN_RESOURCES_ERROR_DEPENDENCY_UNAVAILABLE } from "../src/error-codes";
-import { createDraftLeaveRequest } from "../src/leave/leave-request";
-import { HUMAN_RESOURCES_PERMISSION_CODES } from "../src/permissions";
-import { createMemoryHumanResourcesStore } from "../src/testing";
+import { registerEmployeeDocument } from "../src/features/compliance/employee-document";
+import { createDraftLeaveRequest } from "../src/features/leave/leave-request";
+import { HUMAN_RESOURCES_PERMISSION_CODES } from "../src/kernel/authorization/permissions";
+import { HUMAN_RESOURCES_ERROR_DEPENDENCY_UNAVAILABLE } from "../src/kernel/execution/error-codes";
+import { createMemoryHumanResourcesStore } from "../src/testing/index";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
 import { humanResourcesCodeFromResult } from "./helpers/result-details";

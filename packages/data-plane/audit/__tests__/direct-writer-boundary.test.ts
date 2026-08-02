@@ -6,10 +6,10 @@ import { describe, expect, it } from "vitest";
 const repositoryRoot = fileURLToPath(new URL("../../../../", import.meta.url));
 const directInsertPattern = /insert\s+into\s+platform_audit_log/i;
 const directInsertCountPattern = /insert\s+into\s+platform_audit_log/gi;
-const failedPreparationGuardPattern =
+const defaultFailedPreparationGuardPattern =
 	/if \(!prepared(?:[A-Z][A-Za-z]*)?Audit\.ok\)/g;
 const serializedMetadataBindingPattern =
-	/(?:audit|[a-z][A-Za-z]*Audit)(?:\.|\?\.)metadataJson/g;
+	/(?:audit|[a-z][A-Za-z]*Audit)(?:Entry)?(?:\.|\?\.)metadataJson/g;
 const literalReasonCodePattern = /reasonCode: "[A-Z][A-Z_]+"/g;
 const skippedDirectories = new Set([
 	".next",
@@ -29,21 +29,21 @@ const governedCteWriters = new Map([
 		},
 	],
 	[
-		"packages/erp/human-resources/src/adapters/drizzle/benefit-methods-drizzle.ts",
+		"packages/erp/human-resources/src/features/compensation-benefits/adapters/benefit-methods-drizzle.drizzle.ts",
 		{
 			expectedWrites: 4,
 			preparationCallPattern: /afendaAudit\.transaction\.prepare\(\{/g,
 		},
 	],
 	[
-		"packages/erp/human-resources/src/adapters/drizzle/compensation-review-cycle-drizzle.ts",
+		"packages/erp/human-resources/src/features/compensation-benefits/adapters/compensation-review-cycle-drizzle.drizzle.ts",
 		{
 			expectedWrites: 2,
 			preparationCallPattern: /afendaAudit\.transaction\.prepare\(\{/g,
 		},
 	],
 	[
-		"packages/erp/human-resources/src/adapters/drizzle/compensation-benefits.ts",
+		"packages/erp/human-resources/src/features/compensation-benefits/adapters/compensation-benefits.drizzle.ts",
 		{
 			expectedWrites: 26,
 			expectedReasonCodes: 26,
@@ -54,7 +54,7 @@ const governedCteWriters = new Map([
 		},
 	],
 	[
-		"packages/erp/human-resources/src/adapters/drizzle/compliance.ts",
+		"packages/erp/human-resources/src/features/compliance/adapters/compliance.drizzle.ts",
 		{
 			expectedWrites: 20,
 			expectedReasonCodes: 20,
@@ -64,14 +64,14 @@ const governedCteWriters = new Map([
 		},
 	],
 	[
-		"packages/erp/human-resources/src/adapters/drizzle/core.ts",
+		"packages/erp/human-resources/src/features/workforce-records/employment/adapters/core.drizzle.ts",
 		{
 			expectedWrites: 11,
 			preparationCallPattern: /afendaAudit\.transaction\.prepare\(\{/g,
 		},
 	],
 	[
-		"packages/erp/human-resources/src/adapters/drizzle/employee-compensation-lifecycle-drizzle.ts",
+		"packages/erp/human-resources/src/features/compensation-benefits/adapters/employee-compensation-lifecycle-drizzle.drizzle.ts",
 		{
 			expectedWrites: 10,
 			expectedPreparations: 8,
@@ -81,7 +81,7 @@ const governedCteWriters = new Map([
 		},
 	],
 	[
-		"packages/erp/human-resources/src/adapters/drizzle/employee-relations.ts",
+		"packages/erp/human-resources/src/features/employee-relations/adapters/employee-relations.drizzle.ts",
 		{
 			expectedWrites: 15,
 			expectedReasonCodes: 15,
@@ -89,14 +89,14 @@ const governedCteWriters = new Map([
 		},
 	],
 	[
-		"packages/erp/human-resources/src/adapters/drizzle/leave-transactions.ts",
+		"packages/erp/human-resources/src/features/leave/adapters/leave-transactions.drizzle.ts",
 		{
 			expectedWrites: 1,
 			preparationCallPattern: /afendaAudit\.transaction\.prepareDerived\(\{/g,
 		},
 	],
 	[
-		"packages/erp/human-resources/src/adapters/drizzle/learning.ts",
+		"packages/erp/human-resources/src/features/learning/adapters/learning.drizzle.ts",
 		{
 			expectedWrites: 18,
 			expectedReasonCodes: 18,
@@ -104,7 +104,7 @@ const governedCteWriters = new Map([
 		},
 	],
 	[
-		"packages/erp/human-resources/src/adapters/drizzle/lifecycle.ts",
+		"packages/erp/human-resources/src/features/employment-lifecycle/adapters/lifecycle.drizzle.ts",
 		{
 			expectedWrites: 22,
 			expectedReasonCodes: 22,
@@ -112,7 +112,7 @@ const governedCteWriters = new Map([
 		},
 	],
 	[
-		"packages/erp/human-resources/src/adapters/drizzle/organization.ts",
+		"packages/erp/human-resources/src/features/organization/adapters/organization.drizzle.ts",
 		{
 			expectedWrites: 17,
 			expectedPreparations: 13,
@@ -122,7 +122,7 @@ const governedCteWriters = new Map([
 		},
 	],
 	[
-		"packages/erp/human-resources/src/adapters/drizzle/performance.ts",
+		"packages/erp/human-resources/src/features/performance/adapters/performance.drizzle.ts",
 		{
 			expectedWrites: 45,
 			expectedReasonCodes: 45,
@@ -132,7 +132,7 @@ const governedCteWriters = new Map([
 		},
 	],
 	[
-		"packages/erp/human-resources/src/adapters/drizzle/recruitment.ts",
+		"packages/erp/human-resources/src/features/recruitment/adapters/recruitment.drizzle.ts",
 		{
 			expectedWrites: 27,
 			expectedPreparations: 24,
@@ -144,7 +144,7 @@ const governedCteWriters = new Map([
 		},
 	],
 	[
-		"packages/erp/human-resources/src/adapters/drizzle/talent.ts",
+		"packages/erp/human-resources/src/features/talent/adapters/talent.drizzle.ts",
 		{
 			expectedWrites: 39,
 			expectedReasonCodes: 39,
@@ -154,7 +154,7 @@ const governedCteWriters = new Map([
 		},
 	],
 	[
-		"packages/erp/human-resources/src/adapters/drizzle/workforce-foundation.ts",
+		"packages/erp/human-resources/src/features/workforce-records/identity/adapters/workforce-foundation.drizzle.ts",
 		{
 			expectedWrites: 12,
 			expectedPreparations: 11,
@@ -163,10 +163,62 @@ const governedCteWriters = new Map([
 		},
 	],
 	[
-		"packages/erp/human-resources/src/adapters/drizzle/workforce-planning.ts",
+		"packages/erp/human-resources/src/features/workforce-planning/adapters/workforce-planning.drizzle.ts",
 		{
 			expectedWrites: 10,
 			preparationCallPattern: /prepareWorkforcePlanningAudit\(\{/g,
+		},
+	],
+	[
+		"packages/erp/human-resources/src/features/hire-to-employee/adapters/hire-orchestration.drizzle.ts",
+		{
+			expectedWrites: 1,
+			preparationCallPattern: /afendaAudit\.transaction\.prepare\(\{/g,
+		},
+	],
+	[
+		"packages/erp/human-resources/src/features/leave/adapters/leave.drizzle.ts",
+		{
+			expectedWrites: 1,
+			preparationCallPattern: /afendaAudit\.transaction\.prepare\(\{/g,
+		},
+	],
+	[
+		"packages/erp/human-resources/src/features/time/adapters/time-transactions.drizzle.ts",
+		{
+			expectedWrites: 1,
+			preparationCallPattern: /prepareTimeAudit\(\{/g,
+		},
+	],
+	[
+		"packages/erp/human-resources/src/features/time/adapters/time.drizzle.ts",
+		{
+			expectedWrites: 3,
+			preparationCallPattern: /prepareTimeAudit\(\{/g,
+		},
+	],
+	[
+		"packages/erp/payroll/src/features/payroll-runs/runs.drizzle.ts",
+		{
+			expectedWrites: 4,
+			preparationCallPattern: /afendaAudit\.transaction\.prepare\(\{/g,
+		},
+	],
+	[
+		"packages/erp/payroll/src/features/payroll-setup/setup-extended.drizzle.ts",
+		{
+			expectedWrites: 6,
+			preparationCallPattern: /afendaAudit\.transaction\.prepare\(\{/g,
+			failedPreparationGuardPattern:
+				/!(?:predecessorAudit|successorAudit)\.ok/g,
+		},
+	],
+	[
+		"packages/erp/payroll/src/features/reconciliation/reconciliation.drizzle.ts",
+		{
+			expectedWrites: 2,
+			preparationCallPattern: /afendaAudit\.transaction\.prepare\(\{/g,
+			failedPreparationGuardPattern: /!prepared\.ok/g,
 		},
 	],
 	[
@@ -235,7 +287,7 @@ const governedCteWriters = new Map([
 
 const governedGeneratedWriterCallsites = new Map([
 	[
-		"packages/erp/human-resources/src/adapters/drizzle/leave-sql-builders.ts",
+		"packages/erp/human-resources/src/features/leave/adapters/leave-sql-builders.drizzle.ts",
 		{
 			expectedCalls: 15,
 			generatorCallPattern: /buildAuditCte\(\{/g,
@@ -309,9 +361,14 @@ describe("@afenda/audit direct-writer boundary", () => {
 			expect(source.match(contract.preparationCallPattern)).toHaveLength(
 				expectedPreparations,
 			);
-			expect(source.match(failedPreparationGuardPattern)).toHaveLength(
-				expectedPreparations,
-			);
+			const preparationGuardPattern =
+				"failedPreparationGuardPattern" in contract
+					? contract.failedPreparationGuardPattern
+					: defaultFailedPreparationGuardPattern;
+			expect(
+				source.match(preparationGuardPattern) ?? [],
+				relativePath,
+			).toHaveLength(expectedPreparations);
 			expect(source.match(serializedMetadataBindingPattern)).toHaveLength(
 				expectedMetadataBindings,
 			);
@@ -324,7 +381,7 @@ describe("@afenda/audit direct-writer boundary", () => {
 				expect(source).toMatch(contract.transactionGuardPattern);
 			}
 			expect(source).toMatch(
-				/afendaAudit\.transaction\.(?:prepare|prepareDerived)/,
+				/(?:afendaAudit\.transaction\.(?:prepare|prepareDerived)|prepare[A-Za-z]+Audit)/,
 			);
 		}
 	});

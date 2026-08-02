@@ -9,11 +9,11 @@ import {
 	parseApprovedPayrollHandoff,
 	parseApprovedPayrollHandoffInput,
 	toPayrollRoundingPolicy,
-} from "../src/inputs/parse-approved-payroll-handoff";
+} from "../src/features/workforce-ingress/parse-approved-payroll-handoff";
 import {
 	formatScaledToDecimal,
 	formatScaledToHandoffAmount,
-} from "../src/shared/money";
+} from "../src/kernel/money/money";
 import {
 	HANDOFF_FIXTURE_P1,
 	HANDOFF_FIXTURE_P2,
@@ -253,7 +253,7 @@ describe("parseApprovedPayrollHandoff contract boundaries", () => {
 		const parserBody = readFileSync(
 			join(
 				fileURLToPath(new URL(".", import.meta.url)),
-				"../src/inputs/parse-approved-payroll-handoff.ts",
+				"../src/features/workforce-ingress/parse-approved-payroll-handoff.ts",
 			),
 			"utf8",
 		);

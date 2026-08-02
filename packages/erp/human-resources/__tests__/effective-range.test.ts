@@ -4,7 +4,7 @@ import {
 	resolveUniqueEffectiveRangeRecord,
 	resolveUniqueEffectiveRangeRecordBy,
 	selectUniqueEffectiveRangeRecord,
-} from "../src/shared/effective-range";
+} from "../src/kernel/temporal/effective-range";
 
 describe("selectUniqueEffectiveRangeRecord", () => {
 	it("returns the sole matching record", () => {

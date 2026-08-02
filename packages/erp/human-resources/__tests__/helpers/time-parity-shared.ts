@@ -1,13 +1,13 @@
-import type { HumanResourcesCommandOptions } from "../../src/command-options";
-import { createEmployee } from "../../src/core/employee";
-import { createEmployment } from "../../src/core/employment";
-import { activateShift, createShift } from "../../src/time/shift";
+import { activateShift, createShift } from "../../src/features/time/shift";
+import { createEmployee } from "../../src/features/workforce-records/employment/employee";
+import { createEmployment } from "../../src/features/workforce-records/employment/employment";
 import type {
 	AttendanceExceptionType,
 	Employee,
 	Employment,
 	Shift,
-} from "../../src/types";
+} from "../../src/kernel/contracts";
+import type { HumanResourcesCommandOptions } from "../../src/kernel/execution/command-options";
 import { helperAssert as assert } from "./helper-assert";
 import type { WorkforceStoreAdapter } from "./hr-parity-harness";
 

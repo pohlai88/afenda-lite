@@ -4,22 +4,25 @@ import { afterAll, describe, expect, it } from "vitest";
 import {
 	createDocumentRequirement,
 	publishDocumentRequirement,
-} from "../src/compliance/document-requirement";
+} from "../src/features/compliance/document-requirement";
 import {
 	listMissingRequiredDocuments,
 	registerEmployeeDocument,
 	verifyEmployeeDocument,
-} from "../src/compliance/employee-document";
+} from "../src/features/compliance/employee-document";
 import {
 	issuePolicyAcknowledgementRequirement,
 	listOverduePolicyAcknowledgements,
-} from "../src/compliance/policy-acknowledgement";
+} from "../src/features/compliance/policy-acknowledgement";
 import {
 	listEmployeesWithWorkEligibilityRisk,
 	recordWorkEligibility,
-} from "../src/compliance/work-eligibility";
-import { createEmployee } from "../src/core/employee";
-import { runSequential, sequentialReturn } from "../src/shared/run-sequential";
+} from "../src/features/compliance/work-eligibility";
+import { createEmployee } from "../src/features/workforce-records/employment/employee";
+import {
+	runSequential,
+	sequentialReturn,
+} from "../src/kernel/execution/run-sequential";
 import { runDrizzleParity } from "./helpers/database-gate";
 import {
 	createHrParityHarness,

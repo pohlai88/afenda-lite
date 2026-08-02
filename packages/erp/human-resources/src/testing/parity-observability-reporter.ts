@@ -1,5 +1,5 @@
-import type { HrObservabilityPort } from "../observability/ports";
-import { recordHrParityFailure } from "../observability/recorder";
+import type { HrObservabilityPort } from "../kernel/observability/ports";
+import { recordHrParityFailure } from "../kernel/observability/recorder";
 
 type ParityTestRunEndReason = "passed" | "interrupted" | "failed";
 

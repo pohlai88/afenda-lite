@@ -3,44 +3,43 @@
  */
 
 import { afterAll, describe, expect, it } from "vitest";
-
-import { createEmployee } from "../src/core/employee";
-import { createEmployment } from "../src/core/employment";
-import { createProductionWorkCalendar } from "../src/production-work-calendar";
+import { createProductionWorkCalendar } from "../src/composition/production/work-calendar";
 import {
 	recordAttendanceEvent,
 	recordClockIn,
-} from "../src/time/attendance/events";
-import { resolveAttendanceSession } from "../src/time/attendance/sessions";
+} from "../src/features/time/attendance/events";
+import { resolveAttendanceSession } from "../src/features/time/attendance/sessions";
 import {
 	addCalendarDateOverride,
 	assignEmploymentCalendar,
 	createWorkCalendar,
 	resolveEmploymentCalendar,
 	supersedeWorkCalendar,
-} from "../src/time/calendar";
-import { resolveWorkCalendarCivilDay } from "../src/time/calendar-resolution";
-import { getApprovedTimeHandoff } from "../src/time/handoff/approved-time-handoff";
-import { assignTimeApprovalAuthority } from "../src/time/policy";
+} from "../src/features/time/calendar";
+import { resolveWorkCalendarCivilDay } from "../src/features/time/calendar-resolution";
+import { getApprovedTimeHandoff } from "../src/features/time/handoff/approved-time-handoff";
+import { assignTimeApprovalAuthority } from "../src/features/time/policy";
 import {
 	assignShift,
 	listShiftAssignmentSegments,
 	publishShiftAssignment,
-} from "../src/time/scheduling";
+} from "../src/features/time/scheduling";
 import {
 	activateShift,
 	addShiftBreak,
 	createShift,
 	listShiftBreaks,
 	supersedeShift,
-} from "../src/time/shift";
+} from "../src/features/time/shift";
 import {
 	addTimesheetEntry,
 	approveTimesheet,
 	createTimesheet,
 	getTimesheet,
 	submitTimesheet,
-} from "../src/time/timesheet";
+} from "../src/features/time/timesheet";
+import { createEmployee } from "../src/features/workforce-records/employment/employee";
+import { createEmployment } from "../src/features/workforce-records/employment/employment";
 import {
 	createHrParityHarness,
 	type WorkforceStoreAdapter,

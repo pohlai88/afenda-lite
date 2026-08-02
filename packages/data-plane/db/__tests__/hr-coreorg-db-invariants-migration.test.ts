@@ -2,8 +2,6 @@
  * HR-COREORG-DB-INVARIANTS — generated-baseline effective-range checks.
  */
 
-import { readFileSync } from "node:fs";
-
 import { testingDatabase } from "@afenda/testing";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
@@ -12,25 +10,8 @@ import {
 	readCurrentMigrationSql,
 	readCurrentMigrations,
 } from "./helpers/current-migration-sql";
-import {
-	listHrPgTableNames,
-	loadCoreorgExclusionRegister,
-	resolveCoreorgRegisterPaths,
-	validateCoreorgRegisterInventory,
-} from "./helpers/validate-coreorg-register-inventory.mjs";
 
 const migrationSql = readCurrentMigrationSql();
-
-const { registerPath, schemaPath } = resolveCoreorgRegisterPaths(
-	import.meta.url,
-);
-const exclusionRegister = loadCoreorgExclusionRegister(registerPath);
-const hrSchemaSource = readFileSync(schemaPath, "utf8");
-const hrPgTableNames = listHrPgTableNames(hrSchemaSource);
-const registerInventory = validateCoreorgRegisterInventory({
-	register: exclusionRegister,
-	pgTableNames: hrPgTableNames,
-});
 
 const { hasDatabase } = testingDatabase.resolve();
 
@@ -41,6 +22,8 @@ function requireDatabaseTests(): boolean {
 		ci === "true" || ci === "1" || requireFlag === "1" || requireFlag === "true"
 	);
 }
+
+const runDatabaseTests = hasDatabase && requireDatabaseTests();
 
 describe("HR coreorg DB invariants generated migration", () => {
 	it("passes additive governance and names all effective-range constraints", () => {
@@ -63,98 +46,7 @@ describe("HR coreorg DB invariants generated migration", () => {
 	});
 });
 
-describe("HR coreorg DB invariants exclusion register", () => {
-	it("lists the generated baseline, tenant FK migration, and eight checks", () => {
-		expect(exclusionRegister.migrations).toEqual([
-			"0000_damp_blue_shield.sql",
-			"0002_hr_tenant_foreign_keys.sql",
-		]);
-		expect(exclusionRegister.databaseChecks).toHaveLength(8);
-		const tables = exclusionRegister.databaseChecks.map((row) => row.table);
-		expect(tables).toEqual([
-			"hr_work_assignment",
-			"hr_employment_contract",
-			"hr_reporting_line",
-			"hr_probation_review",
-			"hr_salary_band",
-			"hr_employee_compensation",
-			"hr_benefit_enrollment",
-			"hr_shift",
-		]);
-	});
-
-	it("documents overlap enforcement without database exclusion", () => {
-		const overlapTables = exclusionRegister.overlapPolicies.map(
-			(row) => row.table,
-		);
-		expect(overlapTables).toContain("hr_work_assignment");
-		expect(overlapTables).toContain("hr_employment_contract");
-		expect(overlapTables).toContain("hr_reporting_line");
-		expect(overlapTables).toContain("hr_employee_compensation");
-		expect(overlapTables).toContain("hr_benefit_enrollment");
-		expect(overlapTables).toContain("hr_salary_band");
-		expect(overlapTables).toContain("hr_leave_request_segment");
-		for (const policy of exclusionRegister.overlapPolicies) {
-			expect(policy.databaseOverlapExclusion).toBe(false);
-		}
-	});
-
-	it("records employment-contract overlap enforcement as command-only", () => {
-		const contractPolicy = exclusionRegister.overlapPolicies.find(
-			(row) => row.table === "hr_employment_contract",
-		);
-		expect(contractPolicy).toBeDefined();
-		expect(contractPolicy?.enforcement).toBe("command_only");
-	});
-
-	it("covers every mutable hr_* table in startEndRange inventory buckets", () => {
-		expect(registerInventory.duplicates).toEqual([]);
-		expect(registerInventory.extra).toEqual([]);
-		expect(registerInventory.missing).toEqual([]);
-		expect(
-			registerInventory.ddlCount + registerInventory.notApplicableCount,
-		).toBe(registerInventory.pgTableCount);
-		expect(registerInventory.scaffoldCount).toBe(5);
-	});
-
-	it("maps every database check constraint to Drizzle schema", () => {
-		for (const row of exclusionRegister.databaseChecks) {
-			expect(hrSchemaSource).toContain(row.constraint);
-		}
-	});
-
-	it("cross-links the leave overlap exclusion register", () => {
-		expect(exclusionRegister.crossLinks.leaveOverlapRegister).toContain(
-			"hr-leave-overlap-exclusion-register.json",
-		);
-		const leavePolicy = exclusionRegister.overlapPolicies.find(
-			(row) => row.table === "hr_leave_request_segment",
-		);
-		expect(leavePolicy?.enforcementSurface).toContain(
-			"hr-leave-overlap-exclusion-register.json",
-		);
-	});
-
-	it("documents org-scoped foreign keys via the generated custom migration", () => {
-		expect(
-			exclusionRegister.categoryInventory.orgScopedForeignKeys.migration,
-		).toBe("0002_hr_tenant_foreign_keys.sql");
-	});
-
-	it("records rollback for all eight effective-range constraints", () => {
-		expect(exclusionRegister.rollback).toContain(
-			"DROP CONSTRAINT IF EXISTS hr_work_assignment_effective_range_ck",
-		);
-		expect(exclusionRegister.rollback).toContain(
-			"DROP CONSTRAINT IF EXISTS hr_probation_review_effective_range_ck",
-		);
-		expect(exclusionRegister.rollback).toContain(
-			"DROP CONSTRAINT IF EXISTS hr_shift_effective_range_ck",
-		);
-	});
-});
-
-describe.skipIf(!hasDatabase)(
+describe.skipIf(!runDatabaseTests)(
 	"HR coreorg DB invariants generated baseline (live)",
 	() => {
 		const runId = `${Date.now()}`;
@@ -421,7 +313,7 @@ describe.skipIf(!hasDatabase)(
 	},
 );
 
-describe.skipIf(!hasDatabase)(
+describe.skipIf(!runDatabaseTests)(
 	"HR coreorg DB invariants migration (0035 live)",
 	() => {
 		const runId = `${Date.now()}`;

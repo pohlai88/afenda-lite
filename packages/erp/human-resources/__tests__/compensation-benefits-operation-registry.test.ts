@@ -2,21 +2,20 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 
 import { describe, expect, it } from "vitest";
-
+import { humanResourcesModuleManifest } from "../src/composition/module.manifest";
 import {
 	HUMAN_RESOURCES_COMPENSATION_BENEFITS_COMMAND_AUTHORIZATION,
 	HUMAN_RESOURCES_COMPENSATION_BENEFITS_COMMANDS,
 	HUMAN_RESOURCES_COMPENSATION_BENEFITS_QUERIES,
 	HUMAN_RESOURCES_COMPENSATION_BENEFITS_QUERY_AUTHORIZATION,
-} from "../src/compensation-benefits/operation-registry";
-import { HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD } from "../src/emissions/registry";
-import { humanResourcesModuleManifest } from "../src/module.manifest";
+} from "../src/features/compensation-benefits/operation-registry";
+import { resolveHumanResourcesAuthorizationPolicy } from "../src/kernel/authorization/registry";
+import { HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD } from "../src/kernel/emissions/registry";
 import {
 	HUMAN_RESOURCES_COMPENSATION_BENEFITS_COMMAND_IDS,
 	HUMAN_RESOURCES_COMPENSATION_BENEFITS_QUERY_IDS,
-} from "../src/module-ids";
-import { HUMAN_RESOURCES_REGISTERED_OPERATION_DEFINITIONS } from "../src/operation-registry/registry";
-import { resolveHumanResourcesAuthorizationPolicy } from "../src/shared/authorization-policy-registry";
+} from "../src/kernel/operations/module-ids";
+import { HUMAN_RESOURCES_REGISTERED_OPERATION_DEFINITIONS } from "../src/kernel/operations/registry";
 
 const definitions = [
 	...Object.values(HUMAN_RESOURCES_COMPENSATION_BENEFITS_COMMANDS),
@@ -36,7 +35,9 @@ const handlerSources = [
 	"compensation-review.ts",
 	"employee-compensation.ts",
 	"salary-band.ts",
-].map((fileName) => packageSource(`src/compensation-benefits/${fileName}`));
+].map((fileName) =>
+	packageSource(`src/features/compensation-benefits/${fileName}`),
+);
 
 describe("Compensation & Benefits operation registry", () => {
 	it("owns each public operation exactly once", () => {
@@ -46,7 +47,7 @@ describe("Compensation & Benefits operation registry", () => {
 			54,
 		);
 
-		const publicFacade = packageSource("src/public-capabilities.ts");
+		const publicFacade = packageSource("src/facade/capabilities.ts");
 		for (const definition of definitions) {
 			expect(definition.owner).toBe("compensation-benefits");
 			expect(publicFacade).toMatch(
@@ -129,7 +130,7 @@ describe("Compensation & Benefits operation registry", () => {
 			expect(definition.resourceKind).toBe("compensation");
 		}
 		const policySource = packageSource(
-			"src/shared/authorization-policies/compensation.ts",
+			"src/features/compensation-benefits/authorization/compensation.ts",
 		);
 		expect(policySource).not.toMatch(/\.startsWith\(|human-resources\./);
 	});
@@ -143,7 +144,9 @@ describe("Compensation & Benefits operation registry", () => {
 			),
 		).toBe(54);
 		expect(handlerSources.join("\n")).not.toContain("HumanResourcesStore");
-		expect(packageSource("src/compensation-benefits/store.ts")).toMatch(
+		expect(
+			packageSource("src/features/compensation-benefits/store.ts"),
+		).toMatch(
 			/Pick<HumanResourcesCompensationBenefitsCapabilityStore, TMethods\[number\]>/,
 		);
 	});

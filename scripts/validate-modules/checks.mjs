@@ -86,18 +86,24 @@ export const LIVING_ERP_MANIFEST_PACKAGES = [
 		id: "human-resources",
 		packageName: "@afenda/human-resources",
 		dir: "packages/erp/human-resources",
+		manifestPath: "src/composition/module.manifest.ts",
+		authorizationPath: "src/kernel/authorization/contextual-authorization.ts",
 		manifestExport: "humanResourcesModuleManifest",
 	},
 	{
 		id: "payroll",
 		packageName: "@afenda/payroll",
 		dir: "packages/erp/payroll",
+		manifestPath: "src/composition/module.manifest.ts",
+		authorizationPath: "src/kernel/execution/authorization.ts",
 		manifestExport: "payrollModuleManifest",
 	},
 	{
 		id: "corporate-administration",
 		packageName: "@afenda/corporate-administration",
 		dir: "packages/erp/corporate-administration",
+		manifestPath: "src/composition/module.manifest.ts",
+		authorizationPath: "src/kernel/authorization/authorization.ts",
 		manifestExport: "corporateAdministrationModuleManifest",
 	},
 ];
@@ -490,7 +496,10 @@ export function validateErpAuthorizationPorts(root, manifests = []) {
 		) {
 			continue;
 		}
-		const packageAuth = join(meta.dir, "src", "authorization.ts");
+		const packageAuth = join(
+			meta.dir,
+			meta.authorizationPath ?? "src/authorization.ts",
+		);
 		if (!existsSync(join(root, packageAuth))) {
 			errors.push(`missing ERP authorization.ts: ${packageAuth}`);
 		}

@@ -10,15 +10,15 @@ import {
 } from "@afenda/db";
 import { errorResult } from "@afenda/errors";
 import { describe, expect, it } from "vitest";
-import { createDrizzleBulkCheckpointPort } from "../src/adapters/drizzle/bulk-checkpoint";
-import { createDrizzleReliabilityStore } from "../src/adapters/drizzle/reliability";
+import { createDrizzleBulkCheckpointPort } from "../src/features/bulk-import/adapters/bulk-checkpoint.drizzle";
 import {
 	type BulkCheckpointPort,
 	type BulkImportPorts,
 	type BulkImportRequest,
 	createMemoryBulkCheckpointPort,
 	runHumanResourcesBulkImport,
-} from "../src/bulk";
+} from "../src/features/bulk-import/index";
+import { createDrizzleReliabilityStore } from "../src/kernel/reliability/adapters/drizzle";
 import {
 	checkpointConnectorCursor,
 	claimDueReliabilityWork,
@@ -28,7 +28,7 @@ import {
 	type ReliabilityStorePort,
 	registerReliabilityWork,
 	replayDeadLetter,
-} from "../src/reliability";
+} from "../src/kernel/reliability/index";
 import { runDrizzleParity } from "./helpers/database-gate";
 import { helperAssert as assert } from "./helpers/helper-assert";
 

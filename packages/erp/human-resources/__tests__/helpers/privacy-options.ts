@@ -1,7 +1,16 @@
 import { errorResult } from "@afenda/errors";
-import type { HumanResourcesEmployeeId } from "../../src/brands";
-import type { HumanResourcesCommandOptions } from "../../src/command-options";
-import { createEmployee } from "../../src/core/employee";
+import type {
+	HumanResourcesPrivacyPort,
+	HumanResourcesPrivacySubjectRecord,
+	HumanResourcesRetentionClassification,
+} from "../../src/features/privacy/contract";
+import type {
+	EvaluateHumanResourcesAnonymizationInput,
+	ExportHumanResourcesSubjectDataInput,
+} from "../../src/features/privacy/operations";
+import { createEmployee } from "../../src/features/workforce-records/employment/employee";
+import { createPerson } from "../../src/features/workforce-records/identity/person";
+import { createWorker } from "../../src/features/workforce-records/identity/worker";
 import {
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CREATE,
 	HUMAN_RESOURCES_PERMISSION_PERSON_MANAGE,
@@ -11,19 +20,10 @@ import {
 	HUMAN_RESOURCES_PERMISSION_PRIVACY_LEGAL_HOLD_MANAGE,
 	HUMAN_RESOURCES_PERMISSION_PRIVACY_RETENTION_EVALUATE,
 	HUMAN_RESOURCES_PERMISSION_WORKER_MANAGE,
-} from "../../src/permissions";
-import type {
-	HumanResourcesPrivacyPort,
-	HumanResourcesPrivacySubjectRecord,
-	HumanResourcesRetentionClassification,
-} from "../../src/privacy";
-import type {
-	EvaluateHumanResourcesAnonymizationInput,
-	ExportHumanResourcesSubjectDataInput,
-} from "../../src/privacy/operations";
-import { createMemoryHumanResourcesStore } from "../../src/testing";
-import { createPerson } from "../../src/workforce-foundation/person";
-import { createWorker } from "../../src/workforce-foundation/worker";
+} from "../../src/kernel/authorization/permissions";
+import type { HumanResourcesCommandOptions } from "../../src/kernel/execution/command-options";
+import type { HumanResourcesEmployeeId } from "../../src/kernel/identity/brands";
+import { createMemoryHumanResourcesStore } from "../../src/testing/index";
 import { createTestHumanResourcesCommandOptions } from "./command-options";
 import { createGrantingHumanResourcesAuthorization } from "./memory-authorization";
 import { createMemoryMutationPorts } from "./memory-ports";

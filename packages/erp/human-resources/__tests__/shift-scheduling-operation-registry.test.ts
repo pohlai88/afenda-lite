@@ -2,10 +2,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 
 import { describe, expect, it } from "vitest";
-
-import { HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD } from "../src/emissions/registry";
-import { humanResourcesModuleManifest } from "../src/module.manifest";
-import { resolveHumanResourcesAuthorizationPolicy } from "../src/shared/authorization-policy-registry";
+import { humanResourcesModuleManifest } from "../src/composition/module.manifest";
 import {
 	HUMAN_RESOURCES_SHIFT_SCHEDULING_COMMAND_AUTHORIZATION,
 	HUMAN_RESOURCES_SHIFT_SCHEDULING_COMMAND_IDS,
@@ -13,26 +10,28 @@ import {
 	HUMAN_RESOURCES_SHIFT_SCHEDULING_QUERIES,
 	HUMAN_RESOURCES_SHIFT_SCHEDULING_QUERY_AUTHORIZATION,
 	HUMAN_RESOURCES_SHIFT_SCHEDULING_QUERY_IDS,
-} from "../src/time/operation-registry";
+} from "../src/features/time/operation-registry";
+import { resolveHumanResourcesAuthorizationPolicy } from "../src/kernel/authorization/registry";
+import { HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD } from "../src/kernel/emissions/registry";
 
 const definitions = [
 	...Object.values(HUMAN_RESOURCES_SHIFT_SCHEDULING_COMMANDS),
 	...Object.values(HUMAN_RESOURCES_SHIFT_SCHEDULING_QUERIES),
 ];
 const publicCapabilitiesSource = readFileSync(
-	path.resolve(import.meta.dirname, "../src/public-capabilities.ts"),
+	path.resolve(import.meta.dirname, "../src/facade/capabilities.ts"),
 	"utf8",
 );
 const shiftSource = readFileSync(
-	path.resolve(import.meta.dirname, "../src/time/shift.ts"),
+	path.resolve(import.meta.dirname, "../src/features/time/shift.ts"),
 	"utf8",
 );
 const schedulingSource = readFileSync(
-	path.resolve(import.meta.dirname, "../src/time/scheduling.ts"),
+	path.resolve(import.meta.dirname, "../src/features/time/scheduling.ts"),
 	"utf8",
 );
 const moduleIdsSource = readFileSync(
-	path.resolve(import.meta.dirname, "../src/module-ids.ts"),
+	path.resolve(import.meta.dirname, "../src/kernel/operations/module-ids.ts"),
 	"utf8",
 );
 

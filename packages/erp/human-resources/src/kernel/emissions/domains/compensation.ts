@@ -1,0 +1,348 @@
+import {
+	HUMAN_RESOURCES_BENEFIT_ENROLLMENT_CHANGED_EVENT,
+	HUMAN_RESOURCES_COMPENSATION_CHANGED_EVENT,
+	HUMAN_RESOURCES_COMPENSATION_PROPOSAL_APPROVED_EVENT,
+} from "@afenda/events/schemas";
+
+import {
+	HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_CANCEL,
+	HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_DEPENDENT_ADD,
+	HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_DEPENDENT_END,
+	HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_END,
+	HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_ENROL,
+	HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_WAIVE,
+	HUMAN_RESOURCES_COMMAND_BENEFIT_PLAN_ARCHIVE,
+	HUMAN_RESOURCES_COMMAND_BENEFIT_PLAN_CREATE,
+	HUMAN_RESOURCES_COMMAND_BENEFIT_PLAN_ELIGIBILITY_SET,
+	HUMAN_RESOURCES_COMMAND_BENEFIT_PLAN_UPDATE,
+	HUMAN_RESOURCES_COMMAND_COMPENSATION_GRADE_ARCHIVE,
+	HUMAN_RESOURCES_COMMAND_COMPENSATION_GRADE_CREATE,
+	HUMAN_RESOURCES_COMMAND_COMPENSATION_GRADE_PROGRESSION_RULE_ARCHIVE,
+	HUMAN_RESOURCES_COMMAND_COMPENSATION_GRADE_PROGRESSION_RULE_CREATE,
+	HUMAN_RESOURCES_COMMAND_COMPENSATION_GRADE_UPDATE,
+	HUMAN_RESOURCES_COMMAND_COMPENSATION_PROPOSAL_AMEND,
+	HUMAN_RESOURCES_COMMAND_COMPENSATION_PROPOSAL_APPROVE,
+	HUMAN_RESOURCES_COMMAND_COMPENSATION_PROPOSAL_CREATE,
+	HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_APPLY_APPROVED_RESULT,
+	HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_CREATE_DRAFT,
+	HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_CYCLE_CANCEL,
+	HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_CYCLE_CLOSE,
+	HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_CYCLE_CREATE,
+	HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_CYCLE_OPEN,
+	HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_FINALIZE,
+	HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_RECORD_RECOMMENDATION,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_ACTIVATE,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_AMEND,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_APPROVE,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_CORRECT,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_CREATE,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_END,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_SCHEDULE,
+	HUMAN_RESOURCES_COMMAND_SALARY_BAND_ARCHIVE,
+	HUMAN_RESOURCES_COMMAND_SALARY_BAND_CREATE,
+	HUMAN_RESOURCES_COMMAND_SALARY_BAND_SUPERSEDE,
+	type HumanResourcesCompensationBenefitsCommandId,
+} from "../../operations/module-ids";
+
+import {
+	defineAuditOnlyEmission,
+	defineDomainEventEmission,
+} from "../define-emission";
+import type { HumanResourcesMutationEmissionDefinition } from "../types";
+
+export const HUMAN_RESOURCES_COMPENSATION_EMISSIONS = {
+	[HUMAN_RESOURCES_COMMAND_BENEFIT_PLAN_CREATE]: defineAuditOnlyEmission(
+		HUMAN_RESOURCES_COMMAND_BENEFIT_PLAN_CREATE,
+		{
+			domain: "compensation-benefits",
+			aggregateType: "benefit_plan",
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_BENEFIT_PLAN_UPDATE]: defineAuditOnlyEmission(
+		HUMAN_RESOURCES_COMMAND_BENEFIT_PLAN_UPDATE,
+		{
+			domain: "compensation-benefits",
+			aggregateType: "benefit_plan",
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_BENEFIT_PLAN_ARCHIVE]: defineAuditOnlyEmission(
+		HUMAN_RESOURCES_COMMAND_BENEFIT_PLAN_ARCHIVE,
+		{
+			domain: "compensation-benefits",
+			aggregateType: "benefit_plan",
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_ENROL]: defineDomainEventEmission(
+		HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_ENROL,
+		{
+			domain: "compensation-benefits",
+			aggregateType: "benefit_enrollment",
+			eventTypes: [HUMAN_RESOURCES_BENEFIT_ENROLLMENT_CHANGED_EVENT] as const,
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_END]: defineDomainEventEmission(
+		HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_END,
+		{
+			domain: "compensation-benefits",
+			aggregateType: "benefit_enrollment",
+			eventTypes: [HUMAN_RESOURCES_BENEFIT_ENROLLMENT_CHANGED_EVENT] as const,
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_CANCEL]:
+		defineDomainEventEmission(
+			HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_CANCEL,
+			{
+				domain: "compensation-benefits",
+				aggregateType: "benefit_enrollment",
+				eventTypes: [HUMAN_RESOURCES_BENEFIT_ENROLLMENT_CHANGED_EVENT] as const,
+			},
+		),
+	[HUMAN_RESOURCES_COMMAND_BENEFIT_PLAN_ELIGIBILITY_SET]:
+		defineAuditOnlyEmission(
+			HUMAN_RESOURCES_COMMAND_BENEFIT_PLAN_ELIGIBILITY_SET,
+			{
+				domain: "compensation-benefits",
+				aggregateType: "benefit_plan_eligibility",
+			},
+		),
+	[HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_WAIVE]: defineDomainEventEmission(
+		HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_WAIVE,
+		{
+			domain: "compensation-benefits",
+			aggregateType: "benefit_enrollment",
+			eventTypes: [HUMAN_RESOURCES_BENEFIT_ENROLLMENT_CHANGED_EVENT] as const,
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_DEPENDENT_ADD]:
+		defineAuditOnlyEmission(
+			HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_DEPENDENT_ADD,
+			{
+				domain: "compensation-benefits",
+				aggregateType: "benefit_enrollment_dependent",
+			},
+		),
+	[HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_DEPENDENT_END]:
+		defineAuditOnlyEmission(
+			HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_DEPENDENT_END,
+			{
+				domain: "compensation-benefits",
+				aggregateType: "benefit_enrollment_dependent",
+			},
+		),
+	[HUMAN_RESOURCES_COMMAND_COMPENSATION_GRADE_CREATE]: defineAuditOnlyEmission(
+		HUMAN_RESOURCES_COMMAND_COMPENSATION_GRADE_CREATE,
+		{
+			domain: "compensation-benefits",
+			aggregateType: "compensation_grade",
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_COMPENSATION_GRADE_UPDATE]: defineAuditOnlyEmission(
+		HUMAN_RESOURCES_COMMAND_COMPENSATION_GRADE_UPDATE,
+		{
+			domain: "compensation-benefits",
+			aggregateType: "compensation_grade",
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_COMPENSATION_GRADE_ARCHIVE]: defineAuditOnlyEmission(
+		HUMAN_RESOURCES_COMMAND_COMPENSATION_GRADE_ARCHIVE,
+		{
+			domain: "compensation-benefits",
+			aggregateType: "compensation_grade",
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_COMPENSATION_GRADE_PROGRESSION_RULE_CREATE]:
+		defineAuditOnlyEmission(
+			HUMAN_RESOURCES_COMMAND_COMPENSATION_GRADE_PROGRESSION_RULE_CREATE,
+			{
+				domain: "compensation-benefits",
+				aggregateType: "compensation_grade_progression_rule",
+			},
+		),
+	[HUMAN_RESOURCES_COMMAND_COMPENSATION_GRADE_PROGRESSION_RULE_ARCHIVE]:
+		defineAuditOnlyEmission(
+			HUMAN_RESOURCES_COMMAND_COMPENSATION_GRADE_PROGRESSION_RULE_ARCHIVE,
+			{
+				domain: "compensation-benefits",
+				aggregateType: "compensation_grade_progression_rule",
+			},
+		),
+	[HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_CREATE_DRAFT]:
+		defineAuditOnlyEmission(
+			HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_CREATE_DRAFT,
+			{
+				domain: "compensation-benefits",
+				aggregateType: "compensation_review",
+			},
+		),
+	[HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_RECORD_RECOMMENDATION]:
+		defineAuditOnlyEmission(
+			HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_RECORD_RECOMMENDATION,
+			{
+				domain: "compensation-benefits",
+				aggregateType: "compensation_review",
+			},
+		),
+	[HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_FINALIZE]:
+		defineAuditOnlyEmission(
+			HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_FINALIZE,
+			{
+				domain: "compensation-benefits",
+				aggregateType: "compensation_review",
+			},
+		),
+	[HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_APPLY_APPROVED_RESULT]:
+		defineDomainEventEmission(
+			HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_APPLY_APPROVED_RESULT,
+			{
+				domain: "compensation-benefits",
+				aggregateType: "compensation_review",
+				eventTypes: [HUMAN_RESOURCES_COMPENSATION_CHANGED_EVENT] as const,
+			},
+		),
+	[HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_CYCLE_CREATE]:
+		defineAuditOnlyEmission(
+			HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_CYCLE_CREATE,
+			{
+				domain: "compensation-benefits",
+				aggregateType: "compensation_review_cycle",
+			},
+		),
+	[HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_CYCLE_OPEN]:
+		defineAuditOnlyEmission(
+			HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_CYCLE_OPEN,
+			{
+				domain: "compensation-benefits",
+				aggregateType: "compensation_review_cycle",
+			},
+		),
+	[HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_CYCLE_CLOSE]:
+		defineAuditOnlyEmission(
+			HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_CYCLE_CLOSE,
+			{
+				domain: "compensation-benefits",
+				aggregateType: "compensation_review_cycle",
+			},
+		),
+	[HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_CYCLE_CANCEL]:
+		defineAuditOnlyEmission(
+			HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_CYCLE_CANCEL,
+			{
+				domain: "compensation-benefits",
+				aggregateType: "compensation_review_cycle",
+			},
+		),
+	[HUMAN_RESOURCES_COMMAND_COMPENSATION_PROPOSAL_CREATE]:
+		defineAuditOnlyEmission(
+			HUMAN_RESOURCES_COMMAND_COMPENSATION_PROPOSAL_CREATE,
+			{
+				domain: "compensation-benefits",
+				aggregateType: "compensation_proposal",
+			},
+		),
+	[HUMAN_RESOURCES_COMMAND_COMPENSATION_PROPOSAL_AMEND]:
+		defineAuditOnlyEmission(
+			HUMAN_RESOURCES_COMMAND_COMPENSATION_PROPOSAL_AMEND,
+			{
+				domain: "compensation-benefits",
+				aggregateType: "compensation_proposal",
+			},
+		),
+	[HUMAN_RESOURCES_COMMAND_COMPENSATION_PROPOSAL_APPROVE]:
+		defineDomainEventEmission(
+			HUMAN_RESOURCES_COMMAND_COMPENSATION_PROPOSAL_APPROVE,
+			{
+				domain: "compensation-benefits",
+				aggregateType: "compensation_proposal",
+				eventTypes: [
+					HUMAN_RESOURCES_COMPENSATION_PROPOSAL_APPROVED_EVENT,
+				] as const,
+			},
+		),
+	[HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_CREATE]:
+		defineDomainEventEmission(
+			HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_CREATE,
+			{
+				domain: "compensation-benefits",
+				aggregateType: "employee_compensation",
+				eventTypes: [HUMAN_RESOURCES_COMPENSATION_CHANGED_EVENT] as const,
+			},
+		),
+	[HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_AMEND]:
+		defineDomainEventEmission(
+			HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_AMEND,
+			{
+				domain: "compensation-benefits",
+				aggregateType: "employee_compensation",
+				eventTypes: [HUMAN_RESOURCES_COMPENSATION_CHANGED_EVENT] as const,
+			},
+		),
+	[HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_APPROVE]:
+		defineDomainEventEmission(
+			HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_APPROVE,
+			{
+				domain: "compensation-benefits",
+				aggregateType: "employee_compensation",
+				eventTypes: [HUMAN_RESOURCES_COMPENSATION_CHANGED_EVENT] as const,
+			},
+		),
+	[HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_SCHEDULE]:
+		defineDomainEventEmission(
+			HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_SCHEDULE,
+			{
+				domain: "compensation-benefits",
+				aggregateType: "employee_compensation",
+				eventTypes: [HUMAN_RESOURCES_COMPENSATION_CHANGED_EVENT] as const,
+			},
+		),
+	[HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_ACTIVATE]:
+		defineDomainEventEmission(
+			HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_ACTIVATE,
+			{
+				domain: "compensation-benefits",
+				aggregateType: "employee_compensation",
+				eventTypes: [HUMAN_RESOURCES_COMPENSATION_CHANGED_EVENT] as const,
+			},
+		),
+	[HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_CORRECT]:
+		defineDomainEventEmission(
+			HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_CORRECT,
+			{
+				domain: "compensation-benefits",
+				aggregateType: "employee_compensation",
+				eventTypes: [HUMAN_RESOURCES_COMPENSATION_CHANGED_EVENT] as const,
+			},
+		),
+	[HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_END]:
+		defineDomainEventEmission(
+			HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_END,
+			{
+				domain: "compensation-benefits",
+				aggregateType: "employee_compensation",
+				eventTypes: [HUMAN_RESOURCES_COMPENSATION_CHANGED_EVENT] as const,
+			},
+		),
+	[HUMAN_RESOURCES_COMMAND_SALARY_BAND_CREATE]: defineAuditOnlyEmission(
+		HUMAN_RESOURCES_COMMAND_SALARY_BAND_CREATE,
+		{
+			domain: "compensation-benefits",
+			aggregateType: "salary_band",
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_SALARY_BAND_SUPERSEDE]: defineAuditOnlyEmission(
+		HUMAN_RESOURCES_COMMAND_SALARY_BAND_SUPERSEDE,
+		{
+			domain: "compensation-benefits",
+			aggregateType: "salary_band",
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_SALARY_BAND_ARCHIVE]: defineAuditOnlyEmission(
+		HUMAN_RESOURCES_COMMAND_SALARY_BAND_ARCHIVE,
+		{
+			domain: "compensation-benefits",
+			aggregateType: "salary_band",
+		},
+	),
+} satisfies Record<
+	HumanResourcesCompensationBenefitsCommandId,
+	HumanResourcesMutationEmissionDefinition
+>;

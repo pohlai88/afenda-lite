@@ -5,7 +5,7 @@ import { errorResult } from "@afenda/errors";
 import type {
 	HumanResourcesOrganizationDimensions,
 	OrganizationDimensionDirectoryPort,
-} from "../ports";
+} from "../kernel/execution/ports";
 
 /** Deterministic test adapter for unit tests that do not exercise database FKs. */
 export function createMemoryOrganizationDimensionDirectory(): OrganizationDimensionDirectoryPort {

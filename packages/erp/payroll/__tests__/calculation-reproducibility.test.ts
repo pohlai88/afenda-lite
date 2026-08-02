@@ -4,8 +4,8 @@ import {
 	calculateEmployeePayroll,
 	hashSnapshot,
 	normalizeCalcOutput,
-} from "../src/runs/calculation";
-import { payrollJsonObjectSchema } from "../src/schemas/common";
+} from "../src/features/calculation/calculation";
+import { payrollJsonObjectSchema } from "../src/kernel/validation/common.schema";
 import { buildSyntheticCalcSnapshot } from "./helpers/calc-snapshot";
 
 describe("payroll calculation reproducibility", () => {

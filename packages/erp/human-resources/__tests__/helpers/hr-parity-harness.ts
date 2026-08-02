@@ -1,32 +1,32 @@
 import { randomUUID } from "node:crypto";
 
-import { createDrizzleHumanResourcesStore } from "../../src/adapters/drizzle";
-import { createDrizzleAssignmentContextQuery } from "../../src/adapters/drizzle/assignment-context-query";
-import type { HumanResourcesCommandOptions } from "../../src/command-options";
-import { createEmployee } from "../../src/core/employee";
-import { createEmployment } from "../../src/core/employment";
-import { grantLeaveEntitlement } from "../../src/leave/entitlement";
+import { createDrizzleHumanResourcesStore } from "../../src/composition/adapters/drizzle/index";
+import { grantLeaveEntitlement } from "../../src/features/leave/entitlement";
 import {
 	createLeavePolicy,
 	publishLeavePolicy,
-} from "../../src/leave/leave-policy";
-import { createDraftLeaveRequest } from "../../src/leave/leave-request";
-import { HUMAN_RESOURCES_COMMAND_LEAVE_POLICY_CREATE } from "../../src/module-ids";
-import { HUMAN_RESOURCES_PERMISSION_CODES } from "../../src/permissions";
-import type { MutationPorts } from "../../src/ports";
-import type { HumanResourcesMutationMeta } from "../../src/shared/mutation-meta";
-import { buildMutationMeta } from "../../src/shared/mutation-meta";
-import {
-	createMemoryHumanResourcesStore,
-	createStoreAssignmentContextQuery,
-} from "../../src/testing";
+} from "../../src/features/leave/leave-policy";
+import { createDraftLeaveRequest } from "../../src/features/leave/leave-request";
+import { createDrizzleAssignmentContextQuery } from "../../src/features/workforce-records/employment/adapters/assignment-context-query.drizzle";
+import { createEmployee } from "../../src/features/workforce-records/employment/employee";
+import { createEmployment } from "../../src/features/workforce-records/employment/employment";
+import { HUMAN_RESOURCES_PERMISSION_CODES } from "../../src/kernel/authorization/permissions";
 import type {
 	Employee,
 	Employment,
 	LeaveEntitlement,
 	LeavePolicy,
 	LeaveRequest,
-} from "../../src/types";
+} from "../../src/kernel/contracts";
+import type { HumanResourcesMutationMeta } from "../../src/kernel/emissions/mutation-meta";
+import { buildMutationMeta } from "../../src/kernel/emissions/mutation-meta";
+import type { HumanResourcesCommandOptions } from "../../src/kernel/execution/command-options";
+import type { MutationPorts } from "../../src/kernel/execution/ports";
+import { HUMAN_RESOURCES_COMMAND_LEAVE_POLICY_CREATE } from "../../src/kernel/operations/module-ids";
+import {
+	createMemoryHumanResourcesStore,
+	createStoreAssignmentContextQuery,
+} from "../../src/testing/index";
 import { createTestHumanResourcesCommandOptions } from "./command-options";
 import { createDrizzleTestOrganizationDimensionDirectory } from "./drizzle-organization-dimensions";
 import { createStoreBackedIdentityResolver } from "./identity-resolver";

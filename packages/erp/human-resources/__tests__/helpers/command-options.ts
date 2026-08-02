@@ -1,11 +1,11 @@
-import type { HumanResourcesCommandOptions } from "../../src/command-options";
+import { createStoreAssignmentContextQuery } from "../../src/features/time/store-assignment-context-query";
+import type { HumanResourcesCommandOptions } from "../../src/kernel/execution/command-options";
 import {
 	createMemoryDocumentReferencePort,
 	createMemoryOrganizationDimensionDirectory,
 	createMemoryWorkCalendar,
 	createStoreApprovedLeaveQuery,
-} from "../../src/testing";
-import { createStoreAssignmentContextQuery } from "../../src/time/store-assignment-context-query";
+} from "../../src/testing/index";
 
 export const TEST_ORGANIZATION_DIMENSION_KEYS = {
 	legalEntityKey: "LE-TEST",

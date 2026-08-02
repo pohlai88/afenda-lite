@@ -4,7 +4,10 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 const adapterSource = readFileSync(
-	path.resolve(import.meta.dirname, "../src/adapters/drizzle/time.ts"),
+	path.resolve(
+		import.meta.dirname,
+		"../src/features/time/adapters/time.drizzle.ts",
+	),
 	"utf8",
 );
 

@@ -33,11 +33,11 @@ import {
 	HUMAN_RESOURCES_WORK_ELIGIBILITY_VERIFIED_EVENT,
 } from "@afenda/events/schemas";
 import { describe, expect, it } from "vitest";
-import { HUMAN_RESOURCES_COMPLIANCE_EMISSIONS } from "../src/emissions/domains/compliance";
-import { HUMAN_RESOURCES_EMPLOYEE_RELATIONS_EMISSIONS } from "../src/emissions/domains/employee-relations";
-import { HUMAN_RESOURCES_TALENT_EMISSIONS } from "../src/emissions/domains/talent";
-import { HUMAN_RESOURCES_WORKFORCE_PLANNING_EMISSIONS } from "../src/emissions/domains/workforce-planning";
-import { HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD } from "../src/emissions/registry";
+import { HUMAN_RESOURCES_COMPLIANCE_EMISSIONS } from "../src/kernel/emissions/domains/compliance";
+import { HUMAN_RESOURCES_EMPLOYEE_RELATIONS_EMISSIONS } from "../src/kernel/emissions/domains/employee-relations";
+import { HUMAN_RESOURCES_TALENT_EMISSIONS } from "../src/kernel/emissions/domains/talent";
+import { HUMAN_RESOURCES_WORKFORCE_PLANNING_EMISSIONS } from "../src/kernel/emissions/domains/workforce-planning";
+import { HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD } from "../src/kernel/emissions/registry";
 import {
 	HUMAN_RESOURCES_COMMAND_CAREER_PLAN_ACKNOWLEDGE,
 	HUMAN_RESOURCES_COMMAND_CAREER_PLAN_ACTION_ADD,
@@ -124,7 +124,7 @@ import {
 	HUMAN_RESOURCES_EMPLOYEE_RELATIONS_COMMAND_IDS,
 	HUMAN_RESOURCES_TALENT_COMMAND_IDS,
 	HUMAN_RESOURCES_WORKFORCE_PLANNING_COMMAND_IDS,
-} from "../src/module-ids";
+} from "../src/kernel/operations/module-ids";
 import { helperAssert as assert } from "./helpers/helper-assert";
 
 interface EmissionExpectation {

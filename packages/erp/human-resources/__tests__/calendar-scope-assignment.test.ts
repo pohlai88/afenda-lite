@@ -1,17 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { createEmployee } from "../src/core/employee";
-import { createEmployment } from "../src/core/employment";
-import { HUMAN_RESOURCES_PERMISSION_CODES } from "../src/permissions";
-import {
-	createMemoryHumanResourcesStore,
-	createStoreAssignmentContextQuery,
-} from "../src/testing";
 import {
 	assignEmploymentCalendar,
 	assignWorkCalendarScope,
 	createWorkCalendar,
 	resolveEmployeeWorkCalendar,
-} from "../src/time/calendar";
+} from "../src/features/time/calendar";
+import { createEmployee } from "../src/features/workforce-records/employment/employee";
+import { createEmployment } from "../src/features/workforce-records/employment/employment";
+import { HUMAN_RESOURCES_PERMISSION_CODES } from "../src/kernel/authorization/permissions";
+import {
+	createMemoryHumanResourcesStore,
+	createStoreAssignmentContextQuery,
+} from "../src/testing/index";
 import { createTestHumanResourcesCommandOptions } from "./helpers/command-options";
 import { helperAssert as assert } from "./helpers/helper-assert";
 import { createStoreBackedIdentityResolver } from "./helpers/identity-resolver";

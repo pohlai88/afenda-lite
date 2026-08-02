@@ -1,26 +1,25 @@
 import { errorResult } from "@afenda/errors";
 import { describe, expect, it } from "vitest";
-
-import type { PayrollAuthorizationPort } from "../src/authorization";
+import {
+	payrollResultLineRecordSchema,
+	payrollRunEmployeeRecordSchema,
+} from "../src/features/calculation/outputs.schema";
+import { payrollRunRecordSchema } from "../src/features/payroll-runs/runs.schema";
 import {
 	getOwnPayrollPayslip,
 	getPayrollPayslip,
-} from "../src/outputs/payslip";
-import {
-	PAYROLL_PERMISSION_PAYSLIP_READ_OWN,
-	PAYROLL_PERMISSION_RECONCILIATION_MANAGE,
-} from "../src/permissions";
+} from "../src/features/payslips/payslip";
 import {
 	listPayrollReconciliationsForRun,
 	recordPayrollReconciliation,
 	resolvePayrollReconciliation,
-} from "../src/reconciliation/payroll-reconciliation";
+} from "../src/features/reconciliation/reconciliation.command";
+import type { PayrollAuthorizationPort } from "../src/kernel/execution/authorization";
 import {
-	payrollResultLineRecordSchema,
-	payrollRunEmployeeRecordSchema,
-} from "../src/schemas/outputs";
-import { payrollRunRecordSchema } from "../src/schemas/runs";
-import { createMemoryPayrollStore } from "../src/testing";
+	PAYROLL_PERMISSION_PAYSLIP_READ_OWN,
+	PAYROLL_PERMISSION_RECONCILIATION_MANAGE,
+} from "../src/kernel/execution/permissions";
+import { createMemoryPayrollStore } from "../src/testing/index";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
 
 const ORGANIZATION_ID = "org-payroll-outputs";
@@ -111,7 +110,7 @@ describe("payroll outputs and reconciliation", () => {
 			store,
 			authorization: authorization([PAYROLL_PERMISSION_PAYSLIP_READ_OWN]),
 			employees: {
-				getPayrollEmployee: async () => errorResult.ok(null),
+				getApprovedPayrollHandoff: async () => errorResult.ok(null),
 				resolveActorEmployeeId: async () => errorResult.ok(EMPLOYEE_ID),
 			},
 		};

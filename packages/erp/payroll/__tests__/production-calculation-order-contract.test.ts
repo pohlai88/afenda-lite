@@ -5,7 +5,10 @@ import { describe, expect, it } from "vitest";
 
 const source = readFileSync(
 	fileURLToPath(
-		new URL("../src/runs/production-run-calculator.ts", import.meta.url),
+		new URL(
+			"../src/features/calculation/production-run-calculator.ts",
+			import.meta.url,
+		),
 	),
 	"utf8",
 );

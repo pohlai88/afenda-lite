@@ -2,21 +2,20 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 
 import { describe, expect, it } from "vitest";
-
-import { HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD } from "../src/emissions/registry";
-import { humanResourcesModuleManifest } from "../src/module.manifest";
-import {
-	HUMAN_RESOURCES_TALENT_COMMAND_IDS,
-	HUMAN_RESOURCES_TALENT_QUERY_IDS,
-} from "../src/module-ids";
-import { HUMAN_RESOURCES_REGISTERED_OPERATION_DEFINITIONS } from "../src/operation-registry/registry";
-import { resolveHumanResourcesAuthorizationPolicy } from "../src/shared/authorization-policy-registry";
+import { humanResourcesModuleManifest } from "../src/composition/module.manifest";
 import {
 	HUMAN_RESOURCES_TALENT_COMMAND_AUTHORIZATION,
 	HUMAN_RESOURCES_TALENT_COMMANDS,
 	HUMAN_RESOURCES_TALENT_QUERIES,
 	HUMAN_RESOURCES_TALENT_QUERY_AUTHORIZATION,
-} from "../src/talent/operation-registry";
+} from "../src/features/talent/operation-registry";
+import { resolveHumanResourcesAuthorizationPolicy } from "../src/kernel/authorization/registry";
+import { HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD } from "../src/kernel/emissions/registry";
+import {
+	HUMAN_RESOURCES_TALENT_COMMAND_IDS,
+	HUMAN_RESOURCES_TALENT_QUERY_IDS,
+} from "../src/kernel/operations/module-ids";
+import { HUMAN_RESOURCES_REGISTERED_OPERATION_DEFINITIONS } from "../src/kernel/operations/registry";
 
 const definitions = [
 	...Object.values(HUMAN_RESOURCES_TALENT_COMMANDS),
@@ -32,7 +31,7 @@ const handlers = [
 	"talent-pool.ts",
 	"talent-profile-mobility.ts",
 	"talent-profile.ts",
-].map((file) => source(`src/talent/${file}`));
+].map((file) => source(`src/features/talent/${file}`));
 
 describe("Talent operation registry", () => {
 	it("owns every public operation exactly once", () => {
@@ -41,7 +40,7 @@ describe("Talent operation registry", () => {
 		expect(new Set(definitions.map(({ publicName }) => publicName)).size).toBe(
 			49,
 		);
-		const facade = source("src/public-capabilities.ts");
+		const facade = source("src/facade/capabilities.ts");
 		for (const definition of definitions) {
 			expect(definition.owner).toBe("performance-talent");
 			expect(facade).toMatch(
@@ -96,7 +95,7 @@ describe("Talent operation registry", () => {
 			),
 		).toBe(49);
 		expect(handlers.join("\n")).not.toContain("HumanResourcesStore");
-		expect(source("src/talent/store.ts")).toContain(
+		expect(source("src/features/talent/store.ts")).toContain(
 			"HumanResourcesTalentAuthorizationStore",
 		);
 	});

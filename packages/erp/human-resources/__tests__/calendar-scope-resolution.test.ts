@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
 	type ScopedCalendarAssignmentCandidate,
 	selectScopedWorkCalendarAssignment,
-} from "../src/time/calendar-scope-resolution";
+} from "../src/features/time/calendar-scope-resolution";
 
 function candidate(
 	overrides: Partial<ScopedCalendarAssignmentCandidate> &

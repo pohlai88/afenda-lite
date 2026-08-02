@@ -3,7 +3,7 @@
  */
 import { describe, expect, it } from "vitest";
 
-import type { MissingMemoryHumanResourcesMethods } from "../src/adapters/memory/coverage";
+import type { MissingMemoryHumanResourcesMethods } from "../src/composition/adapters/memory/coverage";
 
 type AssertNever<T extends never> = T;
 

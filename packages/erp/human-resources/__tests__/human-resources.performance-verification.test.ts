@@ -1,11 +1,10 @@
 import { describe, expect, it } from "vitest";
-
+import { runSequential } from "../src/kernel/execution/run-sequential";
 import {
 	createHrLocalBenchmarkWorkloads,
 	type LocalBenchmarkEvidence,
 	runLocalBenchmark,
-} from "../src/performance-verification";
-import { runSequential } from "../src/shared/run-sequential";
+} from "../src/testing/performance/index";
 
 describe("HR local performance verification", () => {
 	it("executes all eight deterministic workloads and reports local threshold evidence", async () => {

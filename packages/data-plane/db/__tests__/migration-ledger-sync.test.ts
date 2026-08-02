@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { getHistoricalReconciliationDisposition } from "../scripts/lib/historical-migration-execution.mjs";
 import { planIdentityMigrations } from "../scripts/lib/identity-migrator.mjs";
+import { listMigrationDdlProbeTags } from "../scripts/lib/migration-ddl-probes.mjs";
 import {
 	findPendingMigrationJournalRows,
 	reconcileMigrationJournalRows,
+	summarizeMigrationJournalRows,
 } from "../scripts/lib/migration-journal-rows.mjs";
 
 async function findJournalEntry(tag: string) {
@@ -103,6 +105,56 @@ describe("reconcileMigrationJournalRows", () => {
 		]);
 		expect(result.rows[0]?.status).toBe("identity mismatch");
 		expect(result.unknownDatabaseRows).toEqual([]);
+	});
+});
+
+describe("summarizeMigrationJournalRows", () => {
+	it("distinguishes the contiguous frontier from later applied identities", () => {
+		const summary = summarizeMigrationJournalRows([
+			{ journalTag: "0000_a", status: "applied" },
+			{ journalTag: "0001_b", status: "pending" },
+			{ journalTag: "0002_c", status: "pending" },
+			{ journalTag: "0003_d", status: "applied" },
+		]);
+
+		expect(summary).toEqual({
+			contiguousAppliedThroughTag: "0000_a",
+			pendingCount: 2,
+			divergentCount: 0,
+			outOfOrderAppliedTags: ["0003_d"],
+		});
+	});
+});
+
+describe("migration DDL probe registry", () => {
+	it("contains only governed tags and covers the current pending identities", async () => {
+		const { readFileSync } = await import("node:fs");
+		const { fileURLToPath } = await import("node:url");
+		const { dirname, join } = await import("node:path");
+		const root = join(dirname(fileURLToPath(import.meta.url)), "..");
+		const journal = JSON.parse(
+			readFileSync(join(root, "drizzle", "meta", "_journal.json"), "utf8"),
+		) as { entries: { tag: string }[] };
+		const journalTags = new Set(journal.entries.map((entry) => entry.tag));
+		const probeTags = listMigrationDdlProbeTags();
+
+		expect(probeTags.every((tag) => journalTags.has(tag))).toBe(true);
+		expect(probeTags).toEqual(
+			expect.arrayContaining([
+				"0034_ca_governance_bodies_memberships",
+				"0035_ca_statutory_offices_officers",
+				"0036_ca_officer_compliance",
+				"0037_ca_governance_meetings",
+				"0038_ca_resolutions",
+				"0039_hr_reliability_scheduler",
+				"0040_hr_bulk_jobs",
+				"0042_platform_tenant_access_indexes",
+				"0043_event_claim_lease",
+				"0044_payroll_setup_rule_ranges",
+				"0045_payroll_assignment_ranges",
+				"0046_payroll_outputs_reconciliation_adjustments",
+			]),
+		);
 	});
 });
 

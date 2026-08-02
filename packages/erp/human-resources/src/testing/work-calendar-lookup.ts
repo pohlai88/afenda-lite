@@ -5,7 +5,7 @@ import type {
 	WorkCalendarHoliday,
 	WorkCalendarLookupPort,
 	WorkWeekDayPattern,
-} from "../time/work-calendar";
+} from "../features/time/work-calendar";
 
 const MON_FRI: WorkWeekDayPattern[] = [
 	{

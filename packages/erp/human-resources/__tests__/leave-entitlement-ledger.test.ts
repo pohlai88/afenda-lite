@@ -3,15 +3,6 @@
  */
 
 import { describe, expect, it } from "vitest";
-
-import type { HumanResourcesPermission } from "../src/authorization";
-import type { HumanResourcesEmployeeId } from "../src/brands";
-import { createEmployee } from "../src/core/employee";
-import { createEmployment } from "../src/core/employment";
-import {
-	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
-	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
-} from "../src/error-codes";
 import {
 	accrueLeaveEntitlement,
 	adjustLeaveEntitlement,
@@ -21,18 +12,21 @@ import {
 	getLeaveEntitlement,
 	grantLeaveEntitlement,
 	reconcileLeaveBalance,
-} from "../src/leave/entitlement";
+} from "../src/features/leave/entitlement";
 import {
 	createLeavePolicy,
 	publishLeavePolicy,
-} from "../src/leave/leave-policy";
+} from "../src/features/leave/leave-policy";
 import {
 	approveLeaveRequest,
 	cancelApprovedLeaveRequest,
 	createDraftLeaveRequest,
 	submitLeaveRequest,
-} from "../src/leave/leave-request";
-import { assignPrimaryReportingLine } from "../src/organization/reporting-line";
+} from "../src/features/leave/leave-request";
+import { assignPrimaryReportingLine } from "../src/features/organization/reporting-line";
+import { createEmployee } from "../src/features/workforce-records/employment/employee";
+import { createEmployment } from "../src/features/workforce-records/employment/employment";
+import type { HumanResourcesPermission } from "../src/kernel/authorization/authorize";
 import {
 	HUMAN_RESOURCES_PERMISSION_CODES,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CREATE,
@@ -45,8 +39,13 @@ import {
 	HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_APPROVE_TEAM,
 	HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_OWN,
 	HUMAN_RESOURCES_PERMISSION_ORGANIZATION_MANAGE,
-} from "../src/permissions";
-import { createMemoryHumanResourcesStore } from "../src/testing";
+} from "../src/kernel/authorization/permissions";
+import {
+	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+} from "../src/kernel/execution/error-codes";
+import type { HumanResourcesEmployeeId } from "../src/kernel/identity/brands";
+import { createMemoryHumanResourcesStore } from "../src/testing/index";
 import { createTestHumanResourcesCommandOptions } from "./helpers/command-options";
 import {
 	createStoreBackedIdentityResolver,

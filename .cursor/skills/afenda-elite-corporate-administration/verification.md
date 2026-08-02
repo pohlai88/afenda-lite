@@ -1,6 +1,10 @@
 # Corporate Administration — verification
 
-Companion for [SKILL.md](SKILL.md). Requirement acceptance is recorded in `packages/erp/corporate-administration/PRD.md`.
+Companion for [SKILL.md](SKILL.md). Product acceptance is recorded in
+`packages/erp/corporate-administration/PRD.md`; sequencing and eligibility are
+recorded in `packages/erp/corporate-administration/DEVELOPMENT-ROADMAP.md`.
+Mission boundaries, permitted code paths, and slice acceptance are recorded in
+`packages/erp/corporate-administration/IMPLEMENTATION-SLICES.md`.
 
 ## Fourteen-boundary matrix
 
@@ -40,7 +44,7 @@ pnpm --filter @afenda/corporate-administration check
 
 ```powershell
 pnpm --filter @afenda/db db:migrate   # or repo-standard migrate command
-# fresh-schema + upgrade tests per PRD.md rollout and recovery sections
+# fresh-schema + upgrade tests per PRD and roadmap release-safety sections
 pnpm audit:tenancy-nulls              # after new hard tenant roots
 ```
 
@@ -107,6 +111,8 @@ Compile success alone is not behavioral evidence.
 2. Requirement group: <CA requirement IDs>
 3. Product posture:
    - canonical requirement authority: packages/erp/corporate-administration/PRD.md
+   - canonical sequencing authority: packages/erp/corporate-administration/DEVELOPMENT-ROADMAP.md
+   - canonical slice authority: packages/erp/corporate-administration/IMPLEMENTATION-SLICES.md
    - current disk baseline inspected: <files/commit/branch>
 4. Working-tree baseline:
    - branch/commit:

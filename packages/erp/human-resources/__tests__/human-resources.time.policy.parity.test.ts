@@ -1,15 +1,14 @@
 import { afterAll, describe, expect, it } from "vitest";
-
-import { createEmployee } from "../src/core/employee";
-import { createEmployment } from "../src/core/employment";
-import { HUMAN_RESOURCES_ERROR_CONFLICT } from "../src/error-codes";
 import {
 	activateTimePolicy,
 	assignTimePolicy,
 	createTimePolicy,
 	resolveTimePolicy,
 	supersedeTimePolicy,
-} from "../src/time/policy";
+} from "../src/features/time/policy";
+import { createEmployee } from "../src/features/workforce-records/employment/employee";
+import { createEmployment } from "../src/features/workforce-records/employment/employment";
+import { HUMAN_RESOURCES_ERROR_CONFLICT } from "../src/kernel/execution/error-codes";
 import {
 	createHrParityHarness,
 	type WorkforceStoreAdapter,

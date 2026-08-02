@@ -28,6 +28,7 @@ export function buildSyntheticHandoff(
 		organizationId: "org-synth-handoff",
 		employeeId: "emp-synth-handoff",
 		employmentId: "employ-synth-handoff",
+		employmentStatus: "active",
 		assignment: BASE_ASSIGNMENT,
 		effectiveDate: "2025-01-01",
 		currencyCode: "USD",

@@ -1,0 +1,2213 @@
+import { randomUUID } from "node:crypto";
+import { errorResult, type Result } from "@afenda/errors";
+import {
+	HUMAN_RESOURCES_LEAVE_APPROVED_EVENT,
+	HUMAN_RESOURCES_LEAVE_CANCELLED_EVENT,
+	HUMAN_RESOURCES_LEAVE_ENTITLEMENT_ADJUSTED_EVENT,
+	HUMAN_RESOURCES_LEAVE_REJECTED_EVENT,
+	HUMAN_RESOURCES_LEAVE_REQUESTED_EVENT,
+	type HumanResourcesEventType,
+} from "@afenda/events/schemas";
+import type {
+	HumanResourcesStore,
+	IdempotentLeaveAdjustmentRecord,
+	IdempotentLeaveEntitlementRecord,
+	IdempotentLeaveRequestRecord,
+	LeaveAdjustmentCreateRecord,
+	LeaveEntitlementGrantRecord,
+	LeavePolicyCreateRecord,
+	LeaveRequestAmendRecord,
+	LeaveRequestCreateRecord,
+} from "../../../composition/store/index";
+import type {
+	ApprovedLeaveHandoff,
+	LeaveAdjustment,
+	LeaveBalance,
+	LeaveEntitlement,
+	LeaveEntitlementListPage,
+	LeavePolicy,
+	LeavePolicyEligibility,
+	LeavePolicyListPage,
+	LeaveRequest,
+	LeaveRequestListPage,
+	LeaveRequestSegment,
+	ResolvedLeavePolicy,
+	TeamCalendarLeavePage,
+} from "../../../kernel/contracts";
+import {
+	attachMutationExecutionContext,
+	type HumanResourcesMutationMeta,
+} from "../../../kernel/emissions/mutation-meta";
+import {
+	aggregateTypeToEntity,
+	emitHumanResourcesMutationOutcome,
+} from "../../../kernel/emissions/mutation-outcome";
+import { getHumanResourcesMutationEmission } from "../../../kernel/emissions/resolve-emission";
+import { assertExpectedVersion } from "../../../kernel/execution/concurrency";
+import {
+	conflict,
+	invalidState,
+	notFound,
+} from "../../../kernel/execution/domain-guards";
+import { HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE } from "../../../kernel/execution/error-codes";
+import type { MutationPorts } from "../../../kernel/execution/ports";
+import {
+	type HumanResourcesEmployeeId,
+	type HumanResourcesEmploymentId,
+	type HumanResourcesLeaveEntitlementId,
+	type HumanResourcesLeavePolicyId,
+	type HumanResourcesLeaveRequestId,
+	parseHumanResourcesLeaveAdjustmentId,
+	parseHumanResourcesLeaveApprovalDecisionId,
+	parseHumanResourcesLeaveEntitlementId,
+	parseHumanResourcesLeavePolicyId,
+	parseHumanResourcesLeaveRequestId,
+	parseHumanResourcesLeaveRequestSegmentId,
+} from "../../../kernel/identity/brands";
+import type { HumanResourcesCommandId } from "../../../kernel/operations/module-ids";
+import { HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_ADJUST } from "../../../kernel/operations/module-ids";
+import type { EmploymentStatus } from "../../workforce-records/employment/employment-status";
+import { computeLeaveBalance, negateLeaveQuantity } from "../balance";
+import {
+	ACTIVE_LEAVE_OVERLAP_STATUSES,
+	assertLeaveEntitlementActive,
+	assertLeaveEntitlementStatusTransition,
+	assertLeavePolicyEditable,
+	assertLeavePolicyStatusTransition,
+	assertLeaveRequestAmendable,
+	assertLeaveRequestStatusTransition,
+	assertNoLeaveOverlap,
+} from "../guards";
+import { resolvePublishedLeavePolicyByCodeLineageAsOf } from "../leave-policy-lineage";
+import { mergeLeavePolicyBalanceRules } from "../policy-balance-rules";
+import type { LeavePolicyStatus, LeaveRequestStatus } from "../status";
+
+export interface LeaveMemoryState {
+	leaveAdjustments: Map<string, LeaveAdjustment>;
+	leaveApprovalDecisions: Map<string, { requestId: string; decision: string }>;
+	leaveEntitlementIdempotency: Map<string, IdempotentLeaveEntitlementRecord>;
+	leaveEntitlements: Map<string, LeaveEntitlement>;
+	leavePolicies: Map<string, LeavePolicy>;
+	leavePolicyEligibility: Map<string, LeavePolicyEligibility>;
+	leaveRequestIdempotency: Map<string, IdempotentLeaveRequestRecord>;
+	leaveRequestSegments: Map<string, LeaveRequestSegment>;
+	leaveRequests: Map<string, LeaveRequest>;
+}
+
+export function createLeaveMemoryState(): LeaveMemoryState {
+	return {
+		leavePolicies: new Map(),
+		leavePolicyEligibility: new Map(),
+		leaveEntitlements: new Map(),
+		leaveEntitlementIdempotency: new Map(),
+		leaveAdjustments: new Map(),
+		leaveRequests: new Map(),
+		leaveRequestIdempotency: new Map(),
+		leaveRequestSegments: new Map(),
+		leaveApprovalDecisions: new Map(),
+	};
+}
+
+export function resetLeaveMemoryState(state: LeaveMemoryState): void {
+	state.leavePolicies.clear();
+	state.leavePolicyEligibility.clear();
+	state.leaveEntitlements.clear();
+	state.leaveEntitlementIdempotency.clear();
+	state.leaveAdjustments.clear();
+	state.leaveRequests.clear();
+	state.leaveRequestIdempotency.clear();
+	state.leaveRequestSegments.clear();
+	state.leaveApprovalDecisions.clear();
+}
+
+const leaveEmployeeBookingLocks = new Map<string, Promise<unknown>>();
+
+function leaveEmployeeBookingLockKey(
+	organizationId: string,
+	employeeId: HumanResourcesEmployeeId,
+): string {
+	return `${organizationId}:${employeeId}`;
+}
+
+async function withLeaveEmployeeBookingLock<T>(
+	key: string,
+	fn: () => Promise<Result<T>>,
+): Promise<Result<T>> {
+	const previous = leaveEmployeeBookingLocks.get(key) ?? Promise.resolve();
+	let release!: () => void;
+	const gate = new Promise<void>((resolve) => {
+		release = resolve;
+	});
+	const current = previous.then(() => gate);
+	leaveEmployeeBookingLocks.set(key, current);
+	try {
+		await previous;
+		return fn();
+	} finally {
+		release();
+		if (leaveEmployeeBookingLocks.get(key) === current) {
+			leaveEmployeeBookingLocks.delete(key);
+		}
+	}
+}
+
+function activeLeaveOverlapRequestIds(
+	state: LeaveMemoryState,
+	input: {
+		organizationId: string;
+		employeeId: HumanResourcesEmployeeId;
+		excludeRequestId?: HumanResourcesLeaveRequestId | undefined;
+		includeDraft?: boolean | undefined;
+	},
+): Set<HumanResourcesLeaveRequestId> {
+	const activeRequests = Array.from(state.leaveRequests.values()).filter(
+		(request) =>
+			request.organizationId === input.organizationId &&
+			request.employeeId === input.employeeId &&
+			(ACTIVE_LEAVE_OVERLAP_STATUSES as readonly LeaveRequestStatus[]).includes(
+				request.status,
+			) &&
+			(input.includeDraft !== false || request.status !== "draft") &&
+			request.id !== input.excludeRequestId,
+	);
+	return new Set(activeRequests.map((request) => request.id));
+}
+
+function assertNoLeaveOverlapForRequest(
+	state: LeaveMemoryState,
+	input: {
+		organizationId: string;
+		requestId: HumanResourcesLeaveRequestId;
+		employeeId: HumanResourcesEmployeeId;
+		includeDraft?: boolean | undefined;
+	},
+): Result<void> {
+	const candidateSegments = Array.from(state.leaveRequestSegments.values())
+		.filter(
+			(segment) =>
+				segment.organizationId === input.organizationId &&
+				segment.requestId === input.requestId,
+		)
+		.map((segment) => ({
+			segmentDate: segment.segmentDate,
+			dayPortion: segment.dayPortion,
+		}));
+	const requestIds = activeLeaveOverlapRequestIds(state, {
+		organizationId: input.organizationId,
+		employeeId: input.employeeId,
+		excludeRequestId: input.requestId,
+		includeDraft: input.includeDraft,
+	});
+	const existingSegments = Array.from(state.leaveRequestSegments.values())
+		.filter(
+			(segment) =>
+				segment.organizationId === input.organizationId &&
+				requestIds.has(segment.requestId),
+		)
+		.map((segment) => ({
+			segmentDate: segment.segmentDate,
+			dayPortion: segment.dayPortion,
+		}));
+	return assertNoLeaveOverlap(candidateSegments, existingSegments);
+}
+
+function postedAdjustmentsForEntitlement(
+	state: LeaveMemoryState,
+	entitlementId: HumanResourcesLeaveEntitlementId,
+): LeaveAdjustment[] {
+	return Array.from(state.leaveAdjustments.values()).filter(
+		(adjustment) =>
+			adjustment.entitlementId === entitlementId &&
+			adjustment.status === "posted",
+	);
+}
+
+function resolveBalance(
+	state: LeaveMemoryState,
+	entitlement: LeaveEntitlement,
+): LeaveBalance {
+	const policy = state.leavePolicies.get(entitlement.policyId);
+	const adjustments = postedAdjustmentsForEntitlement(state, entitlement.id);
+	return {
+		entitlementId: entitlement.id,
+		employeeId: entitlement.employeeId,
+		policyId: entitlement.policyId,
+		unit: policy?.unit ?? "days",
+		openingQuantity: entitlement.openingQuantity,
+		balance: computeLeaveBalance(entitlement.openingQuantity, adjustments),
+	};
+}
+
+async function emitLeaveSideEffects(
+	ports: MutationPorts,
+	input: {
+		commandId: HumanResourcesCommandId;
+		meta: HumanResourcesMutationMeta;
+		organizationId: string;
+		actorUserId: string;
+		aggregateId: string;
+		audit: {
+			entity: string;
+			entityId?: string | undefined;
+			action: "CREATE" | "UPDATE" | "DELETE";
+		};
+		eventType?: HumanResourcesEventType | undefined;
+		eventEntityId?: string | undefined;
+		eventEntityType?: string | undefined;
+		conditionalEventSuppressed?: boolean | undefined;
+	},
+): Promise<Result<void>> {
+	const definition = getHumanResourcesMutationEmission(input.commandId);
+	const executionMeta = attachMutationExecutionContext(input.meta, {
+		organizationId: input.organizationId,
+		actorUserId: input.actorUserId,
+	});
+
+	const eventEntityType =
+		input.eventEntityType ??
+		(input.eventType
+			? aggregateTypeToEntity(definition.aggregateType)
+			: undefined);
+	const eventEntityId = input.eventEntityId ?? input.aggregateId;
+
+	return await emitHumanResourcesMutationOutcome(
+		{
+			commandId: input.commandId,
+			meta: executionMeta,
+			aggregateType: definition.aggregateType,
+			aggregateId: input.aggregateId,
+			conditionalEventSuppressed: input.conditionalEventSuppressed,
+			audit: {
+				entity: input.audit.entity,
+				entityId: input.audit.entityId,
+				action: input.audit.action,
+				changes: [],
+			},
+			event: input.eventType
+				? {
+						type: input.eventType,
+						entityId: eventEntityId,
+						entityType: eventEntityType,
+						payload: {
+							organizationId: input.organizationId,
+							entityType: eventEntityType ?? input.audit.entity,
+							entityId: eventEntityId,
+							actorId: input.actorUserId,
+							correlationId: input.meta.correlationId,
+						},
+					}
+				: undefined,
+		},
+		ports,
+	);
+}
+
+function tenureDaysOn(startsOn: string, asOfDate: string): number {
+	const startMs = Date.parse(`${startsOn}T00:00:00.000Z`);
+	const asOfMs = Date.parse(`${asOfDate}T00:00:00.000Z`);
+	return Math.floor((asOfMs - startMs) / (1000 * 60 * 60 * 24));
+}
+
+function _isPolicyEffectiveOn(policy: LeavePolicy, asOfDate: string): boolean {
+	if (policy.effectiveFrom > asOfDate) {
+		return false;
+	}
+	if (policy.effectiveTo !== null && policy.effectiveTo < asOfDate) {
+		return false;
+	}
+	return true;
+}
+
+function isEmployeeEligibleForPolicy(input: {
+	eligibility: LeavePolicyEligibility;
+	employmentStatus: import("../../workforce-records/employment/employment-status").EmploymentStatus;
+	tenureDays: number;
+}): boolean {
+	if (
+		!input.eligibility.allowedEmploymentStatuses.includes(
+			input.employmentStatus,
+		)
+	) {
+		return false;
+	}
+	if (
+		input.eligibility.minTenureDays !== null &&
+		input.tenureDays < input.eligibility.minTenureDays
+	) {
+		return false;
+	}
+	return true;
+}
+
+export type MemoryLeaveMethods = Pick<
+	HumanResourcesStore,
+	| "getLeavePolicyById"
+	| "getLeavePolicyEligibility"
+	| "resolveApplicableLeavePolicy"
+	| "getPrimaryManagerForEmployee"
+	| "findLeavePolicyByCode"
+	| "createLeavePolicy"
+	| "updateLeavePolicy"
+	| "publishLeavePolicy"
+	| "supersedeLeavePolicy"
+	| "archiveLeavePolicy"
+	| "listLeavePolicies"
+	| "getLeaveEntitlementById"
+	| "findLeaveEntitlementByIdempotencyKey"
+	| "grantLeaveEntitlement"
+	| "carryForwardLeaveEntitlement"
+	| "expireLeaveEntitlement"
+	| "findLeaveAdjustmentByIdempotencyKey"
+	| "adjustLeaveEntitlement"
+	| "listLeaveEntitlements"
+	| "listPostedLeaveAdjustments"
+	| "getLeaveBalance"
+	| "getLeaveRequestById"
+	| "findLeaveRequestByIdempotencyKey"
+	| "listLeaveRequestSegments"
+	| "listOverlappingLeaveSegments"
+	| "createDraftLeaveRequest"
+	| "amendLeaveRequest"
+	| "submitLeaveRequest"
+	| "approveLeaveRequest"
+	| "rejectLeaveRequest"
+	| "returnLeaveRequest"
+	| "withdrawLeaveRequest"
+	| "cancelApprovedLeaveRequest"
+	| "listLeaveRequests"
+	| "listPendingApprovalLeaveRequests"
+	| "listTeamCalendarLeaveRequests"
+	| "getApprovedLeaveHandoff"
+>;
+
+export type LeaveMemoryHost = Pick<
+	HumanResourcesStore,
+	| "resolvePrimaryManager"
+	| "getEmploymentById"
+	| "listDirectReports"
+	| "findLeavePolicyByCode"
+	| "createLeavePolicy"
+	| "grantLeaveEntitlement"
+	| "adjustLeaveEntitlement"
+	| "listLeaveRequestSegments"
+	| "getLeavePolicyEligibility"
+>;
+
+import { idempotencyMapKey } from "../../../kernel/execution/idempotency";
+
+async function transitionLeavePolicyStatus(
+	state: LeaveMemoryState,
+	_host: LeaveMemoryHost & MemoryLeaveMethods,
+	input: {
+		organizationId: string;
+		policyId: HumanResourcesLeavePolicyId;
+		expectedVersion: number;
+		actorUserId: string;
+		nextStatus: LeavePolicyStatus;
+		ports: MutationPorts;
+		meta: HumanResourcesMutationMeta;
+	},
+): Promise<Result<LeavePolicy>> {
+	const policy = state.leavePolicies.get(input.policyId);
+	if (!policy) {
+		return notFound("Leave policy not found");
+	}
+	if (policy.organizationId !== input.organizationId) {
+		return notFound(
+			"Leave policy not found",
+			HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+		);
+	}
+	const versionCheck = assertExpectedVersion(
+		policy.version,
+		input.expectedVersion,
+	);
+	if (!versionCheck.ok) {
+		return versionCheck;
+	}
+	const transition = assertLeavePolicyStatusTransition(
+		policy.status,
+		input.nextStatus,
+	);
+	if (!transition.ok) {
+		return transition;
+	}
+
+	const previous = { ...policy };
+	const now = new Date();
+	const updated: LeavePolicy = {
+		...policy,
+		status: input.nextStatus,
+		version: policy.version + 1,
+		updatedBy: input.actorUserId,
+		updatedAt: now,
+	};
+	state.leavePolicies.set(updated.id, updated);
+
+	const emission = await emitLeaveSideEffects(input.ports, {
+		commandId: input.meta.operationId,
+		meta: input.meta,
+		organizationId: updated.organizationId,
+		actorUserId: input.actorUserId,
+		aggregateId: updated.id,
+		audit: {
+			entity: "hr_leave_policy",
+			action: "UPDATE",
+		},
+	});
+	if (!emission.ok) {
+		state.leavePolicies.set(updated.id, previous);
+		return emission;
+	}
+
+	return errorResult.ok({ ...updated });
+}
+
+async function transitionLeaveEntitlementStatus(
+	state: LeaveMemoryState,
+	host: LeaveMemoryHost & MemoryLeaveMethods,
+	input: {
+		organizationId: string;
+		entitlementId: HumanResourcesLeaveEntitlementId;
+		expectedVersion: number;
+		actorUserId: string;
+		nextStatus: LeaveEntitlement["status"];
+		ports: MutationPorts;
+		meta: HumanResourcesMutationMeta;
+	},
+): Promise<Result<LeaveEntitlement>> {
+	const entitlement = state.leaveEntitlements.get(input.entitlementId);
+	if (!entitlement) {
+		return notFound("Leave entitlement not found");
+	}
+	if (entitlement.organizationId !== input.organizationId) {
+		return notFound(
+			"Leave entitlement not found",
+			HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+		);
+	}
+	const versionCheck = assertExpectedVersion(
+		entitlement.version,
+		input.expectedVersion,
+	);
+	if (!versionCheck.ok) {
+		return versionCheck;
+	}
+	const transition = assertLeaveEntitlementStatusTransition(
+		entitlement.status,
+		input.nextStatus,
+	);
+	if (!transition.ok) {
+		return transition;
+	}
+
+	const previous = { ...entitlement };
+
+	if (input.nextStatus === "expired") {
+		const balance = resolveBalance(state, entitlement);
+		if (balance.balance !== "0") {
+			const expiry = await host.adjustLeaveEntitlement(
+				{
+					organizationId: input.organizationId,
+					entitlementId: entitlement.id,
+					sourceRequestId: null,
+					kind: "expiry",
+					delta: negateLeaveQuantity(balance.balance),
+					reason: "Entitlement expired",
+					source: "system",
+					createIdempotencyKey: `${entitlement.id}:expiry`,
+					createRequestFingerprint: entitlement.fingerprint,
+					createdBy: input.actorUserId,
+				},
+				input.ports,
+				input.meta,
+			);
+			if (!expiry.ok) {
+				return expiry;
+			}
+		}
+	}
+
+	const now = new Date();
+	const updated: LeaveEntitlement = {
+		...entitlement,
+		status: input.nextStatus,
+		version: entitlement.version + 1,
+		updatedBy: input.actorUserId,
+		updatedAt: now,
+	};
+	state.leaveEntitlements.set(updated.id, updated);
+
+	const emission = await emitLeaveSideEffects(input.ports, {
+		commandId: input.meta.operationId,
+		meta: input.meta,
+		organizationId: updated.organizationId,
+		actorUserId: input.actorUserId,
+		aggregateId: updated.id,
+		audit: {
+			entity: "hr_leave_entitlement",
+			action: "UPDATE",
+		},
+	});
+	if (!emission.ok) {
+		state.leaveEntitlements.set(updated.id, previous);
+		return emission;
+	}
+
+	return errorResult.ok({ ...updated });
+}
+
+async function transitionLeaveRequestStatus(
+	state: LeaveMemoryState,
+	_host: LeaveMemoryHost & MemoryLeaveMethods,
+	input: {
+		organizationId: string;
+		requestId: HumanResourcesLeaveRequestId;
+		expectedVersion: number;
+		actorUserId: string;
+		nextStatus: LeaveRequestStatus;
+		note?: string | null | undefined;
+		decision?: "approved" | "rejected" | "returned" | "cancelled" | undefined;
+		ports: MutationPorts;
+		meta: HumanResourcesMutationMeta;
+		emitEvent?: HumanResourcesEventType | undefined;
+		approvedAt?: Date | undefined;
+	},
+): Promise<Result<LeaveRequest>> {
+	const request = state.leaveRequests.get(input.requestId);
+	if (!request) {
+		return notFound("Leave request not found");
+	}
+	if (request.organizationId !== input.organizationId) {
+		return notFound(
+			"Leave request not found",
+			HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+		);
+	}
+	const versionCheck = assertExpectedVersion(
+		request.version,
+		input.expectedVersion,
+	);
+	if (!versionCheck.ok) {
+		return versionCheck;
+	}
+	const transition = assertLeaveRequestStatusTransition(
+		request.status,
+		input.nextStatus,
+	);
+	if (!transition.ok) {
+		return transition;
+	}
+
+	const previous = { ...request };
+	const now = new Date();
+	const updated: LeaveRequest = {
+		...request,
+		status: input.nextStatus,
+		approvedAt: input.approvedAt ?? request.approvedAt,
+		version: request.version + 1,
+		updatedBy: input.actorUserId,
+		updatedAt: now,
+	};
+	state.leaveRequests.set(updated.id, updated);
+
+	if (input.decision !== undefined) {
+		const decisionId = parseHumanResourcesLeaveApprovalDecisionId(randomUUID());
+		if (!decisionId.ok) {
+			state.leaveRequests.set(updated.id, previous);
+			return decisionId;
+		}
+		state.leaveApprovalDecisions.set(decisionId.data, {
+			requestId: updated.id,
+			decision: input.decision,
+		});
+	}
+
+	const emission = await emitLeaveSideEffects(input.ports, {
+		commandId: input.meta.operationId,
+		meta: input.meta,
+		organizationId: updated.organizationId,
+		actorUserId: input.actorUserId,
+		aggregateId: updated.id,
+		audit: {
+			entity: "hr_leave_request",
+			action: "UPDATE",
+		},
+		eventType: input.emitEvent,
+		eventEntityId: updated.id,
+		eventEntityType: "hr_leave_request",
+	});
+	if (!emission.ok) {
+		state.leaveRequests.set(updated.id, previous);
+		return emission;
+	}
+
+	return errorResult.ok({ ...updated });
+}
+
+export function createMemoryLeaveMethods(
+	state: LeaveMemoryState,
+): MemoryLeaveMethods & ThisType<LeaveMemoryHost & MemoryLeaveMethods> {
+	return {
+		async getLeavePolicyById(input: {
+			organizationId: string;
+			policyId: HumanResourcesLeavePolicyId;
+		}): Promise<Result<LeavePolicy | null>> {
+			const policy = state.leavePolicies.get(input.policyId);
+			if (!policy || policy.organizationId !== input.organizationId) {
+				return await errorResult.ok(null);
+			}
+			return await errorResult.ok({ ...policy });
+		},
+
+		async getLeavePolicyEligibility(input: {
+			organizationId: string;
+			policyId: HumanResourcesLeavePolicyId;
+		}): Promise<Result<LeavePolicyEligibility | null>> {
+			const eligibility = Array.from(
+				state.leavePolicyEligibility.values(),
+			).find(
+				(row) =>
+					row.organizationId === input.organizationId &&
+					row.policyId === input.policyId,
+			);
+			return await errorResult.ok(eligibility ? { ...eligibility } : null);
+		},
+
+		async resolveApplicableLeavePolicy(input: {
+			organizationId: string;
+			policyCode: string;
+			employeeId: HumanResourcesEmployeeId;
+			employmentId: HumanResourcesEmploymentId;
+			asOfDate: string;
+		}): Promise<Result<ResolvedLeavePolicy | null>> {
+			const employment = await this.getEmploymentById({
+				organizationId: input.organizationId,
+				employmentId: input.employmentId,
+			});
+			if (!employment.ok) {
+				return employment;
+			}
+			if (employment.data === null) {
+				return errorResult.ok(null);
+			}
+			if (employment.data.employeeId !== input.employeeId) {
+				return errorResult.ok(null);
+			}
+
+			const policy = resolvePublishedLeavePolicyByCodeLineageAsOf({
+				policies: Array.from(state.leavePolicies.values()).filter(
+					(row) => row.organizationId === input.organizationId,
+				),
+				code: input.policyCode,
+				asOf: input.asOfDate,
+			});
+			if (policy === null) {
+				return errorResult.ok(null);
+			}
+
+			const eligibility = await this.getLeavePolicyEligibility({
+				organizationId: input.organizationId,
+				policyId: policy.id,
+			});
+			if (!eligibility.ok) {
+				return eligibility;
+			}
+			if (eligibility.data === null) {
+				return errorResult.ok(null);
+			}
+
+			const eligible = isEmployeeEligibleForPolicy({
+				eligibility: eligibility.data,
+				employmentStatus: employment.data.status,
+				tenureDays: tenureDaysOn(employment.data.startsOn, input.asOfDate),
+			});
+			if (!eligible) {
+				return errorResult.ok(null);
+			}
+
+			return errorResult.ok({
+				policy: { ...policy },
+				eligibility: { ...eligibility.data },
+			});
+		},
+
+		async getPrimaryManagerForEmployee(input: {
+			organizationId: string;
+			employeeId: HumanResourcesEmployeeId;
+			asOf: string;
+		}): Promise<Result<HumanResourcesEmployeeId | null>> {
+			const primary = await this.resolvePrimaryManager({
+				organizationId: input.organizationId,
+				employeeId: input.employeeId,
+				asOf: input.asOf,
+			});
+			if (!primary.ok) {
+				return primary;
+			}
+			return errorResult.ok(primary.data?.managerEmployeeId ?? null);
+		},
+
+		async findLeavePolicyByCode(input: {
+			organizationId: string;
+			code: string;
+			effectiveFrom: string;
+		}): Promise<Result<LeavePolicy | null>> {
+			const policy =
+				Array.from(state.leavePolicies.values()).find(
+					(row) =>
+						row.organizationId === input.organizationId &&
+						row.code === input.code &&
+						row.effectiveFrom === input.effectiveFrom,
+				) ?? null;
+			return await errorResult.ok(policy ? { ...policy } : null);
+		},
+
+		async createLeavePolicy(
+			record: LeavePolicyCreateRecord,
+			ports: MutationPorts,
+			meta: HumanResourcesMutationMeta,
+		): Promise<Result<LeavePolicy>> {
+			const duplicate = await this.findLeavePolicyByCode({
+				organizationId: record.organizationId,
+				code: record.code,
+				effectiveFrom: record.effectiveFrom,
+			});
+			if (!duplicate.ok) {
+				return duplicate;
+			}
+			if (duplicate.data !== null) {
+				return conflict("Leave policy code already exists for effective date");
+			}
+
+			const policyId = parseHumanResourcesLeavePolicyId(randomUUID());
+			if (!policyId.ok) {
+				return policyId;
+			}
+			const now = new Date();
+			const policy: LeavePolicy = {
+				id: policyId.data,
+				organizationId: record.organizationId,
+				code: record.code,
+				name: record.name,
+				leaveType: record.leaveType,
+				unit: record.unit,
+				paid: record.paid,
+				sensitive: record.sensitive,
+				allowsNegativeBalance: record.allowsNegativeBalance,
+				allowSelfApproval: record.allowSelfApproval,
+				allowsPartialDay: record.allowsPartialDay,
+				accrualBasis: record.accrualBasis,
+				accrualFrequency: record.accrualFrequency,
+				accrualQuantityPerPeriod: record.accrualQuantityPerPeriod,
+				carryForwardEnabled: record.carryForwardEnabled,
+				carryForwardMaxQuantity: record.carryForwardMaxQuantity,
+				entitlementExpiryRule: record.entitlementExpiryRule,
+				entitlementExpiryDays: record.entitlementExpiryDays,
+				effectiveFrom: record.effectiveFrom,
+				effectiveTo: record.effectiveTo,
+				status: "draft",
+				supersedesPolicyId: null,
+				version: 1,
+				createdBy: record.createdBy,
+				updatedBy: record.createdBy,
+				createdAt: now,
+				updatedAt: now,
+			};
+			const eligibility: LeavePolicyEligibility = {
+				id: randomUUID(),
+				organizationId: record.organizationId,
+				policyId: policy.id,
+				minTenureDays: record.minTenureDays,
+				allowedEmploymentStatuses: record.allowedEmploymentStatuses,
+				createdBy: record.createdBy,
+				updatedBy: record.createdBy,
+				createdAt: now,
+				updatedAt: now,
+			};
+
+			state.leavePolicies.set(policy.id, policy);
+			state.leavePolicyEligibility.set(eligibility.id, eligibility);
+
+			const emission = await emitLeaveSideEffects(ports, {
+				commandId: meta.operationId,
+				meta,
+				organizationId: policy.organizationId,
+				actorUserId: record.createdBy,
+				aggregateId: policy.id,
+				audit: {
+					entity: "hr_leave_policy",
+					action: "CREATE",
+				},
+			});
+			if (!emission.ok) {
+				state.leavePolicies.delete(policy.id);
+				state.leavePolicyEligibility.delete(eligibility.id);
+				return emission;
+			}
+
+			return errorResult.ok({ ...policy });
+		},
+
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
+		async updateLeavePolicy(
+			input: {
+				organizationId: string;
+				policyId: HumanResourcesLeavePolicyId;
+				name?: string | undefined;
+				paid?: boolean | undefined;
+				sensitive?: boolean | undefined;
+				allowsNegativeBalance?: boolean | undefined;
+				allowSelfApproval?: boolean | undefined;
+				allowsPartialDay?: boolean | undefined;
+				accrualBasis?: LeavePolicy["accrualBasis"] | undefined;
+				accrualFrequency?: LeavePolicy["accrualFrequency"] | undefined;
+				accrualQuantityPerPeriod?: string | null | undefined;
+				carryForwardEnabled?: boolean | undefined;
+				carryForwardMaxQuantity?: string | null | undefined;
+				entitlementExpiryRule?:
+					| LeavePolicy["entitlementExpiryRule"]
+					| undefined;
+				entitlementExpiryDays?: number | null | undefined;
+				effectiveTo?: string | null | undefined;
+				minTenureDays?: number | null | undefined;
+				allowedEmploymentStatuses?: EmploymentStatus[] | undefined;
+				expectedVersion: number;
+				actorUserId: string;
+			},
+			ports: MutationPorts,
+			meta: HumanResourcesMutationMeta,
+		): Promise<Result<LeavePolicy>> {
+			const policy = state.leavePolicies.get(input.policyId);
+			if (!policy) {
+				return notFound("Leave policy not found");
+			}
+			if (policy.organizationId !== input.organizationId) {
+				return notFound(
+					"Leave policy not found",
+					HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+				);
+			}
+			const versionCheck = assertExpectedVersion(
+				policy.version,
+				input.expectedVersion,
+			);
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
+			const editable = assertLeavePolicyEditable(policy.status);
+			if (!editable.ok) {
+				return editable;
+			}
+
+			const previous = { ...policy };
+			const now = new Date();
+			const balanceRules = mergeLeavePolicyBalanceRules(policy, input);
+			const updated: LeavePolicy = {
+				...policy,
+				name: input.name ?? policy.name,
+				paid: input.paid ?? policy.paid,
+				sensitive: input.sensitive ?? policy.sensitive,
+				allowsNegativeBalance:
+					input.allowsNegativeBalance ?? policy.allowsNegativeBalance,
+				allowSelfApproval: input.allowSelfApproval ?? policy.allowSelfApproval,
+				allowsPartialDay: input.allowsPartialDay ?? policy.allowsPartialDay,
+				...balanceRules,
+				effectiveTo:
+					input.effectiveTo === undefined
+						? policy.effectiveTo
+						: input.effectiveTo,
+				version: policy.version + 1,
+				updatedBy: input.actorUserId,
+				updatedAt: now,
+			};
+			state.leavePolicies.set(updated.id, updated);
+
+			if (
+				input.minTenureDays !== undefined ||
+				input.allowedEmploymentStatuses !== undefined
+			) {
+				const eligibility = Array.from(
+					state.leavePolicyEligibility.values(),
+				).find((row) => row.policyId === policy.id);
+				if (eligibility) {
+					state.leavePolicyEligibility.set(eligibility.id, {
+						...eligibility,
+						minTenureDays:
+							input.minTenureDays === undefined
+								? eligibility.minTenureDays
+								: input.minTenureDays,
+						allowedEmploymentStatuses:
+							input.allowedEmploymentStatuses ??
+							eligibility.allowedEmploymentStatuses,
+						updatedBy: input.actorUserId,
+						updatedAt: now,
+					});
+				}
+			}
+
+			const emission = await emitLeaveSideEffects(ports, {
+				commandId: meta.operationId,
+				meta,
+				organizationId: updated.organizationId,
+				actorUserId: input.actorUserId,
+				aggregateId: updated.id,
+				audit: {
+					entity: "hr_leave_policy",
+					action: "UPDATE",
+				},
+			});
+			if (!emission.ok) {
+				state.leavePolicies.set(updated.id, previous);
+				return emission;
+			}
+
+			return errorResult.ok({ ...updated });
+		},
+
+		async publishLeavePolicy(
+			input: {
+				organizationId: string;
+				policyId: HumanResourcesLeavePolicyId;
+				expectedVersion: number;
+				actorUserId: string;
+			},
+			ports: MutationPorts,
+			meta: HumanResourcesMutationMeta,
+		): Promise<Result<LeavePolicy>> {
+			return await transitionLeavePolicyStatus(
+				state,
+				this as LeaveMemoryHost & MemoryLeaveMethods,
+				{
+					...input,
+					nextStatus: "published",
+					ports,
+					meta,
+				},
+			);
+		},
+
+		async supersedeLeavePolicy(
+			input: {
+				organizationId: string;
+				policyId: HumanResourcesLeavePolicyId;
+				code: string;
+				name: string;
+				leaveType: LeavePolicy["leaveType"];
+				unit: LeavePolicy["unit"];
+				paid: boolean;
+				sensitive: boolean;
+				allowsNegativeBalance: boolean;
+				allowSelfApproval: boolean;
+				allowsPartialDay: boolean;
+				accrualBasis: LeavePolicy["accrualBasis"];
+				accrualFrequency: LeavePolicy["accrualFrequency"];
+				accrualQuantityPerPeriod: string | null;
+				carryForwardEnabled: boolean;
+				carryForwardMaxQuantity: string | null;
+				entitlementExpiryRule: LeavePolicy["entitlementExpiryRule"];
+				entitlementExpiryDays: number | null;
+				effectiveFrom: string;
+				effectiveTo: string | null;
+				minTenureDays: number | null;
+				allowedEmploymentStatuses: EmploymentStatus[];
+				expectedVersion: number;
+				actorUserId: string;
+			},
+			ports: MutationPorts,
+			meta: HumanResourcesMutationMeta,
+		): Promise<Result<LeavePolicy>> {
+			const existing = state.leavePolicies.get(input.policyId);
+			if (!existing) {
+				return notFound("Leave policy not found");
+			}
+			if (existing.organizationId !== input.organizationId) {
+				return notFound(
+					"Leave policy not found",
+					HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+				);
+			}
+
+			const superseded = await transitionLeavePolicyStatus(
+				state,
+				this as LeaveMemoryHost & MemoryLeaveMethods,
+				{
+					organizationId: input.organizationId,
+					policyId: input.policyId,
+					expectedVersion: input.expectedVersion,
+					actorUserId: input.actorUserId,
+					nextStatus: "superseded",
+					ports,
+					meta,
+				},
+			);
+			if (!superseded.ok) {
+				return superseded;
+			}
+
+			const created = await this.createLeavePolicy(
+				{
+					organizationId: input.organizationId,
+					code: input.code,
+					name: input.name,
+					leaveType: input.leaveType,
+					unit: input.unit,
+					paid: input.paid,
+					sensitive: input.sensitive,
+					allowsNegativeBalance: input.allowsNegativeBalance,
+					allowSelfApproval: input.allowSelfApproval,
+					allowsPartialDay: input.allowsPartialDay,
+					accrualBasis: input.accrualBasis,
+					accrualFrequency: input.accrualFrequency,
+					accrualQuantityPerPeriod: input.accrualQuantityPerPeriod,
+					carryForwardEnabled: input.carryForwardEnabled,
+					carryForwardMaxQuantity: input.carryForwardMaxQuantity,
+					entitlementExpiryRule: input.entitlementExpiryRule,
+					entitlementExpiryDays: input.entitlementExpiryDays,
+					effectiveFrom: input.effectiveFrom,
+					effectiveTo: input.effectiveTo,
+					minTenureDays: input.minTenureDays,
+					allowedEmploymentStatuses: input.allowedEmploymentStatuses,
+					createdBy: input.actorUserId,
+				},
+				ports,
+				meta,
+			);
+			if (!created.ok) {
+				return created;
+			}
+
+			const published: LeavePolicy = {
+				...created.data,
+				status: "published",
+				supersedesPolicyId: input.policyId,
+				version: 2,
+				updatedBy: input.actorUserId,
+				updatedAt: new Date(),
+			};
+			state.leavePolicies.set(published.id, published);
+			return errorResult.ok({ ...published });
+		},
+
+		async archiveLeavePolicy(
+			input: {
+				organizationId: string;
+				policyId: HumanResourcesLeavePolicyId;
+				expectedVersion: number;
+				actorUserId: string;
+			},
+			ports: MutationPorts,
+			meta: HumanResourcesMutationMeta,
+		): Promise<Result<LeavePolicy>> {
+			return await transitionLeavePolicyStatus(
+				state,
+				this as LeaveMemoryHost & MemoryLeaveMethods,
+				{
+					...input,
+					nextStatus: "archived",
+					ports,
+					meta,
+				},
+			);
+		},
+
+		async listLeavePolicies(input: {
+			organizationId: string;
+			page: number;
+			pageSize: number;
+			status?: LeavePolicyStatus | undefined;
+		}): Promise<Result<LeavePolicyListPage>> {
+			let policies = Array.from(state.leavePolicies.values()).filter(
+				(row) => row.organizationId === input.organizationId,
+			);
+			if (input.status !== undefined) {
+				policies = policies.filter((row) => row.status === input.status);
+			}
+			policies.sort((a, b) => a.code.localeCompare(b.code));
+			const totalCount = policies.length;
+			const start = (input.page - 1) * input.pageSize;
+			return await errorResult.ok({
+				policies: policies
+					.slice(start, start + input.pageSize)
+					.map((p) => ({ ...p })),
+				totalCount,
+				page: input.page,
+				pageSize: input.pageSize,
+			});
+		},
+
+		async getLeaveEntitlementById(input: {
+			organizationId: string;
+			entitlementId: HumanResourcesLeaveEntitlementId;
+		}): Promise<Result<LeaveEntitlement | null>> {
+			const entitlement = state.leaveEntitlements.get(input.entitlementId);
+			if (!entitlement || entitlement.organizationId !== input.organizationId) {
+				return await errorResult.ok(null);
+			}
+			return await errorResult.ok({ ...entitlement });
+		},
+
+		async findLeaveEntitlementByIdempotencyKey(input: {
+			organizationId: string;
+			idempotencyKey: string;
+		}): Promise<Result<IdempotentLeaveEntitlementRecord | null>> {
+			const record =
+				state.leaveEntitlementIdempotency.get(
+					idempotencyMapKey(input.organizationId, input.idempotencyKey),
+				) ?? null;
+			return await errorResult.ok(
+				record ? { ...record, entitlement: { ...record.entitlement } } : null,
+			);
+		},
+
+		async grantLeaveEntitlement(
+			record: LeaveEntitlementGrantRecord,
+			ports: MutationPorts,
+			meta: HumanResourcesMutationMeta,
+		): Promise<Result<LeaveEntitlement>> {
+			const policy = state.leavePolicies.get(record.policyId);
+			if (!policy || policy.organizationId !== record.organizationId) {
+				return notFound("Leave policy not found");
+			}
+			if (policy.status !== "published") {
+				return invalidState("Leave policy must be published");
+			}
+
+			const entitlementId = parseHumanResourcesLeaveEntitlementId(randomUUID());
+			if (!entitlementId.ok) {
+				return entitlementId;
+			}
+			const now = new Date();
+			const entitlement: LeaveEntitlement = {
+				id: entitlementId.data,
+				organizationId: record.organizationId,
+				employeeId: record.employeeId,
+				employmentId: record.employmentId,
+				policyId: record.policyId,
+				periodStart: record.periodStart,
+				periodEnd: record.periodEnd,
+				openingQuantity: record.openingQuantity,
+				status: "active",
+				createIdempotencyKey: record.createIdempotencyKey,
+				fingerprint: record.createRequestFingerprint,
+				version: 1,
+				createdBy: record.createdBy,
+				updatedBy: record.createdBy,
+				createdAt: now,
+				updatedAt: now,
+			};
+
+			state.leaveEntitlements.set(entitlement.id, entitlement);
+			state.leaveEntitlementIdempotency.set(
+				idempotencyMapKey(record.organizationId, record.createIdempotencyKey),
+				{
+					entitlement,
+					createRequestFingerprint: record.createRequestFingerprint,
+				},
+			);
+
+			const emission = await emitLeaveSideEffects(ports, {
+				commandId: meta.operationId,
+				meta,
+				organizationId: entitlement.organizationId,
+				actorUserId: record.createdBy,
+				aggregateId: entitlement.id,
+				audit: {
+					entity: "hr_leave_entitlement",
+					action: "CREATE",
+				},
+			});
+			if (!emission.ok) {
+				state.leaveEntitlements.delete(entitlement.id);
+				state.leaveEntitlementIdempotency.delete(
+					idempotencyMapKey(record.organizationId, record.createIdempotencyKey),
+				);
+				return emission;
+			}
+
+			return errorResult.ok({ ...entitlement });
+		},
+
+		async carryForwardLeaveEntitlement(
+			input: {
+				organizationId: string;
+				entitlementId: HumanResourcesLeaveEntitlementId;
+				newPeriodStart: string;
+				newPeriodEnd: string;
+				carriedQuantity: string;
+				createIdempotencyKey: string;
+				createRequestFingerprint: string;
+				expectedVersion: number;
+				actorUserId: string;
+			},
+			ports: MutationPorts,
+			meta: HumanResourcesMutationMeta,
+		): Promise<Result<LeaveEntitlement>> {
+			const source = state.leaveEntitlements.get(input.entitlementId);
+			if (!source) {
+				return notFound("Leave entitlement not found");
+			}
+			if (source.organizationId !== input.organizationId) {
+				return notFound(
+					"Leave entitlement not found",
+					HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+				);
+			}
+
+			const transition = assertLeaveEntitlementStatusTransition(
+				source.status,
+				"carried_forward",
+			);
+			if (!transition.ok) {
+				return transition;
+			}
+
+			const versionCheck = assertExpectedVersion(
+				source.version,
+				input.expectedVersion,
+			);
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
+
+			const sourceDebit = await this.adjustLeaveEntitlement(
+				{
+					organizationId: input.organizationId,
+					entitlementId: source.id,
+					sourceRequestId: null,
+					kind: "carry_forward",
+					delta: negateLeaveQuantity(input.carriedQuantity),
+					reason: `Carry forward to new period ${input.newPeriodStart}–${input.newPeriodEnd}`,
+					source: "system",
+					createIdempotencyKey: `${input.createIdempotencyKey}:carry-out`,
+					createRequestFingerprint: input.createRequestFingerprint,
+					createdBy: input.actorUserId,
+				},
+				ports,
+				meta,
+			);
+			if (!sourceDebit.ok) {
+				return sourceDebit;
+			}
+
+			const now = new Date();
+			const previous = { ...source };
+			const updated: LeaveEntitlement = {
+				...source,
+				status: "carried_forward",
+				version: source.version + 1,
+				updatedBy: input.actorUserId,
+				updatedAt: now,
+			};
+			state.leaveEntitlements.set(updated.id, updated);
+
+			const granted = await this.grantLeaveEntitlement(
+				{
+					organizationId: input.organizationId,
+					employeeId: source.employeeId,
+					employmentId: source.employmentId,
+					policyId: source.policyId,
+					periodStart: input.newPeriodStart,
+					periodEnd: input.newPeriodEnd,
+					openingQuantity: input.carriedQuantity,
+					createIdempotencyKey: input.createIdempotencyKey,
+					createRequestFingerprint: input.createRequestFingerprint,
+					createdBy: input.actorUserId,
+				},
+				ports,
+				meta,
+			);
+			if (!granted.ok) {
+				state.leaveEntitlements.set(updated.id, previous);
+				state.leaveAdjustments.delete(sourceDebit.data.id);
+				return granted;
+			}
+
+			return errorResult.ok({ ...granted.data });
+		},
+
+		async expireLeaveEntitlement(
+			input: {
+				organizationId: string;
+				entitlementId: HumanResourcesLeaveEntitlementId;
+				expectedVersion: number;
+				actorUserId: string;
+			},
+			ports: MutationPorts,
+			meta: HumanResourcesMutationMeta,
+		): Promise<Result<LeaveEntitlement>> {
+			return await transitionLeaveEntitlementStatus(
+				state,
+				this as LeaveMemoryHost & MemoryLeaveMethods,
+				{
+					...input,
+					nextStatus: "expired",
+					ports,
+					meta,
+				},
+			);
+		},
+
+		async findLeaveAdjustmentByIdempotencyKey(input: {
+			organizationId: string;
+			idempotencyKey: string;
+		}): Promise<Result<IdempotentLeaveAdjustmentRecord | null>> {
+			const adjustment =
+				Array.from(state.leaveAdjustments.values()).find(
+					(candidate) =>
+						candidate.organizationId === input.organizationId &&
+						candidate.createIdempotencyKey === input.idempotencyKey,
+				) ?? null;
+			return await errorResult.ok(
+				adjustment
+					? {
+							adjustment: { ...adjustment },
+							createRequestFingerprint: adjustment.fingerprint,
+						}
+					: null,
+			);
+		},
+
+		async adjustLeaveEntitlement(
+			record: LeaveAdjustmentCreateRecord,
+			ports: MutationPorts,
+			meta: HumanResourcesMutationMeta,
+		): Promise<Result<LeaveAdjustment>> {
+			const replay = await this.findLeaveAdjustmentByIdempotencyKey({
+				organizationId: record.organizationId,
+				idempotencyKey: record.createIdempotencyKey,
+			});
+			if (!replay.ok) {
+				return replay;
+			}
+			if (replay.data !== null) {
+				if (
+					replay.data.createRequestFingerprint ===
+					record.createRequestFingerprint
+				) {
+					return errorResult.ok(replay.data.adjustment);
+				}
+				return conflict("Idempotency key already used with different data");
+			}
+
+			const entitlement = state.leaveEntitlements.get(record.entitlementId);
+			if (!entitlement) {
+				return notFound("Leave entitlement not found");
+			}
+			if (entitlement.organizationId !== record.organizationId) {
+				return notFound(
+					"Leave entitlement not found",
+					HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+				);
+			}
+			const active = assertLeaveEntitlementActive(entitlement.status);
+			if (!active.ok) {
+				return active;
+			}
+
+			const adjustmentId = parseHumanResourcesLeaveAdjustmentId(randomUUID());
+			if (!adjustmentId.ok) {
+				return adjustmentId;
+			}
+			const now = new Date();
+			const adjustment: LeaveAdjustment = {
+				id: adjustmentId.data,
+				organizationId: record.organizationId,
+				entitlementId: record.entitlementId,
+				sourceRequestId: record.sourceRequestId,
+				kind: record.kind,
+				delta: record.delta,
+				reason: record.reason,
+				source: record.source,
+				status: "posted",
+				createIdempotencyKey: record.createIdempotencyKey,
+				fingerprint: record.createRequestFingerprint,
+				version: 1,
+				createdBy: record.createdBy,
+				updatedBy: record.createdBy,
+				createdAt: now,
+				updatedAt: now,
+			};
+
+			state.leaveAdjustments.set(adjustment.id, adjustment);
+
+			const shouldEmitAdjustedEvent =
+				record.kind === "manual" ||
+				record.kind === "accrual" ||
+				record.kind === "carry_forward" ||
+				record.kind === "expiry";
+
+			const emission = await emitLeaveSideEffects(ports, {
+				commandId: HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_ADJUST,
+				meta,
+				organizationId: adjustment.organizationId,
+				actorUserId: record.createdBy,
+				aggregateId: record.entitlementId,
+				audit: {
+					entity: "hr_leave_adjustment",
+					entityId: adjustment.id,
+					action: "CREATE",
+				},
+				eventType: shouldEmitAdjustedEvent
+					? HUMAN_RESOURCES_LEAVE_ENTITLEMENT_ADJUSTED_EVENT
+					: undefined,
+				eventEntityId: record.entitlementId,
+				eventEntityType: "hr_leave_entitlement",
+				conditionalEventSuppressed: !shouldEmitAdjustedEvent,
+			});
+			if (!emission.ok) {
+				state.leaveAdjustments.delete(adjustment.id);
+				return emission;
+			}
+
+			return errorResult.ok({ ...adjustment });
+		},
+
+		async listLeaveEntitlements(input: {
+			organizationId: string;
+			page: number;
+			pageSize: number;
+			employeeId?: HumanResourcesEmployeeId | undefined;
+			employmentId?: HumanResourcesEmploymentId | undefined;
+			policyId?: HumanResourcesLeavePolicyId | undefined;
+		}): Promise<Result<LeaveEntitlementListPage>> {
+			let entitlements = Array.from(state.leaveEntitlements.values()).filter(
+				(row) => row.organizationId === input.organizationId,
+			);
+			if (input.employeeId !== undefined) {
+				entitlements = entitlements.filter(
+					(row) => row.employeeId === input.employeeId,
+				);
+			}
+			if (input.employmentId !== undefined) {
+				entitlements = entitlements.filter(
+					(row) => row.employmentId === input.employmentId,
+				);
+			}
+			if (input.policyId !== undefined) {
+				entitlements = entitlements.filter(
+					(row) => row.policyId === input.policyId,
+				);
+			}
+			entitlements.sort((a, b) => b.periodStart.localeCompare(a.periodStart));
+			const totalCount = entitlements.length;
+			const start = (input.page - 1) * input.pageSize;
+			return await errorResult.ok({
+				entitlements: entitlements
+					.slice(start, start + input.pageSize)
+					.map((row) => ({ ...row })),
+				totalCount,
+				page: input.page,
+				pageSize: input.pageSize,
+			});
+		},
+
+		async listPostedLeaveAdjustments(input: {
+			organizationId: string;
+			entitlementId: HumanResourcesLeaveEntitlementId;
+		}): Promise<Result<LeaveAdjustment[]>> {
+			const adjustments = postedAdjustmentsForEntitlement(
+				state,
+				input.entitlementId,
+			).filter((row) => row.organizationId === input.organizationId);
+			return await errorResult.ok(adjustments.map((row) => ({ ...row })));
+		},
+
+		async getLeaveBalance(input: {
+			organizationId: string;
+			entitlementId: HumanResourcesLeaveEntitlementId;
+		}): Promise<Result<LeaveBalance | null>> {
+			const entitlement = state.leaveEntitlements.get(input.entitlementId);
+			if (!entitlement || entitlement.organizationId !== input.organizationId) {
+				return await errorResult.ok(null);
+			}
+			return await errorResult.ok(resolveBalance(state, entitlement));
+		},
+
+		async getLeaveRequestById(input: {
+			organizationId: string;
+			requestId: HumanResourcesLeaveRequestId;
+		}): Promise<Result<LeaveRequest | null>> {
+			const request = state.leaveRequests.get(input.requestId);
+			if (!request || request.organizationId !== input.organizationId) {
+				return await errorResult.ok(null);
+			}
+			return await errorResult.ok({ ...request });
+		},
+
+		async findLeaveRequestByIdempotencyKey(input: {
+			organizationId: string;
+			idempotencyKey: string;
+		}): Promise<Result<IdempotentLeaveRequestRecord | null>> {
+			const record =
+				state.leaveRequestIdempotency.get(
+					idempotencyMapKey(input.organizationId, input.idempotencyKey),
+				) ?? null;
+			return await errorResult.ok(
+				record ? { ...record, request: { ...record.request } } : null,
+			);
+		},
+
+		async listLeaveRequestSegments(input: {
+			organizationId: string;
+			requestId: HumanResourcesLeaveRequestId;
+		}): Promise<Result<LeaveRequestSegment[]>> {
+			const segments = Array.from(state.leaveRequestSegments.values()).filter(
+				(row) =>
+					row.organizationId === input.organizationId &&
+					row.requestId === input.requestId,
+			);
+			segments.sort((a, b) => a.segmentDate.localeCompare(b.segmentDate));
+			return await errorResult.ok(segments.map((row) => ({ ...row })));
+		},
+
+		async listOverlappingLeaveSegments(input: {
+			organizationId: string;
+			employeeId: HumanResourcesEmployeeId;
+			excludeRequestId?: HumanResourcesLeaveRequestId | undefined;
+			includeDraft?: boolean | undefined;
+		}): Promise<Result<LeaveRequestSegment[]>> {
+			const requestIds = activeLeaveOverlapRequestIds(state, input);
+			const segments = Array.from(state.leaveRequestSegments.values()).filter(
+				(segment) =>
+					segment.organizationId === input.organizationId &&
+					requestIds.has(segment.requestId),
+			);
+			return await errorResult.ok(segments.map((row) => ({ ...row })));
+		},
+
+		async createDraftLeaveRequest(
+			record: LeaveRequestCreateRecord,
+			ports: MutationPorts,
+			meta: HumanResourcesMutationMeta,
+		): Promise<Result<LeaveRequest>> {
+			const requestId = parseHumanResourcesLeaveRequestId(randomUUID());
+			if (!requestId.ok) {
+				return requestId;
+			}
+			const now = new Date();
+			const request: LeaveRequest = {
+				id: requestId.data,
+				organizationId: record.organizationId,
+				employeeId: record.employeeId,
+				employmentId: record.employmentId,
+				entitlementId: record.entitlementId,
+				policyId: record.policyId,
+				startDate: record.startDate,
+				endDate: record.endDate,
+				requestedQuantity: record.requestedQuantity,
+				unit: record.unit,
+				status: "draft",
+				isBackdated: record.isBackdated,
+				backdateJustification: record.backdateJustification,
+				approvedAt: null,
+				createIdempotencyKey: record.createIdempotencyKey,
+				fingerprint: record.createRequestFingerprint,
+				version: 1,
+				createdBy: record.createdBy,
+				updatedBy: record.createdBy,
+				createdAt: now,
+				updatedAt: now,
+			};
+
+			const segments: LeaveRequestSegment[] = [];
+			for (const segment of record.segments) {
+				const segmentId = parseHumanResourcesLeaveRequestSegmentId(
+					randomUUID(),
+				);
+				if (!segmentId.ok) {
+					return segmentId;
+				}
+				segments.push({
+					id: segmentId.data,
+					organizationId: record.organizationId,
+					requestId: request.id,
+					segmentDate: segment.segmentDate,
+					quantity: segment.quantity,
+					dayPortion: segment.dayPortion,
+					createdAt: now,
+					updatedAt: now,
+				});
+			}
+
+			state.leaveRequests.set(request.id, request);
+			for (const segment of segments) {
+				state.leaveRequestSegments.set(segment.id, segment);
+			}
+			state.leaveRequestIdempotency.set(
+				idempotencyMapKey(record.organizationId, record.createIdempotencyKey),
+				{
+					request,
+					createRequestFingerprint: record.createRequestFingerprint,
+				},
+			);
+
+			const emission = await emitLeaveSideEffects(ports, {
+				commandId: meta.operationId,
+				meta,
+				organizationId: request.organizationId,
+				actorUserId: record.createdBy,
+				aggregateId: request.id,
+				audit: {
+					entity: "hr_leave_request",
+					action: "CREATE",
+				},
+			});
+			if (!emission.ok) {
+				state.leaveRequests.delete(request.id);
+				for (const segment of segments) {
+					state.leaveRequestSegments.delete(segment.id);
+				}
+				state.leaveRequestIdempotency.delete(
+					idempotencyMapKey(record.organizationId, record.createIdempotencyKey),
+				);
+				return emission;
+			}
+
+			return errorResult.ok({ ...request });
+		},
+
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors the ordered production state transition for deterministic contract parity.
+		async amendLeaveRequest(
+			record: LeaveRequestAmendRecord,
+			ports: MutationPorts,
+			meta: HumanResourcesMutationMeta,
+		): Promise<Result<LeaveRequest>> {
+			const request = state.leaveRequests.get(record.requestId);
+			if (!request) {
+				return notFound("Leave request not found");
+			}
+			if (request.organizationId !== record.organizationId) {
+				return notFound(
+					"Leave request not found",
+					HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+				);
+			}
+			const versionCheck = assertExpectedVersion(
+				request.version,
+				record.expectedVersion,
+			);
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
+			const amendable = assertLeaveRequestAmendable(request.status);
+			if (!amendable.ok) {
+				return amendable;
+			}
+
+			const previous = { ...request };
+			const previousSegments = Array.from(
+				state.leaveRequestSegments.values(),
+			).filter((segment) => segment.requestId === request.id);
+			const now = new Date();
+			const updated: LeaveRequest = {
+				...request,
+				startDate: record.startDate,
+				endDate: record.endDate,
+				requestedQuantity: record.requestedQuantity,
+				isBackdated: record.isBackdated,
+				backdateJustification: record.backdateJustification,
+				version: request.version + 1,
+				updatedBy: record.actorUserId,
+				updatedAt: now,
+			};
+			state.leaveRequests.set(updated.id, updated);
+
+			for (const segment of previousSegments) {
+				state.leaveRequestSegments.delete(segment.id);
+			}
+			for (const segment of record.segments) {
+				const segmentId = parseHumanResourcesLeaveRequestSegmentId(
+					randomUUID(),
+				);
+				if (!segmentId.ok) {
+					state.leaveRequests.set(updated.id, previous);
+					for (const oldSegment of previousSegments) {
+						state.leaveRequestSegments.set(oldSegment.id, oldSegment);
+					}
+					return segmentId;
+				}
+				state.leaveRequestSegments.set(segmentId.data, {
+					id: segmentId.data,
+					organizationId: record.organizationId,
+					requestId: updated.id,
+					segmentDate: segment.segmentDate,
+					quantity: segment.quantity,
+					dayPortion: segment.dayPortion,
+					createdAt: now,
+					updatedAt: now,
+				});
+			}
+
+			const emission = await emitLeaveSideEffects(ports, {
+				commandId: meta.operationId,
+				meta,
+				organizationId: updated.organizationId,
+				actorUserId: record.actorUserId,
+				aggregateId: updated.id,
+				audit: {
+					entity: "hr_leave_request",
+					action: "UPDATE",
+				},
+			});
+			if (!emission.ok) {
+				state.leaveRequests.set(updated.id, previous);
+				for (const segment of Array.from(
+					state.leaveRequestSegments.values(),
+				).filter((row) => row.requestId === updated.id)) {
+					state.leaveRequestSegments.delete(segment.id);
+				}
+				for (const oldSegment of previousSegments) {
+					state.leaveRequestSegments.set(oldSegment.id, oldSegment);
+				}
+				return emission;
+			}
+
+			return errorResult.ok({ ...updated });
+		},
+
+		async submitLeaveRequest(
+			input: {
+				organizationId: string;
+				requestId: HumanResourcesLeaveRequestId;
+				expectedVersion: number;
+				actorUserId: string;
+			},
+			ports: MutationPorts,
+			meta: HumanResourcesMutationMeta,
+		): Promise<Result<LeaveRequest>> {
+			const request = state.leaveRequests.get(input.requestId);
+			if (!request) {
+				return await notFound("Leave request not found");
+			}
+			if (request.organizationId !== input.organizationId) {
+				return await notFound(
+					"Leave request not found",
+					HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+				);
+			}
+
+			return await withLeaveEmployeeBookingLock(
+				leaveEmployeeBookingLockKey(input.organizationId, request.employeeId),
+				async () => {
+					const overlap = assertNoLeaveOverlapForRequest(state, {
+						organizationId: input.organizationId,
+						requestId: input.requestId,
+						employeeId: request.employeeId,
+						includeDraft: false,
+					});
+					if (!overlap.ok) {
+						return await overlap;
+					}
+
+					return await transitionLeaveRequestStatus(
+						state,
+						this as LeaveMemoryHost & MemoryLeaveMethods,
+						{
+							...input,
+							nextStatus: "submitted",
+							ports,
+							meta,
+							emitEvent: HUMAN_RESOURCES_LEAVE_REQUESTED_EVENT,
+						},
+					);
+				},
+			);
+		},
+
+		async approveLeaveRequest(
+			input: {
+				organizationId: string;
+				requestId: HumanResourcesLeaveRequestId;
+				note: string | null;
+				expectedVersion: number;
+				actorUserId: string;
+			},
+			ports: MutationPorts,
+			meta: HumanResourcesMutationMeta,
+		): Promise<Result<LeaveRequest>> {
+			const request = state.leaveRequests.get(input.requestId);
+			if (!request) {
+				return await notFound("Leave request not found");
+			}
+			if (request.organizationId !== input.organizationId) {
+				return await notFound(
+					"Leave request not found",
+					HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+				);
+			}
+
+			return await withLeaveEmployeeBookingLock(
+				leaveEmployeeBookingLockKey(input.organizationId, request.employeeId),
+				async () => {
+					const overlap = assertNoLeaveOverlapForRequest(state, {
+						organizationId: input.organizationId,
+						requestId: input.requestId,
+						employeeId: request.employeeId,
+					});
+					if (!overlap.ok) {
+						return overlap;
+					}
+
+					const consumption = await this.adjustLeaveEntitlement(
+						{
+							organizationId: input.organizationId,
+							entitlementId: request.entitlementId,
+							sourceRequestId: request.id,
+							kind: "consumption",
+							delta: negateLeaveQuantity(request.requestedQuantity),
+							reason: `Approved leave request ${request.id}`,
+							source: "approval",
+							createIdempotencyKey: `${request.id}:consumption`,
+							createRequestFingerprint: request.fingerprint,
+							createdBy: input.actorUserId,
+						},
+						ports,
+						meta,
+					);
+					if (!consumption.ok) {
+						return consumption;
+					}
+
+					const approved = await transitionLeaveRequestStatus(
+						state,
+						this as LeaveMemoryHost & MemoryLeaveMethods,
+						{
+							organizationId: input.organizationId,
+							requestId: input.requestId,
+							expectedVersion: input.expectedVersion,
+							actorUserId: input.actorUserId,
+							nextStatus: "approved",
+							note: input.note,
+							decision: "approved",
+							ports,
+							meta,
+							emitEvent: HUMAN_RESOURCES_LEAVE_APPROVED_EVENT,
+							approvedAt: new Date(),
+						},
+					);
+					if (!approved.ok) {
+						state.leaveAdjustments.delete(consumption.data.id);
+						return approved;
+					}
+
+					return approved;
+				},
+			);
+		},
+
+		async rejectLeaveRequest(
+			input: {
+				organizationId: string;
+				requestId: HumanResourcesLeaveRequestId;
+				note: string | null;
+				expectedVersion: number;
+				actorUserId: string;
+			},
+			ports: MutationPorts,
+			meta: HumanResourcesMutationMeta,
+		): Promise<Result<LeaveRequest>> {
+			return await transitionLeaveRequestStatus(
+				state,
+				this as LeaveMemoryHost & MemoryLeaveMethods,
+				{
+					...input,
+					nextStatus: "rejected",
+					decision: "rejected",
+					ports,
+					meta,
+					emitEvent: HUMAN_RESOURCES_LEAVE_REJECTED_EVENT,
+				},
+			);
+		},
+
+		async returnLeaveRequest(
+			input: {
+				organizationId: string;
+				requestId: HumanResourcesLeaveRequestId;
+				note: string | null;
+				expectedVersion: number;
+				actorUserId: string;
+			},
+			ports: MutationPorts,
+			meta: HumanResourcesMutationMeta,
+		): Promise<Result<LeaveRequest>> {
+			return await transitionLeaveRequestStatus(
+				state,
+				this as LeaveMemoryHost & MemoryLeaveMethods,
+				{
+					...input,
+					nextStatus: "returned",
+					decision: "returned",
+					ports,
+					meta,
+				},
+			);
+		},
+
+		async withdrawLeaveRequest(
+			input: {
+				organizationId: string;
+				requestId: HumanResourcesLeaveRequestId;
+				expectedVersion: number;
+				actorUserId: string;
+			},
+			ports: MutationPorts,
+			meta: HumanResourcesMutationMeta,
+		): Promise<Result<LeaveRequest>> {
+			return await transitionLeaveRequestStatus(
+				state,
+				this as LeaveMemoryHost & MemoryLeaveMethods,
+				{
+					...input,
+					nextStatus: "withdrawn",
+					ports,
+					meta,
+				},
+			);
+		},
+
+		async cancelApprovedLeaveRequest(
+			input: {
+				organizationId: string;
+				requestId: HumanResourcesLeaveRequestId;
+				note: string | null;
+				expectedVersion: number;
+				actorUserId: string;
+			},
+			ports: MutationPorts,
+			meta: HumanResourcesMutationMeta,
+		): Promise<Result<LeaveRequest>> {
+			const request = state.leaveRequests.get(input.requestId);
+			if (!request) {
+				return notFound("Leave request not found");
+			}
+			if (request.organizationId !== input.organizationId) {
+				return notFound(
+					"Leave request not found",
+					HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+				);
+			}
+
+			const reversal = await this.adjustLeaveEntitlement(
+				{
+					organizationId: input.organizationId,
+					entitlementId: request.entitlementId,
+					sourceRequestId: request.id,
+					kind: "cancellation_reversal",
+					delta: request.requestedQuantity,
+					reason: `Cancelled approved leave request ${request.id}`,
+					source: "cancellation",
+					createIdempotencyKey: `${request.id}:reversal`,
+					createRequestFingerprint: request.fingerprint,
+					createdBy: input.actorUserId,
+				},
+				ports,
+				meta,
+			);
+			if (!reversal.ok) {
+				return reversal;
+			}
+
+			return transitionLeaveRequestStatus(
+				state,
+				this as LeaveMemoryHost & MemoryLeaveMethods,
+				{
+					organizationId: input.organizationId,
+					requestId: input.requestId,
+					expectedVersion: input.expectedVersion,
+					actorUserId: input.actorUserId,
+					nextStatus: "cancelled",
+					note: input.note,
+					decision: "cancelled",
+					ports,
+					meta,
+					emitEvent: HUMAN_RESOURCES_LEAVE_CANCELLED_EVENT,
+				},
+			);
+		},
+
+		async listLeaveRequests(input: {
+			organizationId: string;
+			page: number;
+			pageSize: number;
+			employeeId?: HumanResourcesEmployeeId | undefined;
+			overlapEnd?: string | undefined;
+			overlapStart?: string | undefined;
+			status?: LeaveRequestStatus | undefined;
+		}): Promise<Result<LeaveRequestListPage>> {
+			let requests = Array.from(state.leaveRequests.values()).filter(
+				(row) => row.organizationId === input.organizationId,
+			);
+			if (input.employeeId !== undefined) {
+				requests = requests.filter(
+					(row) => row.employeeId === input.employeeId,
+				);
+			}
+			if (input.status !== undefined) {
+				requests = requests.filter((row) => row.status === input.status);
+			}
+			if (input.overlapStart !== undefined && input.overlapEnd !== undefined) {
+				const { overlapStart, overlapEnd } = input;
+				requests = requests.filter(
+					(row) => row.startDate <= overlapEnd && row.endDate >= overlapStart,
+				);
+			}
+			requests.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+			const totalCount = requests.length;
+			const start = (input.page - 1) * input.pageSize;
+			return await errorResult.ok({
+				requests: requests.slice(start, start + input.pageSize).map((row) => ({
+					...row,
+				})),
+				totalCount,
+				page: input.page,
+				pageSize: input.pageSize,
+			});
+		},
+
+		async listPendingApprovalLeaveRequests(input: {
+			organizationId: string;
+			managerEmployeeId: HumanResourcesEmployeeId;
+			page: number;
+			pageSize: number;
+		}): Promise<Result<LeaveRequestListPage>> {
+			const directReports = await this.listDirectReports({
+				organizationId: input.organizationId,
+				managerEmployeeId: input.managerEmployeeId,
+				asOf: new Date().toISOString().slice(0, 10),
+				page: 1,
+				pageSize: 10_000,
+			});
+			if (!directReports.ok) {
+				return directReports;
+			}
+
+			const reportIds = new Set(
+				directReports.data.reportingLines.map((line) => line.employeeId),
+			);
+
+			const requests = Array.from(state.leaveRequests.values()).filter(
+				(request) =>
+					request.organizationId === input.organizationId &&
+					request.status === "submitted" &&
+					reportIds.has(request.employeeId),
+			);
+			requests.sort((a, b) => a.startDate.localeCompare(b.startDate));
+			const totalCount = requests.length;
+			const start = (input.page - 1) * input.pageSize;
+			return errorResult.ok({
+				requests: requests.slice(start, start + input.pageSize).map((row) => ({
+					...row,
+				})),
+				totalCount,
+				page: input.page,
+				pageSize: input.pageSize,
+			});
+		},
+
+		async listTeamCalendarLeaveRequests(input: {
+			organizationId: string;
+			managerEmployeeId: HumanResourcesEmployeeId;
+			rangeStart: string;
+			rangeEnd: string;
+			page: number;
+			pageSize: number;
+		}): Promise<Result<TeamCalendarLeavePage>> {
+			const directReports = await this.listDirectReports({
+				organizationId: input.organizationId,
+				managerEmployeeId: input.managerEmployeeId,
+				asOf: new Date().toISOString().slice(0, 10),
+				page: 1,
+				pageSize: 10_000,
+			});
+			if (!directReports.ok) {
+				return directReports;
+			}
+
+			const reportIds = new Set(
+				directReports.data.reportingLines.map((line) => line.employeeId),
+			);
+
+			const requests = Array.from(state.leaveRequests.values()).filter(
+				(request) =>
+					request.organizationId === input.organizationId &&
+					(request.status === "approved" || request.status === "submitted") &&
+					reportIds.has(request.employeeId) &&
+					request.endDate >= input.rangeStart &&
+					request.startDate <= input.rangeEnd,
+			);
+			requests.sort((a, b) => a.startDate.localeCompare(b.startDate));
+			const totalCount = requests.length;
+			const start = (input.page - 1) * input.pageSize;
+			const pageRequests = requests.slice(start, start + input.pageSize);
+			const entries = await Promise.all(
+				pageRequests.map(async (request) => {
+					const segments = await this.listLeaveRequestSegments({
+						organizationId: input.organizationId,
+						requestId: request.id,
+					});
+					return {
+						request: { ...request },
+						segments: segments.ok ? segments.data : [],
+					};
+				}),
+			);
+
+			return errorResult.ok({
+				entries,
+				totalCount,
+				page: input.page,
+				pageSize: input.pageSize,
+			});
+		},
+
+		async getApprovedLeaveHandoff(input: {
+			organizationId: string;
+			requestId: HumanResourcesLeaveRequestId;
+			correlationId: string;
+		}): Promise<Result<ApprovedLeaveHandoff | null>> {
+			const request = state.leaveRequests.get(input.requestId);
+			if (!request || request.organizationId !== input.organizationId) {
+				return errorResult.ok(null);
+			}
+			if (request.status !== "approved" || request.approvedAt === null) {
+				return errorResult.ok(null);
+			}
+
+			const policy = state.leavePolicies.get(request.policyId);
+			if (!policy || policy.organizationId !== input.organizationId) {
+				return errorResult.ok(null);
+			}
+
+			const segments = await this.listLeaveRequestSegments({
+				organizationId: input.organizationId,
+				requestId: request.id,
+			});
+			if (!segments.ok) {
+				return segments;
+			}
+
+			return errorResult.ok({
+				organizationId: input.organizationId,
+				employeeId: request.employeeId,
+				employmentId: request.employmentId,
+				requestId: request.id,
+				policyId: request.policyId,
+				policyVersion: policy.version,
+				paid: policy.paid,
+				unit: request.unit,
+				startDate: request.startDate,
+				endDate: request.endDate,
+				quantity: request.requestedQuantity,
+				segments: segments.data.map((segment) => ({
+					date: segment.segmentDate,
+					quantity: segment.quantity,
+					dayPortion: segment.dayPortion,
+				})),
+				approvedAt: request.approvedAt.toISOString(),
+				correlationId: input.correlationId,
+			});
+		},
+	};
+}

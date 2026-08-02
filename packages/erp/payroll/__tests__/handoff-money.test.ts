@@ -4,7 +4,7 @@ import {
 	formatScaledToDecimal,
 	formatScaledToHandoffAmount,
 	parseDecimalToScaled,
-} from "../src/shared/money";
+} from "../src/kernel/money/money";
 
 describe("formatScaledToHandoffAmount", () => {
 	it("preserves trailing zeros at the declared handoff scale", () => {

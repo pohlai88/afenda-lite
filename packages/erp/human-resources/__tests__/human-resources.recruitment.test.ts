@@ -4,31 +4,7 @@ import {
 	HUMAN_RESOURCES_REQUISITION_APPROVED_EVENT,
 } from "@afenda/events/schemas";
 import { describe, expect, it } from "vitest";
-
-import type { HumanResourcesPermission } from "../src/authorization";
-import { createEmployee } from "../src/core/employee";
-import {
-	HUMAN_RESOURCES_ERROR_AUTHORIZATION_DENIED,
-	HUMAN_RESOURCES_ERROR_CONFLICT,
-	HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
-	HUMAN_RESOURCES_ERROR_FORBIDDEN,
-	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
-	HUMAN_RESOURCES_ERROR_NOT_FOUND,
-	HUMAN_RESOURCES_ERROR_STALE_VERSION,
-} from "../src/error-codes";
-import { createPosition } from "../src/organization/position";
-import {
-	HUMAN_RESOURCES_PERMISSION_CANDIDATE_MANAGE,
-	HUMAN_RESOURCES_PERMISSION_CODES,
-	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CREATE,
-	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,
-	HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE,
-	HUMAN_RESOURCES_PERMISSION_INTERVIEW_READ,
-	HUMAN_RESOURCES_PERMISSION_INTERVIEW_RECORD,
-	HUMAN_RESOURCES_PERMISSION_OFFER_APPROVE,
-	HUMAN_RESOURCES_PERMISSION_ORGANIZATION_MANAGE,
-	HUMAN_RESOURCES_PERMISSION_REQUISITION_CREATE,
-} from "../src/permissions";
+import { createPosition } from "../src/features/organization/position";
 import {
 	createApplication,
 	listApplicationStatusHistory,
@@ -37,15 +13,15 @@ import {
 	rejectApplication,
 	reopenApplication,
 	withdrawApplication,
-} from "../src/recruitment/application";
-import { createCandidate } from "../src/recruitment/candidate";
+} from "../src/features/recruitment/application";
+import { createCandidate } from "../src/features/recruitment/candidate";
 import {
 	assignInterviewInterviewer,
 	getInterviewEvaluation,
 	listInterviews,
 	recordInterviewEvaluation,
 	scheduleInterview,
-} from "../src/recruitment/interview";
+} from "../src/features/recruitment/interview";
 import {
 	acceptOffer,
 	amendOfferDraft,
@@ -57,7 +33,7 @@ import {
 	issueOffer,
 	listOffers,
 	withdrawOffer,
-} from "../src/recruitment/offer";
+} from "../src/features/recruitment/offer";
 import {
 	amendRequisition,
 	approveRequisition,
@@ -69,8 +45,31 @@ import {
 	openRequisition,
 	placeRequisitionOnHold,
 	submitRequisition,
-} from "../src/recruitment/requisition";
-import { createMemoryHumanResourcesStore } from "../src/testing";
+} from "../src/features/recruitment/requisition";
+import { createEmployee } from "../src/features/workforce-records/employment/employee";
+import type { HumanResourcesPermission } from "../src/kernel/authorization/authorize";
+import {
+	HUMAN_RESOURCES_PERMISSION_CANDIDATE_MANAGE,
+	HUMAN_RESOURCES_PERMISSION_CODES,
+	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CREATE,
+	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,
+	HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE,
+	HUMAN_RESOURCES_PERMISSION_INTERVIEW_READ,
+	HUMAN_RESOURCES_PERMISSION_INTERVIEW_RECORD,
+	HUMAN_RESOURCES_PERMISSION_OFFER_APPROVE,
+	HUMAN_RESOURCES_PERMISSION_ORGANIZATION_MANAGE,
+	HUMAN_RESOURCES_PERMISSION_REQUISITION_CREATE,
+} from "../src/kernel/authorization/permissions";
+import {
+	HUMAN_RESOURCES_ERROR_AUTHORIZATION_DENIED,
+	HUMAN_RESOURCES_ERROR_CONFLICT,
+	HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+	HUMAN_RESOURCES_ERROR_FORBIDDEN,
+	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+	HUMAN_RESOURCES_ERROR_NOT_FOUND,
+	HUMAN_RESOURCES_ERROR_STALE_VERSION,
+} from "../src/kernel/execution/error-codes";
+import { createMemoryHumanResourcesStore } from "../src/testing/index";
 import { candidateConsentFixture } from "./helpers/candidate-consent-fixture";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";

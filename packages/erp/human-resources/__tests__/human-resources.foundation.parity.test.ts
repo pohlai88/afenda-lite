@@ -3,16 +3,21 @@
  */
 
 import { afterAll, describe, expect, it } from "vitest";
-
-import { createAssignment, endAssignment } from "../src/core/assignment";
-import { createEmployee } from "../src/core/employee";
-import { createEmployment } from "../src/core/employment";
-import { resolveEmployeeOrgContextAsOf } from "../src/core/org-context";
-import { createPosition, updatePosition } from "../src/organization/position";
+import {
+	createPosition,
+	updatePosition,
+} from "../src/features/organization/position";
 import {
 	assignEmploymentCalendar,
 	createWorkCalendar,
-} from "../src/time/calendar";
+} from "../src/features/time/calendar";
+import {
+	createAssignment,
+	endAssignment,
+} from "../src/features/workforce-records/employment/assignment";
+import { createEmployee } from "../src/features/workforce-records/employment/employee";
+import { createEmployment } from "../src/features/workforce-records/employment/employment";
+import { resolveEmployeeOrgContextAsOf } from "../src/features/workforce-records/employment/org-context";
 import { TEST_ORGANIZATION_DIMENSION_KEYS } from "./helpers/command-options";
 import { runDrizzleParity } from "./helpers/database-gate";
 import {

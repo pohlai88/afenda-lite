@@ -5,14 +5,14 @@
 
 import { HumanResourcesEventSchemas } from "@afenda/events/schemas";
 import { describe, expect, it } from "vitest";
-import { HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD } from "../src/emissions/registry";
-import { validateHumanResourcesMutationEmissionRegistry } from "../src/emissions/validate-emission";
-import { HUMAN_RESOURCES_EVENT_CATALOG } from "../src/event-catalog";
+import { HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY } from "../src/kernel/emissions/mutation-emission-registry";
+import { HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD } from "../src/kernel/emissions/registry";
+import { validateHumanResourcesMutationEmissionRegistry } from "../src/kernel/emissions/validate-emission";
+import { HUMAN_RESOURCES_EVENT_CATALOG } from "../src/kernel/events/index";
 import {
 	HUMAN_RESOURCES_COMMAND_IDS,
 	type HumanResourcesCommandId,
-} from "../src/module-ids";
-import { HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY } from "../src/mutation-emission-registry";
+} from "../src/kernel/operations/module-ids";
 import mutationInventoryFixture from "./fixtures/mutation-inventory.json";
 
 describe("Slice 3.8 — HR mutation-emission registry CI gate", () => {

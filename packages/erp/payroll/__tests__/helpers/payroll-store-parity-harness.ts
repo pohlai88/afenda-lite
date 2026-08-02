@@ -1,8 +1,8 @@
-import { createDrizzlePayrollStore } from "../../src/adapters/drizzle";
-import type { MutationPorts } from "../../src/ports";
-import type { PayrollStore } from "../../src/store";
-import type { MemoryPayrollStore } from "../../src/testing";
-import { createMemoryPayrollStore } from "../../src/testing";
+import { createDrizzlePayrollStore } from "../../src/composition/adapters/drizzle";
+import type { PayrollStore } from "../../src/composition/store/contract";
+import type { MutationPorts } from "../../src/kernel/execution/ports";
+import type { MemoryPayrollStore } from "../../src/testing/index";
+import { createMemoryPayrollStore } from "../../src/testing/index";
 import { createMemoryMutationPorts } from "./memory-ports";
 
 export type PayrollStoreAdapter = "memory" | "drizzle";

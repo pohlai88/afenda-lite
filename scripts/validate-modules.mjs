@@ -59,11 +59,17 @@ function fail(message, code = 1) {
 async function loadLivingManifests() {
 	const entries = LIVING_ERP_MANIFEST_PACKAGES.map((meta) => ({
 		meta,
-		manifestPath: join(root, meta.dir, "src", "module.manifest.ts"),
+		manifestPath: join(
+			root,
+			meta.dir,
+			meta.manifestPath ?? "src/module.manifest.ts",
+		),
 	}));
 	for (const entry of entries) {
 		if (!existsSync(entry.manifestPath)) {
-			fail(`missing manifest: ${entry.meta.dir}/src/module.manifest.ts`);
+			fail(
+				`missing manifest: ${entry.meta.dir}/${entry.meta.manifestPath ?? "src/module.manifest.ts"}`,
+			);
 		}
 	}
 	const modules = await Promise.all(
@@ -75,7 +81,7 @@ async function loadLivingManifests() {
 		const manifest = mod[meta.manifestExport];
 		if (!manifest || typeof manifest !== "object") {
 			fail(
-				`manifest export ${meta.manifestExport} missing from ${meta.dir}/src/module.manifest.ts`,
+				`manifest export ${meta.manifestExport} missing from ${meta.dir}/${meta.manifestPath ?? "src/module.manifest.ts"}`,
 			);
 		}
 		return manifest;

@@ -1,10 +1,9 @@
 import { describe, expect, it } from "vitest";
-
-import { HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION } from "../src/error-codes";
 import {
 	assertEmploymentStatusTransition,
 	canTransitionEmploymentStatus,
-} from "../src/shared/employment-status";
+} from "../src/features/workforce-records/employment/employment-status";
+import { HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION } from "../src/kernel/execution/error-codes";
 import { humanResourcesCodeFromResult } from "./helpers/result-details";
 
 describe("employment status transitions (Slice 5.4)", () => {

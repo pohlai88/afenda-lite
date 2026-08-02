@@ -2,6 +2,7 @@ import type { PlopTypes } from "@turbo/gen";
 
 import {
 	createGeneratorDiagnosticReport,
+	type GeneratorDiagnostic,
 	type GeneratorDiagnosticReportV1,
 	renderGeneratorDiagnosticReportText,
 } from "./diagnostic-protocol.ts";
@@ -39,6 +40,13 @@ export interface GeneratorFamilyRegistration {
 	readonly register: (plop: GeneratorRegistrar) => void;
 }
 
+export interface GeneratorDoctorExtension {
+	readonly diagnostics: readonly GeneratorDiagnostic[];
+	readonly json: unknown;
+	readonly kind: string;
+	readonly textLines: readonly string[];
+}
+
 export interface GeneratorRegistrar {
 	readonly setGenerator: (
 		name: string,
@@ -69,10 +77,18 @@ interface GeneratorDoctorReportV1 {
 			readonly workspaces: readonly GeneratorDoctorWorkspace[];
 		}
 	>;
+	readonly extension: unknown;
 	readonly family: GeneratorFamily;
 	readonly release: GeneratorFamilyContractDefinition["release"]["state"];
 	readonly schema: "afenda.generator-doctor/v1";
 	readonly scope: "workspace-discovery-and-contract-diagnostics";
+}
+
+interface CreateFamilyRegistrationOptions {
+	readonly createDoctorExtension?: (input: {
+		readonly repositoryRoot: string;
+		readonly workspaces: readonly DiscoveredWorkspace[];
+	}) => Promise<GeneratorDoctorExtension>;
 }
 
 export class GeneratorDoctorOutputFormatError extends Error {
@@ -92,6 +108,7 @@ const createDoctorReport = (
 	contract: GeneratorFamilyContractDefinition,
 	workspaces: readonly DiscoveredWorkspace[],
 	counts: WorkspaceCountSummary,
+	extension: GeneratorDoctorExtension,
 ): GeneratorDoctorReportV1 => {
 	const authoritativeCapabilities = contract.capabilities.filter(
 		(capability) => capability.status === "authoritative",
@@ -117,7 +134,10 @@ const createDoctorReport = (
 			reconciliation: `${counts.total}=${counts.kernelCandidates}+${counts.erpCandidates}+${counts.outsideFamilyScope}`,
 			workspaces: projectedWorkspaces,
 		}),
-		diagnostics: createGeneratorDiagnosticReport({ diagnostics: [] }),
+		extension: extension.json,
+		diagnostics: createGeneratorDiagnosticReport({
+			diagnostics: extension.diagnostics,
+		}),
 	});
 };
 
@@ -138,6 +158,7 @@ const renderDoctorReportText = (report: GeneratorDoctorReportV1): string => {
 		`outside-family-scope=${report.discovery.outsideFamilyScope}`,
 		`workspace-reconciliation=${report.discovery.reconciliation}`,
 		...workspaceLines,
+		...renderExtensionTextLines(report.extension),
 	].join("; ");
 	const diagnosticReport = renderGeneratorDiagnosticReportText(
 		report.diagnostics,
@@ -180,6 +201,30 @@ const parseDoctorOutputFormat = (
 	throw new GeneratorDoctorOutputFormatError(format);
 };
 
+const createEmptyDoctorExtension = (
+	family: GeneratorFamily,
+): GeneratorDoctorExtension =>
+	Object.freeze({
+		kind: "none",
+		json: Object.freeze({ kind: "none", family }),
+		diagnostics: Object.freeze([]),
+		textLines: Object.freeze([]),
+	});
+
+const isUnknownRecord = (value: unknown): value is Record<string, unknown> =>
+	typeof value === "object" && value !== null && !Array.isArray(value);
+
+const renderExtensionTextLines = (extension: unknown): readonly string[] => {
+	if (!isUnknownRecord(extension)) {
+		return Object.freeze([]);
+	}
+	const maybeTextLines = extension.textLines;
+	return Array.isArray(maybeTextLines) &&
+		maybeTextLines.every((value) => typeof value === "string")
+		? Object.freeze([...maybeTextLines])
+		: Object.freeze([]);
+};
+
 const classificationLabel = (
 	classification: WorkspaceFamilyClassification,
 ): string =>
@@ -213,16 +258,29 @@ const summarizeWorkspaceCounts = (
 export const createFamilyRegistration = (
 	contract: GeneratorFamilyContractDefinition,
 	contracts: GeneratorContractRegistry,
+	registrationOptions: CreateFamilyRegistrationOptions = {},
 ): GeneratorFamilyRegistration => {
 	const name = `${contract.family}-generator` as const;
 	const doctor = async (
 		repositoryRoot: string,
-		options: GeneratorDoctorOptions = {},
+		doctorOptions: GeneratorDoctorOptions = {},
 	): Promise<string> => {
-		const format = parseDoctorOutputFormat(options.format);
+		const format = parseDoctorOutputFormat(doctorOptions.format);
 		const discovery = await discoverWorkspaces({ contracts, repositoryRoot });
 		const counts = summarizeWorkspaceCounts(discovery.workspaces);
-		const report = createDoctorReport(contract, discovery.workspaces, counts);
+		const extension =
+			registrationOptions.createDoctorExtension === undefined
+				? createEmptyDoctorExtension(contract.family)
+				: await registrationOptions.createDoctorExtension({
+						repositoryRoot,
+						workspaces: discovery.workspaces,
+					});
+		const report = createDoctorReport(
+			contract,
+			discovery.workspaces,
+			counts,
+			extension,
+		);
 		return renderDoctorReport(report, format);
 	};
 	const runDoctor: PlopTypes.CustomActionFunction = (_answers, _config, plop) =>

@@ -9,6 +9,7 @@ import {
 	APPROVED_TESTING_CONFIG_FILES,
 	FORBIDDEN_TEST_RUNNERS,
 	getTestingLane,
+	projectWorkspaceTestRun,
 	TESTING_CONTROL_PLANE_HOME,
 	TESTING_LANES,
 	TESTING_POLICY_BOUND_CONFIG_FILES,
@@ -22,4 +23,5 @@ export const testingPolicy = Object.freeze({
 	forbiddenRunners: FORBIDDEN_TEST_RUNNERS,
 	approvedDirectDatabaseUrlTestFiles: APPROVED_DIRECT_DATABASE_URL_TEST_FILES,
 	lane: getTestingLane,
+	workspaceRun: projectWorkspaceTestRun,
 });

@@ -1,8 +1,8 @@
-import type { HumanResourcesCommandOptions } from "../../src/command-options";
 import {
 	assignEmploymentCalendar,
 	createWorkCalendar,
-} from "../../src/time/calendar";
+} from "../../src/features/time/calendar";
+import type { HumanResourcesCommandOptions } from "../../src/kernel/execution/command-options";
 import { helperAssert as assert } from "./helper-assert";
 import { STANDARD_WEEK } from "./time-parity-shared";
 

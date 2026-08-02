@@ -1,6 +1,7 @@
 import type { Role } from "@afenda/auth/client";
 import {
 	BoxesIcon,
+	Building2Icon,
 	CreditCardIcon,
 	DatabaseIcon,
 	FileTextIcon,
@@ -29,6 +30,7 @@ export type ShellNavModuleId =
 	| "payables"
 	| "payments"
 	| "accounting"
+	| "corporate-administration"
 	| "human-resources";
 
 export type ShellNavKind = "module";
@@ -63,6 +65,10 @@ export const SHELL_MODULE_PRESENTATION = Object.freeze({
 	payables: { icon: FileTextIcon, sectionId: "finance" },
 	payments: { icon: CreditCardIcon, sectionId: "finance" },
 	accounting: { icon: LandmarkIcon, sectionId: "finance" },
+	"corporate-administration": {
+		icon: Building2Icon,
+		sectionId: "administration",
+	},
 	"human-resources": { icon: UsersIcon, sectionId: "people" },
 } satisfies Record<
 	ShellNavModuleId,
@@ -222,6 +228,14 @@ export const OPERATOR_SHELL_NAV: readonly ShellNavItem[] = [
  * where Actions require `requireRole("operator")`.
  */
 export const CLIENT_SHELL_NAV: readonly ShellNavItem[] = [
+	{
+		id: "corporate-administration",
+		label: "Corporate administration",
+		href: "/client/corporate-administration",
+		moduleId: "corporate-administration",
+		kind: "module",
+		permissionCodes: ["corporate_administration.company.read"],
+	},
 	{
 		id: "master-data",
 		label: "Master data",

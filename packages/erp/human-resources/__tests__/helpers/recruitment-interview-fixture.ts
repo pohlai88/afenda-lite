@@ -1,4 +1,4 @@
-import type { InterviewScorecardInput } from "../../src/schemas/recruitment";
+import type { InterviewScorecardInput } from "../../src/features/recruitment/schema";
 
 export const SAMPLE_INTERVIEW_SCORECARD = {
 	criteria: [

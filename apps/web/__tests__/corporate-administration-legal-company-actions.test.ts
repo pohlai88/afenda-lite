@@ -1,3 +1,5 @@
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const memberSession = {
@@ -165,6 +167,7 @@ import { setCompanyJurisdictionProfileAction } from "../app/actions/set-company-
 import { supersedeCompanyJurisdictionProfileAction } from "../app/actions/supersede-company-jurisdiction-profile";
 import { updateLegalCompanyProfileAction } from "../app/actions/update-legal-company-profile";
 import { CorporateAdministrationShell } from "../features/corporate-administration/corporate-administration-shell";
+import { EntityRegister } from "../features/corporate-administration/entity-register";
 
 function formData(entries: Readonly<Record<string, string>>): FormData {
 	const form = new FormData();
@@ -284,10 +287,40 @@ describe("Corporate Administration legal-company Server Actions", () => {
 			ok: true,
 			data: [],
 		});
-		corporateAdministrationMocks.listOverdueResolutionActions.mockResolvedValue({
-			ok: true,
-			data: [],
-		});
+		corporateAdministrationMocks.listOverdueResolutionActions.mockResolvedValue(
+			{
+				ok: true,
+				data: [],
+			},
+		);
+	});
+
+	it("renders the tenant-scoped entity register with completeness, registered-office, and cursor evidence", () => {
+		const markup = renderToStaticMarkup(
+			createElement(EntityRegister, {
+				companies: [
+					{
+						legalCompanyId: "22222222-2222-4222-8222-222222222222",
+						companyCode: "AF-MY",
+						displayName: "Afenda Malaysia",
+						homeJurisdictionCountryCode: "MY",
+						lifecycleStatus: "draft",
+						completeness: "incomplete",
+						registeredOffice: "Kuala Lumpur, MY",
+					},
+				],
+				nextCursor: "next-cursor",
+				path: "/client/corporate-administration",
+				showFirstPage: true,
+			}),
+		);
+
+		expect(markup).toContain("Entity register");
+		expect(markup).toContain("Activation incomplete");
+		expect(markup).toContain("Kuala Lumpur, MY");
+		expect(markup).toContain("First page");
+		expect(markup).toContain("cursor=next-cursor");
+		expect(markup).not.toContain("organizationId");
 	});
 
 	it("denies register when company manage permission is missing", async () => {
@@ -510,6 +543,10 @@ describe("Corporate Administration legal-company Server Actions", () => {
 				items: [
 					{
 						legalCompanyId: "22222222-2222-4222-8222-222222222222",
+						companyCode: "AF-MY",
+						profile: { displayName: "Afenda Malaysia" },
+						homeJurisdictionCountryCode: "MY",
+						state: "draft",
 					},
 				],
 				nextCursor: null,
@@ -553,7 +590,7 @@ describe("Corporate Administration legal-company Server Actions", () => {
 		expect(
 			corporateAdministrationMocks.listLegalCompanies,
 		).toHaveBeenCalledWith(
-			{ pagination: { limit: 50 } },
+			{ pagination: { limit: 25 } },
 			expect.objectContaining({
 				organizationId: memberSession.orgId,
 				actorUserId: memberSession.userId,

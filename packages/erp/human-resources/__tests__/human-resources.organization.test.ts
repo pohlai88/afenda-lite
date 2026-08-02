@@ -1,14 +1,4 @@
 import { describe, expect, it } from "vitest";
-import type { HumanResourcesPermission } from "../src/authorization";
-import { createEmployee } from "../src/core/employee";
-import {
-	HUMAN_RESOURCES_ERROR_CONFLICT,
-	HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
-	HUMAN_RESOURCES_ERROR_FORBIDDEN,
-	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
-	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
-	HUMAN_RESOURCES_ERROR_STALE_VERSION,
-} from "../src/error-codes";
 import {
 	activateDepartment,
 	archiveDepartment,
@@ -17,29 +7,46 @@ import {
 	getOrganizationTree,
 	getOrganizationTreeAsOf,
 	updateDepartment,
-} from "../src/organization/department";
-import { archiveJob, getJobAsOf, updateJob } from "../src/organization/job";
+} from "../src/features/organization/department";
+import {
+	archiveJob,
+	getJobAsOf,
+	updateJob,
+} from "../src/features/organization/job";
 import {
 	closePosition,
 	createPosition,
 	freezePosition,
 	getPositionAsOf,
 	updatePosition,
-} from "../src/organization/position";
+} from "../src/features/organization/position";
 import {
 	assignPrimaryReportingLine,
 	listDirectReports,
 	replacePrimaryReportingLine,
 	resolvePrimaryManager,
-} from "../src/organization/reporting-line";
+} from "../src/features/organization/reporting-line";
+import { createEmployee } from "../src/features/workforce-records/employment/employee";
+import type { HumanResourcesPermission } from "../src/kernel/authorization/authorize";
 import {
 	HUMAN_RESOURCES_PERMISSION_CODES,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,
 	HUMAN_RESOURCES_PERMISSION_ORGANIZATION_MANAGE,
 	HUMAN_RESOURCES_PERMISSION_ORGANIZATION_READ,
-} from "../src/permissions";
-import { runSequential, sequentialReturn } from "../src/shared/run-sequential";
-import { createMemoryHumanResourcesStore } from "../src/testing";
+} from "../src/kernel/authorization/permissions";
+import {
+	HUMAN_RESOURCES_ERROR_CONFLICT,
+	HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+	HUMAN_RESOURCES_ERROR_FORBIDDEN,
+	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+	HUMAN_RESOURCES_ERROR_STALE_VERSION,
+} from "../src/kernel/execution/error-codes";
+import {
+	runSequential,
+	sequentialReturn,
+} from "../src/kernel/execution/run-sequential";
+import { createMemoryHumanResourcesStore } from "../src/testing/index";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
 import { humanResourcesCodeFromResult } from "./helpers/result-details";

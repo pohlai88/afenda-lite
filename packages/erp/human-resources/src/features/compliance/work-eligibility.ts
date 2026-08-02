@@ -1,0 +1,313 @@
+import { errorResult, type Result } from "@afenda/errors";
+import type {
+	WorkEligibility,
+	WorkEligibilityRiskListPage,
+} from "../../kernel/contracts";
+import { buildMutationMeta } from "../../kernel/emissions/mutation-meta";
+import type { HumanResourcesCommandOptions } from "../../kernel/execution/command-options";
+import {
+	HUMAN_RESOURCES_ERROR_CONFLICT,
+	humanResourcesErrorDetails,
+} from "../../kernel/execution/error-codes";
+import { fingerprintWorkEligibilityRecord } from "../../kernel/identity/fingerprint";
+import {
+	HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_CLOSE,
+	HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_RECORD,
+	HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_RENEW,
+	HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_SUSPEND,
+	HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_VERIFY,
+	HUMAN_RESOURCES_QUERY_WORK_ELIGIBILITY_GET,
+	HUMAN_RESOURCES_QUERY_WORK_ELIGIBILITY_LIST_RISK,
+} from "../../kernel/operations/module-ids";
+import {
+	assertValidDocumentDateRange,
+	COMPLIANCE_NEARING_EXPIRY_DAYS,
+} from "./guards";
+import {
+	runComplianceCapabilityCommand,
+	runComplianceCapabilityQuery,
+	runComplianceEmployeeScopedCapabilityQuery,
+} from "./run-operation";
+import {
+	getEmployeeWorkEligibilityInputSchema,
+	listEmployeesWithWorkEligibilityRiskInputSchema,
+	recordWorkEligibilityInputSchema,
+	renewWorkEligibilityInputSchema,
+	verifyWorkEligibilityInputSchema,
+	workEligibilityTransitionInputSchema,
+} from "./schema";
+
+export const HUMAN_RESOURCES_AGGREGATE_WORK_ELIGIBILITY =
+	"work_eligibility" as const;
+export type HumanResourcesWorkEligibilityAggregate =
+	typeof HUMAN_RESOURCES_AGGREGATE_WORK_ELIGIBILITY;
+
+const DEFAULT_PAGE = 1;
+const DEFAULT_PAGE_SIZE = 25;
+
+export function recordWorkEligibility(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<WorkEligibility>> {
+	return runComplianceCapabilityCommand(input, options, {
+		schema: recordWorkEligibilityInputSchema,
+		invalidMessage: "Invalid work eligibility record input",
+		command: HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_RECORD,
+		storeMethods: [
+			"findWorkEligibilityByIdempotencyKey",
+			"recordWorkEligibility",
+		],
+		execute: async (data, { store, ports, documentReference }) => {
+			const dateRange = assertValidDocumentDateRange({
+				issuedOn: data.issuedOn,
+				expiresOn: data.expiresOn ?? null,
+			});
+			if (!dateRange.ok) {
+				return dateRange;
+			}
+
+			let normalizedDocumentRef: string | null = null;
+			if (data.documentRef !== undefined) {
+				const refCheck = await documentReference.validateReference({
+					organizationId: data.organizationId,
+					reference: data.documentRef,
+					allowedKinds: [
+						"passport",
+						"work_authorization",
+						"identity_document",
+						"other",
+					],
+					requireImmutableVersion: true,
+				});
+				if (!refCheck.ok) {
+					return refCheck;
+				}
+				normalizedDocumentRef = refCheck.data.reference;
+			}
+
+			const requestFingerprint = fingerprintWorkEligibilityRecord({
+				employeeId: data.employeeId,
+				countryCode: data.countryCode,
+				jurisdiction: data.jurisdiction ?? null,
+				issuedOn: data.issuedOn,
+				expiresOn: data.expiresOn ?? null,
+				documentRef: normalizedDocumentRef,
+			});
+
+			const existingByKey = await store.findWorkEligibilityByIdempotencyKey({
+				organizationId: data.organizationId,
+				idempotencyKey: data.idempotencyKey,
+			});
+			if (!existingByKey.ok) {
+				return existingByKey;
+			}
+			if (existingByKey.data !== null) {
+				if (
+					existingByKey.data.createRequestFingerprint !== requestFingerprint
+				) {
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+						internalContext: humanResourcesErrorDetails(
+							HUMAN_RESOURCES_ERROR_CONFLICT,
+						),
+					});
+				}
+				return errorResult.ok(existingByKey.data.eligibility);
+			}
+
+			return store.recordWorkEligibility(
+				{
+					organizationId: data.organizationId,
+					employeeId: data.employeeId,
+					countryCode: data.countryCode,
+					jurisdiction: data.jurisdiction ?? null,
+					issuedOn: data.issuedOn,
+					expiresOn: data.expiresOn ?? null,
+					documentRef: normalizedDocumentRef ?? null,
+					createIdempotencyKey: data.idempotencyKey,
+					createRequestFingerprint: requestFingerprint,
+					createdBy: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operationId: HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_RECORD,
+					idempotencyKey: data.idempotencyKey,
+				}),
+			);
+		},
+	});
+}
+
+export function verifyWorkEligibility(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<WorkEligibility>> {
+	return runComplianceCapabilityCommand(input, options, {
+		schema: verifyWorkEligibilityInputSchema,
+		invalidMessage: "Invalid work eligibility verify input",
+		command: HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_VERIFY,
+		storeMethods: ["verifyWorkEligibility"],
+		execute: (data, { store, ports }) =>
+			store.verifyWorkEligibility(
+				{
+					organizationId: data.organizationId,
+					eligibilityId: data.eligibilityId,
+					evidenceDate: data.evidenceDate,
+					expectedVersion: data.expectedVersion,
+					actorUserId: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operationId: HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_VERIFY,
+				}),
+			),
+	});
+}
+
+export function suspendWorkEligibility(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<WorkEligibility>> {
+	return runComplianceCapabilityCommand(input, options, {
+		schema: workEligibilityTransitionInputSchema,
+		invalidMessage: "Invalid work eligibility suspend input",
+		command: HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_SUSPEND,
+		storeMethods: ["suspendWorkEligibility"],
+		execute: (data, { store, ports }) =>
+			store.suspendWorkEligibility(
+				{
+					organizationId: data.organizationId,
+					eligibilityId: data.eligibilityId,
+					expectedVersion: data.expectedVersion,
+					actorUserId: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operationId: HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_SUSPEND,
+				}),
+			),
+	});
+}
+
+export function renewWorkEligibility(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<WorkEligibility>> {
+	return runComplianceCapabilityCommand(input, options, {
+		schema: renewWorkEligibilityInputSchema,
+		invalidMessage: "Invalid work eligibility renew input",
+		command: HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_RENEW,
+		storeMethods: ["renewWorkEligibility"],
+		execute: async (data, { store, ports, documentReference }) => {
+			const dateRange = assertValidDocumentDateRange({
+				issuedOn: data.issuedOn,
+				expiresOn: data.expiresOn ?? null,
+			});
+			if (!dateRange.ok) {
+				return dateRange;
+			}
+
+			let normalizedDocumentRef: string | null = null;
+			if (data.documentRef !== undefined) {
+				const refCheck = await documentReference.validateReference({
+					organizationId: data.organizationId,
+					reference: data.documentRef,
+					allowedKinds: [
+						"passport",
+						"work_authorization",
+						"identity_document",
+						"other",
+					],
+					requireImmutableVersion: true,
+				});
+				if (!refCheck.ok) {
+					return refCheck;
+				}
+				normalizedDocumentRef = refCheck.data.reference;
+			}
+
+			return store.renewWorkEligibility(
+				{
+					organizationId: data.organizationId,
+					eligibilityId: data.eligibilityId,
+					issuedOn: data.issuedOn,
+					expiresOn: data.expiresOn ?? null,
+					documentRef: normalizedDocumentRef,
+					expectedVersion: data.expectedVersion,
+					actorUserId: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operationId: HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_RENEW,
+				}),
+			);
+		},
+	});
+}
+
+export function closeWorkEligibility(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<WorkEligibility>> {
+	return runComplianceCapabilityCommand(input, options, {
+		schema: workEligibilityTransitionInputSchema,
+		invalidMessage: "Invalid work eligibility close input",
+		command: HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_CLOSE,
+		storeMethods: ["closeWorkEligibility"],
+		execute: (data, { store, ports }) =>
+			store.closeWorkEligibility(
+				{
+					organizationId: data.organizationId,
+					eligibilityId: data.eligibilityId,
+					expectedVersion: data.expectedVersion,
+					actorUserId: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operationId: HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_CLOSE,
+				}),
+			),
+	});
+}
+
+export function getEmployeeWorkEligibility(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<WorkEligibility | null>> {
+	return runComplianceEmployeeScopedCapabilityQuery(input, options, {
+		query: HUMAN_RESOURCES_QUERY_WORK_ELIGIBILITY_GET,
+		storeMethods: ["getActiveWorkEligibilityForEmployee"],
+		schema: getEmployeeWorkEligibilityInputSchema,
+		invalidMessage: "Invalid work eligibility get input",
+		execute: async (data, { store }) =>
+			store.getActiveWorkEligibilityForEmployee({
+				organizationId: data.organizationId,
+				employeeId: data.employeeId,
+			}),
+	});
+}
+
+export function listEmployeesWithWorkEligibilityRisk(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<WorkEligibilityRiskListPage>> {
+	return runComplianceCapabilityQuery(input, options, {
+		schema: listEmployeesWithWorkEligibilityRiskInputSchema,
+		invalidMessage: "Invalid work eligibility risk list input",
+		query: HUMAN_RESOURCES_QUERY_WORK_ELIGIBILITY_LIST_RISK,
+		storeMethods: ["listEmployeesWithWorkEligibilityRisk"],
+		execute: (data, { store }) =>
+			store.listEmployeesWithWorkEligibilityRisk({
+				organizationId: data.organizationId,
+				asOf: data.asOf,
+				withinDays: data.withinDays ?? COMPLIANCE_NEARING_EXPIRY_DAYS,
+				page: data.page ?? DEFAULT_PAGE,
+				pageSize: data.pageSize ?? DEFAULT_PAGE_SIZE,
+			}),
+	});
+}

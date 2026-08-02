@@ -1,14 +1,5 @@
 import { describe, expect, it } from "vitest";
-
-import {
-	HUMAN_RESOURCES_ERROR_DEPENDENCY_UNAVAILABLE,
-	HUMAN_RESOURCES_ERROR_FORBIDDEN,
-} from "../src/error-codes";
-import {
-	createMemoryHrObservabilityRecorder,
-	type HrObservabilityPorts,
-} from "../src/observability";
-import { HUMAN_RESOURCES_SUBJECT_EXPORT_SCHEMA_VERSION } from "../src/privacy";
+import { HUMAN_RESOURCES_SUBJECT_EXPORT_SCHEMA_VERSION } from "../src/features/privacy/contract";
 import {
 	anonymizeHumanResourcesSubject,
 	evaluateHumanResourcesAnonymization,
@@ -16,7 +7,15 @@ import {
 	exportHumanResourcesSubjectData,
 	getHumanResourcesPrivacyCase,
 	placeHumanResourcesLegalHold,
-} from "../src/privacy/operations";
+} from "../src/features/privacy/operations";
+import {
+	HUMAN_RESOURCES_ERROR_DEPENDENCY_UNAVAILABLE,
+	HUMAN_RESOURCES_ERROR_FORBIDDEN,
+} from "../src/kernel/execution/error-codes";
+import {
+	createMemoryHrObservabilityRecorder,
+	type HrObservabilityPorts,
+} from "../src/kernel/observability/index";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
 import {
 	createDualTenantPrivacyRecords,

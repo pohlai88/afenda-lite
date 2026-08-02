@@ -1,0 +1,167 @@
+import { errorResult, type Result } from "@afenda/errors";
+import { buildMutationMeta } from "../../../kernel/emissions/mutation-meta";
+import type { HumanResourcesCommandOptions } from "../../../kernel/execution/command-options";
+import {
+	HUMAN_RESOURCES_ERROR_CONFLICT,
+	humanResourcesErrorDetails,
+} from "../../../kernel/execution/error-codes";
+import { fingerprintPersonCreate } from "../../../kernel/identity/fingerprint";
+import {
+	HUMAN_RESOURCES_COMMAND_PERSON_CREATE,
+	HUMAN_RESOURCES_COMMAND_PERSON_UPDATE,
+	HUMAN_RESOURCES_QUERY_PERSON_AS_OF,
+	HUMAN_RESOURCES_QUERY_PERSON_GET,
+} from "../../../kernel/operations/module-ids";
+import {
+	runWorkforceFoundationCommand,
+	runWorkforceFoundationQuery,
+} from "./run-operation";
+import {
+	createPersonInputSchema,
+	getPersonAsOfInputSchema,
+	getPersonInputSchema,
+	updatePersonNameInputSchema,
+} from "./schema";
+import type { Person, PersonIdentityAtAsOf } from "./types";
+
+export function createPerson(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<Person>> {
+	return runWorkforceFoundationCommand(input, options, {
+		schema: createPersonInputSchema,
+		invalidMessage: "Invalid person create input",
+		command: HUMAN_RESOURCES_COMMAND_PERSON_CREATE,
+		storeMethods: ["findPersonByIdempotencyKey", "createPerson"],
+		execute: async (data, { store, ports }) => {
+			const requestFingerprint = fingerprintPersonCreate({
+				legalName: data.legalName,
+				preferredName: data.preferredName ?? null,
+				privacyClassification: data.privacyClassification,
+			});
+
+			const existingByKey = await store.findPersonByIdempotencyKey({
+				organizationId: data.organizationId,
+				idempotencyKey: data.idempotencyKey,
+			});
+			if (!existingByKey.ok) {
+				return existingByKey;
+			}
+			if (existingByKey.data !== null) {
+				if (
+					existingByKey.data.createRequestFingerprint !== requestFingerprint
+				) {
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+						internalContext: humanResourcesErrorDetails(
+							HUMAN_RESOURCES_ERROR_CONFLICT,
+						),
+					});
+				}
+				return errorResult.ok(existingByKey.data.person);
+			}
+
+			return store.createPerson(
+				{
+					organizationId: data.organizationId,
+					legalName: data.legalName.trim(),
+					preferredName: data.preferredName?.trim() ?? null,
+					privacyClassification: data.privacyClassification,
+					createIdempotencyKey: data.idempotencyKey,
+					createRequestFingerprint: requestFingerprint,
+					createdBy: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operationId: HUMAN_RESOURCES_COMMAND_PERSON_CREATE,
+				}),
+			);
+		},
+	});
+}
+
+export function updatePersonName(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<Person>> {
+	return runWorkforceFoundationCommand(input, options, {
+		schema: updatePersonNameInputSchema,
+		invalidMessage: "Invalid person update input",
+		command: HUMAN_RESOURCES_COMMAND_PERSON_UPDATE,
+		storeMethods: ["updatePersonName"],
+		execute: async (data, { store, ports }) =>
+			store.updatePersonName(
+				{
+					organizationId: data.organizationId,
+					personId: data.personId,
+					legalName: data.legalName.trim(),
+					effectiveOn: data.effectiveOn,
+					reasonCode: data.reasonCode,
+					evidenceRef: data.evidenceRef ?? null,
+					expectedVersion: data.expectedVersion,
+					actorUserId: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operationId: HUMAN_RESOURCES_COMMAND_PERSON_UPDATE,
+				}),
+			),
+	});
+}
+
+export function getPersonById(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<Person>> {
+	return runWorkforceFoundationQuery(input, options, {
+		schema: getPersonInputSchema,
+		invalidMessage: "Invalid person get input",
+		query: HUMAN_RESOURCES_QUERY_PERSON_GET,
+		storeMethods: ["getPersonById"],
+		execute: async (data, { store }) => {
+			const result = await store.getPersonById({
+				organizationId: data.organizationId,
+				personId: data.personId,
+			});
+			if (!result.ok) {
+				return result;
+			}
+			if (result.data === null) {
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+				});
+			}
+			return errorResult.ok(result.data);
+		},
+	});
+}
+
+export function getPersonAsOf(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<PersonIdentityAtAsOf>> {
+	return runWorkforceFoundationQuery(input, options, {
+		schema: getPersonAsOfInputSchema,
+		invalidMessage: "Invalid person as-of input",
+		query: HUMAN_RESOURCES_QUERY_PERSON_AS_OF,
+		storeMethods: ["findPersonAsOf"],
+		execute: async (data, { store }) => {
+			const result = await store.findPersonAsOf({
+				organizationId: data.organizationId,
+				personId: data.personId,
+				asOf: data.asOf,
+			});
+			if (!result.ok) {
+				return result;
+			}
+			if (result.data === null) {
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The requested resource was not found",
+				});
+			}
+			return errorResult.ok(result.data);
+		},
+	});
+}

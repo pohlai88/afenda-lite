@@ -1,23 +1,22 @@
 import { randomUUID } from "node:crypto";
 
 import type { Result } from "@afenda/errors";
-
-import type { HumanResourcesEmployeeId } from "../../src/brands";
-import type { HumanResourcesCommandOptions } from "../../src/command-options";
-import { createEmployee } from "../../src/core/employee";
-import { createEmployment } from "../../src/core/employment";
 import {
 	approveRequisition,
 	assignHiringManager,
 	createDraftRequisition,
 	openRequisition,
 	submitRequisition,
-} from "../../src/recruitment/requisition";
+} from "../../src/features/recruitment/requisition";
+import { createEmployee } from "../../src/features/workforce-records/employment/employee";
+import { createEmployment } from "../../src/features/workforce-records/employment/employment";
+import type { JobRequisition } from "../../src/kernel/contracts";
+import type { HumanResourcesCommandOptions } from "../../src/kernel/execution/command-options";
 import {
 	runSequential,
 	sequentialReturn,
-} from "../../src/shared/run-sequential";
-import type { JobRequisition } from "../../src/types";
+} from "../../src/kernel/execution/run-sequential";
+import type { HumanResourcesEmployeeId } from "../../src/kernel/identity/brands";
 import { humanResourcesCodeFromResult } from "./result-details";
 
 export type RequisitionPipelineTarget = "approved" | "open";

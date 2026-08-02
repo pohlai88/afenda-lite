@@ -7,7 +7,7 @@ import {
 } from "@afenda/payroll";
 import { describe, expect, it } from "vitest";
 
-import { createPayrollCalendar as createPayrollCalendarInternal } from "../src/setup/calendar";
+import { createPayrollCalendar as createPayrollCalendarInternal } from "../src/features/payroll-setup/calendar";
 
 function createComposition(): PayrollCapabilityComposition {
 	return {
@@ -17,7 +17,7 @@ function createComposition(): PayrollCapabilityComposition {
 			},
 		},
 		workforce: {
-			getPayrollEmployee() {
+			getApprovedPayrollHandoff() {
 				return Promise.resolve(errorResult.ok(null));
 			},
 		},

@@ -3,36 +3,22 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { createEmployee } from "../src/core/employee";
-import { createEmployment } from "../src/core/employment";
-import {
-	HUMAN_RESOURCES_ERROR_CONFLICT,
-	HUMAN_RESOURCES_ERROR_FORBIDDEN,
-	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
-	HUMAN_RESOURCES_ERROR_STALE_VERSION,
-} from "../src/error-codes";
-import { grantLeaveEntitlement } from "../src/leave/entitlement";
+import { createProductionWorkCalendar } from "../src/composition/production/work-calendar";
+import { grantLeaveEntitlement } from "../src/features/leave/entitlement";
 import {
 	createLeavePolicy,
 	publishLeavePolicy,
-} from "../src/leave/leave-policy";
+} from "../src/features/leave/leave-policy";
 import {
 	approveLeaveRequest,
 	createDraftLeaveRequest,
 	submitLeaveRequest,
-} from "../src/leave/leave-request";
-import { assignPrimaryReportingLine } from "../src/organization/reporting-line";
-import { HUMAN_RESOURCES_PERMISSION_CODES } from "../src/permissions";
-import { createProductionWorkCalendar } from "../src/production-work-calendar";
-import { runSequential, sequentialReturn } from "../src/shared/run-sequential";
-import {
-	createMemoryHumanResourcesStore,
-	createStoreAssignmentContextQuery,
-} from "../src/testing";
+} from "../src/features/leave/leave-request";
+import { assignPrimaryReportingLine } from "../src/features/organization/reporting-line";
 import {
 	approveAttendanceBreakWaiver,
 	listAttendanceBreakWaiverDecisions,
-} from "../src/time/attendance/break-waivers";
+} from "../src/features/time/attendance/break-waivers";
 import {
 	correctAttendanceEvent,
 	getAttendanceEvent,
@@ -43,22 +29,22 @@ import {
 	recordClockIn,
 	recordClockOut,
 	recordManualAttendance,
-} from "../src/time/attendance/events";
+} from "../src/features/time/attendance/events";
 import {
 	ATTENDANCE_SESSION_DETECTION_SOURCE,
 	parseExceptionDetectionRemarks,
 	SCHEDULE_PUBLISH_DETECTION_SOURCE,
-} from "../src/time/attendance/exception-detection";
+} from "../src/features/time/attendance/exception-detection";
 import {
 	createAttendanceException,
 	excuseAttendanceException,
 	listUnresolvedAttendanceExceptions,
 	reviewAttendanceException,
-} from "../src/time/attendance/exceptions";
-import { importAttendanceEvents } from "../src/time/attendance/import";
-import { namespacedImportSourceReference } from "../src/time/attendance/import-keys";
-import { resolveAttendanceSession } from "../src/time/attendance/sessions";
-import { getDailyAttendanceSummary } from "../src/time/attendance/summary";
+} from "../src/features/time/attendance/exceptions";
+import { importAttendanceEvents } from "../src/features/time/attendance/import";
+import { namespacedImportSourceReference } from "../src/features/time/attendance/import-keys";
+import { resolveAttendanceSession } from "../src/features/time/attendance/sessions";
+import { getDailyAttendanceSummary } from "../src/features/time/attendance/summary";
 import {
 	addCalendarDateOverride,
 	assignEmploymentCalendar,
@@ -69,17 +55,17 @@ import {
 	removeCalendarDateOverride,
 	resolveEmploymentCalendar,
 	supersedeWorkCalendar,
-} from "../src/time/calendar";
-import { resolveWorkCalendarCivilDay } from "../src/time/calendar-resolution";
-import { getApprovedTimeHandoff } from "../src/time/handoff/approved-time-handoff";
-import type { AttendanceSourcePort } from "../src/time/handoff/ports";
+} from "../src/features/time/calendar";
+import { resolveWorkCalendarCivilDay } from "../src/features/time/calendar-resolution";
+import { getApprovedTimeHandoff } from "../src/features/time/handoff/approved-time-handoff";
+import type { AttendanceSourcePort } from "../src/features/time/handoff/ports";
 import {
 	approveOvertimeRequest,
 	createOvertimeRequest,
 	listPendingOvertimeApprovals,
 	recordOvertimeActual,
 	verifyOvertimeRequest,
-} from "../src/time/overtime";
+} from "../src/features/time/overtime";
 import {
 	activateTimePolicy,
 	assignTimeApprovalAuthority,
@@ -88,7 +74,7 @@ import {
 	endTimeApprovalAuthorityAssignment,
 	resolveTimePolicy,
 	supersedeTimePolicy,
-} from "../src/time/policy";
+} from "../src/features/time/policy";
 import {
 	assignShift,
 	changeShiftAssignment,
@@ -96,7 +82,7 @@ import {
 	listLocationSchedule,
 	listShiftAssignmentSegments,
 	publishShiftAssignment,
-} from "../src/time/scheduling";
+} from "../src/features/time/scheduling";
 import {
 	activateShift,
 	addShiftBreak,
@@ -105,7 +91,7 @@ import {
 	listShiftBreaks,
 	supersedeShift,
 	updateShift,
-} from "../src/time/shift";
+} from "../src/features/time/shift";
 import {
 	addTimesheetEntry,
 	approveTimesheet,
@@ -121,12 +107,29 @@ import {
 	returnTimesheet,
 	submitTimesheet,
 	updateTimesheetEntry,
-} from "../src/time/timesheet";
+} from "../src/features/time/timesheet";
 import {
 	parseAbsenceDetectionRemarks,
 	TIMESHEET_GENERATION_ABSENCE_SOURCE,
-} from "../src/time/timesheet-generation";
-import type { AttendanceExceptionType } from "../src/types";
+} from "../src/features/time/timesheet-generation";
+import { createEmployee } from "../src/features/workforce-records/employment/employee";
+import { createEmployment } from "../src/features/workforce-records/employment/employment";
+import { HUMAN_RESOURCES_PERMISSION_CODES } from "../src/kernel/authorization/permissions";
+import type { AttendanceExceptionType } from "../src/kernel/contracts";
+import {
+	HUMAN_RESOURCES_ERROR_CONFLICT,
+	HUMAN_RESOURCES_ERROR_FORBIDDEN,
+	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+	HUMAN_RESOURCES_ERROR_STALE_VERSION,
+} from "../src/kernel/execution/error-codes";
+import {
+	runSequential,
+	sequentialReturn,
+} from "../src/kernel/execution/run-sequential";
+import {
+	createMemoryHumanResourcesStore,
+	createStoreAssignmentContextQuery,
+} from "../src/testing/index";
 import { createTestHumanResourcesCommandOptions } from "./helpers/command-options";
 import { helperAssert as assert } from "./helpers/helper-assert";
 import {

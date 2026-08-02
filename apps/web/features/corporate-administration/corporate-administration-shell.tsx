@@ -30,6 +30,10 @@ import {
 
 import { requirePermission } from "@/features/auth/require-permission";
 import {
+	EntityRegister,
+	type EntityRegisterCompany,
+} from "@/features/corporate-administration/entity-register";
+import {
 	type GovernanceDecisionMeeting,
 	type GovernanceDecisionOverdueAction,
 	type GovernanceDecisionResolution,
@@ -64,6 +68,7 @@ const LEGAL_COMPANY_IDENTITY_UNAVAILABLE_MESSAGE =
 	"Company identity data is unavailable.";
 
 interface CorporateAdministrationShellProps {
+	cursor?: string;
 	surface: "admin" | "client";
 }
 
@@ -73,6 +78,7 @@ type GovernanceLegalCompanyId = Parameters<
 
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The RSC composes independently authorized corporate administration surfaces.
 export async function CorporateAdministrationShell({
+	cursor,
 	surface,
 }: CorporateAdministrationShellProps) {
 	const session =
@@ -111,10 +117,43 @@ export async function CorporateAdministrationShell({
 		correlationId,
 	});
 	const companiesResult = await listLegalCompanies(
-		{ pagination: { limit: 50 } },
+		{
+			pagination: {
+				limit: 25,
+				...(cursor === undefined ? {} : { cursor }),
+			},
+		},
 		queryOptions,
 		dependencies,
 	);
+	const asOf = canonicalDateSchema.parse(new Date().toISOString().slice(0, 10));
+	const entityRegisterCompanies = companiesResult.ok
+		? await Promise.all(
+				companiesResult.data.items.map(async (company) => {
+					const [completeness, registeredAddress] = await Promise.all([
+						getCompanyCompletenessForActivation(
+							{ legalCompanyId: company.legalCompanyId, asOf },
+							queryOptions,
+							dependencies,
+						),
+						findRegisteredAddressAsOf(
+							{
+								legalCompanyId: company.legalCompanyId,
+								addressType: "registered_office",
+								asOf,
+							},
+							queryOptions,
+							dependencies,
+						),
+					]);
+					return toEntityRegisterCompany({
+						company,
+						completeness,
+						registeredAddress,
+					});
+				}),
+			)
+		: [];
 	const detailedCompanies = companiesResult.ok
 		? await Promise.all(
 				companiesResult.data.items.map(async (company) => {
@@ -209,6 +248,19 @@ export async function CorporateAdministrationShell({
 						<AlertDescription>{companiesResult.message}</AlertDescription>
 					</Alert>
 				)}
+
+				<EntityRegister
+					companies={entityRegisterCompanies}
+					nextCursor={
+						companiesResult.ok ? companiesResult.data.nextCursor : null
+					}
+					path={
+						surface === "admin"
+							? "/admin/corporate-administration"
+							: "/client/corporate-administration"
+					}
+					showFirstPage={cursor !== undefined}
+				/>
 
 				<LegalCompanyWorkspace
 					canWrite={canWrite}
@@ -320,6 +372,55 @@ export async function CorporateAdministrationShell({
 			</WorkspacePageContent>
 		</WorkspacePage>
 	);
+}
+
+function toEntityRegisterCompany(
+	input: Readonly<{
+		company: Readonly<{
+			legalCompanyId: string;
+			companyCode: string;
+			homeJurisdictionCountryCode: string;
+			profile: Readonly<{ displayName: string }>;
+			state: string;
+		}>;
+		completeness: Awaited<
+			ReturnType<typeof getCompanyCompletenessForActivation>
+		>;
+		registeredAddress: Awaited<ReturnType<typeof findRegisteredAddressAsOf>>;
+	}>,
+): EntityRegisterCompany {
+	let registeredOffice: EntityRegisterCompany["registeredOffice"];
+	if (!input.registeredAddress.ok) {
+		registeredOffice = "unavailable";
+	} else if (input.registeredAddress.data === null) {
+		registeredOffice = null;
+	} else {
+		registeredOffice = [
+			input.registeredAddress.data.address.line1,
+			input.registeredAddress.data.address.city,
+			input.registeredAddress.data.address.countryCode,
+		]
+			.filter((part) => part.length > 0)
+			.join(", ");
+	}
+	let completeness: EntityRegisterCompany["completeness"];
+	if (!input.completeness.ok) {
+		completeness = "unavailable";
+	} else if (input.completeness.data.complete) {
+		completeness = "complete";
+	} else {
+		completeness = "incomplete";
+	}
+
+	return {
+		legalCompanyId: input.company.legalCompanyId,
+		companyCode: input.company.companyCode,
+		displayName: input.company.profile.displayName,
+		homeJurisdictionCountryCode: input.company.homeJurisdictionCountryCode,
+		lifecycleStatus: input.company.state,
+		completeness,
+		registeredOffice,
+	};
 }
 
 async function loadGovernanceDecisions(input: {

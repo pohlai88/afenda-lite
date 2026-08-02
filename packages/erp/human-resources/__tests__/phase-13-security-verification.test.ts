@@ -11,10 +11,10 @@ import {
 	runHumanResourcesBulkExport,
 	verifyHumanResourcesAuditIntegrity,
 } from "../src";
-import { createCompensationGrade } from "../src/compensation-benefits/compensation-grade";
-import { createVaultDocumentReferenceAdapter } from "../src/compliance/vault-document-reference-adapter";
-import { runSequential } from "../src/shared/run-sequential";
-import { createMemoryHumanResourcesStore } from "../src/testing";
+import { createCompensationGrade } from "../src/features/compensation-benefits/compensation-grade";
+import { createVaultDocumentReferenceAdapter } from "../src/features/compliance/vault-document-reference-adapter";
+import { runSequential } from "../src/kernel/execution/run-sequential";
+import { createMemoryHumanResourcesStore } from "../src/testing/index";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
 

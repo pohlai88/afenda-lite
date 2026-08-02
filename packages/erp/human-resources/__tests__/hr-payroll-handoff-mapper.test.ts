@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { approvedPayrollHandoffSchema } from "@afenda/events/schemas";
 import { describe, expect, it } from "vitest";
 
-import { mapApprovedPayrollHandoff } from "../src/handoff/map-approved-payroll-handoff";
+import { mapApprovedPayrollHandoff } from "../src/features/payroll-handoff/map-approved-payroll-handoff";
 import type {
 	ApprovedCompensationHandoff,
 	ApprovedLeaveHandoff,
@@ -13,7 +13,7 @@ import type {
 	BenefitEnrollment,
 	EmployeeCompensation,
 	WorkAssignment,
-} from "../src/types";
+} from "../src/kernel/contracts";
 
 const compensation: EmployeeCompensation = {
 	id: "comp-1" as EmployeeCompensation["id"],
@@ -136,6 +136,7 @@ const timeHandoff: ApprovedTimeHandoff = {
 describe("mapApprovedPayrollHandoff", () => {
 	it("maps domain handoffs into the shared contract with all Slice 8.7 fields", () => {
 		const mapped = mapApprovedPayrollHandoff({
+			employmentStatus: "active",
 			compensationHandoff,
 			leaveHandoffs: [leaveHandoff],
 			timeHandoff,
@@ -186,9 +187,8 @@ describe("mapApprovedPayrollHandoff", () => {
 	it("does not import @afenda/payroll from handoff modules", () => {
 		const root = join(fileURLToPath(new URL(".", import.meta.url)), "..");
 		const modules = [
-			"src/handoff/map-approved-payroll-handoff.ts",
-			"src/handoff/approved-payroll-handoff.ts",
-			"src/handoff/ports.ts",
+			"src/features/payroll-handoff/map-approved-payroll-handoff.ts",
+			"src/features/payroll-handoff/approved-payroll-handoff.ts",
 		];
 
 		for (const relativePath of modules) {

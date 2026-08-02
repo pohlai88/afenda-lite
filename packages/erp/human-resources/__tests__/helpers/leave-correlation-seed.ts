@@ -1,11 +1,10 @@
-import type { HumanResourcesCommandOptions } from "../../src/command-options";
-import { createEmployee } from "../../src/core/employee";
-import { createEmployment } from "../../src/core/employment";
-import { grantLeaveEntitlement } from "../../src/leave/entitlement";
+import { grantLeaveEntitlement } from "../../src/features/leave/entitlement";
 import {
 	createLeavePolicy,
 	publishLeavePolicy,
-} from "../../src/leave/leave-policy";
+} from "../../src/features/leave/leave-policy";
+import { createEmployee } from "../../src/features/workforce-records/employment/employee";
+import { createEmployment } from "../../src/features/workforce-records/employment/employment";
 import {
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CREATE,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE,
@@ -13,7 +12,8 @@ import {
 	HUMAN_RESOURCES_PERMISSION_LEAVE_POLICY_MANAGE,
 	HUMAN_RESOURCES_PERMISSION_LEAVE_POLICY_READ,
 	HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_OWN,
-} from "../../src/permissions";
+} from "../../src/kernel/authorization/permissions";
+import type { HumanResourcesCommandOptions } from "../../src/kernel/execution/command-options";
 import { helperAssert as assert } from "./helper-assert";
 import { mapActorToEmployee } from "./identity-resolver";
 import { createGrantingHumanResourcesAuthorization } from "./memory-authorization";

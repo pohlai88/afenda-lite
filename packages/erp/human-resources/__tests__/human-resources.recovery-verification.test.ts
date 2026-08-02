@@ -1,11 +1,10 @@
 import { describe, expect, it } from "vitest";
-
+import { runSequential } from "../src/kernel/execution/run-sequential";
 import {
 	createHrLocalRecoveryDrills,
 	type LocalRecoveryDrillEvidence,
 	runLocalRecoveryDrill,
-} from "../src/recovery-verification";
-import { runSequential } from "../src/shared/run-sequential";
+} from "../src/testing/recovery/index";
 
 describe("HR local recovery-drill verification", () => {
 	it("executes all eight injected-failure recovery drills", async () => {

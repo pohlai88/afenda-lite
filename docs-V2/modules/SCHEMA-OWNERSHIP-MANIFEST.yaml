@@ -23,7 +23,7 @@ prefixReservations:
     moduleId: corporate-administration
     kind: erp
     status: reserved
-    authority: CA-0.1
+    authority: CA-DATA-001
 
 tables:
   # --- Platform sole mutators (R1-C / R1-D) ---

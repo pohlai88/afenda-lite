@@ -6,8 +6,8 @@ import {
 	executeHumanResourcesDeletionDecision,
 	type HumanResourcesDeletionDecisionInput,
 	type HumanResourcesPrivacyDeletionPort,
-} from "../src/privacy/deletion-decision";
-import type { HumanResourcesPrivacyProcessorBoundary } from "../src/privacy/processor-boundary";
+} from "../src/features/privacy/deletion-decision";
+import type { HumanResourcesPrivacyProcessorBoundary } from "../src/features/privacy/processor-boundary";
 
 const boundary: HumanResourcesPrivacyProcessorBoundary = {
 	organizationId: "org-privacy",

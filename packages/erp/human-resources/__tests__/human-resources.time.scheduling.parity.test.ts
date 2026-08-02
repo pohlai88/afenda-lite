@@ -1,31 +1,33 @@
 import { afterAll, describe, expect, it } from "vitest";
-
-import { createEmployee } from "../src/core/employee";
-import { createEmployment } from "../src/core/employment";
 import {
-	HUMAN_RESOURCES_ERROR_CONFLICT,
-	HUMAN_RESOURCES_ERROR_FORBIDDEN,
-	HUMAN_RESOURCES_ERROR_NOT_FOUND,
-	HUMAN_RESOURCES_ERROR_STALE_VERSION,
-} from "../src/error-codes";
-import { createWorkCalendar, getWorkCalendar } from "../src/time/calendar";
+	createWorkCalendar,
+	getWorkCalendar,
+} from "../src/features/time/calendar";
 import {
 	approveOvertimeRequest,
 	createOvertimeRequest,
 	getOvertimeRequest,
 	recordOvertimeActual,
 	verifyOvertimeRequest,
-} from "../src/time/overtime";
-import { assignTimeApprovalAuthority } from "../src/time/policy";
-import { assignShift } from "../src/time/scheduling";
-import { activateShift, createShift } from "../src/time/shift";
+} from "../src/features/time/overtime";
+import { assignTimeApprovalAuthority } from "../src/features/time/policy";
+import { assignShift } from "../src/features/time/scheduling";
+import { activateShift, createShift } from "../src/features/time/shift";
 import {
 	addTimesheetEntry,
 	approveTimesheet,
 	createTimesheet,
 	getTimesheet,
 	submitTimesheet,
-} from "../src/time/timesheet";
+} from "../src/features/time/timesheet";
+import { createEmployee } from "../src/features/workforce-records/employment/employee";
+import { createEmployment } from "../src/features/workforce-records/employment/employment";
+import {
+	HUMAN_RESOURCES_ERROR_CONFLICT,
+	HUMAN_RESOURCES_ERROR_FORBIDDEN,
+	HUMAN_RESOURCES_ERROR_NOT_FOUND,
+	HUMAN_RESOURCES_ERROR_STALE_VERSION,
+} from "../src/kernel/execution/error-codes";
 import {
 	createHrParityHarness,
 	type WorkforceStoreAdapter,

@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
 	assertLineageSegmentMutable,
 	validateLineageSegmentEffectiveOn,
-} from "../src/workforce-foundation/lineage-segment";
+} from "../src/features/workforce-records/identity/lineage-segment";
 
 describe("lineage segment guards", () => {
 	it("rejects mutation of superseded lineage segments", () => {

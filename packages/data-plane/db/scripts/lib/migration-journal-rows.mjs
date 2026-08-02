@@ -4,6 +4,12 @@ import { join } from "node:path";
 
 const LINE_BREAK_PATTERN = /\r?\n/;
 const ENV_ASSIGNMENT_PATTERN = /^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/;
+const RECONCILIATION_STATUSES = new Set([
+	"applied",
+	"pending",
+	"hash mismatch",
+	"identity mismatch",
+]);
 
 /**
  * @param {string} drizzleDir
@@ -56,6 +62,43 @@ export function findPendingMigrationJournalRows(journalRows, dbRows) {
 	}
 
 	return { pending, driftIssues };
+}
+
+/**
+ * Derive operator-facing application posture from journal-ordered reconciliation
+ * rows. A later applied identity never advances the contiguous frontier across a
+ * pending or divergent identity.
+ *
+ * @param {Array<{ journalTag: string | null, status: string }>} rows
+ */
+export function summarizeMigrationJournalRows(rows) {
+	for (const row of rows) {
+		if (!RECONCILIATION_STATUSES.has(row.status)) {
+			throw new Error(`Unknown migration reconciliation status: ${row.status}`);
+		}
+	}
+
+	const firstGapIndex = rows.findIndex((row) => row.status !== "applied");
+	const contiguousRows =
+		firstGapIndex === -1 ? rows : rows.slice(0, firstGapIndex);
+	const rowsBeyondGap = firstGapIndex === -1 ? [] : rows.slice(firstGapIndex);
+	const contiguousAppliedThroughTag = contiguousRows.at(-1)?.journalTag ?? null;
+	const pendingCount = rows.filter((row) => row.status === "pending").length;
+	const divergentCount = rows.filter(
+		(row) =>
+			row.status === "hash mismatch" || row.status === "identity mismatch",
+	).length;
+	const outOfOrderAppliedTags = rowsBeyondGap
+		.filter((row) => row.status === "applied")
+		.map((row) => row.journalTag)
+		.filter((tag) => tag !== null);
+
+	return {
+		contiguousAppliedThroughTag,
+		pendingCount,
+		divergentCount,
+		outOfOrderAppliedTags,
+	};
 }
 
 /**
@@ -133,7 +176,11 @@ export function reconcileMigrationJournalRows(journalRows, dbRows) {
 			status: "unknown in database",
 		}));
 
-	return { rows, unknownDatabaseRows };
+	return {
+		rows,
+		unknownDatabaseRows,
+		summary: summarizeMigrationJournalRows(rows),
+	};
 }
 
 /**

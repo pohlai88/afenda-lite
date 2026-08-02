@@ -1,23 +1,22 @@
 import { describe, expect, it } from "vitest";
-
-import { humanResourcesEmployeeIdSchema } from "../src/brands";
-import { createCompensationGrade } from "../src/compensation-benefits/compensation-grade";
-import { createMemoryCurrencyLookup } from "../src/compensation-benefits/currency-lookup";
+import { createCompensationGrade } from "../src/features/compensation-benefits/compensation-grade";
+import { createMemoryCurrencyLookup } from "../src/features/compensation-benefits/currency-lookup";
 import {
 	createEmployeeCompensation,
 	getEmployeeCompensation,
-} from "../src/compensation-benefits/employee-compensation";
-import { createEmployee } from "../src/core/employee";
-import { createEmployment } from "../src/core/employment";
+} from "../src/features/compensation-benefits/employee-compensation";
+import { createEmployee } from "../src/features/workforce-records/employment/employee";
+import { createEmployment } from "../src/features/workforce-records/employment/employment";
 import {
 	HUMAN_RESOURCES_PERMISSION_COMPENSATION_MANAGE,
 	HUMAN_RESOURCES_PERMISSION_COMPENSATION_READ,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CREATE,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE,
-} from "../src/permissions";
-import { createMemoryHumanResourcesStore } from "../src/testing";
-import type { EmployeeCompensation } from "../src/types";
+} from "../src/kernel/authorization/permissions";
+import type { EmployeeCompensation } from "../src/kernel/contracts";
+import { humanResourcesEmployeeIdSchema } from "../src/kernel/identity/brands";
+import { createMemoryHumanResourcesStore } from "../src/testing/index";
 import { createMappingIdentityResolver } from "./helpers/identity-resolver";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";

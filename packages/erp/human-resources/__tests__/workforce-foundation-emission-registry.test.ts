@@ -30,11 +30,11 @@ import {
 	HUMAN_RESOURCES_WORKER_CREATED_EVENT,
 } from "@afenda/events/schemas";
 import { describe, expect, it } from "vitest";
-import { HUMAN_RESOURCES_EMPLOYMENT_LIFECYCLE_EMISSIONS } from "../src/emissions/domains/employment-lifecycle";
-import { HUMAN_RESOURCES_ORGANIZATION_EMISSIONS } from "../src/emissions/domains/organization";
-import { HUMAN_RESOURCES_TIME_EMISSIONS } from "../src/emissions/domains/time";
-import { HUMAN_RESOURCES_WORKFORCE_FOUNDATION_EMISSIONS } from "../src/emissions/domains/workforce-foundation";
-import { HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD } from "../src/emissions/registry";
+import { HUMAN_RESOURCES_EMPLOYMENT_LIFECYCLE_EMISSIONS } from "../src/kernel/emissions/domains/employment-lifecycle";
+import { HUMAN_RESOURCES_ORGANIZATION_EMISSIONS } from "../src/kernel/emissions/domains/organization";
+import { HUMAN_RESOURCES_TIME_EMISSIONS } from "../src/kernel/emissions/domains/time";
+import { HUMAN_RESOURCES_WORKFORCE_FOUNDATION_EMISSIONS } from "../src/kernel/emissions/domains/workforce-foundation";
+import { HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD } from "../src/kernel/emissions/registry";
 import {
 	HUMAN_RESOURCES_COMMAND_ASSIGNMENT_CREATE,
 	HUMAN_RESOURCES_COMMAND_ASSIGNMENT_END,
@@ -84,7 +84,7 @@ import {
 	HUMAN_RESOURCES_COMMAND_WORKER_CREATE,
 	HUMAN_RESOURCES_ORGANIZATION_COMMAND_IDS,
 	HUMAN_RESOURCES_WORKFORCE_FOUNDATION_COMMAND_IDS,
-} from "../src/module-ids";
+} from "../src/kernel/operations/module-ids";
 
 const DRAINED_FROM_LEGACY = [
 	HUMAN_RESOURCES_COMMAND_PERSON_CREATE,

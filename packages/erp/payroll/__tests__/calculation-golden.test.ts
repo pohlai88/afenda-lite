@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import {
 	calculateEmployeePayroll,
 	normalizeCalcOutput,
-} from "../src/runs/calculation";
+} from "../src/features/calculation/calculation";
 import { buildSyntheticCalcSnapshot } from "./helpers/calc-snapshot";
 
 const fixturePath = fileURLToPath(

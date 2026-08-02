@@ -1,19 +1,6 @@
 import "server-only";
 
 export {
-	PAYROLL_PERMISSION_CODES,
-	PAYROLL_PERMISSION_INPUT_MANAGE,
-	PAYROLL_PERMISSION_PAYSLIP_READ_ALL,
-	PAYROLL_PERMISSION_PAYSLIP_READ_OWN,
-	PAYROLL_PERMISSION_RECONCILIATION_MANAGE,
-	PAYROLL_PERMISSION_RUN_CALCULATE,
-	PAYROLL_PERMISSION_RUN_CREATE,
-	PAYROLL_PERMISSION_RUN_FINALIZE,
-	PAYROLL_PERMISSION_RUN_REVERSE,
-	PAYROLL_PERMISSION_RUN_REVIEW,
-	PAYROLL_PERMISSION_SETUP_MANAGE,
-} from "./permissions";
-export {
 	archivePayrollCalendar,
 	archivePayrollDeductionRule,
 	archivePayrollEarningRule,
@@ -62,13 +49,26 @@ export {
 	updatePayrollPayGroup,
 	updatePayrollPeriod,
 	updatePayrollStatutoryRule,
-} from "./public-capabilities";
+} from "./facade/capabilities";
+export {
+	createPayrollCapabilityOptions,
+	type PayrollCapabilityOptions,
+} from "./facade/context";
 export type {
 	PayrollAuthorizationCapability,
 	PayrollCapabilityComposition,
 	PayrollWorkforceCapability,
-} from "./public-contracts";
+} from "./facade/contracts";
 export {
-	createPayrollCapabilityOptions,
-	type PayrollCapabilityOptions,
-} from "./public-execution-context";
+	PAYROLL_PERMISSION_CODES,
+	PAYROLL_PERMISSION_INPUT_MANAGE,
+	PAYROLL_PERMISSION_PAYSLIP_READ_ALL,
+	PAYROLL_PERMISSION_PAYSLIP_READ_OWN,
+	PAYROLL_PERMISSION_RECONCILIATION_MANAGE,
+	PAYROLL_PERMISSION_RUN_CALCULATE,
+	PAYROLL_PERMISSION_RUN_CREATE,
+	PAYROLL_PERMISSION_RUN_FINALIZE,
+	PAYROLL_PERMISSION_RUN_REVERSE,
+	PAYROLL_PERMISSION_RUN_REVIEW,
+	PAYROLL_PERMISSION_SETUP_MANAGE,
+} from "./kernel/execution/permissions";

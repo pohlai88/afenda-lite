@@ -8,7 +8,7 @@ import type {
 	MutationPorts,
 	OutboxFactInput,
 	OutboxPort,
-} from "../../src/ports";
+} from "../../src/kernel/execution/ports";
 
 export function createMemoryAuditPort(options?: {
 	failAfter?: number;

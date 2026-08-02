@@ -19,12 +19,22 @@ import {
 	HUMAN_RESOURCES_EMPLOYMENT_STARTED_EVENT,
 } from "@afenda/events/schemas";
 import { afterAll, describe, expect, it } from "vitest";
+import { transferAssignment } from "../src/features/employment-lifecycle/transfer";
+import { createPosition } from "../src/features/organization/position";
+import { assignPrimaryReportingLine } from "../src/features/organization/reporting-line";
+import {
+	assignEmploymentCalendar,
+	createWorkCalendar,
+} from "../src/features/time/calendar";
 import {
 	createAssignment,
 	endAssignment,
 	getAssignmentAsOf,
-} from "../src/core/assignment";
-import { createEmployee, updateEmployee } from "../src/core/employee";
+} from "../src/features/workforce-records/employment/assignment";
+import {
+	createEmployee,
+	updateEmployee,
+} from "../src/features/workforce-records/employment/employee";
 import {
 	amendEmployment,
 	correctEmployment,
@@ -32,7 +42,7 @@ import {
 	getEmployment,
 	getEmploymentAsOf,
 	listEmploymentStatusHistory,
-} from "../src/core/employment";
+} from "../src/features/workforce-records/employment/employment";
 import {
 	correctEmploymentContract,
 	createEmploymentContract,
@@ -41,16 +51,16 @@ import {
 	getEmploymentContractAsOf,
 	listEmploymentContracts,
 	supersedeEmploymentContract,
-} from "../src/core/employment-contract";
+} from "../src/features/workforce-records/employment/employment-contract";
 import {
 	amendEmploymentContract,
 	renewEmploymentContract,
-} from "../src/core/employment-contract-management";
+} from "../src/features/workforce-records/employment/employment-contract-management";
 import {
 	reactivateEmployment,
 	suspendEmployment,
-} from "../src/core/employment-management";
-import { resolveEmployeeOrgContextAsOf } from "../src/core/org-context";
+} from "../src/features/workforce-records/employment/employment-management";
+import { resolveEmployeeOrgContextAsOf } from "../src/features/workforce-records/employment/org-context";
 import {
 	HUMAN_RESOURCES_ERROR_ASSIGNMENT_OUTSIDE_EMPLOYMENT_RANGE,
 	HUMAN_RESOURCES_ERROR_CONFLICT,
@@ -61,14 +71,7 @@ import {
 	HUMAN_RESOURCES_ERROR_NOT_FOUND,
 	HUMAN_RESOURCES_ERROR_REHIRE_REQUIRES_ENDED_EMPLOYMENT,
 	HUMAN_RESOURCES_ERROR_STALE_VERSION,
-} from "../src/error-codes";
-import { transferAssignment } from "../src/lifecycle/transfer";
-import { createPosition } from "../src/organization/position";
-import { assignPrimaryReportingLine } from "../src/organization/reporting-line";
-import {
-	assignEmploymentCalendar,
-	createWorkCalendar,
-} from "../src/time/calendar";
+} from "../src/kernel/execution/error-codes";
 import { TEST_ORGANIZATION_DIMENSION_KEYS } from "./helpers/command-options";
 import { runDrizzleParity } from "./helpers/database-gate";
 import {

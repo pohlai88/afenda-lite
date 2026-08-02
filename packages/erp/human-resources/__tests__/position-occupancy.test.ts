@@ -1,16 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { createAssignment, endAssignment } from "../src/core/assignment";
-import { createEmployee } from "../src/core/employee";
-import { createEmployment } from "../src/core/employment";
 import {
 	createPosition,
 	getPositionOccupancyAsOf,
-} from "../src/organization/position";
-import { HUMAN_RESOURCES_PERMISSION_CODES } from "../src/permissions";
+} from "../src/features/organization/position";
+import {
+	createAssignment,
+	endAssignment,
+} from "../src/features/workforce-records/employment/assignment";
+import { createEmployee } from "../src/features/workforce-records/employment/employee";
+import { createEmployment } from "../src/features/workforce-records/employment/employment";
+import { HUMAN_RESOURCES_PERMISSION_CODES } from "../src/kernel/authorization/permissions";
 import {
 	createMemoryHumanResourcesStore,
 	createMemoryOrganizationDimensionDirectory,
-} from "../src/testing";
+} from "../src/testing/index";
 import { TEST_ORGANIZATION_DIMENSION_KEYS } from "./helpers/command-options";
 import { helperAssert as assert } from "./helpers/helper-assert";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";

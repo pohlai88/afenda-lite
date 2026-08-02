@@ -1,20 +1,20 @@
-import type { HumanResourcesCommandOptions } from "../../src/command-options";
-import { createBenefitPlan } from "../../src/compensation-benefits/benefit-plan";
+import { createBenefitPlan } from "../../src/features/compensation-benefits/benefit-plan";
 import {
 	createCompensationReviewDraft,
 	finalizeCompensationReview,
 	recordCompensationRecommendation,
-} from "../../src/compensation-benefits/compensation-review";
-import { createMemoryCurrencyLookup } from "../../src/compensation-benefits/currency-lookup";
-import { createEmployee } from "../../src/core/employee";
-import { createEmployment } from "../../src/core/employment";
+} from "../../src/features/compensation-benefits/compensation-review";
+import { createMemoryCurrencyLookup } from "../../src/features/compensation-benefits/currency-lookup";
+import { createEmployee } from "../../src/features/workforce-records/employment/employee";
+import { createEmployment } from "../../src/features/workforce-records/employment/employment";
 import {
 	HUMAN_RESOURCES_PERMISSION_BENEFITS_MANAGE,
 	HUMAN_RESOURCES_PERMISSION_COMPENSATION_MANAGE,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CREATE,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE,
-} from "../../src/permissions";
+} from "../../src/kernel/authorization/permissions";
+import type { HumanResourcesCommandOptions } from "../../src/kernel/execution/command-options";
 import { seedOpenCompensationReviewCycle } from "./compensation-review-cycle-seed";
 import { helperAssert as assert } from "./helper-assert";
 import { createGrantingHumanResourcesAuthorization } from "./memory-authorization";

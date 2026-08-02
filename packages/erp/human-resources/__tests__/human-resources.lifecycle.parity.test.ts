@@ -25,10 +25,7 @@ import {
 	HUMAN_RESOURCES_PROBATION_REVIEWED_EVENT,
 } from "@afenda/events/schemas";
 import { afterAll, describe, expect, it } from "vitest";
-import { createAssignment } from "../src/core/assignment";
-import { createEmployee } from "../src/core/employee";
-import { createEmployment } from "../src/core/employment";
-import { confirmEmployment } from "../src/lifecycle/confirmation";
+import { confirmEmployment } from "../src/features/employment-lifecycle/confirmation";
 import {
 	completeOffboarding,
 	completeOffboardingTask,
@@ -41,16 +38,19 @@ import {
 	recordOffboardingAccessRevocation,
 	recordOffboardingPayrollHandoff,
 	startOffboarding,
-} from "../src/lifecycle/offboarding";
+} from "../src/features/employment-lifecycle/offboarding";
 import {
 	extendProbation,
 	openProbation,
 	recordProbationAssessment,
 	recordProbationOutcome,
-} from "../src/lifecycle/probation";
-import { transferAssignment } from "../src/lifecycle/transfer";
-import { createPosition } from "../src/organization/position";
-import { isoDateTimeSchema } from "../src/schemas/common";
+} from "../src/features/employment-lifecycle/probation";
+import { transferAssignment } from "../src/features/employment-lifecycle/transfer";
+import { createPosition } from "../src/features/organization/position";
+import { createAssignment } from "../src/features/workforce-records/employment/assignment";
+import { createEmployee } from "../src/features/workforce-records/employment/employee";
+import { createEmployment } from "../src/features/workforce-records/employment/employment";
+import { isoDateTimeSchema } from "../src/kernel/validation/common";
 import { TEST_ORGANIZATION_DIMENSION_KEYS } from "./helpers/command-options";
 import { runDrizzleParity } from "./helpers/database-gate";
 import {

@@ -5,24 +5,23 @@
  */
 
 import { afterAll, describe, expect, it } from "vitest";
-
-import { createEmployee } from "../src/core/employee";
-import { createEmployment } from "../src/core/employment";
-import { selectEffectiveLineageRecord } from "../src/shared/effective-lineage";
 import {
 	assignEmploymentCalendar,
 	createWorkCalendar,
 	getWorkCalendar,
 	resolveEmploymentCalendar,
 	supersedeWorkCalendar,
-} from "../src/time/calendar";
+} from "../src/features/time/calendar";
 import {
 	activateShift,
 	createShift,
 	getShift,
 	supersedeShift,
-} from "../src/time/shift";
-import type { Shift, WorkCalendar } from "../src/types";
+} from "../src/features/time/shift";
+import { createEmployee } from "../src/features/workforce-records/employment/employee";
+import { createEmployment } from "../src/features/workforce-records/employment/employment";
+import type { Shift, WorkCalendar } from "../src/kernel/contracts";
+import { selectEffectiveLineageRecord } from "../src/kernel/temporal/effective-lineage";
 import { runDrizzleParity } from "./helpers/database-gate";
 import {
 	createHrParityHarness,

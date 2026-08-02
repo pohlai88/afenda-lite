@@ -24,6 +24,7 @@ operators running release gates.
 | Vitest config shape | `testingVitest` from `@afenda/testing` |
 | Playwright config shape | `testingPlaywright` from `@afenda/testing` |
 | Named runner entry files | `testing/` |
+| Workspace test execution projection | `testingPolicy.workspaceRun()` from `@afenda/testing` |
 | E2E scenario implementation | `testing/e2e/` |
 | Structural anti-drift scan | `scripts/check-testing-governance.mts` |
 
@@ -54,6 +55,7 @@ describes how tests are selected or bootstrapped, it belongs in
 
 ```bash
 pnpm test
+pnpm test:affected
 pnpm test:unit
 pnpm test:interaction
 pnpm test:web:scenario

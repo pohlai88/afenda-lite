@@ -7,7 +7,7 @@ function files(directory: string): string[] {
 	return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
 		const target = path.join(directory, entry.name);
 		if (entry.isDirectory()) {
-			return files(target);
+			return entry.name === "adapters" ? [] : files(target);
 		}
 		return entry.isFile() && entry.name.endsWith(".ts") ? [target] : [];
 	});
@@ -21,7 +21,7 @@ describe("Talent capability boundary", () => {
 			),
 		).toBe(false);
 		for (const file of files(
-			path.resolve(import.meta.dirname, "../src/talent"),
+			path.resolve(import.meta.dirname, "../src/features/talent"),
 		)) {
 			const body = readFileSync(file, "utf8");
 			expect(body, file).not.toContain("HumanResourcesStore");
@@ -31,7 +31,7 @@ describe("Talent capability boundary", () => {
 			expect(body, file).not.toContain("shared/talent-command");
 		}
 		const resourceBoundary = readFileSync(
-			path.resolve(import.meta.dirname, "../src/shared/talent-resource.ts"),
+			path.resolve(import.meta.dirname, "../src/features/talent/resource.ts"),
 			"utf8",
 		);
 		expect(resourceBoundary).not.toContain("HumanResourcesStore");

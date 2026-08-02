@@ -1,12 +1,11 @@
 import { randomUUID } from "node:crypto";
-
+import { createDepartment } from "../../src/features/organization/department";
+import { createJob } from "../../src/features/organization/job";
+import type { HumanResourcesCommandOptions } from "../../src/kernel/execution/command-options";
 import type {
 	HumanResourcesDepartmentId,
 	HumanResourcesJobId,
-} from "../../src/brands";
-import type { HumanResourcesCommandOptions } from "../../src/command-options";
-import { createDepartment } from "../../src/organization/department";
-import { createJob } from "../../src/organization/job";
+} from "../../src/kernel/identity/brands";
 
 /** Seed active department + job for position create (HR-03 required FKs). */
 export async function seedDepartmentAndJob(

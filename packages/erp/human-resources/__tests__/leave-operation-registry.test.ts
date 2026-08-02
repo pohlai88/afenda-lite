@@ -2,32 +2,31 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 
 import { describe, expect, it } from "vitest";
-
-import { HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD } from "../src/emissions/registry";
+import { humanResourcesModuleManifest } from "../src/composition/module.manifest";
 import {
 	HUMAN_RESOURCES_LEAVE_COMMAND_AUTHORIZATION,
 	HUMAN_RESOURCES_LEAVE_COMMANDS,
 	HUMAN_RESOURCES_LEAVE_QUERIES,
 	HUMAN_RESOURCES_LEAVE_QUERY_AUTHORIZATION,
-} from "../src/leave/operation-registry";
-import { humanResourcesModuleManifest } from "../src/module.manifest";
+} from "../src/features/leave/operation-registry";
+import { resolveHumanResourcesAuthorizationPolicy } from "../src/kernel/authorization/registry";
+import { HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD } from "../src/kernel/emissions/registry";
 import {
 	HUMAN_RESOURCES_LEAVE_COMMAND_IDS,
 	HUMAN_RESOURCES_LEAVE_QUERY_IDS,
-} from "../src/module-ids";
-import { HUMAN_RESOURCES_REGISTERED_OPERATION_DEFINITIONS } from "../src/operation-registry/registry";
-import { resolveHumanResourcesAuthorizationPolicy } from "../src/shared/authorization-policy-registry";
+} from "../src/kernel/operations/module-ids";
+import { HUMAN_RESOURCES_REGISTERED_OPERATION_DEFINITIONS } from "../src/kernel/operations/registry";
 
 const definitions = [
 	...Object.values(HUMAN_RESOURCES_LEAVE_COMMANDS),
 	...Object.values(HUMAN_RESOURCES_LEAVE_QUERIES),
 ];
 const publicCapabilitiesSource = readFileSync(
-	path.resolve(import.meta.dirname, "../src/public-capabilities.ts"),
+	path.resolve(import.meta.dirname, "../src/facade/capabilities.ts"),
 	"utf8",
 );
 const moduleIdsSource = readFileSync(
-	path.resolve(import.meta.dirname, "../src/module-ids.ts"),
+	path.resolve(import.meta.dirname, "../src/kernel/operations/module-ids.ts"),
 	"utf8",
 );
 const leaveHandlerSources = [
@@ -36,16 +35,19 @@ const leaveHandlerSources = [
 	"leave-request.ts",
 ].map((fileName) =>
 	readFileSync(
-		path.resolve(import.meta.dirname, `../src/leave/${fileName}`),
+		path.resolve(import.meta.dirname, `../src/features/leave/${fileName}`),
 		"utf8",
 	),
 );
 const leaveRunnerSource = readFileSync(
-	path.resolve(import.meta.dirname, "../src/leave/run-operation.ts"),
+	path.resolve(import.meta.dirname, "../src/features/leave/run-operation.ts"),
 	"utf8",
 );
 const drizzleLeaveSource = readFileSync(
-	path.resolve(import.meta.dirname, "../src/adapters/drizzle/leave.ts"),
+	path.resolve(
+		import.meta.dirname,
+		"../src/features/leave/adapters/leave.drizzle.ts",
+	),
 	"utf8",
 );
 

@@ -3,28 +3,19 @@
  */
 
 import { describe, expect, it } from "vitest";
-
-import type { HumanResourcesPermission } from "../src/authorization";
-import { createEmployee } from "../src/core/employee";
-import { createEmployment } from "../src/core/employment";
 import {
 	EMPLOYEE_RELATIONS_CASE_POLICY_ID,
 	employeeCaseToResourceContext,
 	employeeRelationsCasePolicy,
-} from "../src/employee-relations/case-authorization-policy";
+} from "../src/features/employee-relations/case-authorization-policy";
 import {
 	getEmployeeCaseById,
 	getEmployeeCaseTimeline,
 	openEmployeeCase,
-} from "../src/employee-relations/employee-case";
-import {
-	HUMAN_RESOURCES_ERROR_AUTHORIZATION_DENIED,
-	HUMAN_RESOURCES_ERROR_NOT_FOUND,
-} from "../src/error-codes";
-import {
-	HUMAN_RESOURCES_QUERY_EMPLOYEE_CASE_GET,
-	HUMAN_RESOURCES_QUERY_EMPLOYEE_RELATIONS_HISTORY_BY_EMPLOYEE,
-} from "../src/module-ids";
+} from "../src/features/employee-relations/employee-case";
+import { createEmployee } from "../src/features/workforce-records/employment/employee";
+import { createEmployment } from "../src/features/workforce-records/employment/employment";
+import type { HumanResourcesPermission } from "../src/kernel/authorization/authorize";
 import {
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CASE_ASSIGNED_READ,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CASE_EXCEPTIONAL_ADMIN,
@@ -32,10 +23,18 @@ import {
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CASE_OPEN,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CREATE,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE,
-} from "../src/permissions";
-import { resolveHumanResourcesAuthorizationPolicy } from "../src/shared/authorization-policy-registry";
-import { createParityResourceShell } from "../src/shared/run-authorized-operation";
-import { createMemoryHumanResourcesStore } from "../src/testing";
+} from "../src/kernel/authorization/permissions";
+import { resolveHumanResourcesAuthorizationPolicy } from "../src/kernel/authorization/registry";
+import { createParityResourceShell } from "../src/kernel/authorization/run-authorized-operation";
+import {
+	HUMAN_RESOURCES_ERROR_AUTHORIZATION_DENIED,
+	HUMAN_RESOURCES_ERROR_NOT_FOUND,
+} from "../src/kernel/execution/error-codes";
+import {
+	HUMAN_RESOURCES_QUERY_EMPLOYEE_CASE_GET,
+	HUMAN_RESOURCES_QUERY_EMPLOYEE_RELATIONS_HISTORY_BY_EMPLOYEE,
+} from "../src/kernel/operations/module-ids";
+import { createMemoryHumanResourcesStore } from "../src/testing/index";
 import { createTestHumanResourcesCommandOptions } from "./helpers/command-options";
 import {
 	createStoreBackedIdentityResolver,

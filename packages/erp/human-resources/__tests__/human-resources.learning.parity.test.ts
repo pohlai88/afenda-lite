@@ -3,8 +3,6 @@
  */
 
 import { afterAll, describe, expect, it } from "vitest";
-import { createEmployee } from "../src/core/employee";
-import { HUMAN_RESOURCES_ERROR_CONFLICT } from "../src/error-codes";
 import {
 	expireCertification,
 	getCertification,
@@ -12,30 +10,30 @@ import {
 	listCertifications,
 	renewCertification,
 	revokeCertification,
-} from "../src/learning/certification";
+} from "../src/features/learning/certification";
 import {
 	getCompletion,
 	listCompletions,
 	recordCompletion,
-} from "../src/learning/completion";
+} from "../src/features/learning/completion";
 import {
 	archiveCourse,
 	createCourse,
 	getCourse,
 	listCourses,
 	updateCourse,
-} from "../src/learning/course";
+} from "../src/features/learning/course";
 import {
 	assignLearning,
 	enrolAssignment,
 	getLearningAssignment,
 	listLearningAssignments,
 	waiveAssignment,
-} from "../src/learning/learning-assignment";
+} from "../src/features/learning/learning-assignment";
 import {
 	listLearningAttendance,
 	recordLearningAttendance,
-} from "../src/learning/learning-attendance";
+} from "../src/features/learning/learning-attendance";
 import {
 	assignSessionInstructor,
 	completeSession,
@@ -43,8 +41,10 @@ import {
 	getSession,
 	listSessions,
 	startSession,
-} from "../src/learning/learning-session";
-import { runSequential } from "../src/shared/run-sequential";
+} from "../src/features/learning/learning-session";
+import { createEmployee } from "../src/features/workforce-records/employment/employee";
+import { HUMAN_RESOURCES_ERROR_CONFLICT } from "../src/kernel/execution/error-codes";
+import { runSequential } from "../src/kernel/execution/run-sequential";
 import { runDrizzleParity } from "./helpers/database-gate";
 import {
 	createHrParityHarness,

@@ -3,8 +3,6 @@
  */
 
 import { afterAll, describe, expect, it } from "vitest";
-import type { HumanResourcesCommandOptions } from "../src/command-options";
-import { HUMAN_RESOURCES_ERROR_CONFLICT } from "../src/error-codes";
 import {
 	addCalendarDateOverride,
 	addWorkCalendarHoliday,
@@ -22,8 +20,10 @@ import {
 	resolveEmploymentCalendar,
 	supersedeWorkCalendar,
 	updateWorkCalendar,
-} from "../src/time/calendar";
-import type { WorkCalendar } from "../src/types";
+} from "../src/features/time/calendar";
+import type { WorkCalendar } from "../src/kernel/contracts";
+import type { HumanResourcesCommandOptions } from "../src/kernel/execution/command-options";
+import { HUMAN_RESOURCES_ERROR_CONFLICT } from "../src/kernel/execution/error-codes";
 import { runDrizzleParity } from "./helpers/database-gate";
 import { helperAssert as assert } from "./helpers/helper-assert";
 import {

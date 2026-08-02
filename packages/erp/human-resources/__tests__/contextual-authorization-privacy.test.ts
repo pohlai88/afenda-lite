@@ -14,17 +14,17 @@ import {
 	HUMAN_RESOURCES_SENSITIVE_RESOURCE_TYPES,
 	humanResourcesSensitiveOperationPolicy,
 } from "../src";
-import type { HumanResourcesAuthorizationPort } from "../src/authorization";
-import type { HumanResourcesQueryId } from "../src/module-ids";
-import { HUMAN_RESOURCES_PERMISSION_COMPENSATION_READ } from "../src/permissions";
+import type { HumanResourcesAuthorizationPort } from "../src/kernel/authorization/authorize";
 import {
 	authorizeHumanResourcesOperation,
 	authorizeHumanResourcesSensitiveResource,
-} from "../src/shared/contextual-authorization";
+} from "../src/kernel/authorization/contextual-authorization";
+import { HUMAN_RESOURCES_PERMISSION_COMPENSATION_READ } from "../src/kernel/authorization/permissions";
+import type { HumanResourcesQueryId } from "../src/kernel/operations/module-ids";
 import {
 	applyResourceFieldProjection,
 	COMPENSATION_FIELD_CLASSES,
-} from "../src/shared/field-projection";
+} from "../src/kernel/privacy/field-projection";
 
 const employeeId =
 	"550e8400-e29b-41d4-a716-446655440000" as HumanResourcesEmployeeId;

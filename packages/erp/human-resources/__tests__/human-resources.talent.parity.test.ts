@@ -3,26 +3,14 @@
  */
 
 import { afterAll, describe, expect, it } from "vitest";
-import { createEmployee } from "../src/core/employee";
-import { createEmployment } from "../src/core/employment";
-import {
-	HUMAN_RESOURCES_ERROR_CONFLICT,
-	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
-	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
-} from "../src/error-codes";
-import { createPosition } from "../src/organization/position";
-import {
-	HUMAN_RESOURCES_PERMISSION_COMPETENCY_READ,
-	HUMAN_RESOURCES_PERMISSION_TALENT_PROFILE_SENSITIVE_READ,
-} from "../src/permissions";
-import { SUCCESSION_READINESS_MAX_AGE_DAYS } from "../src/shared/talent-status";
+import { createPosition } from "../src/features/organization/position";
 import {
 	acknowledgeCareerPlan,
 	addCareerPlanAction,
 	closeCareerPlan,
 	completeCareerPlanAction,
 	createCareerPlan,
-} from "../src/talent/career-plan";
+} from "../src/features/talent/career-plan";
 import {
 	assessEmployeeCompetency,
 	createCompetency,
@@ -36,24 +24,25 @@ import {
 	retireCompetency,
 	supersedeCompetencyAssessment,
 	updateCompetency,
-} from "../src/talent/competency";
+} from "../src/features/talent/competency";
 import {
 	listCriticalRoleReadiness,
 	recordCriticalRoleReadiness,
-} from "../src/talent/critical-role-readiness";
+} from "../src/features/talent/critical-role-readiness";
+import { SUCCESSION_READINESS_MAX_AGE_DAYS } from "../src/features/talent/status";
 import {
 	approveSuccessionCandidate,
 	createSuccessionPlan,
 	getPositionSuccessionCoverage,
 	nominateSuccessionCandidate,
-} from "../src/talent/succession-plan";
+} from "../src/features/talent/succession-plan";
 import {
 	approveTalentPoolMember,
 	closeTalentPool,
 	createTalentPool,
 	nominateTalentPoolMember,
 	removeTalentPoolMember,
-} from "../src/talent/talent-pool";
+} from "../src/features/talent/talent-pool";
 import {
 	archiveTalentProfile,
 	confirmTalentProfileAssessment,
@@ -62,12 +51,23 @@ import {
 	listTalentProfileAssessments,
 	recordTalentProfileAssessment,
 	updateTalentProfile,
-} from "../src/talent/talent-profile";
+} from "../src/features/talent/talent-profile";
 import {
 	listTalentProfileMobility,
 	recordTalentProfileMobility,
-} from "../src/talent/talent-profile-mobility";
-import { createMemoryHumanResourcesStore } from "../src/testing";
+} from "../src/features/talent/talent-profile-mobility";
+import { createEmployee } from "../src/features/workforce-records/employment/employee";
+import { createEmployment } from "../src/features/workforce-records/employment/employment";
+import {
+	HUMAN_RESOURCES_PERMISSION_COMPETENCY_READ,
+	HUMAN_RESOURCES_PERMISSION_TALENT_PROFILE_SENSITIVE_READ,
+} from "../src/kernel/authorization/permissions";
+import {
+	HUMAN_RESOURCES_ERROR_CONFLICT,
+	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+} from "../src/kernel/execution/error-codes";
+import { createMemoryHumanResourcesStore } from "../src/testing/index";
 import { createTestHumanResourcesCommandOptions } from "./helpers/command-options";
 import { runDrizzleParity } from "./helpers/database-gate";
 import {

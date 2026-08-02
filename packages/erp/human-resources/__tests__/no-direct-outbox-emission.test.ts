@@ -20,9 +20,9 @@ const SKIP_DIRS = new Set(["node_modules", ".next", ".turbo"]);
 const FORBIDDEN_SYMBOLS = ["publishOutboxEvent", "insertOutboxEvent"] as const;
 
 const PORTS_OUTBOX_APPEND_ALLOWLIST = new Set([
-	"emissions/mutation-outcome.ts",
-	"emissions/sql-side-effects.ts",
-	"production-ports.ts",
+	"kernel/emissions/mutation-outcome.ts",
+	"kernel/emissions/sql-side-effects.ts",
+	"composition/production/ports.ts",
 ]);
 
 function collectSourceFiles(dir: string): string[] {
@@ -55,7 +55,7 @@ function isAllowedOutboxAppendPath(relative: string): boolean {
 	if (PORTS_OUTBOX_APPEND_ALLOWLIST.has(relative)) {
 		return true;
 	}
-	return relative.startsWith("adapters/");
+	return relative.includes("/adapters/");
 }
 
 function findOutboxBoundaryViolations(): string[] {

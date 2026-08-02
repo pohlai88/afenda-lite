@@ -4,7 +4,7 @@ import {
 	parsePayrollEarningRuleId,
 	parsePayrollResultLineId,
 	parsePayrollRunEmployeeId,
-} from "../src/brands";
+} from "../src/kernel/identity/brands";
 
 import {
 	createPayrollParityHarness,

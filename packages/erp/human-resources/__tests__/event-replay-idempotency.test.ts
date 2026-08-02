@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { registerEmployeeDocument } from "../src/compliance/employee-document";
-import { recordWorkEligibility } from "../src/compliance/work-eligibility";
-import { createEmployee } from "../src/core/employee";
-import { HUMAN_RESOURCES_PERMISSION_CODES } from "../src/permissions";
-import { createMemoryHumanResourcesStore } from "../src/testing";
+import { registerEmployeeDocument } from "../src/features/compliance/employee-document";
+import { recordWorkEligibility } from "../src/features/compliance/work-eligibility";
+import { createEmployee } from "../src/features/workforce-records/employment/employee";
+import { HUMAN_RESOURCES_PERMISSION_CODES } from "../src/kernel/authorization/permissions";
+import { createMemoryHumanResourcesStore } from "../src/testing/index";
 import { createTestHumanResourcesCommandOptions } from "./helpers/command-options";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";

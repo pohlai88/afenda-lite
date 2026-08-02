@@ -7,7 +7,6 @@
  * This script adds Neon Cloud API checks on top of the product contract.
  */
 
-import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -20,6 +19,7 @@ import {
 	evaluateTrustedDomains,
 	extractTrustedOrigins,
 } from "./lib/neon-auth-trusted-domains.mjs";
+import { runNeonCliJson } from "./lib/neon-cli.mjs";
 
 const env = loadLocalEnv();
 // Prefer `.env.local` over shell exports — stale NEON_BRANCH_ID must not win.
@@ -126,16 +126,9 @@ function neonApiGet(path) {
 const neonFile = JSON.parse(readFileSync(".neon", "utf8"));
 
 function run(args) {
-	return withNeonRetries(
-		() =>
-			execFileSync("npx", ["neon@latest", ...args, "-o", "json"], {
-				env: { ...process.env, NEON_API_KEY: apiKey },
-				encoding: "utf8",
-				shell: true,
-				maxBuffer: 10 * 1024 * 1024,
-			}),
-		{ onRetry: logNeonRetry },
-	);
+	return withNeonRetries(() => runNeonCliJson(args, { apiKey }), {
+		onRetry: logNeonRetry,
+	});
 }
 
 function check(label, ok, detail) {

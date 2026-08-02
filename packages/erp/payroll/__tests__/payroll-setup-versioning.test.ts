@@ -1,56 +1,55 @@
 import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
-
-import type { PayrollAuthorizationPort } from "../src/authorization";
-import {
-	parsePayrollResultLineId,
-	parsePayrollRunEmployeeId,
-} from "../src/brands";
-import { hashSnapshot } from "../src/runs/calc/snapshot";
-import { finalizePayrollRun } from "../src/runs/finalization";
+import { hashSnapshot } from "../src/features/calculation/calculation-snapshot";
+import { finalizePayrollRun } from "../src/features/payroll-runs/finalization";
 import {
 	closePayrollPeriod,
 	createPayrollPeriod,
 	getPayrollPeriod,
 	listPayrollPeriods,
 	updatePayrollPeriod,
-} from "../src/runs/payroll-period";
-import { createPayrollRun } from "../src/runs/payroll-run";
-import { calculatePayrollRun } from "../src/runs/run-calculate-command";
+} from "../src/features/payroll-runs/payroll-period";
+import { createPayrollRun } from "../src/features/payroll-runs/payroll-run";
+import { calculatePayrollRun } from "../src/features/payroll-runs/run-calculate-command";
 import {
 	archivePayrollCalendar,
 	createPayrollCalendar,
 	listPayrollCalendars,
 	updatePayrollCalendar,
-} from "../src/setup/calendar";
+} from "../src/features/payroll-setup/calendar";
 import {
 	createPayrollDeductionRule,
 	supersedePayrollDeductionRule,
-} from "../src/setup/deduction-rule";
+} from "../src/features/payroll-setup/deduction-rule";
 import {
 	archivePayrollEarningRule,
 	createPayrollEarningRule,
 	supersedePayrollEarningRule,
 	updatePayrollEarningRule,
-} from "../src/setup/earning-rule";
+} from "../src/features/payroll-setup/earning-rule";
 import {
 	archivePayrollPayGroup,
 	createPayrollPayGroup,
 	listPayrollPayGroups,
 	updatePayrollPayGroup,
-} from "../src/setup/pay-group";
+} from "../src/features/payroll-setup/pay-group";
 import {
 	createPayrollStatutoryRule,
 	supersedePayrollStatutoryRule,
-} from "../src/setup/statutory-rule";
+} from "../src/features/payroll-setup/statutory-rule";
+import type { PayrollAuthorizationPort } from "../src/kernel/execution/authorization";
+import {
+	parsePayrollResultLineId,
+	parsePayrollRunEmployeeId,
+} from "../src/kernel/identity/brands";
 import {
 	DEFAULT_PAYROLL_ROUNDING_POLICY,
 	PAYROLL_CALCULATION_VERSION,
-} from "../src/shared/rounding-policy";
+} from "../src/kernel/money/rounding-policy";
 import {
 	createMemoryPayrollStore,
 	createTestPayrollRunCalculator,
-} from "../src/testing";
+} from "../src/testing/index";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
 
 const organizationId = "org-setup-versioning";

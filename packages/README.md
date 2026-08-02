@@ -115,7 +115,7 @@ Memory adapters for rate-limit and cache are test and local-development only unl
 | [`@afenda/accounting`](./erp/accounting/README.md) | Node | Active | Journal / journal line / ledger posting / accounting period / CoA / posting profile sole mutator (ARCH-006) |
 | [`@afenda/human-resources`](./erp/human-resources/README.md) | Node | Scaffolded | Workforce relationship sole mutator (`hr_*`) |
 | [`@afenda/payroll`](./erp/payroll/README.md) | Node | Scaffolded | Payroll calculation sole mutator (`payroll_*`) |
-| [`@afenda/corporate-administration`](./erp/corporate-administration/README.md) | Node | Scaffolded | CA-0.4 durable infrastructure implemented; Neon verification blocked |
+| [`@afenda/corporate-administration`](./erp/corporate-administration/README.md) | Node | Scaffolded | Legal-company and governance core implemented; enterprise closure pending |
 
 Peer R1-F packages do not import each other by default. ERP peer collaboration occurs only through:
 

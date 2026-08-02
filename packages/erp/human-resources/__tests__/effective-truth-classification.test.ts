@@ -1,13 +1,12 @@
 import { describe, expect, it } from "vitest";
-
-import { HUMAN_RESOURCES_EFFECTIVE_TRUTH_ADOPTION } from "../src/effective-truth-adoption";
+import { HUMAN_RESOURCES_MUTATION_TABLES } from "../src/kernel/emissions/mutation-tables";
+import { HUMAN_RESOURCES_EFFECTIVE_TRUTH_ADOPTION } from "../src/kernel/temporal/effective-truth-adoption";
 import {
 	adoptionDecisionToClassificationCategory,
 	HUMAN_RESOURCES_EFFECTIVE_TRUTH_CLASSIFICATION,
 	summarizeEffectiveTruthClassificationByCategory,
 	validateEffectiveTruthClassificationRegister,
-} from "../src/effective-truth-classification";
-import { HUMAN_RESOURCES_MUTATION_TABLES } from "../src/mutation-tables";
+} from "../src/kernel/temporal/effective-truth-classification";
 
 const EXPECTED_CATEGORY_TOTALS = {
 	"effective-definition": 20,

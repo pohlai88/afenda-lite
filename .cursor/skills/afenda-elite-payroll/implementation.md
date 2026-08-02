@@ -19,32 +19,34 @@ Copy and track per aggregate:
 
 ```text
 Payroll slice:
-- [ ] Farm folder chosen (setup | assignments | inputs | runs | statutory | outputs | reconciliation)
-- [ ] schemas/<domain>.ts — strict Zod; no tenant injection from client
-- [ ] store/<domain>.ts — persistence methods typed
-- [ ] adapters/drizzle/<domain>.ts — methods composed via createDrizzlePayrollStore
-- [ ] adapters/memory — covered when unit tests need the method
-- [ ] <farm>/<aggregate>.ts — command/query
-- [ ] module-ids.ts + module.manifest.ts authorization map (if new command id)
-- [ ] brands.ts — branded ids at boundary
+- [ ] Semantic owner chosen under `features/<feature>/`
+- [ ] `contract.ts` and `schema.ts` — owned values and strict validation; no tenant injection from client
+- [ ] `store-contract.ts` — narrow persistence capability
+- [ ] `adapters/drizzle.ts` — production implementation
+- [ ] `adapters/memory.ts` — parity implementation when persistence is used
+- [ ] `<use-case>.ts` — command, query, or domain behavior
+- [ ] `definition.ts` or named feature registry updated once; kernel projections remain derived
+- [ ] package-wide identity added to `kernel/identity/` only when multiple features genuinely share it
 - [ ] index.ts export (only if public)
 - [ ] __tests__ — memory path; drizzle parity when persistence lands
+- [ ] recursive architecture guards cover the feature and its adapters
 - [ ] pnpm --filter @afenda/payroll check
 ```
 
 ## Import patterns
 
 ```ts
-// Domain command — narrow store
-import type { PayrollRunsStore } from "../store/runs";
-import { createPayrollRunInputSchema } from "../schemas/runs";
+// Feature use case — narrow owned contract
+import type { PayrollReconciliationStore } from "./store-contract";
+import { reconcilePayrollInputSchema } from "./schema";
 
-// Composition root (apps/web)
-import { createDrizzlePayrollStore } from "@afenda/payroll/adapters/drizzle";
-import type { PayrollCommandOptions } from "@afenda/payroll";
+// Composition root (apps/web) — consume only the opaque root facade
+import {
+	createPayrollCalendar,
+	createPayrollCapabilityOptions,
+} from "@afenda/payroll";
 
-// Tests
-import { createMemoryPayrollStore } from "@afenda/payroll/testing";
+// Package tests use relative internal imports; no testing subpath is published.
 ```
 
 ## Ports (do not bypass)
@@ -60,26 +62,22 @@ import { createMemoryPayrollStore } from "@afenda/payroll/testing";
 
 | Anti-pattern | Fix |
 |--------------|-----|
-| New root `schemas.ts` / `store.ts` / `drizzle-store.ts` | Use sliced trees under `schemas/`, `store/`, `adapters/` |
+| Layer-first schema/store/adapter files for a new capability | Place contracts, behavior, and adapters inside the owning `features/<feature>/` capsule |
 | `import … from "@afenda/human-resources"` inside payroll | Inject `PayrollEmployeeQueryPort` at `apps/web` |
 | SQL in Server Actions | Call package command; adapters own SQL |
 | Insert into `payment` / `journal` | Emit payroll handoff events; app saga / owning packages mutate |
-| One command file importing every store slice | Depend on the narrowest `Payroll*Store` |
-| Growing `adapters/drizzle/store.ts` with SQL | Keep compose-only; put SQL in domain adapter files |
+| Feature handler or adapter importing the aggregate Payroll store | Depend on the feature store contract or an explicit narrow port |
+| Feature importing `composition`, `facade`, or `testing` | Reverse the dependency and inject a narrow capability from composition |
+| Growing a shared composition file with SQL | Keep composition construction-only; put SQL in the feature's Drizzle adapter |
+| Root `shared/`, `types.ts`, or `ports.ts` | Assign meaning to a feature or a specifically named kernel owner |
 | `{ success, data }` envelopes | Use `@afenda/errors` `Result`; Actions map to `ActionResult` |
 
-## Structural reference (HR)
+## Structural reference
 
-When unsure where a file goes, open the matching HR path and mirror the role — not the HR domain names:
-
-| Payroll | HR analogue |
-|---------|-------------|
-| `schemas/runs.ts` | `schemas/leave.ts` (domain Zod) |
-| `store/runs.ts` | `store/leave.ts` (domain store) |
-| `adapters/drizzle/runs.ts` | `adapters/drizzle/leave.ts` |
-| `adapters/drizzle/store.ts` | `adapters/drizzle/store.ts` (compose only) |
-| `adapters/memory/store.ts` | `adapters/memory/store.ts` |
-| `runs/payroll-run.ts` | `leave/leave-request.ts` (command) |
+Use
+[`feature-first-erp.md`](../afenda-semantic-registry-cutover/references/feature-first-erp.md)
+for the uniform capsule and dependency rules. Use Human Resources only as a
+structural reference; derive Payroll feature names from Payroll vocabulary.
 
 ## Verify commands
 

@@ -11,6 +11,15 @@ export type TestingCacheClass =
 	| "uncached"
 	| "playwright-artifacts";
 
+export type TestingWorkspaceRunOptions = Readonly<{
+	affected?: boolean;
+}>;
+
+export type TestingWorkspaceRun = Readonly<{
+	executable: "turbo";
+	args: readonly string[];
+}>;
+
 export type TestingLaneDefinition = Readonly<{
 	id: string;
 	runner: TestingRunner;

@@ -1,0 +1,299 @@
+import { errorResult, type Result } from "@afenda/errors";
+import {
+	effectiveRangeOverlap,
+	invalidInput,
+	invalidState,
+} from "../../kernel/execution/domain-guards";
+import {
+	HUMAN_RESOURCES_ERROR_FORBIDDEN,
+	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+	humanResourcesErrorDetails,
+} from "../../kernel/execution/error-codes";
+import type { HumanResourcesEmployeeId } from "../../kernel/identity/brands";
+import type { EmploymentStatus } from "../workforce-records/employment/employment-status";
+import { compareLeaveQuantity, computeLeaveBalance } from "./balance";
+import type { ResolvedLeavePolicyBalanceRules } from "./policy-balance-rules";
+import type {
+	ApprovalDecision,
+	LeavePolicyStatus,
+	LeaveRequestStatus,
+} from "./status";
+import {
+	canTransitionLeaveEntitlementStatus,
+	canTransitionLeavePolicyStatus,
+	canTransitionLeaveRequestStatus,
+	isLeaveEntitlementActive,
+	isLeavePolicyEditable,
+	isLeavePolicyPublished,
+} from "./status";
+
+function cannotTransition(
+	_entity: string,
+	_current: string,
+	_next: string,
+): Result<never> {
+	return errorResult.fail("BAD_REQUEST", {
+		publicMessage: "The request is invalid",
+		internalContext: humanResourcesErrorDetails(
+			HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+		),
+	});
+}
+
+export function assertLeavePolicyStatusTransition(
+	current: LeavePolicyStatus,
+	next: LeavePolicyStatus,
+): Result<void> {
+	if (!canTransitionLeavePolicyStatus(current, next)) {
+		return cannotTransition("leave policy", current, next);
+	}
+	return errorResult.ok(undefined);
+}
+
+export function assertLeaveRequestStatusTransition(
+	current: LeaveRequestStatus,
+	next: LeaveRequestStatus,
+): Result<void> {
+	if (!canTransitionLeaveRequestStatus(current, next)) {
+		return cannotTransition("leave request", current, next);
+	}
+	return errorResult.ok(undefined);
+}
+
+export function assertLeaveEntitlementStatusTransition(
+	current: Parameters<typeof canTransitionLeaveEntitlementStatus>[0],
+	next: Parameters<typeof canTransitionLeaveEntitlementStatus>[1],
+): Result<void> {
+	if (!canTransitionLeaveEntitlementStatus(current, next)) {
+		return cannotTransition("leave entitlement", current, next);
+	}
+	return errorResult.ok(undefined);
+}
+
+export function assertLeavePolicyEditable(
+	status: LeavePolicyStatus,
+): Result<void> {
+	if (!isLeavePolicyEditable(status)) {
+		return invalidState("Leave policy must be in draft status");
+	}
+	return errorResult.ok(undefined);
+}
+
+export function assertLeavePolicyPublished(
+	status: LeavePolicyStatus,
+): Result<void> {
+	if (!isLeavePolicyPublished(status)) {
+		return invalidState("Leave policy must be published");
+	}
+	return errorResult.ok(undefined);
+}
+
+export function assertLeaveEntitlementActive(
+	status: Parameters<typeof isLeaveEntitlementActive>[0],
+): Result<void> {
+	if (!isLeaveEntitlementActive(status)) {
+		return invalidState("Leave entitlement must be active");
+	}
+	return errorResult.ok(undefined);
+}
+
+export function assertEmploymentActiveForLeave(input: {
+	employmentStatus: EmploymentStatus;
+	endsOn: string | null;
+	asOfDate: string;
+}): Result<void> {
+	if (input.employmentStatus === "terminated") {
+		return invalidState("Employment is terminated");
+	}
+	if (input.endsOn !== null && input.endsOn < input.asOfDate) {
+		return invalidState("Employment has ended");
+	}
+	return errorResult.ok(undefined);
+}
+
+export function assertNoSelfApproval(input: {
+	employeeUserId: string;
+	approverUserId: string;
+	allowSelfApproval: boolean;
+}): Result<void> {
+	if (
+		!input.allowSelfApproval &&
+		input.employeeUserId === input.approverUserId
+	) {
+		return errorResult.fail("FORBIDDEN", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
+	}
+	return errorResult.ok(undefined);
+}
+
+export function assertSufficientLeaveBalance(input: {
+	balance: string;
+	requestedQuantity: string;
+	allowsNegativeBalance: boolean;
+}): Result<void> {
+	if (input.allowsNegativeBalance) {
+		return errorResult.ok(undefined);
+	}
+	if (compareLeaveQuantity(input.balance, input.requestedQuantity) < 0) {
+		return invalidInput("Insufficient leave balance");
+	}
+	return errorResult.ok(undefined);
+}
+
+export function assertLeaveAccrualAllowed(input: {
+	balanceRules: ResolvedLeavePolicyBalanceRules;
+	quantity: string;
+}): Result<void> {
+	if (input.balanceRules.accrualBasis === "none") {
+		return invalidState("Leave policy does not allow accrual");
+	}
+	if (input.balanceRules.accrualQuantityPerPeriod === null) {
+		return invalidState(
+			"Leave policy accrual quantity per period is not configured",
+		);
+	}
+	if (
+		compareLeaveQuantity(
+			input.quantity,
+			input.balanceRules.accrualQuantityPerPeriod,
+		) !== 0
+	) {
+		return invalidInput(
+			"Accrual quantity must match the policy accrual quantity per period",
+		);
+	}
+	return errorResult.ok(undefined);
+}
+
+export function assertLeaveCarryForwardAllowed(input: {
+	balanceRules: ResolvedLeavePolicyBalanceRules;
+	carriedQuantity: string;
+	sourceBalance: string;
+}): Result<void> {
+	if (!input.balanceRules.carryForwardEnabled) {
+		return invalidState("Leave policy does not allow carry forward");
+	}
+	if (compareLeaveQuantity(input.carriedQuantity, input.sourceBalance) > 0) {
+		return invalidInput("Carried quantity exceeds available balance");
+	}
+	if (
+		input.balanceRules.carryForwardMaxQuantity !== null &&
+		compareLeaveQuantity(
+			input.carriedQuantity,
+			input.balanceRules.carryForwardMaxQuantity,
+		) > 0
+	) {
+		return invalidInput(
+			"Carried quantity exceeds policy carry-forward maximum",
+		);
+	}
+	return errorResult.ok(undefined);
+}
+
+export function assertLeaveAdjustmentBalanceAllowed(input: {
+	openingQuantity: string;
+	adjustments: { delta: string }[];
+	delta: string;
+	allowsNegativeBalance: boolean;
+}): Result<void> {
+	const projected = computeLeaveBalance(input.openingQuantity, [
+		...input.adjustments,
+		{ delta: input.delta },
+	]);
+	return assertSufficientLeaveBalance({
+		balance: projected,
+		requestedQuantity: "0",
+		allowsNegativeBalance: input.allowsNegativeBalance,
+	});
+}
+
+export const ACTIVE_LEAVE_OVERLAP_STATUSES = [
+	"draft",
+	"submitted",
+	"returned",
+	"approved",
+] as const satisfies readonly LeaveRequestStatus[];
+
+export interface LeaveOverlapSegment {
+	dayPortion: "morning" | "afternoon" | "full";
+	segmentDate: string;
+}
+
+export function segmentsOverlap(
+	left: LeaveOverlapSegment,
+	right: LeaveOverlapSegment,
+): boolean {
+	if (left.segmentDate !== right.segmentDate) {
+		return false;
+	}
+	if (left.dayPortion === "full" || right.dayPortion === "full") {
+		return true;
+	}
+	return left.dayPortion === right.dayPortion;
+}
+
+export function assertNoLeaveOverlap(
+	candidate: LeaveOverlapSegment[],
+	existing: LeaveOverlapSegment[],
+): Result<void> {
+	for (const candidateSegment of candidate) {
+		for (const existingSegment of existing) {
+			if (segmentsOverlap(candidateSegment, existingSegment)) {
+				return effectiveRangeOverlap(
+					"Leave request overlaps an existing booking",
+				);
+			}
+		}
+	}
+	return errorResult.ok(undefined);
+}
+
+export function assertApprovalDecisionMatchesRequestTransition(input: {
+	decision: ApprovalDecision;
+	nextStatus: LeaveRequestStatus;
+}): Result<void> {
+	const expected: Record<ApprovalDecision, LeaveRequestStatus> = {
+		approved: "approved",
+		rejected: "rejected",
+		returned: "returned",
+		cancelled: "cancelled",
+	};
+	if (expected[input.decision] !== input.nextStatus) {
+		return invalidInput("Approval decision does not match request transition");
+	}
+	return errorResult.ok(undefined);
+}
+
+export function assertApproverIsPrimaryManager(input: {
+	approverEmployeeId: HumanResourcesEmployeeId;
+	primaryManagerEmployeeId: HumanResourcesEmployeeId | null;
+}): Result<void> {
+	if (input.primaryManagerEmployeeId === null) {
+		return errorResult.fail("FORBIDDEN", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_FORBIDDEN,
+			),
+		});
+	}
+	if (input.approverEmployeeId !== input.primaryManagerEmployeeId) {
+		return errorResult.fail("FORBIDDEN", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_FORBIDDEN,
+			),
+		});
+	}
+	return errorResult.ok(undefined);
+}
+
+export function assertLeaveRequestAmendable(
+	status: LeaveRequestStatus,
+): Result<void> {
+	if (status !== "draft" && status !== "returned") {
+		return invalidState("Leave request must be in draft or returned status");
+	}
+	return errorResult.ok(undefined);
+}

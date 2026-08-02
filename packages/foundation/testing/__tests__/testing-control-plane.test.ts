@@ -40,6 +40,38 @@ describe("testing control plane registry", () => {
 		expect(testingPolicy.home).toBe("testing");
 	});
 
+	it("projects bounded workspace execution without leaking Turbo policy", () => {
+		const fullRun = testingPolicy.workspaceRun();
+		const affectedRun = testingPolicy.workspaceRun({ affected: true });
+
+		expect(fullRun).toEqual({
+			executable: "turbo",
+			args: ["run", "test", "--concurrency=4"],
+		});
+		expect(affectedRun).toEqual({
+			executable: "turbo",
+			args: ["run", "test", "--concurrency=4", "--affected"],
+		});
+		expect(Object.isFrozen(fullRun)).toBe(true);
+		expect(Object.isFrozen(fullRun.args)).toBe(true);
+	});
+
+	it("keeps root test scripts as thin workspace-run adapters", () => {
+		const packageJson = JSON.parse(
+			readFileSync(
+				join(import.meta.dirname, "../../../../package.json"),
+				"utf8",
+			),
+		) as { scripts: Record<string, string> };
+
+		expect(packageJson.scripts.test).toBe(
+			"node --experimental-strip-types testing/run-workspace-tests.mts",
+		);
+		expect(packageJson.scripts["test:affected"]).toBe(
+			"node --experimental-strip-types testing/run-workspace-tests.mts --affected",
+		);
+	});
+
 	it("keeps lane ids unique", () => {
 		const laneIds = testingPolicy.lanes.map((lane) => lane.id);
 

@@ -1,12 +1,4 @@
 import { afterAll, expect, it } from "vitest";
-import { createEmployee } from "../../src/core/employee";
-import { createEmployment } from "../../src/core/employment";
-import {
-	HUMAN_RESOURCES_ERROR_CONFLICT,
-	HUMAN_RESOURCES_ERROR_FORBIDDEN,
-	HUMAN_RESOURCES_ERROR_NOT_FOUND,
-	HUMAN_RESOURCES_ERROR_STALE_VERSION,
-} from "../../src/error-codes";
 import {
 	approveOvertimeRequest,
 	createOvertimeRequest,
@@ -14,8 +6,16 @@ import {
 	recordOvertimeActual,
 	rejectOvertimeRequest,
 	verifyOvertimeRequest,
-} from "../../src/time/overtime";
-import { assignTimeApprovalAuthority } from "../../src/time/policy";
+} from "../../src/features/time/overtime";
+import { assignTimeApprovalAuthority } from "../../src/features/time/policy";
+import { createEmployee } from "../../src/features/workforce-records/employment/employee";
+import { createEmployment } from "../../src/features/workforce-records/employment/employment";
+import {
+	HUMAN_RESOURCES_ERROR_CONFLICT,
+	HUMAN_RESOURCES_ERROR_FORBIDDEN,
+	HUMAN_RESOURCES_ERROR_NOT_FOUND,
+	HUMAN_RESOURCES_ERROR_STALE_VERSION,
+} from "../../src/kernel/execution/error-codes";
 import { helperAssert as assert } from "./helper-assert";
 import {
 	createHrParityHarness,

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { createMemoryHrObservabilityRecorder } from "../src/observability";
+import { createMemoryHrObservabilityRecorder } from "../src/kernel/observability/index";
 import HumanResourcesParityObservabilityReporter from "../src/testing/parity-observability-reporter";
 
 describe("HR parity observability reporter", () => {

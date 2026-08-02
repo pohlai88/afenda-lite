@@ -8,42 +8,35 @@ import {
 	HUMAN_RESOURCES_LEARNING_COMPLETION_RECORDED_EVENT,
 } from "@afenda/events/schemas";
 import { describe, expect, it } from "vitest";
-import type { HumanResourcesPermission } from "../src/authorization";
-import { createEmployee } from "../src/core/employee";
-import {
-	HUMAN_RESOURCES_ERROR_CONFLICT,
-	HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
-	HUMAN_RESOURCES_ERROR_FORBIDDEN,
-	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
-	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
-	HUMAN_RESOURCES_ERROR_STALE_VERSION,
-} from "../src/error-codes";
 import {
 	expireCertification,
 	issueCertification,
 	listCertifications,
 	renewCertification,
 	revokeCertification,
-} from "../src/learning/certification";
-import { listCompletions, recordCompletion } from "../src/learning/completion";
+} from "../src/features/learning/certification";
+import {
+	listCompletions,
+	recordCompletion,
+} from "../src/features/learning/completion";
 import {
 	activateCourse,
 	archiveCourse,
 	createCourse,
 	listCourses,
 	updateCourse,
-} from "../src/learning/course";
+} from "../src/features/learning/course";
 import {
 	assignLearning,
 	enrolAssignment,
 	listLearningAssignments,
 	waiveAssignment,
-} from "../src/learning/learning-assignment";
+} from "../src/features/learning/learning-assignment";
 import {
 	getLearningAttendance,
 	listLearningAttendance,
 	recordLearningAttendance,
-} from "../src/learning/learning-attendance";
+} from "../src/features/learning/learning-attendance";
 import {
 	assignSessionInstructor,
 	cancelSession,
@@ -51,15 +44,25 @@ import {
 	createSession,
 	listSessions,
 	startSession,
-} from "../src/learning/learning-session";
+} from "../src/features/learning/learning-session";
+import { createEmployee } from "../src/features/workforce-records/employment/employee";
+import type { HumanResourcesPermission } from "../src/kernel/authorization/authorize";
 import {
 	HUMAN_RESOURCES_PERMISSION_CODES,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CREATE,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,
 	HUMAN_RESOURCES_PERMISSION_LEARNING_MANAGE,
-} from "../src/permissions";
-import { runSequential } from "../src/shared/run-sequential";
-import { createMemoryHumanResourcesStore } from "../src/testing";
+} from "../src/kernel/authorization/permissions";
+import {
+	HUMAN_RESOURCES_ERROR_CONFLICT,
+	HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+	HUMAN_RESOURCES_ERROR_FORBIDDEN,
+	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+	HUMAN_RESOURCES_ERROR_STALE_VERSION,
+} from "../src/kernel/execution/error-codes";
+import { runSequential } from "../src/kernel/execution/run-sequential";
+import { createMemoryHumanResourcesStore } from "../src/testing/index";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
 import { humanResourcesCodeFromResult } from "./helpers/result-details";

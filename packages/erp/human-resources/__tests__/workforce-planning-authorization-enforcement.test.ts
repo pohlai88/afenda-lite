@@ -1,21 +1,20 @@
 import { errorResult } from "@afenda/errors";
 import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
-
-import type { HumanResourcesAuthorizationPort } from "../src/authorization";
-import {
-	HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_CREATE,
-	HUMAN_RESOURCES_QUERY_HEADCOUNT_PLAN_GET,
-} from "../src/module-ids";
-import {
-	HUMAN_RESOURCES_PERMISSION_WORKFORCE_PLAN_PREPARE,
-	HUMAN_RESOURCES_PERMISSION_WORKFORCE_PLAN_READ,
-} from "../src/permissions";
-import { createMemoryHumanResourcesStore } from "../src/testing";
 import {
 	runWorkforcePlanningCapabilityCommand,
 	runWorkforcePlanningCapabilityQuery,
-} from "../src/workforce-planning/run-operation";
+} from "../src/features/workforce-planning/run-operation";
+import type { HumanResourcesAuthorizationPort } from "../src/kernel/authorization/authorize";
+import {
+	HUMAN_RESOURCES_PERMISSION_WORKFORCE_PLAN_PREPARE,
+	HUMAN_RESOURCES_PERMISSION_WORKFORCE_PLAN_READ,
+} from "../src/kernel/authorization/permissions";
+import {
+	HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_CREATE,
+	HUMAN_RESOURCES_QUERY_HEADCOUNT_PLAN_GET,
+} from "../src/kernel/operations/module-ids";
+import { createMemoryHumanResourcesStore } from "../src/testing/index";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
 
 const inputSchema = z.object({

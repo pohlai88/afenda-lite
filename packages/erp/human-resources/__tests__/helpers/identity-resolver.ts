@@ -1,11 +1,10 @@
 import { errorResult, type Result } from "@afenda/errors";
-
-import type { HumanResourcesEmployeeId } from "../../src/brands";
+import type { HumanResourcesStore } from "../../src/composition/store/index";
 import type {
 	HumanResourcesEmployeeIdentity,
 	HumanResourcesIdentityResolverPort,
-} from "../../src/identity-resolver";
-import type { HumanResourcesStore } from "../../src/store";
+} from "../../src/features/workforce-records/identity-resolution/identity-resolver";
+import type { HumanResourcesEmployeeId } from "../../src/kernel/identity/brands";
 
 /** Identity resolver backed by the HR store's user↔employee mapping. */
 export function createStoreBackedIdentityResolver(

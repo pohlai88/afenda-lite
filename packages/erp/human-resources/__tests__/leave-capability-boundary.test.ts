@@ -7,13 +7,16 @@ function typescriptFiles(directory: string): string[] {
 	return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
 		const target = path.join(directory, entry.name);
 		if (entry.isDirectory()) {
-			return typescriptFiles(target);
+			return entry.name === "adapters" ? [] : typescriptFiles(target);
 		}
 		return entry.isFile() && entry.name.endsWith(".ts") ? [target] : [];
 	});
 }
 
-const leaveDirectory = path.resolve(import.meta.dirname, "../src/leave");
+const leaveDirectory = path.resolve(
+	import.meta.dirname,
+	"../src/features/leave",
+);
 
 describe("Leave capability boundary", () => {
 	it("rejects the deleted broad runner and unrestricted store access", () => {

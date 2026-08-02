@@ -1,152 +1,112 @@
 # `@afenda/corporate-administration`
 
-Corporate Administration is the organization-scoped statutory and
-corporate-secretarial system of record. Product scope, architecture constraints,
-delivery order, and enterprise acceptance are defined in [PRD.md](PRD.md).
+Corporate Administration is the organization-scoped system of record for legal
+entities, statutory administration, governance, corporate authority, and the
+evidence supporting those facts over time.
 
-## Capability position
+## Authority
 
-- Implemented: canonical operation registry, authorization, durable command
-  execution, idempotency, transaction, audit, outbox, observability, and memory
-  and Drizzle adapter foundations.
-- Implemented: legal-company registry and lifecycle, jurisdiction profiles,
-  legal names/forms, identifiers, financial years, activities, establishments,
-  registered offices, governance bodies, officers, meetings, voting,
-  resolutions, minutes references, and implementation actions.
-- Verified: the supported inherited 13-table Neon parity cohort passes 21 files
-  and 36 tests on preview branch `br-still-cloud-aof2rkqv`.
-- Verified for the supported legal-company cohort: database-backed adversarial
-  tenant isolation for reads, writes, tenant-scoped natural keys, and relational
-  references.
-- Implemented and preview-verified for legal-company, status-filtered company,
-  legal-name, identifier, company-activity as-of, legal-company timeline,
-  legal-establishment, and premise lists: scope-bound versioned opaque cursors,
-  bounded keyset pagination, stable ordering, invalid-cursor rejection,
-  supporting-index inventory, and bounded query-plan evidence. Status-filtered
-  company pagination covers both current state and historical as-of/known-at
-  resolution without N+1 reads. The timeline merges company, jurisdiction, and
-  status history through three bounded tenant-scoped reads with one canonical
-  cross-source order. Activity overlap validation uses a dedicated
-  tenant-scoped limit-one capability, so paginating the operational list does
-  not weaken the effective-range invariant.
-- Implemented for governance-body, governance-membership as-of, required
-  statutory-office, officer-appointment as-of, and expiring officer-declaration
-  lists, as well as active officer-disqualification, conflict-for-matter, and
-  governance-meeting lists: the
-  same internal cursor codec, scope- and filter-bound keysets, stable canonical
-  ordering, and bounded Drizzle queries. The membership facade pages operational
-  reads without weakening complete-set retirement and quorum decisions;
-  officer appointment conflict, vacancy, and eligibility decisions likewise
-  retain their distinct complete-set capabilities. Preview parity and EXPLAIN
-  evidence remain
-  blocked because the isolated branch does not yet contain the governance tables
-  owned by migration
-  `0034_ca_governance_bodies_memberships.sql` or the statutory-office table
-  and officer-appointment table owned by migration
-  `0035_ca_statutory_offices_officers.sql`. The declaration,
-  disqualification, and conflict-disclosure tables are likewise absent because
-  migration `0036_ca_officer_compliance.sql` is not deployed. The meeting table
-  is absent because migration `0037_ca_governance_meetings.sql` is not deployed.
-  The preview suite records 20 passing files and 42 passing tests; eight
-  database tests stop only on the absent 0034–0037 tables. This package mission
-  did not apply any migration.
-- Pending evidence: production approval integration, broader adapter parity,
-  broader failure injection and tenant isolation (including approvals and
-  exports), migration integrity, recovery, and operational readiness.
+- [PRD.md](PRD.md) defines product scope, ownership, requirements, and acceptance.
+- [DEVELOPMENT-ROADMAP.md](DEVELOPMENT-ROADMAP.md) defines sequencing, eligibility,
+  and closure work.
+- [IMPLEMENTATION-SLICES.md](IMPLEMENTATION-SLICES.md) defines the authorized
+  controlled-beta workspace and parallel closure evidence.
+- Feature operation definitions own executable command/query semantics.
 
-Securities, capital, investors, shareholders, holdings, certificates,
-beneficial ownership, and distributions are excluded. They belong to a separate
-Investor Relations ERP bounded context.
+The current enterprise closure matrix is exactly five `DONE` and nine non-`DONE`
+rows. `CA-APP-01` may now ship the implemented cohort as a controlled beta; it
+does not grant an enterprise seal or authorize new CA-FR-006 through CA-FR-013
+semantics.
+
+## Living capabilities
+
+The implemented feature owners are:
+
+| Feature | Capability |
+| --- | --- |
+| `company` | Legal-company identity, jurisdiction, names, forms, identifiers, financial years, activities, lifecycle, chronology, and completeness |
+| `establishments` | Registered offices, branches, representative offices, foreign registrations, establishments, premises, and status chronology |
+| `governance` | Governance bodies, memberships, roles, tenure, and voting entitlements |
+| `officers` | Statutory offices, appointments, qualifications, declarations, disqualifications, conflicts, recusals, vacancy, and eligibility |
+| `meetings` | Scheduling, notices, attendance, quorum, opening, adjournment, closure, and meeting queries |
+| `resolutions` | Voting, written decisions, adoption/rejection/supersession, minutes references, and implementation actions |
+
+The package also implements the canonical operation registry, authorization,
+durable-command execution, idempotency, transaction, audit, outbox,
+observability, opaque pagination, memory adapters, and Drizzle composition needed
+by those capabilities.
+
+Implementation does not imply enterprise closure. The authorized application slice
+turns this cohort into a usable workspace while parallel evidence covers production
+approval integration, adapter parity, atomicity, hostile tenant coverage,
+migrations/recovery, and operations. Exact status lives only in the PRD matrix.
+
+Planned statutory filings, authority, legal instruments, group structure,
+agreements, controlled records, work management, and assurance capabilities are
+defined in the PRD but are not eligible for implementation yet. No placeholder
+feature capsules exist for them.
+
+Investor Relations owns securities, capital, investors, shareholders, holdings,
+beneficial ownership, certificates, distributions, and investor communications.
+Asset Management and Accounting own asset operations and financial recognition.
+Corporate Administration owns only the related legal facts and governed
+references described by the PRD.
+
+## Architecture
+
+Business behavior is organized under `src/features/<feature>`. Each feature owns
+its contracts, schemas, rules, operations, narrow store capability, and memory and
+Drizzle adapters. Package-wide semantic policy lives under `src/kernel`, runtime
+assembly and the module manifest under `src/composition`, and isolated test
+capabilities under `src/testing`.
+
+The package exposes one business capability style through
+`createCorporateAdministrationRuntime`. The private command/query kernels derive
+permission, approval, transaction, idempotency, audit, emission, privacy, and
+observability behavior from canonical operation definitions. Domain handlers do
+not reinterpret shared execution policy or depend on the composite package store.
+
+Approval-required behavior fails closed. Application composition must not install
+an allow-all, synthetic, or CA-local approval verifier. A production verifier can
+be integrated only after `PLATFORM-APPROVALS-01` publishes the canonical platform
+contract.
+
+All organization and actor identities are trusted server facts. Browser input
+cannot replace them. The package is the only business mutator of `ca_*` state;
+shared audit and pending-event infrastructure remain platform-owned.
 
 ## Lifecycle
 
-The module manifest must remain:
+The module manifest remains:
 
 ```ts
 lifecycle: "scaffolded";
 activationMode: "organization_toggle";
 ```
 
-Durable persistence and draft registration do not activate the full Corporate
-Administration module or imply incorporation/production legal capability.
-
-## Execution model
-
-Corporate Administration uses the composed-service model. Runtime ports are
-constructed at the app composition root and validated by the package. Per-call
-options carry request facts only: organization, actor, correlation,
-authorization, idempotency key and optional causation.
-
-Internally, business behavior is organized under `src/features/<feature>`.
-Each feature owns its schema, rules, commands, queries, narrow store contract,
-and memory/Drizzle adapters. Cross-feature semantics live under `src/kernel`,
-while production assembly and the module manifest live under `src/composition`.
-These internal paths are not consumer APIs.
-
-The root exposes one runtime factory, `createCorporateAdministrationRuntime`.
-After parsing and before any domain read, a private command capability derives
-the required permission from the operation registry and returns a registry-bound
-authorization token. The internal durable kernel accepts that token as its only
-source of operation identity and request facts; callers cannot authorize one
-operation and persist, audit, emit or observe another. The kernel then owns
-approval checks, idempotency reservation, transaction execution, audit
-recording, outbox append and idempotency completion. Domain handlers supply
-domain behavior; they do not reinterpret shared execution policy or depend on
-another domain's store contract.
-
-Approval semantics are registry-owned and evaluated by the command kernel:
-optional approval is enforced whenever a verifier is configured, legal-company
-lifecycle transitions always require a verified maker-checker decision, and
-officer appointment requires one when the resolved statutory office is a
-protected role. Required approval fails closed when the verifier, binding IDs,
-tenant/fingerprint match, affirmative decision or independent approver is
-missing. Application composition does not install an allow-all or synthetic
-approval verifier.
-
-Operation diagnostics are registry-driven and emitted once by the private
-command and query kernels. Every accepted operation invocation records a
-terminal `success`, governed `failure` with its canonical error code, or
-redacted `exception` observation. The private query kernel also owns the
-registry-ID-to-permission decision; query facades retain input parsing and
-domain behavior but cannot interpret authorization policy.
-The required runtime observability port is implemented at the application
-composition root through `@afenda/logger`; package code does not depend on the
-logger implementation or expose tenant, actor, payload, approval, SQL or stack
-data through the observation contract.
-
-Operation meaning is owned by the domain operation definitions composed into
-the canonical registry. Command/query identifiers, permissions, registered
-events and manifest inventories derive from that registry. Application
-consumers request a permission through
-`corporateAdministrationPermissionFor(operationId)` and cannot consume the
-registry's internal permission maps or low-level permission guard from the
-package root.
-
-The package owns `ca_*` mutation tables only through its stores and adapters.
-Shared audit and pending-event infrastructure remains platform-owned.
+Durable persistence and implemented feature behavior do not activate the module
+or imply incorporation, production migration approval, or enterprise readiness.
 
 ## Public exports
 
-- `@afenda/corporate-administration` — package contracts, domain commands,
-  queries and runtime contracts
+- `@afenda/corporate-administration` — permanent business facade and durable
+  contracts
 - `@afenda/corporate-administration/module-manifest` — governed manifest
-- `@afenda/corporate-administration/adapters/drizzle` — production adapter
-  factories and structural dependency contracts for app composition; concrete
-  adapter classes remain private implementation details
+- `@afenda/corporate-administration/adapters/drizzle` — application composition
+  factories and structural dependency contracts
 - `@afenda/corporate-administration/testing` — non-production fixtures, parity
-  harnesses and memory stores
+  harnesses, and memory stores
 
-Consumers must not deep-import `src/*`.
+Consumers must not deep-import `src/*`, concrete adapters, feature stores,
+registry representation, or database structure.
 
 ## Validation
 
 ```powershell
-pnpm --filter @afenda/corporate-administration lint
-pnpm --filter @afenda/corporate-administration typecheck
-pnpm --filter @afenda/corporate-administration test
+pnpm --filter @afenda/corporate-administration check
 ```
 
-Required Neon parity must use an explicitly isolated non-production target:
+Neon parity requires an explicitly isolated non-production target:
 
 ```powershell
 $env:DATABASE_URL="<isolated-preview-connection>"
@@ -154,3 +114,6 @@ $env:AFENDA_DATABASE_TEST_TARGET="preview"
 $env:REQUIRE_DATABASE_TESTS="1"
 pnpm test:corporate-administration:parity
 ```
+
+Database evidence must record the branch/schema identity with secrets redacted.
+This package mission does not authorize applying migrations 0034–0046.

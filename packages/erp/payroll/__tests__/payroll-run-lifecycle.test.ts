@@ -9,8 +9,32 @@ import {
 	PAYROLL_RUN_STARTED_EVENT,
 } from "@afenda/events/schemas";
 import { describe, expect, it } from "vitest";
-
-import type { PayrollAuthorizationPort } from "../src/authorization";
+import { hashSnapshot } from "../src/features/calculation/calculation";
+import {
+	buildPayrollFinalizationProjection,
+	buildPayrollReversalProjection,
+} from "../src/features/calculation/finalization-evidence";
+import {
+	payrollResultLineRecordSchema,
+	payrollRunEmployeeRecordSchema,
+} from "../src/features/calculation/outputs.schema";
+import {
+	listPayrollExceptionsForRun,
+	recordPayrollException,
+} from "../src/features/payroll-runs/exception";
+import { finalizePayrollRun } from "../src/features/payroll-runs/finalization";
+import { buildPayrollRunEventPayloadForType } from "../src/features/payroll-runs/lifecycle-events";
+import { createPayrollPeriod } from "../src/features/payroll-runs/payroll-period";
+import {
+	createPayrollRun,
+	getPayrollRun,
+} from "../src/features/payroll-runs/payroll-run";
+import { reversePayrollRun } from "../src/features/payroll-runs/reversal";
+import { calculatePayrollRun } from "../src/features/payroll-runs/run-calculate-command";
+import { payrollRunRecordSchema } from "../src/features/payroll-runs/runs.schema";
+import { createPayrollCalendar } from "../src/features/payroll-setup/calendar";
+import { createPayrollPayGroup } from "../src/features/payroll-setup/pay-group";
+import type { PayrollAuthorizationPort } from "../src/kernel/execution/authorization";
 import {
 	PAYROLL_PERMISSION_RUN_CALCULATE,
 	PAYROLL_PERMISSION_RUN_CREATE,
@@ -18,33 +42,11 @@ import {
 	PAYROLL_PERMISSION_RUN_REVERSE,
 	PAYROLL_PERMISSION_RUN_REVIEW,
 	PAYROLL_PERMISSION_SETUP_MANAGE,
-} from "../src/permissions";
-import { hashSnapshot } from "../src/runs/calculation";
-import {
-	listPayrollExceptionsForRun,
-	recordPayrollException,
-} from "../src/runs/exception";
-import { finalizePayrollRun } from "../src/runs/finalization";
-import {
-	buildPayrollFinalizationProjection,
-	buildPayrollReversalProjection,
-} from "../src/runs/finalization-evidence";
-import { buildPayrollRunEventPayloadForType } from "../src/runs/lifecycle-events";
-import { createPayrollPeriod } from "../src/runs/payroll-period";
-import { createPayrollRun, getPayrollRun } from "../src/runs/payroll-run";
-import { reversePayrollRun } from "../src/runs/reversal";
-import { calculatePayrollRun } from "../src/runs/run-calculate-command";
-import {
-	payrollResultLineRecordSchema,
-	payrollRunEmployeeRecordSchema,
-} from "../src/schemas/outputs";
-import { payrollRunRecordSchema } from "../src/schemas/runs";
-import { createPayrollCalendar } from "../src/setup/calendar";
-import { createPayrollPayGroup } from "../src/setup/pay-group";
+} from "../src/kernel/execution/permissions";
 import {
 	createMemoryPayrollStore,
 	createTestPayrollRunCalculator,
-} from "../src/testing";
+} from "../src/testing/index";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
 
 function createGrantingAuthorization(

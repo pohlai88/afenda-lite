@@ -2,27 +2,26 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 
 import { describe, expect, it } from "vitest";
-
-import { humanResourcesModuleManifest } from "../src/module.manifest";
-import {
-	HUMAN_RESOURCES_ORGANIZATION_COMMAND_IDS,
-	HUMAN_RESOURCES_ORGANIZATION_QUERY_IDS,
-} from "../src/module-ids";
-import { HUMAN_RESOURCES_REGISTERED_OPERATION_DEFINITIONS } from "../src/operation-registry/registry";
+import { humanResourcesModuleManifest } from "../src/composition/module.manifest";
 import {
 	HUMAN_RESOURCES_ORGANIZATION_COMMAND_AUTHORIZATION,
 	HUMAN_RESOURCES_ORGANIZATION_COMMANDS,
 	HUMAN_RESOURCES_ORGANIZATION_QUERIES,
 	HUMAN_RESOURCES_ORGANIZATION_QUERY_AUTHORIZATION,
-} from "../src/organization/operation-registry";
-import { resolveHumanResourcesAuthorizationPolicy } from "../src/shared/authorization-policy-registry";
+} from "../src/features/organization/operation-registry";
+import { resolveHumanResourcesAuthorizationPolicy } from "../src/kernel/authorization/registry";
+import {
+	HUMAN_RESOURCES_ORGANIZATION_COMMAND_IDS,
+	HUMAN_RESOURCES_ORGANIZATION_QUERY_IDS,
+} from "../src/kernel/operations/module-ids";
+import { HUMAN_RESOURCES_REGISTERED_OPERATION_DEFINITIONS } from "../src/kernel/operations/registry";
 
 const definitions = [
 	...Object.values(HUMAN_RESOURCES_ORGANIZATION_COMMANDS),
 	...Object.values(HUMAN_RESOURCES_ORGANIZATION_QUERIES),
 ];
 const publicCapabilitiesSource = readFileSync(
-	path.resolve(import.meta.dirname, "../src/public-capabilities.ts"),
+	path.resolve(import.meta.dirname, "../src/facade/capabilities.ts"),
 	"utf8",
 );
 const organizationHandlerSources = [
@@ -32,12 +31,18 @@ const organizationHandlerSources = [
 	"reporting-line.ts",
 ].map((fileName) =>
 	readFileSync(
-		path.resolve(import.meta.dirname, `../src/organization/${fileName}`),
+		path.resolve(
+			import.meta.dirname,
+			`../src/features/organization/${fileName}`,
+		),
 		"utf8",
 	),
 );
 const organizationRunnerSource = readFileSync(
-	path.resolve(import.meta.dirname, "../src/organization/run-operation.ts"),
+	path.resolve(
+		import.meta.dirname,
+		"../src/features/organization/run-operation.ts",
+	),
 	"utf8",
 );
 

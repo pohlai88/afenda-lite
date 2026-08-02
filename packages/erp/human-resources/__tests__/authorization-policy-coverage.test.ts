@@ -1,14 +1,13 @@
 import { describe, expect, it } from "vitest";
-
-import {
-	HUMAN_RESOURCES_COMMAND_IDS,
-	HUMAN_RESOURCES_QUERY_IDS,
-} from "../src/module-ids";
 import {
 	HUMAN_RESOURCES_AUTHORIZATION_POLICIES,
 	HumanResourcesAuthorizationPolicyResolveError,
 	resolveHumanResourcesAuthorizationPolicy,
-} from "../src/shared/authorization-policy-registry";
+} from "../src/kernel/authorization/registry";
+import {
+	HUMAN_RESOURCES_COMMAND_IDS,
+	HUMAN_RESOURCES_QUERY_IDS,
+} from "../src/kernel/operations/module-ids";
 
 describe("authorization policy coverage", () => {
 	const allOperations = [

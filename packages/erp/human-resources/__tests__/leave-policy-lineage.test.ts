@@ -1,9 +1,8 @@
 import { describe, expect, it } from "vitest";
-
-import { parseHumanResourcesLeavePolicyId } from "../src/brands";
-import { resolvePublishedLeavePolicyByCodeLineageAsOf } from "../src/leave/leave-policy-lineage";
-import { DEFAULT_LEAVE_POLICY_BALANCE_RULES } from "../src/shared/leave-policy-balance-rules";
-import type { LeavePolicy } from "../src/types";
+import { resolvePublishedLeavePolicyByCodeLineageAsOf } from "../src/features/leave/leave-policy-lineage";
+import { DEFAULT_LEAVE_POLICY_BALANCE_RULES } from "../src/features/leave/policy-balance-rules";
+import type { LeavePolicy } from "../src/kernel/contracts";
+import { parseHumanResourcesLeavePolicyId } from "../src/kernel/identity/brands";
 
 const ORG = "org-leave-policy-lineage";
 

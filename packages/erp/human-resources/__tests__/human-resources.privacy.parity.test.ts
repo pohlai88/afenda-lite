@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { HUMAN_RESOURCES_SUBJECT_EXPORT_SCHEMA_VERSION } from "../src/privacy";
+import { HUMAN_RESOURCES_SUBJECT_EXPORT_SCHEMA_VERSION } from "../src/features/privacy/contract";
 import {
 	evaluateHumanResourcesAnonymization,
 	exportHumanResourcesSubjectData,
-} from "../src/privacy/operations";
-import { runSequential } from "../src/shared/run-sequential";
+} from "../src/features/privacy/operations";
+import { runSequential } from "../src/kernel/execution/run-sequential";
 import { runDrizzleParity } from "./helpers/database-gate";
 import {
 	createDualTenantPrivacyRecords,

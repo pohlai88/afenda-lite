@@ -2,50 +2,50 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 
 import { describe, expect, it } from "vitest";
-import { HUMAN_RESOURCES_EMPLOYMENT_LIFECYCLE_EMISSIONS } from "../src/emissions/domains/employment-lifecycle";
-import { HUMAN_RESOURCES_EMPLOYMENT_WORKFLOW_EMISSIONS } from "../src/emissions/domains/employment-workflow";
+import { humanResourcesModuleManifest } from "../src/composition/module.manifest";
 import {
 	HUMAN_RESOURCES_EMPLOYMENT_LIFECYCLE_COMMAND_AUTHORIZATION,
 	HUMAN_RESOURCES_EMPLOYMENT_LIFECYCLE_COMMANDS,
 	HUMAN_RESOURCES_EMPLOYMENT_LIFECYCLE_QUERIES,
 	HUMAN_RESOURCES_EMPLOYMENT_LIFECYCLE_QUERY_AUTHORIZATION,
-} from "../src/employment-lifecycle/operation-registry";
-import { humanResourcesModuleManifest } from "../src/module.manifest";
+} from "../src/features/employment-lifecycle/operation-registry";
+import { resolveHumanResourcesAuthorizationPolicy } from "../src/kernel/authorization/registry";
+import { HUMAN_RESOURCES_EMPLOYMENT_LIFECYCLE_EMISSIONS } from "../src/kernel/emissions/domains/employment-lifecycle";
+import { HUMAN_RESOURCES_EMPLOYMENT_WORKFLOW_EMISSIONS } from "../src/kernel/emissions/domains/employment-workflow";
 import {
 	HUMAN_RESOURCES_EMPLOYMENT_LIFECYCLE_COMMAND_IDS,
 	HUMAN_RESOURCES_EMPLOYMENT_LIFECYCLE_QUERY_IDS,
-} from "../src/module-ids";
-import { HUMAN_RESOURCES_REGISTERED_OPERATION_DEFINITIONS } from "../src/operation-registry/registry";
-import { resolveHumanResourcesAuthorizationPolicy } from "../src/shared/authorization-policy-registry";
+} from "../src/kernel/operations/module-ids";
+import { HUMAN_RESOURCES_REGISTERED_OPERATION_DEFINITIONS } from "../src/kernel/operations/registry";
 
 const definitions = [
 	...Object.values(HUMAN_RESOURCES_EMPLOYMENT_LIFECYCLE_COMMANDS),
 	...Object.values(HUMAN_RESOURCES_EMPLOYMENT_LIFECYCLE_QUERIES),
 ];
 const publicCapabilitiesSource = readFileSync(
-	path.resolve(import.meta.dirname, "../src/public-capabilities.ts"),
+	path.resolve(import.meta.dirname, "../src/facade/capabilities.ts"),
 	"utf8",
 );
 const handlerSources = [
-	"../src/core/employment.ts",
-	"../src/core/employment-management.ts",
-	"../src/core/employment-contract.ts",
-	"../src/core/employment-contract-management.ts",
-	"../src/core/assignment.ts",
-	"../src/core/org-context.ts",
-	"../src/lifecycle/onboarding.ts",
-	"../src/lifecycle/probation.ts",
-	"../src/lifecycle/confirmation.ts",
-	"../src/lifecycle/transfer.ts",
-	"../src/lifecycle/termination.ts",
-	"../src/lifecycle/offboarding.ts",
+	"../src/features/workforce-records/employment/employment.ts",
+	"../src/features/workforce-records/employment/employment-management.ts",
+	"../src/features/workforce-records/employment/employment-contract.ts",
+	"../src/features/workforce-records/employment/employment-contract-management.ts",
+	"../src/features/workforce-records/employment/assignment.ts",
+	"../src/features/workforce-records/employment/org-context.ts",
+	"../src/features/employment-lifecycle/onboarding.ts",
+	"../src/features/employment-lifecycle/probation.ts",
+	"../src/features/employment-lifecycle/confirmation.ts",
+	"../src/features/employment-lifecycle/transfer.ts",
+	"../src/features/employment-lifecycle/termination.ts",
+	"../src/features/employment-lifecycle/offboarding.ts",
 ].map((relativePath) =>
 	readFileSync(path.resolve(import.meta.dirname, relativePath), "utf8"),
 );
 const runnerSource = readFileSync(
 	path.resolve(
 		import.meta.dirname,
-		"../src/employment-lifecycle/run-operation.ts",
+		"../src/features/employment-lifecycle/run-operation.ts",
 	),
 	"utf8",
 );

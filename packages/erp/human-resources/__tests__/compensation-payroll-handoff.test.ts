@@ -7,15 +7,15 @@ import { describe, expect, it } from "vitest";
 import {
 	enrolBenefit,
 	getApprovedCompensationHandoff,
-} from "../src/compensation-benefits/benefit-enrollment";
-import { createBenefitPlan } from "../src/compensation-benefits/benefit-plan";
-import { mapApprovedPayrollHandoff } from "../src/handoff/map-approved-payroll-handoff";
+} from "../src/features/compensation-benefits/benefit-enrollment";
+import { createBenefitPlan } from "../src/features/compensation-benefits/benefit-plan";
+import { mapApprovedPayrollHandoff } from "../src/features/payroll-handoff/map-approved-payroll-handoff";
 import {
 	HUMAN_RESOURCES_PERMISSION_BENEFITS_MANAGE,
 	HUMAN_RESOURCES_PERMISSION_COMPENSATION_MANAGE,
 	HUMAN_RESOURCES_PERMISSION_COMPENSATION_READ,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,
-} from "../src/permissions";
+} from "../src/kernel/authorization/permissions";
 import {
 	COMPENSATION_HANDOFF_PARITY_ACTOR,
 	COMPENSATION_HANDOFF_PARITY_EFFECTIVE_DATE,
@@ -26,6 +26,35 @@ import {
 } from "./helpers/compensation-handoff-parity";
 
 describe("compensation payroll handoff parity (Slice 8.8)", () => {
+	it("selects compensation only when it is effective for the payroll date", async () => {
+		const ready = compensationHandoffParityHarness([
+			HUMAN_RESOURCES_PERMISSION_COMPENSATION_MANAGE,
+			HUMAN_RESOURCES_PERMISSION_COMPENSATION_READ,
+			HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,
+		]);
+		const seeded = await seedApprovedCompensationForHandoff(ready, {
+			idempotencySuffix: "effective-date",
+		});
+		expect(seeded.ok).toBe(true);
+		if (!seeded.ok) {
+			return;
+		}
+
+		const beforeEffectiveDate = await getApprovedCompensationHandoff(
+			{
+				organizationId: COMPENSATION_HANDOFF_PARITY_ORG,
+				actorUserId: COMPENSATION_HANDOFF_PARITY_ACTOR,
+				correlationId: "corr-get-handoff-before-effective-date",
+				employeeId: seeded.employee.id,
+				employmentId: seeded.employment.id,
+				effectiveDate: "2024-12-31",
+			},
+			ready,
+		);
+
+		expect(beforeEffectiveDate).toEqual({ ok: true, data: null });
+	});
+
 	it("mapApprovedPayrollHandoff emits contract-valid handoff with derived decimal scale", async () => {
 		const ready = compensationHandoffParityHarness([
 			HUMAN_RESOURCES_PERMISSION_COMPENSATION_MANAGE,
@@ -46,6 +75,8 @@ describe("compensation payroll handoff parity (Slice 8.8)", () => {
 				actorUserId: COMPENSATION_HANDOFF_PARITY_ACTOR,
 				correlationId: "corr-get-handoff",
 				employeeId: seeded.employee.id,
+				employmentId: seeded.employment.id,
+				effectiveDate: COMPENSATION_HANDOFF_PARITY_EFFECTIVE_DATE,
 			},
 			ready,
 		);
@@ -65,6 +96,7 @@ describe("compensation payroll handoff parity (Slice 8.8)", () => {
 			}),
 			effectiveDate: COMPENSATION_HANDOFF_PARITY_EFFECTIVE_DATE,
 			correlationId: "corr-map-handoff",
+			employmentStatus: "active",
 		});
 
 		expect(mapped.ok).toBe(true);
@@ -141,6 +173,8 @@ describe("compensation payroll handoff parity (Slice 8.8)", () => {
 				actorUserId: COMPENSATION_HANDOFF_PARITY_ACTOR,
 				correlationId: "corr-get-handoff-benefits",
 				employeeId: seeded.employee.id,
+				employmentId: seeded.employment.id,
+				effectiveDate: COMPENSATION_HANDOFF_PARITY_EFFECTIVE_DATE,
 			},
 			ready,
 		);
@@ -160,6 +194,7 @@ describe("compensation payroll handoff parity (Slice 8.8)", () => {
 			}),
 			effectiveDate: COMPENSATION_HANDOFF_PARITY_EFFECTIVE_DATE,
 			correlationId: "corr-map-handoff-benefits",
+			employmentStatus: "active",
 		});
 		expect(mapped.ok).toBe(true);
 		if (!mapped.ok) {
@@ -196,6 +231,8 @@ describe("compensation payroll handoff parity (Slice 8.8)", () => {
 				actorUserId: COMPENSATION_HANDOFF_PARITY_ACTOR,
 				correlationId: "corr-chain-handoff",
 				employeeId: seeded.employee.id,
+				employmentId: seeded.employment.id,
+				effectiveDate: COMPENSATION_HANDOFF_PARITY_EFFECTIVE_DATE,
 			},
 			ready,
 		);
@@ -215,6 +252,7 @@ describe("compensation payroll handoff parity (Slice 8.8)", () => {
 			}),
 			effectiveDate: COMPENSATION_HANDOFF_PARITY_EFFECTIVE_DATE,
 			correlationId: "corr-chain-map",
+			employmentStatus: "active",
 		});
 		expect(mapped.ok).toBe(true);
 		if (!mapped.ok) {

@@ -462,19 +462,19 @@ edges:
   - from: "@afenda/corporate-administration"
     to: "@afenda/db"
     status: approved
-    authority: CA-0.4
+    authority: CA-NFR-003
     reason: "Schema host, durable idempotency receipt, and transaction-scoped outbox append"
     effectiveDate: "2026-07-26"
   - from: "@afenda/corporate-administration"
     to: "@afenda/audit"
     status: approved
-    authority: CA-0.4
+    authority: CA-NFR-003
     reason: "Shared platform audit fact persistence; no CA-owned audit table"
     effectiveDate: "2026-07-26"
   - from: "@afenda/corporate-administration"
     to: "@afenda/errors"
     status: approved
-    authority: CA-0.2
+    authority: CA-SEC-002
     reason: "Transport-neutral Result and semantic error contracts"
     effectiveDate: "2026-07-26"
   - from: "@afenda/ai-the-machine"

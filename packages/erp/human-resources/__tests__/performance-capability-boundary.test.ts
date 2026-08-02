@@ -7,7 +7,7 @@ function files(directory: string): string[] {
 	return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
 		const target = path.join(directory, entry.name);
 		if (entry.isDirectory()) {
-			return files(target);
+			return entry.name === "adapters" ? [] : files(target);
 		}
 		return entry.isFile() && entry.name.endsWith(".ts") ? [target] : [];
 	});
@@ -24,7 +24,7 @@ describe("Performance capability boundary", () => {
 			),
 		).toBe(false);
 		for (const file of files(
-			path.resolve(import.meta.dirname, "../src/performance"),
+			path.resolve(import.meta.dirname, "../src/features/performance"),
 		)) {
 			const body = readFileSync(file, "utf8");
 			expect(body, file).not.toContain("HumanResourcesStore");

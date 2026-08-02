@@ -13,7 +13,7 @@ function typescriptFiles(directory: string): string[] {
 	});
 }
 
-const timeDirectory = path.resolve(import.meta.dirname, "../src/time");
+const timeDirectory = path.resolve(import.meta.dirname, "../src/features/time");
 
 describe("Time capability boundary", () => {
 	it("rejects the deleted broad runner and unrestricted store access", () => {
@@ -26,6 +26,9 @@ describe("Time capability boundary", () => {
 		for (const file of typescriptFiles(timeDirectory)) {
 			const source = readFileSync(file, "utf8");
 			expect(source, file).not.toContain("HumanResourcesStore");
+			expect(source, file).not.toMatch(
+				/from\s+["'][^"']*(?:composition|facade|testing)(?:\/|["'])/,
+			);
 			expect(source, file).not.toContain("runTimeCommand");
 			expect(source, file).not.toContain("runTimeQuery");
 			expect(source, file).not.toContain("shared/time-command");

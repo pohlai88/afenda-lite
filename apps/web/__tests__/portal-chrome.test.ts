@@ -98,6 +98,24 @@ describe("portal-chrome (N16)", () => {
 		);
 	});
 
+	it("exposes the Corporate Administration client route only with its canonical read permission", async () => {
+		hasPermissionMock.mockImplementation(
+			async ({ code }) => code === "corporate_administration.company.read",
+		);
+
+		const nav = await resolveClientShellNav({
+			...session,
+			role: "client",
+		});
+		expect(nav).toEqual([
+			expect.objectContaining({
+				id: "corporate-administration",
+				href: "/client/corporate-administration",
+				permissionCodes: ["corporate_administration.company.read"],
+			}),
+		]);
+	});
+
 	it("exposes module-tagged nav for on-disk operator routes only", () => {
 		const hrefs = OPERATOR_SHELL_NAV.map((item) => item.href);
 		expect(hrefs).toContain("/admin");
@@ -143,6 +161,9 @@ describe("portal-chrome (N16)", () => {
 		]);
 		expect(SHELL_MODULE_PRESENTATION.accounting.sectionId).toBe("finance");
 		expect(SHELL_MODULE_PRESENTATION.inventory.sectionId).toBe("operations");
+		expect(
+			SHELL_MODULE_PRESENTATION["corporate-administration"].sectionId,
+		).toBe("administration");
 		expect(SHELL_MODULE_PRESENTATION["human-resources"].sectionId).toBe(
 			"people",
 		);

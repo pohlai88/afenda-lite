@@ -1047,7 +1047,7 @@ export type {
 	WorkforcePlanVariance,
 	WorkWeekDayPattern,
 	WorkWeekDayPatternJson,
-} from "./internal-api";
+} from "./composition/internal-api";
 export {
 	ATTENDANCE_SESSION_DETECTION_SOURCE,
 	acceptOfferInputSchema,
@@ -2212,21 +2212,10 @@ export {
 	workedMinutesForSessionCivilDate,
 	workerStatusSchema,
 	workerTypeSchema,
-} from "./internal-api";
-export { createProductionApprovedLeaveQuery } from "./production-approved-leave-query";
-export { createProductionAttendanceSource } from "./production-attendance-source";
-export {
-	createHumanResourcesBulkCheckpointCapability,
-	createHumanResourcesBulkExportDataCapability,
-	createHumanResourcesBulkJobCapability,
-	createHumanResourcesIdentityResolverCapability,
-	createHumanResourcesPayrollDeliveryCapability,
-	createHumanResourcesReliabilityCapability,
-	createHumanResourcesReportingSourceCapability,
-	createHumanResourcesWorkCalendarLookupCapability,
-	listHumanResourcesSubjectInventoryRecords,
-} from "./production-capabilities";
-export { createProductionWorkCalendar } from "./production-work-calendar";
+} from "./composition/internal-api";
+export { createProductionApprovedLeaveQuery } from "./composition/production/approved-leave-query";
+export { createProductionAttendanceSource } from "./composition/production/attendance-source";
+export { createProductionWorkCalendar } from "./composition/production/work-calendar";
 export {
 	acceptOffer,
 	accrueLeaveEntitlement,
@@ -2788,7 +2777,11 @@ export {
 	withdrawCandidateConsent,
 	withdrawLeaveRequest,
 	withdrawOffer,
-} from "./public-capabilities";
+} from "./facade/capabilities";
+export {
+	createHumanResourcesCapabilityOptions,
+	type HumanResourcesCapabilityOptions,
+} from "./facade/context";
 export type {
 	ApprovedLeaveQueryCapability,
 	AttendanceSourceCapability,
@@ -2813,8 +2806,15 @@ export type {
 	ReliabilityKernelCapabilities,
 	ReliabilityStoreCapability,
 	WorkCalendarCapability,
-} from "./public-contracts";
+} from "./facade/contracts";
 export {
-	createHumanResourcesCapabilityOptions,
-	type HumanResourcesCapabilityOptions,
-} from "./public-execution-context";
+	createHumanResourcesBulkCheckpointCapability,
+	createHumanResourcesBulkExportDataCapability,
+	createHumanResourcesBulkJobCapability,
+	createHumanResourcesIdentityResolverCapability,
+	createHumanResourcesPayrollDeliveryCapability,
+	createHumanResourcesReliabilityCapability,
+	createHumanResourcesReportingSourceCapability,
+	createHumanResourcesWorkCalendarLookupCapability,
+	listHumanResourcesSubjectInventoryRecords,
+} from "./facade/production-capabilities";

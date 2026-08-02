@@ -13,8 +13,6 @@ import {
 	HUMAN_RESOURCES_IMPROVEMENT_PLAN_STARTED_EVENT,
 } from "@afenda/events/schemas";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { createEmployee } from "../src/core/employee";
-import { createEmployment } from "../src/core/employment";
 import {
 	activatePerformanceGoal,
 	approvePerformanceGoal,
@@ -25,7 +23,7 @@ import {
 	listGoalProgress,
 	recordGoalProgress,
 	submitPerformanceGoal,
-} from "../src/performance/goal";
+} from "../src/features/performance/goal";
 import {
 	acknowledgeImprovementPlan,
 	amendImprovementPlan,
@@ -36,13 +34,13 @@ import {
 	listImprovementPlanCheckpoints,
 	openImprovementPlan,
 	recordImprovementCheckpoint,
-} from "../src/performance/improvement-plan";
+} from "../src/features/performance/improvement-plan";
 import {
 	createPerformanceCycle,
 	getPerformanceCycleById,
 	listCycleParticipants,
 	listPerformanceCycles,
-} from "../src/performance/performance-cycle";
+} from "../src/features/performance/performance-cycle";
 import {
 	acknowledgePerformanceReview,
 	addDelegatedReviewer,
@@ -54,8 +52,10 @@ import {
 	submitDelegatedAssessment,
 	submitManagerAssessment,
 	submitSelfAssessment,
-} from "../src/performance/review";
-import { runSequential } from "../src/shared/run-sequential";
+} from "../src/features/performance/review";
+import { createEmployee } from "../src/features/workforce-records/employment/employee";
+import { createEmployment } from "../src/features/workforce-records/employment/employment";
+import { runSequential } from "../src/kernel/execution/run-sequential";
 import { runDrizzleParity } from "./helpers/database-gate";
 import { ensurePerformanceSchemaForTests } from "./helpers/ensure-performance-schema";
 import { helperAssert as assert } from "./helpers/helper-assert";

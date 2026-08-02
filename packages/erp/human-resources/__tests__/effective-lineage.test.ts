@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
 	resolveEffectiveLineageRecord,
 	selectEffectiveLineageRecord,
-} from "../src/shared/effective-lineage";
+} from "../src/kernel/temporal/effective-lineage";
 
 interface Record {
 	effectiveFrom: string;

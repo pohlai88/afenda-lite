@@ -4,21 +4,24 @@
 
 import { errorResult } from "@afenda/errors";
 import { afterAll, describe, expect, it } from "vitest";
-import type { HumanResourcesCommandOptions } from "../src/command-options";
-import { createAssignment } from "../src/core/assignment";
-import { createEmployee } from "../src/core/employee";
-import { createEmployment } from "../src/core/employment";
-import { HUMAN_RESOURCES_ERROR_CONFLICT } from "../src/error-codes";
-import { createPosition } from "../src/organization/position";
+import { createPosition } from "../src/features/organization/position";
 import {
 	assignEmploymentCalendar,
 	assignWorkCalendarScope,
 	createWorkCalendar,
 	endWorkCalendarScopeAssignment,
 	resolveEmployeeWorkCalendar,
-} from "../src/time/calendar";
-import type { EmployeeAssignmentContext } from "../src/time/handoff/ports";
-import type { WorkCalendar, WorkCalendarScopeType } from "../src/types";
+} from "../src/features/time/calendar";
+import type { EmployeeAssignmentContext } from "../src/features/time/handoff/ports";
+import { createAssignment } from "../src/features/workforce-records/employment/assignment";
+import { createEmployee } from "../src/features/workforce-records/employment/employee";
+import { createEmployment } from "../src/features/workforce-records/employment/employment";
+import type {
+	WorkCalendar,
+	WorkCalendarScopeType,
+} from "../src/kernel/contracts";
+import type { HumanResourcesCommandOptions } from "../src/kernel/execution/command-options";
+import { HUMAN_RESOURCES_ERROR_CONFLICT } from "../src/kernel/execution/error-codes";
 import { TEST_ORGANIZATION_DIMENSION_KEYS } from "./helpers/command-options";
 import { runDrizzleParity } from "./helpers/database-gate";
 import { helperAssert as assert } from "./helpers/helper-assert";

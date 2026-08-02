@@ -1,31 +1,30 @@
 import { errorResult } from "@afenda/errors";
 import { describe, expect, it, vi } from "vitest";
-
-import type { HumanResourcesAuthorizationPort } from "../src/authorization";
-import type { HumanResourcesQueryId } from "../src/module-ids";
-import {
-	HUMAN_RESOURCES_COMMAND_COMPENSATION_GRADE_CREATE,
-	HUMAN_RESOURCES_COMMAND_DEPARTMENT_CREATE,
-	HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_CREATE_DRAFT,
-	HUMAN_RESOURCES_QUERY_LEAVE_REQUEST_GET,
-} from "../src/module-ids";
-import {
-	createMemoryHrObservabilityRecorder,
-	type HrObservabilityPorts,
-} from "../src/observability";
+import type { HumanResourcesFieldProjection } from "../src/kernel/authorization/authorization-types";
+import type { HumanResourcesAuthorizationPort } from "../src/kernel/authorization/authorize";
 import {
 	HUMAN_RESOURCES_PERMISSION_COMPENSATION_MANAGE,
 	HUMAN_RESOURCES_PERMISSION_COMPENSATION_READ,
 	HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_OWN,
 	HUMAN_RESOURCES_PERMISSION_ORGANIZATION_MANAGE,
-} from "../src/permissions";
-import type { HumanResourcesFieldProjection } from "../src/shared/authorization-types";
+} from "../src/kernel/authorization/permissions";
 import {
 	authorizationDecisionToFailure,
 	createParityResourceShell,
 	runAuthorizedHumanResourcesOperation,
 	runDomainAuthorizedOperation,
-} from "../src/shared/run-authorized-operation";
+} from "../src/kernel/authorization/run-authorized-operation";
+import {
+	createMemoryHrObservabilityRecorder,
+	type HrObservabilityPorts,
+} from "../src/kernel/observability/index";
+import type { HumanResourcesQueryId } from "../src/kernel/operations/module-ids";
+import {
+	HUMAN_RESOURCES_COMMAND_COMPENSATION_GRADE_CREATE,
+	HUMAN_RESOURCES_COMMAND_DEPARTMENT_CREATE,
+	HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_CREATE_DRAFT,
+	HUMAN_RESOURCES_QUERY_LEAVE_REQUEST_GET,
+} from "../src/kernel/operations/module-ids";
 
 function grantingAuthorization(
 	permissions: ReadonlySet<string>,

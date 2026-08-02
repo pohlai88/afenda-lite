@@ -1,7 +1,7 @@
 export {
 	createMemoryPayrollStore,
 	type MemoryPayrollStore,
-} from "../adapters/memory/store";
+} from "./memory-store";
 export {
 	createTestPayrollRunCalculator,
 	type TestPayrollRunCalculatorOptions,

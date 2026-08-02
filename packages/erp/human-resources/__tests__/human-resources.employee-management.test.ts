@@ -1,25 +1,25 @@
 import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
-import type { HumanResourcesEmployeeId } from "../src/brands";
-import type { HumanResourcesCommandOptions } from "../src/command-options";
-import { createEmployee } from "../src/core/employee";
-import { createEmployment } from "../src/core/employment";
-import { HUMAN_RESOURCES_ERROR_AUTHORIZATION_DENIED } from "../src/error-codes";
-import { assignPrimaryReportingLine } from "../src/organization/reporting-line";
+import { assignPrimaryReportingLine } from "../src/features/organization/reporting-line";
+import { createEmployee } from "../src/features/workforce-records/employment/employee";
+import { createEmployment } from "../src/features/workforce-records/employment/employment";
+import { getEmployeeProfile } from "../src/features/workforce-records/identity/employee-management";
+import { createPerson } from "../src/features/workforce-records/identity/person";
+import {
+	addPersonContact,
+	addPersonIdentifier,
+} from "../src/features/workforce-records/identity/person-management";
+import { createWorker } from "../src/features/workforce-records/identity/worker";
 import {
 	HUMAN_RESOURCES_PERMISSION_CODES,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,
 	HUMAN_RESOURCES_PERMISSION_PERSON_READ,
 	HUMAN_RESOURCES_PERMISSION_SENSITIVE_IDENTIFIERS_READ,
-} from "../src/permissions";
-import { createMemoryHumanResourcesStore } from "../src/testing";
-import { getEmployeeProfile } from "../src/workforce-foundation/employee-management";
-import { createPerson } from "../src/workforce-foundation/person";
-import {
-	addPersonContact,
-	addPersonIdentifier,
-} from "../src/workforce-foundation/person-management";
-import { createWorker } from "../src/workforce-foundation/worker";
+} from "../src/kernel/authorization/permissions";
+import type { HumanResourcesCommandOptions } from "../src/kernel/execution/command-options";
+import { HUMAN_RESOURCES_ERROR_AUTHORIZATION_DENIED } from "../src/kernel/execution/error-codes";
+import type { HumanResourcesEmployeeId } from "../src/kernel/identity/brands";
+import { createMemoryHumanResourcesStore } from "../src/testing/index";
 import { createTestHumanResourcesCommandOptions } from "./helpers/command-options";
 import { helperAssert as assert } from "./helpers/helper-assert";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";

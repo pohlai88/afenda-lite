@@ -10,14 +10,14 @@ import {
 } from "@afenda/events/schemas";
 import { describe, expect, it } from "vitest";
 
-import { createDrizzlePayrollDeliveryStore } from "../src/adapters/drizzle/payroll-delivery";
+import { createDrizzlePayrollDeliveryStore } from "../src/features/payroll-handoff/delivery/adapters/payroll-delivery.drizzle";
 import {
 	createMemoryPayrollDeliveryStore,
 	deliverPayrollHandoff,
 	type PayrollDeliveryStorePort,
 	queuePayrollDelivery,
 	recordPayrollDeliveryFeedback,
-} from "../src/integrations/payroll-delivery";
+} from "../src/features/payroll-handoff/delivery/index";
 import { runDrizzleParity } from "./helpers/database-gate";
 
 function handoff(

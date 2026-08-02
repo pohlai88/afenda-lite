@@ -1,0 +1,3017 @@
+{
+	"categories": [
+		{
+			"items": [
+				{
+					"evidence": "src/composition/adapters/drizzle/coverage.ts exceeds src/<owner>/<file>",
+					"file": "src/composition/adapters/drizzle/coverage.ts"
+				},
+				{
+					"evidence": "src/composition/adapters/drizzle/index.ts exceeds src/<owner>/<file>",
+					"file": "src/composition/adapters/drizzle/index.ts"
+				},
+				{
+					"evidence": "src/composition/adapters/drizzle/store.ts exceeds src/<owner>/<file>",
+					"file": "src/composition/adapters/drizzle/store.ts"
+				},
+				{
+					"evidence": "src/composition/adapters/memory/coverage.ts exceeds src/<owner>/<file>",
+					"file": "src/composition/adapters/memory/coverage.ts"
+				},
+				{
+					"evidence": "src/composition/adapters/memory/store.ts exceeds src/<owner>/<file>",
+					"file": "src/composition/adapters/memory/store.ts"
+				},
+				{
+					"evidence": "src/composition/integrations/accounting-provisioning-facts.ts exceeds src/<owner>/<file>",
+					"file": "src/composition/integrations/accounting-provisioning-facts.ts"
+				},
+				{
+					"evidence": "src/composition/integrations/platform-facts.ts exceeds src/<owner>/<file>",
+					"file": "src/composition/integrations/platform-facts.ts"
+				},
+				{
+					"evidence": "src/composition/production/approved-leave-query.ts exceeds src/<owner>/<file>",
+					"file": "src/composition/production/approved-leave-query.ts"
+				},
+				{
+					"evidence": "src/composition/production/assignment-context-query.ts exceeds src/<owner>/<file>",
+					"file": "src/composition/production/assignment-context-query.ts"
+				},
+				{
+					"evidence": "src/composition/production/attendance-source.ts exceeds src/<owner>/<file>",
+					"file": "src/composition/production/attendance-source.ts"
+				},
+				{
+					"evidence": "src/composition/production/ports.ts exceeds src/<owner>/<file>",
+					"file": "src/composition/production/ports.ts"
+				},
+				{
+					"evidence": "src/composition/production/work-calendar.ts exceeds src/<owner>/<file>",
+					"file": "src/composition/production/work-calendar.ts"
+				},
+				{
+					"evidence": "src/composition/store/compose.ts exceeds src/<owner>/<file>",
+					"file": "src/composition/store/compose.ts"
+				},
+				{
+					"evidence": "src/composition/store/index.ts exceeds src/<owner>/<file>",
+					"file": "src/composition/store/index.ts"
+				},
+				{
+					"evidence": "src/composition/store/resolve-store.ts exceeds src/<owner>/<file>",
+					"file": "src/composition/store/resolve-store.ts"
+				},
+				{
+					"evidence": "src/features/bulk-export/bulk-export.ts exceeds src/<owner>/<file>",
+					"file": "src/features/bulk-export/bulk-export.ts"
+				},
+				{
+					"evidence": "src/features/bulk-export/csv.ts exceeds src/<owner>/<file>",
+					"file": "src/features/bulk-export/csv.ts"
+				},
+				{
+					"evidence": "src/features/bulk-export/index.ts exceeds src/<owner>/<file>",
+					"file": "src/features/bulk-export/index.ts"
+				},
+				{
+					"evidence": "src/features/bulk-export/types.ts exceeds src/<owner>/<file>",
+					"file": "src/features/bulk-export/types.ts"
+				},
+				{
+					"evidence": "src/features/bulk-import/adapters/bulk-checkpoint.drizzle.ts exceeds src/<owner>/<file>",
+					"file": "src/features/bulk-import/adapters/bulk-checkpoint.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/bulk-import/error-file.ts exceeds src/<owner>/<file>",
+					"file": "src/features/bulk-import/error-file.ts"
+				},
+				{
+					"evidence": "src/features/bulk-import/index.ts exceeds src/<owner>/<file>",
+					"file": "src/features/bulk-import/index.ts"
+				},
+				{
+					"evidence": "src/features/bulk-import/kernel.ts exceeds src/<owner>/<file>",
+					"file": "src/features/bulk-import/kernel.ts"
+				},
+				{
+					"evidence": "src/features/bulk-import/memory-checkpoint-store.ts exceeds src/<owner>/<file>",
+					"file": "src/features/bulk-import/memory-checkpoint-store.ts"
+				},
+				{
+					"evidence": "src/features/bulk-import/source-pipelines.ts exceeds src/<owner>/<file>",
+					"file": "src/features/bulk-import/source-pipelines.ts"
+				},
+				{
+					"evidence": "src/features/bulk-import/types.ts exceeds src/<owner>/<file>",
+					"file": "src/features/bulk-import/types.ts"
+				},
+				{
+					"evidence": "src/features/bulk-jobs/adapters/bulk-jobs.drizzle.ts exceeds src/<owner>/<file>",
+					"file": "src/features/bulk-jobs/adapters/bulk-jobs.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/bulk-jobs/index.ts exceeds src/<owner>/<file>",
+					"file": "src/features/bulk-jobs/index.ts"
+				},
+				{
+					"evidence": "src/features/bulk-jobs/kernel.ts exceeds src/<owner>/<file>",
+					"file": "src/features/bulk-jobs/kernel.ts"
+				},
+				{
+					"evidence": "src/features/bulk-jobs/memory-store.ts exceeds src/<owner>/<file>",
+					"file": "src/features/bulk-jobs/memory-store.ts"
+				},
+				{
+					"evidence": "src/features/bulk-jobs/types.ts exceeds src/<owner>/<file>",
+					"file": "src/features/bulk-jobs/types.ts"
+				},
+				{
+					"evidence": "src/features/compensation-benefits/adapters/benefit-methods-drizzle.drizzle.ts exceeds src/<owner>/<file>",
+					"file": "src/features/compensation-benefits/adapters/benefit-methods-drizzle.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/compensation-benefits/adapters/compensation-benefits.drizzle.ts exceeds src/<owner>/<file>",
+					"file": "src/features/compensation-benefits/adapters/compensation-benefits.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/compensation-benefits/adapters/compensation-benefits.memory.ts exceeds src/<owner>/<file>",
+					"file": "src/features/compensation-benefits/adapters/compensation-benefits.memory.ts"
+				},
+				{
+					"evidence": "src/features/compensation-benefits/adapters/compensation-review-cycle-drizzle.drizzle.ts exceeds src/<owner>/<file>",
+					"file": "src/features/compensation-benefits/adapters/compensation-review-cycle-drizzle.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/compensation-benefits/adapters/compensation-review-cycle.memory.ts exceeds src/<owner>/<file>",
+					"file": "src/features/compensation-benefits/adapters/compensation-review-cycle.memory.ts"
+				},
+				{
+					"evidence": "src/features/compensation-benefits/adapters/employee-compensation-lifecycle-drizzle.drizzle.ts exceeds src/<owner>/<file>",
+					"file": "src/features/compensation-benefits/adapters/employee-compensation-lifecycle-drizzle.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/compensation-benefits/adapters/employee-compensation-lifecycle.memory.ts exceeds src/<owner>/<file>",
+					"file": "src/features/compensation-benefits/adapters/employee-compensation-lifecycle.memory.ts"
+				},
+				{
+					"evidence": "src/features/compensation-benefits/authorization/compensation.ts exceeds src/<owner>/<file>",
+					"file": "src/features/compensation-benefits/authorization/compensation.ts"
+				},
+				{
+					"evidence": "src/features/compensation-benefits/benefit-dependent.ts exceeds src/<owner>/<file>",
+					"file": "src/features/compensation-benefits/benefit-dependent.ts"
+				},
+				{
+					"evidence": "src/features/compensation-benefits/benefit-eligibility.ts exceeds src/<owner>/<file>",
+					"file": "src/features/compensation-benefits/benefit-eligibility.ts"
+				},
+				{
+					"evidence": "src/features/compensation-benefits/benefit-enrollment.ts exceeds src/<owner>/<file>",
+					"file": "src/features/compensation-benefits/benefit-enrollment.ts"
+				},
+				{
+					"evidence": "src/features/compensation-benefits/benefit-guards.ts exceeds src/<owner>/<file>",
+					"file": "src/features/compensation-benefits/benefit-guards.ts"
+				},
+				{
+					"evidence": "src/features/compensation-benefits/benefit-plan.ts exceeds src/<owner>/<file>",
+					"file": "src/features/compensation-benefits/benefit-plan.ts"
+				},
+				{
+					"evidence": "src/features/compensation-benefits/compensation-grade-progression-rule.ts exceeds src/<owner>/<file>",
+					"file": "src/features/compensation-benefits/compensation-grade-progression-rule.ts"
+				},
+				{
+					"evidence": "src/features/compensation-benefits/compensation-grade.ts exceeds src/<owner>/<file>",
+					"file": "src/features/compensation-benefits/compensation-grade.ts"
+				},
+				{
+					"evidence": "src/features/compensation-benefits/compensation-proposal.ts exceeds src/<owner>/<file>",
+					"file": "src/features/compensation-benefits/compensation-proposal.ts"
+				},
+				{
+					"evidence": "src/features/compensation-benefits/compensation-review-cycle.ts exceeds src/<owner>/<file>",
+					"file": "src/features/compensation-benefits/compensation-review-cycle.ts"
+				},
+				{
+					"evidence": "src/features/compensation-benefits/compensation-review.ts exceeds src/<owner>/<file>",
+					"file": "src/features/compensation-benefits/compensation-review.ts"
+				},
+				{
+					"evidence": "src/features/compensation-benefits/currency-lookup.ts exceeds src/<owner>/<file>",
+					"file": "src/features/compensation-benefits/currency-lookup.ts"
+				},
+				{
+					"evidence": "src/features/compensation-benefits/employee-compensation-lifecycle.ts exceeds src/<owner>/<file>",
+					"file": "src/features/compensation-benefits/employee-compensation-lifecycle.ts"
+				},
+				{
+					"evidence": "src/features/compensation-benefits/employee-compensation-projection.ts exceeds src/<owner>/<file>",
+					"file": "src/features/compensation-benefits/employee-compensation-projection.ts"
+				},
+				{
+					"evidence": "src/features/compensation-benefits/employee-compensation-query-fields.ts exceeds src/<owner>/<file>",
+					"file": "src/features/compensation-benefits/employee-compensation-query-fields.ts"
+				},
+				{
+					"evidence": "src/features/compensation-benefits/employee-compensation.ts exceeds src/<owner>/<file>",
+					"file": "src/features/compensation-benefits/employee-compensation.ts"
+				},
+				{
+					"evidence": "src/features/compensation-benefits/money.ts exceeds src/<owner>/<file>",
+					"file": "src/features/compensation-benefits/money.ts"
+				},
+				{
+					"evidence": "src/features/compensation-benefits/operation-registry.ts exceeds src/<owner>/<file>",
+					"file": "src/features/compensation-benefits/operation-registry.ts"
+				},
+				{
+					"evidence": "src/features/compensation-benefits/proposal-guards.ts exceeds src/<owner>/<file>",
+					"file": "src/features/compensation-benefits/proposal-guards.ts"
+				},
+				{
+					"evidence": "src/features/compensation-benefits/review-audit.ts exceeds src/<owner>/<file>",
+					"file": "src/features/compensation-benefits/review-audit.ts"
+				},
+				{
+					"evidence": "src/features/compensation-benefits/review-budget-loader.ts exceeds src/<owner>/<file>",
+					"file": "src/features/compensation-benefits/review-budget-loader.ts"
+				},
+				{
+					"evidence": "src/features/compensation-benefits/review-budget.ts exceeds src/<owner>/<file>",
+					"file": "src/features/compensation-benefits/review-budget.ts"
+				},
+				{
+					"evidence": "src/features/compensation-benefits/review-guards.ts exceeds src/<owner>/<file>",
+					"file": "src/features/compensation-benefits/review-guards.ts"
+				},
+				{
+					"evidence": "src/features/compensation-benefits/run-operation.ts exceeds src/<owner>/<file>",
+					"file": "src/features/compensation-benefits/run-operation.ts"
+				},
+				{
+					"evidence": "src/features/compensation-benefits/salary-band.ts exceeds src/<owner>/<file>",
+					"file": "src/features/compensation-benefits/salary-band.ts"
+				},
+				{
+					"evidence": "src/features/compensation-benefits/schema.ts exceeds src/<owner>/<file>",
+					"file": "src/features/compensation-benefits/schema.ts"
+				},
+				{
+					"evidence": "src/features/compensation-benefits/status.ts exceeds src/<owner>/<file>",
+					"file": "src/features/compensation-benefits/status.ts"
+				},
+				{
+					"evidence": "src/features/compensation-benefits/store-contract.ts exceeds src/<owner>/<file>",
+					"file": "src/features/compensation-benefits/store-contract.ts"
+				},
+				{
+					"evidence": "src/features/compensation-benefits/store.ts exceeds src/<owner>/<file>",
+					"file": "src/features/compensation-benefits/store.ts"
+				},
+				{
+					"evidence": "src/features/compliance/adapters/compliance.drizzle.ts exceeds src/<owner>/<file>",
+					"file": "src/features/compliance/adapters/compliance.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/compliance/adapters/compliance.memory.ts exceeds src/<owner>/<file>",
+					"file": "src/features/compliance/adapters/compliance.memory.ts"
+				},
+				{
+					"evidence": "src/features/compliance/authorization/compliance.ts exceeds src/<owner>/<file>",
+					"file": "src/features/compliance/authorization/compliance.ts"
+				},
+				{
+					"evidence": "src/features/compliance/document-requirement.ts exceeds src/<owner>/<file>",
+					"file": "src/features/compliance/document-requirement.ts"
+				},
+				{
+					"evidence": "src/features/compliance/employee-compliance-summary.ts exceeds src/<owner>/<file>",
+					"file": "src/features/compliance/employee-compliance-summary.ts"
+				},
+				{
+					"evidence": "src/features/compliance/employee-document.ts exceeds src/<owner>/<file>",
+					"file": "src/features/compliance/employee-document.ts"
+				},
+				{
+					"evidence": "src/features/compliance/expiry-operations.ts exceeds src/<owner>/<file>",
+					"file": "src/features/compliance/expiry-operations.ts"
+				},
+				{
+					"evidence": "src/features/compliance/guards.ts exceeds src/<owner>/<file>",
+					"file": "src/features/compliance/guards.ts"
+				},
+				{
+					"evidence": "src/features/compliance/operation-registry.ts exceeds src/<owner>/<file>",
+					"file": "src/features/compliance/operation-registry.ts"
+				},
+				{
+					"evidence": "src/features/compliance/policy-acknowledgement.ts exceeds src/<owner>/<file>",
+					"file": "src/features/compliance/policy-acknowledgement.ts"
+				},
+				{
+					"evidence": "src/features/compliance/privacy.ts exceeds src/<owner>/<file>",
+					"file": "src/features/compliance/privacy.ts"
+				},
+				{
+					"evidence": "src/features/compliance/run-operation.ts exceeds src/<owner>/<file>",
+					"file": "src/features/compliance/run-operation.ts"
+				},
+				{
+					"evidence": "src/features/compliance/schema.ts exceeds src/<owner>/<file>",
+					"file": "src/features/compliance/schema.ts"
+				},
+				{
+					"evidence": "src/features/compliance/status.ts exceeds src/<owner>/<file>",
+					"file": "src/features/compliance/status.ts"
+				},
+				{
+					"evidence": "src/features/compliance/store-contract.ts exceeds src/<owner>/<file>",
+					"file": "src/features/compliance/store-contract.ts"
+				},
+				{
+					"evidence": "src/features/compliance/store.ts exceeds src/<owner>/<file>",
+					"file": "src/features/compliance/store.ts"
+				},
+				{
+					"evidence": "src/features/compliance/vault-document-reference-adapter.ts exceeds src/<owner>/<file>",
+					"file": "src/features/compliance/vault-document-reference-adapter.ts"
+				},
+				{
+					"evidence": "src/features/compliance/work-eligibility.ts exceeds src/<owner>/<file>",
+					"file": "src/features/compliance/work-eligibility.ts"
+				},
+				{
+					"evidence": "src/features/employee-relations/adapters/employee-relations.drizzle.ts exceeds src/<owner>/<file>",
+					"file": "src/features/employee-relations/adapters/employee-relations.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/employee-relations/adapters/employee-relations.memory.ts exceeds src/<owner>/<file>",
+					"file": "src/features/employee-relations/adapters/employee-relations.memory.ts"
+				},
+				{
+					"evidence": "src/features/employee-relations/authorization/employee-relations.ts exceeds src/<owner>/<file>",
+					"file": "src/features/employee-relations/authorization/employee-relations.ts"
+				},
+				{
+					"evidence": "src/features/employee-relations/authorized-case-read.ts exceeds src/<owner>/<file>",
+					"file": "src/features/employee-relations/authorized-case-read.ts"
+				},
+				{
+					"evidence": "src/features/employee-relations/case-access-control.ts exceeds src/<owner>/<file>",
+					"file": "src/features/employee-relations/case-access-control.ts"
+				},
+				{
+					"evidence": "src/features/employee-relations/case-action.ts exceeds src/<owner>/<file>",
+					"file": "src/features/employee-relations/case-action.ts"
+				},
+				{
+					"evidence": "src/features/employee-relations/case-appeal.ts exceeds src/<owner>/<file>",
+					"file": "src/features/employee-relations/case-appeal.ts"
+				},
+				{
+					"evidence": "src/features/employee-relations/case-authorization-policy.ts exceeds src/<owner>/<file>",
+					"file": "src/features/employee-relations/case-authorization-policy.ts"
+				},
+				{
+					"evidence": "src/features/employee-relations/case-event.ts exceeds src/<owner>/<file>",
+					"file": "src/features/employee-relations/case-event.ts"
+				},
+				{
+					"evidence": "src/features/employee-relations/case-field-projection.ts exceeds src/<owner>/<file>",
+					"file": "src/features/employee-relations/case-field-projection.ts"
+				},
+				{
+					"evidence": "src/features/employee-relations/employee-case.ts exceeds src/<owner>/<file>",
+					"file": "src/features/employee-relations/employee-case.ts"
+				},
+				{
+					"evidence": "src/features/employee-relations/guards.ts exceeds src/<owner>/<file>",
+					"file": "src/features/employee-relations/guards.ts"
+				},
+				{
+					"evidence": "src/features/employee-relations/operation-registry.ts exceeds src/<owner>/<file>",
+					"file": "src/features/employee-relations/operation-registry.ts"
+				},
+				{
+					"evidence": "src/features/employee-relations/run-operation.ts exceeds src/<owner>/<file>",
+					"file": "src/features/employee-relations/run-operation.ts"
+				},
+				{
+					"evidence": "src/features/employee-relations/schema.ts exceeds src/<owner>/<file>",
+					"file": "src/features/employee-relations/schema.ts"
+				},
+				{
+					"evidence": "src/features/employee-relations/status.ts exceeds src/<owner>/<file>",
+					"file": "src/features/employee-relations/status.ts"
+				},
+				{
+					"evidence": "src/features/employee-relations/store-contract.ts exceeds src/<owner>/<file>",
+					"file": "src/features/employee-relations/store-contract.ts"
+				},
+				{
+					"evidence": "src/features/employee-relations/store.ts exceeds src/<owner>/<file>",
+					"file": "src/features/employee-relations/store.ts"
+				},
+				{
+					"evidence": "src/features/employee-relations/types.ts exceeds src/<owner>/<file>",
+					"file": "src/features/employee-relations/types.ts"
+				},
+				{
+					"evidence": "src/features/employment-lifecycle/adapters/lifecycle.drizzle.ts exceeds src/<owner>/<file>",
+					"file": "src/features/employment-lifecycle/adapters/lifecycle.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/employment-lifecycle/adapters/lifecycle.memory.ts exceeds src/<owner>/<file>",
+					"file": "src/features/employment-lifecycle/adapters/lifecycle.memory.ts"
+				},
+				{
+					"evidence": "src/features/employment-lifecycle/authorization/lifecycle.ts exceeds src/<owner>/<file>",
+					"file": "src/features/employment-lifecycle/authorization/lifecycle.ts"
+				},
+				{
+					"evidence": "src/features/employment-lifecycle/confirmation.ts exceeds src/<owner>/<file>",
+					"file": "src/features/employment-lifecycle/confirmation.ts"
+				},
+				{
+					"evidence": "src/features/employment-lifecycle/guards.ts exceeds src/<owner>/<file>",
+					"file": "src/features/employment-lifecycle/guards.ts"
+				},
+				{
+					"evidence": "src/features/employment-lifecycle/offboarding.ts exceeds src/<owner>/<file>",
+					"file": "src/features/employment-lifecycle/offboarding.ts"
+				},
+				{
+					"evidence": "src/features/employment-lifecycle/onboarding-checklist.ts exceeds src/<owner>/<file>",
+					"file": "src/features/employment-lifecycle/onboarding-checklist.ts"
+				},
+				{
+					"evidence": "src/features/employment-lifecycle/onboarding-completion-readiness.ts exceeds src/<owner>/<file>",
+					"file": "src/features/employment-lifecycle/onboarding-completion-readiness.ts"
+				},
+				{
+					"evidence": "src/features/employment-lifecycle/onboarding.ts exceeds src/<owner>/<file>",
+					"file": "src/features/employment-lifecycle/onboarding.ts"
+				},
+				{
+					"evidence": "src/features/employment-lifecycle/operation-registry.ts exceeds src/<owner>/<file>",
+					"file": "src/features/employment-lifecycle/operation-registry.ts"
+				},
+				{
+					"evidence": "src/features/employment-lifecycle/probation.ts exceeds src/<owner>/<file>",
+					"file": "src/features/employment-lifecycle/probation.ts"
+				},
+				{
+					"evidence": "src/features/employment-lifecycle/run-operation.ts exceeds src/<owner>/<file>",
+					"file": "src/features/employment-lifecycle/run-operation.ts"
+				},
+				{
+					"evidence": "src/features/employment-lifecycle/schema.ts exceeds src/<owner>/<file>",
+					"file": "src/features/employment-lifecycle/schema.ts"
+				},
+				{
+					"evidence": "src/features/employment-lifecycle/status.ts exceeds src/<owner>/<file>",
+					"file": "src/features/employment-lifecycle/status.ts"
+				},
+				{
+					"evidence": "src/features/employment-lifecycle/store-contract.ts exceeds src/<owner>/<file>",
+					"file": "src/features/employment-lifecycle/store-contract.ts"
+				},
+				{
+					"evidence": "src/features/employment-lifecycle/store.ts exceeds src/<owner>/<file>",
+					"file": "src/features/employment-lifecycle/store.ts"
+				},
+				{
+					"evidence": "src/features/employment-lifecycle/termination.ts exceeds src/<owner>/<file>",
+					"file": "src/features/employment-lifecycle/termination.ts"
+				},
+				{
+					"evidence": "src/features/employment-lifecycle/transfer.ts exceeds src/<owner>/<file>",
+					"file": "src/features/employment-lifecycle/transfer.ts"
+				},
+				{
+					"evidence": "src/features/hire-to-employee/adapters/hire-orchestration.drizzle.ts exceeds src/<owner>/<file>",
+					"file": "src/features/hire-to-employee/adapters/hire-orchestration.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/hire-to-employee/adapters/hire-orchestration.memory.ts exceeds src/<owner>/<file>",
+					"file": "src/features/hire-to-employee/adapters/hire-orchestration.memory.ts"
+				},
+				{
+					"evidence": "src/features/hire-to-employee/compensation.ts exceeds src/<owner>/<file>",
+					"file": "src/features/hire-to-employee/compensation.ts"
+				},
+				{
+					"evidence": "src/features/hire-to-employee/hire-from-accepted-offer.ts exceeds src/<owner>/<file>",
+					"file": "src/features/hire-to-employee/hire-from-accepted-offer.ts"
+				},
+				{
+					"evidence": "src/features/hire-to-employee/operation-registry.ts exceeds src/<owner>/<file>",
+					"file": "src/features/hire-to-employee/operation-registry.ts"
+				},
+				{
+					"evidence": "src/features/hire-to-employee/run-operation.ts exceeds src/<owner>/<file>",
+					"file": "src/features/hire-to-employee/run-operation.ts"
+				},
+				{
+					"evidence": "src/features/hire-to-employee/schema.ts exceeds src/<owner>/<file>",
+					"file": "src/features/hire-to-employee/schema.ts"
+				},
+				{
+					"evidence": "src/features/hire-to-employee/store-contract.ts exceeds src/<owner>/<file>",
+					"file": "src/features/hire-to-employee/store-contract.ts"
+				},
+				{
+					"evidence": "src/features/hire-to-employee/store.ts exceeds src/<owner>/<file>",
+					"file": "src/features/hire-to-employee/store.ts"
+				},
+				{
+					"evidence": "src/features/hire-to-employee/types.ts exceeds src/<owner>/<file>",
+					"file": "src/features/hire-to-employee/types.ts"
+				},
+				{
+					"evidence": "src/features/learning/adapters/learning.drizzle.ts exceeds src/<owner>/<file>",
+					"file": "src/features/learning/adapters/learning.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/learning/adapters/learning.memory.ts exceeds src/<owner>/<file>",
+					"file": "src/features/learning/adapters/learning.memory.ts"
+				},
+				{
+					"evidence": "src/features/learning/authorization/learning.ts exceeds src/<owner>/<file>",
+					"file": "src/features/learning/authorization/learning.ts"
+				},
+				{
+					"evidence": "src/features/learning/certification.ts exceeds src/<owner>/<file>",
+					"file": "src/features/learning/certification.ts"
+				},
+				{
+					"evidence": "src/features/learning/completion.ts exceeds src/<owner>/<file>",
+					"file": "src/features/learning/completion.ts"
+				},
+				{
+					"evidence": "src/features/learning/course.ts exceeds src/<owner>/<file>",
+					"file": "src/features/learning/course.ts"
+				},
+				{
+					"evidence": "src/features/learning/guards.ts exceeds src/<owner>/<file>",
+					"file": "src/features/learning/guards.ts"
+				},
+				{
+					"evidence": "src/features/learning/learning-assignment.ts exceeds src/<owner>/<file>",
+					"file": "src/features/learning/learning-assignment.ts"
+				},
+				{
+					"evidence": "src/features/learning/learning-attendance.ts exceeds src/<owner>/<file>",
+					"file": "src/features/learning/learning-attendance.ts"
+				},
+				{
+					"evidence": "src/features/learning/learning-session.ts exceeds src/<owner>/<file>",
+					"file": "src/features/learning/learning-session.ts"
+				},
+				{
+					"evidence": "src/features/learning/operation-registry.ts exceeds src/<owner>/<file>",
+					"file": "src/features/learning/operation-registry.ts"
+				},
+				{
+					"evidence": "src/features/learning/run-operation.ts exceeds src/<owner>/<file>",
+					"file": "src/features/learning/run-operation.ts"
+				},
+				{
+					"evidence": "src/features/learning/schema.ts exceeds src/<owner>/<file>",
+					"file": "src/features/learning/schema.ts"
+				},
+				{
+					"evidence": "src/features/learning/status.ts exceeds src/<owner>/<file>",
+					"file": "src/features/learning/status.ts"
+				},
+				{
+					"evidence": "src/features/learning/store-contract.ts exceeds src/<owner>/<file>",
+					"file": "src/features/learning/store-contract.ts"
+				},
+				{
+					"evidence": "src/features/learning/store.ts exceeds src/<owner>/<file>",
+					"file": "src/features/learning/store.ts"
+				},
+				{
+					"evidence": "src/features/leave/adapters/leave-sql-builders.drizzle.ts exceeds src/<owner>/<file>",
+					"file": "src/features/leave/adapters/leave-sql-builders.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/leave/adapters/leave-transactions.drizzle.ts exceeds src/<owner>/<file>",
+					"file": "src/features/leave/adapters/leave-transactions.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/leave/adapters/leave.drizzle.ts exceeds src/<owner>/<file>",
+					"file": "src/features/leave/adapters/leave.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/leave/adapters/leave.memory.ts exceeds src/<owner>/<file>",
+					"file": "src/features/leave/adapters/leave.memory.ts"
+				},
+				{
+					"evidence": "src/features/leave/authorization/leave.ts exceeds src/<owner>/<file>",
+					"file": "src/features/leave/authorization/leave.ts"
+				},
+				{
+					"evidence": "src/features/leave/balance.ts exceeds src/<owner>/<file>",
+					"file": "src/features/leave/balance.ts"
+				},
+				{
+					"evidence": "src/features/leave/entitlement-context.ts exceeds src/<owner>/<file>",
+					"file": "src/features/leave/entitlement-context.ts"
+				},
+				{
+					"evidence": "src/features/leave/entitlement.ts exceeds src/<owner>/<file>",
+					"file": "src/features/leave/entitlement.ts"
+				},
+				{
+					"evidence": "src/features/leave/guards.ts exceeds src/<owner>/<file>",
+					"file": "src/features/leave/guards.ts"
+				},
+				{
+					"evidence": "src/features/leave/leave-policy-lineage.ts exceeds src/<owner>/<file>",
+					"file": "src/features/leave/leave-policy-lineage.ts"
+				},
+				{
+					"evidence": "src/features/leave/leave-policy.ts exceeds src/<owner>/<file>",
+					"file": "src/features/leave/leave-policy.ts"
+				},
+				{
+					"evidence": "src/features/leave/leave-request.ts exceeds src/<owner>/<file>",
+					"file": "src/features/leave/leave-request.ts"
+				},
+				{
+					"evidence": "src/features/leave/operation-registry.ts exceeds src/<owner>/<file>",
+					"file": "src/features/leave/operation-registry.ts"
+				},
+				{
+					"evidence": "src/features/leave/policy-balance-rules.ts exceeds src/<owner>/<file>",
+					"file": "src/features/leave/policy-balance-rules.ts"
+				},
+				{
+					"evidence": "src/features/leave/run-operation.ts exceeds src/<owner>/<file>",
+					"file": "src/features/leave/run-operation.ts"
+				},
+				{
+					"evidence": "src/features/leave/schema.ts exceeds src/<owner>/<file>",
+					"file": "src/features/leave/schema.ts"
+				},
+				{
+					"evidence": "src/features/leave/status.ts exceeds src/<owner>/<file>",
+					"file": "src/features/leave/status.ts"
+				},
+				{
+					"evidence": "src/features/leave/store-contract.ts exceeds src/<owner>/<file>",
+					"file": "src/features/leave/store-contract.ts"
+				},
+				{
+					"evidence": "src/features/leave/store.ts exceeds src/<owner>/<file>",
+					"file": "src/features/leave/store.ts"
+				},
+				{
+					"evidence": "src/features/organization/adapters/organization.drizzle.ts exceeds src/<owner>/<file>",
+					"file": "src/features/organization/adapters/organization.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/organization/adapters/organization.memory.ts exceeds src/<owner>/<file>",
+					"file": "src/features/organization/adapters/organization.memory.ts"
+				},
+				{
+					"evidence": "src/features/organization/authorization/organization.ts exceeds src/<owner>/<file>",
+					"file": "src/features/organization/authorization/organization.ts"
+				},
+				{
+					"evidence": "src/features/organization/department.ts exceeds src/<owner>/<file>",
+					"file": "src/features/organization/department.ts"
+				},
+				{
+					"evidence": "src/features/organization/guards.ts exceeds src/<owner>/<file>",
+					"file": "src/features/organization/guards.ts"
+				},
+				{
+					"evidence": "src/features/organization/job.ts exceeds src/<owner>/<file>",
+					"file": "src/features/organization/job.ts"
+				},
+				{
+					"evidence": "src/features/organization/operation-registry.ts exceeds src/<owner>/<file>",
+					"file": "src/features/organization/operation-registry.ts"
+				},
+				{
+					"evidence": "src/features/organization/organization-structure-lineage.ts exceeds src/<owner>/<file>",
+					"file": "src/features/organization/organization-structure-lineage.ts"
+				},
+				{
+					"evidence": "src/features/organization/position.ts exceeds src/<owner>/<file>",
+					"file": "src/features/organization/position.ts"
+				},
+				{
+					"evidence": "src/features/organization/reporting-line.ts exceeds src/<owner>/<file>",
+					"file": "src/features/organization/reporting-line.ts"
+				},
+				{
+					"evidence": "src/features/organization/run-operation.ts exceeds src/<owner>/<file>",
+					"file": "src/features/organization/run-operation.ts"
+				},
+				{
+					"evidence": "src/features/organization/schema.ts exceeds src/<owner>/<file>",
+					"file": "src/features/organization/schema.ts"
+				},
+				{
+					"evidence": "src/features/organization/store.ts exceeds src/<owner>/<file>",
+					"file": "src/features/organization/store.ts"
+				},
+				{
+					"evidence": "src/features/payroll-handoff/approved-payroll-handoff.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payroll-handoff/approved-payroll-handoff.ts"
+				},
+				{
+					"evidence": "src/features/payroll-handoff/delivery/adapters/payroll-delivery.drizzle.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payroll-handoff/delivery/adapters/payroll-delivery.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/payroll-handoff/delivery/index.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payroll-handoff/delivery/index.ts"
+				},
+				{
+					"evidence": "src/features/payroll-handoff/delivery/memory-store.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payroll-handoff/delivery/memory-store.ts"
+				},
+				{
+					"evidence": "src/features/payroll-handoff/delivery/ports.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payroll-handoff/delivery/ports.ts"
+				},
+				{
+					"evidence": "src/features/payroll-handoff/delivery/types.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payroll-handoff/delivery/types.ts"
+				},
+				{
+					"evidence": "src/features/payroll-handoff/delivery/workflow.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payroll-handoff/delivery/workflow.ts"
+				},
+				{
+					"evidence": "src/features/payroll-handoff/map-approved-payroll-handoff.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payroll-handoff/map-approved-payroll-handoff.ts"
+				},
+				{
+					"evidence": "src/features/payroll-handoff/operation-registry.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payroll-handoff/operation-registry.ts"
+				},
+				{
+					"evidence": "src/features/payroll-handoff/run-operation.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payroll-handoff/run-operation.ts"
+				},
+				{
+					"evidence": "src/features/payroll-handoff/store.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payroll-handoff/store.ts"
+				},
+				{
+					"evidence": "src/features/performance/adapters/performance.drizzle.ts exceeds src/<owner>/<file>",
+					"file": "src/features/performance/adapters/performance.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/performance/adapters/performance.memory.ts exceeds src/<owner>/<file>",
+					"file": "src/features/performance/adapters/performance.memory.ts"
+				},
+				{
+					"evidence": "src/features/performance/authorization/performance.ts exceeds src/<owner>/<file>",
+					"file": "src/features/performance/authorization/performance.ts"
+				},
+				{
+					"evidence": "src/features/performance/cycle-eligibility.ts exceeds src/<owner>/<file>",
+					"file": "src/features/performance/cycle-eligibility.ts"
+				},
+				{
+					"evidence": "src/features/performance/goal.ts exceeds src/<owner>/<file>",
+					"file": "src/features/performance/goal.ts"
+				},
+				{
+					"evidence": "src/features/performance/guards.ts exceeds src/<owner>/<file>",
+					"file": "src/features/performance/guards.ts"
+				},
+				{
+					"evidence": "src/features/performance/improvement-plan.ts exceeds src/<owner>/<file>",
+					"file": "src/features/performance/improvement-plan.ts"
+				},
+				{
+					"evidence": "src/features/performance/operation-registry.ts exceeds src/<owner>/<file>",
+					"file": "src/features/performance/operation-registry.ts"
+				},
+				{
+					"evidence": "src/features/performance/performance-cycle.ts exceeds src/<owner>/<file>",
+					"file": "src/features/performance/performance-cycle.ts"
+				},
+				{
+					"evidence": "src/features/performance/performance-field-projection.ts exceeds src/<owner>/<file>",
+					"file": "src/features/performance/performance-field-projection.ts"
+				},
+				{
+					"evidence": "src/features/performance/rating.ts exceeds src/<owner>/<file>",
+					"file": "src/features/performance/rating.ts"
+				},
+				{
+					"evidence": "src/features/performance/review.ts exceeds src/<owner>/<file>",
+					"file": "src/features/performance/review.ts"
+				},
+				{
+					"evidence": "src/features/performance/run-operation.ts exceeds src/<owner>/<file>",
+					"file": "src/features/performance/run-operation.ts"
+				},
+				{
+					"evidence": "src/features/performance/schema.ts exceeds src/<owner>/<file>",
+					"file": "src/features/performance/schema.ts"
+				},
+				{
+					"evidence": "src/features/performance/status.ts exceeds src/<owner>/<file>",
+					"file": "src/features/performance/status.ts"
+				},
+				{
+					"evidence": "src/features/performance/store-contract.ts exceeds src/<owner>/<file>",
+					"file": "src/features/performance/store-contract.ts"
+				},
+				{
+					"evidence": "src/features/performance/store.ts exceeds src/<owner>/<file>",
+					"file": "src/features/performance/store.ts"
+				},
+				{
+					"evidence": "src/features/privacy/authorization/privacy.ts exceeds src/<owner>/<file>",
+					"file": "src/features/privacy/authorization/privacy.ts"
+				},
+				{
+					"evidence": "src/features/privacy/contract.ts exceeds src/<owner>/<file>",
+					"file": "src/features/privacy/contract.ts"
+				},
+				{
+					"evidence": "src/features/privacy/deletion-decision.ts exceeds src/<owner>/<file>",
+					"file": "src/features/privacy/deletion-decision.ts"
+				},
+				{
+					"evidence": "src/features/privacy/operation-registry.ts exceeds src/<owner>/<file>",
+					"file": "src/features/privacy/operation-registry.ts"
+				},
+				{
+					"evidence": "src/features/privacy/operations.ts exceeds src/<owner>/<file>",
+					"file": "src/features/privacy/operations.ts"
+				},
+				{
+					"evidence": "src/features/privacy/processor-boundary.ts exceeds src/<owner>/<file>",
+					"file": "src/features/privacy/processor-boundary.ts"
+				},
+				{
+					"evidence": "src/features/privacy/store.ts exceeds src/<owner>/<file>",
+					"file": "src/features/privacy/store.ts"
+				},
+				{
+					"evidence": "src/features/privacy/subject-data-collector.ts exceeds src/<owner>/<file>",
+					"file": "src/features/privacy/subject-data-collector.ts"
+				},
+				{
+					"evidence": "src/features/recruitment/adapters/recruitment.drizzle.ts exceeds src/<owner>/<file>",
+					"file": "src/features/recruitment/adapters/recruitment.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/recruitment/adapters/recruitment.memory.ts exceeds src/<owner>/<file>",
+					"file": "src/features/recruitment/adapters/recruitment.memory.ts"
+				},
+				{
+					"evidence": "src/features/recruitment/application-history.ts exceeds src/<owner>/<file>",
+					"file": "src/features/recruitment/application-history.ts"
+				},
+				{
+					"evidence": "src/features/recruitment/application.ts exceeds src/<owner>/<file>",
+					"file": "src/features/recruitment/application.ts"
+				},
+				{
+					"evidence": "src/features/recruitment/authorization/recruitment.ts exceeds src/<owner>/<file>",
+					"file": "src/features/recruitment/authorization/recruitment.ts"
+				},
+				{
+					"evidence": "src/features/recruitment/candidate.ts exceeds src/<owner>/<file>",
+					"file": "src/features/recruitment/candidate.ts"
+				},
+				{
+					"evidence": "src/features/recruitment/guards.ts exceeds src/<owner>/<file>",
+					"file": "src/features/recruitment/guards.ts"
+				},
+				{
+					"evidence": "src/features/recruitment/hiring-manager-validation.ts exceeds src/<owner>/<file>",
+					"file": "src/features/recruitment/hiring-manager-validation.ts"
+				},
+				{
+					"evidence": "src/features/recruitment/interview-field-projection.ts exceeds src/<owner>/<file>",
+					"file": "src/features/recruitment/interview-field-projection.ts"
+				},
+				{
+					"evidence": "src/features/recruitment/interview.ts exceeds src/<owner>/<file>",
+					"file": "src/features/recruitment/interview.ts"
+				},
+				{
+					"evidence": "src/features/recruitment/offer.ts exceeds src/<owner>/<file>",
+					"file": "src/features/recruitment/offer.ts"
+				},
+				{
+					"evidence": "src/features/recruitment/operation-registry.ts exceeds src/<owner>/<file>",
+					"file": "src/features/recruitment/operation-registry.ts"
+				},
+				{
+					"evidence": "src/features/recruitment/requisition.ts exceeds src/<owner>/<file>",
+					"file": "src/features/recruitment/requisition.ts"
+				},
+				{
+					"evidence": "src/features/recruitment/run-operation.ts exceeds src/<owner>/<file>",
+					"file": "src/features/recruitment/run-operation.ts"
+				},
+				{
+					"evidence": "src/features/recruitment/schema.ts exceeds src/<owner>/<file>",
+					"file": "src/features/recruitment/schema.ts"
+				},
+				{
+					"evidence": "src/features/recruitment/status.ts exceeds src/<owner>/<file>",
+					"file": "src/features/recruitment/status.ts"
+				},
+				{
+					"evidence": "src/features/recruitment/store-contract.ts exceeds src/<owner>/<file>",
+					"file": "src/features/recruitment/store-contract.ts"
+				},
+				{
+					"evidence": "src/features/recruitment/store.ts exceeds src/<owner>/<file>",
+					"file": "src/features/recruitment/store.ts"
+				},
+				{
+					"evidence": "src/features/recruitment/validate-offer-compensation-proposal-attachment.ts exceeds src/<owner>/<file>",
+					"file": "src/features/recruitment/validate-offer-compensation-proposal-attachment.ts"
+				},
+				{
+					"evidence": "src/features/reporting/adapters/reporting.drizzle.ts exceeds src/<owner>/<file>",
+					"file": "src/features/reporting/adapters/reporting.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/reporting/adapters/reporting.memory.ts exceeds src/<owner>/<file>",
+					"file": "src/features/reporting/adapters/reporting.memory.ts"
+				},
+				{
+					"evidence": "src/features/reporting/index.ts exceeds src/<owner>/<file>",
+					"file": "src/features/reporting/index.ts"
+				},
+				{
+					"evidence": "src/features/reporting/reconcile.ts exceeds src/<owner>/<file>",
+					"file": "src/features/reporting/reconcile.ts"
+				},
+				{
+					"evidence": "src/features/reporting/source-derivations.ts exceeds src/<owner>/<file>",
+					"file": "src/features/reporting/source-derivations.ts"
+				},
+				{
+					"evidence": "src/features/reporting/types.ts exceeds src/<owner>/<file>",
+					"file": "src/features/reporting/types.ts"
+				},
+				{
+					"evidence": "src/features/talent/adapters/talent.drizzle.ts exceeds src/<owner>/<file>",
+					"file": "src/features/talent/adapters/talent.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/talent/adapters/talent.memory.ts exceeds src/<owner>/<file>",
+					"file": "src/features/talent/adapters/talent.memory.ts"
+				},
+				{
+					"evidence": "src/features/talent/authorization/talent.ts exceeds src/<owner>/<file>",
+					"file": "src/features/talent/authorization/talent.ts"
+				},
+				{
+					"evidence": "src/features/talent/authorized-talent-read.ts exceeds src/<owner>/<file>",
+					"file": "src/features/talent/authorized-talent-read.ts"
+				},
+				{
+					"evidence": "src/features/talent/career-plan.ts exceeds src/<owner>/<file>",
+					"file": "src/features/talent/career-plan.ts"
+				},
+				{
+					"evidence": "src/features/talent/competency.ts exceeds src/<owner>/<file>",
+					"file": "src/features/talent/competency.ts"
+				},
+				{
+					"evidence": "src/features/talent/critical-role-readiness.ts exceeds src/<owner>/<file>",
+					"file": "src/features/talent/critical-role-readiness.ts"
+				},
+				{
+					"evidence": "src/features/talent/guards.ts exceeds src/<owner>/<file>",
+					"file": "src/features/talent/guards.ts"
+				},
+				{
+					"evidence": "src/features/talent/operation-registry.ts exceeds src/<owner>/<file>",
+					"file": "src/features/talent/operation-registry.ts"
+				},
+				{
+					"evidence": "src/features/talent/resource.ts exceeds src/<owner>/<file>",
+					"file": "src/features/talent/resource.ts"
+				},
+				{
+					"evidence": "src/features/talent/run-operation.ts exceeds src/<owner>/<file>",
+					"file": "src/features/talent/run-operation.ts"
+				},
+				{
+					"evidence": "src/features/talent/schemas/career-plan.ts exceeds src/<owner>/<file>",
+					"file": "src/features/talent/schemas/career-plan.ts"
+				},
+				{
+					"evidence": "src/features/talent/schemas/competency.ts exceeds src/<owner>/<file>",
+					"file": "src/features/talent/schemas/competency.ts"
+				},
+				{
+					"evidence": "src/features/talent/schemas/critical-role-readiness.ts exceeds src/<owner>/<file>",
+					"file": "src/features/talent/schemas/critical-role-readiness.ts"
+				},
+				{
+					"evidence": "src/features/talent/schemas/index.ts exceeds src/<owner>/<file>",
+					"file": "src/features/talent/schemas/index.ts"
+				},
+				{
+					"evidence": "src/features/talent/schemas/mobility.ts exceeds src/<owner>/<file>",
+					"file": "src/features/talent/schemas/mobility.ts"
+				},
+				{
+					"evidence": "src/features/talent/schemas/pool.ts exceeds src/<owner>/<file>",
+					"file": "src/features/talent/schemas/pool.ts"
+				},
+				{
+					"evidence": "src/features/talent/schemas/profile.ts exceeds src/<owner>/<file>",
+					"file": "src/features/talent/schemas/profile.ts"
+				},
+				{
+					"evidence": "src/features/talent/schemas/succession.ts exceeds src/<owner>/<file>",
+					"file": "src/features/talent/schemas/succession.ts"
+				},
+				{
+					"evidence": "src/features/talent/status.ts exceeds src/<owner>/<file>",
+					"file": "src/features/talent/status.ts"
+				},
+				{
+					"evidence": "src/features/talent/store-contract.ts exceeds src/<owner>/<file>",
+					"file": "src/features/talent/store-contract.ts"
+				},
+				{
+					"evidence": "src/features/talent/store.ts exceeds src/<owner>/<file>",
+					"file": "src/features/talent/store.ts"
+				},
+				{
+					"evidence": "src/features/talent/succession-plan.ts exceeds src/<owner>/<file>",
+					"file": "src/features/talent/succession-plan.ts"
+				},
+				{
+					"evidence": "src/features/talent/talent-field-projection.ts exceeds src/<owner>/<file>",
+					"file": "src/features/talent/talent-field-projection.ts"
+				},
+				{
+					"evidence": "src/features/talent/talent-pool.ts exceeds src/<owner>/<file>",
+					"file": "src/features/talent/talent-pool.ts"
+				},
+				{
+					"evidence": "src/features/talent/talent-profile-mobility.ts exceeds src/<owner>/<file>",
+					"file": "src/features/talent/talent-profile-mobility.ts"
+				},
+				{
+					"evidence": "src/features/talent/talent-profile.ts exceeds src/<owner>/<file>",
+					"file": "src/features/talent/talent-profile.ts"
+				},
+				{
+					"evidence": "src/features/time/adapters/time-transactions.drizzle.ts exceeds src/<owner>/<file>",
+					"file": "src/features/time/adapters/time-transactions.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/time/adapters/time.drizzle.ts exceeds src/<owner>/<file>",
+					"file": "src/features/time/adapters/time.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/time/adapters/time.memory.ts exceeds src/<owner>/<file>",
+					"file": "src/features/time/adapters/time.memory.ts"
+				},
+				{
+					"evidence": "src/features/time/adapters/work-calendar-lookup.drizzle.ts exceeds src/<owner>/<file>",
+					"file": "src/features/time/adapters/work-calendar-lookup.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/time/attendance/break-waivers.ts exceeds src/<owner>/<file>",
+					"file": "src/features/time/attendance/break-waivers.ts"
+				},
+				{
+					"evidence": "src/features/time/attendance/connector-cursor.ts exceeds src/<owner>/<file>",
+					"file": "src/features/time/attendance/connector-cursor.ts"
+				},
+				{
+					"evidence": "src/features/time/attendance/connector-validation.ts exceeds src/<owner>/<file>",
+					"file": "src/features/time/attendance/connector-validation.ts"
+				},
+				{
+					"evidence": "src/features/time/attendance/dry-run.ts exceeds src/<owner>/<file>",
+					"file": "src/features/time/attendance/dry-run.ts"
+				},
+				{
+					"evidence": "src/features/time/attendance/event-order.ts exceeds src/<owner>/<file>",
+					"file": "src/features/time/attendance/event-order.ts"
+				},
+				{
+					"evidence": "src/features/time/attendance/events.ts exceeds src/<owner>/<file>",
+					"file": "src/features/time/attendance/events.ts"
+				},
+				{
+					"evidence": "src/features/time/attendance/exception-detection.ts exceeds src/<owner>/<file>",
+					"file": "src/features/time/attendance/exception-detection.ts"
+				},
+				{
+					"evidence": "src/features/time/attendance/exceptions.ts exceeds src/<owner>/<file>",
+					"file": "src/features/time/attendance/exceptions.ts"
+				},
+				{
+					"evidence": "src/features/time/attendance/http-connector-pull.ts exceeds src/<owner>/<file>",
+					"file": "src/features/time/attendance/http-connector-pull.ts"
+				},
+				{
+					"evidence": "src/features/time/attendance/import-keys.ts exceeds src/<owner>/<file>",
+					"file": "src/features/time/attendance/import-keys.ts"
+				},
+				{
+					"evidence": "src/features/time/attendance/import-row-validation.ts exceeds src/<owner>/<file>",
+					"file": "src/features/time/attendance/import-row-validation.ts"
+				},
+				{
+					"evidence": "src/features/time/attendance/import.ts exceeds src/<owner>/<file>",
+					"file": "src/features/time/attendance/import.ts"
+				},
+				{
+					"evidence": "src/features/time/attendance/session-resolution.ts exceeds src/<owner>/<file>",
+					"file": "src/features/time/attendance/session-resolution.ts"
+				},
+				{
+					"evidence": "src/features/time/attendance/sessions.ts exceeds src/<owner>/<file>",
+					"file": "src/features/time/attendance/sessions.ts"
+				},
+				{
+					"evidence": "src/features/time/attendance/summary.ts exceeds src/<owner>/<file>",
+					"file": "src/features/time/attendance/summary.ts"
+				},
+				{
+					"evidence": "src/features/time/authorization/time.ts exceeds src/<owner>/<file>",
+					"file": "src/features/time/authorization/time.ts"
+				},
+				{
+					"evidence": "src/features/time/calendar-resolution.ts exceeds src/<owner>/<file>",
+					"file": "src/features/time/calendar-resolution.ts"
+				},
+				{
+					"evidence": "src/features/time/calendar-scope-resolution.ts exceeds src/<owner>/<file>",
+					"file": "src/features/time/calendar-scope-resolution.ts"
+				},
+				{
+					"evidence": "src/features/time/calendar.ts exceeds src/<owner>/<file>",
+					"file": "src/features/time/calendar.ts"
+				},
+				{
+					"evidence": "src/features/time/employee-work-calendar-resolution.ts exceeds src/<owner>/<file>",
+					"file": "src/features/time/employee-work-calendar-resolution.ts"
+				},
+				{
+					"evidence": "src/features/time/employment.ts exceeds src/<owner>/<file>",
+					"file": "src/features/time/employment.ts"
+				},
+				{
+					"evidence": "src/features/time/guards.ts exceeds src/<owner>/<file>",
+					"file": "src/features/time/guards.ts"
+				},
+				{
+					"evidence": "src/features/time/handoff/approved-time-handoff.ts exceeds src/<owner>/<file>",
+					"file": "src/features/time/handoff/approved-time-handoff.ts"
+				},
+				{
+					"evidence": "src/features/time/handoff/ports.ts exceeds src/<owner>/<file>",
+					"file": "src/features/time/handoff/ports.ts"
+				},
+				{
+					"evidence": "src/features/time/iana-timezone.ts exceeds src/<owner>/<file>",
+					"file": "src/features/time/iana-timezone.ts"
+				},
+				{
+					"evidence": "src/features/time/index.ts exceeds src/<owner>/<file>",
+					"file": "src/features/time/index.ts"
+				},
+				{
+					"evidence": "src/features/time/legal-minute-allocation.ts exceeds src/<owner>/<file>",
+					"file": "src/features/time/legal-minute-allocation.ts"
+				},
+				{
+					"evidence": "src/features/time/operation-registry.ts exceeds src/<owner>/<file>",
+					"file": "src/features/time/operation-registry.ts"
+				},
+				{
+					"evidence": "src/features/time/org-local-work-date.ts exceeds src/<owner>/<file>",
+					"file": "src/features/time/org-local-work-date.ts"
+				},
+				{
+					"evidence": "src/features/time/overtime.ts exceeds src/<owner>/<file>",
+					"file": "src/features/time/overtime.ts"
+				},
+				{
+					"evidence": "src/features/time/payroll-minute-totals.ts exceeds src/<owner>/<file>",
+					"file": "src/features/time/payroll-minute-totals.ts"
+				},
+				{
+					"evidence": "src/features/time/policy.ts exceeds src/<owner>/<file>",
+					"file": "src/features/time/policy.ts"
+				},
+				{
+					"evidence": "src/features/time/run-operation.ts exceeds src/<owner>/<file>",
+					"file": "src/features/time/run-operation.ts"
+				},
+				{
+					"evidence": "src/features/time/scheduling.ts exceeds src/<owner>/<file>",
+					"file": "src/features/time/scheduling.ts"
+				},
+				{
+					"evidence": "src/features/time/schema.ts exceeds src/<owner>/<file>",
+					"file": "src/features/time/schema.ts"
+				},
+				{
+					"evidence": "src/features/time/shift.ts exceeds src/<owner>/<file>",
+					"file": "src/features/time/shift.ts"
+				},
+				{
+					"evidence": "src/features/time/store-assignment-context-query.ts exceeds src/<owner>/<file>",
+					"file": "src/features/time/store-assignment-context-query.ts"
+				},
+				{
+					"evidence": "src/features/time/store-contract.ts exceeds src/<owner>/<file>",
+					"file": "src/features/time/store-contract.ts"
+				},
+				{
+					"evidence": "src/features/time/store-work-calendar-lookup.ts exceeds src/<owner>/<file>",
+					"file": "src/features/time/store-work-calendar-lookup.ts"
+				},
+				{
+					"evidence": "src/features/time/store.ts exceeds src/<owner>/<file>",
+					"file": "src/features/time/store.ts"
+				},
+				{
+					"evidence": "src/features/time/timesheet-generation.ts exceeds src/<owner>/<file>",
+					"file": "src/features/time/timesheet-generation.ts"
+				},
+				{
+					"evidence": "src/features/time/timesheet.ts exceeds src/<owner>/<file>",
+					"file": "src/features/time/timesheet.ts"
+				},
+				{
+					"evidence": "src/features/time/work-calendar-lineage.ts exceeds src/<owner>/<file>",
+					"file": "src/features/time/work-calendar-lineage.ts"
+				},
+				{
+					"evidence": "src/features/time/work-calendar.ts exceeds src/<owner>/<file>",
+					"file": "src/features/time/work-calendar.ts"
+				},
+				{
+					"evidence": "src/features/workforce-planning/adapters/workforce-planning.drizzle.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-planning/adapters/workforce-planning.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/workforce-planning/adapters/workforce-planning.memory.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-planning/adapters/workforce-planning.memory.ts"
+				},
+				{
+					"evidence": "src/features/workforce-planning/authorization/workforce-planning.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-planning/authorization/workforce-planning.ts"
+				},
+				{
+					"evidence": "src/features/workforce-planning/availability.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-planning/availability.ts"
+				},
+				{
+					"evidence": "src/features/workforce-planning/guards.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-planning/guards.ts"
+				},
+				{
+					"evidence": "src/features/workforce-planning/headcount-plan-line.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-planning/headcount-plan-line.ts"
+				},
+				{
+					"evidence": "src/features/workforce-planning/headcount-plan.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-planning/headcount-plan.ts"
+				},
+				{
+					"evidence": "src/features/workforce-planning/headcount-reservation.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-planning/headcount-reservation.ts"
+				},
+				{
+					"evidence": "src/features/workforce-planning/operation-registry.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-planning/operation-registry.ts"
+				},
+				{
+					"evidence": "src/features/workforce-planning/run-operation.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-planning/run-operation.ts"
+				},
+				{
+					"evidence": "src/features/workforce-planning/schema.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-planning/schema.ts"
+				},
+				{
+					"evidence": "src/features/workforce-planning/status.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-planning/status.ts"
+				},
+				{
+					"evidence": "src/features/workforce-planning/store-contract.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-planning/store-contract.ts"
+				},
+				{
+					"evidence": "src/features/workforce-planning/store.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-planning/store.ts"
+				},
+				{
+					"evidence": "src/features/workforce-planning/variance.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-planning/variance.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/employment/adapters/assignment-context-query.drizzle.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-records/employment/adapters/assignment-context-query.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/employment/adapters/core.drizzle.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-records/employment/adapters/core.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/employment/adapters/core.memory.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-records/employment/adapters/core.memory.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/employment/assignment-guards.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-records/employment/assignment-guards.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/employment/assignment-lineage-map.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-records/employment/assignment-lineage-map.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/employment/assignment-management.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-records/employment/assignment-management.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/employment/assignment-snapshots.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-records/employment/assignment-snapshots.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/employment/assignment.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-records/employment/assignment.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/employment/authorization/employee-profile.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-records/employment/authorization/employee-profile.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/employment/authorization/employee-subject.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-records/employment/authorization/employee-subject.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/employment/employee-number.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-records/employment/employee-number.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/employment/employee-org-context-resolution.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-records/employment/employee-org-context-resolution.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/employment/employee-profile-resource.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-records/employment/employee-profile-resource.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/employment/employee.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-records/employment/employee.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/employment/employment-contract-guards.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-records/employment/employment-contract-guards.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/employment/employment-contract-management.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-records/employment/employment-contract-management.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/employment/employment-contract.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-records/employment/employment-contract.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/employment/employment-history.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-records/employment/employment-history.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/employment/employment-management.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-records/employment/employment-management.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/employment/employment-status.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-records/employment/employment-status.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/employment/employment.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-records/employment/employment.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/employment/org-context.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-records/employment/org-context.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/employment/schema.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-records/employment/schema.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/employment/store-contract.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-records/employment/store-contract.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/identity-resolution/adapters/identity.drizzle.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-records/identity-resolution/adapters/identity.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/identity-resolution/adapters/identity.memory.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-records/identity-resolution/adapters/identity.memory.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/identity-resolution/identity-resolver.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-records/identity-resolution/identity-resolver.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/identity-resolution/store-contract.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-records/identity-resolution/store-contract.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/identity/adapters/workforce-foundation.drizzle.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-records/identity/adapters/workforce-foundation.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/identity/adapters/workforce-foundation.memory.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-records/identity/adapters/workforce-foundation.memory.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/identity/classification.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-records/identity/classification.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/identity/employee-management.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-records/identity/employee-management.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/identity/employee-profile-field-projection.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-records/identity/employee-profile-field-projection.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/identity/lineage-segment.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-records/identity/lineage-segment.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/identity/operation-registry.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-records/identity/operation-registry.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/identity/person-identity-lineage.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-records/identity/person-identity-lineage.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/identity/person-management.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-records/identity/person-management.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/identity/person-privacy.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-records/identity/person-privacy.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/identity/person.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-records/identity/person.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/identity/run-operation.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-records/identity/run-operation.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/identity/schema.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-records/identity/schema.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/identity/store-contract.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-records/identity/store-contract.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/identity/types.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-records/identity/types.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/identity/worker-classification-lineage.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-records/identity/worker-classification-lineage.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/identity/worker.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-records/identity/worker.ts"
+				},
+				{
+					"evidence": "src/kernel/authorization/authorization-policy-helpers.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/authorization/authorization-policy-helpers.ts"
+				},
+				{
+					"evidence": "src/kernel/authorization/authorization-policy-ids.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/authorization/authorization-policy-ids.ts"
+				},
+				{
+					"evidence": "src/kernel/authorization/authorization-policy-types.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/authorization/authorization-policy-types.ts"
+				},
+				{
+					"evidence": "src/kernel/authorization/authorization-resource-kind.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/authorization/authorization-resource-kind.ts"
+				},
+				{
+					"evidence": "src/kernel/authorization/authorization-types.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/authorization/authorization-types.ts"
+				},
+				{
+					"evidence": "src/kernel/authorization/authorize.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/authorization/authorize.ts"
+				},
+				{
+					"evidence": "src/kernel/authorization/contextual-authorization.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/authorization/contextual-authorization.ts"
+				},
+				{
+					"evidence": "src/kernel/authorization/manifest-permission.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/authorization/manifest-permission.ts"
+				},
+				{
+					"evidence": "src/kernel/authorization/permissions.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/authorization/permissions.ts"
+				},
+				{
+					"evidence": "src/kernel/authorization/policies/create-scoped-policy.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/authorization/policies/create-scoped-policy.ts"
+				},
+				{
+					"evidence": "src/kernel/authorization/policies/index.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/authorization/policies/index.ts"
+				},
+				{
+					"evidence": "src/kernel/authorization/policies/manifest-only.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/authorization/policies/manifest-only.ts"
+				},
+				{
+					"evidence": "src/kernel/authorization/registry.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/authorization/registry.ts"
+				},
+				{
+					"evidence": "src/kernel/authorization/run-authorized-operation.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/authorization/run-authorized-operation.ts"
+				},
+				{
+					"evidence": "src/kernel/authorization/sensitive-operation-policies.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/authorization/sensitive-operation-policies.ts"
+				},
+				{
+					"evidence": "src/kernel/authorization/subject-aware-authorization.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/authorization/subject-aware-authorization.ts"
+				},
+				{
+					"evidence": "src/kernel/emissions/audit-facts.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/emissions/audit-facts.ts"
+				},
+				{
+					"evidence": "src/kernel/emissions/audit-integrity.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/emissions/audit-integrity.ts"
+				},
+				{
+					"evidence": "src/kernel/emissions/compose-registry.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/emissions/compose-registry.ts"
+				},
+				{
+					"evidence": "src/kernel/emissions/define-emission.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/emissions/define-emission.ts"
+				},
+				{
+					"evidence": "src/kernel/emissions/domains/compensation.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/emissions/domains/compensation.ts"
+				},
+				{
+					"evidence": "src/kernel/emissions/domains/compliance.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/emissions/domains/compliance.ts"
+				},
+				{
+					"evidence": "src/kernel/emissions/domains/employee-relations.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/emissions/domains/employee-relations.ts"
+				},
+				{
+					"evidence": "src/kernel/emissions/domains/employment-lifecycle.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/emissions/domains/employment-lifecycle.ts"
+				},
+				{
+					"evidence": "src/kernel/emissions/domains/employment-workflow.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/emissions/domains/employment-workflow.ts"
+				},
+				{
+					"evidence": "src/kernel/emissions/domains/hire-orchestration.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/emissions/domains/hire-orchestration.ts"
+				},
+				{
+					"evidence": "src/kernel/emissions/domains/learning.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/emissions/domains/learning.ts"
+				},
+				{
+					"evidence": "src/kernel/emissions/domains/leave.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/emissions/domains/leave.ts"
+				},
+				{
+					"evidence": "src/kernel/emissions/domains/organization.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/emissions/domains/organization.ts"
+				},
+				{
+					"evidence": "src/kernel/emissions/domains/performance.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/emissions/domains/performance.ts"
+				},
+				{
+					"evidence": "src/kernel/emissions/domains/privacy.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/emissions/domains/privacy.ts"
+				},
+				{
+					"evidence": "src/kernel/emissions/domains/recruitment.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/emissions/domains/recruitment.ts"
+				},
+				{
+					"evidence": "src/kernel/emissions/domains/talent.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/emissions/domains/talent.ts"
+				},
+				{
+					"evidence": "src/kernel/emissions/domains/time.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/emissions/domains/time.ts"
+				},
+				{
+					"evidence": "src/kernel/emissions/domains/workforce-foundation.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/emissions/domains/workforce-foundation.ts"
+				},
+				{
+					"evidence": "src/kernel/emissions/domains/workforce-planning.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/emissions/domains/workforce-planning.ts"
+				},
+				{
+					"evidence": "src/kernel/emissions/event-payload.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/emissions/event-payload.ts"
+				},
+				{
+					"evidence": "src/kernel/emissions/mutation-emission-registry.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/emissions/mutation-emission-registry.ts"
+				},
+				{
+					"evidence": "src/kernel/emissions/mutation-meta.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/emissions/mutation-meta.ts"
+				},
+				{
+					"evidence": "src/kernel/emissions/mutation-outcome.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/emissions/mutation-outcome.ts"
+				},
+				{
+					"evidence": "src/kernel/emissions/mutation-tables.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/emissions/mutation-tables.ts"
+				},
+				{
+					"evidence": "src/kernel/emissions/registry.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/emissions/registry.ts"
+				},
+				{
+					"evidence": "src/kernel/emissions/resolve-emission.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/emissions/resolve-emission.ts"
+				},
+				{
+					"evidence": "src/kernel/emissions/sql-side-effects.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/emissions/sql-side-effects.ts"
+				},
+				{
+					"evidence": "src/kernel/emissions/types.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/emissions/types.ts"
+				},
+				{
+					"evidence": "src/kernel/emissions/validate-emission.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/emissions/validate-emission.ts"
+				},
+				{
+					"evidence": "src/kernel/events/catalog.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/events/catalog.ts"
+				},
+				{
+					"evidence": "src/kernel/events/classified-event-types.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/events/classified-event-types.ts"
+				},
+				{
+					"evidence": "src/kernel/events/documented-no-consumer-reasons.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/events/documented-no-consumer-reasons.ts"
+				},
+				{
+					"evidence": "src/kernel/events/get-event-catalog-entry.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/events/get-event-catalog-entry.ts"
+				},
+				{
+					"evidence": "src/kernel/events/index.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/events/index.ts"
+				},
+				{
+					"evidence": "src/kernel/events/types.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/events/types.ts"
+				},
+				{
+					"evidence": "src/kernel/events/validate-catalog.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/events/validate-catalog.ts"
+				},
+				{
+					"evidence": "src/kernel/execution/command-options.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/execution/command-options.ts"
+				},
+				{
+					"evidence": "src/kernel/execution/concurrency.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/execution/concurrency.ts"
+				},
+				{
+					"evidence": "src/kernel/execution/domain-guards.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/execution/domain-guards.ts"
+				},
+				{
+					"evidence": "src/kernel/execution/domain-runner.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/execution/domain-runner.ts"
+				},
+				{
+					"evidence": "src/kernel/execution/error-codes.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/execution/error-codes.ts"
+				},
+				{
+					"evidence": "src/kernel/execution/idempotency.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/execution/idempotency.ts"
+				},
+				{
+					"evidence": "src/kernel/execution/persistence-errors.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/execution/persistence-errors.ts"
+				},
+				{
+					"evidence": "src/kernel/execution/ports.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/execution/ports.ts"
+				},
+				{
+					"evidence": "src/kernel/execution/result-guards.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/execution/result-guards.ts"
+				},
+				{
+					"evidence": "src/kernel/execution/rollback.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/execution/rollback.ts"
+				},
+				{
+					"evidence": "src/kernel/execution/run-sequential.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/execution/run-sequential.ts"
+				},
+				{
+					"evidence": "src/kernel/identity/brands.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/identity/brands.ts"
+				},
+				{
+					"evidence": "src/kernel/identity/fingerprint.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/identity/fingerprint.ts"
+				},
+				{
+					"evidence": "src/kernel/numeric/exact-decimal.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/numeric/exact-decimal.ts"
+				},
+				{
+					"evidence": "src/kernel/observability/index.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/observability/index.ts"
+				},
+				{
+					"evidence": "src/kernel/observability/memory-recorder.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/observability/memory-recorder.ts"
+				},
+				{
+					"evidence": "src/kernel/observability/operation-observability.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/observability/operation-observability.ts"
+				},
+				{
+					"evidence": "src/kernel/observability/ports.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/observability/ports.ts"
+				},
+				{
+					"evidence": "src/kernel/observability/recorder.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/observability/recorder.ts"
+				},
+				{
+					"evidence": "src/kernel/observability/types.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/observability/types.ts"
+				},
+				{
+					"evidence": "src/kernel/observability/validation.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/observability/validation.ts"
+				},
+				{
+					"evidence": "src/kernel/operations/define-registry.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/operations/define-registry.ts"
+				},
+				{
+					"evidence": "src/kernel/operations/governance-manifest.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/operations/governance-manifest.ts"
+				},
+				{
+					"evidence": "src/kernel/operations/module-ids.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/operations/module-ids.ts"
+				},
+				{
+					"evidence": "src/kernel/operations/registry.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/operations/registry.ts"
+				},
+				{
+					"evidence": "src/kernel/operations/sensitivity-defaults.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/operations/sensitivity-defaults.ts"
+				},
+				{
+					"evidence": "src/kernel/operations/temporal-policy.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/operations/temporal-policy.ts"
+				},
+				{
+					"evidence": "src/kernel/operations/types.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/operations/types.ts"
+				},
+				{
+					"evidence": "src/kernel/privacy/field-projection.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/privacy/field-projection.ts"
+				},
+				{
+					"evidence": "src/kernel/privacy/sensitive-field-types.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/privacy/sensitive-field-types.ts"
+				},
+				{
+					"evidence": "src/kernel/privacy/sensitivity-types.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/privacy/sensitivity-types.ts"
+				},
+				{
+					"evidence": "src/kernel/reliability/adapters/drizzle.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/reliability/adapters/drizzle.ts"
+				},
+				{
+					"evidence": "src/kernel/reliability/index.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/reliability/index.ts"
+				},
+				{
+					"evidence": "src/kernel/reliability/kernel.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/reliability/kernel.ts"
+				},
+				{
+					"evidence": "src/kernel/reliability/memory-store.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/reliability/memory-store.ts"
+				},
+				{
+					"evidence": "src/kernel/reliability/operations.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/reliability/operations.ts"
+				},
+				{
+					"evidence": "src/kernel/reliability/outage.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/reliability/outage.ts"
+				},
+				{
+					"evidence": "src/kernel/reliability/ports.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/reliability/ports.ts"
+				},
+				{
+					"evidence": "src/kernel/reliability/retry.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/reliability/retry.ts"
+				},
+				{
+					"evidence": "src/kernel/reliability/types.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/reliability/types.ts"
+				},
+				{
+					"evidence": "src/kernel/temporal/effective-dates.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/temporal/effective-dates.ts"
+				},
+				{
+					"evidence": "src/kernel/temporal/effective-lineage.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/temporal/effective-lineage.ts"
+				},
+				{
+					"evidence": "src/kernel/temporal/effective-range.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/temporal/effective-range.ts"
+				},
+				{
+					"evidence": "src/kernel/temporal/effective-truth-adoption.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/temporal/effective-truth-adoption.ts"
+				},
+				{
+					"evidence": "src/kernel/temporal/effective-truth-classification.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/temporal/effective-truth-classification.ts"
+				},
+				{
+					"evidence": "src/kernel/validation/common.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/validation/common.ts"
+				},
+				{
+					"evidence": "src/kernel/validation/index.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/validation/index.ts"
+				},
+				{
+					"evidence": "src/kernel/validation/org-context.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/validation/org-context.ts"
+				},
+				{
+					"evidence": "src/kernel/validation/parse-input.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/validation/parse-input.ts"
+				},
+				{
+					"evidence": "src/testing/performance/harness.ts exceeds src/<owner>/<file>",
+					"file": "src/testing/performance/harness.ts"
+				},
+				{
+					"evidence": "src/testing/performance/index.ts exceeds src/<owner>/<file>",
+					"file": "src/testing/performance/index.ts"
+				},
+				{
+					"evidence": "src/testing/performance/run-local-benchmarks.ts exceeds src/<owner>/<file>",
+					"file": "src/testing/performance/run-local-benchmarks.ts"
+				},
+				{
+					"evidence": "src/testing/performance/thresholds.ts exceeds src/<owner>/<file>",
+					"file": "src/testing/performance/thresholds.ts"
+				},
+				{
+					"evidence": "src/testing/performance/workloads.ts exceeds src/<owner>/<file>",
+					"file": "src/testing/performance/workloads.ts"
+				},
+				{
+					"evidence": "src/testing/recovery/decisions.ts exceeds src/<owner>/<file>",
+					"file": "src/testing/recovery/decisions.ts"
+				},
+				{
+					"evidence": "src/testing/recovery/drills.ts exceeds src/<owner>/<file>",
+					"file": "src/testing/recovery/drills.ts"
+				},
+				{
+					"evidence": "src/testing/recovery/harness.ts exceeds src/<owner>/<file>",
+					"file": "src/testing/recovery/harness.ts"
+				},
+				{
+					"evidence": "src/testing/recovery/index.ts exceeds src/<owner>/<file>",
+					"file": "src/testing/recovery/index.ts"
+				}
+			],
+			"key": "directory-depth",
+			"target": 0
+		},
+		{
+			"items": [
+				{
+					"evidence": "src/features/compensation-benefits/adapters/benefit-methods-drizzle.drizzle.ts:14 -> src/composition/store/index.ts (feature -> composition)",
+					"file": "src/features/compensation-benefits/adapters/benefit-methods-drizzle.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/compensation-benefits/adapters/compensation-benefits.drizzle.ts:28 -> src/composition/store/index.ts (feature -> composition)",
+					"file": "src/features/compensation-benefits/adapters/compensation-benefits.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/compensation-benefits/adapters/compensation-benefits.memory.ts:7 -> src/composition/store/index.ts (feature -> composition)",
+					"file": "src/features/compensation-benefits/adapters/compensation-benefits.memory.ts"
+				},
+				{
+					"evidence": "src/features/compensation-benefits/adapters/employee-compensation-lifecycle-drizzle.drizzle.ts:16 -> src/composition/store/index.ts (feature -> composition)",
+					"file": "src/features/compensation-benefits/adapters/employee-compensation-lifecycle-drizzle.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/compliance/adapters/compliance.drizzle.ts:35 -> src/composition/store/index.ts (feature -> composition)",
+					"file": "src/features/compliance/adapters/compliance.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/compliance/adapters/compliance.memory.ts:17 -> src/composition/store/index.ts (feature -> composition)",
+					"file": "src/features/compliance/adapters/compliance.memory.ts"
+				},
+				{
+					"evidence": "src/features/employee-relations/adapters/employee-relations.drizzle.ts:30 -> src/composition/store/index.ts (feature -> composition)",
+					"file": "src/features/employee-relations/adapters/employee-relations.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/employee-relations/adapters/employee-relations.memory.ts:20 -> src/composition/store/index.ts (feature -> composition)",
+					"file": "src/features/employee-relations/adapters/employee-relations.memory.ts"
+				},
+				{
+					"evidence": "src/features/employment-lifecycle/adapters/lifecycle.drizzle.ts:43 -> src/composition/store/index.ts (feature -> composition)",
+					"file": "src/features/employment-lifecycle/adapters/lifecycle.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/employment-lifecycle/adapters/lifecycle.memory.ts:16 -> src/composition/store/index.ts (feature -> composition)",
+					"file": "src/features/employment-lifecycle/adapters/lifecycle.memory.ts"
+				},
+				{
+					"evidence": "src/features/hire-to-employee/adapters/hire-orchestration.drizzle.ts:7 -> src/composition/store/index.ts (feature -> composition)",
+					"file": "src/features/hire-to-employee/adapters/hire-orchestration.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/learning/adapters/learning.drizzle.ts:29 -> src/composition/store/index.ts (feature -> composition)",
+					"file": "src/features/learning/adapters/learning.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/learning/adapters/learning.memory.ts:10 -> src/composition/store/index.ts (feature -> composition)",
+					"file": "src/features/learning/adapters/learning.memory.ts"
+				},
+				{
+					"evidence": "src/features/leave/adapters/leave.drizzle.ts:16 -> src/composition/store/index.ts (feature -> composition)",
+					"file": "src/features/leave/adapters/leave.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/leave/adapters/leave.memory.ts:11 -> src/composition/store/index.ts (feature -> composition)",
+					"file": "src/features/leave/adapters/leave.memory.ts"
+				},
+				{
+					"evidence": "src/features/organization/adapters/organization.drizzle.ts:38 -> src/composition/store/index.ts (feature -> composition)",
+					"file": "src/features/organization/adapters/organization.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/organization/adapters/organization.memory.ts:16 -> src/composition/store/index.ts (feature -> composition)",
+					"file": "src/features/organization/adapters/organization.memory.ts"
+				},
+				{
+					"evidence": "src/features/performance/adapters/performance.drizzle.ts:34 -> src/composition/store/index.ts (feature -> composition)",
+					"file": "src/features/performance/adapters/performance.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/performance/adapters/performance.memory.ts:16 -> src/composition/store/index.ts (feature -> composition)",
+					"file": "src/features/performance/adapters/performance.memory.ts"
+				},
+				{
+					"evidence": "src/features/privacy/store.ts:1 -> src/composition/store/index.ts (feature -> composition)",
+					"file": "src/features/privacy/store.ts"
+				},
+				{
+					"evidence": "src/features/recruitment/adapters/recruitment.drizzle.ts:25 -> src/composition/store/index.ts (feature -> composition)",
+					"file": "src/features/recruitment/adapters/recruitment.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/recruitment/adapters/recruitment.memory.ts:3 -> src/composition/store/index.ts (feature -> composition)",
+					"file": "src/features/recruitment/adapters/recruitment.memory.ts"
+				},
+				{
+					"evidence": "src/features/reporting/adapters/reporting.memory.ts:2 -> src/composition/adapters/memory/store.ts (feature -> composition)",
+					"file": "src/features/reporting/adapters/reporting.memory.ts"
+				},
+				{
+					"evidence": "src/features/talent/adapters/talent.drizzle.ts:39 -> src/composition/store/index.ts (feature -> composition)",
+					"file": "src/features/talent/adapters/talent.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/talent/adapters/talent.memory.ts:20 -> src/composition/store/index.ts (feature -> composition)",
+					"file": "src/features/talent/adapters/talent.memory.ts"
+				},
+				{
+					"evidence": "src/features/workforce-planning/adapters/workforce-planning.drizzle.ts:23 -> src/composition/store/index.ts (feature -> composition)",
+					"file": "src/features/workforce-planning/adapters/workforce-planning.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/workforce-planning/adapters/workforce-planning.memory.ts:10 -> src/composition/store/index.ts (feature -> composition)",
+					"file": "src/features/workforce-planning/adapters/workforce-planning.memory.ts"
+				},
+				{
+					"evidence": "src/features/workforce-planning/variance.ts:1 -> src/composition/store/index.ts (feature -> composition)",
+					"file": "src/features/workforce-planning/variance.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/employment/adapters/core.drizzle.ts:34 -> src/composition/store/index.ts (feature -> composition)",
+					"file": "src/features/workforce-records/employment/adapters/core.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/employment/adapters/core.memory.ts:15 -> src/composition/store/index.ts (feature -> composition)",
+					"file": "src/features/workforce-records/employment/adapters/core.memory.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/identity/adapters/workforce-foundation.memory.ts:14 -> src/composition/store/index.ts (feature -> composition)",
+					"file": "src/features/workforce-records/identity/adapters/workforce-foundation.memory.ts"
+				}
+			],
+			"key": "feature-to-composition",
+			"target": 0
+		},
+		{
+			"items": [],
+			"key": "feature-to-facade",
+			"target": 0
+		},
+		{
+			"items": [
+				{
+					"evidence": "src/composition/internal-api.ts:151 -> src/testing/performance/index.ts (production -> testing)",
+					"file": "src/composition/internal-api.ts"
+				},
+				{
+					"evidence": "src/composition/internal-api.ts:152 -> src/testing/recovery/index.ts (production -> testing)",
+					"file": "src/composition/internal-api.ts"
+				}
+			],
+			"key": "production-to-testing",
+			"target": 0
+		},
+		{
+			"items": [
+				{
+					"evidence": "src/features/compensation-benefits/adapters/benefit-methods-drizzle.drizzle.ts:14 names HumanResourcesStore",
+					"file": "src/features/compensation-benefits/adapters/benefit-methods-drizzle.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/compensation-benefits/adapters/compensation-benefits.drizzle.ts:28 names HumanResourcesStore",
+					"file": "src/features/compensation-benefits/adapters/compensation-benefits.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/compensation-benefits/adapters/compensation-benefits.memory.ts:7 names HumanResourcesStore",
+					"file": "src/features/compensation-benefits/adapters/compensation-benefits.memory.ts"
+				},
+				{
+					"evidence": "src/features/compensation-benefits/adapters/employee-compensation-lifecycle-drizzle.drizzle.ts:16 names HumanResourcesStore",
+					"file": "src/features/compensation-benefits/adapters/employee-compensation-lifecycle-drizzle.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/compliance/adapters/compliance.drizzle.ts:35 names HumanResourcesStore",
+					"file": "src/features/compliance/adapters/compliance.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/compliance/adapters/compliance.memory.ts:17 names HumanResourcesStore",
+					"file": "src/features/compliance/adapters/compliance.memory.ts"
+				},
+				{
+					"evidence": "src/features/employee-relations/adapters/employee-relations.drizzle.ts:30 names HumanResourcesStore",
+					"file": "src/features/employee-relations/adapters/employee-relations.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/employee-relations/adapters/employee-relations.memory.ts:21 names HumanResourcesStore",
+					"file": "src/features/employee-relations/adapters/employee-relations.memory.ts"
+				},
+				{
+					"evidence": "src/features/employment-lifecycle/adapters/lifecycle.drizzle.ts:43 names HumanResourcesStore",
+					"file": "src/features/employment-lifecycle/adapters/lifecycle.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/employment-lifecycle/adapters/lifecycle.memory.ts:18 names HumanResourcesStore",
+					"file": "src/features/employment-lifecycle/adapters/lifecycle.memory.ts"
+				},
+				{
+					"evidence": "src/features/hire-to-employee/adapters/hire-orchestration.drizzle.ts:7 names HumanResourcesStore",
+					"file": "src/features/hire-to-employee/adapters/hire-orchestration.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/learning/adapters/learning.drizzle.ts:29 names HumanResourcesStore",
+					"file": "src/features/learning/adapters/learning.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/learning/adapters/learning.memory.ts:13 names HumanResourcesStore",
+					"file": "src/features/learning/adapters/learning.memory.ts"
+				},
+				{
+					"evidence": "src/features/leave/adapters/leave.drizzle.ts:17 names HumanResourcesStore",
+					"file": "src/features/leave/adapters/leave.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/leave/adapters/leave.memory.ts:12 names HumanResourcesStore",
+					"file": "src/features/leave/adapters/leave.memory.ts"
+				},
+				{
+					"evidence": "src/features/organization/adapters/organization.drizzle.ts:40 names HumanResourcesStore",
+					"file": "src/features/organization/adapters/organization.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/organization/adapters/organization.memory.ts:18 names HumanResourcesStore",
+					"file": "src/features/organization/adapters/organization.memory.ts"
+				},
+				{
+					"evidence": "src/features/performance/adapters/performance.drizzle.ts:34 names HumanResourcesStore",
+					"file": "src/features/performance/adapters/performance.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/performance/adapters/performance.memory.ts:17 names HumanResourcesStore",
+					"file": "src/features/performance/adapters/performance.memory.ts"
+				},
+				{
+					"evidence": "src/features/privacy/store.ts:1 names HumanResourcesStore",
+					"file": "src/features/privacy/store.ts"
+				},
+				{
+					"evidence": "src/features/recruitment/adapters/recruitment.drizzle.ts:29 names HumanResourcesStore",
+					"file": "src/features/recruitment/adapters/recruitment.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/recruitment/adapters/recruitment.memory.ts:7 names HumanResourcesStore",
+					"file": "src/features/recruitment/adapters/recruitment.memory.ts"
+				},
+				{
+					"evidence": "src/features/reporting/adapters/reporting.memory.ts:2 names HumanResourcesStore",
+					"file": "src/features/reporting/adapters/reporting.memory.ts"
+				},
+				{
+					"evidence": "src/features/talent/adapters/talent.drizzle.ts:39 names HumanResourcesStore",
+					"file": "src/features/talent/adapters/talent.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/talent/adapters/talent.memory.ts:20 names HumanResourcesStore",
+					"file": "src/features/talent/adapters/talent.memory.ts"
+				},
+				{
+					"evidence": "src/features/workforce-planning/adapters/workforce-planning.drizzle.ts:23 names HumanResourcesStore",
+					"file": "src/features/workforce-planning/adapters/workforce-planning.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/workforce-planning/adapters/workforce-planning.memory.ts:15 names HumanResourcesStore",
+					"file": "src/features/workforce-planning/adapters/workforce-planning.memory.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/employment/adapters/core.drizzle.ts:40 names HumanResourcesStore",
+					"file": "src/features/workforce-records/employment/adapters/core.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/employment/adapters/core.memory.ts:21 names HumanResourcesStore",
+					"file": "src/features/workforce-records/employment/adapters/core.memory.ts"
+				}
+			],
+			"key": "feature-composite-store",
+			"target": 0
+		},
+		{
+			"items": [
+				{
+					"evidence": "src/features/bulk-export/csv.ts:3 -> src/features/bulk-jobs/types.ts (bulk-export -> bulk-jobs)",
+					"file": "src/features/bulk-export/csv.ts"
+				},
+				{
+					"evidence": "src/features/bulk-import/source-pipelines.ts:12 -> src/features/compensation-benefits/employee-compensation.ts (bulk-import -> compensation-benefits)",
+					"file": "src/features/bulk-import/source-pipelines.ts"
+				},
+				{
+					"evidence": "src/features/bulk-import/source-pipelines.ts:13 -> src/features/learning/learning-assignment.ts (bulk-import -> learning)",
+					"file": "src/features/bulk-import/source-pipelines.ts"
+				},
+				{
+					"evidence": "src/features/bulk-import/source-pipelines.ts:14 -> src/features/leave/entitlement.ts (bulk-import -> leave)",
+					"file": "src/features/bulk-import/source-pipelines.ts"
+				},
+				{
+					"evidence": "src/features/bulk-import/source-pipelines.ts:15 -> src/features/time/attendance/events.ts (bulk-import -> time)",
+					"file": "src/features/bulk-import/source-pipelines.ts"
+				},
+				{
+					"evidence": "src/features/bulk-import/source-pipelines.ts:16 -> src/features/workforce-records/employment/assignment.ts (bulk-import -> workforce-records)",
+					"file": "src/features/bulk-import/source-pipelines.ts"
+				},
+				{
+					"evidence": "src/features/bulk-import/source-pipelines.ts:17 -> src/features/workforce-records/employment/employee.ts (bulk-import -> workforce-records)",
+					"file": "src/features/bulk-import/source-pipelines.ts"
+				},
+				{
+					"evidence": "src/features/bulk-jobs/kernel.ts:10 -> src/features/bulk-import/types.ts (bulk-jobs -> bulk-import)",
+					"file": "src/features/bulk-jobs/kernel.ts"
+				},
+				{
+					"evidence": "src/features/bulk-jobs/kernel.ts:6 -> src/features/bulk-import/kernel.ts (bulk-jobs -> bulk-import)",
+					"file": "src/features/bulk-jobs/kernel.ts"
+				},
+				{
+					"evidence": "src/features/bulk-jobs/types.ts:4 -> src/features/bulk-import/types.ts (bulk-jobs -> bulk-import)",
+					"file": "src/features/bulk-jobs/types.ts"
+				},
+				{
+					"evidence": "src/features/compensation-benefits/adapters/benefit-methods-drizzle.drizzle.ts:41 -> src/features/workforce-records/employment/employment-status.ts (compensation-benefits -> workforce-records)",
+					"file": "src/features/compensation-benefits/adapters/benefit-methods-drizzle.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/compensation-benefits/adapters/compensation-benefits.memory.ts:73 -> src/features/recruitment/adapters/recruitment.memory.ts (compensation-benefits -> recruitment)",
+					"file": "src/features/compensation-benefits/adapters/compensation-benefits.memory.ts"
+				},
+				{
+					"evidence": "src/features/compensation-benefits/adapters/compensation-benefits.memory.ts:74 -> src/features/workforce-records/employment/adapters/core.memory.ts (compensation-benefits -> workforce-records)",
+					"file": "src/features/compensation-benefits/adapters/compensation-benefits.memory.ts"
+				},
+				{
+					"evidence": "src/features/compensation-benefits/adapters/employee-compensation-lifecycle.memory.ts:25 -> src/features/workforce-records/employment/adapters/core.memory.ts (compensation-benefits -> workforce-records)",
+					"file": "src/features/compensation-benefits/adapters/employee-compensation-lifecycle.memory.ts"
+				},
+				{
+					"evidence": "src/features/compensation-benefits/benefit-guards.ts:7 -> src/features/workforce-records/employment/employment-status.ts (compensation-benefits -> workforce-records)",
+					"file": "src/features/compensation-benefits/benefit-guards.ts"
+				},
+				{
+					"evidence": "src/features/compensation-benefits/employee-compensation.ts:28 -> src/features/workforce-records/employment/employment.ts (compensation-benefits -> workforce-records)",
+					"file": "src/features/compensation-benefits/employee-compensation.ts"
+				},
+				{
+					"evidence": "src/features/compensation-benefits/schema.ts:24 -> src/features/workforce-records/employment/employment-status.ts (compensation-benefits -> workforce-records)",
+					"file": "src/features/compensation-benefits/schema.ts"
+				},
+				{
+					"evidence": "src/features/compensation-benefits/store-contract.ts:42 -> src/features/workforce-records/employment/employment-status.ts (compensation-benefits -> workforce-records)",
+					"file": "src/features/compensation-benefits/store-contract.ts"
+				},
+				{
+					"evidence": "src/features/compensation-benefits/store.ts:1 -> src/features/leave/store-contract.ts (compensation-benefits -> leave)",
+					"file": "src/features/compensation-benefits/store.ts"
+				},
+				{
+					"evidence": "src/features/compliance/adapters/compliance.memory.ts:64 -> src/features/workforce-records/employment/adapters/core.memory.ts (compliance -> workforce-records)",
+					"file": "src/features/compliance/adapters/compliance.memory.ts"
+				},
+				{
+					"evidence": "src/features/compliance/run-operation.ts:42 -> src/features/workforce-records/identity-resolution/identity-resolver.ts (compliance -> workforce-records)",
+					"file": "src/features/compliance/run-operation.ts"
+				},
+				{
+					"evidence": "src/features/compliance/store.ts:1 -> src/features/learning/store-contract.ts (compliance -> learning)",
+					"file": "src/features/compliance/store.ts"
+				},
+				{
+					"evidence": "src/features/compliance/store.ts:2 -> src/features/workforce-records/employment/store-contract.ts (compliance -> workforce-records)",
+					"file": "src/features/compliance/store.ts"
+				},
+				{
+					"evidence": "src/features/employee-relations/run-operation.ts:21 -> src/features/workforce-records/identity-resolution/identity-resolver.ts (employee-relations -> workforce-records)",
+					"file": "src/features/employee-relations/run-operation.ts"
+				},
+				{
+					"evidence": "src/features/employee-relations/store.ts:1 -> src/features/leave/store-contract.ts (employee-relations -> leave)",
+					"file": "src/features/employee-relations/store.ts"
+				},
+				{
+					"evidence": "src/features/employee-relations/store.ts:2 -> src/features/workforce-records/identity-resolution/store-contract.ts (employee-relations -> workforce-records)",
+					"file": "src/features/employee-relations/store.ts"
+				},
+				{
+					"evidence": "src/features/employment-lifecycle/adapters/lifecycle.drizzle.ts:100 -> src/features/workforce-records/employment/assignment-guards.ts (employment-lifecycle -> workforce-records)",
+					"file": "src/features/employment-lifecycle/adapters/lifecycle.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/employment-lifecycle/adapters/lifecycle.drizzle.ts:101 -> src/features/workforce-records/employment/employment-status.ts (employment-lifecycle -> workforce-records)",
+					"file": "src/features/employment-lifecycle/adapters/lifecycle.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/employment-lifecycle/adapters/lifecycle.memory.ts:108 -> src/features/organization/adapters/organization.memory.ts (employment-lifecycle -> organization)",
+					"file": "src/features/employment-lifecycle/adapters/lifecycle.memory.ts"
+				},
+				{
+					"evidence": "src/features/employment-lifecycle/adapters/lifecycle.memory.ts:109 -> src/features/recruitment/adapters/recruitment.memory.ts (employment-lifecycle -> recruitment)",
+					"file": "src/features/employment-lifecycle/adapters/lifecycle.memory.ts"
+				},
+				{
+					"evidence": "src/features/employment-lifecycle/adapters/lifecycle.memory.ts:110 -> src/features/workforce-records/employment/adapters/core.memory.ts (employment-lifecycle -> workforce-records)",
+					"file": "src/features/employment-lifecycle/adapters/lifecycle.memory.ts"
+				},
+				{
+					"evidence": "src/features/employment-lifecycle/adapters/lifecycle.memory.ts:111 -> src/features/workforce-records/employment/adapters/core.memory.ts (employment-lifecycle -> workforce-records)",
+					"file": "src/features/employment-lifecycle/adapters/lifecycle.memory.ts"
+				},
+				{
+					"evidence": "src/features/employment-lifecycle/adapters/lifecycle.memory.ts:112 -> src/features/workforce-records/employment/assignment-guards.ts (employment-lifecycle -> workforce-records)",
+					"file": "src/features/employment-lifecycle/adapters/lifecycle.memory.ts"
+				},
+				{
+					"evidence": "src/features/employment-lifecycle/adapters/lifecycle.memory.ts:113 -> src/features/workforce-records/employment/employment-status.ts (employment-lifecycle -> workforce-records)",
+					"file": "src/features/employment-lifecycle/adapters/lifecycle.memory.ts"
+				},
+				{
+					"evidence": "src/features/employment-lifecycle/guards.ts:10 -> src/features/workforce-records/employment/employment-status.ts (employment-lifecycle -> workforce-records)",
+					"file": "src/features/employment-lifecycle/guards.ts"
+				},
+				{
+					"evidence": "src/features/employment-lifecycle/guards.ts:11 -> src/features/workforce-records/employment/employment-status.ts (employment-lifecycle -> workforce-records)",
+					"file": "src/features/employment-lifecycle/guards.ts"
+				},
+				{
+					"evidence": "src/features/employment-lifecycle/store.ts:1 -> src/features/compliance/store-contract.ts (employment-lifecycle -> compliance)",
+					"file": "src/features/employment-lifecycle/store.ts"
+				},
+				{
+					"evidence": "src/features/employment-lifecycle/store.ts:2 -> src/features/time/store-contract.ts (employment-lifecycle -> time)",
+					"file": "src/features/employment-lifecycle/store.ts"
+				},
+				{
+					"evidence": "src/features/employment-lifecycle/store.ts:3 -> src/features/workforce-records/employment/store-contract.ts (employment-lifecycle -> workforce-records)",
+					"file": "src/features/employment-lifecycle/store.ts"
+				},
+				{
+					"evidence": "src/features/employment-lifecycle/transfer.ts:13 -> src/features/workforce-records/employment/assignment-snapshots.ts (employment-lifecycle -> workforce-records)",
+					"file": "src/features/employment-lifecycle/transfer.ts"
+				},
+				{
+					"evidence": "src/features/hire-to-employee/compensation.ts:10 -> src/features/workforce-records/identity/worker.ts (hire-to-employee -> workforce-records)",
+					"file": "src/features/hire-to-employee/compensation.ts"
+				},
+				{
+					"evidence": "src/features/hire-to-employee/compensation.ts:4 -> src/features/workforce-records/employment/assignment.ts (hire-to-employee -> workforce-records)",
+					"file": "src/features/hire-to-employee/compensation.ts"
+				},
+				{
+					"evidence": "src/features/hire-to-employee/compensation.ts:8 -> src/features/workforce-records/employment/employment.ts (hire-to-employee -> workforce-records)",
+					"file": "src/features/hire-to-employee/compensation.ts"
+				},
+				{
+					"evidence": "src/features/hire-to-employee/compensation.ts:9 -> src/features/workforce-records/employment/employment-management.ts (hire-to-employee -> workforce-records)",
+					"file": "src/features/hire-to-employee/compensation.ts"
+				},
+				{
+					"evidence": "src/features/hire-to-employee/hire-from-accepted-offer.ts:18 -> src/features/employment-lifecycle/onboarding.ts (hire-to-employee -> employment-lifecycle)",
+					"file": "src/features/hire-to-employee/hire-from-accepted-offer.ts"
+				},
+				{
+					"evidence": "src/features/hire-to-employee/hire-from-accepted-offer.ts:19 -> src/features/recruitment/candidate.ts (hire-to-employee -> recruitment)",
+					"file": "src/features/hire-to-employee/hire-from-accepted-offer.ts"
+				},
+				{
+					"evidence": "src/features/hire-to-employee/hire-from-accepted-offer.ts:20 -> src/features/recruitment/offer.ts (hire-to-employee -> recruitment)",
+					"file": "src/features/hire-to-employee/hire-from-accepted-offer.ts"
+				},
+				{
+					"evidence": "src/features/hire-to-employee/hire-from-accepted-offer.ts:21 -> src/features/recruitment/requisition.ts (hire-to-employee -> recruitment)",
+					"file": "src/features/hire-to-employee/hire-from-accepted-offer.ts"
+				},
+				{
+					"evidence": "src/features/hire-to-employee/hire-from-accepted-offer.ts:22 -> src/features/workforce-planning/headcount-reservation.ts (hire-to-employee -> workforce-planning)",
+					"file": "src/features/hire-to-employee/hire-from-accepted-offer.ts"
+				},
+				{
+					"evidence": "src/features/hire-to-employee/hire-from-accepted-offer.ts:23 -> src/features/workforce-records/employment/assignment.ts (hire-to-employee -> workforce-records)",
+					"file": "src/features/hire-to-employee/hire-from-accepted-offer.ts"
+				},
+				{
+					"evidence": "src/features/hire-to-employee/hire-from-accepted-offer.ts:24 -> src/features/workforce-records/employment/employee.ts (hire-to-employee -> workforce-records)",
+					"file": "src/features/hire-to-employee/hire-from-accepted-offer.ts"
+				},
+				{
+					"evidence": "src/features/hire-to-employee/hire-from-accepted-offer.ts:25 -> src/features/workforce-records/employment/employment-management.ts (hire-to-employee -> workforce-records)",
+					"file": "src/features/hire-to-employee/hire-from-accepted-offer.ts"
+				},
+				{
+					"evidence": "src/features/hire-to-employee/hire-from-accepted-offer.ts:26 -> src/features/workforce-records/identity/person.ts (hire-to-employee -> workforce-records)",
+					"file": "src/features/hire-to-employee/hire-from-accepted-offer.ts"
+				},
+				{
+					"evidence": "src/features/hire-to-employee/hire-from-accepted-offer.ts:27 -> src/features/workforce-records/identity/worker.ts (hire-to-employee -> workforce-records)",
+					"file": "src/features/hire-to-employee/hire-from-accepted-offer.ts"
+				},
+				{
+					"evidence": "src/features/hire-to-employee/store.ts:1 -> src/features/recruitment/store-contract.ts (hire-to-employee -> recruitment)",
+					"file": "src/features/hire-to-employee/store.ts"
+				},
+				{
+					"evidence": "src/features/learning/adapters/learning.memory.ts:67 -> src/features/workforce-records/employment/adapters/core.memory.ts (learning -> workforce-records)",
+					"file": "src/features/learning/adapters/learning.memory.ts"
+				},
+				{
+					"evidence": "src/features/learning/guards.ts:16 -> src/features/workforce-records/employment/employment-status.ts (learning -> workforce-records)",
+					"file": "src/features/learning/guards.ts"
+				},
+				{
+					"evidence": "src/features/leave/adapters/leave.drizzle.ts:73 -> src/features/workforce-records/employment/employment-status.ts (leave -> workforce-records)",
+					"file": "src/features/leave/adapters/leave.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/leave/adapters/leave.memory.ts:69 -> src/features/workforce-records/employment/employment-status.ts (leave -> workforce-records)",
+					"file": "src/features/leave/adapters/leave.memory.ts"
+				},
+				{
+					"evidence": "src/features/leave/guards.ts:14 -> src/features/workforce-records/employment/employment-status.ts (leave -> workforce-records)",
+					"file": "src/features/leave/guards.ts"
+				},
+				{
+					"evidence": "src/features/leave/run-operation.ts:25 -> src/features/time/work-calendar.ts (leave -> time)",
+					"file": "src/features/leave/run-operation.ts"
+				},
+				{
+					"evidence": "src/features/leave/run-operation.ts:26 -> src/features/workforce-records/identity-resolution/identity-resolver.ts (leave -> workforce-records)",
+					"file": "src/features/leave/run-operation.ts"
+				},
+				{
+					"evidence": "src/features/leave/schema.ts:15 -> src/features/workforce-records/employment/employment-status.ts (leave -> workforce-records)",
+					"file": "src/features/leave/schema.ts"
+				},
+				{
+					"evidence": "src/features/leave/store-contract.ts:26 -> src/features/workforce-records/employment/employment-status.ts (leave -> workforce-records)",
+					"file": "src/features/leave/store-contract.ts"
+				},
+				{
+					"evidence": "src/features/leave/store.ts:1 -> src/features/workforce-records/employment/store-contract.ts (leave -> workforce-records)",
+					"file": "src/features/leave/store.ts"
+				},
+				{
+					"evidence": "src/features/organization/adapters/organization.drizzle.ts:103 -> src/features/workforce-records/identity/lineage-segment.ts (organization -> workforce-records)",
+					"file": "src/features/organization/adapters/organization.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/organization/adapters/organization.drizzle.ts:93 -> src/features/workforce-records/employment/employment-status.ts (organization -> workforce-records)",
+					"file": "src/features/organization/adapters/organization.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/organization/adapters/organization.memory.ts:64 -> src/features/workforce-records/employment/adapters/core.memory.ts (organization -> workforce-records)",
+					"file": "src/features/organization/adapters/organization.memory.ts"
+				},
+				{
+					"evidence": "src/features/organization/adapters/organization.memory.ts:65 -> src/features/workforce-records/employment/employment-status.ts (organization -> workforce-records)",
+					"file": "src/features/organization/adapters/organization.memory.ts"
+				},
+				{
+					"evidence": "src/features/organization/adapters/organization.memory.ts:72 -> src/features/workforce-records/identity/lineage-segment.ts (organization -> workforce-records)",
+					"file": "src/features/organization/adapters/organization.memory.ts"
+				},
+				{
+					"evidence": "src/features/organization/guards.ts:17 -> src/features/workforce-records/employment/employment-status.ts (organization -> workforce-records)",
+					"file": "src/features/organization/guards.ts"
+				},
+				{
+					"evidence": "src/features/organization/organization-structure-lineage.ts:10 -> src/features/workforce-records/identity/types.ts (organization -> workforce-records)",
+					"file": "src/features/organization/organization-structure-lineage.ts"
+				},
+				{
+					"evidence": "src/features/organization/schema.ts:16 -> src/features/workforce-records/employment/employment-status.ts (organization -> workforce-records)",
+					"file": "src/features/organization/schema.ts"
+				},
+				{
+					"evidence": "src/features/organization/store.ts:1 -> src/features/workforce-records/employment/store-contract.ts (organization -> workforce-records)",
+					"file": "src/features/organization/store.ts"
+				},
+				{
+					"evidence": "src/features/payroll-handoff/approved-payroll-handoff.ts:20 -> src/features/workforce-records/employment/employment-history.ts (payroll-handoff -> workforce-records)",
+					"file": "src/features/payroll-handoff/approved-payroll-handoff.ts"
+				},
+				{
+					"evidence": "src/features/payroll-handoff/map-approved-payroll-handoff.ts:22 -> src/features/time/handoff/ports.ts (payroll-handoff -> time)",
+					"file": "src/features/payroll-handoff/map-approved-payroll-handoff.ts"
+				},
+				{
+					"evidence": "src/features/payroll-handoff/map-approved-payroll-handoff.ts:23 -> src/features/workforce-records/employment/employment-status.ts (payroll-handoff -> workforce-records)",
+					"file": "src/features/payroll-handoff/map-approved-payroll-handoff.ts"
+				},
+				{
+					"evidence": "src/features/payroll-handoff/run-operation.ts:11 -> src/features/compensation-benefits/run-operation.ts (payroll-handoff -> compensation-benefits)",
+					"file": "src/features/payroll-handoff/run-operation.ts"
+				},
+				{
+					"evidence": "src/features/payroll-handoff/store.ts:1 -> src/features/compensation-benefits/store-contract.ts (payroll-handoff -> compensation-benefits)",
+					"file": "src/features/payroll-handoff/store.ts"
+				},
+				{
+					"evidence": "src/features/payroll-handoff/store.ts:2 -> src/features/leave/store-contract.ts (payroll-handoff -> leave)",
+					"file": "src/features/payroll-handoff/store.ts"
+				},
+				{
+					"evidence": "src/features/payroll-handoff/store.ts:3 -> src/features/time/store-contract.ts (payroll-handoff -> time)",
+					"file": "src/features/payroll-handoff/store.ts"
+				},
+				{
+					"evidence": "src/features/payroll-handoff/store.ts:4 -> src/features/workforce-records/employment/store-contract.ts (payroll-handoff -> workforce-records)",
+					"file": "src/features/payroll-handoff/store.ts"
+				},
+				{
+					"evidence": "src/features/performance/adapters/performance.drizzle.ts:105 -> src/features/compensation-benefits/benefit-guards.ts (performance -> compensation-benefits)",
+					"file": "src/features/performance/adapters/performance.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/performance/adapters/performance.drizzle.ts:106 -> src/features/workforce-records/employment/employment-status.ts (performance -> workforce-records)",
+					"file": "src/features/performance/adapters/performance.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/performance/adapters/performance.memory.ts:90 -> src/features/compensation-benefits/benefit-guards.ts (performance -> compensation-benefits)",
+					"file": "src/features/performance/adapters/performance.memory.ts"
+				},
+				{
+					"evidence": "src/features/performance/cycle-eligibility.ts:7 -> src/features/compensation-benefits/benefit-guards.ts (performance -> compensation-benefits)",
+					"file": "src/features/performance/cycle-eligibility.ts"
+				},
+				{
+					"evidence": "src/features/performance/cycle-eligibility.ts:8 -> src/features/workforce-records/employment/employment-status.ts (performance -> workforce-records)",
+					"file": "src/features/performance/cycle-eligibility.ts"
+				},
+				{
+					"evidence": "src/features/performance/run-operation.ts:37 -> src/features/workforce-records/identity-resolution/identity-resolver.ts (performance -> workforce-records)",
+					"file": "src/features/performance/run-operation.ts"
+				},
+				{
+					"evidence": "src/features/performance/schema.ts:18 -> src/features/workforce-records/employment/employment-status.ts (performance -> workforce-records)",
+					"file": "src/features/performance/schema.ts"
+				},
+				{
+					"evidence": "src/features/performance/store-contract.ts:33 -> src/features/workforce-records/employment/employment-status.ts (performance -> workforce-records)",
+					"file": "src/features/performance/store-contract.ts"
+				},
+				{
+					"evidence": "src/features/performance/store.ts:1 -> src/features/leave/store-contract.ts (performance -> leave)",
+					"file": "src/features/performance/store.ts"
+				},
+				{
+					"evidence": "src/features/recruitment/hiring-manager-validation.ts:4 -> src/features/time/timesheet-generation.ts (recruitment -> time)",
+					"file": "src/features/recruitment/hiring-manager-validation.ts"
+				},
+				{
+					"evidence": "src/features/recruitment/store.ts:1 -> src/features/workforce-records/employment/store-contract.ts (recruitment -> workforce-records)",
+					"file": "src/features/recruitment/store.ts"
+				},
+				{
+					"evidence": "src/features/recruitment/validate-offer-compensation-proposal-attachment.ts:10 -> src/features/compensation-benefits/status.ts (recruitment -> compensation-benefits)",
+					"file": "src/features/recruitment/validate-offer-compensation-proposal-attachment.ts"
+				},
+				{
+					"evidence": "src/features/recruitment/validate-offer-compensation-proposal-attachment.ts:9 -> src/features/compensation-benefits/proposal-guards.ts (recruitment -> compensation-benefits)",
+					"file": "src/features/recruitment/validate-offer-compensation-proposal-attachment.ts"
+				},
+				{
+					"evidence": "src/features/talent/adapters/talent.drizzle.ts:93 -> src/features/workforce-records/employment/employment-status.ts (talent -> workforce-records)",
+					"file": "src/features/talent/adapters/talent.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/talent/adapters/talent.memory.ts:92 -> src/features/workforce-records/employment/employment-status.ts (talent -> workforce-records)",
+					"file": "src/features/talent/adapters/talent.memory.ts"
+				},
+				{
+					"evidence": "src/features/talent/guards.ts:11 -> src/features/workforce-records/employment/employment-status.ts (talent -> workforce-records)",
+					"file": "src/features/talent/guards.ts"
+				},
+				{
+					"evidence": "src/features/talent/resource.ts:12 -> src/features/workforce-records/identity-resolution/identity-resolver.ts (talent -> workforce-records)",
+					"file": "src/features/talent/resource.ts"
+				},
+				{
+					"evidence": "src/features/talent/store.ts:1 -> src/features/leave/store-contract.ts (talent -> leave)",
+					"file": "src/features/talent/store.ts"
+				},
+				{
+					"evidence": "src/features/time/adapters/time.drizzle.ts:135 -> src/features/workforce-records/employment/store-contract.ts (time -> workforce-records)",
+					"file": "src/features/time/adapters/time.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/time/adapters/time.memory.ts:106 -> src/features/workforce-records/employment/adapters/core.memory.ts (time -> workforce-records)",
+					"file": "src/features/time/adapters/time.memory.ts"
+				},
+				{
+					"evidence": "src/features/time/adapters/time.memory.ts:107 -> src/features/workforce-records/employment/store-contract.ts (time -> workforce-records)",
+					"file": "src/features/time/adapters/time.memory.ts"
+				},
+				{
+					"evidence": "src/features/time/employment.ts:8 -> src/features/workforce-records/employment/store-contract.ts (time -> workforce-records)",
+					"file": "src/features/time/employment.ts"
+				},
+				{
+					"evidence": "src/features/time/handoff/ports.ts:10 -> src/features/leave/status.ts (time -> leave)",
+					"file": "src/features/time/handoff/ports.ts"
+				},
+				{
+					"evidence": "src/features/time/store-assignment-context-query.ts:7 -> src/features/workforce-records/employment/store-contract.ts (time -> workforce-records)",
+					"file": "src/features/time/store-assignment-context-query.ts"
+				},
+				{
+					"evidence": "src/features/time/store-work-calendar-lookup.ts:7 -> src/features/workforce-records/employment/store-contract.ts (time -> workforce-records)",
+					"file": "src/features/time/store-work-calendar-lookup.ts"
+				},
+				{
+					"evidence": "src/features/time/store.ts:1 -> src/features/workforce-records/employment/store-contract.ts (time -> workforce-records)",
+					"file": "src/features/time/store.ts"
+				},
+				{
+					"evidence": "src/features/time/timesheet-generation.ts:23 -> src/features/leave/status.ts (time -> leave)",
+					"file": "src/features/time/timesheet-generation.ts"
+				},
+				{
+					"evidence": "src/features/time/work-calendar.ts:3 -> src/features/leave/status.ts (time -> leave)",
+					"file": "src/features/time/work-calendar.ts"
+				},
+				{
+					"evidence": "src/features/workforce-planning/headcount-reservation.ts:28 -> src/features/recruitment/guards.ts (workforce-planning -> recruitment)",
+					"file": "src/features/workforce-planning/headcount-reservation.ts"
+				},
+				{
+					"evidence": "src/features/workforce-planning/store.ts:1 -> src/features/recruitment/store-contract.ts (workforce-planning -> recruitment)",
+					"file": "src/features/workforce-planning/store.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/employment/adapters/assignment-context-query.drizzle.ts:18 -> src/features/time/handoff/ports.ts (workforce-records -> time)",
+					"file": "src/features/workforce-records/employment/adapters/assignment-context-query.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/employment/adapters/core.memory.ts:67 -> src/features/organization/adapters/organization.memory.ts (workforce-records -> organization)",
+					"file": "src/features/workforce-records/employment/adapters/core.memory.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/employment/assignment-guards.ts:10 -> src/features/organization/guards.ts (workforce-records -> organization)",
+					"file": "src/features/workforce-records/employment/assignment-guards.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/employment/assignment-management.ts:1 -> src/features/employment-lifecycle/transfer.ts (workforce-records -> employment-lifecycle)",
+					"file": "src/features/workforce-records/employment/assignment-management.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/employment/assignment-snapshots.ts:13 -> src/features/employment-lifecycle/store.ts (workforce-records -> employment-lifecycle)",
+					"file": "src/features/workforce-records/employment/assignment-snapshots.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/employment/assignment-snapshots.ts:14 -> src/features/time/employee-work-calendar-resolution.ts (workforce-records -> time)",
+					"file": "src/features/workforce-records/employment/assignment-snapshots.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/employment/assignment-snapshots.ts:15 -> src/features/time/handoff/ports.ts (workforce-records -> time)",
+					"file": "src/features/workforce-records/employment/assignment-snapshots.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/employment/assignment.ts:18 -> src/features/employment-lifecycle/run-operation.ts (workforce-records -> employment-lifecycle)",
+					"file": "src/features/workforce-records/employment/assignment.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/employment/assignment.ts:22 -> src/features/employment-lifecycle/store.ts (workforce-records -> employment-lifecycle)",
+					"file": "src/features/workforce-records/employment/assignment.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/employment/assignment.ts:23 -> src/features/organization/schema.ts (workforce-records -> organization)",
+					"file": "src/features/workforce-records/employment/assignment.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/employment/employee-org-context-resolution.ts:12 -> src/features/organization/store.ts (workforce-records -> organization)",
+					"file": "src/features/workforce-records/employment/employee-org-context-resolution.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/employment/employment-contract-guards.ts:8 -> src/features/organization/guards.ts (workforce-records -> organization)",
+					"file": "src/features/workforce-records/employment/employment-contract-guards.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/employment/employment-contract.ts:24 -> src/features/employment-lifecycle/run-operation.ts (workforce-records -> employment-lifecycle)",
+					"file": "src/features/workforce-records/employment/employment-contract.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/employment/employment-contract.ts:28 -> src/features/employment-lifecycle/store.ts (workforce-records -> employment-lifecycle)",
+					"file": "src/features/workforce-records/employment/employment-contract.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/employment/employment-status.ts:10 -> src/features/organization/guards.ts (workforce-records -> organization)",
+					"file": "src/features/workforce-records/employment/employment-status.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/employment/employment.ts:27 -> src/features/employment-lifecycle/run-operation.ts (workforce-records -> employment-lifecycle)",
+					"file": "src/features/workforce-records/employment/employment.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/employment/employment.ts:31 -> src/features/employment-lifecycle/store.ts (workforce-records -> employment-lifecycle)",
+					"file": "src/features/workforce-records/employment/employment.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/employment/org-context.ts:12 -> src/features/employment-lifecycle/run-operation.ts (workforce-records -> employment-lifecycle)",
+					"file": "src/features/workforce-records/employment/org-context.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/employment/store-contract.ts:33 -> src/features/organization/organization-structure-lineage.ts (workforce-records -> organization)",
+					"file": "src/features/workforce-records/employment/store-contract.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/identity-resolution/adapters/identity.memory.ts:4 -> src/features/organization/adapters/organization.memory.ts (workforce-records -> organization)",
+					"file": "src/features/workforce-records/identity-resolution/adapters/identity.memory.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/identity/adapters/workforce-foundation.drizzle.ts:54 -> src/features/privacy/contract.ts (workforce-records -> privacy)",
+					"file": "src/features/workforce-records/identity/adapters/workforce-foundation.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/identity/schema.ts:14 -> src/features/privacy/contract.ts (workforce-records -> privacy)",
+					"file": "src/features/workforce-records/identity/schema.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/identity/store-contract.ts:9 -> src/features/privacy/contract.ts (workforce-records -> privacy)",
+					"file": "src/features/workforce-records/identity/store-contract.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/identity/types.ts:6 -> src/features/privacy/contract.ts (workforce-records -> privacy)",
+					"file": "src/features/workforce-records/identity/types.ts"
+				}
+			],
+			"key": "cross-feature-import",
+			"target": 0
+		},
+		{
+			"items": [
+				{
+					"evidence": "reciprocal feature cycle: compensation-benefits <-> recruitment",
+					"file": "src/features/compensation-benefits"
+				},
+				{
+					"evidence": "reciprocal feature cycle: employment-lifecycle <-> workforce-records",
+					"file": "src/features/employment-lifecycle"
+				},
+				{
+					"evidence": "reciprocal feature cycle: leave <-> time",
+					"file": "src/features/leave"
+				},
+				{
+					"evidence": "reciprocal feature cycle: organization <-> workforce-records",
+					"file": "src/features/organization"
+				},
+				{
+					"evidence": "reciprocal feature cycle: time <-> workforce-records",
+					"file": "src/features/time"
+				}
+			],
+			"key": "feature-cycle",
+			"target": 0
+		},
+		{
+			"items": [
+				{
+					"evidence": "src/features/compensation-benefits/adapters/benefit-methods-drizzle.drizzle.ts:14 names HumanResourcesStore beneath a feature adapter",
+					"file": "src/features/compensation-benefits/adapters/benefit-methods-drizzle.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/compensation-benefits/adapters/compensation-benefits.drizzle.ts:28 names HumanResourcesStore beneath a feature adapter",
+					"file": "src/features/compensation-benefits/adapters/compensation-benefits.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/compensation-benefits/adapters/compensation-benefits.memory.ts:7 names HumanResourcesStore beneath a feature adapter",
+					"file": "src/features/compensation-benefits/adapters/compensation-benefits.memory.ts"
+				},
+				{
+					"evidence": "src/features/compensation-benefits/adapters/employee-compensation-lifecycle-drizzle.drizzle.ts:16 names HumanResourcesStore beneath a feature adapter",
+					"file": "src/features/compensation-benefits/adapters/employee-compensation-lifecycle-drizzle.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/compliance/adapters/compliance.drizzle.ts:35 names HumanResourcesStore beneath a feature adapter",
+					"file": "src/features/compliance/adapters/compliance.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/compliance/adapters/compliance.memory.ts:17 names HumanResourcesStore beneath a feature adapter",
+					"file": "src/features/compliance/adapters/compliance.memory.ts"
+				},
+				{
+					"evidence": "src/features/employee-relations/adapters/employee-relations.drizzle.ts:30 names HumanResourcesStore beneath a feature adapter",
+					"file": "src/features/employee-relations/adapters/employee-relations.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/employee-relations/adapters/employee-relations.memory.ts:21 names HumanResourcesStore beneath a feature adapter",
+					"file": "src/features/employee-relations/adapters/employee-relations.memory.ts"
+				},
+				{
+					"evidence": "src/features/employment-lifecycle/adapters/lifecycle.drizzle.ts:43 names HumanResourcesStore beneath a feature adapter",
+					"file": "src/features/employment-lifecycle/adapters/lifecycle.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/employment-lifecycle/adapters/lifecycle.memory.ts:18 names HumanResourcesStore beneath a feature adapter",
+					"file": "src/features/employment-lifecycle/adapters/lifecycle.memory.ts"
+				},
+				{
+					"evidence": "src/features/hire-to-employee/adapters/hire-orchestration.drizzle.ts:7 names HumanResourcesStore beneath a feature adapter",
+					"file": "src/features/hire-to-employee/adapters/hire-orchestration.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/learning/adapters/learning.drizzle.ts:29 names HumanResourcesStore beneath a feature adapter",
+					"file": "src/features/learning/adapters/learning.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/learning/adapters/learning.memory.ts:13 names HumanResourcesStore beneath a feature adapter",
+					"file": "src/features/learning/adapters/learning.memory.ts"
+				},
+				{
+					"evidence": "src/features/leave/adapters/leave.drizzle.ts:17 names HumanResourcesStore beneath a feature adapter",
+					"file": "src/features/leave/adapters/leave.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/leave/adapters/leave.memory.ts:12 names HumanResourcesStore beneath a feature adapter",
+					"file": "src/features/leave/adapters/leave.memory.ts"
+				},
+				{
+					"evidence": "src/features/organization/adapters/organization.drizzle.ts:40 names HumanResourcesStore beneath a feature adapter",
+					"file": "src/features/organization/adapters/organization.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/organization/adapters/organization.memory.ts:18 names HumanResourcesStore beneath a feature adapter",
+					"file": "src/features/organization/adapters/organization.memory.ts"
+				},
+				{
+					"evidence": "src/features/performance/adapters/performance.drizzle.ts:34 names HumanResourcesStore beneath a feature adapter",
+					"file": "src/features/performance/adapters/performance.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/performance/adapters/performance.memory.ts:17 names HumanResourcesStore beneath a feature adapter",
+					"file": "src/features/performance/adapters/performance.memory.ts"
+				},
+				{
+					"evidence": "src/features/recruitment/adapters/recruitment.drizzle.ts:29 names HumanResourcesStore beneath a feature adapter",
+					"file": "src/features/recruitment/adapters/recruitment.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/recruitment/adapters/recruitment.memory.ts:7 names HumanResourcesStore beneath a feature adapter",
+					"file": "src/features/recruitment/adapters/recruitment.memory.ts"
+				},
+				{
+					"evidence": "src/features/reporting/adapters/reporting.memory.ts:2 names HumanResourcesStore beneath a feature adapter",
+					"file": "src/features/reporting/adapters/reporting.memory.ts"
+				},
+				{
+					"evidence": "src/features/talent/adapters/talent.drizzle.ts:39 names HumanResourcesStore beneath a feature adapter",
+					"file": "src/features/talent/adapters/talent.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/talent/adapters/talent.memory.ts:20 names HumanResourcesStore beneath a feature adapter",
+					"file": "src/features/talent/adapters/talent.memory.ts"
+				},
+				{
+					"evidence": "src/features/workforce-planning/adapters/workforce-planning.drizzle.ts:23 names HumanResourcesStore beneath a feature adapter",
+					"file": "src/features/workforce-planning/adapters/workforce-planning.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/workforce-planning/adapters/workforce-planning.memory.ts:15 names HumanResourcesStore beneath a feature adapter",
+					"file": "src/features/workforce-planning/adapters/workforce-planning.memory.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/employment/adapters/core.drizzle.ts:40 names HumanResourcesStore beneath a feature adapter",
+					"file": "src/features/workforce-records/employment/adapters/core.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/workforce-records/employment/adapters/core.memory.ts:21 names HumanResourcesStore beneath a feature adapter",
+					"file": "src/features/workforce-records/employment/adapters/core.memory.ts"
+				}
+			],
+			"key": "adapter-composite-store",
+			"target": 0
+		},
+		{
+			"items": [],
+			"key": "consumer-deep-import",
+			"target": 0
+		},
+		{
+			"items": [
+				{
+					"evidence": "packages/data-plane/audit/__tests__/direct-writer-boundary.test.ts reads retired path packages/erp/human-resources/src/adapters/drizzle/benefit-methods-drizzle.ts",
+					"file": "packages/data-plane/audit/__tests__/direct-writer-boundary.test.ts"
+				},
+				{
+					"evidence": "packages/data-plane/audit/__tests__/direct-writer-boundary.test.ts reads retired path packages/erp/human-resources/src/adapters/drizzle/compensation-benefits.ts",
+					"file": "packages/data-plane/audit/__tests__/direct-writer-boundary.test.ts"
+				},
+				{
+					"evidence": "packages/data-plane/audit/__tests__/direct-writer-boundary.test.ts reads retired path packages/erp/human-resources/src/adapters/drizzle/compensation-review-cycle-drizzle.ts",
+					"file": "packages/data-plane/audit/__tests__/direct-writer-boundary.test.ts"
+				},
+				{
+					"evidence": "packages/data-plane/audit/__tests__/direct-writer-boundary.test.ts reads retired path packages/erp/human-resources/src/adapters/drizzle/compliance.ts",
+					"file": "packages/data-plane/audit/__tests__/direct-writer-boundary.test.ts"
+				},
+				{
+					"evidence": "packages/data-plane/audit/__tests__/direct-writer-boundary.test.ts reads retired path packages/erp/human-resources/src/adapters/drizzle/core.ts",
+					"file": "packages/data-plane/audit/__tests__/direct-writer-boundary.test.ts"
+				},
+				{
+					"evidence": "packages/data-plane/audit/__tests__/direct-writer-boundary.test.ts reads retired path packages/erp/human-resources/src/adapters/drizzle/employee-compensation-lifecycle-drizzle.ts",
+					"file": "packages/data-plane/audit/__tests__/direct-writer-boundary.test.ts"
+				},
+				{
+					"evidence": "packages/data-plane/audit/__tests__/direct-writer-boundary.test.ts reads retired path packages/erp/human-resources/src/adapters/drizzle/employee-relations.ts",
+					"file": "packages/data-plane/audit/__tests__/direct-writer-boundary.test.ts"
+				},
+				{
+					"evidence": "packages/data-plane/audit/__tests__/direct-writer-boundary.test.ts reads retired path packages/erp/human-resources/src/adapters/drizzle/learning.ts",
+					"file": "packages/data-plane/audit/__tests__/direct-writer-boundary.test.ts"
+				},
+				{
+					"evidence": "packages/data-plane/audit/__tests__/direct-writer-boundary.test.ts reads retired path packages/erp/human-resources/src/adapters/drizzle/leave-sql-builders.ts",
+					"file": "packages/data-plane/audit/__tests__/direct-writer-boundary.test.ts"
+				},
+				{
+					"evidence": "packages/data-plane/audit/__tests__/direct-writer-boundary.test.ts reads retired path packages/erp/human-resources/src/adapters/drizzle/leave-transactions.ts",
+					"file": "packages/data-plane/audit/__tests__/direct-writer-boundary.test.ts"
+				},
+				{
+					"evidence": "packages/data-plane/audit/__tests__/direct-writer-boundary.test.ts reads retired path packages/erp/human-resources/src/adapters/drizzle/lifecycle.ts",
+					"file": "packages/data-plane/audit/__tests__/direct-writer-boundary.test.ts"
+				},
+				{
+					"evidence": "packages/data-plane/audit/__tests__/direct-writer-boundary.test.ts reads retired path packages/erp/human-resources/src/adapters/drizzle/organization.ts",
+					"file": "packages/data-plane/audit/__tests__/direct-writer-boundary.test.ts"
+				},
+				{
+					"evidence": "packages/data-plane/audit/__tests__/direct-writer-boundary.test.ts reads retired path packages/erp/human-resources/src/adapters/drizzle/performance.ts",
+					"file": "packages/data-plane/audit/__tests__/direct-writer-boundary.test.ts"
+				},
+				{
+					"evidence": "packages/data-plane/audit/__tests__/direct-writer-boundary.test.ts reads retired path packages/erp/human-resources/src/adapters/drizzle/recruitment.ts",
+					"file": "packages/data-plane/audit/__tests__/direct-writer-boundary.test.ts"
+				},
+				{
+					"evidence": "packages/data-plane/audit/__tests__/direct-writer-boundary.test.ts reads retired path packages/erp/human-resources/src/adapters/drizzle/talent.ts",
+					"file": "packages/data-plane/audit/__tests__/direct-writer-boundary.test.ts"
+				},
+				{
+					"evidence": "packages/data-plane/audit/__tests__/direct-writer-boundary.test.ts reads retired path packages/erp/human-resources/src/adapters/drizzle/workforce-foundation.ts",
+					"file": "packages/data-plane/audit/__tests__/direct-writer-boundary.test.ts"
+				},
+				{
+					"evidence": "packages/data-plane/audit/__tests__/direct-writer-boundary.test.ts reads retired path packages/erp/human-resources/src/adapters/drizzle/workforce-planning.ts",
+					"file": "packages/data-plane/audit/__tests__/direct-writer-boundary.test.ts"
+				},
+				{
+					"evidence": "packages/data-plane/db/__tests__/hr-leave-overlap-exclusion-register.test.ts reads retired path ../../../../packages/erp/human-resources/src/shared/leave-guards.ts",
+					"file": "packages/data-plane/db/__tests__/hr-leave-overlap-exclusion-register.test.ts"
+				}
+			],
+			"key": "retired-path-reading-test",
+			"target": 0
+		}
+	],
+	"packageName": "@afenda/human-resources",
+	"policy": {
+		"baselineDisposition": "measured debt, never an allowlist",
+		"maximumSourceSegments": 2,
+		"targetInvariant": "zero architecture debt in every category"
+	},
+	"schemaVersion": 1,
+	"summary": {
+		"featureCount": 20,
+		"sourceTypeScriptFiles": 502
+	}
+}

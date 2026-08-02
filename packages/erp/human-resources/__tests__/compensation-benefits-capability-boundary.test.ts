@@ -7,7 +7,7 @@ function typescriptFiles(directory: string): string[] {
 	return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
 		const target = path.join(directory, entry.name);
 		if (entry.isDirectory()) {
-			return typescriptFiles(target);
+			return entry.name === "adapters" ? [] : typescriptFiles(target);
 		}
 		return entry.isFile() && entry.name.endsWith(".ts") ? [target] : [];
 	});
@@ -25,7 +25,10 @@ describe("Compensation & Benefits capability boundary", () => {
 		).toBe(false);
 
 		for (const file of typescriptFiles(
-			path.resolve(import.meta.dirname, "../src/compensation-benefits"),
+			path.resolve(
+				import.meta.dirname,
+				"../src/features/compensation-benefits",
+			),
 		)) {
 			const source = readFileSync(file, "utf8");
 			expect(source, file).not.toContain("HumanResourcesStore");

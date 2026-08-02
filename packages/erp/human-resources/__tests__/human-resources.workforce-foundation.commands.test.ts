@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { HUMAN_RESOURCES_PERMISSION_CODES } from "../src/permissions";
-import { createMemoryHumanResourcesStore } from "../src/testing";
 import {
 	createPerson,
 	getPersonById,
-} from "../src/workforce-foundation/person";
+} from "../src/features/workforce-records/identity/person";
 import {
 	createWorker,
 	getWorkerById,
-} from "../src/workforce-foundation/worker";
+} from "../src/features/workforce-records/identity/worker";
+import { HUMAN_RESOURCES_PERMISSION_CODES } from "../src/kernel/authorization/permissions";
+import { createMemoryHumanResourcesStore } from "../src/testing/index";
 import { createTestHumanResourcesCommandOptions } from "./helpers/command-options";
 import { createStoreBackedIdentityResolver } from "./helpers/identity-resolver";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";

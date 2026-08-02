@@ -1,0 +1,447 @@
+import type { Result } from "@afenda/errors";
+import type {
+	EmployeePerformanceHistory,
+	PerformanceReview,
+	PerformanceReviewDetail,
+	PerformanceReviewListPage,
+} from "../../kernel/contracts";
+import { buildMutationMeta } from "../../kernel/emissions/mutation-meta";
+import type { HumanResourcesCommandOptions } from "../../kernel/execution/command-options";
+import { fingerprintPerformanceReviewFinalize } from "../../kernel/identity/fingerprint";
+import {
+	HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_ACKNOWLEDGE,
+	HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_ADD_DELEGATED_REVIEWER,
+	HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_CALIBRATE,
+	HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_FINALIZE,
+	HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_REOPEN,
+	HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_RETURN_FOR_CORRECTION,
+	HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_START,
+	HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_SUBMIT_DELEGATED_ASSESSMENT,
+	HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_SUBMIT_MANAGER_ASSESSMENT,
+	HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_SUBMIT_SELF_ASSESSMENT,
+	HUMAN_RESOURCES_QUERY_EMPLOYEE_PERFORMANCE_HISTORY_GET,
+	HUMAN_RESOURCES_QUERY_PERFORMANCE_REVIEW_GET,
+	HUMAN_RESOURCES_QUERY_PERFORMANCE_REVIEW_LIST_BY_EMPLOYEE,
+	HUMAN_RESOURCES_QUERY_PERFORMANCE_REVIEW_LIST_PENDING_MANAGER_ACTION,
+} from "../../kernel/operations/module-ids";
+import {
+	requirePerformanceConfidentialRead,
+	runPerformanceCapabilityCommand,
+	runPerformanceCapabilityQuery,
+	runPerformanceEmployeeScopedCapabilityQuery,
+	runPerformanceResourceScopedCapabilityQuery,
+} from "./run-operation";
+import {
+	acknowledgePerformanceReviewInputSchema,
+	addDelegatedReviewerInputSchema,
+	calibratePerformanceReviewInputSchema,
+	finalizePerformanceReviewInputSchema,
+	getEmployeePerformanceHistoryInputSchema,
+	getPerformanceReviewByIdInputSchema,
+	listEmployeePerformanceReviewsInputSchema,
+	listReviewsPendingManagerActionInputSchema,
+	performanceReviewStatusTransitionInputSchema,
+	reopenPerformanceReviewInputSchema,
+	startPerformanceReviewInputSchema,
+	submitDelegatedAssessmentInputSchema,
+	submitManagerAssessmentInputSchema,
+	submitSelfAssessmentInputSchema,
+} from "./schema";
+
+export const HUMAN_RESOURCES_AGGREGATE_REVIEW = "review" as const;
+export type HumanResourcesReviewAggregate =
+	typeof HUMAN_RESOURCES_AGGREGATE_REVIEW;
+
+export function startPerformanceReview(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<PerformanceReview>> {
+	return runPerformanceCapabilityCommand(input, options, {
+		storeMethods: ["startPerformanceReview"],
+		schema: startPerformanceReviewInputSchema,
+		invalidMessage: "Invalid performance review start input",
+		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_START,
+		execute: (data, { store, ports }) =>
+			store.startPerformanceReview(
+				{
+					organizationId: data.organizationId,
+					cycleId: data.cycleId,
+					employeeId: data.employeeId,
+					employmentId: data.employmentId,
+					managerEmployeeId: data.managerEmployeeId,
+					actorUserId: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operationId: HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_START,
+				}),
+			),
+	});
+}
+
+export function submitSelfAssessment(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<PerformanceReview>> {
+	return runPerformanceCapabilityCommand(input, options, {
+		storeMethods: ["submitSelfAssessment"],
+		schema: submitSelfAssessmentInputSchema,
+		invalidMessage: "Invalid self assessment submit input",
+		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_SUBMIT_SELF_ASSESSMENT,
+		execute: (data, { store, ports }) =>
+			store.submitSelfAssessment(
+				{
+					organizationId: data.organizationId,
+					reviewId: data.reviewId,
+					rating: data.rating,
+					commentsSensitive: data.commentsSensitive ?? null,
+					actorUserId: data.actorUserId,
+					actorEmployeeId: data.actorEmployeeId,
+					expectedVersion: data.expectedVersion,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operationId:
+						HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_SUBMIT_SELF_ASSESSMENT,
+				}),
+			),
+	});
+}
+
+export function submitManagerAssessment(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<PerformanceReview>> {
+	return runPerformanceCapabilityCommand(input, options, {
+		storeMethods: ["submitManagerAssessment"],
+		schema: submitManagerAssessmentInputSchema,
+		invalidMessage: "Invalid manager assessment submit input",
+		command:
+			HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_SUBMIT_MANAGER_ASSESSMENT,
+		execute: (data, { store, ports }) =>
+			store.submitManagerAssessment(
+				{
+					organizationId: data.organizationId,
+					reviewId: data.reviewId,
+					rating: data.rating,
+					commentsSensitive: data.commentsSensitive ?? null,
+					actorUserId: data.actorUserId,
+					managerEmployeeId: data.managerEmployeeId,
+					expectedVersion: data.expectedVersion,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operationId:
+						HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_SUBMIT_MANAGER_ASSESSMENT,
+				}),
+			),
+	});
+}
+
+export function addDelegatedReviewer(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<PerformanceReview>> {
+	return runPerformanceCapabilityCommand(input, options, {
+		storeMethods: ["addDelegatedReviewer"],
+		schema: addDelegatedReviewerInputSchema,
+		invalidMessage: "Invalid delegated reviewer input",
+		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_ADD_DELEGATED_REVIEWER,
+		execute: (data, { store, ports }) =>
+			store.addDelegatedReviewer(
+				{
+					organizationId: data.organizationId,
+					reviewId: data.reviewId,
+					delegatedEmployeeId: data.delegatedEmployeeId,
+					expectedVersion: data.expectedVersion,
+					actorUserId: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operationId:
+						HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_ADD_DELEGATED_REVIEWER,
+				}),
+			),
+	});
+}
+
+export function submitDelegatedAssessment(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<PerformanceReview>> {
+	return runPerformanceCapabilityCommand(input, options, {
+		storeMethods: ["submitDelegatedAssessment"],
+		schema: submitDelegatedAssessmentInputSchema,
+		invalidMessage: "Invalid delegated assessment submit input",
+		command:
+			HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_SUBMIT_DELEGATED_ASSESSMENT,
+		execute: (data, { store, ports }) =>
+			store.submitDelegatedAssessment(
+				{
+					organizationId: data.organizationId,
+					reviewId: data.reviewId,
+					participantId: data.participantId,
+					rating: data.rating,
+					commentsSensitive: data.commentsSensitive ?? null,
+					delegatedEmployeeId: data.delegatedEmployeeId,
+					expectedVersion: data.expectedVersion,
+					actorUserId: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operationId:
+						HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_SUBMIT_DELEGATED_ASSESSMENT,
+				}),
+			),
+	});
+}
+
+export function calibratePerformanceReview(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<PerformanceReview>> {
+	return runPerformanceCapabilityCommand(input, options, {
+		storeMethods: ["calibratePerformanceReview"],
+		schema: calibratePerformanceReviewInputSchema,
+		invalidMessage: "Invalid performance review calibration input",
+		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_CALIBRATE,
+		execute: (data, { store, ports }) =>
+			store.calibratePerformanceReview(
+				{
+					organizationId: data.organizationId,
+					reviewId: data.reviewId,
+					overallRating: data.overallRating,
+					calibrationNote: data.calibrationNote ?? null,
+					expectedVersion: data.expectedVersion,
+					actorUserId: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operationId: HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_CALIBRATE,
+				}),
+			),
+	});
+}
+
+export function returnPerformanceReviewForCorrection(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<PerformanceReview>> {
+	return runPerformanceCapabilityCommand(input, options, {
+		storeMethods: ["returnPerformanceReviewForCorrection"],
+		schema: performanceReviewStatusTransitionInputSchema,
+		invalidMessage: "Invalid performance review return input",
+		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_RETURN_FOR_CORRECTION,
+		execute: (data, { store, ports }) =>
+			store.returnPerformanceReviewForCorrection(
+				{
+					organizationId: data.organizationId,
+					reviewId: data.reviewId,
+					expectedVersion: data.expectedVersion,
+					actorUserId: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operationId:
+						HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_RETURN_FOR_CORRECTION,
+				}),
+			),
+	});
+}
+
+export function acknowledgePerformanceReview(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<PerformanceReview>> {
+	return runPerformanceCapabilityCommand(input, options, {
+		storeMethods: ["acknowledgePerformanceReview"],
+		schema: acknowledgePerformanceReviewInputSchema,
+		invalidMessage: "Invalid performance review acknowledge input",
+		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_ACKNOWLEDGE,
+		execute: (data, { store, ports }) =>
+			store.acknowledgePerformanceReview(
+				{
+					organizationId: data.organizationId,
+					reviewId: data.reviewId,
+					acknowledgementNote: data.acknowledgementNote ?? null,
+					expectedVersion: data.expectedVersion,
+					actorUserId: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operationId: HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_ACKNOWLEDGE,
+				}),
+			),
+	});
+}
+
+export function finalizePerformanceReview(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<PerformanceReview>> {
+	return runPerformanceCapabilityCommand(input, options, {
+		storeMethods: ["finalizePerformanceReview"],
+		schema: finalizePerformanceReviewInputSchema,
+		invalidMessage: "Invalid performance review finalize input",
+		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_FINALIZE,
+		execute: (data, { store, ports }) => {
+			const requestFingerprint = fingerprintPerformanceReviewFinalize({
+				reviewId: data.reviewId,
+			});
+
+			return store.finalizePerformanceReview(
+				{
+					organizationId: data.organizationId,
+					reviewId: data.reviewId,
+					overallRating: data.overallRating,
+					finalizeIdempotencyKey: data.idempotencyKey,
+					finalizeRequestFingerprint: requestFingerprint,
+					expectedVersion: data.expectedVersion,
+					actorUserId: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operationId: HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_FINALIZE,
+				}),
+			);
+		},
+	});
+}
+
+export function reopenPerformanceReview(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<PerformanceReview>> {
+	return runPerformanceCapabilityCommand(input, options, {
+		storeMethods: ["reopenPerformanceReview"],
+		schema: reopenPerformanceReviewInputSchema,
+		invalidMessage: "Invalid performance review reopen input",
+		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_REOPEN,
+		execute: (data, { store, ports }) =>
+			store.reopenPerformanceReview(
+				{
+					organizationId: data.organizationId,
+					reviewId: data.reviewId,
+					reason: data.reason,
+					expectedVersion: data.expectedVersion,
+					actorUserId: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operationId: HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_REOPEN,
+				}),
+			),
+	});
+}
+
+export function getPerformanceReviewById(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<PerformanceReviewDetail | null>> {
+	return runPerformanceResourceScopedCapabilityQuery(input, options, {
+		storeMethods: ["getPerformanceReviewById"],
+		query: HUMAN_RESOURCES_QUERY_PERFORMANCE_REVIEW_GET,
+		schema: getPerformanceReviewByIdInputSchema,
+		invalidMessage: "Invalid performance review get input",
+		execute: async (data, { store }) => {
+			const confidential = await requirePerformanceConfidentialRead(options, {
+				organizationId: data.organizationId,
+				actorUserId: data.actorUserId,
+				includeConfidential: data.includeConfidential,
+			});
+			if (!confidential.ok) {
+				return confidential;
+			}
+			return store.getPerformanceReviewById({
+				organizationId: data.organizationId,
+				reviewId: data.reviewId,
+				includeConfidential: data.includeConfidential,
+			});
+		},
+	});
+}
+
+export function listEmployeePerformanceReviews(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<PerformanceReviewListPage>> {
+	return runPerformanceEmployeeScopedCapabilityQuery(input, options, {
+		storeMethods: ["listEmployeePerformanceReviews"],
+		query: HUMAN_RESOURCES_QUERY_PERFORMANCE_REVIEW_LIST_BY_EMPLOYEE,
+		schema: listEmployeePerformanceReviewsInputSchema,
+		invalidMessage: "Invalid employee performance reviews list input",
+		execute: async (data, { store }) => {
+			const confidential = await requirePerformanceConfidentialRead(options, {
+				organizationId: data.organizationId,
+				actorUserId: data.actorUserId,
+				includeConfidential: data.includeConfidential,
+			});
+			if (!confidential.ok) {
+				return confidential;
+			}
+			return store.listEmployeePerformanceReviews({
+				organizationId: data.organizationId,
+				employeeId: data.employeeId,
+				page: data.page ?? 1,
+				pageSize: data.pageSize ?? 20,
+				includeConfidential: data.includeConfidential,
+			});
+		},
+	});
+}
+
+export function listReviewsPendingManagerAction(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<PerformanceReviewListPage>> {
+	return runPerformanceCapabilityQuery(input, options, {
+		storeMethods: ["listReviewsPendingManagerAction"],
+		schema: listReviewsPendingManagerActionInputSchema,
+		invalidMessage: "Invalid pending manager reviews list input",
+		query: HUMAN_RESOURCES_QUERY_PERFORMANCE_REVIEW_LIST_PENDING_MANAGER_ACTION,
+		execute: (data, { store }) =>
+			store.listReviewsPendingManagerAction({
+				organizationId: data.organizationId,
+				managerEmployeeId: data.managerEmployeeId,
+				page: data.page ?? 1,
+				pageSize: data.pageSize ?? 20,
+			}),
+	});
+}
+
+export function getEmployeePerformanceHistory(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<EmployeePerformanceHistory>> {
+	return runPerformanceEmployeeScopedCapabilityQuery(input, options, {
+		storeMethods: ["getEmployeePerformanceHistory"],
+		query: HUMAN_RESOURCES_QUERY_EMPLOYEE_PERFORMANCE_HISTORY_GET,
+		schema: getEmployeePerformanceHistoryInputSchema,
+		invalidMessage: "Invalid employee performance history get input",
+		execute: async (data, { store }) => {
+			const confidential = await requirePerformanceConfidentialRead(options, {
+				organizationId: data.organizationId,
+				actorUserId: data.actorUserId,
+				includeConfidential: data.includeConfidential,
+			});
+			if (!confidential.ok) {
+				return confidential;
+			}
+			return store.getEmployeePerformanceHistory({
+				organizationId: data.organizationId,
+				employeeId: data.employeeId,
+				includeConfidential: data.includeConfidential,
+			});
+		},
+	});
+}

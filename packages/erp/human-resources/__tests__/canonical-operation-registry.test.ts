@@ -2,22 +2,21 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 
 import { describe, expect, it } from "vitest";
-
-import {
-	HUMAN_RESOURCES_COMMAND_IDS,
-	HUMAN_RESOURCES_QUERY_IDS,
-} from "../src/module-ids";
-import { resolveHrOperationArea } from "../src/observability/operation-observability";
-import { HR_OBSERVABILITY_AREAS } from "../src/observability/types";
-import {
-	getHumanResourcesOperationDefinition,
-	HUMAN_RESOURCES_REGISTERED_OPERATION_DEFINITIONS,
-} from "../src/operation-registry/registry";
-import { HUMAN_RESOURCES_CAPABILITY_IDS } from "../src/operation-registry/types";
 import {
 	HUMAN_RESOURCES_SENSITIVE_OPERATION_IDS,
 	humanResourcesSensitiveOperationPolicy,
-} from "../src/sensitive-operation-policies";
+} from "../src/kernel/authorization/sensitive-operation-policies";
+import { resolveHrOperationArea } from "../src/kernel/observability/operation-observability";
+import { HR_OBSERVABILITY_AREAS } from "../src/kernel/observability/types";
+import {
+	HUMAN_RESOURCES_COMMAND_IDS,
+	HUMAN_RESOURCES_QUERY_IDS,
+} from "../src/kernel/operations/module-ids";
+import {
+	getHumanResourcesOperationDefinition,
+	HUMAN_RESOURCES_REGISTERED_OPERATION_DEFINITIONS,
+} from "../src/kernel/operations/registry";
+import { HUMAN_RESOURCES_CAPABILITY_IDS } from "../src/kernel/operations/types";
 
 const source = (relativePath: string) =>
 	readFileSync(path.resolve(import.meta.dirname, `../${relativePath}`), "utf8");
@@ -47,7 +46,7 @@ describe("Canonical Human Resources operation registry", () => {
 	});
 
 	it("binds every definition to the frozen public facade and a known owner", () => {
-		const facade = source("src/public-capabilities.ts");
+		const facade = source("src/facade/capabilities.ts");
 		const owners = new Set<string>(HUMAN_RESOURCES_CAPABILITY_IDS);
 		const registeredPublicNames = new Set(
 			HUMAN_RESOURCES_REGISTERED_OPERATION_DEFINITIONS.map(
@@ -69,7 +68,7 @@ describe("Canonical Human Resources operation registry", () => {
 	});
 
 	it("forbids module-ids from becoming a second literal registry", () => {
-		expect(source("src/module-ids.ts")).not.toMatch(
+		expect(source("src/kernel/operations/module-ids.ts")).not.toMatch(
 			/["']human-resources\.[a-z0-9.-]+["']/,
 		);
 	});
@@ -112,7 +111,7 @@ describe("Canonical Human Resources operation registry", () => {
 
 	it("forbids observability from reinterpreting operation subjects", () => {
 		const observability = source(
-			"src/observability/operation-observability.ts",
+			"src/kernel/observability/operation-observability.ts",
 		);
 		expect(observability).not.toMatch(/_SUBJECTS\b|operationSubject\b/);
 		expect(observability).not.toMatch(/operationId\.split\(/);
@@ -127,7 +126,7 @@ describe("Canonical Human Resources operation registry", () => {
 				),
 			),
 		).toBe(false);
-		const timeEmissions = source("src/emissions/domains/time.ts");
+		const timeEmissions = source("src/kernel/emissions/domains/time.ts");
 		expect(timeEmissions).not.toMatch(
 			/inferEmissionMetadata|commandId\.(?:includes|startsWith|split)/,
 		);
@@ -135,7 +134,7 @@ describe("Canonical Human Resources operation registry", () => {
 	});
 
 	it("forbids authorization policy resolution from interpreting ID prefixes", () => {
-		const resolver = source("src/shared/authorization-policy-registry.ts");
+		const resolver = source("src/kernel/authorization/registry.ts");
 		expect(resolver).not.toMatch(/operationPrefixes|\.startsWith\(/);
 		expect(resolver).toContain(
 			"HUMAN_RESOURCES_REGISTERED_OPERATION_DEFINITION_RECORD",
@@ -172,7 +171,9 @@ describe("Canonical Human Resources operation registry", () => {
 	});
 
 	it("forbids sensitivity policy from interpreting operation-name prefixes", () => {
-		const sensitivity = source("src/sensitive-operation-policies.ts");
+		const sensitivity = source(
+			"src/kernel/authorization/sensitive-operation-policies.ts",
+		);
 		expect(sensitivity).not.toMatch(/operationPrefixes|\.startsWith\(/);
 		expect(source("src/index.ts")).not.toContain(
 			"HUMAN_RESOURCES_SENSITIVE_OPERATION_POLICY_RULES",

@@ -13,8 +13,8 @@ import {
 } from "@afenda/events/schemas";
 import { describe, expect, it } from "vitest";
 
-import { HUMAN_RESOURCES_EMPLOYMENT_WORKFLOW_EMISSIONS } from "../src/emissions/domains/employment-workflow";
-import { HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD } from "../src/emissions/registry";
+import { HUMAN_RESOURCES_EMPLOYMENT_WORKFLOW_EMISSIONS } from "../src/kernel/emissions/domains/employment-workflow";
+import { HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD } from "../src/kernel/emissions/registry";
 import {
 	HUMAN_RESOURCES_COMMAND_ASSIGNMENT_TRANSFER,
 	HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONFIRM,
@@ -39,7 +39,7 @@ import {
 	HUMAN_RESOURCES_COMMAND_TERMINATION_FINALIZE,
 	HUMAN_RESOURCES_COMMAND_TERMINATION_PROPOSE,
 	HUMAN_RESOURCES_EMPLOYMENT_WORKFLOW_COMMAND_IDS,
-} from "../src/module-ids";
+} from "../src/kernel/operations/module-ids";
 
 const EXPECTED_MATRIX: Record<
 	string,

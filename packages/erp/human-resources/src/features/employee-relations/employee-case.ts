@@ -1,0 +1,491 @@
+import { errorResult, type Result } from "@afenda/errors";
+import { buildMutationMeta } from "../../kernel/emissions/mutation-meta";
+import type { HumanResourcesCommandOptions } from "../../kernel/execution/command-options";
+import {
+	HUMAN_RESOURCES_ERROR_CONFLICT,
+	humanResourcesErrorDetails,
+} from "../../kernel/execution/error-codes";
+import { fingerprintEmployeeCaseOpen } from "../../kernel/identity/fingerprint";
+import {
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_ADD_PARTICIPANT,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_ASSIGN_OWNER,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_CLOSE,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_ISSUE_INTERIM_MEASURE,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_OPEN,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RECORD_FINDING,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_REOPEN,
+	HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_UPDATE_CLASSIFICATION,
+	HUMAN_RESOURCES_QUERY_EMPLOYEE_CASE_GET,
+	HUMAN_RESOURCES_QUERY_EMPLOYEE_CASE_LIST,
+	HUMAN_RESOURCES_QUERY_EMPLOYEE_CASE_LIST_ASSIGNED,
+	HUMAN_RESOURCES_QUERY_EMPLOYEE_CASE_LIST_OPEN,
+	HUMAN_RESOURCES_QUERY_EMPLOYEE_CASE_OUTCOME,
+	HUMAN_RESOURCES_QUERY_EMPLOYEE_CASE_TIMELINE,
+	HUMAN_RESOURCES_QUERY_EMPLOYEE_RELATIONS_HISTORY_BY_EMPLOYEE,
+} from "../../kernel/operations/module-ids";
+import {
+	runAuthorizedEmployeeCaseListQuery,
+	runAuthorizedEmployeeCaseReadQuery,
+} from "./authorized-case-read";
+import { projectEmployeeCaseFromDecision } from "./case-field-projection";
+import {
+	runEmployeeRelationsCapabilityCommand,
+	runEmployeeRelationsCapabilityQuery,
+} from "./run-operation";
+import {
+	addEmployeeCaseParticipantInputSchema,
+	assignEmployeeCaseOwnerInputSchema,
+	closeEmployeeCaseInputSchema,
+	getEmployeeCaseByIdInputSchema,
+	getEmployeeCaseOutcomeInputSchema,
+	getEmployeeCaseTimelineInputSchema,
+	getEmployeeRelationsHistoryByEmployeeInputSchema,
+	issueInterimEmployeeMeasureInputSchema,
+	listCasesAssignedToActorInputSchema,
+	listEmployeeCasesInputSchema,
+	listOpenEmployeeRelationsCasesInputSchema,
+	openEmployeeCaseInputSchema,
+	recordEmployeeCaseFindingInputSchema,
+	reopenEmployeeCaseInputSchema,
+	updateEmployeeCaseClassificationInputSchema,
+} from "./schema";
+import type {
+	EmployeeCase,
+	EmployeeCaseListPage,
+	EmployeeCaseOutcome,
+	EmployeeCaseTimeline,
+	ProjectedEmployeeCase,
+} from "./types";
+
+export const HUMAN_RESOURCES_AGGREGATE_EMPLOYEE_CASE = "employee_case" as const;
+export type HumanResourcesEmployeeCaseAggregate =
+	typeof HUMAN_RESOURCES_AGGREGATE_EMPLOYEE_CASE;
+
+export function openEmployeeCase(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<EmployeeCase>> {
+	return runEmployeeRelationsCapabilityCommand(input, options, {
+		schema: openEmployeeCaseInputSchema,
+		invalidMessage: "Invalid employee case open input",
+		command: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_OPEN,
+		storeMethods: ["findEmployeeCaseByIdempotencyKey", "openEmployeeCase"],
+		execute: async (data, { store, ports }) => {
+			const fingerprint = fingerprintEmployeeCaseOpen({
+				employeeId: data.employeeId,
+				employmentId: data.employmentId,
+				caseType: data.caseType,
+				severity: data.severity,
+				classificationCode: data.classificationCode,
+				ownerActorUserId: data.ownerActorUserId,
+			});
+			const existing = await store.findEmployeeCaseByIdempotencyKey({
+				organizationId: data.organizationId,
+				idempotencyKey: data.idempotencyKey,
+			});
+			if (!existing.ok) {
+				return existing;
+			}
+			if (existing.data !== null) {
+				if (existing.data.createRequestFingerprint !== fingerprint) {
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "The request conflicts with current state",
+						internalContext: humanResourcesErrorDetails(
+							HUMAN_RESOURCES_ERROR_CONFLICT,
+						),
+					});
+				}
+				return errorResult.ok(existing.data.case);
+			}
+			return store.openEmployeeCase(
+				{
+					organizationId: data.organizationId,
+					employeeId: data.employeeId,
+					employmentId: data.employmentId,
+					caseType: data.caseType,
+					severity: data.severity,
+					allegationSummary: data.allegationSummary,
+					classificationCode: data.classificationCode,
+					ownerActorUserId: data.ownerActorUserId,
+					subjectActorUserId: data.subjectActorUserId ?? null,
+					conflictedActorUserIds: data.conflictedActorUserIds,
+					createIdempotencyKey: data.idempotencyKey,
+					createRequestFingerprint: fingerprint,
+					createdBy: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operationId: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_OPEN,
+				}),
+			);
+		},
+	});
+}
+
+export function updateEmployeeCaseClassification(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<EmployeeCase>> {
+	return runEmployeeRelationsCapabilityCommand(input, options, {
+		schema: updateEmployeeCaseClassificationInputSchema,
+		invalidMessage: "Invalid employee case classification input",
+		command: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_UPDATE_CLASSIFICATION,
+		storeMethods: ["updateEmployeeCaseClassification"],
+		execute: (data, { store, ports }) =>
+			store.updateEmployeeCaseClassification(
+				{
+					organizationId: data.organizationId,
+					caseId: data.caseId,
+					classificationCode: data.classificationCode,
+					expectedVersion: data.expectedVersion,
+					actorUserId: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operationId:
+						HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_UPDATE_CLASSIFICATION,
+				}),
+			),
+	});
+}
+
+export function assignEmployeeCaseOwner(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<EmployeeCase>> {
+	return runEmployeeRelationsCapabilityCommand(input, options, {
+		schema: assignEmployeeCaseOwnerInputSchema,
+		invalidMessage: "Invalid employee case assign-owner input",
+		command: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_ASSIGN_OWNER,
+		storeMethods: ["assignEmployeeCaseOwner"],
+		execute: (data, { store, ports }) =>
+			store.assignEmployeeCaseOwner(
+				{
+					organizationId: data.organizationId,
+					caseId: data.caseId,
+					ownerActorUserId: data.ownerActorUserId,
+					expectedVersion: data.expectedVersion,
+					actorUserId: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operationId: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_ASSIGN_OWNER,
+				}),
+			),
+	});
+}
+
+export function addEmployeeCaseParticipant(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<EmployeeCase>> {
+	return runEmployeeRelationsCapabilityCommand(input, options, {
+		schema: addEmployeeCaseParticipantInputSchema,
+		invalidMessage: "Invalid employee case add-participant input",
+		command: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_ADD_PARTICIPANT,
+		storeMethods: ["addEmployeeCaseParticipant"],
+		execute: (data, { store, ports }) =>
+			store.addEmployeeCaseParticipant(
+				{
+					organizationId: data.organizationId,
+					caseId: data.caseId,
+					participantActorUserId: data.participantActorUserId,
+					role: data.role,
+					expectedVersion: data.expectedVersion,
+					actorUserId: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operationId: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_ADD_PARTICIPANT,
+				}),
+			),
+	});
+}
+
+export function issueInterimEmployeeMeasure(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<EmployeeCase>> {
+	return runEmployeeRelationsCapabilityCommand(input, options, {
+		schema: issueInterimEmployeeMeasureInputSchema,
+		invalidMessage: "Invalid interim employee measure input",
+		command: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_ISSUE_INTERIM_MEASURE,
+		storeMethods: ["issueInterimEmployeeMeasure"],
+		execute: (data, { store, ports }) =>
+			store.issueInterimEmployeeMeasure(
+				{
+					organizationId: data.organizationId,
+					caseId: data.caseId,
+					interimAuthority: data.interimAuthority,
+					interimReason: data.interimReason,
+					interimStartsOn: data.interimStartsOn,
+					interimReviewOn: data.interimReviewOn,
+					expectedVersion: data.expectedVersion,
+					actorUserId: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operationId:
+						HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_ISSUE_INTERIM_MEASURE,
+				}),
+			),
+	});
+}
+
+export function recordEmployeeCaseFinding(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<EmployeeCase>> {
+	return runEmployeeRelationsCapabilityCommand(input, options, {
+		schema: recordEmployeeCaseFindingInputSchema,
+		invalidMessage: "Invalid employee case finding input",
+		command: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RECORD_FINDING,
+		storeMethods: ["recordEmployeeCaseFinding"],
+		execute: (data, { store, ports }) =>
+			store.recordEmployeeCaseFinding(
+				{
+					organizationId: data.organizationId,
+					caseId: data.caseId,
+					findingCode: data.findingCode,
+					findingSummary: data.findingSummary,
+					expectedVersion: data.expectedVersion,
+					actorUserId: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operationId: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RECORD_FINDING,
+				}),
+			),
+	});
+}
+
+export function closeEmployeeCase(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<EmployeeCase>> {
+	return runEmployeeRelationsCapabilityCommand(input, options, {
+		schema: closeEmployeeCaseInputSchema,
+		invalidMessage: "Invalid employee case close input",
+		command: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_CLOSE,
+		storeMethods: ["closeEmployeeCase"],
+		execute: (data, { store, ports }) =>
+			store.closeEmployeeCase(
+				{
+					organizationId: data.organizationId,
+					caseId: data.caseId,
+					outcomeCode: data.outcomeCode,
+					expectedVersion: data.expectedVersion,
+					actorUserId: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operationId: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_CLOSE,
+				}),
+			),
+	});
+}
+
+export function reopenEmployeeCase(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<EmployeeCase>> {
+	return runEmployeeRelationsCapabilityCommand(input, options, {
+		schema: reopenEmployeeCaseInputSchema,
+		invalidMessage: "Invalid employee case reopen input",
+		command: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_REOPEN,
+		storeMethods: ["reopenEmployeeCase"],
+		execute: (data, { store, ports }) =>
+			store.reopenEmployeeCase(
+				{
+					organizationId: data.organizationId,
+					caseId: data.caseId,
+					reasonCode: data.reasonCode,
+					expectedVersion: data.expectedVersion,
+					actorUserId: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operationId: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_REOPEN,
+				}),
+			),
+	});
+}
+
+export function getEmployeeCaseById(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<ProjectedEmployeeCase>> {
+	return runAuthorizedEmployeeCaseReadQuery<
+		readonly [],
+		typeof getEmployeeCaseByIdInputSchema,
+		EmployeeCase,
+		ProjectedEmployeeCase
+	>(input, options, {
+		schema: getEmployeeCaseByIdInputSchema,
+		invalidMessage: "Invalid employee case get input",
+		query: HUMAN_RESOURCES_QUERY_EMPLOYEE_CASE_GET,
+		storeMethods: [],
+		execute: async ({ employeeCase }) => errorResult.ok(employeeCase),
+		project: (value, projection) =>
+			projectEmployeeCaseFromDecision(value, projection),
+	});
+}
+
+export function listEmployeeCases(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<EmployeeCaseListPage>> {
+	return runEmployeeRelationsCapabilityQuery(input, options, {
+		schema: listEmployeeCasesInputSchema,
+		invalidMessage: "Invalid employee case list input",
+		query: HUMAN_RESOURCES_QUERY_EMPLOYEE_CASE_LIST,
+		storeMethods: ["listEmployeeCases"],
+		execute: (data, { store }) =>
+			runAuthorizedEmployeeCaseListQuery(
+				{
+					organizationId: data.organizationId,
+					actorUserId: data.actorUserId,
+					correlationId: data.correlationId,
+					...(data.page === undefined ? {} : { page: data.page }),
+					...(data.pageSize === undefined ? {} : { pageSize: data.pageSize }),
+					queryId: HUMAN_RESOURCES_QUERY_EMPLOYEE_CASE_LIST,
+				},
+				options,
+				() =>
+					store.listEmployeeCases({
+						organizationId: data.organizationId,
+						...(data.status === undefined ? {} : { status: data.status }),
+					}),
+			),
+	});
+}
+
+export function listCasesAssignedToActor(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<EmployeeCaseListPage>> {
+	return runEmployeeRelationsCapabilityQuery(input, options, {
+		schema: listCasesAssignedToActorInputSchema,
+		invalidMessage: "Invalid assigned employee case list input",
+		query: HUMAN_RESOURCES_QUERY_EMPLOYEE_CASE_LIST_ASSIGNED,
+		storeMethods: ["listCasesAssignedToActor"],
+		execute: (data, { store }) =>
+			runAuthorizedEmployeeCaseListQuery(
+				{
+					organizationId: data.organizationId,
+					actorUserId: data.actorUserId,
+					correlationId: data.correlationId,
+					...(data.page === undefined ? {} : { page: data.page }),
+					...(data.pageSize === undefined ? {} : { pageSize: data.pageSize }),
+					queryId: HUMAN_RESOURCES_QUERY_EMPLOYEE_CASE_LIST_ASSIGNED,
+				},
+				options,
+				() =>
+					store.listCasesAssignedToActor({
+						organizationId: data.organizationId,
+						ownerActorUserId: data.actorUserId,
+					}),
+			),
+	});
+}
+
+export function listOpenEmployeeRelationsCases(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<EmployeeCaseListPage>> {
+	return runEmployeeRelationsCapabilityQuery(input, options, {
+		schema: listOpenEmployeeRelationsCasesInputSchema,
+		invalidMessage: "Invalid open employee case list input",
+		query: HUMAN_RESOURCES_QUERY_EMPLOYEE_CASE_LIST_OPEN,
+		storeMethods: ["listOpenEmployeeRelationsCases"],
+		execute: (data, { store }) =>
+			runAuthorizedEmployeeCaseListQuery(
+				{
+					organizationId: data.organizationId,
+					actorUserId: data.actorUserId,
+					correlationId: data.correlationId,
+					...(data.page === undefined ? {} : { page: data.page }),
+					...(data.pageSize === undefined ? {} : { pageSize: data.pageSize }),
+					queryId: HUMAN_RESOURCES_QUERY_EMPLOYEE_CASE_LIST_OPEN,
+				},
+				options,
+				() =>
+					store.listOpenEmployeeRelationsCases({
+						organizationId: data.organizationId,
+					}),
+			),
+	});
+}
+
+export function getEmployeeRelationsHistoryByEmployee(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<EmployeeCaseListPage>> {
+	return runEmployeeRelationsCapabilityQuery(input, options, {
+		schema: getEmployeeRelationsHistoryByEmployeeInputSchema,
+		invalidMessage: "Invalid employee relations history input",
+		query: HUMAN_RESOURCES_QUERY_EMPLOYEE_RELATIONS_HISTORY_BY_EMPLOYEE,
+		storeMethods: ["getEmployeeRelationsHistoryByEmployee"],
+		execute: (data, { store }) =>
+			runAuthorizedEmployeeCaseListQuery(
+				{
+					organizationId: data.organizationId,
+					actorUserId: data.actorUserId,
+					correlationId: data.correlationId,
+					...(data.page === undefined ? {} : { page: data.page }),
+					...(data.pageSize === undefined ? {} : { pageSize: data.pageSize }),
+					queryId: HUMAN_RESOURCES_QUERY_EMPLOYEE_RELATIONS_HISTORY_BY_EMPLOYEE,
+				},
+				options,
+				() =>
+					store.getEmployeeRelationsHistoryByEmployee({
+						organizationId: data.organizationId,
+						employeeId: data.employeeId,
+					}),
+			),
+	});
+}
+
+export function getEmployeeCaseTimeline(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<EmployeeCaseTimeline>> {
+	return runAuthorizedEmployeeCaseReadQuery(input, options, {
+		schema: getEmployeeCaseTimelineInputSchema,
+		invalidMessage: "Invalid employee case timeline input",
+		query: HUMAN_RESOURCES_QUERY_EMPLOYEE_CASE_TIMELINE,
+		storeMethods: ["getEmployeeCaseTimeline"],
+		execute: ({ data, store }) =>
+			store.getEmployeeCaseTimeline({
+				organizationId: data.organizationId,
+				caseId: data.caseId,
+				actorUserId: data.actorUserId,
+			}),
+	});
+}
+
+export function getEmployeeCaseOutcome(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<EmployeeCaseOutcome>> {
+	return runAuthorizedEmployeeCaseReadQuery(input, options, {
+		schema: getEmployeeCaseOutcomeInputSchema,
+		invalidMessage: "Invalid employee case outcome input",
+		query: HUMAN_RESOURCES_QUERY_EMPLOYEE_CASE_OUTCOME,
+		storeMethods: ["getEmployeeCaseOutcome"],
+		execute: ({ data, store }) =>
+			store.getEmployeeCaseOutcome({
+				organizationId: data.organizationId,
+				caseId: data.caseId,
+				actorUserId: data.actorUserId,
+			}),
+	});
+}

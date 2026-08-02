@@ -1,0 +1,115 @@
+import type { Result } from "@afenda/errors";
+import type { HeadcountPlanLine } from "../../kernel/contracts";
+import { buildMutationMeta } from "../../kernel/emissions/mutation-meta";
+import type { HumanResourcesCommandOptions } from "../../kernel/execution/command-options";
+import {
+	HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_LINE_ADD,
+	HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_LINE_REMOVE,
+	HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_LINE_UPDATE,
+} from "../../kernel/operations/module-ids";
+import { runWorkforcePlanningCapabilityCommand } from "./run-operation";
+import {
+	addHeadcountPlanLineInputSchema,
+	removeHeadcountPlanLineInputSchema,
+	updateHeadcountPlanLineInputSchema,
+} from "./schema";
+
+export const HUMAN_RESOURCES_AGGREGATE_HEADCOUNT_PLAN_LINE =
+	"headcount-plan-line" as const;
+export type HumanResourcesHeadcountPlanLineAggregate =
+	typeof HUMAN_RESOURCES_AGGREGATE_HEADCOUNT_PLAN_LINE;
+
+export function addHeadcountPlanLine(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<HeadcountPlanLine>> {
+	return runWorkforcePlanningCapabilityCommand(input, options, {
+		schema: addHeadcountPlanLineInputSchema,
+		invalidMessage: "Invalid headcount plan line add input",
+		command: HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_LINE_ADD,
+		storeMethods: ["addHeadcountPlanLine"],
+		execute: (data, { store, ports }) =>
+			store.addHeadcountPlanLine(
+				{
+					organizationId: data.organizationId,
+					planId: data.planId,
+					departmentId: data.departmentId ?? null,
+					jobId: data.jobId ?? null,
+					positionId: data.positionId ?? null,
+					locationCode: data.locationCode?.trim() ?? null,
+					employmentType: data.employmentType ?? null,
+					plannedFte: data.plannedFte,
+					plannedHeadcount: data.plannedHeadcount,
+					costEnvelopeAmount: data.costEnvelopeAmount ?? null,
+					costEnvelopeCurrencyCode: data.costEnvelopeCurrencyCode ?? null,
+					createdBy: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operationId: HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_LINE_ADD,
+				}),
+			),
+	});
+}
+
+export function updateHeadcountPlanLine(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<HeadcountPlanLine>> {
+	return runWorkforcePlanningCapabilityCommand(input, options, {
+		schema: updateHeadcountPlanLineInputSchema,
+		invalidMessage: "Invalid headcount plan line update input",
+		command: HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_LINE_UPDATE,
+		storeMethods: ["updateHeadcountPlanLine"],
+		execute: (data, { store, ports }) =>
+			store.updateHeadcountPlanLine(
+				{
+					organizationId: data.organizationId,
+					planLineId: data.planLineId,
+					departmentId: data.departmentId,
+					jobId: data.jobId,
+					positionId: data.positionId,
+					locationCode: data.locationCode,
+					employmentType: data.employmentType,
+					plannedFte: data.plannedFte,
+					plannedHeadcount: data.plannedHeadcount,
+					costEnvelopeAmount: data.costEnvelopeAmount,
+					costEnvelopeCurrencyCode: data.costEnvelopeCurrencyCode,
+					expectedVersion: data.expectedVersion,
+					actorUserId: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operationId: HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_LINE_UPDATE,
+				}),
+			),
+	});
+}
+
+export function removeHeadcountPlanLine(
+	input: unknown,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<void>> {
+	return runWorkforcePlanningCapabilityCommand(input, options, {
+		schema: removeHeadcountPlanLineInputSchema,
+		invalidMessage: "Invalid headcount plan line remove input",
+		command: HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_LINE_REMOVE,
+		storeMethods: ["removeHeadcountPlanLine"],
+		execute: (data, { store, ports }) =>
+			store.removeHeadcountPlanLine(
+				{
+					organizationId: data.organizationId,
+					planLineId: data.planLineId,
+					expectedVersion: data.expectedVersion,
+					actorUserId: data.actorUserId,
+				},
+				ports,
+				buildMutationMeta({
+					correlationId: data.correlationId,
+					operationId: HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_LINE_REMOVE,
+				}),
+			),
+	});
+}

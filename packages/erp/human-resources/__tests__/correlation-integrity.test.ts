@@ -9,22 +9,23 @@ import {
 	HUMAN_RESOURCES_EMPLOYMENT_STARTED_EVENT,
 } from "@afenda/events/schemas";
 import { describe, expect, it } from "vitest";
+import { createProductionWorkCalendar } from "../src/composition/production/work-calendar";
 import {
 	cancelBenefitEnrollment,
 	endBenefitEnrollment,
 	enrolBenefit,
-} from "../src/compensation-benefits/benefit-enrollment";
-import { applyApprovedCompensationResult } from "../src/compensation-benefits/compensation-review";
+} from "../src/features/compensation-benefits/benefit-enrollment";
+import { applyApprovedCompensationResult } from "../src/features/compensation-benefits/compensation-review";
 import {
 	createEmployeeCompensation,
 	endEmployeeCompensation,
-} from "../src/compensation-benefits/employee-compensation";
+} from "../src/features/compensation-benefits/employee-compensation";
 import {
 	createDocumentRequirement,
 	publishDocumentRequirement,
 	retireDocumentRequirement,
 	updateDocumentRequirement,
-} from "../src/compliance/document-requirement";
+} from "../src/features/compliance/document-requirement";
 import {
 	markEmployeeDocumentExpired,
 	registerEmployeeDocument,
@@ -32,52 +33,34 @@ import {
 	revokeEmployeeDocumentVerification,
 	updateEmployeeDocumentMetadata,
 	verifyEmployeeDocument,
-} from "../src/compliance/employee-document";
+} from "../src/features/compliance/employee-document";
 import {
 	acknowledgePolicy,
 	issuePolicyAcknowledgementRequirement,
 	revokePolicyAcknowledgement,
 	supersedePolicyAcknowledgementRequirement,
-} from "../src/compliance/policy-acknowledgement";
+} from "../src/features/compliance/policy-acknowledgement";
 import {
 	closeWorkEligibility,
 	recordWorkEligibility,
 	renewWorkEligibility,
 	suspendWorkEligibility,
 	verifyWorkEligibility,
-} from "../src/compliance/work-eligibility";
-import { createAssignment } from "../src/core/assignment";
-import { createEmployee } from "../src/core/employee";
-import { createEmployment } from "../src/core/employment";
-import { createEmploymentContract } from "../src/core/employment-contract";
+} from "../src/features/compliance/work-eligibility";
 import {
 	approveEmployeeCaseAction,
 	recommendEmployeeCaseAction,
-} from "../src/employee-relations/case-action";
-import { recordEmployeeCaseAppeal } from "../src/employee-relations/case-appeal";
-import { recordEmployeeCaseEvent } from "../src/employee-relations/case-event";
+} from "../src/features/employee-relations/case-action";
+import { recordEmployeeCaseAppeal } from "../src/features/employee-relations/case-appeal";
+import { recordEmployeeCaseEvent } from "../src/features/employee-relations/case-event";
 import {
 	assignEmployeeCaseOwner,
 	closeEmployeeCase,
 	openEmployeeCase,
 	recordEmployeeCaseFinding,
 	reopenEmployeeCase,
-} from "../src/employee-relations/employee-case";
-import {
-	expireCertification,
-	issueCertification,
-	revokeCertification,
-} from "../src/learning/certification";
-import { recordCompletion } from "../src/learning/completion";
-import { createCourse } from "../src/learning/course";
-import { assignLearning } from "../src/learning/learning-assignment";
-import {
-	approveLeaveRequest,
-	createDraftLeaveRequest,
-	rejectLeaveRequest,
-	submitLeaveRequest,
-} from "../src/leave/leave-request";
-import { confirmEmployment } from "../src/lifecycle/confirmation";
+} from "../src/features/employee-relations/employee-case";
+import { confirmEmployment } from "../src/features/employment-lifecycle/confirmation";
 import {
 	completeOffboarding,
 	completeOffboardingTask,
@@ -90,7 +73,7 @@ import {
 	recordOffboardingAccessRevocation,
 	recordOffboardingPayrollHandoff,
 	startOffboarding,
-} from "../src/lifecycle/offboarding";
+} from "../src/features/employment-lifecycle/offboarding";
 import {
 	completeOnboarding,
 	completeOnboardingTask,
@@ -102,23 +85,203 @@ import {
 	recordOnboardingEquipmentHandoff,
 	recordOnboardingOrientation,
 	startOnboarding,
-} from "../src/lifecycle/onboarding";
+} from "../src/features/employment-lifecycle/onboarding";
 import {
 	ONBOARDING_TASK_CODE_IDENTITY_DOCUMENTS,
 	ONBOARDING_TASK_CODE_ORIENTATION,
 	ONBOARDING_TASK_CODE_WORK_ELIGIBILITY,
-} from "../src/lifecycle/onboarding-checklist";
+} from "../src/features/employment-lifecycle/onboarding-checklist";
 import {
 	extendProbation,
 	openProbation,
 	recordProbationOutcome,
-} from "../src/lifecycle/probation";
+} from "../src/features/employment-lifecycle/probation";
 import {
 	approveTermination,
 	finalizeTermination,
 	proposeTermination,
-} from "../src/lifecycle/termination";
-import { transferAssignment } from "../src/lifecycle/transfer";
+} from "../src/features/employment-lifecycle/termination";
+import { transferAssignment } from "../src/features/employment-lifecycle/transfer";
+import {
+	expireCertification,
+	issueCertification,
+	revokeCertification,
+} from "../src/features/learning/certification";
+import { recordCompletion } from "../src/features/learning/completion";
+import { createCourse } from "../src/features/learning/course";
+import { assignLearning } from "../src/features/learning/learning-assignment";
+import {
+	approveLeaveRequest,
+	createDraftLeaveRequest,
+	rejectLeaveRequest,
+	submitLeaveRequest,
+} from "../src/features/leave/leave-request";
+import {
+	activateDepartment,
+	archiveDepartment,
+	createDepartment,
+} from "../src/features/organization/department";
+import { createPosition } from "../src/features/organization/position";
+import { assignPrimaryReportingLine } from "../src/features/organization/reporting-line";
+import { approvePerformanceGoal } from "../src/features/performance/goal";
+import {
+	completeImprovementPlan,
+	createImprovementPlan,
+	openImprovementPlan,
+	recordImprovementCheckpoint,
+} from "../src/features/performance/improvement-plan";
+import {
+	addCycleParticipant,
+	openPerformanceCycle,
+} from "../src/features/performance/performance-cycle";
+import {
+	acknowledgePerformanceReview,
+	finalizePerformanceReview,
+	reopenPerformanceReview,
+} from "../src/features/performance/review";
+import {
+	createApplication,
+	moveApplicationToInReview,
+	moveApplicationToInterviewing,
+	rejectApplication,
+	withdrawApplication,
+} from "../src/features/recruitment/application";
+import {
+	anonymizeCandidate,
+	changeCandidateRetention,
+	createCandidate,
+	withdrawCandidateConsent,
+} from "../src/features/recruitment/candidate";
+import {
+	recordInterviewEvaluation,
+	scheduleInterview,
+} from "../src/features/recruitment/interview";
+import {
+	acceptOffer,
+	amendOfferDraft,
+	approveOffer,
+	createOffer,
+	declineOffer,
+	expireOffer,
+	issueOffer,
+	withdrawOffer,
+} from "../src/features/recruitment/offer";
+import {
+	approveRequisition,
+	closeRequisition,
+	createDraftRequisition,
+	openRequisition,
+	submitRequisition,
+} from "../src/features/recruitment/requisition";
+import {
+	approveTalentPoolMember,
+	createTalentPool,
+	nominateTalentPoolMember,
+	removeTalentPoolMember,
+} from "../src/features/talent/talent-pool";
+import {
+	createTalentProfile,
+	updateTalentProfile,
+} from "../src/features/talent/talent-profile";
+import {
+	correctAttendanceEvent,
+	recordClockIn,
+	recordClockOut,
+	voidAttendanceEvent,
+} from "../src/features/time/attendance/events";
+import {
+	createAttendanceException,
+	excuseAttendanceException,
+	rejectAttendanceException,
+	resolveAttendanceException,
+	reviewAttendanceException,
+} from "../src/features/time/attendance/exceptions";
+import { importAttendanceEvents } from "../src/features/time/attendance/import";
+import { resolveAttendanceSession } from "../src/features/time/attendance/sessions";
+import {
+	addCalendarDateOverride,
+	addWorkCalendarHoliday,
+	archiveWorkCalendar,
+	assignEmploymentCalendar,
+	createWorkCalendar,
+	endWorkCalendarAssignment,
+	removeCalendarDateOverride,
+	removeWorkCalendarHoliday,
+	updateWorkCalendar,
+} from "../src/features/time/calendar";
+import {
+	approveOvertimeRequest,
+	cancelOvertimeRequest,
+	createOvertimeRequest,
+	recordOvertimeActual,
+	rejectOvertimeRequest,
+	verifyOvertimeRequest,
+} from "../src/features/time/overtime";
+import { assignTimeApprovalAuthority } from "../src/features/time/policy";
+import {
+	assignShift,
+	cancelShiftAssignment,
+	changeShiftAssignment,
+	completeShiftAssignment,
+	publishShiftAssignment,
+} from "../src/features/time/scheduling";
+import {
+	activateShift,
+	addShiftBreak,
+	createShift,
+	deactivateShift,
+	removeShiftBreak,
+	updateShift,
+} from "../src/features/time/shift";
+import {
+	addTimesheetEntry,
+	approveTimesheet,
+	createTimesheet,
+	generateTimesheetEntries,
+	getTimesheet,
+	lockTimesheet,
+	rejectTimesheet,
+	removeTimesheetEntry,
+	reopenTimesheet,
+	returnTimesheet,
+	submitTimesheet,
+	supersedeTimesheet,
+	updateTimesheetEntry,
+} from "../src/features/time/timesheet";
+import {
+	approveHeadcountPlan,
+	createHeadcountPlan,
+	submitHeadcountPlan,
+} from "../src/features/workforce-planning/headcount-plan";
+import { addHeadcountPlanLine } from "../src/features/workforce-planning/headcount-plan-line";
+import {
+	consumeHeadcountReservation,
+	releaseHeadcountReservation,
+	reserveHeadcount,
+} from "../src/features/workforce-planning/headcount-reservation";
+import { createAssignment } from "../src/features/workforce-records/employment/assignment";
+import { createEmployee } from "../src/features/workforce-records/employment/employee";
+import { createEmployment } from "../src/features/workforce-records/employment/employment";
+import { createEmploymentContract } from "../src/features/workforce-records/employment/employment-contract";
+import {
+	createPerson,
+	updatePersonName,
+} from "../src/features/workforce-records/identity/person";
+import {
+	changeWorkerStatus,
+	changeWorkerType,
+	createWorker,
+} from "../src/features/workforce-records/identity/worker";
+import {
+	HUMAN_RESOURCES_PERMISSION_CODES,
+	HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_APPROVE_TEAM,
+	HUMAN_RESOURCES_PERMISSION_ORGANIZATION_MANAGE,
+} from "../src/kernel/authorization/permissions";
+import { HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY } from "../src/kernel/emissions/mutation-emission-registry";
+import {
+	runSequential,
+	sequentialReturn,
+} from "../src/kernel/execution/run-sequential";
 import {
 	HUMAN_RESOURCES_COMMAND_APPLICATION_CREATE,
 	HUMAN_RESOURCES_COMMAND_APPLICATION_MOVE_TO_IN_REVIEW,
@@ -280,171 +443,11 @@ import {
 	HUMAN_RESOURCES_TIME_COMMAND_IDS,
 	HUMAN_RESOURCES_WORKFORCE_FOUNDATION_COMMAND_IDS,
 	HUMAN_RESOURCES_WORKFORCE_PLANNING_COMMAND_IDS,
-} from "../src/module-ids";
-import { HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY } from "../src/mutation-emission-registry";
-import {
-	activateDepartment,
-	archiveDepartment,
-	createDepartment,
-} from "../src/organization/department";
-import { createPosition } from "../src/organization/position";
-import { assignPrimaryReportingLine } from "../src/organization/reporting-line";
-import { approvePerformanceGoal } from "../src/performance/goal";
-import {
-	completeImprovementPlan,
-	createImprovementPlan,
-	openImprovementPlan,
-	recordImprovementCheckpoint,
-} from "../src/performance/improvement-plan";
-import {
-	addCycleParticipant,
-	openPerformanceCycle,
-} from "../src/performance/performance-cycle";
-import {
-	acknowledgePerformanceReview,
-	finalizePerformanceReview,
-	reopenPerformanceReview,
-} from "../src/performance/review";
-import {
-	HUMAN_RESOURCES_PERMISSION_CODES,
-	HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_APPROVE_TEAM,
-	HUMAN_RESOURCES_PERMISSION_ORGANIZATION_MANAGE,
-} from "../src/permissions";
-import { createProductionWorkCalendar } from "../src/production-work-calendar";
-import {
-	createApplication,
-	moveApplicationToInReview,
-	moveApplicationToInterviewing,
-	rejectApplication,
-	withdrawApplication,
-} from "../src/recruitment/application";
-import {
-	anonymizeCandidate,
-	changeCandidateRetention,
-	createCandidate,
-	withdrawCandidateConsent,
-} from "../src/recruitment/candidate";
-import {
-	recordInterviewEvaluation,
-	scheduleInterview,
-} from "../src/recruitment/interview";
-import {
-	acceptOffer,
-	amendOfferDraft,
-	approveOffer,
-	createOffer,
-	declineOffer,
-	expireOffer,
-	issueOffer,
-	withdrawOffer,
-} from "../src/recruitment/offer";
-import {
-	approveRequisition,
-	closeRequisition,
-	createDraftRequisition,
-	openRequisition,
-	submitRequisition,
-} from "../src/recruitment/requisition";
-import { runSequential, sequentialReturn } from "../src/shared/run-sequential";
-import {
-	approveTalentPoolMember,
-	createTalentPool,
-	nominateTalentPoolMember,
-	removeTalentPoolMember,
-} from "../src/talent/talent-pool";
-import {
-	createTalentProfile,
-	updateTalentProfile,
-} from "../src/talent/talent-profile";
+} from "../src/kernel/operations/module-ids";
 import {
 	createMemoryHumanResourcesStore,
 	createMemoryWorkCalendar,
-} from "../src/testing";
-import {
-	correctAttendanceEvent,
-	recordClockIn,
-	recordClockOut,
-	voidAttendanceEvent,
-} from "../src/time/attendance/events";
-import {
-	createAttendanceException,
-	excuseAttendanceException,
-	rejectAttendanceException,
-	resolveAttendanceException,
-	reviewAttendanceException,
-} from "../src/time/attendance/exceptions";
-import { importAttendanceEvents } from "../src/time/attendance/import";
-import { resolveAttendanceSession } from "../src/time/attendance/sessions";
-import {
-	addCalendarDateOverride,
-	addWorkCalendarHoliday,
-	archiveWorkCalendar,
-	assignEmploymentCalendar,
-	createWorkCalendar,
-	endWorkCalendarAssignment,
-	removeCalendarDateOverride,
-	removeWorkCalendarHoliday,
-	updateWorkCalendar,
-} from "../src/time/calendar";
-import {
-	approveOvertimeRequest,
-	cancelOvertimeRequest,
-	createOvertimeRequest,
-	recordOvertimeActual,
-	rejectOvertimeRequest,
-	verifyOvertimeRequest,
-} from "../src/time/overtime";
-import { assignTimeApprovalAuthority } from "../src/time/policy";
-import {
-	assignShift,
-	cancelShiftAssignment,
-	changeShiftAssignment,
-	completeShiftAssignment,
-	publishShiftAssignment,
-} from "../src/time/scheduling";
-import {
-	activateShift,
-	addShiftBreak,
-	createShift,
-	deactivateShift,
-	removeShiftBreak,
-	updateShift,
-} from "../src/time/shift";
-import {
-	addTimesheetEntry,
-	approveTimesheet,
-	createTimesheet,
-	generateTimesheetEntries,
-	getTimesheet,
-	lockTimesheet,
-	rejectTimesheet,
-	removeTimesheetEntry,
-	reopenTimesheet,
-	returnTimesheet,
-	submitTimesheet,
-	supersedeTimesheet,
-	updateTimesheetEntry,
-} from "../src/time/timesheet";
-import {
-	createPerson,
-	updatePersonName,
-} from "../src/workforce-foundation/person";
-import {
-	changeWorkerStatus,
-	changeWorkerType,
-	createWorker,
-} from "../src/workforce-foundation/worker";
-import {
-	approveHeadcountPlan,
-	createHeadcountPlan,
-	submitHeadcountPlan,
-} from "../src/workforce-planning/headcount-plan";
-import { addHeadcountPlanLine } from "../src/workforce-planning/headcount-plan-line";
-import {
-	consumeHeadcountReservation,
-	releaseHeadcountReservation,
-	reserveHeadcount,
-} from "../src/workforce-planning/headcount-reservation";
+} from "../src/testing/index";
 import { candidateConsentFixture } from "./helpers/candidate-consent-fixture";
 import {
 	createTestHumanResourcesCommandOptions,

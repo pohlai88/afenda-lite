@@ -1,8 +1,8 @@
 ---
 name: afenda-elite-payroll
 description: >-
-  Implements and extends @afenda/payroll using HR-style domain folder
-  boundaries (schemas, store, drizzle/memory adapters, capability farms).
+  Implements and extends @afenda/payroll using the uniform ERP feature-first
+  facade, kernel, composition, features, and testing topology.
   Covers package boundaries, domain invariants, calculation/finalization,
   testing, security, and phased workflow. Use when adding payroll commands,
   Zod schemas, store methods, Drizzle adapters, reconciliation/runs/setup
@@ -13,22 +13,28 @@ disable-model-invocation: true
 
 # Afenda Elite — payroll package
 
-**SSOT for `@afenda/payroll` implementation shape.** Mirror `@afenda/human-resources` folder discipline so schemas, store contracts, and adapters do not collapse into root monoliths.
+**Payroll-domain SSOT for `@afenda/payroll`.** The repository-wide topology is
+owned by
+[`afenda-semantic-registry-cutover`](../afenda-semantic-registry-cutover/SKILL.md).
+Each Payroll feature owns its contract, schema, store capability, adapters,
+policy, and operations behind one root facade.
 
 ```text
 LOAD:
   companions: package-tree.md · implementation.md · boundaries.md · domain.md
               · testing.md · security.md · workflow.md
+  ../afenda-semantic-registry-cutover/references/feature-first-erp.md
   packages/erp/payroll/** · packages/erp/SCAFFOLDING.md
-  packages/erp/human-resources/src/{schemas,store,adapters}/**   # structural reference
-  docs-V2/_scratch/erp/human-resource.md                         # payroll ownership facts
-  docs-V2/_scratch/payroll-cursor-agent-pack/docs/payroll/     # progressive phase plan
+  docs-V2/_scratch/human-resources/human-resources-prd.md       # HR ownership boundary
+  docs-V2/_scratch/payroll/PAYROLL-PRD-MY-VN.md                 # product requirements
 SKIP:
   Living docs/payroll/** and Living docs/architecture as required LOAD
   peer import @afenda/human-resources from payroll
   dual-write payroll_* from apps/web
   owning hr_* / inserting payment or journal rows from payroll
-  recreating root schemas.ts · store.ts · drizzle-store.ts · memory-store.ts
+  recreating root schemas.ts · store.ts · shared/ · types.ts · ports.ts
+  feature imports from facade/ · composition/ · testing/
+  feature handlers or adapters that accept the composite Payroll store
 VERIFY:
   pnpm --filter @afenda/payroll check
   pnpm validate:modules
@@ -59,53 +65,57 @@ VERIFY:
 
 - Implementing any payroll command, query, schema, or store method
 - Growing Drizzle or memory adapters
-- Reviewing whether a change belongs in `setup` vs `runs` vs `outputs`
+- Reviewing which Payroll feature owns a capability
 - Scaffolding a new aggregate under an existing capability farm
 - Planning payroll phases or verifying completed payroll work
 
 ## Hard rules
 
-1. **Domain farms own commands** — put command files under `src/{setup,assignments,inputs,runs,statutory,outputs,reconciliation}/`.
-2. **Schemas stay sliced** — Zod lives in `src/schemas/<domain>.ts`; `common.ts` is primitives + mutation context only.
-3. **Store stays sliced** — persistence methods on `src/store/<domain>.ts`; compose in `store/index.ts` as `PayrollStore`.
-4. **Adapters stay sliced** — Drizzle methods in `adapters/drizzle/<domain>.ts`; compose with `createDrizzlePayrollStore` only in `adapters/drizzle/store.ts`. Memory factory in `adapters/memory/store.ts`, re-exported from `@afenda/payroll/testing`.
-5. **No peer ERP import of HR** — workforce reads via injected `PayrollEmployeeQueryPort` at `apps/web`.
-6. **Sole mutator** — only this package writes `payroll_*` (see `mutation-tables.ts` + SCHEMA-OWNERSHIP-MANIFEST).
-7. **Events for Payments/Accounting** — emit `payroll.payment-requested.v1` / `payroll.posting-requested.v1`; do not insert payment/journal rows here.
-8. **Public API** — root barrel exports commands/types/schemas/permissions/ports; not raw SQL, Drizzle tables, or Next.js types.
-9. **Quality bar** — enterprise production only; no shim/stub product paths.
-10. **Organization scope** — every aggregate, command, query, unique key, and mutation scoped by `organizationId`.
-11. **Money** — never JavaScript `number` for monetary arithmetic; use canonical decimal/money types; explicit rounding.
-12. **Effective-dated rules** — statutory/earning/deduction rules versioned; runs record exact rule versions used.
-13. **Deterministic calculation** — same snapshots + rule versions + rounding policy → same result; snapshot HR facts at calc time.
-14. **Finalized immutability** — corrections via adjustments, off-cycle runs, or compensating reversals; never rewrite finalized lines.
-15. **Synthetic fixtures only** — never real employee, salary, bank, tax, or payslip data in prompts, tests, or commits.
+1. **Uniform ERP topology** — production source uses only justified `facade/`, `kernel/`, `composition/`, `features/`, and `testing/` roots plus `index.ts`.
+2. **Features own vertical slices** — contracts, schemas, policies, operations, narrow store contracts, and adapters live under `src/features/<feature>/`.
+3. **One semantic owner** — feature definitions own business meaning; the kernel composes and validates registries without redefining feature policy.
+4. **One-way dependencies** — features may use their own contracts, narrow ports, and approved kernel primitives; they never import `facade`, `composition`, or `testing`.
+5. **Composite-store containment** — only composition combines feature adapters. Feature handlers and adapters never name, accept, construct, or import the aggregate Payroll store.
+6. **Final deletion cutover** — delete shallow business farms, root `shared/`, generic `types.ts`/`ports.ts`, superseded aliases, and old architecture fixtures after parity; leave no forwarding paths.
+7. **No peer ERP import of HR** — workforce facts cross a Payroll-owned capability supplied by application composition.
+8. **Sole mutator** — only this package writes `payroll_*` (see the canonical mutation inventory and SCHEMA-OWNERSHIP-MANIFEST).
+9. **Events for Payments/Accounting** — emit versioned requests; do not insert payment or journal rows here.
+10. **Public API** — the sole root barrel exports durable commands, queries, permissions, result-facing types, and opaque capability factories. Internals stay private.
+11. **Quality bar** — enterprise production only; no shim/stub product paths.
+12. **Organization scope** — every aggregate, command, query, unique key, and mutation is scoped by `organizationId`.
+13. **Money** — never use JavaScript `number` for monetary arithmetic; use lossless decimal values and explicit rounding.
+14. **Effective-dated rules** — statutory, earning, and deduction rules are versioned; runs record the exact versions used.
+15. **Deterministic calculation** — the same snapshots, rules, calculator version, and rounding policy produce the same result.
+16. **Finalized immutability** — corrections use adjustments, off-cycle runs, or compensating reversals; never rewrite finalized lines.
+17. **Synthetic fixtures only** — never use real employee, salary, bank, tax, or payslip data in prompts, tests, or commits.
 
 ## Quick start (new command)
 
-1. Confirm aggregate farm from [package-tree.md](package-tree.md).
-2. Add Zod input in `schemas/<domain>.ts` (strict; stamp org/actor/correlation at composition root).
-3. Extend `store/<domain>.ts` with persistence methods.
-4. Implement methods in `adapters/drizzle/<domain>.ts` and memory path if tests need them.
-5. Implement command in `<farm>/<aggregate>.ts` — parse → authorize → resolve deps → mutate → audit/outbox → `Result`.
+1. Confirm the owning feature from [package-tree.md](package-tree.md).
+2. Add the owned contract and strict validation under `features/<feature>/`; stamp org/actor/correlation at the composition boundary.
+3. Add the narrow persistence contract as `features/<feature>/store-contract.ts`.
+4. Add memory and Drizzle implementations under `features/<feature>/adapters/` when persistence is required.
+5. Implement the use case in the feature — parse → authorize → resolve narrow capabilities → mutate/read → audit/outbox → `Result`.
 6. Export from `src/index.ts` only when the surface is public.
 7. Verify: `pnpm --filter @afenda/payroll check`.
 
 ## Capability cheat sheet
 
-| Farm | Owns | Typical tables |
+| Feature | Owns | Typical tables |
 |------|------|----------------|
-| `setup` | Calendar, pay group, rules | `payroll_calendar`, `payroll_pay_group`, `*_rule` |
-| `assignments` | Employee assignment, recurring lines | `payroll_employee_assignment`, `payroll_recurring_*` |
-| `inputs` | Period inputs / adjustments | `payroll_variable_input`, `payroll_adjustment` |
-| `runs` | Period, run lifecycle, calc, reverse | `payroll_period`, `payroll_run`, `payroll_run_employee`, `payroll_exception` |
-| `statutory` | Contributions, tax, submissions | `payroll_statutory_result` (+ submission aggregates) |
-| `outputs` | Results, payslips, handoff instructions | `payroll_result_line`, `payroll_payslip` |
+| `payroll-setup` | Calendar, pay group, effective-dated rules | `payroll_calendar`, `payroll_pay_group`, `*_rule` |
+| `employee-assignments` | Employee assignment and recurring lines | `payroll_employee_assignment`, `payroll_recurring_*` |
+| `workforce-ingress` | Accepted HR facts, normalization, correction lineage | Payroll-owned accepted-input records |
+| `variable-inputs` | Period inputs, adjustments, opening balances | `payroll_variable_input`, `payroll_adjustment` |
+| `payroll-runs` | Period, run lifecycle, finalization, reversal | `payroll_period`, `payroll_run`, `payroll_run_employee`, `payroll_exception` |
+| `calculation` | Deterministic gross-to-net and cumulative balances | `payroll_result_line` |
+| jurisdiction/statutory features | Contributions, tax, submissions | `payroll_statutory_result` and submission records |
+| output features | Payslips and payment/posting projections | `payroll_payslip`; event projections |
 | `reconciliation` | Close / match controls | `payroll_reconciliation` |
 
 ## Agent operating rules
 
-1. Prefer **extend** existing farm files over new root modules.
+1. Prefer **extend** the owning feature over new kernel or composition abstractions.
 2. If disk layout and this skill disagree — stop and ask (Confusion management).
 3. Do not invent `@afenda/payroll` subpackages or nest payroll under HR.
 4. App Actions stay thin: Zod at Action, call package command, map to `ActionResult`.
@@ -113,8 +123,11 @@ VERIFY:
 
 ## Verification
 
-- [ ] New code landed in the correct farm / schemas / store / adapter file
-- [ ] No new root monolith (`schemas.ts`, `store.ts`, `drizzle-store.ts`, `memory-store.ts`)
+- [ ] New business code landed in one `features/<feature>/` capsule
+- [ ] Source root contains only `index.ts` and justified horizontal surfaces
+- [ ] No root `schemas`, `store`, `adapters`, `shared`, `types.ts`, or `ports.ts`
+- [ ] No feature imports from `facade`, `composition`, or `testing`
+- [ ] No feature handler or adapter depends on the composite Payroll store
 - [ ] No `@afenda/human-resources` dependency in `packages/erp/payroll/package.json`
 - [ ] `pnpm --filter @afenda/payroll check` green
 - [ ] Manifest / mutation tables still aligned after table changes (`pnpm validate:modules`)

@@ -1,114 +1,128 @@
 # `@afenda/payroll` package tree
 
-Structural SSOT for agents implementing payroll. Pattern source: `@afenda/human-resources`.
+Structural SSOT for agents implementing Payroll. Use the repository-wide ERP
+feature-first topology from
+[`feature-first-erp.md`](../afenda-semantic-registry-cutover/references/feature-first-erp.md).
+Payroll owns the feature names and domain boundaries below; it does not define an
+alternate root layout.
 
-## Target layout
+## Canonical target
 
 ```text
 packages/erp/payroll/
-├── package.json                 # exports: ., adapters/drizzle, schemas, store, testing, …
+├── package.json                         # one public entrypoint: "."
 ├── README.md
-├── __tests__/
+├── PRODUCTION_READINESS.md
+├── __tests__/                           # public, architecture, parity, product contracts
 └── src/
-    ├── index.ts                 # public barrel (`import "server-only"`)
-    ├── module.manifest.ts
-    ├── module-ids.ts
-    ├── mutation-tables.ts
-    ├── permissions.ts
-    ├── authorization.ts
-    ├── command-options.ts
-    ├── ports.ts
-    ├── production-ports.ts
-    ├── resolve-store.ts
-    ├── parse-input.ts
-    ├── brands.ts
-    ├── error-codes.ts
-    ├── types.ts
-    ├── schemas/
-    │   ├── README.md
-    │   ├── common.ts            # mutation context + shared primitives
-    │   ├── setup.ts
-    │   ├── assignments.ts
-    │   ├── inputs.ts
-    │   ├── runs.ts
-    │   ├── statutory.ts
-    │   ├── outputs.ts
-    │   ├── reconciliation.ts
-    │   └── index.ts
-    ├── store/
-    │   ├── README.md
-    │   ├── setup.ts
-    │   ├── assignments.ts
-    │   ├── inputs.ts
-    │   ├── runs.ts
-    │   ├── statutory.ts
-    │   ├── outputs.ts
-    │   ├── reconciliation.ts
-    │   └── index.ts             # PayrollStore = intersection of slices
-    ├── adapters/
-    │   ├── drizzle/
-    │   │   ├── compose.ts
-    │   │   ├── store.ts         # createDrizzlePayrollStore only
-    │   │   ├── setup.ts
-    │   │   ├── assignments.ts
-    │   │   ├── inputs.ts
-    │   │   ├── runs.ts
-    │   │   ├── statutory.ts
-    │   │   ├── outputs.ts
-    │   │   ├── reconciliation.ts
-    │   │   └── index.ts
-    │   └── memory/
-    │       ├── store.ts         # createMemoryPayrollStore
-    │       └── index.ts
-    ├── testing/
-    │   └── index.ts             # re-exports memory factory
-    ├── setup/                   # command/query files
-    ├── assignments/
-    ├── inputs/
-    ├── runs/
-    ├── statutory/
-    ├── outputs/
-    └── reconciliation/
+    ├── index.ts                         # permanent @afenda/payroll facade export
+    ├── facade/                          # representation-safe commands, queries, contracts
+    ├── kernel/                          # package-wide semantic composition and primitives
+    │   ├── operations/                  # composed operation registry and projections
+    │   ├── identity/                    # package-wide branded identities
+    │   ├── money/                       # decimal and rounding invariants
+    │   ├── temporal/                    # effective-date primitives
+    │   ├── execution/                   # authorization and execution policy
+    │   ├── emissions/                   # event catalogue and mutation inventory
+    │   └── serialization/               # canonical snapshot/wire serialization policy
+    ├── composition/                     # production/test construction; no business meaning
+    │   ├── production.ts
+    │   ├── store/                       # aggregate construction only
+    │   └── adapters/                    # technology-specific aggregate wiring only
+    ├── features/                        # primary business ownership axis
+    │   ├── payroll-setup/
+    │   ├── employee-assignments/
+    │   ├── workforce-ingress/
+    │   ├── variable-inputs/
+    │   ├── payroll-runs/
+    │   ├── calculation/
+    │   ├── statutory-rules/
+    │   ├── malaysia-statutory/
+    │   ├── vietnam-statutory/
+    │   ├── payslips/
+    │   ├── payment-instructions/
+    │   ├── accounting-postings/
+    │   ├── reconciliation/
+    │   ├── statutory-filings/
+    │   └── reporting/
+    └── testing/                         # isolated package test composition only
 ```
 
-## Folder vs file ownership
+The tree is a target inventory, not permission to create empty folders or
+placeholder files. Create a feature only with production behavior and acceptance
+evidence. Large features may use named business subfeatures, never generic
+`commands/`, `queries/`, `services/`, `models/`, `schemas/`, or `adapters/`
+layers spanning multiple features.
 
-| Concern | Home | Forbidden |
-|---------|------|-----------|
-| Zod for a domain | `schemas/<domain>.ts` | Dumping into `common.ts` or a root `schemas.ts` |
-| Store method for a domain | `store/<domain>.ts` | Monolithic root `store.ts` |
-| Drizzle SQL/methods | `adapters/drizzle/<domain>.ts` | Growing `adapters/drizzle/store.ts` beyond compose |
-| Memory persistence | `adapters/memory/` (+ domain files when state grows) | Root `memory-store.ts` |
-| Command / query | `<farm>/<aggregate>.ts` | Cross-farm files that mix setup + runs + outputs |
-| Shared pure helpers | `shared/` (create when first helper exists) | Business writes or store calls in `shared/` |
-| Cross-module workforce read | `ports.ts` → `PayrollEmployeeQueryPort` | `@afenda/human-resources` import |
+## Uniform feature capsule
 
-## Published exports
+Use only the files justified by the feature:
 
-| Subpath | Resolves to |
-|---------|-------------|
-| `@afenda/payroll` | `src/index.ts` |
-| `@afenda/payroll/adapters/drizzle` | `src/adapters/drizzle/index.ts` |
-| `@afenda/payroll/schemas` | `src/schemas/index.ts` |
-| `@afenda/payroll/store` | `src/store/index.ts` |
-| `@afenda/payroll/testing` | `src/testing/index.ts` |
-| `@afenda/payroll/module-manifest` | `src/module.manifest.ts` |
-| `@afenda/payroll/authorization` | `src/authorization.ts` |
-| `@afenda/payroll/brands` | `src/brands.ts` |
-| `@afenda/payroll/resolve-store` | `src/resolve-store.ts` |
+```text
+features/<feature>/
+├── index.ts                  # internal projection only when composition needs it
+├── definition.ts             # canonical operation/status/policy definitions
+├── contract.ts               # domain inputs, outputs, and values
+├── schema.ts                 # validation derived from the owned contract
+├── policy.ts                 # feature authorization/privacy/workflow policy
+├── <use-case>.ts             # command, query, or domain behavior
+├── store-contract.ts         # smallest persistence capability
+├── ports.ts                  # explicit peer/external capabilities when required
+├── adapters/
+│   ├── memory.ts
+│   └── drizzle.ts
+└── __tests__/                # colocated contracts when tooling supports them
+```
 
-## Aggregate → farm map
+## Ownership rules
 
-| Aggregate marker / concern | Farm |
-|----------------------------|------|
-| calendar, pay-group, earning-rule, deduction-rule, statutory-rule | `setup` |
-| employee-payroll-assignment, recurring-earning, recurring-deduction | `assignments` |
-| variable-input, overtime-input, leave-adjustment, one-time-adjustment | `inputs` |
-| payroll-period, payroll-run, calculation, exception, finalization, reversal | `runs` |
-| employee-contribution, employer-contribution, tax-result, statutory-submission | `statutory` |
-| payroll-result, payslip, payment-instruction, accounting-posting | `outputs` |
-| payroll-reconciliation, payment-reconciliation, accounting-reconciliation | `reconciliation` |
+| Concern | Canonical home | Forbidden |
+|---|---|---|
+| Feature contract and validation | `features/<feature>/contract.ts` and `schema.ts` | Root `types.ts`, `ports.ts`, or package-wide `schemas/` |
+| Feature policy and definitions | `features/<feature>/definition.ts` or named registry | Parallel command/status/permission maps |
+| Feature persistence | `store-contract.ts` plus feature adapters | Feature dependency on the composite Payroll store |
+| Cross-feature workflow | Narrow capability in the owning feature's `ports.ts` | Importing peer adapters or interpreting peer state |
+| Package-wide registry composition | `kernel/operations/` or another named kernel owner | Moving feature meaning into the kernel |
+| Aggregate construction | `composition/` | Business policy, validation, or feature re-export barrels |
+| Public capabilities | `facade/` and root `index.ts` | Business subpaths or a second capability style |
+| Test construction | `testing/` | Production imports from testing |
 
-## Root files that stay flat
+## Dependency direction
 
-Keep these at `src/` root (same as HR): `index.ts`, `ports.ts`, `authorization.ts`, `brands.ts`, `command-options.ts`, `error-codes.ts`, `permissions.ts`, `parse-input.ts`, `production-ports.ts`, `resolve-store.ts`, `module.manifest.ts`, `module-ids.ts`, `mutation-tables.ts`, `types.ts`.
+```text
+consumer -> index -> facade -> composition -> feature adapters
+                              |              |
+                              +-> kernel <---+
+feature -> own contract/store + narrow ports + approved kernel primitives
+```
+
+Features never import `composition`, `facade`, or `testing`. Feature handlers and
+adapters never name, accept, construct, or import the composite Payroll store.
+Only composition combines feature adapters. Adapter-neutral composition helpers
+must not live under a technology-specific directory.
+
+## Public export
+
+`@afenda/payroll` resolves only to `src/index.ts`. Stores, schemas, adapters,
+brands, registries, calculators, SQL, and testing mechanisms remain private.
+Internal moves require zero production-consumer edits unless the business contract
+deliberately changes.
+
+## Final cutover requirements
+
+The current shallow farms are migration sources, not a second accepted topology.
+The structural cutover must:
+
+1. freeze root exports and accepted consumers;
+2. use an explicit collision-checked old-to-new manifest;
+3. move files before resolver-aware import rewriting;
+4. replace broad `PayrollStore` and package-wide memory-state dependencies with
+   feature-owned contracts;
+5. delete root `shared/`, generic `types.ts`/`ports.ts`, shallow business farms,
+   superseded aliases, and old architecture fixtures in the same cutover;
+6. add recursive dependency guards covering feature adapters and colocated tests;
+7. prove facade, behavior, authorization, serialization, adapter, transaction,
+   tenancy, and affected-consumer parity.
+
+Do not leave forwarding files, compatibility folders, parallel APIs, or an empty
+copy of a superseded directory.

@@ -10,12 +10,14 @@ disable-model-invocation: true
 
 # Afenda Elite — Corporate Administration
 
-Corporate Administration is the statutory and corporate-secretarial system of record. Its permanent product and acceptance authority is `packages/erp/corporate-administration/PRD.md`; deleted historical phase and slice packs are not execution authority.
+Corporate Administration is the statutory and corporate-secretarial system of record. Its permanent product and acceptance authority is `packages/erp/corporate-administration/PRD.md`; `DEVELOPMENT-ROADMAP.md` owns eligibility and sequence, and `IMPLEMENTATION-SLICES.md` owns bounded mission paths and acceptance. Deleted historical phase and slice packs are not execution authority.
 
 ```text
 LOAD:
   companions: reference.md · verification.md
   packages/erp/corporate-administration/PRD.md
+  packages/erp/corporate-administration/DEVELOPMENT-ROADMAP.md
+  packages/erp/corporate-administration/IMPLEMENTATION-SLICES.md
   packages/erp/corporate-administration/README.md
   packages/erp/corporate-administration/**
   packages/data-plane/db/src/schema/corporate-administration.ts  # when schema is relevant
@@ -62,7 +64,7 @@ Investor Relations owns securities, capital transactions, investors, shareholder
 
 ## Execution workflow
 
-1. Read `PRD.md` and identify the smallest unmet requirement group.
+1. Read `PRD.md`, `DEVELOPMENT-ROADMAP.md`, and `IMPLEMENTATION-SLICES.md`; select exactly one authorized beta-delivery or closure slice within the implemented cohort, or one explicitly authorized future requirement group.
 2. Confirm external dependencies and current disk behavior; an unavailable prerequisite is `BLOCKED`.
 3. State the canonical owner, permanent consumer surface, normalization boundary, and unavoidable consumer blast radius.
 4. Implement the group across every required package, database, adapter, app, UI, test, and operational layer.

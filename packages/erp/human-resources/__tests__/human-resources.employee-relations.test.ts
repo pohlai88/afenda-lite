@@ -7,22 +7,18 @@ import {
 	HUMAN_RESOURCES_EMPLOYEE_CASE_OPENED_EVENT,
 } from "@afenda/events/schemas";
 import { describe, expect, it } from "vitest";
-
-import type { HumanResourcesPermission } from "../src/authorization";
-import { createEmployee } from "../src/core/employee";
-import { createEmployment } from "../src/core/employment";
 import {
 	approveEmployeeCaseAction,
 	recommendEmployeeCaseAction,
-} from "../src/employee-relations/case-action";
+} from "../src/features/employee-relations/case-action";
 import {
 	recordEmployeeCaseAppeal,
 	resolveEmployeeCaseAppeal,
-} from "../src/employee-relations/case-appeal";
+} from "../src/features/employee-relations/case-appeal";
 import {
 	addEmployeeCaseEvidenceReference,
 	recordEmployeeCaseEvent,
-} from "../src/employee-relations/case-event";
+} from "../src/features/employee-relations/case-event";
 import {
 	assignEmployeeCaseOwner,
 	closeEmployeeCase,
@@ -34,15 +30,10 @@ import {
 	openEmployeeCase,
 	recordEmployeeCaseFinding,
 	reopenEmployeeCase,
-} from "../src/employee-relations/employee-case";
-import {
-	HUMAN_RESOURCES_ERROR_AUTHORIZATION_DENIED,
-	HUMAN_RESOURCES_ERROR_CONFLICT,
-	HUMAN_RESOURCES_ERROR_FORBIDDEN,
-	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
-	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
-	HUMAN_RESOURCES_ERROR_NOT_FOUND,
-} from "../src/error-codes";
+} from "../src/features/employee-relations/employee-case";
+import { createEmployee } from "../src/features/workforce-records/employment/employee";
+import { createEmployment } from "../src/features/workforce-records/employment/employment";
+import type { HumanResourcesPermission } from "../src/kernel/authorization/authorize";
 import {
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CASE_ACTION_APPROVE,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CASE_APPEAL,
@@ -54,8 +45,16 @@ import {
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CREATE,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE,
-} from "../src/permissions";
-import { createMemoryHumanResourcesStore } from "../src/testing";
+} from "../src/kernel/authorization/permissions";
+import {
+	HUMAN_RESOURCES_ERROR_AUTHORIZATION_DENIED,
+	HUMAN_RESOURCES_ERROR_CONFLICT,
+	HUMAN_RESOURCES_ERROR_FORBIDDEN,
+	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+	HUMAN_RESOURCES_ERROR_NOT_FOUND,
+} from "../src/kernel/execution/error-codes";
+import { createMemoryHumanResourcesStore } from "../src/testing/index";
 import { createTestHumanResourcesCommandOptions } from "./helpers/command-options";
 import {
 	createStoreBackedIdentityResolver,

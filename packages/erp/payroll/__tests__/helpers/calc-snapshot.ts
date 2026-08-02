@@ -1,8 +1,8 @@
-import type { PayrollEmployeeCalcSnapshot } from "../../src/runs/calc/types";
+import type { PayrollEmployeeCalcSnapshot } from "../../src/features/calculation/calculation.types";
 import {
 	DEFAULT_PAYROLL_ROUNDING_POLICY,
 	PAYROLL_CALCULATION_VERSION,
-} from "../../src/shared/rounding-policy";
+} from "../../src/kernel/money/rounding-policy";
 
 export const CALC_TEST_IDS = {
 	organizationId: "org-synth-calc-test",
@@ -33,6 +33,17 @@ export function buildSyntheticCalcSnapshot(
 ): PayrollEmployeeCalcSnapshot {
 	const ids = CALC_TEST_IDS;
 	const base: PayrollEmployeeCalcSnapshot = {
+		approvedWorkFacts: {
+			approvalEvidence: {
+				approvedAt: "2025-01-01T00:00:00.000Z",
+				correlationId: "corr-synth-calc-test",
+			},
+			components: [],
+			leaveFacts: [],
+			overtimeFacts: [],
+			sourceVersion: { compensationVersion: 1 },
+			timeFacts: null,
+		},
 		organizationId: ids.organizationId,
 		employeeId: ids.employeeId,
 		assignmentId: ids.assignmentId,
@@ -143,6 +154,7 @@ export function buildSyntheticCalcSnapshot(
 	return {
 		...base,
 		...overrides,
+		approvedWorkFacts: overrides.approvedWorkFacts ?? base.approvedWorkFacts,
 		eligibility: {
 			...base.eligibility,
 			...overrides.eligibility,

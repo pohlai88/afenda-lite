@@ -1,7 +1,7 @@
 import type {
 	HumanResourcesAuthorizationPort,
 	HumanResourcesPermission,
-} from "../../src/authorization";
+} from "../../src/kernel/authorization/authorize";
 
 /** Test double — grants an explicit permission set. */
 export function createGrantingHumanResourcesAuthorization(

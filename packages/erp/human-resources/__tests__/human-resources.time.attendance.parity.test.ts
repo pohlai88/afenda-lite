@@ -8,20 +8,10 @@ import {
 	HUMAN_RESOURCES_TIMESHEET_APPROVED_EVENT,
 } from "@afenda/events/schemas";
 import { afterAll, describe, expect, it } from "vitest";
-
-import { createEmployee } from "../src/core/employee";
-import { createEmployment } from "../src/core/employment";
-import {
-	HUMAN_RESOURCES_ERROR_CONFLICT,
-	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
-	HUMAN_RESOURCES_ERROR_NOT_FOUND,
-	HUMAN_RESOURCES_ERROR_STALE_VERSION,
-} from "../src/error-codes";
-import { runSequential } from "../src/shared/run-sequential";
 import {
 	approveAttendanceBreakWaiver,
 	listAttendanceBreakWaiverDecisions,
-} from "../src/time/attendance/break-waivers";
+} from "../src/features/time/attendance/break-waivers";
 import {
 	getAttendanceEvent,
 	listAttendanceEvents,
@@ -31,39 +21,39 @@ import {
 	recordClockOut,
 	recordManualAttendance,
 	voidAttendanceEvent,
-} from "../src/time/attendance/events";
+} from "../src/features/time/attendance/events";
 import {
 	ATTENDANCE_SESSION_DETECTION_SOURCE,
 	parseExceptionDetectionRemarks,
-} from "../src/time/attendance/exception-detection";
-import { listUnresolvedAttendanceExceptions } from "../src/time/attendance/exceptions";
-import { importAttendanceEvents } from "../src/time/attendance/import";
-import { namespacedImportSourceReference } from "../src/time/attendance/import-keys";
-import { resolveAttendanceSession } from "../src/time/attendance/sessions";
+} from "../src/features/time/attendance/exception-detection";
+import { listUnresolvedAttendanceExceptions } from "../src/features/time/attendance/exceptions";
+import { importAttendanceEvents } from "../src/features/time/attendance/import";
+import { namespacedImportSourceReference } from "../src/features/time/attendance/import-keys";
+import { resolveAttendanceSession } from "../src/features/time/attendance/sessions";
 import {
 	assignEmploymentCalendar,
 	createWorkCalendar,
-} from "../src/time/calendar";
+} from "../src/features/time/calendar";
 import {
 	activateTimePolicy,
 	assignTimeApprovalAuthority,
 	assignTimePolicy,
 	createTimePolicy,
 	endTimeApprovalAuthorityAssignment,
-} from "../src/time/policy";
+} from "../src/features/time/policy";
 import {
 	assignShift,
 	changeShiftAssignment,
 	getScheduledShiftForEmployeeDate,
 	listShiftAssignmentSegments,
 	publishShiftAssignment,
-} from "../src/time/scheduling";
+} from "../src/features/time/scheduling";
 import {
 	activateShift,
 	addShiftBreak,
 	createShift,
 	listShiftBreaks,
-} from "../src/time/shift";
+} from "../src/features/time/shift";
 import {
 	approveTimesheet,
 	createTimesheet,
@@ -72,8 +62,17 @@ import {
 	reopenTimesheet,
 	returnTimesheet,
 	submitTimesheet,
-} from "../src/time/timesheet";
-import type { AttendanceExceptionType } from "../src/types";
+} from "../src/features/time/timesheet";
+import { createEmployee } from "../src/features/workforce-records/employment/employee";
+import { createEmployment } from "../src/features/workforce-records/employment/employment";
+import type { AttendanceExceptionType } from "../src/kernel/contracts";
+import {
+	HUMAN_RESOURCES_ERROR_CONFLICT,
+	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+	HUMAN_RESOURCES_ERROR_NOT_FOUND,
+	HUMAN_RESOURCES_ERROR_STALE_VERSION,
+} from "../src/kernel/execution/error-codes";
+import { runSequential } from "../src/kernel/execution/run-sequential";
 import {
 	createHrParityHarness,
 	type WorkforceStoreAdapter,

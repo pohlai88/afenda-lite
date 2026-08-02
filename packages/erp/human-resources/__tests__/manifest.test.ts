@@ -12,12 +12,24 @@ import {
 	PLATFORM_HUMAN_RESOURCES_WORKFLOW_FACT_RECORDED_EVENT,
 } from "@afenda/events/schemas";
 import { describe, expect, it } from "vitest";
-import { validateEffectiveTruthClassificationRegister } from "../src/effective-truth-classification";
+import { humanResourcesModuleManifest } from "../src/composition/module.manifest";
+import {
+	HUMAN_RESOURCES_PERMISSION_CODES,
+	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CREATE,
+	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,
+	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_UPDATE,
+	HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE,
+	HUMAN_RESOURCES_PERMISSION_LEAVE_HANDOFF_READ,
+	HUMAN_RESOURCES_PERMISSION_ORGANIZATION_MANAGE,
+	HUMAN_RESOURCES_PERMISSION_ORGANIZATION_READ,
+	HUMAN_RESOURCES_PERMISSION_TIME_HANDOFF_READ,
+	HUMAN_RESOURCES_PERMISSION_TIME_TIMESHEET_APPROVE,
+} from "../src/kernel/authorization/permissions";
+import { HUMAN_RESOURCES_MUTATION_TABLES } from "../src/kernel/emissions/mutation-tables";
 import {
 	HUMAN_RESOURCES_ERROR_CODE_LIST,
 	HUMAN_RESOURCES_ERROR_CODES,
-} from "../src/error-codes";
-import { humanResourcesModuleManifest } from "../src/module.manifest";
+} from "../src/kernel/execution/error-codes";
 import {
 	HUMAN_RESOURCES_COMMAND_ASSIGNMENT_CREATE,
 	HUMAN_RESOURCES_COMMAND_ASSIGNMENT_END,
@@ -46,20 +58,8 @@ import {
 	HUMAN_RESOURCES_QUERY_IDS,
 	HUMAN_RESOURCES_QUERY_POSITION_GET,
 	HUMAN_RESOURCES_QUERY_POSITION_LIST,
-} from "../src/module-ids";
-import { HUMAN_RESOURCES_MUTATION_TABLES } from "../src/mutation-tables";
-import {
-	HUMAN_RESOURCES_PERMISSION_CODES,
-	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CREATE,
-	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,
-	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_UPDATE,
-	HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE,
-	HUMAN_RESOURCES_PERMISSION_LEAVE_HANDOFF_READ,
-	HUMAN_RESOURCES_PERMISSION_ORGANIZATION_MANAGE,
-	HUMAN_RESOURCES_PERMISSION_ORGANIZATION_READ,
-	HUMAN_RESOURCES_PERMISSION_TIME_HANDOFF_READ,
-	HUMAN_RESOURCES_PERMISSION_TIME_TIMESHEET_APPROVE,
-} from "../src/permissions";
+} from "../src/kernel/operations/module-ids";
+import { validateEffectiveTruthClassificationRegister } from "../src/kernel/temporal/effective-truth-classification";
 
 const pkgPath = path.resolve(
 	path.dirname(fileURLToPath(import.meta.url)),

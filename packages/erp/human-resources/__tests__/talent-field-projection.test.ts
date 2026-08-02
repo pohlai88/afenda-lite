@@ -1,6 +1,23 @@
 import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import {
+	projectCompetencyAssessmentFromDecision,
+	projectCriticalRoleReadinessFromDecision,
+	projectSuccessionCandidateFromDecision,
+	projectTalentProfileAssessmentFromDecision,
+	projectTalentProfileAssessmentListFromDecision,
+	projectTalentProfileFromDecision,
+	projectTalentProfileMobilityFromDecision,
+} from "../src/features/talent/talent-field-projection";
+import type {
+	CompetencyAssessment,
+	SuccessionCandidate,
+	TalentCriticalRoleReadiness,
+	TalentProfile,
+	TalentProfileAssessment,
+	TalentProfileMobility,
+} from "../src/kernel/contracts";
+import {
 	humanResourcesCompetencyAssessmentIdSchema,
 	humanResourcesCompetencyIdSchema,
 	humanResourcesEmployeeIdSchema,
@@ -11,24 +28,7 @@ import {
 	humanResourcesTalentProfileAssessmentIdSchema,
 	humanResourcesTalentProfileIdSchema,
 	humanResourcesTalentProfileMobilityIdSchema,
-} from "../src/brands";
-import {
-	projectCompetencyAssessmentFromDecision,
-	projectCriticalRoleReadinessFromDecision,
-	projectSuccessionCandidateFromDecision,
-	projectTalentProfileAssessmentFromDecision,
-	projectTalentProfileAssessmentListFromDecision,
-	projectTalentProfileFromDecision,
-	projectTalentProfileMobilityFromDecision,
-} from "../src/talent/talent-field-projection";
-import type {
-	CompetencyAssessment,
-	SuccessionCandidate,
-	TalentCriticalRoleReadiness,
-	TalentProfile,
-	TalentProfileAssessment,
-	TalentProfileMobility,
-} from "../src/types";
+} from "../src/kernel/identity/brands";
 
 const NOW = new Date("2026-07-27T00:00:00.000Z");
 const ORGANIZATION_ID = "org-1";

@@ -1,8 +1,7 @@
 import { errorResult, type Result } from "@afenda/errors";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
-
-import { HUMAN_RESOURCES_COMMAND_PERSON_CREATE } from "../src/module-ids";
+import { runParsedAuthorizedCommand } from "../src/kernel/execution/domain-runner";
 import {
 	createMemoryHrObservabilityRecorder,
 	type HrObservabilityPorts,
@@ -16,8 +15,8 @@ import {
 	recordHrParityFailure,
 	recordHrPayrollDeliveryFailure,
 	recordHrPrivacyOperation,
-} from "../src/observability";
-import { runParsedAuthorizedCommand } from "../src/shared/domain-runner";
+} from "../src/kernel/observability/index";
+import { HUMAN_RESOURCES_COMMAND_PERSON_CREATE } from "../src/kernel/operations/module-ids";
 
 function createHarness() {
 	const recorder = createMemoryHrObservabilityRecorder();

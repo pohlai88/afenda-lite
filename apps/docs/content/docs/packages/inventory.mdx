@@ -157,6 +157,13 @@ Never re-exports raw Drizzle tables or `db` / `eq`.
 | Inventory-specific error codes | `@afenda/inventory` |
 | ActionResult adapters · inventory UI | `apps/web` |
 
+Inventory operation policy is owned once by the private
+`INVENTORY_OPERATION_DEFINITIONS` registry. Command/query inventories,
+authorization maps, transaction and idempotency dispositions, emitted-event
+inventory, and runtime event selections derive from it. Consumers continue to
+use the package root and never import the registry or interpret its storage
+shape.
+
 **Layer:** Rank-1 Platform (`@afenda/db` · `@afenda/errors` · `@afenda/audit` · `@afenda/events` · `@afenda/master-data` · zod · server-only). Must not import Surfaces, `apps/*`, Receiving, Fulfillment, or Next.js. See [docs-V2/monorepo](https://github.com/pohlai88/afenda-lite/blob/main/docs-V2/monorepo/README.md).
 
 ## Operations

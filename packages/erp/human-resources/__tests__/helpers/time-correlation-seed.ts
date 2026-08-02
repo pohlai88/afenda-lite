@@ -1,7 +1,7 @@
-import type { HumanResourcesCommandOptions } from "../../src/command-options";
-import { createEmployee } from "../../src/core/employee";
-import { createEmployment } from "../../src/core/employment";
-import type { Employee, Employment } from "../../src/types";
+import { createEmployee } from "../../src/features/workforce-records/employment/employee";
+import { createEmployment } from "../../src/features/workforce-records/employment/employment";
+import type { Employee, Employment } from "../../src/kernel/contracts";
+import type { HumanResourcesCommandOptions } from "../../src/kernel/execution/command-options";
 import { helperAssert as assert } from "./helper-assert";
 
 export const TIME_CORR_STANDARD_WEEK = [0, 1, 2, 3, 4, 5, 6].map(

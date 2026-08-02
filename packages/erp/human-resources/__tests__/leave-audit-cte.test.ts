@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { buildAuditCte } from "../src/adapters/drizzle/leave-transactions";
+import { buildAuditCte } from "../src/features/leave/adapters/leave-transactions.drizzle";
 
 const validInput = {
 	auditId: "10a96aba-7ceb-4c95-8b3d-2efc7df56731",

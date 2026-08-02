@@ -3,25 +3,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-
-import type { HumanResourcesPermission } from "../src/authorization";
-import { createEmployee } from "../src/core/employee";
-import { createEmployment } from "../src/core/employment";
-import {
-	HUMAN_RESOURCES_ERROR_CONFLICT,
-	HUMAN_RESOURCES_ERROR_FORBIDDEN,
-	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
-	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
-} from "../src/error-codes";
-import { createPosition } from "../src/organization/position";
-import {
-	HUMAN_RESOURCES_PERMISSION_CODES,
-	HUMAN_RESOURCES_PERMISSION_COMPETENCY_READ,
-	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CREATE,
-	HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE,
-} from "../src/permissions";
-import { assertReadinessNotStale } from "../src/shared/talent-guards";
-import { SUCCESSION_READINESS_MAX_AGE_DAYS } from "../src/shared/talent-status";
+import { createPosition } from "../src/features/organization/position";
 import {
 	acknowledgeCareerPlan,
 	addCareerPlanAction,
@@ -29,7 +11,7 @@ import {
 	completeCareerPlanAction,
 	createCareerPlan,
 	getCareerPlanById,
-} from "../src/talent/career-plan";
+} from "../src/features/talent/career-plan";
 import {
 	assessEmployeeCompetency,
 	createCompetency,
@@ -39,7 +21,9 @@ import {
 	removeCompetencyFromJob,
 	retireCompetency,
 	supersedeCompetencyAssessment,
-} from "../src/talent/competency";
+} from "../src/features/talent/competency";
+import { assertReadinessNotStale } from "../src/features/talent/guards";
+import { SUCCESSION_READINESS_MAX_AGE_DAYS } from "../src/features/talent/status";
 import {
 	approveSuccessionCandidate,
 	assessSuccessionReadiness,
@@ -47,7 +31,7 @@ import {
 	createSuccessionPlan,
 	getPositionSuccessionCoverage,
 	nominateSuccessionCandidate,
-} from "../src/talent/succession-plan";
+} from "../src/features/talent/succession-plan";
 import {
 	approveTalentPoolMember,
 	closeTalentPool,
@@ -55,7 +39,7 @@ import {
 	listTalentPoolMembers,
 	nominateTalentPoolMember,
 	removeTalentPoolMember,
-} from "../src/talent/talent-pool";
+} from "../src/features/talent/talent-pool";
 import {
 	archiveTalentProfile,
 	confirmTalentProfileAssessment,
@@ -63,8 +47,23 @@ import {
 	getTalentProfileByEmployee,
 	recordTalentProfileAssessment,
 	updateTalentProfile,
-} from "../src/talent/talent-profile";
-import { createMemoryHumanResourcesStore } from "../src/testing";
+} from "../src/features/talent/talent-profile";
+import { createEmployee } from "../src/features/workforce-records/employment/employee";
+import { createEmployment } from "../src/features/workforce-records/employment/employment";
+import type { HumanResourcesPermission } from "../src/kernel/authorization/authorize";
+import {
+	HUMAN_RESOURCES_PERMISSION_CODES,
+	HUMAN_RESOURCES_PERMISSION_COMPETENCY_READ,
+	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CREATE,
+	HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE,
+} from "../src/kernel/authorization/permissions";
+import {
+	HUMAN_RESOURCES_ERROR_CONFLICT,
+	HUMAN_RESOURCES_ERROR_FORBIDDEN,
+	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+} from "../src/kernel/execution/error-codes";
+import { createMemoryHumanResourcesStore } from "../src/testing/index";
 import { createTestHumanResourcesCommandOptions } from "./helpers/command-options";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";

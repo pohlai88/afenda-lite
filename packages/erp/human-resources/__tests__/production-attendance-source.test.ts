@@ -1,25 +1,25 @@
 import { describe, expect, it, vi } from "vitest";
-import { createEmployee } from "../src/core/employee";
-import { createEmployment } from "../src/core/employment";
-import {
-	createMemoryHrObservabilityRecorder,
-	type HrObservabilityPorts,
-} from "../src/observability";
-import { HUMAN_RESOURCES_PERMISSION_CODES } from "../src/permissions";
-import { createProductionAttendanceSource } from "../src/production-attendance-source";
-import {
-	createMemoryHumanResourcesStore,
-	createStoreAssignmentContextQuery,
-} from "../src/testing";
+import { createProductionAttendanceSource } from "../src/composition/production/attendance-source";
 import {
 	bindAttendanceConnectorCursor,
 	resolveAttendanceConnectorPullCursor,
-} from "../src/time/attendance/connector-cursor";
-import { importAttendanceEvents } from "../src/time/attendance/import";
+} from "../src/features/time/attendance/connector-cursor";
+import { importAttendanceEvents } from "../src/features/time/attendance/import";
 import type {
 	AttendanceConnectorPullPort,
 	AttendanceSourceEvent,
-} from "../src/time/handoff/ports";
+} from "../src/features/time/handoff/ports";
+import { createEmployee } from "../src/features/workforce-records/employment/employee";
+import { createEmployment } from "../src/features/workforce-records/employment/employment";
+import { HUMAN_RESOURCES_PERMISSION_CODES } from "../src/kernel/authorization/permissions";
+import {
+	createMemoryHrObservabilityRecorder,
+	type HrObservabilityPorts,
+} from "../src/kernel/observability/index";
+import {
+	createMemoryHumanResourcesStore,
+	createStoreAssignmentContextQuery,
+} from "../src/testing/index";
 import { createTestHumanResourcesCommandOptions } from "./helpers/command-options";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
@@ -357,7 +357,7 @@ describe("createProductionAttendanceSource", () => {
 describe("createHttpAttendanceConnectorPull", () => {
 	it("maps HTTP JSON payloads into connector pull results", async () => {
 		const { createHttpAttendanceConnectorPull } = await import(
-			"../src/time/attendance/http-connector-pull"
+			"../src/features/time/attendance/http-connector-pull.ts"
 		);
 		const fetchImpl = vi.fn(async () => ({
 			ok: true,
@@ -383,7 +383,7 @@ describe("createHttpAttendanceConnectorPull", () => {
 
 	it("rejects invalid HTTP payloads after Zod validation", async () => {
 		const { createHttpAttendanceConnectorPull } = await import(
-			"../src/time/attendance/http-connector-pull"
+			"../src/features/time/attendance/http-connector-pull.ts"
 		);
 		const fetchImpl = vi.fn(async () => ({
 			ok: true,

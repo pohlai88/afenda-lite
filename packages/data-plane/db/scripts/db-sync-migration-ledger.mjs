@@ -8,7 +8,7 @@
  *
  * Usage:
  *   AFENDA_ALLOW_DB_MIGRATE=1 pnpm --filter @afenda/db db:sync-migration-ledger
- *   AFENDA_ALLOW_DB_MIGRATE=1 pnpm --filter @afenda/db db:sync-migration-ledger -- 0017_hr_candidate_consent
+ *   AFENDA_ALLOW_DB_MIGRATE=1 pnpm --filter @afenda/db db:sync-migration-ledger -- <migration-tag>
  */
 import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";

@@ -1,12 +1,29 @@
 # `@afenda/human-resources`
 
-Enterprise HR bounded context for Afenda-Lite — workforce records, organizational structure, recruitment and lifecycle, leave and compensation, performance and learning, compliance and employee relations, time and attendance, talent, and workforce planning. Commands and queries return `@afenda/errors` `Result` types; mutations emit domain events for audit, notifications, and downstream payroll handoff.
+Enterprise HR bounded context for Afenda-Lite — workforce records, organizational structure, recruitment and lifecycle, leave and compensation, performance and learning, compliance and employee relations, time and attendance, talent, and workforce planning. Commands and queries return `@afenda/errors` `Result` types; the canonical operation and emission registries decide authorization, audit, transaction, idempotency, and event behavior.
 
-**Who it's for:** `apps/web` server actions and sibling packages that need typed HR mutations — not UI shells, HTTP handlers, or payroll calculation engines.
+**Who it's for:** `apps/web` server actions and approved contract/testing consumers — not UI shells, HTTP handlers, or payroll calculation engines.
 
 **Requires:** Node 24.x · pnpm ≥10.33.4 (root `package.json` engines).
 
-**Disk inventory (2026-08-02):** **360** commands · **200** queries · **113** permissions · **136** `hr_*` mutation / hard-tenant tables · **136/136** effective-truth classification register · emission registry **360/360**. Manifest `lifecycle: scaffolded`. Phases 0–12 are locally implemented. Phase 13 remediation remains open: the production scheduler/claim/acknowledgement path and permissioned recovery controls are present, while durable scheduled bulk import/export handling, same-revision full-suite/live-parity evidence, external certification, and controlled lifecycle approval remain outstanding — see [current evidence and dual scores](../../../docs-V2/_scratch/erp/human-resources-enterprise-audit/47-current-implementation-evidence-and-dual-scores.md) · [`00.hrm.md`](../../../docs-V2/_scratch/00.hrm.md).
+## Current status
+
+### Implemented package behavior
+
+The reviewed [public-contract](__tests__/fixtures/public-contract.fixture.json), [registry-projection](__tests__/fixtures/registry-projection.fixture.json), and [consumer-inventory](__tests__/fixtures/consumer-inventory.fixture.json) fixtures enumerate the accepted root contract, canonical operation governance, and consumer graph. The package exposes one production root and one isolated `./testing` entrypoint. The module manifest remains `lifecycle: "scaffolded"`.
+
+The package implements broad local behavior for workforce records, organization, planning, recruitment, hire conversion, employment lifecycle, leave, time, compensation, performance, learning, talent, compliance, employee relations, privacy, reporting, bulk processing, reliability, and approved Payroll handoff. The [Human Resources PRD](../../../docs-V2/_scratch/human-resources/human-resources-prd.md) is the Scratch classification of implemented behavior versus open requirements; names or locally green tests do not establish product completeness.
+
+### Open product and architecture work
+
+- HR-to-Payroll still requires dedicated recurring allowance and bonus agreement facts, complete per-source lineage, and a Payroll-owned historical-version ingress ledger.
+- Candidate-facing recruitment, governed calendar scheduling, production attendance channels, complete persona journeys, and several reporting/operational workflows remain open requirements.
+- The reporting-only [architecture baseline](__tests__/fixtures/architecture-debt.fixture.json) records nonzero depth, upward-import, composite-store, cross-feature, cycle, testing-leakage, and retired-path debt. Every target remains zero; the baseline is not an allowlist.
+- Semantic containment must reach zero upward imports, zero feature composite-store dependencies, and zero cycles before the final shallow structural cutover.
+
+### Release evidence not yet achieved
+
+Same-revision live Drizzle parity, transactional rollback and tenant-hostility evidence, durable recovery drills, approved scale/SLO results, migration rehearsal, accessibility evidence, jurisdiction-specific legal/privacy/security review, and independent release approval remain outstanding. Malaysia and Vietnam are the selected first-launch jurisdictions, but the launch entities, worker cohorts, localization obligations, attendance/privacy constraints, and named sign-off owners remain open. Package-local verification cannot promote the lifecycle or authorize launch.
 
 ## Consume
 
@@ -35,25 +52,28 @@ const execution = createHumanResourcesCapabilityOptions({
 const result = await createEmployee(input, execution);
 ```
 
-| Domain farm | Responsibility |
-|-------------|----------------|
-| `core` | Employees, employment, contracts, assignments |
-| `organization` | Departments, jobs, positions, reporting lines |
-| `recruitment` | Requisitions, candidates, interviews, offers |
-| `lifecycle` | Onboarding, probation, transfers, terminations, offboarding |
-| `leave` | Policies, entitlements, requests |
-| `compensation-benefits` | Grades, salary bands, reviews, benefit enrollments |
-| `performance` | Cycles, goals, reviews, improvement plans |
-| `learning` | Courses, sessions, assignments, certifications |
-| `talent` | Profiles, pools, career plans, succession |
-| `compliance` | Document requirements, work eligibility, policy acknowledgements |
-| `employee-relations` | Employee cases, actions, appeals |
-| `time` | Work calendars, shifts, attendance, timesheets, overtime, payroll handoff ports |
-| `workforce-planning` | Headcount plans, reservations, availability |
-| `reporting` | Reconciled HR read-model snapshots and Memory/Drizzle sources |
-| `bulk` / `bulk-export` | Resumable imports, field-allowlisted exports, and privacy evidence |
-| `integrations` | Platform work items, payroll delivery, accounting, and provisioning facts |
-| `observability` / `reliability` | Bounded metrics, fair claims, leases, acknowledgements, retries, dead letters, cursor recovery, and server-derived connector health |
+| Feature capsule | Responsibility |
+|-----------------|----------------|
+| `workforce-records` | People, workers, employees, employment, contracts, and assignments |
+| `organization` | Departments, jobs, positions, and reporting lines |
+| `recruitment` | Requisitions, candidates, interviews, and offers |
+| `hire-to-employee` | Accepted-offer conversion into canonical workforce records |
+| `employment-lifecycle` | Onboarding, probation, transfers, terminations, and offboarding |
+| `leave` | Policies, entitlements, requests, and approvals |
+| `compensation-benefits` | Grades, salary bands, reviews, and benefit enrollments |
+| `performance` | Cycles, goals, reviews, and improvement plans |
+| `learning` | Courses, sessions, assignments, and certifications |
+| `talent` | Profiles, pools, career plans, and succession |
+| `compliance` | Document requirements, work eligibility, and policy acknowledgements |
+| `employee-relations` | Employee cases, actions, and appeals |
+| `workforce-planning` | Headcount plans, reservations, and availability |
+| `time` | Work calendars, shifts, attendance, timesheets, and overtime |
+| `payroll-handoff` | Approved immutable payroll inputs, delivery, acknowledgement, and correction state |
+| `privacy` | Field projection, evidence, retention, and deletion workflows |
+| `reporting` | Reconciled HR read-model snapshots and feature-owned sources |
+| `bulk-import` | Resumable validated imports and row-level outcomes |
+| `bulk-export` | Field-allowlisted exports and privacy evidence |
+| `bulk-jobs` | Durable claims, leases, acknowledgements, retries, dead letters, and recovery |
 
 ## Worker identity model
 
@@ -76,7 +96,7 @@ Person → Worker → Employee specialization
 
 **Security:** Commands require an injected `HumanResourcesAuthorizationPort`. Input schemas reject tenant-field injection — the composition root stamps `organizationId`, `actorUserId`, and `correlationId` after validation.
 
-**Tenancy:** Shared Neon schema with organization-scoped rows (`organization_id` NOT NULL on **136** `hr_*` hard-tenant roots of **245** total repo roots; SSOT `packages/data-plane/db/src/hard-tenant-roots.ts`). The current null audit records **243 audited / 2 unrelated pending-DDL skips**. Not multi-DB isolation — see [docs-V2/tenancy](../../../docs-V2/tenancy/README.md).
+**Tenancy:** Shared Neon schema with organization-scoped rows. HR hard-tenant-root names, table objects, and audit SQL derive from `packages/data-plane/db/src/hard-tenant-roots.ts`; the README does not duplicate that volatile inventory. This is not multi-DB isolation — see [docs-V2/tenancy](../../../docs-V2/tenancy/README.md).
 
 ## Public surface
 
@@ -87,17 +107,86 @@ Person → Worker → Employee specialization
 
 The root uses explicit exports. It does not export stores, raw ports, command options, resolvers, Drizzle constructors, SQL builders, database handles, authorization-policy implementations, Next.js types, or HTTP envelopes. Production consumers must not import package subpaths.
 
+## Internal architecture
+
+The package root is the only production consumer entrypoint. Internal representation changes stay behind the facade; package-wide semantic registries live in the kernel; capability vocabulary belongs with the feature that owns its meaning. The top-level layer-first roots have been removed, but semantic containment and the final shallow cutover remain incomplete.
+
+```text
+src/
+├── index.ts                         # explicit package-root exports only
+├── facade/                          # permanent consumer capability surface
+│   ├── capabilities.ts
+│   ├── context.ts                   # opaque execution context
+│   ├── contracts.ts
+│   └── production-capabilities.ts
+├── kernel/                          # package-wide canonical semantics
+│   ├── authorization/               # authorization registry and shared policy mechanics
+│   ├── emissions/                   # canonical mutation-emission projections
+│   ├── events/                      # event catalog and validation
+│   ├── execution/                   # cross-feature execution primitives and ports
+│   ├── identity/                    # branded identifiers and normalization
+│   ├── observability/               # operation-level observability semantics
+│   ├── operations/                  # operation registry and governance projections
+│   ├── privacy/                     # shared field-projection primitives
+│   ├── reliability/                 # retry, lease, and recovery semantics
+│   ├── temporal/                    # effective-dated truth primitives
+│   └── validation/                  # cross-feature validation primitives
+├── features/                        # business ownership; no layer-first roots
+│   ├── workforce-records/           # person, worker, employee, employment, contracts
+│   ├── organization/
+│   ├── recruitment/
+│   ├── hire-to-employee/
+│   ├── employment-lifecycle/
+│   ├── leave/
+│   ├── compensation-benefits/
+│   ├── performance/
+│   ├── learning/
+│   ├── talent/
+│   ├── compliance/
+│   ├── employee-relations/
+│   ├── workforce-planning/
+│   ├── time/
+│   ├── payroll-handoff/
+│   ├── privacy/
+│   ├── reporting/
+│   ├── bulk-import/
+│   ├── bulk-export/
+│   └── bulk-jobs/
+├── composition/                     # aggregate stores, production wiring, integrations
+└── testing/                         # isolated test capabilities and verification harnesses
+```
+
+The package has no root `shared/`, `schemas/`, `store/`, or `adapters/` layer, and
+`scripts/feature-first-layout.mjs` rejects restoration of those superseded roots.
+That guard proves only the top-level layout. The architecture-debt report separately
+tracks deep paths, upward imports, composite-store dependencies, cross-feature
+edges, cycles, testing leakage, deep consumer imports, and retired filesystem paths.
+Until those counts reach zero, the current tree is transitional rather than the
+final feature-first structure.
+
+### Feature ownership during containment
+
+Phase 1 keeps files at their current paths while each business term is assigned one
+feature owner, projections derive from that owner, handlers receive narrow store or
+port capabilities, and composition alone constructs the aggregate. The final Phase
+2 cutover then moves production files once into `src/<file>` or
+`src/<approved-surface-or-feature>/<file>` and rejects any third directory level.
+Memory and Drizzle implementations remain paired through descriptive filenames;
+no empty capsule placeholders or generic layer farms are introduced. See the
+[development roadmap](../../../docs-V2/_scratch/human-resources/development-roadmap.md)
+and reusable [feature-first ERP semantic method](../../../.cursor/skills/afenda-semantic-registry-cutover/references/feature-first-erp.md).
+
 ## Integration contracts
 
 | Boundary | Consumer contract | Enforcement evidence |
 |---|---|---|
-| Permission | The composition root injects authorization into `HumanResourcesCapabilityOptions`; app Actions stamp organization, actor, and correlation context and return the standard `ActionResult` envelope. Callers cannot supply tenant identity. | `src/public-execution-context.ts` · `src/public-capabilities.ts` · `apps/web/app/actions/hr-action-runner.ts` |
-| Events and audit | Mutation definitions classify audit-only versus domain-event behavior. Audit recording is required before outbox append; commands fail closed when either required fact cannot be recorded. | `src/emissions/mutation-outcome.ts` · `src/emissions/registry.ts` |
-| Privacy | Sensitive queries use contextual authorization and field projection. Bulk exports use an allowlisted definition-bound permission and record privacy evidence before rows are released. | `src/shared/contextual-authorization.ts` · `src/bulk-export/` · `src/privacy/` |
-| Document references | HR stores canonical `vault://` references only; object acceptance and immutable-version requirements are delegated through `DocumentReferencePort`. Document bytes remain outside this package. | `src/compliance/vault-document-reference-adapter.ts` · `src/ports.ts` |
-| Payroll | HR publishes approved, immutable handoff facts and owns delivery acknowledgement/correction state. The payroll producer must deduplicate by `deliveryId + payloadHash`. | `src/handoff/` · `src/integrations/payroll-delivery/` |
+| Permission | The composition root injects authorization into `HumanResourcesCapabilityOptions`; app Actions stamp organization, actor, and correlation context and return the standard `ActionResult` envelope. Callers cannot supply tenant identity. | `src/facade/context.ts` · `src/facade/capabilities.ts` · `apps/web/app/actions/hr-action-runner.ts` |
+| Events and audit | Mutation definitions classify audit-only versus domain-event behavior. Audit recording is required before outbox append; commands fail closed when either required fact cannot be recorded. | `src/kernel/emissions/mutation-outcome.ts` · `src/kernel/emissions/registry.ts` |
+| Privacy | Sensitive queries use contextual authorization and field projection. Bulk exports use an allowlisted definition-bound permission and record privacy evidence before rows are released. | `src/kernel/authorization/contextual-authorization.ts` · `src/features/bulk-export/` · `src/features/privacy/` |
+| Document references | HR stores canonical `vault://` references only; object acceptance and immutable-version requirements are delegated through `DocumentReferencePort`. Document bytes remain outside this package. | `src/features/compliance/vault-document-reference-adapter.ts` · `src/kernel/execution/ports.ts` |
+| Payroll | HR publishes approved, immutable handoff facts and owns delivery acknowledgement/correction state. The payroll producer must deduplicate by `deliveryId + payloadHash`. | `src/features/payroll-handoff/` · `src/features/payroll-handoff/delivery/` |
 
-`@afenda/payroll` is a test-only development dependency for contract verification. Production HR source does not import it and never calculates gross-to-net, statutory deductions, net pay, or payslips.
+Production HR source does not import `@afenda/payroll` and never calculates gross-to-net, statutory deductions, net pay, or payslips. Payroll contract tests consume HR's public handoff shape without creating a peer ERP runtime dependency.
 
 ## Product composition
 
@@ -115,11 +204,11 @@ The root uses explicit exports. It does not export stores, raw ports, command op
 | Privacy deletion | [`hr-privacy-deletion.ts`](../../../apps/web/app/actions/hr-privacy-deletion.ts) · [`human-resources-privacy-deletion.ts`](../../../apps/web/lib/erp/human-resources-privacy-deletion.ts) |
 | Reliability worker | [`human-resources-reliability-worker.ts`](../../../apps/web/modules/platform/domain/human-resources-reliability-worker.ts) |
 | Observability | [`human-resources-observability.ts`](../../../apps/web/modules/platform/observability/human-resources-observability.ts) |
-| Operational recovery | [`44-operational-recovery-runbooks.md`](../../../docs-V2/_scratch/erp/human-resources-enterprise-audit/44-operational-recovery-runbooks.md) |
 
 ## Maintain
 
 ```bash
+node packages/erp/human-resources/scripts/feature-first-layout.mjs
 pnpm --filter @afenda/human-resources lint
 pnpm --filter @afenda/human-resources typecheck
 pnpm --filter @afenda/human-resources test
@@ -148,12 +237,12 @@ pnpm governance:packages
 | Owns | Does not own |
 |------|----------------|
 | HR domain commands, validation, business rules, and events for `hr_*` tables | Database schema host (`@afenda/db` — `writeOwner` in SCHEMA-OWNERSHIP-MANIFEST) |
-| Store adapters (`adapters/drizzle`, `adapters/memory`) | Payroll calculation (`@afenda/payroll`) |
-| Zod input/output contracts under `src/schemas/` | UI (`@afenda/ui-system` in `apps/web` only) |
+| Feature-owned persistence adapters under `src/features/*/adapters/` | Payroll calculation (`@afenda/payroll`) |
+| Feature-owned Zod contracts under `src/features/*/schema.ts` and `src/features/*/schemas/` | UI (`@afenda/ui-system` in `apps/web` only) |
 | **Compensation agreement** — `hr_employee_compensation`, `hr_allowance_entitlement`, `hr_bonus_eligibility`, benefit enrollment **contribution terms** on `hr_benefit_enrollment` | Pay-period calculated earnings/deductions/net; `payroll_*`, `journal*`, `payment*` writes |
 | Approved, immutable payroll handoff inputs and acknowledged delivery state | Gross-to-net, statutory pay math, payslip generation |
 
-**Allowance/deduction four-way ownership (Slice 8.6):** HR entitlement/agreement → payroll calculation → accounting posting → payments disbursement. SSOT: [allowance-deduction-ownership.md](../../../docs-V2/_scratch/erp/allowance-deduction-ownership.md).
+**Allowance/deduction four-way ownership:** HR entitlement/agreement → Payroll calculation → Accounting posting → Payments disbursement. The product boundary and non-duplication rules are defined in the [Human Resources PRD](../../../docs-V2/_scratch/human-resources/human-resources-prd.md).
 
 **Dependencies:** `@afenda/db`, `@afenda/errors`, `@afenda/events`, `@afenda/audit`. Cross-domain reference capabilities such as currency and organization dimensions are injected by the application composition root; Human Resources does not import master-data persistence or adapters.
 
@@ -161,18 +250,15 @@ pnpm governance:packages
 
 | Topic | Link |
 |-------|------|
-| Bounded-context map (Scratch) | [human-resource.md](../../../docs-V2/_scratch/erp/human-resource.md) |
-| Enterprise audit pack (Scratch) | [human-resources-enterprise-audit/](../../../docs-V2/_scratch/erp/human-resources-enterprise-audit/) — authority, scorecard, repair roadmap (Phase 0 exit MET) |
-| Historical repair queue (Scratch) | [44-next-repair-mission.md](../../../docs-V2/_scratch/erp/human-resources-enterprise-audit/44-next-repair-mission.md) — retained as earlier repair evidence; current sequencing is the program roadmap |
-| Program roadmap (Scratch) | [00.hrm.md](../../../docs-V2/_scratch/00.hrm.md) |
-| Operational recovery (Scratch) | [44-operational-recovery-runbooks.md](../../../docs-V2/_scratch/erp/human-resources-enterprise-audit/44-operational-recovery-runbooks.md) — migration, outbox, payroll, attendance, privacy, correction, leakage, rollback |
-| Current implementation evidence + dual scores (Scratch) | [47-current-implementation-evidence-and-dual-scores.md](../../../docs-V2/_scratch/erp/human-resources-enterprise-audit/47-current-implementation-evidence-and-dual-scores.md) — current gaps and certification gates; no lifecycle promotion |
-| Historical architecture + dual scores (Scratch) | [45-architecture-composition-and-dual-scores.md](../../../docs-V2/_scratch/erp/human-resources-enterprise-audit/45-architecture-composition-and-dual-scores.md) |
-| Phase sequencing (Scratch) | [human-resources-roadmap.md](../../../docs-V2/_scratch/erp/human-resources-roadmap.md) |
-| Time domain spec (Scratch) | [time.md](../../../docs-V2/_scratch/erp/time.md) · [time-slices-roadmap.md](../../../docs-V2/_scratch/erp/time-slices-roadmap.md) |
-| Implementation audit (Scratch) | [human-resources-implementation-audit.md](../../../docs-V2/_scratch/erp/human-resources-implementation-audit.md) — **superseded** by enterprise-audit pack; 43-table snapshot only |
-| Drizzle adapter audit / migration / validation (Scratch) | [AUDIT](../../../docs-V2/_scratch/erp/human-resources-drizzle-adapter-audit.md) · [MIGRATION](../../../docs-V2/_scratch/erp/human-resources-drizzle-adapter-migration.md) · [VALIDATION](../../../docs-V2/_scratch/erp/human-resources-drizzle-adapter-validation.md) |
-| ERP scaffold rules | [SCAFFOLDING.md](../SCAFFOLDING.md) |
+| Feature-first ERP semantic method | [feature-first-erp.md](../../../.cursor/skills/afenda-semantic-registry-cutover/references/feature-first-erp.md) |
+| Feature-first layout guard | [feature-first-layout.mjs](scripts/feature-first-layout.mjs) |
+| Product requirements and bounded-context map (Scratch) | [human-resources-prd.md](../../../docs-V2/_scratch/human-resources/human-resources-prd.md) |
+| Development roadmap and delivery gates (Scratch) | [development-roadmap.md](../../../docs-V2/_scratch/human-resources/development-roadmap.md) |
+| Payroll product requirements (Scratch) | [PAYROLL-PRD-MY-VN.md](../../../docs-V2/_scratch/payroll/PAYROLL-PRD-MY-VN.md) |
+| Public contract evidence | [`public-contract.fixture.json`](__tests__/fixtures/public-contract.fixture.json) · [`consumer-inventory.fixture.json`](__tests__/fixtures/consumer-inventory.fixture.json) |
+| Registry and architecture evidence | [`registry-projection.fixture.json`](__tests__/fixtures/registry-projection.fixture.json) · [`architecture-debt.fixture.json`](__tests__/fixtures/architecture-debt.fixture.json) |
+| Module lifecycle | [`module.manifest.ts`](src/composition/module.manifest.ts) |
+| ERP scaffold rules | [ERP-SCAFFOLDING.md](../ERP-SCAFFOLDING.md) |
 | Tenancy | [docs-V2/tenancy](../../../docs-V2/tenancy/README.md) |
 | Package DAG | [docs-V2/monorepo](../../../docs-V2/monorepo/README.md) |
 | Schema ownership | [SCHEMA-OWNERSHIP-MANIFEST.yaml](../../../docs-V2/modules/SCHEMA-OWNERSHIP-MANIFEST.yaml) |

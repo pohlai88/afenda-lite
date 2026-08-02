@@ -73,8 +73,8 @@ aggregate state, and owns the versioned discrepancy-resolution workflow.
 
 Date inputs must be real ISO calendar dates. Monetary parsing accepts at most
 the canonical 12 fractional digits and rejects excess precision instead of
-silently truncating it. Memory persistence is test-only; omitted internal store
-wiring resolves to the Drizzle production store.
+silently truncating it. Memory persistence is test-only; the facade composition
+injects the Drizzle production store and required mutation capabilities.
 
 Production statutory activation is fail-closed. The bundled `synth.v1`
 calculator is test-only and is not a jurisdiction approval. See
@@ -91,30 +91,32 @@ shares a deterministic per-rule transaction lock with update, archive, and
 supersede, so a finalized version cannot be changed or retired even under a
 concurrent mutation.
 
-Manifest: `src/module.manifest.ts` (repository-governance input, not a consumer
+Manifest: `src/composition/module.manifest.ts` (repository-governance input, not a consumer
 subpath).
 
-## Domain farms
+## Domain features
 
-| Folder | Responsibility |
-|--------|----------------|
-| `setup` | Calendar, pay group, earning/deduction/statutory rules |
-| `assignments` | Employee payroll assignment, recurring earning/deduction |
-| `inputs` | Variable, overtime, leave adjustment, one-time adjustment |
-| `runs` | Period, run, calculation, exception, finalization, reversal |
-| `statutory` | Employee/employer contribution, tax result, submission |
-| `outputs` | Payroll result, payslip, payment instruction, accounting posting |
-| `reconciliation` | Payroll / payment / accounting reconciliation |
+Payroll uses the uniform ERP `facade/kernel/composition/features/testing`
+topology. Business behavior, validation, persistence contracts, and adapters are
+owned by named feature capsules under `src/features/`. The kernel composes
+package-wide operations and primitives; composition alone constructs the
+aggregate store; the root facade remains the only business-consumer surface.
 
-Supporting trees (same shape as `@afenda/human-resources`):
+| Feature | Responsibility |
+|---------|----------------|
+| `payroll-setup` | Calendars, pay groups, and effective-dated rules |
+| `employee-assignments` | Employee assignment and recurring earning/deduction |
+| `workforce-ingress` | HR handoff validation and canonical normalization |
+| `variable-inputs` | Period variable inputs and source idempotency |
+| `payroll-runs` | Period/run lifecycle, exceptions, finalization, and reversal |
+| `calculation` | Deterministic calculation, result lines, and snapshots |
+| `statutory-rules` | Statutory calculators, results, and approval policy |
+| `payslips` | Authorized deterministic payslip views |
+| `reconciliation` | Payroll/downstream discrepancy resolution |
 
-| Tree | Role |
-|------|------|
-| `schemas/` | Domain-sliced Zod contracts |
-| `store/` | Domain-sliced persistence contracts → composed `PayrollStore` |
-| `adapters/drizzle/` | Per-domain Drizzle methods + `createDrizzlePayrollStore` |
-| `adapters/memory/` | In-memory store for unit/domain tests |
-| `testing/` | Package-private test factory |
+Feature handlers and adapters depend on their feature-owned store contract or a
+narrow cross-feature capability. They never import `facade`, `composition`, or
+`testing`, and never accept the composite `PayrollStore`.
 
 ## Public surfaces
 
@@ -130,6 +132,7 @@ types, or HTTP envelopes.
 
 ```bash
 pnpm --filter @afenda/payroll lint
+pnpm --filter @afenda/payroll layout
 pnpm --filter @afenda/payroll typecheck
 pnpm --filter @afenda/payroll test
 pnpm --filter @afenda/payroll check
@@ -146,19 +149,19 @@ Implementation method: project skill `afenda-elite-payroll`.
 
 ## Ownership
 
-**Mutation tables (19):** `payroll_calendar` … `payroll_rule_finalized_usage` — see `src/mutation-tables.ts`.
+**Mutation tables (19):** `payroll_calendar` … `payroll_rule_finalized_usage` — see `src/kernel/emissions/mutation-tables.ts`.
 
 | Owns | Does not own |
 |------|----------------|
 | Payroll domain commands, validation, business rules, and events for `payroll_*` | Database schema host (`@afenda/db`) |
-| Store adapters (`adapters/drizzle`, `adapters/memory`) | HR workforce records (`@afenda/human-resources`) |
-| Zod contracts under `src/schemas/` | Direct payment / journal inserts |
+| Feature-owned persistence adapters | HR workforce records (`@afenda/human-resources`) |
+| Feature-owned Zod contracts | Direct payment / journal inserts |
 | **Allowance calculation** — `payroll_earning_rule`, `payroll_recurring_earning`, earning `payroll_result_line` rows | `hr_allowance_entitlement`, `hr_employee_compensation` (HR agreement) |
 | **Deduction calculation** — `payroll_deduction_rule`, `payroll_recurring_deduction`, `payroll_statutory_*`, deduction `payroll_result_line` rows, gross-to-net on run | Benefit enrollment contribution **terms** on `hr_benefit_enrollment` (HR agreement) |
 | Disbursement/posting **requests** via `payroll.payment-requested.v1` and `payroll.posting-requested.v1` | `payment*`, `journal*` tables (Payments and Accounting own execution) |
 
 **Anti-goals:** owning `hr_employee` / `hr_employee_compensation` / `hr_allowance_entitlement`; nesting under `@afenda/human-resources`; peer package import of HR; inserting into `payment` or `journal`.
 
-**Four-way ownership (Slice 8.6):** [allowance-deduction-ownership.md](https://github.com/pohlai88/afenda-lite/blob/main/docs-V2/_scratch/erp/allowance-deduction-ownership.md)
+**Four-way ownership:** HR entitlement/agreement → Payroll calculation → Accounting posting → Payments disbursement. The product boundary and non-duplication rules are defined in the [Human Resources PRD](https://github.com/pohlai88/afenda-lite/blob/main/docs-V2/_scratch/human-resources/human-resources-prd.md).
 
-**Authority:** [docs-V2/_scratch/erp/human-resource.md](https://github.com/pohlai88/afenda-lite/blob/main/docs-V2/_scratch/erp/human-resource.md) · [SCAFFOLDING.md](https://github.com/pohlai88/afenda-lite/blob/main/packages/erp/SCAFFOLDING.md) · skill `afenda-elite-payroll`
+**Authority:** [Human Resources PRD](https://github.com/pohlai88/afenda-lite/blob/main/docs-V2/_scratch/human-resources/human-resources-prd.md) · [Malaysia/Vietnam Payroll PRD](https://github.com/pohlai88/afenda-lite/blob/main/docs-V2/_scratch/payroll/PAYROLL-PRD-MY-VN.md) · [SCAFFOLDING.md](https://github.com/pohlai88/afenda-lite/blob/main/packages/erp/SCAFFOLDING.md) · skill `afenda-elite-payroll`

@@ -1,34 +1,37 @@
 import { errorResult } from "@afenda/errors";
 import { beforeEach, describe, expect, it } from "vitest";
-import type { createDrizzleHumanResourcesStore } from "../src/adapters/drizzle/store";
-import { createMemoryHumanResourcesStore } from "../src/adapters/memory/store";
-import type { HumanResourcesAuthorizationPort } from "../src/authorization";
-import type { HumanResourcesEmployeeId } from "../src/brands";
-import { requireComplianceEmployeeReadScope } from "../src/compliance/run-operation";
-import { createEmployee } from "../src/core/employee";
-import { createEmployment } from "../src/core/employment";
-import type { HumanResourcesIdentityResolverPort } from "../src/identity-resolver";
-import { assignPrimaryReportingLine } from "../src/organization/reporting-line";
+import type { createDrizzleHumanResourcesStore } from "../src/composition/adapters/drizzle/store";
+import { createMemoryHumanResourcesStore } from "../src/composition/adapters/memory/store";
+import { requireComplianceEmployeeReadScope } from "../src/features/compliance/run-operation";
+import { assignPrimaryReportingLine } from "../src/features/organization/reporting-line";
 import {
 	createPerformanceGoal,
 	getPerformanceGoalById,
 	listEmployeeGoals,
 	submitPerformanceGoal,
-} from "../src/performance/goal";
-import { createPerformanceCycle } from "../src/performance/performance-cycle";
+} from "../src/features/performance/goal";
+import { createPerformanceCycle } from "../src/features/performance/performance-cycle";
 import {
 	getPerformanceReviewById,
 	listEmployeePerformanceReviews,
-} from "../src/performance/review";
-import { HUMAN_RESOURCES_PERMISSION_TALENT_PROFILE_SENSITIVE_READ } from "../src/permissions";
+} from "../src/features/performance/review";
 import {
 	createCareerPlan,
 	listEmployeeCareerPlans,
-} from "../src/talent/career-plan";
-import { getEmployeeCompetencyProfile } from "../src/talent/competency";
-import { listSuccessionPlans } from "../src/talent/succession-plan";
-import { getTalentProfileByEmployee } from "../src/talent/talent-profile";
-import type { PerformanceGoal, PerformanceReviewDetail } from "../src/types";
+} from "../src/features/talent/career-plan";
+import { getEmployeeCompetencyProfile } from "../src/features/talent/competency";
+import { listSuccessionPlans } from "../src/features/talent/succession-plan";
+import { getTalentProfileByEmployee } from "../src/features/talent/talent-profile";
+import { createEmployee } from "../src/features/workforce-records/employment/employee";
+import { createEmployment } from "../src/features/workforce-records/employment/employment";
+import type { HumanResourcesIdentityResolverPort } from "../src/features/workforce-records/identity-resolution/identity-resolver";
+import type { HumanResourcesAuthorizationPort } from "../src/kernel/authorization/authorize";
+import { HUMAN_RESOURCES_PERMISSION_TALENT_PROFILE_SENSITIVE_READ } from "../src/kernel/authorization/permissions";
+import type {
+	PerformanceGoal,
+	PerformanceReviewDetail,
+} from "../src/kernel/contracts";
+import type { HumanResourcesEmployeeId } from "../src/kernel/identity/brands";
 import { mapActorToEmployee } from "./helpers/identity-resolver";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
@@ -794,7 +797,7 @@ describe("End-to-End Authorization Parity Tests", () => {
 		it("should enforce temporal boundaries in leave approval workflows", async () => {
 			// Test that former managers cannot approve leave requests
 			const { approveLeaveRequest } = await import(
-				"../src/leave/leave-request"
+				"../src/features/leave/leave-request.ts"
 			);
 
 			const authPort = createAuthPort({

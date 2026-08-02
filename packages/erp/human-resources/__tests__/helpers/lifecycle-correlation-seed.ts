@@ -1,8 +1,8 @@
-import type { HumanResourcesCommandOptions } from "../../src/command-options";
-import { createAssignment } from "../../src/core/assignment";
-import { createEmployee } from "../../src/core/employee";
-import { createEmployment } from "../../src/core/employment";
-import { createPosition } from "../../src/organization/position";
+import { createPosition } from "../../src/features/organization/position";
+import { createAssignment } from "../../src/features/workforce-records/employment/assignment";
+import { createEmployee } from "../../src/features/workforce-records/employment/employee";
+import { createEmployment } from "../../src/features/workforce-records/employment/employment";
+import type { HumanResourcesCommandOptions } from "../../src/kernel/execution/command-options";
 import { TEST_ORGANIZATION_DIMENSION_KEYS } from "./command-options";
 import { seedDepartmentAndJob } from "./seed-department-and-job";
 

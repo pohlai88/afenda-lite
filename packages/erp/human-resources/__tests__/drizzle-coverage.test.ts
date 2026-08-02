@@ -3,7 +3,7 @@
  */
 import { describe, expect, it } from "vitest";
 
-import type { MissingDrizzleHumanResourcesMethods } from "../src/adapters/drizzle/coverage";
+import type { MissingDrizzleHumanResourcesMethods } from "../src/composition/adapters/drizzle/coverage";
 
 type AssertNever<T extends never> = T;
 

@@ -1,28 +1,28 @@
 import { describe, expect, it } from "vitest";
-import type { HumanResourcesAuthorizationPort } from "../src/authorization";
+import type { HumanResourcesAuthorizationRequest } from "../src/kernel/authorization/authorization-types";
+import type { HumanResourcesAuthorizationPort } from "../src/kernel/authorization/authorize";
+import { authorizeHumanResourcesOperation } from "../src/kernel/authorization/contextual-authorization";
+import {
+	HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_OWN,
+	HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_SENSITIVE_READ,
+	HUMAN_RESOURCES_PERMISSION_ORGANIZATION_MANAGE,
+} from "../src/kernel/authorization/permissions";
+import {
+	HUMAN_RESOURCES_MANIFEST_ONLY_POLICY_ID,
+	type HumanResourcesAuthorizationPolicy,
+	resolveHumanResourcesAuthorizationPolicy,
+} from "../src/kernel/authorization/registry";
+import { HUMAN_RESOURCES_SENSITIVE_OPERATION_IDS } from "../src/kernel/authorization/sensitive-operation-policies";
 import {
 	HUMAN_RESOURCES_ERROR_AUTHORIZATION_DENIED,
 	HUMAN_RESOURCES_ERROR_FORBIDDEN,
-} from "../src/error-codes";
+} from "../src/kernel/execution/error-codes";
 import {
 	HUMAN_RESOURCES_COMMAND_DEPARTMENT_CREATE,
 	HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_CREATE_DRAFT,
 	HUMAN_RESOURCES_QUERY_EMPLOYEE_CASE_GET,
 	HUMAN_RESOURCES_QUERY_LEAVE_REQUEST_GET,
-} from "../src/module-ids";
-import {
-	HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_OWN,
-	HUMAN_RESOURCES_PERMISSION_LEAVE_REQUEST_SENSITIVE_READ,
-	HUMAN_RESOURCES_PERMISSION_ORGANIZATION_MANAGE,
-} from "../src/permissions";
-import { HUMAN_RESOURCES_SENSITIVE_OPERATION_IDS } from "../src/sensitive-operation-policies";
-import {
-	HUMAN_RESOURCES_MANIFEST_ONLY_POLICY_ID,
-	type HumanResourcesAuthorizationPolicy,
-	resolveHumanResourcesAuthorizationPolicy,
-} from "../src/shared/authorization-policy-registry";
-import type { HumanResourcesAuthorizationRequest } from "../src/shared/authorization-types";
-import { authorizeHumanResourcesOperation } from "../src/shared/contextual-authorization";
+} from "../src/kernel/operations/module-ids";
 import { helperAssert as assert } from "./helpers/helper-assert";
 import { humanResourcesContextFromResult } from "./helpers/result-details";
 

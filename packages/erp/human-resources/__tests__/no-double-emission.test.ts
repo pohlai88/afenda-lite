@@ -3,32 +3,32 @@ import {
 	HUMAN_RESOURCES_LEAVE_REQUESTED_EVENT,
 } from "@afenda/events/schemas";
 import { describe, expect, it } from "vitest";
-import { createEmployee } from "../src/core/employee";
-import { createEmployment } from "../src/core/employment";
 import {
 	adjustLeaveEntitlement,
 	grantLeaveEntitlement,
-} from "../src/leave/entitlement";
+} from "../src/features/leave/entitlement";
 import {
 	createLeavePolicy,
 	publishLeavePolicy,
-} from "../src/leave/leave-policy";
+} from "../src/features/leave/leave-policy";
 import {
 	createDraftLeaveRequest,
 	submitLeaveRequest,
-} from "../src/leave/leave-request";
+} from "../src/features/leave/leave-request";
+import { createEmployee } from "../src/features/workforce-records/employment/employee";
+import { createEmployment } from "../src/features/workforce-records/employment/employment";
+import { HUMAN_RESOURCES_PERMISSION_CODES } from "../src/kernel/authorization/permissions";
+import {
+	emitHumanResourcesMutationOutcome,
+	getHumanResourcesMutationEmission,
+} from "../src/kernel/emissions/mutation-emission-registry";
+import { attachMutationExecutionContext } from "../src/kernel/emissions/mutation-meta";
 import {
 	HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_ADJUST,
 	HUMAN_RESOURCES_COMMAND_LEAVE_POLICY_CREATE,
 	HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_SUBMIT,
-} from "../src/module-ids";
-import {
-	emitHumanResourcesMutationOutcome,
-	getHumanResourcesMutationEmission,
-} from "../src/mutation-emission-registry";
-import { HUMAN_RESOURCES_PERMISSION_CODES } from "../src/permissions";
-import { attachMutationExecutionContext } from "../src/shared/mutation-meta";
-import { createMemoryHumanResourcesStore } from "../src/testing";
+} from "../src/kernel/operations/module-ids";
+import { createMemoryHumanResourcesStore } from "../src/testing/index";
 import { createTestHumanResourcesCommandOptions } from "./helpers/command-options";
 import {
 	createStoreBackedIdentityResolver,

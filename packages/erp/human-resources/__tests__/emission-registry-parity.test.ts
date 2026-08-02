@@ -3,7 +3,8 @@ import {
 	HumanResourcesEventSchemas,
 } from "@afenda/events/schemas";
 import { describe, expect, it } from "vitest";
-import { humanResourcesModuleManifest } from "../src/module.manifest";
+import { humanResourcesModuleManifest } from "../src/composition/module.manifest";
+import { HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY } from "../src/kernel/emissions/mutation-emission-registry";
 import {
 	HUMAN_RESOURCES_COMPENSATION_BENEFITS_COMMAND_IDS,
 	HUMAN_RESOURCES_COMPLIANCE_COMMAND_IDS,
@@ -19,8 +20,7 @@ import {
 	HUMAN_RESOURCES_TIME_COMMAND_IDS,
 	HUMAN_RESOURCES_WORKFORCE_FOUNDATION_COMMAND_IDS,
 	HUMAN_RESOURCES_WORKFORCE_PLANNING_COMMAND_IDS,
-} from "../src/module-ids";
-import { HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY } from "../src/mutation-emission-registry";
+} from "../src/kernel/operations/module-ids";
 
 const SLICE_36_CLASSIFIED_PACKS = [
 	{

@@ -70,22 +70,21 @@ try {
 }
 
 const reconciliation = reconcileMigrationJournalRows(journalRows, dbRows);
-const pending = reconciliation.rows.filter((row) => row.status === "pending");
 const divergent = reconciliation.rows.filter(
 	(row) => row.status === "hash mismatch" || row.status === "identity mismatch",
 );
-const applied = reconciliation.rows.filter((row) => row.status === "applied");
-const pendingCount = pending.length;
-const appliedThroughTag = applied.at(-1)?.journalTag ?? null;
+const { contiguousAppliedThroughTag, pendingCount, outOfOrderAppliedTags } =
+	reconciliation.summary;
 const details = process.argv.includes("--details");
 
 console.log("@afenda/db db:migration-status:");
 console.log(`  journal entries: ${journalRows.length}`);
 console.log(`  db ledger rows:  ${dbRows.length}`);
 console.log(
-	`  applied through:   ${appliedThroughTag ?? "(none detected by hash+when)"}`,
+	`  contiguous applied through: ${contiguousAppliedThroughTag ?? "(none detected by hash+when)"}`,
 );
 console.log(`  pending forward: ${pendingCount}`);
+console.log(`  applied beyond gap: ${outOfOrderAppliedTags.length}`);
 console.log(
 	`  unknown database rows: ${reconciliation.unknownDatabaseRows.length}`,
 );
@@ -134,7 +133,7 @@ if (pendingCount > 0) {
 		"  action: AFENDA_ALLOW_DB_MIGRATE=1 pnpm --filter @afenda/db db:migrate",
 	);
 	console.error(
-		"        if DDL is already on Neon, backfill ledger with AFENDA_ALLOW_DB_MIGRATE=1 pnpm db:sync-migration-ledger",
+		"        if DDL is already on Neon, backfill ledger with AFENDA_ALLOW_DB_MIGRATE=1 pnpm --filter @afenda/db db:sync-migration-ledger",
 	);
 	process.exit(1);
 }

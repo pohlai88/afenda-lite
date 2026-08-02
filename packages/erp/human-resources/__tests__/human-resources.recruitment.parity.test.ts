@@ -15,18 +15,18 @@ import {
 } from "@afenda/events/schemas";
 import { afterAll, describe, expect, it } from "vitest";
 import {
-	HUMAN_RESOURCES_ERROR_CONFLICT,
-	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
-} from "../src/error-codes";
-import {
 	createApplication,
 	listApplicationStatusHistory,
 	moveApplicationToInReview,
 	rejectApplication,
 	reopenApplication,
-} from "../src/recruitment/application";
-import { createCandidate } from "../src/recruitment/candidate";
-import { acceptOffer } from "../src/recruitment/offer";
+} from "../src/features/recruitment/application";
+import { createCandidate } from "../src/features/recruitment/candidate";
+import { acceptOffer } from "../src/features/recruitment/offer";
+import {
+	HUMAN_RESOURCES_ERROR_CONFLICT,
+	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+} from "../src/kernel/execution/error-codes";
 import { candidateConsentFixture } from "./helpers/candidate-consent-fixture";
 import { runDrizzleParity } from "./helpers/database-gate";
 import {

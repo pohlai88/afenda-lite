@@ -10,8 +10,8 @@
 
 import { randomUUID } from "node:crypto";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
-import { drizzleLeave } from "../src/adapters/drizzle/leave";
-import { HUMAN_RESOURCES_ERROR_EFFECTIVE_RANGE_OVERLAP } from "../src/error-codes";
+import { drizzleLeave } from "../src/features/leave/adapters/leave.drizzle";
+import { HUMAN_RESOURCES_ERROR_EFFECTIVE_RANGE_OVERLAP } from "../src/kernel/execution/error-codes";
 import { runDrizzleParity } from "./helpers/database-gate";
 import type {
 	TestEmployee,

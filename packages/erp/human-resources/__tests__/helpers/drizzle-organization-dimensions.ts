@@ -9,11 +9,11 @@ import { errorResult } from "@afenda/errors";
 import type {
 	HumanResourcesOrganizationDimensions,
 	OrganizationDimensionDirectoryPort,
-} from "../../src/ports";
+} from "../../src/kernel/execution/ports";
 import {
 	runSequential,
 	sequentialReturn,
-} from "../../src/shared/run-sequential";
+} from "../../src/kernel/execution/run-sequential";
 
 /** Seeds real governed masters for database-enforced HR parity tests. */
 export function createDrizzleTestOrganizationDimensionDirectory(): OrganizationDimensionDirectoryPort {

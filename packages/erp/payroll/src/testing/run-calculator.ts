@@ -1,15 +1,14 @@
 import { errorResult, type Result } from "@afenda/errors";
-
+import { hashSnapshot } from "../features/calculation/calculation-snapshot";
 import type {
 	MutationPorts,
 	PayrollRunCalculatorPort,
 	PayrollRunCalculatorResult,
-} from "../ports";
-import { hashSnapshot } from "../runs/calc/snapshot";
+} from "../kernel/execution/ports";
 import {
 	DEFAULT_PAYROLL_ROUNDING_POLICY,
 	PAYROLL_CALCULATION_VERSION,
-} from "../shared/rounding-policy";
+} from "../kernel/money/rounding-policy";
 
 export interface TestPayrollRunCalculatorOptions {
 	exceptions?: PayrollRunCalculatorResult["exceptions"];

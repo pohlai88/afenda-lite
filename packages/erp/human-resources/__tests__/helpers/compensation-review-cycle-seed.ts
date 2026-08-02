@@ -1,9 +1,9 @@
-import type { HumanResourcesCommandOptions } from "../../src/command-options";
 import {
 	createCompensationReviewCycle,
 	openCompensationReviewCycle,
-} from "../../src/compensation-benefits/compensation-review-cycle";
-import type { CompensationReviewCycle } from "../../src/types";
+} from "../../src/features/compensation-benefits/compensation-review-cycle";
+import type { CompensationReviewCycle } from "../../src/kernel/contracts";
+import type { HumanResourcesCommandOptions } from "../../src/kernel/execution/command-options";
 import { helperAssert as assert } from "./helper-assert";
 import { resultFailureMessage } from "./result-details";
 

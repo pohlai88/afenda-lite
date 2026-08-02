@@ -2,32 +2,31 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 
 import { describe, expect, it } from "vitest";
-
-import { HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD } from "../src/emissions/registry";
-import { humanResourcesModuleManifest } from "../src/module.manifest";
-import {
-	HUMAN_RESOURCES_RECRUITMENT_COMMAND_IDS,
-	HUMAN_RESOURCES_RECRUITMENT_QUERY_IDS,
-} from "../src/module-ids";
-import { HUMAN_RESOURCES_REGISTERED_OPERATION_DEFINITIONS } from "../src/operation-registry/registry";
+import { humanResourcesModuleManifest } from "../src/composition/module.manifest";
 import {
 	HUMAN_RESOURCES_RECRUITMENT_COMMAND_AUTHORIZATION,
 	HUMAN_RESOURCES_RECRUITMENT_COMMANDS,
 	HUMAN_RESOURCES_RECRUITMENT_QUERIES,
 	HUMAN_RESOURCES_RECRUITMENT_QUERY_AUTHORIZATION,
-} from "../src/recruitment/operation-registry";
-import { resolveHumanResourcesAuthorizationPolicy } from "../src/shared/authorization-policy-registry";
+} from "../src/features/recruitment/operation-registry";
+import { resolveHumanResourcesAuthorizationPolicy } from "../src/kernel/authorization/registry";
+import { HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD } from "../src/kernel/emissions/registry";
+import {
+	HUMAN_RESOURCES_RECRUITMENT_COMMAND_IDS,
+	HUMAN_RESOURCES_RECRUITMENT_QUERY_IDS,
+} from "../src/kernel/operations/module-ids";
+import { HUMAN_RESOURCES_REGISTERED_OPERATION_DEFINITIONS } from "../src/kernel/operations/registry";
 
 const definitions = [
 	...Object.values(HUMAN_RESOURCES_RECRUITMENT_COMMANDS),
 	...Object.values(HUMAN_RESOURCES_RECRUITMENT_QUERIES),
 ];
 const publicCapabilitiesSource = readFileSync(
-	path.resolve(import.meta.dirname, "../src/public-capabilities.ts"),
+	path.resolve(import.meta.dirname, "../src/facade/capabilities.ts"),
 	"utf8",
 );
 const moduleIdsSource = readFileSync(
-	path.resolve(import.meta.dirname, "../src/module-ids.ts"),
+	path.resolve(import.meta.dirname, "../src/kernel/operations/module-ids.ts"),
 	"utf8",
 );
 const recruitmentHandlerSources = [
@@ -38,12 +37,18 @@ const recruitmentHandlerSources = [
 	"offer.ts",
 ].map((fileName) =>
 	readFileSync(
-		path.resolve(import.meta.dirname, `../src/recruitment/${fileName}`),
+		path.resolve(
+			import.meta.dirname,
+			`../src/features/recruitment/${fileName}`,
+		),
 		"utf8",
 	),
 );
 const recruitmentRunnerSource = readFileSync(
-	path.resolve(import.meta.dirname, "../src/recruitment/run-operation.ts"),
+	path.resolve(
+		import.meta.dirname,
+		"../src/features/recruitment/run-operation.ts",
+	),
 	"utf8",
 );
 

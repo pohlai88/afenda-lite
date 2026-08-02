@@ -39,6 +39,10 @@ const CONFIG_REFERENCE_PATTERN = /--config(?:=|\s+)([^\s]+)/g;
 const PACKAGE_SOURCE_TEST_PATTERN = /\/src\/.+\.(test|spec)\.(ts|tsx)$/;
 const TEST_FILENAME_PATTERN = /\.(test|spec)\.(ts|tsx)$/;
 const DATABASE_GATE_CALL_PATTERN = /\btestingDatabase\.resolve\s*\(/;
+const RAW_WORKSPACE_TEST_CONCURRENCY_PATTERN =
+	/\bturbo\b.*--concurrency(?:=|\s)/;
+const ROOT_TEST_SCRIPT =
+	"node --experimental-strip-types testing/run-workspace-tests.mts";
 
 type PackageJson = Readonly<{
 	name?: string;
@@ -477,6 +481,36 @@ function assertForbiddenRunnerDependencies(errors: string[]): void {
 	}
 }
 
+function assertWorkspaceExecutionPolicyBoundary(errors: string[]): void {
+	const packageJsons = collectPackageJsons();
+	const rootPackage = packageJsons.find(
+		({ filePath }) => repoPath(filePath) === "package.json",
+	)?.pkg;
+
+	if (rootPackage?.scripts?.test !== ROOT_TEST_SCRIPT) {
+		errors.push(
+			`package.json script "test" must delegate to the canonical workspace runner: ${ROOT_TEST_SCRIPT}`,
+		);
+	}
+	if (
+		rootPackage?.scripts?.["test:affected"] !== `${ROOT_TEST_SCRIPT} --affected`
+	) {
+		errors.push(
+			`package.json script "test:affected" must delegate to the canonical affected workspace runner.`,
+		);
+	}
+
+	for (const { filePath, pkg } of packageJsons) {
+		for (const [scriptName, command] of Object.entries(pkg.scripts ?? {})) {
+			if (RAW_WORKSPACE_TEST_CONCURRENCY_PATTERN.test(command)) {
+				errors.push(
+					`${repoPath(filePath)} script "${scriptName}" owns Turbo concurrency outside @afenda/testing: ${command}`,
+				);
+			}
+		}
+	}
+}
+
 function assertTestPlacement(errors: string[]): void {
 	const misplacedTests = walkFiles(
 		path.join(repoRoot, "packages"),
@@ -534,6 +568,7 @@ assertNoTestingPackageSourceImports(governanceErrors);
 assertTestingInfrastructureDatabaseGate(governanceErrors);
 assertLaneFileCoverage(governanceErrors);
 assertPackageScriptsUseApprovedRunnerPolicy(governanceErrors);
+assertWorkspaceExecutionPolicyBoundary(governanceErrors);
 assertForbiddenRunnerDependencies(governanceErrors);
 assertTestPlacement(governanceErrors);
 assertDatabaseGate(governanceErrors);

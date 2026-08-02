@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { dryRunAttendanceImport } from "../src/time/attendance/dry-run";
+import { dryRunAttendanceImport } from "../src/features/time/attendance/dry-run";
 
 const EMPLOYEE_ID = "00000000-0000-4000-8000-000000000001";
 

@@ -140,7 +140,7 @@ import {
 import {
 	runSequential,
 	sequentialBreak,
-} from "../../src/shared/run-sequential";
+} from "../../src/kernel/execution/run-sequential";
 
 function isForeignKeyViolation(error: unknown): boolean {
 	let current: unknown = error;

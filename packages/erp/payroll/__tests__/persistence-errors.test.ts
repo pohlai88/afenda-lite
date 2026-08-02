@@ -5,7 +5,7 @@ import {
 	isPayrollRunIdentityUniqueViolation,
 	isPostgresUniqueViolation,
 	mapPersistenceFailure,
-} from "../src/shared/persistence-errors";
+} from "../src/kernel/execution/persistence-errors";
 
 describe("@afenda/payroll persistence errors", () => {
 	it("fails closed for hostile Postgres-shaped getters", () => {

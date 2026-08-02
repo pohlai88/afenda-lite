@@ -3,21 +3,21 @@
  */
 
 import { afterAll, describe, expect, it } from "vitest";
-import { createEmployee } from "../src/core/employee";
-import { createEmployment } from "../src/core/employment";
 import {
 	listEmployeeCases,
 	openEmployeeCase,
-} from "../src/employee-relations/employee-case";
-import { HUMAN_RESOURCES_ERROR_FORBIDDEN } from "../src/error-codes";
+} from "../src/features/employee-relations/employee-case";
+import { createEmployee } from "../src/features/workforce-records/employment/employee";
+import { createEmployment } from "../src/features/workforce-records/employment/employment";
 import {
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CASE_ASSIGNED_READ,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CASE_INVESTIGATE,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CASE_OPEN,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CREATE,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE,
-} from "../src/permissions";
-import { runSequential } from "../src/shared/run-sequential";
+} from "../src/kernel/authorization/permissions";
+import { HUMAN_RESOURCES_ERROR_FORBIDDEN } from "../src/kernel/execution/error-codes";
+import { runSequential } from "../src/kernel/execution/run-sequential";
 import { runDrizzleParity } from "./helpers/database-gate";
 import { createHrParityHarness } from "./helpers/hr-parity-harness";
 import {

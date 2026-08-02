@@ -1,23 +1,23 @@
-import type { HumanResourcesPermission } from "../../src/authorization";
-import {
-	parseHumanResourcesAssignmentId,
-	parseHumanResourcesPositionId,
-} from "../../src/brands";
-import { createMemoryCurrencyLookup } from "../../src/compensation-benefits/currency-lookup";
+import { createMemoryCurrencyLookup } from "../../src/features/compensation-benefits/currency-lookup";
 import {
 	approveEmployeeCompensation,
 	createEmployeeCompensation,
-} from "../../src/compensation-benefits/employee-compensation";
-import { createEmployee } from "../../src/core/employee";
-import { createEmployment } from "../../src/core/employment";
+} from "../../src/features/compensation-benefits/employee-compensation";
+import { createEmployee } from "../../src/features/workforce-records/employment/employee";
+import { createEmployment } from "../../src/features/workforce-records/employment/employment";
+import type { HumanResourcesPermission } from "../../src/kernel/authorization/authorize";
 import {
 	HUMAN_RESOURCES_PERMISSION_CODES,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CREATE,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE,
-} from "../../src/permissions";
-import { createMemoryHumanResourcesStore } from "../../src/testing";
-import type { WorkAssignment } from "../../src/types";
+} from "../../src/kernel/authorization/permissions";
+import type { WorkAssignment } from "../../src/kernel/contracts";
+import {
+	parseHumanResourcesAssignmentId,
+	parseHumanResourcesPositionId,
+} from "../../src/kernel/identity/brands";
+import { createMemoryHumanResourcesStore } from "../../src/testing/index";
 import { createGrantingHumanResourcesAuthorization } from "./memory-authorization";
 import { createMemoryMutationPorts } from "./memory-ports";
 

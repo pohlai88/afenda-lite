@@ -1,11 +1,11 @@
 import { errorResult, type Result } from "@afenda/errors";
 
-import type { DayPortion } from "../shared/leave-status";
+import type { DayPortion } from "../features/leave/status";
 import type {
 	WorkCalendarPort,
 	WorkCalendarSegment,
 	WorkCalendarSegmentInput,
-} from "../time/work-calendar";
+} from "../features/time/work-calendar";
 
 function parseIsoDate(value: string): Date {
 	const [yearText, monthText, dayText] = value.split("-");

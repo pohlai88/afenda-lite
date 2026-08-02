@@ -22,8 +22,8 @@ import {
 } from "@afenda/events/schemas";
 import { describe, expect, it } from "vitest";
 
-import { HUMAN_RESOURCES_RECRUITMENT_EMISSIONS } from "../src/emissions/domains/recruitment";
-import { HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD } from "../src/emissions/registry";
+import { HUMAN_RESOURCES_RECRUITMENT_EMISSIONS } from "../src/kernel/emissions/domains/recruitment";
+import { HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD } from "../src/kernel/emissions/registry";
 import {
 	HUMAN_RESOURCES_COMMAND_APPLICATION_CREATE,
 	HUMAN_RESOURCES_COMMAND_APPLICATION_MOVE_TO_IN_REVIEW,
@@ -58,7 +58,7 @@ import {
 	HUMAN_RESOURCES_COMMAND_REQUISITION_PLACE_ON_HOLD,
 	HUMAN_RESOURCES_COMMAND_REQUISITION_SUBMIT,
 	HUMAN_RESOURCES_RECRUITMENT_COMMAND_IDS,
-} from "../src/module-ids";
+} from "../src/kernel/operations/module-ids";
 
 const EXPECTED_MATRIX: Record<
 	string,

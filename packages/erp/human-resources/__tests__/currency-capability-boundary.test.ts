@@ -3,7 +3,7 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { assertCurrencyExists } from "../src/compensation-benefits/run-operation";
+import { assertCurrencyExists } from "../src/features/compensation-benefits/run-operation";
 
 const packageRoot = join(import.meta.dirname, "..");
 

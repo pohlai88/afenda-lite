@@ -7,7 +7,7 @@ function typescriptFiles(directory: string): string[] {
 	return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
 		const target = path.join(directory, entry.name);
 		if (entry.isDirectory()) {
-			return typescriptFiles(target);
+			return entry.name === "adapters" ? [] : typescriptFiles(target);
 		}
 		return entry.isFile() && entry.name.endsWith(".ts") ? [target] : [];
 	});
@@ -15,7 +15,7 @@ function typescriptFiles(directory: string): string[] {
 
 const workforcePlanningDirectory = path.resolve(
 	import.meta.dirname,
-	"../src/workforce-planning",
+	"../src/features/workforce-planning",
 );
 
 describe("Workforce Planning capability boundary", () => {

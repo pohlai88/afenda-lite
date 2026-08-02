@@ -1,0 +1,31 @@
+import type { HumanResourcesCoreStore } from "../workforce-records/employment/store-contract";
+
+export type HumanResourcesOrganizationStore = Pick<
+	HumanResourcesCoreStore,
+	| "assignPrimaryReportingLine"
+	| "closeReportingLine"
+	| "createDepartment"
+	| "createJob"
+	| "createPosition"
+	| "findDepartmentAsOf"
+	| "findJobAsOf"
+	| "findPositionAsOf"
+	| "getDepartmentById"
+	| "getJobById"
+	| "getOrganizationTree"
+	| "getOrganizationTreeAsOf"
+	| "getPositionById"
+	| "listDepartments"
+	| "listDirectReports"
+	| "listJobs"
+	| "listPositions"
+	| "replacePrimaryReportingLine"
+	| "resolvePositionOccupancyAsOf"
+	| "resolvePrimaryManager"
+	| "setDepartmentStatus"
+	| "setJobStatus"
+	| "setPositionStatus"
+	| "updateDepartment"
+	| "updateJob"
+	| "updatePosition"
+>;

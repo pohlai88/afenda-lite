@@ -3,14 +3,6 @@
  */
 
 import { describe, expect, it } from "vitest";
-import type { HumanResourcesPermission } from "../src/authorization";
-import { createEmployee } from "../src/core/employee";
-import { createEmployment } from "../src/core/employment";
-import { suspendEmployment } from "../src/core/employment-management";
-import {
-	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
-	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
-} from "../src/error-codes";
 import {
 	archiveLeavePolicy,
 	createLeavePolicy,
@@ -19,14 +11,22 @@ import {
 	resolveApplicableLeavePolicy,
 	supersedeLeavePolicy,
 	updateLeavePolicy,
-} from "../src/leave/leave-policy";
+} from "../src/features/leave/leave-policy";
+import { createEmployee } from "../src/features/workforce-records/employment/employee";
+import { createEmployment } from "../src/features/workforce-records/employment/employment";
+import { suspendEmployment } from "../src/features/workforce-records/employment/employment-management";
+import type { HumanResourcesPermission } from "../src/kernel/authorization/authorize";
 import {
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CREATE,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE,
 	HUMAN_RESOURCES_PERMISSION_LEAVE_POLICY_MANAGE,
 	HUMAN_RESOURCES_PERMISSION_LEAVE_POLICY_READ,
-} from "../src/permissions";
-import { createMemoryHumanResourcesStore } from "../src/testing";
+} from "../src/kernel/authorization/permissions";
+import {
+	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
+} from "../src/kernel/execution/error-codes";
+import { createMemoryHumanResourcesStore } from "../src/testing/index";
 import { createTestHumanResourcesCommandOptions } from "./helpers/command-options";
 import { helperAssert as assert } from "./helpers/helper-assert";
 import {

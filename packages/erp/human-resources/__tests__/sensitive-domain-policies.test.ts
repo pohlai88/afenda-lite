@@ -1,17 +1,7 @@
 import { describe, expect, it } from "vitest";
-
-import type { HumanResourcesAuthorizationPort } from "../src/authorization";
-import {
-	HUMAN_RESOURCES_COMMAND_COMPETENCY_ASSESSMENT_RECORD,
-	HUMAN_RESOURCES_COMMAND_SUCCESSION_PLAN_CREATE,
-	HUMAN_RESOURCES_QUERY_APPROVED_COMPENSATION_HANDOFF_GET,
-	HUMAN_RESOURCES_QUERY_EMPLOYEE_COMPETENCY_PROFILE_GET,
-	HUMAN_RESOURCES_QUERY_EMPLOYEE_DOCUMENT_GET,
-	HUMAN_RESOURCES_QUERY_EMPLOYEE_PROFILE_GET,
-	HUMAN_RESOURCES_QUERY_HEADCOUNT_PLAN_APPROVED_GET,
-	HUMAN_RESOURCES_QUERY_TALENT_PROFILE_GET_BY_EMPLOYEE,
-	type HumanResourcesQueryId,
-} from "../src/module-ids";
+import type { HumanResourcesAuthorizationRequest } from "../src/kernel/authorization/authorization-types";
+import type { HumanResourcesAuthorizationPort } from "../src/kernel/authorization/authorize";
+import { authorizeHumanResourcesOperation } from "../src/kernel/authorization/contextual-authorization";
 import {
 	HUMAN_RESOURCES_PERMISSION_COMPENSATION_MANAGE,
 	HUMAN_RESOURCES_PERMISSION_COMPENSATION_READ,
@@ -27,10 +17,19 @@ import {
 	HUMAN_RESOURCES_PERMISSION_TALENT_ADMIN,
 	HUMAN_RESOURCES_PERMISSION_TALENT_PROFILE_SENSITIVE_READ,
 	HUMAN_RESOURCES_PERMISSION_WORKFORCE_PLAN_READ,
-} from "../src/permissions";
-import { resolveHumanResourcesAuthorizationPolicy } from "../src/shared/authorization-policy-registry";
-import type { HumanResourcesAuthorizationRequest } from "../src/shared/authorization-types";
-import { authorizeHumanResourcesOperation } from "../src/shared/contextual-authorization";
+} from "../src/kernel/authorization/permissions";
+import { resolveHumanResourcesAuthorizationPolicy } from "../src/kernel/authorization/registry";
+import {
+	HUMAN_RESOURCES_COMMAND_COMPETENCY_ASSESSMENT_RECORD,
+	HUMAN_RESOURCES_COMMAND_SUCCESSION_PLAN_CREATE,
+	HUMAN_RESOURCES_QUERY_APPROVED_COMPENSATION_HANDOFF_GET,
+	HUMAN_RESOURCES_QUERY_EMPLOYEE_COMPETENCY_PROFILE_GET,
+	HUMAN_RESOURCES_QUERY_EMPLOYEE_DOCUMENT_GET,
+	HUMAN_RESOURCES_QUERY_EMPLOYEE_PROFILE_GET,
+	HUMAN_RESOURCES_QUERY_HEADCOUNT_PLAN_APPROVED_GET,
+	HUMAN_RESOURCES_QUERY_TALENT_PROFILE_GET_BY_EMPLOYEE,
+	type HumanResourcesQueryId,
+} from "../src/kernel/operations/module-ids";
 import {
 	COMPENSATION_FIELD_CLASSES,
 	PERFORMANCE_FIELD_CLASSES,
@@ -38,7 +37,7 @@ import {
 	redactedFieldsForResource,
 	TALENT_SUCCESSION_SENSITIVE_FIELD_NAMES,
 	WORKFORCE_PLANNING_EMPLOYEE_ACTUAL_FIELDS,
-} from "../src/shared/field-projection";
+} from "../src/kernel/privacy/field-projection";
 import { humanResourcesContextFromResult } from "./helpers/result-details";
 
 function grantingAuthorization(

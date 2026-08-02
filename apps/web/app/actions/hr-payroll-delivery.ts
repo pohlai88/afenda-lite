@@ -2,16 +2,14 @@
 
 import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import {
-	type ApprovedPayrollHandoff,
-	approvedPayrollHandoffSchema,
-} from "@afenda/events/schemas";
-import {
+	assembleApprovedPayrollHandoff,
 	type PayrollDeliveryRecord,
 	queuePayrollDelivery,
 } from "@afenda/human-resources";
 import { z } from "zod";
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runHrPayrollDeliveryOperatorPermissionAction as runOperatorPermissionAction } from "@/app/actions/run-hr-operator-permission-action";
+import { createHumanResourcesCommandOptions } from "@/lib/erp/human-resources-command-options";
 import {
 	createProductionPayrollDeliveryPorts,
 	publishPayrollDelivery,
@@ -20,12 +18,37 @@ import {
 } from "@/modules/platform/domain/human-resources-payroll-delivery";
 import { parseSchema } from "@/modules/platform/schemas/common";
 
-const queueSchema = z.object({
-	idempotencyKey: z.string().trim().min(1).max(200),
-	payload: approvedPayrollHandoffSchema,
-	maxAttempts: z.number().int().min(1).max(10).optional(),
-	supersedesDeliveryId: z.string().uuid().optional(),
-});
+const isoDateSchema = z.string().date();
+const queueSchema = z
+	.object({
+		employeeId: z.string().uuid(),
+		effectiveDate: isoDateSchema,
+		periodStart: isoDateSchema,
+		periodEnd: isoDateSchema,
+		idempotencyKey: z.string().trim().min(1).max(200),
+		maxAttempts: z.number().int().min(1).max(10).optional(),
+		supersedesDeliveryId: z.string().uuid().optional(),
+	})
+	.strict()
+	.superRefine((value, ctx) => {
+		if (value.periodStart > value.periodEnd) {
+			ctx.addIssue({
+				code: "custom",
+				message: "periodStart must be on or before periodEnd",
+				path: ["periodStart"],
+			});
+		}
+		if (
+			value.effectiveDate < value.periodStart ||
+			value.effectiveDate > value.periodEnd
+		) {
+			ctx.addIssue({
+				code: "custom",
+				message: "effectiveDate must fall within the delivery period",
+				path: ["effectiveDate"],
+			});
+		}
+	});
 const correctionSchema = queueSchema.extend({
 	supersedesDeliveryId: z.string().uuid(),
 });
@@ -41,8 +64,11 @@ const recoverySchema = z.object({
 });
 
 export async function queuePayrollDeliveryAction(input: {
+	employeeId: string;
+	effectiveDate: string;
+	periodStart: string;
+	periodEnd: string;
 	idempotencyKey: string;
-	payload: ApprovedPayrollHandoff;
 	maxAttempts?: number;
 	supersedesDeliveryId?: string;
 }): Promise<ActionResult<PayrollDeliveryRecord>> {
@@ -50,20 +76,40 @@ export async function queuePayrollDeliveryAction(input: {
 		path: "queuePayrollDeliveryAction",
 		permission: "payroll.input.manage",
 		safeMessage: "Could not queue the payroll delivery.",
-		execute: async (session) => {
+		execute: async (session, correlationId) => {
 			const parsed = parseSchema(queueSchema, input);
 			if (!parsed.success) {
 				return errorResult.fail("VALIDATION_ERROR", {
 					publicMessage: "Enter a valid payroll delivery.",
 				});
 			}
+			const assembled = await assembleApprovedPayrollHandoff(
+				{
+					organizationId: session.orgId,
+					actorUserId: session.userId,
+					correlationId,
+					employeeId: parsed.data.employeeId,
+					effectiveDate: parsed.data.effectiveDate,
+					periodStart: parsed.data.periodStart,
+					periodEnd: parsed.data.periodEnd,
+				},
+				createHumanResourcesCommandOptions(),
+			);
+			if (!assembled.ok) {
+				return assembled;
+			}
+			if (assembled.data === null) {
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "Approved payroll facts were not found.",
+				});
+			}
 			const result = await queuePayrollDelivery(
 				{
 					idempotencyKey: parsed.data.idempotencyKey,
-					payload: parsed.data.payload,
+					payload: assembled.data,
 					organizationId: session.orgId,
 					actorUserId: session.userId,
-					correlationId: parsed.data.payload.approvalEvidence.correlationId,
+					correlationId,
 					...(parsed.data.maxAttempts === undefined
 						? {}
 						: { maxAttempts: parsed.data.maxAttempts }),
@@ -107,8 +153,11 @@ export async function publishPayrollDeliveryAction(input: {
 }
 
 export async function queuePayrollDeliveryCorrectionAction(input: {
+	employeeId: string;
+	effectiveDate: string;
+	periodStart: string;
+	periodEnd: string;
 	idempotencyKey: string;
-	payload: ApprovedPayrollHandoff;
 	supersedesDeliveryId: string;
 	maxAttempts?: number;
 }): Promise<ActionResult<PayrollDeliveryRecord>> {
@@ -116,22 +165,42 @@ export async function queuePayrollDeliveryCorrectionAction(input: {
 		path: "queuePayrollDeliveryCorrectionAction",
 		permission: "payroll.input.manage",
 		safeMessage: "Could not queue the corrected payroll delivery.",
-		execute: async (session) => {
+		execute: async (session, correlationId) => {
 			const parsed = parseSchema(correctionSchema, input);
 			if (!parsed.success) {
 				return errorResult.fail("VALIDATION_ERROR", {
 					publicMessage: "Enter a valid corrected payroll delivery.",
 				});
 			}
+			const assembled = await assembleApprovedPayrollHandoff(
+				{
+					organizationId: session.orgId,
+					actorUserId: session.userId,
+					correlationId,
+					employeeId: parsed.data.employeeId,
+					effectiveDate: parsed.data.effectiveDate,
+					periodStart: parsed.data.periodStart,
+					periodEnd: parsed.data.periodEnd,
+				},
+				createHumanResourcesCommandOptions(),
+			);
+			if (!assembled.ok) {
+				return assembled;
+			}
+			if (assembled.data === null) {
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "Approved payroll facts were not found.",
+				});
+			}
 			return mapPackageResult(
 				await queuePayrollDelivery(
 					{
 						idempotencyKey: parsed.data.idempotencyKey,
-						payload: parsed.data.payload,
+						payload: assembled.data,
 						supersedesDeliveryId: parsed.data.supersedesDeliveryId,
 						organizationId: session.orgId,
 						actorUserId: session.userId,
-						correlationId: parsed.data.payload.approvalEvidence.correlationId,
+						correlationId,
 						...(parsed.data.maxAttempts === undefined
 							? {}
 							: { maxAttempts: parsed.data.maxAttempts }),

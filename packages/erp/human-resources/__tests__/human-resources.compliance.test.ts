@@ -10,13 +10,11 @@ import {
 	HUMAN_RESOURCES_WORK_ELIGIBILITY_SUSPENDED_EVENT,
 } from "@afenda/events/schemas";
 import { describe, expect, it } from "vitest";
-
-import type { HumanResourcesPermission } from "../src/authorization";
 import {
 	createDocumentRequirement,
 	publishDocumentRequirement,
-} from "../src/compliance/document-requirement";
-import { getEmployeeComplianceSummary } from "../src/compliance/employee-compliance-summary";
+} from "../src/features/compliance/document-requirement";
+import { getEmployeeComplianceSummary } from "../src/features/compliance/employee-compliance-summary";
 import {
 	listEmployeeDocuments,
 	markEmployeeDocumentExpired,
@@ -24,31 +22,27 @@ import {
 	rejectEmployeeDocument,
 	revokeEmployeeDocumentVerification,
 	verifyEmployeeDocument,
-} from "../src/compliance/employee-document";
-import { detectComplianceExpiryOperations } from "../src/compliance/expiry-operations";
+} from "../src/features/compliance/employee-document";
+import { detectComplianceExpiryOperations } from "../src/features/compliance/expiry-operations";
 import {
 	acknowledgePolicy,
 	issuePolicyAcknowledgementRequirement,
 	listOutstandingPolicyAcknowledgements,
 	supersedePolicyAcknowledgementRequirement,
-} from "../src/compliance/policy-acknowledgement";
+} from "../src/features/compliance/policy-acknowledgement";
 import {
 	closeWorkEligibility,
 	recordWorkEligibility,
 	suspendWorkEligibility,
 	verifyWorkEligibility,
-} from "../src/compliance/work-eligibility";
-import { createEmployee } from "../src/core/employee";
-import { createEmployment } from "../src/core/employment";
-import {
-	HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
-	HUMAN_RESOURCES_ERROR_FORBIDDEN,
-	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
-} from "../src/error-codes";
-import { issueCertification } from "../src/learning/certification";
-import { recordCompletion } from "../src/learning/completion";
-import { createCourse } from "../src/learning/course";
-import { assignLearning } from "../src/learning/learning-assignment";
+} from "../src/features/compliance/work-eligibility";
+import { issueCertification } from "../src/features/learning/certification";
+import { recordCompletion } from "../src/features/learning/completion";
+import { createCourse } from "../src/features/learning/course";
+import { assignLearning } from "../src/features/learning/learning-assignment";
+import { createEmployee } from "../src/features/workforce-records/employment/employee";
+import { createEmployment } from "../src/features/workforce-records/employment/employment";
+import type { HumanResourcesPermission } from "../src/kernel/authorization/authorize";
 import {
 	HUMAN_RESOURCES_PERMISSION_CODES,
 	HUMAN_RESOURCES_PERMISSION_COMPLIANCE_ADMINISTER,
@@ -59,8 +53,13 @@ import {
 	HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE,
 	HUMAN_RESOURCES_PERMISSION_POLICY_ACKNOWLEDGEMENT_ADMINISTER,
 	HUMAN_RESOURCES_PERMISSION_WORK_ELIGIBILITY_VERIFY,
-} from "../src/permissions";
-import { createMemoryHumanResourcesStore } from "../src/testing";
+} from "../src/kernel/authorization/permissions";
+import {
+	HUMAN_RESOURCES_ERROR_CROSS_ORGANIZATION_REFERENCE,
+	HUMAN_RESOURCES_ERROR_FORBIDDEN,
+	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+} from "../src/kernel/execution/error-codes";
+import { createMemoryHumanResourcesStore } from "../src/testing/index";
 import { createTestHumanResourcesCommandOptions } from "./helpers/command-options";
 import { createStoreBackedIdentityResolver } from "./helpers/identity-resolver";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";

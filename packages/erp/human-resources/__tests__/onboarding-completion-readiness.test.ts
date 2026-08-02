@@ -1,18 +1,17 @@
 import { describe, expect, it } from "vitest";
-
-import type {
-	HumanResourcesEmployeeId,
-	HumanResourcesWorkEligibilityId,
-} from "../src/brands";
 import {
 	ONBOARDING_TASK_CODE_ACCESS_HANDOFF,
 	ONBOARDING_TASK_CODE_EQUIPMENT_HANDOFF,
 	ONBOARDING_TASK_CODE_IDENTITY_DOCUMENTS,
 	ONBOARDING_TASK_CODE_ORIENTATION,
 	ONBOARDING_TASK_CODE_WORK_ELIGIBILITY,
-} from "../src/lifecycle/onboarding-checklist";
-import { evaluateOnboardingCompletionReadiness } from "../src/shared/onboarding-completion-readiness";
-import type { WorkEligibility } from "../src/types";
+} from "../src/features/employment-lifecycle/onboarding-checklist";
+import { evaluateOnboardingCompletionReadiness } from "../src/features/employment-lifecycle/onboarding-completion-readiness";
+import type { WorkEligibility } from "../src/kernel/contracts";
+import type {
+	HumanResourcesEmployeeId,
+	HumanResourcesWorkEligibilityId,
+} from "../src/kernel/identity/brands";
 
 const activeWorkEligibility: WorkEligibility = {
 	id: "00000000-0000-4000-8000-000000000001" as HumanResourcesWorkEligibilityId,

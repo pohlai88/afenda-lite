@@ -1,10 +1,10 @@
 import { afterAll, expect, it } from "vitest";
 
-import { createPerson } from "../../src/workforce-foundation/person";
+import { createPerson } from "../../src/features/workforce-records/identity/person";
 import {
 	addPersonContact,
 	addPersonIdentifier,
-} from "../../src/workforce-foundation/person-management";
+} from "../../src/features/workforce-records/identity/person-management";
 import {
 	createHrParityHarness,
 	type WorkforceStoreAdapter,

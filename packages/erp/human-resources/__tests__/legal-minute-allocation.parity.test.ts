@@ -4,39 +4,43 @@
  */
 
 import { afterAll, describe, expect, it } from "vitest";
-import type { HumanResourcesCommandOptions } from "../src/command-options";
-import { createEmployee } from "../src/core/employee";
-import { createEmployment } from "../src/core/employment";
-import { createProductionWorkCalendar } from "../src/production-work-calendar";
+import { createProductionWorkCalendar } from "../src/composition/production/work-calendar";
 import {
 	recordBreakEnd,
 	recordBreakStart,
 	recordClockIn,
 	recordClockOut,
-} from "../src/time/attendance/events";
+} from "../src/features/time/attendance/events";
 import {
 	getAttendanceSession,
 	resolveAttendanceSession,
-} from "../src/time/attendance/sessions";
+} from "../src/features/time/attendance/sessions";
 import {
 	addCalendarDateOverride,
 	assignEmploymentCalendar,
 	createWorkCalendar,
-} from "../src/time/calendar";
-import { resolveWorkCalendarCivilDay } from "../src/time/calendar-resolution";
+} from "../src/features/time/calendar";
+import { resolveWorkCalendarCivilDay } from "../src/features/time/calendar-resolution";
 import {
 	allocateWorkedMinutesByCivilDate,
 	attendanceEntrySourceReference,
 	sessionBreakIntervals,
 	workedMinutesForSessionCivilDate,
-} from "../src/time/legal-minute-allocation";
+} from "../src/features/time/legal-minute-allocation";
 import {
 	createTimesheet,
 	generateTimesheetEntries,
 	listTimesheetEntries,
-} from "../src/time/timesheet";
-import { buildAttendanceTimesheetEntryPlans } from "../src/time/timesheet-generation";
-import type { AttendanceSession, Employee, Employment } from "../src/types";
+} from "../src/features/time/timesheet";
+import { buildAttendanceTimesheetEntryPlans } from "../src/features/time/timesheet-generation";
+import { createEmployee } from "../src/features/workforce-records/employment/employee";
+import { createEmployment } from "../src/features/workforce-records/employment/employment";
+import type {
+	AttendanceSession,
+	Employee,
+	Employment,
+} from "../src/kernel/contracts";
+import type { HumanResourcesCommandOptions } from "../src/kernel/execution/command-options";
 import { runDrizzleParity } from "./helpers/database-gate";
 import { helperAssert as assert } from "./helpers/helper-assert";
 import {

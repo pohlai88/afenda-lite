@@ -3,9 +3,6 @@
  */
 
 import { describe, expect, it } from "vitest";
-import type { HumanResourcesPermission } from "../src/authorization";
-import { createEmployee } from "../src/core/employee";
-import { createEmployment } from "../src/core/employment";
 import {
 	addEmployeeCaseParticipant,
 	getEmployeeCaseById,
@@ -15,12 +12,10 @@ import {
 	listEmployeeCases,
 	listOpenEmployeeRelationsCases,
 	openEmployeeCase,
-} from "../src/employee-relations/employee-case";
-import {
-	HUMAN_RESOURCES_ERROR_AUTHORIZATION_DENIED,
-	HUMAN_RESOURCES_ERROR_FORBIDDEN,
-	HUMAN_RESOURCES_ERROR_UNAUTHORIZED,
-} from "../src/error-codes";
+} from "../src/features/employee-relations/employee-case";
+import { createEmployee } from "../src/features/workforce-records/employment/employee";
+import { createEmployment } from "../src/features/workforce-records/employment/employment";
+import type { HumanResourcesPermission } from "../src/kernel/authorization/authorize";
 import {
 	HUMAN_RESOURCES_PERMISSION_COMPLIANCE_ADMINISTER,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CASE_ASSIGNED_READ,
@@ -30,9 +25,14 @@ import {
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CREATE,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE,
-} from "../src/permissions";
-import { runSequential } from "../src/shared/run-sequential";
-import { createMemoryHumanResourcesStore } from "../src/testing";
+} from "../src/kernel/authorization/permissions";
+import {
+	HUMAN_RESOURCES_ERROR_AUTHORIZATION_DENIED,
+	HUMAN_RESOURCES_ERROR_FORBIDDEN,
+	HUMAN_RESOURCES_ERROR_UNAUTHORIZED,
+} from "../src/kernel/execution/error-codes";
+import { runSequential } from "../src/kernel/execution/run-sequential";
+import { createMemoryHumanResourcesStore } from "../src/testing/index";
 import { createTestHumanResourcesCommandOptions } from "./helpers/command-options";
 import {
 	createStoreBackedIdentityResolver,

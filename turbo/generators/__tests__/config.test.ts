@@ -21,6 +21,7 @@ describe("generator registrations", () => {
 			"__tests__/config.test.ts",
 			"__tests__/contract-loader.test.ts",
 			"__tests__/diagnostic-protocol.test.ts",
+			"__tests__/erp-manifest-authority.test.ts",
 			"__tests__/generator-check.test.ts",
 			"__tests__/repository-state.test.ts",
 			"__tests__/workspace-discovery.test.ts",
@@ -82,6 +83,11 @@ describe("generator registrations", () => {
 			expect(report).toContain("outside-family-scope=7");
 			expect(report).toContain("workspace-reconciliation=38=18+13+7");
 			expect(report).toContain("outside-generator-families");
+			if (report.includes("erp-generator contract is valid")) {
+				expect(report).toContain("erp-manifest-count=13");
+				expect(report).toContain("erp-manifest-missing=0");
+				expect(report).toContain("erp-manifest-duplicate-conflict=0");
+			}
 			expect(report).toContain("schema=afenda.generator-diagnostics/v1");
 			expect(report).toContain("outcomes=completed");
 			expect(report).toContain("exit=0");
@@ -95,6 +101,13 @@ describe("generator registrations", () => {
 			expect(report).toContain('"schema": "afenda.generator-doctor/v1"');
 			expect(report).toContain('"authoritativeCapabilities": 0');
 			expect(report).toContain('"reconciliation": "38=18+13+7"');
+			if (report.includes('"family": "erp"')) {
+				expect(report).toContain(
+					'"schema": "afenda.erp-manifest-authority/v1"',
+				);
+				expect(report).toContain('"missing": 0');
+				expect(report).toContain('"duplicateConflict": 0');
+			}
 			expect(report).toContain('"schema": "afenda.generator-diagnostics/v1"');
 		}
 	});

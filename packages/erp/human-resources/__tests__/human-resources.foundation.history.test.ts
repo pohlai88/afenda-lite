@@ -3,19 +3,19 @@
  */
 
 import { afterAll, describe, expect, it } from "vitest";
-import { createEmployee } from "../src/core/employee";
-import { previousIsoDate } from "../src/shared/effective-dates";
+import { createEmployee } from "../src/features/workforce-records/employment/employee";
 import {
 	createPerson,
 	getPersonAsOf,
 	updatePersonName,
-} from "../src/workforce-foundation/person";
+} from "../src/features/workforce-records/identity/person";
 import {
 	changeWorkerStatus,
 	changeWorkerType,
 	createWorker,
 	getWorkerAsOf,
-} from "../src/workforce-foundation/worker";
+} from "../src/features/workforce-records/identity/worker";
+import { previousIsoDate } from "../src/kernel/temporal/effective-dates";
 import {
 	createHrParityHarness,
 	type WorkforceStoreAdapter,

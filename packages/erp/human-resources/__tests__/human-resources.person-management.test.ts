@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest";
-
-import { HUMAN_RESOURCES_PERMISSION_CODES } from "../src/permissions";
-import { collectHumanResourcesSubjectData } from "../src/privacy/subject-data-collector";
-import { createMemoryHumanResourcesStore } from "../src/testing";
-import { createPerson } from "../src/workforce-foundation/person";
+import { collectHumanResourcesSubjectData } from "../src/features/privacy/subject-data-collector";
+import { createPerson } from "../src/features/workforce-records/identity/person";
 import {
 	addPersonContact,
 	addPersonIdentifier,
@@ -13,7 +10,9 @@ import {
 	retirePersonContact,
 	setPersonPrivacyClassification,
 	updatePersonPreferredName,
-} from "../src/workforce-foundation/person-management";
+} from "../src/features/workforce-records/identity/person-management";
+import { HUMAN_RESOURCES_PERMISSION_CODES } from "../src/kernel/authorization/permissions";
+import { createMemoryHumanResourcesStore } from "../src/testing/index";
 import { createTestHumanResourcesCommandOptions } from "./helpers/command-options";
 import { createStoreBackedIdentityResolver } from "./helpers/identity-resolver";
 import { createGrantingHumanResourcesAuthorization } from "./helpers/memory-authorization";
@@ -299,8 +298,12 @@ describe("@afenda/human-resources person management (memory)", () => {
 
 	it("includes person records in subject export when worker linkage exists", async () => {
 		const ready = harness();
-		const { createEmployee } = await import("../src/core/employee");
-		const { createWorker } = await import("../src/workforce-foundation/worker");
+		const { createEmployee } = await import(
+			"../src/features/workforce-records/employment/employee"
+		);
+		const { createWorker } = await import(
+			"../src/features/workforce-records/identity/worker"
+		);
 		const person = await createPerson(
 			{
 				organizationId: ORG,

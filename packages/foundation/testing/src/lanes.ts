@@ -4,9 +4,17 @@
  * Protected: changes require local pre-edit token and compatibility checks.
  */
 
-import type { TestingLaneDefinition } from "#testing/contracts";
+import type {
+	TestingLaneDefinition,
+	TestingWorkspaceRun,
+	TestingWorkspaceRunOptions,
+} from "#testing/contracts";
 
 export const TESTING_CONTROL_PLANE_HOME = "testing";
+
+// Package tasks already create Vitest worker pools. Keep Turbo fan-out bounded so
+// those pools do not oversubscribe the host under a full workspace run.
+const WORKSPACE_TEST_TASK_CONCURRENCY = 4 as const;
 
 const TESTING_SUPPORT_CONFIG_FILES = [
 	"testing/vitest.config.ts",
@@ -290,6 +298,20 @@ function deepFreeze<const T>(value: T): DeepReadonly<T> {
 }
 
 export const TESTING_LANES = deepFreeze(TESTING_LANE_DEFINITIONS);
+
+export function projectWorkspaceTestRun(
+	options: TestingWorkspaceRunOptions = {},
+): TestingWorkspaceRun {
+	return deepFreeze({
+		executable: "turbo" as const,
+		args: [
+			"run",
+			"test",
+			`--concurrency=${WORKSPACE_TEST_TASK_CONCURRENCY}`,
+			...(options.affected ? ["--affected"] : []),
+		],
+	});
+}
 
 export type TestingLaneId = (typeof TESTING_LANES)[number]["id"];
 export type TestingLane = TestingLaneDefinition &

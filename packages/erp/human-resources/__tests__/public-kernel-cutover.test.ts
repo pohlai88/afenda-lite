@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 
 import { describe, expect, it } from "vitest";
@@ -38,6 +38,41 @@ describe("@afenda/human-resources public kernel cutover", () => {
 		expect(source).not.toMatch(
 			/\b\w+(?:Store|Port|Adapter|Resolver|CommandOptions)\b/,
 		);
+	});
+
+	it("keeps facade and package-wide semantics in their canonical homes", () => {
+		const requiredFiles = [
+			"src/facade/capabilities.ts",
+			"src/facade/context.ts",
+			"src/facade/contracts.ts",
+			"src/facade/production-capabilities.ts",
+			"src/kernel/authorization/registry.ts",
+			"src/kernel/events/catalog.ts",
+			"src/kernel/operations/registry.ts",
+		] as const;
+		for (const file of requiredFiles) {
+			expect(existsSync(path.join(packageRoot, file)), file).toBe(true);
+		}
+
+		const supersededPaths = [
+			"src/event-catalog",
+			"src/operation-registry",
+			"src/public-capabilities.ts",
+			"src/public-contracts.ts",
+			"src/public-execution-context.ts",
+			"src/shared/authorization-policy-registry.ts",
+			"src/shared/leave-balance.ts",
+			"src/shared/leave-guards.ts",
+			"src/shared/leave-policy-balance-rules.ts",
+			"src/shared/leave-status.ts",
+		] as const;
+		for (const entry of supersededPaths) {
+			expect(existsSync(path.join(packageRoot, entry)), entry).toBe(false);
+		}
+	});
+
+	it("removes the cross-capability shared directory", () => {
+		expect(existsSync(path.join(packageRoot, "src/shared"))).toBe(false);
 	});
 
 	it("prevents product consumers from importing HR implementation subpaths", () => {

@@ -5,7 +5,7 @@ import {
 	mulScaledWithRounding,
 	parseDecimalToScaled,
 	roundScaled,
-} from "../src/runs/calculation";
+} from "../src/features/calculation/calculation";
 
 describe("payroll money (BigInt scale-12)", () => {
 	it("round-trips decimal strings without floating point", () => {

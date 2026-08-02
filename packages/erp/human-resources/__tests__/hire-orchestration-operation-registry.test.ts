@@ -2,45 +2,44 @@ import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 
 import { describe, expect, it } from "vitest";
-
-import { HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD } from "../src/emissions/registry";
+import { humanResourcesModuleManifest } from "../src/composition/module.manifest";
 import {
 	HUMAN_RESOURCES_HIRE_ORCHESTRATION_COMMAND_AUTHORIZATION,
 	HUMAN_RESOURCES_HIRE_ORCHESTRATION_COMMAND_IDS,
 	HUMAN_RESOURCES_HIRE_ORCHESTRATION_COMMANDS,
-} from "../src/hire-orchestration/operation-registry";
-import { humanResourcesModuleManifest } from "../src/module.manifest";
-import { HUMAN_RESOURCES_REGISTERED_OPERATION_DEFINITIONS } from "../src/operation-registry/registry";
-import { resolveHumanResourcesAuthorizationPolicy } from "../src/shared/authorization-policy-registry";
+} from "../src/features/hire-to-employee/operation-registry";
+import { resolveHumanResourcesAuthorizationPolicy } from "../src/kernel/authorization/registry";
+import { HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD } from "../src/kernel/emissions/registry";
+import { HUMAN_RESOURCES_REGISTERED_OPERATION_DEFINITIONS } from "../src/kernel/operations/registry";
 
 const definition =
 	HUMAN_RESOURCES_HIRE_ORCHESTRATION_COMMANDS.hireFromAcceptedOffer;
 const handlerSource = readFileSync(
 	path.resolve(
 		import.meta.dirname,
-		"../src/hire-orchestration/hire-from-accepted-offer.ts",
+		"../src/features/hire-to-employee/hire-from-accepted-offer.ts",
 	),
 	"utf8",
 );
 const runnerSource = readFileSync(
 	path.resolve(
 		import.meta.dirname,
-		"../src/hire-orchestration/run-operation.ts",
+		"../src/features/hire-to-employee/run-operation.ts",
 	),
 	"utf8",
 );
 const moduleIdsSource = readFileSync(
-	path.resolve(import.meta.dirname, "../src/module-ids.ts"),
+	path.resolve(import.meta.dirname, "../src/kernel/operations/module-ids.ts"),
 	"utf8",
 );
 const publicCapabilitiesSource = readFileSync(
-	path.resolve(import.meta.dirname, "../src/public-capabilities.ts"),
+	path.resolve(import.meta.dirname, "../src/facade/capabilities.ts"),
 	"utf8",
 );
 const drizzleSource = readFileSync(
 	path.resolve(
 		import.meta.dirname,
-		"../src/adapters/drizzle/hire-orchestration.ts",
+		"../src/features/hire-to-employee/adapters/hire-orchestration.drizzle.ts",
 	),
 	"utf8",
 );
