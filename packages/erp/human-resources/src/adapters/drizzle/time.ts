@@ -124,6 +124,7 @@ import {
 import {
 	ATTENDANCE_SESSION_DETECTION_SOURCE,
 	type ExceptionDetectionHost,
+	planAttendanceExceptionDetection,
 	runAttendanceExceptionDetection,
 	SCHEDULE_PUBLISH_DETECTION_SOURCE,
 } from "../../time/attendance/exception-detection";

@@ -376,19 +376,20 @@ export function hasExistingAutoDetectedException(input: {
 	});
 }
 
-export async function runAttendanceExceptionDetection(
+export interface AttendanceExceptionDetectionInput {
+	actorUserId: string;
+	correlationId: string;
+	detectionSource: ExceptionDetectionSource;
+	employeeId: HumanResourcesEmployeeId;
+	events: readonly AttendanceEvent[];
+	organizationId: string;
+	session: AttendanceSession;
+}
+
+export async function planAttendanceExceptionDetection(
 	host: ExceptionDetectionHost,
-	input: {
-		organizationId: string;
-		employeeId: HumanResourcesEmployeeId;
-		session: AttendanceSession;
-		events: readonly AttendanceEvent[];
-		detectionSource: ExceptionDetectionSource;
-		actorUserId: string;
-		correlationId: string;
-	},
-	ports: MutationPorts,
-): Promise<Result<void>> {
+	input: AttendanceExceptionDetectionInput,
+): Promise<Result<AttendanceExceptionCreateRecord[]>> {
 	const scheduled = await host.getScheduledShiftForEmployeeDate({
 		organizationId: input.organizationId,
 		employeeId: input.employeeId,
@@ -470,41 +471,56 @@ export async function runAttendanceExceptionDetection(
 	});
 
 	const known = [...existing.data];
+	const planned: AttendanceExceptionCreateRecord[] = [];
+	for (const candidate of candidates) {
+		if (
+			hasExistingAutoDetectedException({
+				exceptions: known,
+				employeeId: input.employeeId,
+				sessionId: input.session.id,
+				exceptionType: candidate.exceptionType,
+				detectionSource: input.detectionSource,
+			})
+		) {
+			continue;
+		}
+		planned.push({
+			organizationId: input.organizationId,
+			employeeId: input.employeeId,
+			sessionId: input.session.id,
+			eventId: null,
+			shiftAssignmentId: candidate.shiftAssignmentId,
+			exceptionType: candidate.exceptionType,
+			severity: candidate.severity,
+			remarks: encodeExceptionDetectionRemarks({
+				detectionSource: input.detectionSource,
+				workDate: input.session.localWorkDate,
+				sessionId: input.session.id,
+				exceptionType: candidate.exceptionType,
+				shiftAssignmentId: candidate.shiftAssignmentId,
+			}),
+			createdBy: input.actorUserId,
+			correlationId: input.correlationId,
+		});
+	}
+	return errorResult.ok(planned);
+}
+
+export async function runAttendanceExceptionDetection(
+	host: ExceptionDetectionHost,
+	input: AttendanceExceptionDetectionInput,
+	ports: MutationPorts,
+): Promise<Result<void>> {
+	const planned = await planAttendanceExceptionDetection(host, input);
+	if (!planned.ok) {
+		return planned;
+	}
 	const createdIds: AttendanceException["id"][] = [];
 	const sequentialOuterOutcome1 = await runSequential(
-		candidates,
-		async (candidate) => {
-			if (
-				hasExistingAutoDetectedException({
-					exceptions: known,
-					employeeId: input.employeeId,
-					sessionId: input.session.id,
-					exceptionType: candidate.exceptionType,
-					detectionSource: input.detectionSource,
-				})
-			) {
-				return sequentialContinue();
-			}
-
+		planned.data,
+		async (exceptionInput) => {
 			const created = await host.createAttendanceException(
-				{
-					organizationId: input.organizationId,
-					employeeId: input.employeeId,
-					sessionId: input.session.id,
-					eventId: null,
-					shiftAssignmentId: candidate.shiftAssignmentId,
-					exceptionType: candidate.exceptionType,
-					severity: candidate.severity,
-					remarks: encodeExceptionDetectionRemarks({
-						detectionSource: input.detectionSource,
-						workDate: input.session.localWorkDate,
-						sessionId: input.session.id,
-						exceptionType: candidate.exceptionType,
-						shiftAssignmentId: candidate.shiftAssignmentId,
-					}),
-					createdBy: input.actorUserId,
-					correlationId: input.correlationId,
-				},
+				exceptionInput,
 				ports,
 			);
 			if (!created.ok) {
@@ -520,7 +536,7 @@ export async function runAttendanceExceptionDetection(
 				return sequentialReturn(created);
 			}
 			createdIds.push(created.data.id);
-			known.push(created.data);
+			return sequentialContinue();
 		},
 	);
 	if (sequentialOuterOutcome1.kind === "return") {
