@@ -1,11 +1,20 @@
 import type { Result } from "@afenda/errors";
 
 import type {
+	InstrumentClearanceStatus,
 	Payment,
+	PaymentDeduction,
 	PaymentDirection,
+	PaymentMethodSnapshot,
 	PaymentStatus,
 	RefundSource,
 } from "../../kernel/contracts/domain";
+
+/** Validated deduction line handed to the store by the operation layer. */
+export type PaymentDeductionInput = Omit<
+	PaymentDeduction,
+	"id" | "paymentId" | "createdAt" | "createdBy" | "functionalAmount"
+>;
 
 export type PaymentCreateRecord = Omit<
 	Payment,
@@ -24,9 +33,16 @@ export type PaymentCreateRecord = Omit<
 	| "reverseIdempotencyKey"
 	| "createdBy"
 	| "updatedBy"
+	| "deductions"
+	| "methodSnapshot"
+	| "clearanceStatus"
+	| "clearanceIdempotencyKey"
 > & {
 	actorUserId: string;
 	correlationId: string;
+	deductions: readonly PaymentDeductionInput[];
+	/** Set only by immediately-posting flows (transfer, refund); null for drafts. */
+	methodSnapshot: PaymentMethodSnapshot | null;
 };
 
 export interface PaymentsLifecycleStore {
@@ -36,6 +52,8 @@ export interface PaymentsLifecycleStore {
 		normalizedCode: string;
 		fromPaymentAccountId: string;
 		toPaymentAccountId: string;
+		paymentMethodId: string;
+		methodSnapshot: PaymentMethodSnapshot;
 		amount: string;
 		currencyCode: string;
 		actorUserId: string;
@@ -59,6 +77,7 @@ export interface PaymentsLifecycleStore {
 		organizationId: string;
 		paymentId: string;
 		expectedVersion: number;
+		methodSnapshot: PaymentMethodSnapshot;
 		actorUserId: string;
 		correlationId: string;
 		idempotencyKey: string;
@@ -87,6 +106,18 @@ export interface PaymentsLifecycleStore {
 		paymentId: string;
 		expectedVersion: number;
 		reason: string;
+		actorUserId: string;
+		correlationId: string;
+		idempotencyKey: string;
+	}) => Promise<Result<Payment>>;
+	updateInstrumentClearance: (record: {
+		organizationId: string;
+		paymentId: string;
+		expectedVersion: number;
+		status: InstrumentClearanceStatus;
+		clearanceDate: string | null;
+		settlementReference: string | null;
+		reason: string | null;
 		actorUserId: string;
 		correlationId: string;
 		idempotencyKey: string;

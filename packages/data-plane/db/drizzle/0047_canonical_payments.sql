@@ -31,6 +31,7 @@ ALTER TABLE "payment"
 	ADD COLUMN "method_snapshot" text,
 	ADD COLUMN "instrument" text,
 	ADD COLUMN "clearance_status" text DEFAULT 'not-applicable' NOT NULL,
+	ADD COLUMN "clearance_idempotency_key" text,
 	ADD COLUMN "fx_context" text,
 	ADD COLUMN "functional_amount" text NOT NULL;
 --> statement-breakpoint

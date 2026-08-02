@@ -12,13 +12,6 @@ import {
 	listPaymentAccountsOperation,
 } from "../features/payment-accounts/accounts.operations";
 import {
-	createPaymentMethodOperation,
-	deactivatePaymentMethodOperation,
-	listPaymentMethodsOperation,
-	seedDefaultPaymentMethods as seedDefaultPaymentMethodsOperation,
-	updatePaymentMethodOperation,
-} from "../features/payment-methods/methods.operations";
-import {
 	createAndPostPaymentTransferOperation,
 	createDraftPaymentOperation,
 	getPaymentByIdOperation,
@@ -27,6 +20,13 @@ import {
 	postRefundOperation,
 	reversePaymentOperation,
 } from "../features/payment-lifecycle/lifecycle.operations";
+import {
+	createPaymentMethodOperation,
+	deactivatePaymentMethodOperation,
+	listPaymentMethodsOperation,
+	seedDefaultPaymentMethods as seedDefaultPaymentMethodsOperation,
+	updatePaymentMethodOperation,
+} from "../features/payment-methods/methods.operations";
 import type {
 	Payment,
 	PaymentAccount,
@@ -35,6 +35,16 @@ import type {
 	PaymentMethod,
 } from "../kernel/contracts/domain";
 import type { PaymentsCommandOptions } from "./contracts";
+
+function lifecycleDeps(options: PaymentsCommandOptions) {
+	const store = resolvePaymentsStore(options.store);
+	return {
+		authorization: options.authorization,
+		store,
+		accounts: store,
+		methods: store,
+	};
+}
 
 export function createPaymentMethod(
 	input: unknown,
@@ -110,10 +120,7 @@ export function createDraftPayment(
 	input: unknown,
 	options: PaymentsCommandOptions = {},
 ): Promise<Result<Payment>> {
-	return createDraftPaymentOperation(input, {
-		authorization: options.authorization,
-		store: resolvePaymentsStore(options.store),
-	});
+	return createDraftPaymentOperation(input, lifecycleDeps(options));
 }
 
 export function addPaymentApplicationInstruction(
@@ -130,40 +137,28 @@ export function postPayment(
 	input: unknown,
 	options: PaymentsCommandOptions = {},
 ): Promise<Result<Payment>> {
-	return postPaymentOperation(input, {
-		authorization: options.authorization,
-		store: resolvePaymentsStore(options.store),
-	});
+	return postPaymentOperation(input, lifecycleDeps(options));
 }
 
 export function reversePayment(
 	input: unknown,
 	options: PaymentsCommandOptions = {},
 ): Promise<Result<Payment>> {
-	return reversePaymentOperation(input, {
-		authorization: options.authorization,
-		store: resolvePaymentsStore(options.store),
-	});
+	return reversePaymentOperation(input, lifecycleDeps(options));
 }
 
 export function createAndPostPaymentTransfer(
 	input: unknown,
 	options: PaymentsCommandOptions = {},
 ): Promise<Result<{ outgoing: Payment; incoming: Payment }>> {
-	return createAndPostPaymentTransferOperation(input, {
-		authorization: options.authorization,
-		store: resolvePaymentsStore(options.store),
-	});
+	return createAndPostPaymentTransferOperation(input, lifecycleDeps(options));
 }
 
 export function postRefund(
 	input: unknown,
 	options: PaymentsCommandOptions = {},
 ): Promise<Result<Payment>> {
-	return postRefundOperation(input, {
-		authorization: options.authorization,
-		store: resolvePaymentsStore(options.store),
-	});
+	return postRefundOperation(input, lifecycleDeps(options));
 }
 
 export function markApplicationInstructionApplied(
@@ -190,20 +185,14 @@ export function getPaymentById(
 	input: unknown,
 	options: PaymentsCommandOptions = {},
 ): Promise<Result<Payment | null>> {
-	return getPaymentByIdOperation(input, {
-		authorization: options.authorization,
-		store: resolvePaymentsStore(options.store),
-	});
+	return getPaymentByIdOperation(input, lifecycleDeps(options));
 }
 
 export function listPayments(
 	input: unknown,
 	options: PaymentsCommandOptions = {},
 ): Promise<Result<Payment[]>> {
-	return listPaymentsOperation(input, {
-		authorization: options.authorization,
-		store: resolvePaymentsStore(options.store),
-	});
+	return listPaymentsOperation(input, lifecycleDeps(options));
 }
 
 export function getPaymentApplicationAvailability(

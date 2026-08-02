@@ -86,16 +86,16 @@ export async function updatePaymentMethodOperation(
 	return deps.store.updatePaymentMethod({
 		organizationId: data.organizationId,
 		id: data.id,
-		...(data.name !== undefined ? { name: data.name } : {}),
-		...(data.instrumentRequirement !== undefined
-			? { instrumentRequirement: data.instrumentRequirement }
-			: {}),
-		...(data.allowedInstrumentKinds !== undefined
-			? { allowedInstrumentKinds: data.allowedInstrumentKinds }
-			: {}),
-		...(data.allowedAccountKinds !== undefined
-			? { allowedAccountKinds: data.allowedAccountKinds }
-			: {}),
+		...(data.name === undefined ? {} : { name: data.name }),
+		...(data.instrumentRequirement === undefined
+			? {}
+			: { instrumentRequirement: data.instrumentRequirement }),
+		...(data.allowedInstrumentKinds === undefined
+			? {}
+			: { allowedInstrumentKinds: data.allowedInstrumentKinds }),
+		...(data.allowedAccountKinds === undefined
+			? {}
+			: { allowedAccountKinds: data.allowedAccountKinds }),
 		updatedBy: data.actorUserId,
 	});
 }
@@ -185,7 +185,10 @@ export async function seedDefaultPaymentMethods(
 	input: unknown,
 	deps: PaymentMethodsOperationDeps,
 ): Promise<Result<PaymentMethod[]>> {
-	const parsed = parsePaymentsInput(seedDefaultPaymentMethodsInputSchema, input);
+	const parsed = parsePaymentsInput(
+		seedDefaultPaymentMethodsInputSchema,
+		input,
+	);
 	if (!parsed.ok) {
 		return parsed;
 	}
@@ -202,24 +205,28 @@ export async function seedDefaultPaymentMethods(
 	const existingCodes = new Set(
 		existing.data.map((method) => method.normalizedCode),
 	);
+	const missing = DEFAULT_PAYMENT_METHODS.filter(
+		(seed) => !existingCodes.has(normalizedCode(seed.code)),
+	);
+	const results = await Promise.all(
+		missing.map((seed) =>
+			deps.store.createPaymentMethod({
+				organizationId: parsed.data.organizationId,
+				code: seed.code,
+				normalizedCode: normalizedCode(seed.code),
+				name: seed.name,
+				kind: seed.kind,
+				instrumentRequirement: seed.instrumentRequirement,
+				allowedInstrumentKinds: seed.allowedInstrumentKinds,
+				allowedAccountKinds: seed.allowedAccountKinds,
+				active: true,
+				createdBy: parsed.data.actorUserId,
+				updatedBy: parsed.data.actorUserId,
+			}),
+		),
+	);
 	const created: PaymentMethod[] = [];
-	for (const seed of DEFAULT_PAYMENT_METHODS) {
-		if (existingCodes.has(normalizedCode(seed.code))) {
-			continue;
-		}
-		const result = await deps.store.createPaymentMethod({
-			organizationId: parsed.data.organizationId,
-			code: seed.code,
-			normalizedCode: normalizedCode(seed.code),
-			name: seed.name,
-			kind: seed.kind,
-			instrumentRequirement: seed.instrumentRequirement,
-			allowedInstrumentKinds: seed.allowedInstrumentKinds,
-			allowedAccountKinds: seed.allowedAccountKinds,
-			active: true,
-			createdBy: parsed.data.actorUserId,
-			updatedBy: parsed.data.actorUserId,
-		});
+	for (const result of results) {
 		if (!result.ok) {
 			return result;
 		}

@@ -27,6 +27,7 @@ describe("payments authorization", () => {
 				idempotencyKey: "pay-1",
 				code: "PAY-1",
 				paymentAccountId: "00000000-0000-4000-8000-000000000099",
+				paymentMethodId: "00000000-0000-4000-8000-000000000098",
 				direction: "receipt",
 				purpose: "customer_receipt",
 				counterpartyId: "00000000-0000-4000-8000-000000000001",

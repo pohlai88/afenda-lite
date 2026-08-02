@@ -7,6 +7,7 @@ import {
 	eq,
 	payment,
 	paymentAllocation,
+	paymentDeduction,
 	paymentReversal,
 } from "@afenda/db";
 import {
@@ -19,17 +20,27 @@ import {
 import type {
 	Payment,
 	PaymentApplicationInstruction,
+	PaymentDeduction,
 	PaymentDirection,
+	PaymentFxContext,
+	PaymentInstrument,
+	PaymentMethodSnapshot,
 	PaymentPurpose,
 	PaymentReversal,
 	PaymentStatus,
 } from "../../kernel/contracts/domain";
 import {
 	APPLICATION_STATUSES,
+	INSTRUMENT_CLEARANCE_STATUSES,
+	PAYMENT_DEDUCTION_EFFECTS,
+	PAYMENT_DEDUCTION_KINDS,
 	PAYMENT_DIRECTIONS,
+	PAYMENT_INSTRUMENT_KINDS,
+	PAYMENT_METHOD_KINDS,
 	PAYMENT_PURPOSES,
 	PAYMENT_STATUSES,
 } from "../../kernel/contracts/domain";
+import { deriveFunctionalAmount } from "./fx-policy";
 import type {
 	PaymentCreateRecord,
 	PaymentsLifecycleStore,
@@ -102,6 +113,78 @@ function mapInstruction(
 	};
 }
 
+function parseJsonObject(value: string | null, field: string): unknown {
+	if (value === null || value.trim().length === 0) {
+		return null;
+	}
+	const parsed: unknown = JSON.parse(value);
+	if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+		throw new Error(`Invalid ${field}`);
+	}
+	return parsed;
+}
+
+function mapInstrument(value: string | null): PaymentInstrument | null {
+	const parsed = parseJsonObject(value, "payment.instrument");
+	if (parsed === null) {
+		return null;
+	}
+	const instrument = parsed as PaymentInstrument;
+	parseEnum(
+		instrument.kind,
+		PAYMENT_INSTRUMENT_KINDS,
+		"payment.instrument.kind",
+	);
+	return instrument;
+}
+
+function mapFxContext(value: string | null): PaymentFxContext | null {
+	return parseJsonObject(
+		value,
+		"payment.fx_context",
+	) as PaymentFxContext | null;
+}
+
+function mapMethodSnapshot(value: string | null): PaymentMethodSnapshot | null {
+	const parsed = parseJsonObject(value, "payment.method_snapshot");
+	if (parsed === null) {
+		return null;
+	}
+	const snapshot = parsed as PaymentMethodSnapshot;
+	parseEnum(
+		snapshot.kind,
+		PAYMENT_METHOD_KINDS,
+		"payment.method_snapshot.kind",
+	);
+	return snapshot;
+}
+
+function mapDeduction(
+	row: typeof paymentDeduction.$inferSelect,
+): PaymentDeduction {
+	return {
+		id: row.id,
+		paymentId: row.paymentId,
+		lineNo: row.lineNo,
+		kind: parseEnum(
+			row.kind,
+			PAYMENT_DEDUCTION_KINDS,
+			"payment_deduction.kind",
+		),
+		effect: parseEnum(
+			row.effect,
+			PAYMENT_DEDUCTION_EFFECTS,
+			"payment_deduction.effect",
+		),
+		amount: row.amount,
+		functionalAmount: row.functionalAmount,
+		accountingPurposeCode: row.accountingPurposeCode,
+		description: row.description,
+		createdBy: row.createdBy,
+		createdAt: row.createdAt,
+	};
+}
+
 function mapReversal(
 	row: typeof paymentReversal.$inferSelect,
 ): PaymentReversal {
@@ -118,6 +201,7 @@ function mapReversal(
 function mapPayment(
 	row: typeof payment.$inferSelect,
 	instructions: PaymentApplicationInstruction[],
+	deductions: PaymentDeduction[],
 	reversal: PaymentReversal | null,
 ): Payment {
 	return {
@@ -126,6 +210,18 @@ function mapPayment(
 		code: row.code,
 		normalizedCode: row.normalizedCode,
 		paymentAccountId: row.paymentAccountId,
+		paymentMethodId: row.paymentMethodId,
+		methodSnapshot: mapMethodSnapshot(row.methodSnapshot),
+		instrument: mapInstrument(row.instrument),
+		clearanceStatus: parseEnum(
+			row.clearanceStatus,
+			INSTRUMENT_CLEARANCE_STATUSES,
+			"payment.clearance_status",
+		),
+		clearanceIdempotencyKey: row.clearanceIdempotencyKey,
+		fxContext: mapFxContext(row.fxContext),
+		functionalAmount: row.functionalAmount,
+		deductions,
 		direction: parseEnum(
 			row.direction,
 			PAYMENT_DIRECTIONS,
@@ -213,7 +309,7 @@ async function getById(
 		if (header === undefined) {
 			return errorResult.ok(null);
 		}
-		const [instructions, reversals] = await Promise.all([
+		const [instructions, deductions, reversals] = await Promise.all([
 			afendaDatabase.client
 				.select()
 				.from(paymentAllocation)
@@ -221,6 +317,15 @@ async function getById(
 					and(
 						eq(paymentAllocation.organizationId, organizationId),
 						eq(paymentAllocation.paymentId, id),
+					),
+				),
+			afendaDatabase.client
+				.select()
+				.from(paymentDeduction)
+				.where(
+					and(
+						eq(paymentDeduction.organizationId, organizationId),
+						eq(paymentDeduction.paymentId, id),
 					),
 				),
 			afendaDatabase.client
@@ -238,6 +343,9 @@ async function getById(
 			mapPayment(
 				header,
 				instructions.map(mapInstruction),
+				deductions
+					.map(mapDeduction)
+					.sort((left, right) => left.lineNo - right.lineNo),
 				reversals[0] === undefined ? null : mapReversal(reversals[0]),
 			),
 		);
@@ -268,6 +376,30 @@ export const drizzlePaymentLifecycleMethods: PaymentsLifecycleStore = {
 			record.counterpartySnapshot === null
 				? null
 				: JSON.stringify(record.counterpartySnapshot);
+		const instrumentJson =
+			record.instrument === null ? null : JSON.stringify(record.instrument);
+		const fxJson =
+			record.fxContext === null ? null : JSON.stringify(record.fxContext);
+		const methodSnapshotJson =
+			record.methodSnapshot === null
+				? null
+				: JSON.stringify(record.methodSnapshot);
+		const clearanceStatus =
+			record.instrument !== null &&
+			(record.instrument.kind === "check" ||
+				record.instrument.kind === "bank-transfer")
+				? "pending"
+				: "not-applicable";
+		const deductionsJson = JSON.stringify(
+			record.deductions.map((line) => ({
+				lineNo: line.lineNo,
+				kind: line.kind,
+				effect: line.effect,
+				amount: line.amount,
+				accountingPurposeCode: line.accountingPurposeCode,
+				description: line.description,
+			})),
+		);
 		const payload = paymentPayload({
 			organizationId: record.organizationId,
 			paymentId: id,
@@ -296,18 +428,34 @@ export const drizzlePaymentLifecycleMethods: PaymentsLifecycleStore = {
 					mutated AS (
 						INSERT INTO payment (
 							id, organization_id, code, normalized_code, payment_account_id,
+							payment_method_id, method_snapshot, instrument, clearance_status,
+							fx_context, functional_amount,
 							direction, purpose, status, counterparty_id, counterparty_snapshot,
 							transfer_group_id, linked_payment_id, original_payment_id, refund_source,
 							currency_code, amount, reference, create_idempotency_key, version,
 							created_by, updated_by
 						)
 						SELECT ${id}, ${record.organizationId}, ${record.code}, ${record.normalizedCode},
-							account.id, ${record.direction}, ${record.purpose}, 'draft',
+							account.id, ${record.paymentMethodId}, ${methodSnapshotJson},
+							${instrumentJson}, ${clearanceStatus}, ${fxJson}, ${record.functionalAmount},
+							${record.direction}, ${record.purpose}, 'draft',
 							${record.counterpartyId}, ${snapshot}, ${record.transferGroupId},
 							${record.linkedPaymentId}, ${record.originalPaymentId}, ${record.refundSource},
 							${record.currencyCode}, ${record.amount}, ${record.reference},
 							${record.createIdempotencyKey}, 1, ${record.actorUserId}, ${record.actorUserId}
 						FROM account
+						RETURNING id
+					),
+					deducted AS (
+						INSERT INTO payment_deduction (
+							id, organization_id, payment_id, line_no, kind, effect, amount,
+							functional_amount, accounting_purpose_code, description, created_by
+						)
+						SELECT gen_random_uuid(), ${record.organizationId}, mutated.id,
+							(line->>'lineNo')::int, line->>'kind', line->>'effect', line->>'amount',
+							NULL, line->>'accountingPurposeCode', line->>'description',
+							${record.actorUserId}
+						FROM mutated, jsonb_array_elements(${deductionsJson}::jsonb) AS line
 						RETURNING id
 					)
 					INSERT INTO platform_domain_event (
@@ -336,6 +484,26 @@ export const drizzlePaymentLifecycleMethods: PaymentsLifecycleStore = {
 		record: Parameters<PaymentsLifecycleStore["post"]>[0],
 	): Promise<Result<Payment>> {
 		const eventId = randomUUID();
+		const current = await getById(record.organizationId, record.paymentId);
+		if (!current.ok) {
+			return current;
+		}
+		if (current.data === null) {
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Payment not found",
+			});
+		}
+		const draft = current.data;
+		const methodSnapshotJson = JSON.stringify(record.methodSnapshot);
+		const frozenDeductionsJson = JSON.stringify(
+			draft.deductions.map((deduction) => ({
+				lineNo: deduction.lineNo,
+				functionalAmount: deriveFunctionalAmount(
+					deduction.amount,
+					draft.fxContext,
+				),
+			})),
+		);
 		try {
 			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
@@ -345,6 +513,7 @@ export const drizzlePaymentLifecycleMethods: PaymentsLifecycleStore = {
 							posted_at = now(),
 							posted_by = ${record.actorUserId},
 							post_idempotency_key = ${record.idempotencyKey},
+							method_snapshot = ${methodSnapshotJson},
 							updated_at = now(),
 							updated_by = ${record.actorUserId},
 							version = version + 1
@@ -354,6 +523,13 @@ export const drizzlePaymentLifecycleMethods: PaymentsLifecycleStore = {
 							AND direction <> 'refund'
 							AND version = ${record.expectedVersion}
 						RETURNING *
+					),
+					frozen AS (
+						UPDATE payment_deduction d
+						SET functional_amount = line->>'functionalAmount'
+						FROM mutated, jsonb_array_elements(${frozenDeductionsJson}::jsonb) AS line
+						WHERE d.payment_id = mutated.id
+							AND d.line_no = (line->>'lineNo')::int
 					),
 					outboxed AS (
 						INSERT INTO platform_domain_event (
@@ -510,13 +686,16 @@ export const drizzlePaymentLifecycleMethods: PaymentsLifecycleStore = {
 					outgoing AS (
 						INSERT INTO payment (
 							id, organization_id, code, normalized_code, payment_account_id,
+							payment_method_id, method_snapshot, functional_amount,
 							direction, purpose, status, currency_code, amount, reference,
 							transfer_group_id, linked_payment_id, create_idempotency_key,
 							post_idempotency_key, version, created_by, updated_by,
 							posted_at, posted_by
 						)
 						SELECT ${outgoingId}, ${record.organizationId}, ${outgoingCode},
-							${`${record.normalizedCode}-OUT`}, from_account.id, 'disbursement',
+							${`${record.normalizedCode}-OUT`}, from_account.id,
+							${record.paymentMethodId}, ${JSON.stringify(record.methodSnapshot)},
+							${record.amount}, 'disbursement',
 							'internal_transfer', 'posted', ${record.currencyCode}, ${record.amount},
 							${record.reference}, ${groupId}, ${incomingId},
 							${`${record.idempotencyKey}:out`}, ${record.idempotencyKey}, 1,
@@ -527,13 +706,16 @@ export const drizzlePaymentLifecycleMethods: PaymentsLifecycleStore = {
 					incoming AS (
 						INSERT INTO payment (
 							id, organization_id, code, normalized_code, payment_account_id,
+							payment_method_id, method_snapshot, functional_amount,
 							direction, purpose, status, currency_code, amount, reference,
 							transfer_group_id, linked_payment_id, create_idempotency_key,
 							post_idempotency_key, version, created_by, updated_by,
 							posted_at, posted_by
 						)
 						SELECT ${incomingId}, ${record.organizationId}, ${incomingCode},
-							${`${record.normalizedCode}-IN`}, to_account.id, 'receipt',
+							${`${record.normalizedCode}-IN`}, to_account.id,
+							${record.paymentMethodId}, ${JSON.stringify(record.methodSnapshot)},
+							${record.amount}, 'receipt',
 							'internal_transfer', 'posted', ${record.currencyCode}, ${record.amount},
 							${record.reference}, ${groupId}, ${outgoingId},
 							${`${record.idempotencyKey}:in`}, ${record.idempotencyKey}, 1,
@@ -596,6 +778,31 @@ export const drizzlePaymentLifecycleMethods: PaymentsLifecycleStore = {
 	): Promise<Result<Payment>> {
 		const id = randomUUID();
 		const eventId = randomUUID();
+		const instrumentJson =
+			record.instrument === null ? null : JSON.stringify(record.instrument);
+		const fxJson =
+			record.fxContext === null ? null : JSON.stringify(record.fxContext);
+		const methodSnapshotJson =
+			record.methodSnapshot === null
+				? null
+				: JSON.stringify(record.methodSnapshot);
+		const clearanceStatus =
+			record.instrument !== null &&
+			(record.instrument.kind === "check" ||
+				record.instrument.kind === "bank-transfer")
+				? "pending"
+				: "not-applicable";
+		const deductionsJson = JSON.stringify(
+			record.deductions.map((line) => ({
+				lineNo: line.lineNo,
+				kind: line.kind,
+				effect: line.effect,
+				amount: line.amount,
+				functionalAmount: deriveFunctionalAmount(line.amount, record.fxContext),
+				accountingPurposeCode: line.accountingPurposeCode,
+				description: line.description,
+			})),
+		);
 		try {
 			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
@@ -625,13 +832,17 @@ export const drizzlePaymentLifecycleMethods: PaymentsLifecycleStore = {
 					mutated AS (
 						INSERT INTO payment (
 							id, organization_id, code, normalized_code, payment_account_id,
+							payment_method_id, method_snapshot, instrument, clearance_status,
+							fx_context, functional_amount,
 							direction, purpose, status, counterparty_id, counterparty_snapshot,
 							original_payment_id, refund_source, currency_code, amount, reference,
 							create_idempotency_key, post_idempotency_key, version,
 							created_by, updated_by, posted_at, posted_by
 						)
 						SELECT ${id}, original.organization_id, ${record.code}, ${record.normalizedCode},
-							account.id, 'refund',
+							account.id, ${record.paymentMethodId}, ${methodSnapshotJson},
+							${instrumentJson}, ${clearanceStatus}, ${fxJson},
+							${record.functionalAmount}, 'refund',
 							CASE WHEN original.direction = 'receipt' THEN 'customer_refund'
 								ELSE 'supplier_refund_receipt' END,
 							'posted', original.counterparty_id, original.counterparty_snapshot,
@@ -641,6 +852,18 @@ export const drizzlePaymentLifecycleMethods: PaymentsLifecycleStore = {
 							${record.actorUserId}, now(), ${record.actorUserId}
 						FROM original, account
 						RETURNING *
+					),
+					deducted AS (
+						INSERT INTO payment_deduction (
+							id, organization_id, payment_id, line_no, kind, effect, amount,
+							functional_amount, accounting_purpose_code, description, created_by
+						)
+						SELECT gen_random_uuid(), ${record.organizationId}, mutated.id,
+							(line->>'lineNo')::int, line->>'kind', line->>'effect', line->>'amount',
+							line->>'functionalAmount', line->>'accountingPurposeCode',
+							line->>'description', ${record.actorUserId}
+						FROM mutated, jsonb_array_elements(${deductionsJson}::jsonb) AS line
+						RETURNING id
 					),
 					outboxed AS (
 						INSERT INTO platform_domain_event (
@@ -679,6 +902,106 @@ export const drizzlePaymentLifecycleMethods: PaymentsLifecycleStore = {
 			return reload(record.organizationId, id, "Posted refund missing");
 		} catch (error) {
 			return failFromPersistence(error, "Failed to post refund");
+		}
+	},
+
+	async updateInstrumentClearance(
+		record: Parameters<PaymentsLifecycleStore["updateInstrumentClearance"]>[0],
+	): Promise<Result<Payment>> {
+		const current = await getById(record.organizationId, record.paymentId);
+		if (!current.ok) {
+			return current;
+		}
+		if (current.data === null) {
+			return errorResult.fail("NOT_FOUND", {
+				publicMessage: "Payment not found",
+			});
+		}
+		const existing = current.data;
+		if (existing.clearanceIdempotencyKey === record.idempotencyKey) {
+			return errorResult.ok(existing);
+		}
+		if (existing.status !== "posted") {
+			return errorResult.fail("CONFLICT", {
+				publicMessage:
+					"Instrument clearance can only change on posted payments",
+			});
+		}
+		if (
+			record.status === "not-applicable" &&
+			existing.clearanceStatus !== "not-applicable"
+		) {
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "A clearable instrument cannot return to not-applicable",
+			});
+		}
+		let instrumentJson: string | null =
+			existing.instrument === null ? null : JSON.stringify(existing.instrument);
+		if (existing.instrument !== null && existing.instrument.kind === "check") {
+			instrumentJson = JSON.stringify({
+				...existing.instrument,
+				...(record.clearanceDate === null
+					? {}
+					: { clearanceDate: record.clearanceDate }),
+				...(record.settlementReference === null
+					? {}
+					: { bankReference: record.settlementReference }),
+			});
+		}
+		const eventId = randomUUID();
+		try {
+			const [rows] = await afendaDatabase.transaction((sql) => [
+				sql`
+					WITH mutated AS (
+						UPDATE payment
+						SET clearance_status = ${record.status},
+							clearance_idempotency_key = ${record.idempotencyKey},
+							instrument = ${instrumentJson},
+							updated_at = now(),
+							updated_by = ${record.actorUserId},
+							version = version + 1
+						WHERE id = ${record.paymentId}
+							AND organization_id = ${record.organizationId}
+							AND status = 'posted'
+							AND version = ${record.expectedVersion}
+						RETURNING *
+					)
+					INSERT INTO platform_domain_event (
+						id, organization_id, type, source_module, correlation_id,
+						actor_user_id, payload, status, attempts
+					)
+					SELECT ${eventId}, organization_id,
+						'payments.payment.instrument_clearance_updated.v1',
+						'payments', ${record.correlationId}, ${record.actorUserId},
+						jsonb_build_object(
+							'organizationId', organization_id,
+							'paymentId', id,
+							'status', ${record.status},
+							'clearanceDate', ${record.clearanceDate},
+							'settlementReference', ${record.settlementReference},
+							'reason', ${record.reason},
+							'actorId', ${record.actorUserId},
+							'correlationId', ${record.correlationId}
+						), 'pending', 0
+					FROM mutated
+					RETURNING id
+				`,
+			]);
+			if (rows[0] === undefined) {
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Instrument clearance conflict",
+				});
+			}
+			return reload(
+				record.organizationId,
+				record.paymentId,
+				"Cleared payment missing",
+			);
+		} catch (error) {
+			return failFromPersistence(
+				error,
+				"Failed to update instrument clearance",
+			);
 		}
 	},
 

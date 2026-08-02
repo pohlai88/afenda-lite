@@ -97,6 +97,7 @@ export const payment = pgTable(
 		clearanceStatus: text("clearance_status")
 			.notNull()
 			.default("not-applicable"),
+		clearanceIdempotencyKey: text("clearance_idempotency_key"),
 		/** PaymentFxContext JSON or null (same-currency). */
 		fxContext: text("fx_context"),
 		functionalAmount: text("functional_amount").notNull(),

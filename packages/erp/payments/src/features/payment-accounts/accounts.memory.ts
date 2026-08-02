@@ -47,6 +47,19 @@ export function createMemoryPaymentAccountMethods(
 			});
 		},
 
+		getPaymentAccountById(
+			organizationId: string,
+			id: string,
+		): Promise<Result<PaymentAccount | null>> {
+			return resolveOperation(() => {
+				const found = state.accounts.get(id);
+				if (!found || found.organizationId !== organizationId) {
+					return errorResult.ok(null);
+				}
+				return errorResult.ok({ ...found });
+			});
+		},
+
 		listPaymentAccounts(
 			organizationId: string,
 		): Promise<Result<PaymentAccount[]>> {

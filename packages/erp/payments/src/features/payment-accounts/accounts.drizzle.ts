@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import {
 	database as afendaDatabase,
+	and,
 	desc,
 	eq,
 	paymentAccount,
@@ -77,6 +78,27 @@ export const drizzlePaymentAccountMethods: PaymentAccountsStore = {
 			return errorResult.ok(mapAccount(row));
 		} catch (error) {
 			return failFromPersistence(error, "Failed to create payment account");
+		}
+	},
+
+	async getPaymentAccountById(
+		organizationId: string,
+		id: string,
+	): Promise<Result<PaymentAccount | null>> {
+		try {
+			const [row] = await afendaDatabase.client
+				.select()
+				.from(paymentAccount)
+				.where(
+					and(
+						eq(paymentAccount.organizationId, organizationId),
+						eq(paymentAccount.id, id),
+					),
+				)
+				.limit(1);
+			return errorResult.ok(row === undefined ? null : mapAccount(row));
+		} catch (error) {
+			return failFromPersistence(error, "Failed to load payment account");
 		}
 	},
 

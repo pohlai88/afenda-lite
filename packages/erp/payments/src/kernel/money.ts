@@ -27,7 +27,7 @@ export function multiplyRoundHalfEven(
 	rate: string,
 	decimals: number,
 ): string {
-	if (!DECIMAL_PATTERN.test(amount) || !DECIMAL_PATTERN.test(rate)) {
+	if (!(DECIMAL_PATTERN.test(amount) && DECIMAL_PATTERN.test(rate))) {
 		throw new Error("multiplyRoundHalfEven requires plain decimal strings");
 	}
 	if (!Number.isInteger(decimals) || decimals < 0 || decimals > 6) {

@@ -2,8 +2,14 @@ import { randomUUID } from "node:crypto";
 
 import { errorResult, type Result } from "@afenda/errors";
 
-import type { Payment, PaymentAccount } from "../../kernel/contracts/domain";
+import type {
+	InstrumentClearanceStatus,
+	Payment,
+	PaymentAccount,
+	PaymentDeduction,
+} from "../../kernel/contracts/domain";
 import { decimal } from "../../kernel/money";
+import { deriveFunctionalAmount } from "./fx-policy";
 import type {
 	PaymentCreateRecord,
 	PaymentsLifecycleStore,
@@ -25,8 +31,79 @@ export function clonePayment(payment: Payment): Payment {
 		applicationInstructions: payment.applicationInstructions.map(
 			(instruction) => ({ ...instruction }),
 		),
+		deductions: payment.deductions.map((deduction) => ({ ...deduction })),
+		instrument: payment.instrument === null ? null : { ...payment.instrument },
+		fxContext: payment.fxContext === null ? null : { ...payment.fxContext },
+		methodSnapshot:
+			payment.methodSnapshot === null ? null : { ...payment.methodSnapshot },
 		reversal: payment.reversal === null ? null : { ...payment.reversal },
 	};
+}
+
+/** Checks and bank transfers carry a clearance lifecycle; the rest do not. */
+function initialClearanceStatus(
+	instrument: Payment["instrument"],
+): InstrumentClearanceStatus {
+	return instrument !== null &&
+		(instrument.kind === "check" || instrument.kind === "bank-transfer")
+		? "pending"
+		: "not-applicable";
+}
+
+/** Guards shared by every clearance transition; null when the change may proceed. */
+function clearanceTransitionRejection(
+	payment: Payment,
+	record: { expectedVersion: number; status: InstrumentClearanceStatus },
+): Result<Payment> | null {
+	if (payment.status !== "posted") {
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Instrument clearance can only change on posted payments",
+		});
+	}
+	if (payment.version !== record.expectedVersion) {
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Payment version conflict",
+		});
+	}
+	if (
+		record.status === "not-applicable" &&
+		payment.clearanceStatus !== "not-applicable"
+	) {
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "A clearable instrument cannot return to not-applicable",
+		});
+	}
+	return null;
+}
+
+/** Merges clearance evidence into a check instrument; other kinds keep theirs. */
+function mergeClearanceEvidence(
+	payment: Payment,
+	record: { clearanceDate: string | null; settlementReference: string | null },
+): void {
+	if (payment.instrument === null || payment.instrument.kind !== "check") {
+		return;
+	}
+	payment.instrument = {
+		...payment.instrument,
+		...(record.clearanceDate === null
+			? {}
+			: { clearanceDate: record.clearanceDate }),
+		...(record.settlementReference === null
+			? {}
+			: { bankReference: record.settlementReference }),
+	};
+}
+
+/** Freezes each deduction line's functional value at posting time. */
+function freezeDeductionFunctionalAmounts(payment: Payment): void {
+	payment.deductions = payment.deductions.map((deduction) => ({
+		...deduction,
+		functionalAmount: deriveFunctionalAmount(
+			deduction.amount,
+			payment.fxContext,
+		),
+	}));
 }
 
 function resolveOperation<T>(operation: () => Result<T>): Promise<Result<T>> {
@@ -102,12 +179,29 @@ function buildDraft(
 		}
 	}
 	const now = new Date();
-	return errorResult.ok({
+	const paymentId = randomUUID();
+	const deductions: PaymentDeduction[] = record.deductions.map((line) => ({
+		...line,
 		id: randomUUID(),
+		paymentId,
+		description: line.description ?? null,
+		functionalAmount: null,
+		createdAt: now,
+		createdBy: record.actorUserId,
+	}));
+	return errorResult.ok({
+		id: paymentId,
 		organizationId: record.organizationId,
 		code: record.code,
 		normalizedCode: record.normalizedCode,
 		paymentAccountId: record.paymentAccountId,
+		paymentMethodId: record.paymentMethodId,
+		methodSnapshot: record.methodSnapshot,
+		instrument: record.instrument,
+		clearanceStatus: initialClearanceStatus(record.instrument),
+		fxContext: record.fxContext,
+		functionalAmount: record.functionalAmount,
+		deductions,
 		direction: record.direction,
 		purpose: record.purpose,
 		status: "draft",
@@ -123,6 +217,7 @@ function buildDraft(
 		createIdempotencyKey: record.createIdempotencyKey,
 		postIdempotencyKey: null,
 		reverseIdempotencyKey: null,
+		clearanceIdempotencyKey: null,
 		version: 1,
 		createdBy: record.actorUserId,
 		updatedBy: record.actorUserId,
@@ -228,6 +323,8 @@ export function createMemoryPaymentLifecycleMethods(
 				const previous = clonePayment(payment);
 				const now = new Date();
 				payment.status = "posted";
+				payment.methodSnapshot = { ...record.methodSnapshot };
+				freezeDeductionFunctionalAmounts(payment);
 				payment.postIdempotencyKey = record.idempotencyKey;
 				payment.postedAt = now;
 				payment.postedBy = record.actorUserId;
@@ -318,6 +415,12 @@ export function createMemoryPaymentLifecycleMethods(
 					code: `${record.code}-OUT`,
 					normalizedCode: `${record.normalizedCode}-OUT`,
 					paymentAccountId: record.fromPaymentAccountId,
+					paymentMethodId: record.paymentMethodId,
+					methodSnapshot: record.methodSnapshot,
+					instrument: null,
+					fxContext: null,
+					functionalAmount: record.amount,
+					deductions: [],
 					direction: "disbursement",
 					purpose: "internal_transfer",
 					counterpartyId: null,
@@ -341,6 +444,12 @@ export function createMemoryPaymentLifecycleMethods(
 					code: `${record.code}-IN`,
 					normalizedCode: `${record.normalizedCode}-IN`,
 					paymentAccountId: record.toPaymentAccountId,
+					paymentMethodId: record.paymentMethodId,
+					methodSnapshot: record.methodSnapshot,
+					instrument: null,
+					fxContext: null,
+					functionalAmount: record.amount,
+					deductions: [],
 					direction: "receipt",
 					purpose: "internal_transfer",
 					counterpartyId: null,
@@ -406,6 +515,15 @@ export function createMemoryPaymentLifecycleMethods(
 						publicMessage: "Refund exceeds remaining refundable amount",
 					});
 				}
+				if (
+					record.fxContext !== null &&
+					record.fxContext.transactionCurrency !== original.currencyCode
+				) {
+					return errorResult.fail("CONFLICT", {
+						publicMessage:
+							"Refund FX context currency differs from the original payment currency",
+					});
+				}
 				const draft = buildDraft(state, {
 					...record,
 					direction: "refund",
@@ -427,11 +545,52 @@ export function createMemoryPaymentLifecycleMethods(
 				}
 				const refund = draft.data;
 				refund.status = "posted";
+				freezeDeductionFunctionalAmounts(refund);
 				refund.postedAt = new Date();
 				refund.postedBy = record.actorUserId;
 				refund.postIdempotencyKey = record.createIdempotencyKey;
 				state.payments.set(refund.id, refund);
 				return errorResult.ok(clonePayment(refund));
+			});
+		},
+
+		updateInstrumentClearance(
+			record: Parameters<
+				PaymentsLifecycleStore["updateInstrumentClearance"]
+			>[0],
+		): Promise<Result<Payment>> {
+			return resolveOperation(() => {
+				const found = find(state, record.organizationId, record.paymentId);
+				if (!found.ok) {
+					return found;
+				}
+				const payment = found.data;
+				if (payment.clearanceIdempotencyKey === record.idempotencyKey) {
+					return errorResult.ok(clonePayment(payment));
+				}
+				const rejection = clearanceTransitionRejection(payment, record);
+				if (rejection !== null) {
+					return rejection;
+				}
+				const previous = clonePayment(payment);
+				const now = new Date();
+				payment.clearanceStatus = record.status;
+				payment.clearanceIdempotencyKey = record.idempotencyKey;
+				mergeClearanceEvidence(payment, record);
+				payment.updatedAt = now;
+				payment.updatedBy = record.actorUserId;
+				payment.version += 1;
+				const idem = idempotent(
+					state,
+					record.organizationId,
+					record.idempotencyKey,
+					payment.id,
+				);
+				if (!idem.ok) {
+					state.payments.set(payment.id, previous);
+					return idem;
+				}
+				return errorResult.ok(clonePayment(payment));
 			});
 		},
 

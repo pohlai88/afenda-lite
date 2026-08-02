@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
 
 import {
-	and,
 	database as afendaDatabase,
+	and,
 	desc,
 	eq,
 	paymentMethod,
@@ -166,23 +166,23 @@ export const drizzlePaymentMethodMethods: PaymentMethodsStore = {
 			const [row] = await afendaDatabase.client
 				.update(paymentMethod)
 				.set({
-					...(record.name !== undefined ? { name: record.name } : {}),
-					...(record.instrumentRequirement !== undefined
-						? { instrumentRequirement: record.instrumentRequirement }
-						: {}),
-					...(record.allowedInstrumentKinds !== undefined
-						? {
+					...(record.name === undefined ? {} : { name: record.name }),
+					...(record.instrumentRequirement === undefined
+						? {}
+						: { instrumentRequirement: record.instrumentRequirement }),
+					...(record.allowedInstrumentKinds === undefined
+						? {}
+						: {
 								allowedInstrumentKinds: JSON.stringify(
 									record.allowedInstrumentKinds,
 								),
-							}
-						: {}),
-					...(record.allowedAccountKinds !== undefined
-						? {
+							}),
+					...(record.allowedAccountKinds === undefined
+						? {}
+						: {
 								allowedAccountKinds: JSON.stringify(record.allowedAccountKinds),
-							}
-						: {}),
-					...(record.active !== undefined ? { active: record.active } : {}),
+							}),
+					...(record.active === undefined ? {} : { active: record.active }),
 					updatedBy: record.updatedBy,
 					updatedAt: new Date(),
 				})

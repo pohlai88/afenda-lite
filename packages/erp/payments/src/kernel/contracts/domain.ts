@@ -64,17 +64,21 @@ export type PaymentInstrument =
 			kind: "check";
 			number: string;
 			issuedOn: string;
-			clearanceDate?: string;
-			bankReference?: string;
+			clearanceDate?: string | undefined;
+			bankReference?: string | undefined;
 	  }
-	| { kind: "bank-transfer"; bankReference: string; valueDate?: string }
+	| {
+			kind: "bank-transfer";
+			bankReference: string;
+			valueDate?: string | undefined;
+	  }
 	| {
 			kind: "card";
-			authorizationReference?: string;
-			settlementReference?: string;
+			authorizationReference?: string | undefined;
+			settlementReference?: string | undefined;
 	  }
 	| { kind: "gateway"; providerReference: string }
-	| { kind: "other"; reference?: string };
+	| { kind: "other"; reference?: string | undefined };
 
 export const INSTRUMENT_CLEARANCE_STATUSES = [
 	"not-applicable",
@@ -135,8 +139,7 @@ export const PAYMENT_DEDUCTION_EFFECTS = [
 	"reduces_cash_movement",
 	"informational",
 ] as const;
-export type PaymentDeductionEffect =
-	(typeof PAYMENT_DEDUCTION_EFFECTS)[number];
+export type PaymentDeductionEffect = (typeof PAYMENT_DEDUCTION_EFFECTS)[number];
 
 /** Aggregate-owned child line — mutated only through Payment operations. */
 export interface PaymentDeduction {
@@ -214,6 +217,7 @@ export interface PaymentReversal {
 export interface Payment {
 	amount: string;
 	applicationInstructions: PaymentApplicationInstruction[];
+	clearanceIdempotencyKey: string | null;
 	clearanceStatus: InstrumentClearanceStatus;
 	code: string;
 	counterpartyId: string | null;
@@ -228,14 +232,14 @@ export interface Payment {
 	fxContext: PaymentFxContext | null;
 	id: string;
 	instrument: PaymentInstrument | null;
+	linkedPaymentId: string | null;
 	/** Frozen at post; null while draft. */
 	methodSnapshot: PaymentMethodSnapshot | null;
-	paymentMethodId: string;
-	linkedPaymentId: string | null;
 	normalizedCode: string;
 	organizationId: string;
 	originalPaymentId: string | null;
 	paymentAccountId: string;
+	paymentMethodId: string;
 	postedAt: Date | null;
 	postedBy: string | null;
 	postIdempotencyKey: string | null;

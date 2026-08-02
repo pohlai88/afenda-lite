@@ -11,6 +11,7 @@ import {
 	postPayment,
 	postRefund,
 	reversePayment,
+	seedDefaultPaymentMethods,
 } from "../src/index";
 import { createMemoryPaymentsStore } from "../src/testing";
 
@@ -22,10 +23,31 @@ const authorization = {
 	},
 };
 
+async function seedMethod(store: ReturnType<typeof createMemoryPaymentsStore>) {
+	const seeded = await seedDefaultPaymentMethods(
+		{
+			organizationId,
+			actorUserId,
+			correlationId: "method",
+			idempotencyKey: "methods-1",
+		},
+		{ store, authorization },
+	);
+	if (!seeded.ok) {
+		throw new Error("method seed failed");
+	}
+	const method = seeded.data.find((entry) => entry.code === "other");
+	if (!method) {
+		throw new Error("default method missing");
+	}
+	return method;
+}
+
 describe("payments domain conflicts", () => {
 	it("rejects version conflicts on post and reverse", async () => {
 		const store = createMemoryPaymentsStore();
 		const options = { store, authorization };
+		const method = await seedMethod(store);
 		const account = await createPaymentAccount(
 			{
 				organizationId,
@@ -50,6 +72,7 @@ describe("payments domain conflicts", () => {
 				idempotencyKey: "pay-tx-1",
 				code: "PAY-TX-1",
 				paymentAccountId: account.data.id,
+				paymentMethodId: method.id,
 				direction: "receipt",
 				purpose: "manual_receipt",
 				currencyCode: "USD",
@@ -114,6 +137,7 @@ describe("payments domain conflicts", () => {
 	it("rejects refunds that exceed the remaining refundable amount", async () => {
 		const store = createMemoryPaymentsStore();
 		const options = { store, authorization };
+		const method = await seedMethod(store);
 		const account = await createPaymentAccount(
 			{
 				organizationId,
@@ -137,6 +161,7 @@ describe("payments domain conflicts", () => {
 				idempotencyKey: "pay-tx-2",
 				code: "PAY-TX-2",
 				paymentAccountId: account.data.id,
+				paymentMethodId: method.id,
 				direction: "receipt",
 				purpose: "customer_receipt",
 				counterpartyId: "00000000-0000-4000-8000-000000000001",
@@ -172,6 +197,7 @@ describe("payments domain conflicts", () => {
 				code: "REF-1",
 				originalPaymentId: created.data.id,
 				paymentAccountId: account.data.id,
+				paymentMethodId: method.id,
 				refundSource: "customer_payment",
 				amount: "15",
 			},
@@ -188,6 +214,7 @@ describe("payments domain conflicts", () => {
 				code: "REF-2",
 				originalPaymentId: created.data.id,
 				paymentAccountId: account.data.id,
+				paymentMethodId: method.id,
 				refundSource: "customer_payment",
 				amount: "10",
 			},
@@ -203,6 +230,7 @@ describe("payments domain conflicts", () => {
 	it("normalizes domain rejects to canonical error codes", async () => {
 		const store = createMemoryPaymentsStore();
 		const options = { store, authorization };
+		const method = await seedMethod(store);
 		const missing = await getPaymentApplicationAvailability(
 			{
 				organizationId,
@@ -259,6 +287,7 @@ describe("payments domain conflicts", () => {
 				idempotencyKey: "draft-credit",
 				code: "PAY-CREDIT-REJECT",
 				paymentAccountId: account.data.id,
+				paymentMethodId: method.id,
 				direction: "receipt",
 				purpose: "customer_receipt",
 				counterpartyId: "00000000-0000-4000-8000-000000000001",
@@ -296,6 +325,7 @@ describe("payments domain conflicts", () => {
 	it("reconciles paired transfers as consistent", async () => {
 		const store = createMemoryPaymentsStore();
 		const options = { store, authorization };
+		const method = await seedMethod(store);
 		const from = await createPaymentAccount(
 			{
 				organizationId,
@@ -334,6 +364,7 @@ describe("payments domain conflicts", () => {
 				code: "XFER",
 				fromPaymentAccountId: from.data.id,
 				toPaymentAccountId: to.data.id,
+				paymentMethodId: method.id,
 				amount: "12",
 				currencyCode: "USD",
 			},

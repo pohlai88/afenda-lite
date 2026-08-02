@@ -11,6 +11,7 @@ import {
 	postPayment,
 	postRefund,
 	reversePayment,
+	seedDefaultPaymentMethods,
 } from "../src/index";
 import { createMemoryPaymentsStore } from "../src/testing";
 
@@ -46,11 +47,35 @@ async function seedAccount(
 	return account.data;
 }
 
+async function seedMethod(
+	store: ReturnType<typeof createMemoryPaymentsStore>,
+	code = "other",
+) {
+	const seeded = await seedDefaultPaymentMethods(
+		{
+			organizationId,
+			actorUserId,
+			correlationId: "method",
+			idempotencyKey: "methods-1",
+		},
+		{ store, authorization },
+	);
+	if (!seeded.ok) {
+		throw new Error("method seed failed");
+	}
+	const method = seeded.data.find((entry) => entry.code === code);
+	if (!method) {
+		throw new Error("default method missing");
+	}
+	return method;
+}
+
 describe("payments lifecycle", () => {
 	it("posts, refunds, and reverses with application instructions and availability", async () => {
 		const store = createMemoryPaymentsStore();
 		const options = { store, authorization };
 		const account = await seedAccount(store);
+		const method = await seedMethod(store);
 
 		const created = await createDraftPayment(
 			{
@@ -60,6 +85,7 @@ describe("payments lifecycle", () => {
 				idempotencyKey: "pay-1",
 				code: "PAY-1",
 				paymentAccountId: account.id,
+				paymentMethodId: method.id,
 				direction: "receipt",
 				purpose: "customer_receipt",
 				counterpartyId,
@@ -122,6 +148,7 @@ describe("payments lifecycle", () => {
 				code: "REF-1",
 				originalPaymentId: created.data.id,
 				paymentAccountId: account.id,
+				paymentMethodId: method.id,
 				refundSource: "customer_payment",
 				amount: "25",
 			},
@@ -172,6 +199,7 @@ describe("payments lifecycle", () => {
 	it("creates paired transfer payments atomically", async () => {
 		const store = createMemoryPaymentsStore();
 		const options = { store, authorization };
+		const method = await seedMethod(store);
 		const from = await createPaymentAccount(
 			{
 				organizationId,
@@ -211,6 +239,7 @@ describe("payments lifecycle", () => {
 				code: "XFER-1",
 				fromPaymentAccountId: from.data.id,
 				toPaymentAccountId: to.data.id,
+				paymentMethodId: method.id,
 				amount: "50",
 				currencyCode: "USD",
 			},
@@ -234,6 +263,7 @@ describe("payments lifecycle", () => {
 		const store = createMemoryPaymentsStore();
 		const options = { store, authorization };
 		const account = await seedAccount(store);
+		const method = await seedMethod(store);
 		const created = await createDraftPayment(
 			{
 				organizationId,
@@ -242,6 +272,7 @@ describe("payments lifecycle", () => {
 				idempotencyKey: "pay-2",
 				code: "PAY-2",
 				paymentAccountId: account.id,
+				paymentMethodId: method.id,
 				direction: "disbursement",
 				purpose: "supplier_disbursement",
 				counterpartyId,
@@ -291,6 +322,7 @@ describe("payments lifecycle", () => {
 		const store = createMemoryPaymentsStore();
 		const options = { store, authorization };
 		const account = await seedAccount(store);
+		const method = await seedMethod(store);
 		const created = await createDraftPayment(
 			{
 				organizationId,
@@ -299,6 +331,7 @@ describe("payments lifecycle", () => {
 				idempotencyKey: "race-pay",
 				code: "PAY-RACE",
 				paymentAccountId: account.id,
+				paymentMethodId: method.id,
 				direction: "receipt",
 				purpose: "customer_receipt",
 				counterpartyId,
@@ -349,10 +382,94 @@ describe("payments lifecycle", () => {
 		expect(failures).toHaveLength(1);
 	});
 
+	it("freezes the method snapshot and functional amounts at post", async () => {
+		const store = createMemoryPaymentsStore();
+		const options = { store, authorization };
+		const method = await seedMethod(store, "bank-transfer");
+		const account = await createPaymentAccount(
+			{
+				organizationId,
+				actorUserId,
+				correlationId: "eur-account",
+				idempotencyKey: "eur-account-1",
+				code: "BANK-EUR",
+				name: "Bank EUR",
+				kind: "bank",
+				currencyCode: "EUR",
+			},
+			options,
+		);
+		if (!account.ok) {
+			throw new Error("account seed failed");
+		}
+		const created = await createDraftPayment(
+			{
+				organizationId,
+				actorUserId,
+				correlationId: "fx-create",
+				idempotencyKey: "fx-pay-1",
+				code: "PAY-FX-1",
+				paymentAccountId: account.data.id,
+				paymentMethodId: method.id,
+				direction: "receipt",
+				purpose: "customer_receipt",
+				counterpartyId,
+				currencyCode: "EUR",
+				amount: "100",
+				fxContext: {
+					transactionCurrency: "EUR",
+					functionalCurrency: "USD",
+					exchangeRate: "1.1",
+					rateDate: "2026-08-01",
+				},
+				deductions: [
+					{
+						kind: "bank_charge",
+						amount: "2",
+						accountingPurposeCode: "bank-fees",
+					},
+				],
+			},
+			options,
+		);
+		expect(created.ok).toBe(true);
+		if (!created.ok) {
+			return;
+		}
+		expect(created.data.functionalAmount).toBe("110");
+		expect(created.data.methodSnapshot).toBeNull();
+		expect(created.data.deductions[0]?.functionalAmount).toBeNull();
+		expect(created.data.deductions[0]?.effect).toBe("reduces_cash_movement");
+
+		const posted = await postPayment(
+			{
+				organizationId,
+				actorUserId,
+				correlationId: "fx-post",
+				idempotencyKey: "fx-post-1",
+				paymentId: created.data.id,
+				expectedVersion: 1,
+			},
+			options,
+		);
+		expect(posted.ok).toBe(true);
+		if (!posted.ok) {
+			return;
+		}
+		expect(posted.data.methodSnapshot).toEqual({
+			paymentMethodId: method.id,
+			code: "bank-transfer",
+			kind: "wire",
+		});
+		expect(posted.data.functionalAmount).toBe("110");
+		expect(posted.data.deductions[0]?.functionalAmount).toBe("2.2");
+	});
+
 	it("returns original payment for identical create idempotency key", async () => {
 		const store = createMemoryPaymentsStore();
 		const options = { store, authorization };
 		const account = await seedAccount(store);
+		const method = await seedMethod(store);
 		const input = {
 			organizationId,
 			actorUserId,
@@ -360,6 +477,7 @@ describe("payments lifecycle", () => {
 			idempotencyKey: "same-create-key",
 			code: "PAY-IDEM",
 			paymentAccountId: account.id,
+			paymentMethodId: method.id,
 			direction: "receipt" as const,
 			purpose: "customer_receipt" as const,
 			counterpartyId,
