@@ -28,6 +28,131 @@ export const PAYMENT_ACCOUNT_KINDS = [
 ] as const;
 export type PaymentAccountKind = (typeof PAYMENT_ACCOUNT_KINDS)[number];
 
+export const PAYMENT_METHOD_KINDS = [
+	"cash",
+	"check",
+	"wire",
+	"ach",
+	"card",
+	"gateway",
+	"other",
+] as const;
+export type PaymentMethodKind = (typeof PAYMENT_METHOD_KINDS)[number];
+
+export const INSTRUMENT_REQUIREMENTS = [
+	"forbidden",
+	"optional",
+	"required",
+] as const;
+export type InstrumentRequirement = (typeof INSTRUMENT_REQUIREMENTS)[number];
+
+export const PAYMENT_INSTRUMENT_KINDS = [
+	"check",
+	"bank-transfer",
+	"card",
+	"gateway",
+	"other",
+] as const;
+export type PaymentInstrumentKind = (typeof PAYMENT_INSTRUMENT_KINDS)[number];
+
+/**
+ * Discriminated instrument value object. The `gateway` variant is a passive
+ * external reference only — provider machinery is out of scope here.
+ */
+export type PaymentInstrument =
+	| {
+			kind: "check";
+			number: string;
+			issuedOn: string;
+			clearanceDate?: string;
+			bankReference?: string;
+	  }
+	| { kind: "bank-transfer"; bankReference: string; valueDate?: string }
+	| {
+			kind: "card";
+			authorizationReference?: string;
+			settlementReference?: string;
+	  }
+	| { kind: "gateway"; providerReference: string }
+	| { kind: "other"; reference?: string };
+
+export const INSTRUMENT_CLEARANCE_STATUSES = [
+	"not-applicable",
+	"pending",
+	"cleared",
+	"rejected",
+] as const;
+export type InstrumentClearanceStatus =
+	(typeof INSTRUMENT_CLEARANCE_STATUSES)[number];
+
+export interface PaymentMethod {
+	active: boolean;
+	allowedAccountKinds: readonly PaymentAccountKind[];
+	allowedInstrumentKinds: readonly PaymentInstrumentKind[];
+	code: string;
+	createdAt: Date;
+	createdBy: string;
+	id: string;
+	instrumentRequirement: InstrumentRequirement;
+	kind: PaymentMethodKind;
+	name: string;
+	normalizedCode: string;
+	organizationId: string;
+	updatedAt: Date;
+	updatedBy: string;
+}
+
+/**
+ * Minimal snapshot frozen at posting so historical interpretation never
+ * changes when the master record is edited. No governance fields.
+ */
+export interface PaymentMethodSnapshot {
+	code: string;
+	kind: PaymentMethodKind;
+	paymentMethodId: string;
+}
+
+/** Rate direction: transaction → functional. */
+export interface PaymentFxContext {
+	exchangeRate: string;
+	functionalCurrency: string;
+	rateDate: string;
+	rateSource: string | null;
+	transactionCurrency: string;
+}
+
+export const PAYMENT_DEDUCTION_KINDS = [
+	"bank_charge",
+	"write_off",
+	"rounding",
+	"withholding",
+	"other",
+] as const;
+export type PaymentDeductionKind = (typeof PAYMENT_DEDUCTION_KINDS)[number];
+
+export const PAYMENT_DEDUCTION_EFFECTS = [
+	"reduces_application_only",
+	"reduces_cash_movement",
+	"informational",
+] as const;
+export type PaymentDeductionEffect =
+	(typeof PAYMENT_DEDUCTION_EFFECTS)[number];
+
+/** Aggregate-owned child line — mutated only through Payment operations. */
+export interface PaymentDeduction {
+	accountingPurposeCode: string;
+	amount: string;
+	createdAt: Date;
+	createdBy: string;
+	description: string | null;
+	effect: PaymentDeductionEffect;
+	functionalAmount: string | null;
+	id: string;
+	kind: PaymentDeductionKind;
+	lineNo: number;
+	paymentId: string;
+}
+
 export const APPLICATION_STATUSES = [
 	"pending",
 	"applied",
@@ -89,6 +214,7 @@ export interface PaymentReversal {
 export interface Payment {
 	amount: string;
 	applicationInstructions: PaymentApplicationInstruction[];
+	clearanceStatus: InstrumentClearanceStatus;
 	code: string;
 	counterpartyId: string | null;
 	counterpartySnapshot: Record<string, unknown> | null;
@@ -96,8 +222,15 @@ export interface Payment {
 	createdBy: string;
 	createIdempotencyKey: string;
 	currencyCode: string;
+	deductions: PaymentDeduction[];
 	direction: PaymentDirection;
+	functionalAmount: string;
+	fxContext: PaymentFxContext | null;
 	id: string;
+	instrument: PaymentInstrument | null;
+	/** Frozen at post; null while draft. */
+	methodSnapshot: PaymentMethodSnapshot | null;
+	paymentMethodId: string;
 	linkedPaymentId: string | null;
 	normalizedCode: string;
 	organizationId: string;

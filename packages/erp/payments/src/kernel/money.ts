@@ -15,3 +15,32 @@ export function formatDecimal(value: bigint): string {
 		.replace(TRAILING_ZERO_PATTERN, "");
 	return fraction.length > 0 ? `${whole}.${fraction}` : whole.toString();
 }
+
+const DECIMAL_PATTERN = /^\d+(?:\.\d{1,6})?$/;
+
+/**
+ * amount × rate, rounded half-even at `decimals` places (0–6).
+ * Pure primitive — payment-specific FX interpretation lives in fx-policy.
+ */
+export function multiplyRoundHalfEven(
+	amount: string,
+	rate: string,
+	decimals: number,
+): string {
+	if (!DECIMAL_PATTERN.test(amount) || !DECIMAL_PATTERN.test(rate)) {
+		throw new Error("multiplyRoundHalfEven requires plain decimal strings");
+	}
+	if (!Number.isInteger(decimals) || decimals < 0 || decimals > 6) {
+		throw new Error("multiplyRoundHalfEven precision must be 0-6");
+	}
+	const product = decimal(amount) * decimal(rate);
+	const targetScale = 10n ** BigInt(12 - decimals);
+	const quotient = product / targetScale;
+	const remainder = product % targetScale;
+	const half = targetScale / 2n;
+	let rounded = quotient;
+	if (remainder > half || (remainder === half && quotient % 2n === 1n)) {
+		rounded += 1n;
+	}
+	return formatDecimal(rounded * 10n ** BigInt(6 - decimals));
+}
