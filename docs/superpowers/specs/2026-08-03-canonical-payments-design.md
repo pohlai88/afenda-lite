@@ -2,8 +2,15 @@
 
 - **Date**: 2026-08-03
 - **Module**: `@afenda/payments` ([packages/erp/payments](../../../packages/erp/payments))
-- **Status**: Approved design, pre-implementation
+- **Status**: Approved design — implementation-ready, subject to the binding closure clarifications below
 - **Compatibility target**: concept parity with ERPNext (Payment Entry, Mode of Payment, deductions, Payment Request) and Odoo (account.payment, payment method lines, payment.provider/transaction/token)
+
+### Binding closure clarifications
+
+1. The cutover includes schema migration and deterministic method seed/backfill; it does **not** include compatibility migration, dual-read, dual-write, or dual-published events (§10).
+2. Payment amount, cash movement, deduction, and net application semantics are explicitly defined via per-line deduction effects (§6).
+3. Functional-currency rounding residuals are emitted as separate economic facts and are never silently allocated (§5.4).
+4. Event wire IDs and naming grammar are frozen through the canonical operation registry (§7.4).
 
 ## 1. Summary
 
@@ -110,6 +117,8 @@ type PaymentInstrument =
 
 A tagged union — never a nullable-field block — so contradictory states are unrepresentable. ERPNext *reference no / reference date* maps into the relevant variant.
 
+**Phase 1 scope of the `gateway` variant (binding):** Phase 1 permits `instrument.kind = "gateway"` only as a *passive external-reference representation* for imported or manually recorded gateway payments. It does not create provider configuration, transaction lifecycle, webhook ingestion, token handling, or any direct processor interaction — all of that is Phase 2 (§9). Implementers must not start Phase 2 inside Phase 1.
+
 ### 4.3 Clearance
 
 Instrument clearance is distinct from payment lifecycle status and from reconciliation status:
@@ -120,6 +129,28 @@ type InstrumentClearanceStatus = "not-applicable" | "pending" | "cleared" | "rej
 
 Stored on the payment alongside the instrument. Updated only through the dedicated `updateInstrumentClearance` post-posting operation (emits `payment.instrument_clearance_updated.v1`). This gives post-dated-cheque parity without a cheque-management subsystem. A `rejected` clearance does not auto-reverse the payment; reversal remains an explicit operation.
 
+Clearance updates are **controlled amendments**:
+
+```ts
+type UpdateInstrumentClearanceInput = {
+  paymentId: string;
+  expectedVersion: number;
+  status: InstrumentClearanceStatus;
+  clearanceDate?: string;
+  settlementReference?: string;
+  reason?: string;
+  idempotencyKey: string;
+};
+```
+
+Invariants:
+
+- only posted payments may enter `pending`, `cleared`, or `rejected`
+- `clearanceDate` is required for `cleared` and forbidden for `pending`
+- `not-applicable` cannot be used when the method requires a clearable instrument (e.g. check)
+- transition from `cleared` back to `pending` requires controlled-correction authority
+- every amendment is auditable, idempotent, and version-checked (`expectedVersion`)
+
 ### 4.4 Method snapshot (frozen semantics)
 
 At posting, the payment freezes a snapshot so later edits to the master record never change historical interpretation:
@@ -127,6 +158,8 @@ At posting, the payment freezes a snapshot so later edits to the master record n
 ```ts
 type PaymentMethodSnapshot = { paymentMethodId: string; code: string; kind: PaymentMethodKind };
 ```
+
+The snapshot is deliberately minimal. Do **not** snapshot `allowedAccountKinds`, `allowedInstrumentKinds`, `active`, display name, or audit fields — those are validation-time governance details, not historical economic facts.
 
 ### 4.5 Mandatory method, no hidden fallback
 
@@ -172,11 +205,42 @@ Rules:
 
 ### 5.2 Cross-currency application & realized FX
 
-An application instruction carries the target document's currency, the amount applied in it, and the document's booked exchange rate (supplied by the caller — the target module knows its document's rate; payments does not look it up). At application time, payments computes the **realized FX gain/loss**: the functional-currency difference between the document's booked rate and the payment's rate. It is emitted as a signed economic fact on `application_instruction.applied.v1` (with both rates). Payments computes and reports; accounting classifies and books.
+An application instruction carries an explicit FX context so rate direction is never ambiguous:
+
+```ts
+type ApplicationFxContext = {
+  documentCurrency: string;
+  appliedDocumentAmount: string;      // amount applied, in document currency
+  documentBookedRate: string;         // document → functional
+  appliedFunctionalAmount: string;    // caller-supplied functional value at document rate
+};
+```
+
+The caller (the target module, which knows its document's booked rate) supplies the amounts; payments validates the arithmetic and computes the fact:
+
+```text
+paymentEquivalentFunctionalAmount = roundHalfEven(appliedTransactionAmount × payment.exchangeRate)
+documentBookedFunctionalAmount    = roundHalfEven(appliedDocumentAmount × documentBookedRate)
+realizedFx = paymentEquivalentFunctionalAmount − documentBookedFunctionalAmount
+```
+
+Emitted as a signed economic fact on `application_instruction.applied.v1` (with both rates). Payments computes and reports; accounting classifies and books.
+
+**Phase 1 cross-currency rule (binding):** cross-currency application is supported only where the caller supplies the applied amount in payment transaction currency, the applied amount in document currency, and both corresponding functional-currency values or rates. Payments validates the arithmetic and emits the difference. Derivation of a missing transaction-currency equivalent (e.g. payment and document in two different foreign currencies with no supplied cross amount) is rejected, not inferred.
 
 ### 5.3 Availability
 
 Availability math stays entirely in transaction currency — no FX in availability.
+
+### 5.4 Rounding residuals
+
+Each monetary component (payment, each deduction line, each application) is independently rounded at functional-currency precision:
+
+```text
+deduction.functionalAmount = roundHalfEven(deduction.amount × payment.exchangeRate)
+```
+
+Any residual caused solely by component rounding (e.g. component functional sums differing from `payment.functionalAmount` by sub-precision amounts) is emitted as a separate signed `roundingDifferenceFunctionalAmount` economic fact. It is **never** silently added to the final deduction or application line. This keeps event payloads reproducible and order-independent.
 
 ## 6. Deductions & write-offs (Phase 1)
 
@@ -185,23 +249,43 @@ Availability math stays entirely in transaction currency — no FX in availabili
 ```ts
 type PaymentDeductionKind = "bank_charge" | "write_off" | "rounding" | "withholding" | "other";
 
+type PaymentDeductionEffect =
+  | "reduces_application_only"   // consumes gross settlement capacity; cash unaffected
+  | "reduces_cash_movement"      // cash moved is less than gross; application capacity unaffected
+  | "informational";             // affects neither; classification-only fact
+
 interface PaymentDeduction {
   id: string;
   paymentId: string;
   lineNo: number;
   kind: PaymentDeductionKind;
+  effect: PaymentDeductionEffect; // required per line; defaults per kind below
   amount: string;                 // transaction currency, strictly positive
-  functionalAmount: string | null; // derived at post via the payment's fx context
+  functionalAmount: string | null; // derived at post via the payment's fx context (§5.4)
   accountingPurposeCode: string;  // resolved to a GL account by accounting; payments never holds account IDs
   description: string | null;
   createdAt: Date; createdBy: string;
 }
 ```
 
-**Invariants:**
+### 6.1 Amount semantics (binding)
 
-- `sum(deductions) ≤ payment.amount`
-- `availableToApply = postedAmount − refundedAmount − appliedAmount − deductionsTotal`
+`payment.amount` is the **gross settlement value** — the economic value the payment record represents. From it:
+
+```text
+deductionsTotal(effect)  = sum of deduction amounts with that effect
+cashMovement             = payment.amount − deductionsTotal("reduces_cash_movement")
+availableToApply         = payment.amount − refundedAmount − appliedAmount
+                           − deductionsTotal("reduces_application_only")
+```
+
+`informational` deductions affect neither figure. The event contract carries each line's `effect` explicitly (§7.1) — accounting never infers cash treatment from the deduction kind.
+
+**Default effect per kind** (caller may override where economically justified): `bank_charge` → `reduces_cash_movement`; `withholding` → `reduces_cash_movement`; `write_off` → `reduces_cash_movement`; `rounding` → `reduces_application_only`; `other` → no default, effect must be supplied.
+
+### 6.2 Invariants
+
+- Each deduction `amount` is strictly positive; per-effect totals must each be `≤ payment.amount`, and `cashMovement ≥ 0` and `availableToApply ≥ 0` at all times.
 - Deductions are editable only in draft, only through Payment operations; frozen at post; reversed atomically with payment reversal (the reversed event re-emits them negated as economic facts).
 
 ## 7. Events & the accounting contract (Phase 1)
@@ -215,7 +299,8 @@ Accounting stays events-only. Payments emits **economic facts**, never journal e
 - method snapshot (§4.4)
 - instrument summary: kind + identifying reference
 - fx block: both currencies, rate, rateDate, transaction amount, functional amount
-- deductions array: kind, purpose code, transaction + functional amounts
+- deductions array: kind, **effect**, purpose code, transaction + functional amounts
+- derived figures: gross amount, `cashMovement`, and any `roundingDifferenceFunctionalAmount` fact (§5.4)
 - payment account reference
 
 `payments.application_instruction.applied.v1` additionally carries the realized FX gain/loss fact (signed functional amount, payment rate, document rate).
@@ -229,7 +314,28 @@ Accounting stays events-only. Payments emits **economic facts**, never journal e
 
 ### 7.3 Reconciliation matching contract
 
-The reconciliation workflow is unchanged, but its matching contract explicitly widens to: instrument reference, payment-method identity, transaction-currency amount, functional-currency amount, exchange-rate variance tolerance, deductions total. Provider reference is reserved for Phase 2.
+The reconciliation workflow is unchanged, but its matching contract explicitly widens to: instrument reference, payment-method identity, transaction-currency amount, functional-currency amount, exchange-rate variance tolerance, deductions total (and `cashMovement`, which is what a bank line actually matches). Provider reference is reserved for Phase 2.
+
+### 7.4 Event naming grammar (frozen)
+
+One grammar: `payments.<aggregate>.<past_tense_fact>.v1`, where `<aggregate>` ∈ `payment`, `payment_method`, `application_instruction`, `refund`, `transfer`. The full Phase 1 set:
+
+```text
+payments.payment_method.created.v1
+payments.payment_method.updated.v1
+payments.payment_method.deactivated.v1
+payments.payment.created.v1
+payments.payment.posted.v1
+payments.payment.reversed.v1
+payments.payment.instrument_clearance_updated.v1
+payments.refund.posted.v1
+payments.transfer.posted.v1
+payments.application_instruction.created.v1
+payments.application_instruction.applied.v1
+payments.application_instruction.rejected.v1
+```
+
+Wire IDs are frozen through the canonical operation registry (and surface in the generated EVENT-REGISTER). The names above are **binding wire contracts** — registry generation must produce exactly these IDs.
 
 ## 8. Treasury payment factory — non-preclusion constraints (binding on Phase 1)
 
@@ -260,7 +366,16 @@ Detailed design deferred to its own spec. Requirements:
   - instrument union validation; editability-matrix enforcement (posted-immutability tests); clearance operation
   - event payload snapshot tests for the economic-facts contract (§7)
 - Governance artifacts regenerate: COMMAND/EVENT/PERMISSION registers, export-surface and registry-projection tests.
-- Rollout: single cutover on current branch conventions — no dual-publish, no data migration. Organization method seeding (§4.5) lands with the cutover so the mandatory `paymentMethodId` holds with no hidden fallback.
+- **Rollout**: no *compatibility* migration or dual-read period is required. A one-time destructive schema cutover and deterministic PaymentMethod seed/backfill run for all existing organizations and test fixtures. Existing payment data may be rebuilt or transformed under pre-production cutover rules. The mandatory `paymentMethodId` (§4.5) holds with no hidden fallback because the seed lands in the same cutover.
+
+  | Change | Required |
+  |---|---|
+  | Schema migration | Yes |
+  | Existing organization method seed/backfill | Yes |
+  | Existing payment transformation | Depends on retained data |
+  | Dual-write or dual-read | No |
+  | Backward-compatible API period | No |
+  | Event dual-publish | No |
 
 ## 11. Out of scope
 
