@@ -1709,25 +1709,26 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 				issuingAuthorityCode: input.replacement.issuingAuthorityCode,
 				normalizedIdentifierValue: input.replacement.normalizedIdentifierValue,
 			});
+			// Neon HTTP batches cannot branch on an UPDATE row count. The stale-CAS
+			// path selects the predecessor primary key for the INSERT so PostgreSQL
+			// rejects it canonically and rolls back the entire transaction batch.
 			input.transaction.enqueue((database) => {
 				const txSql = asTransactionSql(database);
 				return txSql`
-					UPDATE ca_company_identifier
-					SET status = 'superseded',
-						superseded_at = ${input.replacement.recordedAt},
-						recorded_to = ${input.replacement.recordedAt},
-						superseded_by_identifier_id = ${replacementId},
-						version = ${input.expectedIdentifierVersion + 1},
-						updated_at = ${input.replacement.recordedAt}
-					WHERE organization_id = ${input.organizationId}
-						AND legal_company_id = ${input.legalCompanyId}
-						AND id = ${input.companyIdentifierId}
-						AND version = ${input.expectedIdentifierVersion}
-				`;
-			});
-			input.transaction.enqueue((database) => {
-				const txSql = asTransactionSql(database);
-				return txSql`
+					WITH predecessor_update AS (
+						UPDATE ca_company_identifier
+						SET status = 'superseded',
+							superseded_at = ${input.replacement.recordedAt},
+							recorded_to = ${input.replacement.recordedAt},
+							superseded_by_identifier_id = ${replacementId},
+							version = ${input.expectedIdentifierVersion + 1},
+							updated_at = ${input.replacement.recordedAt}
+						WHERE organization_id = ${input.organizationId}
+							AND legal_company_id = ${input.legalCompanyId}
+							AND id = ${input.companyIdentifierId}
+							AND version = ${input.expectedIdentifierVersion}
+						RETURNING id
+					)
 					INSERT INTO ca_company_identifier (
 						id, organization_id, legal_company_id, identifier_type,
 						jurisdiction_code, authority_code, display_value,
@@ -1736,7 +1737,12 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 						correction_reason, status, supersedes_id, version
 					)
 					VALUES (
-						${replacementId}, ${input.organizationId}, ${input.legalCompanyId},
+						CASE
+							WHEN EXISTS (SELECT 1 FROM predecessor_update)
+								THEN CAST(${replacementId} AS uuid)
+							ELSE CAST(${input.companyIdentifierId} AS uuid)
+						END,
+						${input.organizationId}, ${input.legalCompanyId},
 						${input.replacement.identifierType},
 						${input.replacement.jurisdictionCode},
 						${input.replacement.issuingAuthorityCode},
