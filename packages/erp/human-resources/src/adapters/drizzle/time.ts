@@ -186,6 +186,8 @@ import {
 	attendanceBreakWaiverDecisionFromSql,
 	attendanceEventFromSql,
 	attendanceExceptionFromSql,
+	attendanceSessionFromSql,
+	buildDetectedAttendanceExceptionInsert,
 	buildTimeAuditInsert,
 	buildTimeOutboxInsert,
 	type EmploymentCalendarAssignmentSqlRow,

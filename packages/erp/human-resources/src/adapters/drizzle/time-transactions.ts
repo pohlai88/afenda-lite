@@ -12,6 +12,7 @@ import {
 	type hrAttendanceBreakWaiverDecision,
 	type hrAttendanceEvent,
 	type hrAttendanceException,
+	type hrAttendanceSession,
 	type hrEmploymentCalendarAssignment,
 	type hrShift,
 	type hrShiftAssignment,
@@ -29,6 +30,7 @@ import {
 	type NeonHttpTransactionResults,
 } from "@afenda/db";
 import type { HumanResourcesEventType } from "@afenda/events";
+import { HUMAN_RESOURCES_TIME_EXCEPTION_CREATED_EVENT } from "@afenda/events/schemas";
 
 const TIME_AUDIT_SOURCE = "human-resources.time-drizzle";
 
@@ -116,6 +118,92 @@ export function buildTimeOutboxInsert(
 			${payload}::jsonb, 'pending', 0
 		)
 		RETURNING id
+	`;
+}
+
+export function buildDetectedAttendanceExceptionInsert(
+	sql: NeonHttpSql,
+	input: {
+		actorUserId: string;
+		auditId: string;
+		correlationId: string;
+		employeeId: string;
+		eventType: string;
+		exceptionId: string;
+		organizationId: string;
+		remarks: string | null;
+		sessionId: string;
+		severity: string;
+		shiftAssignmentId: string | null;
+	},
+): NeonHttpTransactionQuery {
+	const preparedAudit = prepareTimeAudit({
+		organizationId: input.organizationId,
+		actorUserId: input.actorUserId,
+		correlationId: input.correlationId,
+		entity: "hr_attendance_exception",
+		entityId: input.exceptionId,
+		action: "CREATE",
+		reasonCode: "ATTENDANCE_EXCEPTION_AUTO_DETECT",
+	});
+	if (!preparedAudit.ok) {
+		throw new TypeError("Invalid generated detected-exception audit command");
+	}
+	const auditEntry = preparedAudit.data;
+	const payload = JSON.stringify({
+		organizationId: input.organizationId,
+		entityType: "hr_attendance_exception",
+		entityId: input.exceptionId,
+		actorId: input.actorUserId,
+		correlationId: input.correlationId,
+	});
+	return sql`
+		WITH inserted AS (
+			INSERT INTO hr_attendance_exception (
+				id, organization_id, employee_id, session_id, event_id,
+				shift_assignment_id, exception_type, severity, detected_facts,
+				review_status, resolution, reviewer_user_id, evidence_reference,
+				remarks, version, created_by, updated_by
+			)
+			SELECT ${input.exceptionId}, ${input.organizationId}, ${input.employeeId},
+				${input.sessionId}, NULL, ${input.shiftAssignmentId}, ${input.eventType},
+				${input.severity}, NULL, 'open', NULL, NULL, NULL, ${input.remarks}, 1,
+				${input.actorUserId}, ${input.actorUserId}
+			WHERE NOT EXISTS (
+				SELECT 1 FROM hr_attendance_exception
+				WHERE organization_id = ${input.organizationId}
+					AND employee_id = ${input.employeeId} AND session_id = ${input.sessionId}
+					AND exception_type = ${input.eventType}
+					AND review_status IN ('open', 'in_review')
+					AND remarks IS NOT DISTINCT FROM ${input.remarks}
+			)
+			RETURNING id
+		),
+		audited AS (
+			INSERT INTO platform_audit_log (
+				id, organization_id, actor_user_id, correlation_id, module, entity,
+				entity_id, action, changes, old_value, new_value, metadata,
+				ip_address, user_agent
+			)
+			SELECT ${input.auditId}, ${auditEntry.organizationId}, ${auditEntry.actorUserId},
+				${auditEntry.correlationId}, ${auditEntry.module}, ${auditEntry.entity},
+				inserted.id, ${auditEntry.action}, ${auditEntry.changesJson}::jsonb,
+				${auditEntry.oldValueJson}::jsonb, ${auditEntry.newValueJson}::jsonb,
+				${auditEntry.metadataJson}::jsonb, ${auditEntry.ipAddress},
+				${auditEntry.userAgent}
+			FROM inserted RETURNING id
+		),
+		outboxed AS (
+			INSERT INTO platform_domain_event (
+				id, organization_id, type, source_module, correlation_id, actor_user_id,
+				payload, status, attempts
+			)
+			SELECT gen_random_uuid(), ${input.organizationId},
+				${HUMAN_RESOURCES_TIME_EXCEPTION_CREATED_EVENT}, 'human-resources',
+				${input.correlationId}, ${input.actorUserId}, ${payload}::jsonb, 'pending', 0
+			FROM inserted RETURNING id
+		)
+		SELECT id FROM inserted
 	`;
 }
 
@@ -386,6 +474,31 @@ export interface AttendanceExceptionSqlRow {
 	updated_at: Date;
 	updated_by: string;
 	version: number;
+}
+
+export interface AttendanceSessionSqlRow {
+	break_minutes: number;
+	create_idempotency_key: string;
+	create_request_fingerprint: string;
+	created_at: Date;
+	created_by: string;
+	employee_id: string;
+	employment_id: string | null;
+	final_clock_out_at: Date | null;
+	first_clock_in_at: Date | null;
+	gross_minutes: number;
+	id: string;
+	local_work_date: string;
+	organization_id: string;
+	provenance: unknown;
+	requires_review: boolean;
+	resolution_status: string;
+	shift_assignment_id: string | null;
+	timezone: string;
+	updated_at: Date;
+	updated_by: string;
+	version: number;
+	worked_minutes: number;
 }
 
 export interface AttendanceBreakWaiverDecisionSqlRow {
@@ -766,6 +879,35 @@ export function attendanceExceptionFromSql(
 		evidenceReference: row.evidence_reference,
 		remarks: row.remarks,
 		version: row.version,
+		createdBy: row.created_by,
+		updatedBy: row.updated_by,
+		createdAt: parseDate(row.created_at),
+		updatedAt: parseDate(row.updated_at),
+	};
+}
+
+export function attendanceSessionFromSql(
+	row: AttendanceSessionSqlRow,
+): typeof hrAttendanceSession.$inferSelect {
+	return {
+		id: row.id,
+		organizationId: row.organization_id,
+		employeeId: row.employee_id,
+		employmentId: row.employment_id,
+		shiftAssignmentId: row.shift_assignment_id,
+		localWorkDate: row.local_work_date,
+		timezone: row.timezone,
+		firstClockInAt: parseNullableDate(row.first_clock_in_at),
+		finalClockOutAt: parseNullableDate(row.final_clock_out_at),
+		breakMinutes: row.break_minutes,
+		workedMinutes: row.worked_minutes,
+		grossMinutes: row.gross_minutes,
+		provenance: row.provenance,
+		resolutionStatus: row.resolution_status,
+		requiresReview: row.requires_review,
+		version: row.version,
+		createIdempotencyKey: row.create_idempotency_key,
+		createRequestFingerprint: row.create_request_fingerprint,
 		createdBy: row.created_by,
 		updatedBy: row.updated_by,
 		createdAt: parseDate(row.created_at),
