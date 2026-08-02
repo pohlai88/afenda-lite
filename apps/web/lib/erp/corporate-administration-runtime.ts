@@ -1,7 +1,9 @@
 import {
 	type ClockPort,
+	type CorporateAdministrationObservabilityPort,
+	type CorporateAdministrationOperationObservation,
 	type CorporateAdministrationRuntimePorts,
-	createCorporateAdministrationProductionRuntime,
+	createCorporateAdministrationRuntime,
 } from "@afenda/corporate-administration";
 import {
 	type CorporateAdministrationAuditWriter,
@@ -16,6 +18,37 @@ import {
 	events,
 	type PendingDomainEventTransactionExecutor,
 } from "@afenda/events";
+import { logger } from "@afenda/logger";
+
+const corporateAdministrationObservability = {
+	recordOperation(observation) {
+		const projection = projectOperationObservation(observation);
+		logger.event({
+			level: projection.level,
+			event: `corporate_administration.${observation.kind}.${observation.operationId}.${observation.outcome}`,
+			correlationId: observation.correlationId,
+			module: "corporate-administration",
+			code: projection.code,
+		});
+	},
+} satisfies CorporateAdministrationObservabilityPort;
+
+function projectOperationObservation(
+	observation: CorporateAdministrationOperationObservation,
+): Readonly<{ level: "info" | "warn" | "error"; code: string }> {
+	switch (observation.outcome) {
+		case "success":
+			return { level: "info", code: "OK" };
+		case "failure":
+			return { level: "warn", code: observation.errorCode };
+		case "exception":
+			return { level: "error", code: "UNHANDLED_EXCEPTION" };
+		default: {
+			const exhaustive: never = observation;
+			return exhaustive;
+		}
+	}
+}
 
 export type CorporateAdministrationAppRuntimeDependencies = Readonly<{
 	clock: ClockPort;
@@ -30,13 +63,13 @@ export type CorporateAdministrationAppRuntimeDependencies = Readonly<{
 /**
  * Application composition root for Corporate Administration runtime ports.
  *
- * Adapter construction stays here. The package only validates the resulting
- * shape via `createCorporateAdministrationProductionRuntime`.
+ * Adapter construction stays here. The package validates the resulting shape
+ * through its single `createCorporateAdministrationRuntime` facade.
  */
 export function createCorporateAdministrationAppRuntime(
 	dependencies: CorporateAdministrationAppRuntimeDependencies,
 ): CorporateAdministrationRuntimePorts {
-	return createCorporateAdministrationProductionRuntime({
+	return createCorporateAdministrationRuntime({
 		clock: dependencies.clock,
 		transaction: createDrizzleCorporateAdministrationTransactionPort({
 			execute: dependencies.executeTransaction,
@@ -55,5 +88,6 @@ export function createCorporateAdministrationAppRuntime(
 				executeTransaction: dependencies.executeOutboxTransaction,
 			}),
 		}),
+		observability: corporateAdministrationObservability,
 	});
 }

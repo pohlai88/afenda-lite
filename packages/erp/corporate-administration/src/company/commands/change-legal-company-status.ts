@@ -3,23 +3,19 @@
 import { errorResult, type Result } from "@afenda/errors";
 import type { z } from "zod";
 
-import {
-	CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS,
-	type CorporateAdministrationApprovalVerificationDependencies,
-	requireCorporateAdministrationApprovalIfConfigured,
-	requireCorporateAdministrationPermission,
-} from "../../authorization";
-import { createCorporateAdministrationCommandFingerprint } from "../../command-identity";
+import type { CorporateAdministrationApprovalVerificationDependencies } from "../../authorization";
 import type {
 	CorporateAdministrationApprovalCommandOptions,
 	CorporateAdministrationCommandOptions,
 } from "../../command-options";
+import {
+	authorizeCorporateAdministrationCommand,
+	type CorporateAdministrationCommandKernelDependencies,
+	executeCorporateAdministrationCommand,
+} from "../../internal/durable-command";
 import type { OrganizationId } from "../../kernel/brands";
 import { parseCorporateAdministrationInput } from "../../parse-input";
-import {
-	legalCompanyStatusRequiresApproval,
-	validateLegalCompanyStatusTransition,
-} from "../rules";
+import { validateLegalCompanyStatusTransition } from "../rules";
 import {
 	activateLegalCompanyInputSchema,
 	archiveLegalCompanyInputSchema,
@@ -42,14 +38,13 @@ import type {
 	RestoreLegalCompanyInput,
 	SuspendLegalCompanyInput,
 } from "../types";
-import {
-	type DurableLegalCompanyCommandDependencies,
-	runDurableCompanyCommand,
-} from "./durable-command";
 
 type LegalCompanyLifecycleDependencies =
 	LegalCompanyLifecycleCommandDependencies &
-		Pick<DurableLegalCompanyCommandDependencies, "runtime" | "createEventId"> &
+		Pick<
+			CorporateAdministrationCommandKernelDependencies,
+			"runtime" | "createEventId"
+		> &
 		CorporateAdministrationApprovalVerificationDependencies;
 
 type LegalCompanyLifecycleOptions = CorporateAdministrationCommandOptions &
@@ -69,7 +64,14 @@ type ParsedLegalCompanyStatusInput = Readonly<{
 }>;
 
 type LegalCompanyLifecycleCommandConfig = Readonly<{
-	commandId: string;
+	operationId:
+		| "activateLegalCompany"
+		| "suspendLegalCompany"
+		| "markCompanyStruckOff"
+		| "enterLiquidation"
+		| "dissolveLegalCompany"
+		| "restoreLegalCompany"
+		| "archiveLegalCompany";
 	permissionKey:
 		| "activateLegalCompany"
 		| "suspendLegalCompany"
@@ -81,14 +83,6 @@ type LegalCompanyLifecycleCommandConfig = Readonly<{
 	targetStatus: LegalCompanyStatus;
 	inputSchema: z.ZodType<ParsedLegalCompanyStatusInput>;
 	input: unknown;
-	eventType:
-		| "corporate_administration.legal_company.activated.v1"
-		| "corporate_administration.legal_company.suspended.v1"
-		| "corporate_administration.legal_company.struck_off_marked.v1"
-		| "corporate_administration.legal_company.liquidation_entered.v1"
-		| "corporate_administration.legal_company.dissolved.v1"
-		| "corporate_administration.legal_company.restored.v1"
-		| "corporate_administration.legal_company.archived.v1";
 }>;
 
 export function activateLegalCompany(
@@ -97,12 +91,11 @@ export function activateLegalCompany(
 	dependencies: LegalCompanyLifecycleDependencies,
 ): Promise<Result<CompanyStatusHistory>> {
 	return changeLegalCompanyStatus({
-		commandId: "corporate-administration.legal-company.activate",
+		operationId: "activateLegalCompany",
 		permissionKey: "activateLegalCompany",
 		targetStatus: "active",
 		inputSchema: activateLegalCompanyInputSchema,
 		input,
-		eventType: "corporate_administration.legal_company.activated.v1",
 		options,
 		dependencies,
 	});
@@ -114,12 +107,11 @@ export function suspendLegalCompany(
 	dependencies: LegalCompanyLifecycleDependencies,
 ): Promise<Result<CompanyStatusHistory>> {
 	return changeLegalCompanyStatus({
-		commandId: "corporate-administration.legal-company.suspend",
+		operationId: "suspendLegalCompany",
 		permissionKey: "suspendLegalCompany",
 		targetStatus: "suspended",
 		inputSchema: suspendLegalCompanyInputSchema,
 		input,
-		eventType: "corporate_administration.legal_company.suspended.v1",
 		options,
 		dependencies,
 	});
@@ -131,12 +123,11 @@ export function markCompanyStruckOff(
 	dependencies: LegalCompanyLifecycleDependencies,
 ): Promise<Result<CompanyStatusHistory>> {
 	return changeLegalCompanyStatus({
-		commandId: "corporate-administration.legal-company.mark-struck-off",
+		operationId: "markCompanyStruckOff",
 		permissionKey: "markCompanyStruckOff",
 		targetStatus: "struck_off",
 		inputSchema: markCompanyStruckOffInputSchema,
 		input,
-		eventType: "corporate_administration.legal_company.struck_off_marked.v1",
 		options,
 		dependencies,
 	});
@@ -148,12 +139,11 @@ export function enterLiquidation(
 	dependencies: LegalCompanyLifecycleDependencies,
 ): Promise<Result<CompanyStatusHistory>> {
 	return changeLegalCompanyStatus({
-		commandId: "corporate-administration.legal-company.enter-liquidation",
+		operationId: "enterLiquidation",
 		permissionKey: "enterLiquidation",
 		targetStatus: "in_liquidation",
 		inputSchema: enterLiquidationInputSchema,
 		input,
-		eventType: "corporate_administration.legal_company.liquidation_entered.v1",
 		options,
 		dependencies,
 	});
@@ -165,12 +155,11 @@ export function dissolveLegalCompany(
 	dependencies: LegalCompanyLifecycleDependencies,
 ): Promise<Result<CompanyStatusHistory>> {
 	return changeLegalCompanyStatus({
-		commandId: "corporate-administration.legal-company.dissolve",
+		operationId: "dissolveLegalCompany",
 		permissionKey: "dissolveLegalCompany",
 		targetStatus: "dissolved",
 		inputSchema: dissolveLegalCompanyInputSchema,
 		input,
-		eventType: "corporate_administration.legal_company.dissolved.v1",
 		options,
 		dependencies,
 	});
@@ -182,12 +171,11 @@ export function restoreLegalCompany(
 	dependencies: LegalCompanyLifecycleDependencies,
 ): Promise<Result<CompanyStatusHistory>> {
 	return changeLegalCompanyStatus({
-		commandId: "corporate-administration.legal-company.restore",
+		operationId: "restoreLegalCompany",
 		permissionKey: "restoreLegalCompany",
 		targetStatus: "restored",
 		inputSchema: restoreLegalCompanyInputSchema,
 		input,
-		eventType: "corporate_administration.legal_company.restored.v1",
 		options,
 		dependencies,
 	});
@@ -199,12 +187,11 @@ export function archiveLegalCompany(
 	dependencies: LegalCompanyLifecycleDependencies,
 ): Promise<Result<CompanyStatusHistory>> {
 	return changeLegalCompanyStatus({
-		commandId: "corporate-administration.legal-company.archive",
+		operationId: "archiveLegalCompany",
 		permissionKey: "archiveLegalCompany",
 		targetStatus: "archived",
 		inputSchema: archiveLegalCompanyInputSchema,
 		input,
-		eventType: "corporate_administration.legal_company.archived.v1",
 		options,
 		dependencies,
 	});
@@ -225,43 +212,12 @@ async function changeLegalCompanyStatus(
 		return parsed;
 	}
 
-	const authorized = await requireCorporateAdministrationPermission(
-		config.options.authorization,
-		{
-			organizationId: config.options.organizationId,
-			actorUserId: config.options.actorUserId,
-			permission:
-				CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS[config.permissionKey],
-		},
+	const authorized = await authorizeCorporateAdministrationCommand(
+		config.operationId,
+		config.options,
 	);
 	if (!authorized.ok) {
 		return authorized;
-	}
-
-	const identity = createCorporateAdministrationCommandFingerprint({
-		schema: config.inputSchema,
-		organizationId: config.options.organizationId,
-		commandId: config.commandId,
-		input: parsed.data,
-	});
-	if (!identity.ok) {
-		return identity;
-	}
-
-	if (legalCompanyStatusRequiresApproval(config.targetStatus)) {
-		const approved = await requireCorporateAdministrationApprovalIfConfigured(
-			config.dependencies,
-			{
-				organizationId: config.options.organizationId,
-				actorUserId: config.options.actorUserId,
-				approvalRequestId: config.options.approvalRequestId,
-				approvalDecisionId: config.options.approvalDecisionId,
-				commandFingerprint: identity.data.fingerprint,
-			},
-		);
-		if (!approved.ok) {
-			return approved;
-		}
 	}
 
 	const current = await config.dependencies.store.lockLegalCompany({
@@ -330,15 +286,13 @@ async function changeLegalCompanyStatus(
 	}
 	const sourceDocumentId = source.data.sourceDocumentId;
 
-	return runDurableCompanyCommand({
-		commandId: config.commandId,
+	return executeCorporateAdministrationCommand({
+		authorization: authorized.data,
 		fingerprintSchema: config.inputSchema,
 		fingerprintInput: parsed.data,
 		outputSchema: companyStatusHistorySchema,
-		options: config.options,
 		dependencies: config.dependencies,
 		event: {
-			type: config.eventType,
 			operationType: "UPDATE",
 			targetType: "ca_company_status_history",
 			aggregateId: (result) => result.legalCompanyId,

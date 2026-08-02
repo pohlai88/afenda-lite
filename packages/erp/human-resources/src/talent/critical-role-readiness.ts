@@ -15,15 +15,15 @@ import {
 } from "../schemas/talent";
 import { fingerprintCriticalRoleReadinessCreate } from "../shared/fingerprint";
 import { buildMutationMeta } from "../shared/mutation-meta";
-import {
-	resolveTalentProfileResourceFromTalentProfile,
-	runTalentCommand,
-	runTalentQuery,
-} from "../shared/talent-command";
 import type {
 	TalentCriticalRoleReadiness,
 	TalentCriticalRoleReadinessListPage,
 } from "../types";
+import {
+	resolveTalentProfileResourceFromTalentProfile,
+	runTalentCapabilityCommand,
+	runTalentCapabilityQuery,
+} from "./run-operation";
 import {
 	CRITICAL_ROLE_READINESS_SENSITIVE_FIELD_NAMES,
 	type ProjectedTalentCriticalRoleReadinessListPage,
@@ -39,7 +39,11 @@ export function recordCriticalRoleReadiness(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<TalentCriticalRoleReadiness>> {
-	return runTalentCommand(input, options, {
+	return runTalentCapabilityCommand(input, options, {
+		storeMethods: [
+			"findCriticalRoleReadinessByIdempotencyKey",
+			"recordCriticalRoleReadiness",
+		],
 		schema: recordCriticalRoleReadinessInputSchema,
 		invalidMessage: "Invalid critical role readiness record input",
 		command: HUMAN_RESOURCES_COMMAND_CRITICAL_ROLE_READINESS_RECORD,
@@ -112,7 +116,8 @@ export function listCriticalRoleReadiness(
 	}
 	const { includeSensitive } = parsed.data;
 
-	return runTalentQuery(parsed.data, options, {
+	return runTalentCapabilityQuery(parsed.data, options, {
+		storeMethods: ["listCriticalRoleReadiness"],
 		schema: listCriticalRoleReadinessInputSchema,
 		invalidMessage: "Invalid critical role readiness list input",
 		query: HUMAN_RESOURCES_QUERY_CRITICAL_ROLE_READINESS_LIST,

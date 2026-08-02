@@ -1,17 +1,16 @@
 // biome-ignore-all lint/complexity/noExcessiveCognitiveComplexity: Identifier registration coordinates policy, idempotency, audit, and outbox atomically.
 // biome-ignore-all lint/style/useDestructuring: Explicit company state access keeps command evidence visible.
 import { errorResult, type Result } from "@afenda/errors";
-import {
-	CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS,
-	type CorporateAdministrationApprovalVerificationDependencies,
-	requireCorporateAdministrationApprovalIfConfigured,
-	requireCorporateAdministrationPermission,
-} from "../../authorization";
-import { createCorporateAdministrationCommandFingerprint } from "../../command-identity";
+import type { CorporateAdministrationApprovalVerificationDependencies } from "../../authorization";
 import type {
 	CorporateAdministrationApprovalCommandOptions,
 	CorporateAdministrationCommandOptions,
 } from "../../command-options";
+import {
+	authorizeCorporateAdministrationCommand,
+	type CorporateAdministrationCommandKernelDependencies,
+	executeCorporateAdministrationCommand,
+} from "../../internal/durable-command";
 import { parseCorporateAdministrationInput } from "../../parse-input";
 import {
 	assertNonTaxCompanyIdentifierType,
@@ -29,14 +28,13 @@ import type {
 	CompanyIdentifier,
 	RegisterCompanyIdentifierInput,
 } from "../types";
-import {
-	type DurableLegalCompanyCommandDependencies,
-	runDurableCompanyCommand,
-} from "./durable-command";
 
 type RegisterCompanyIdentifierDependencies =
 	CompanyIdentifierCommandDependencies &
-		Pick<DurableLegalCompanyCommandDependencies, "runtime" | "createEventId"> &
+		Pick<
+			CorporateAdministrationCommandKernelDependencies,
+			"runtime" | "createEventId"
+		> &
 		CorporateAdministrationApprovalVerificationDependencies;
 
 type RegisterCompanyIdentifierOptions = CorporateAdministrationCommandOptions &
@@ -65,41 +63,12 @@ export async function registerCompanyIdentifier(
 		return parsed;
 	}
 
-	const authorized = await requireCorporateAdministrationPermission(
-		options.authorization,
-		{
-			organizationId: options.organizationId,
-			actorUserId: options.actorUserId,
-			permission:
-				CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS.registerCompanyIdentifier,
-		},
+	const authorized = await authorizeCorporateAdministrationCommand(
+		"registerCompanyIdentifier",
+		options,
 	);
 	if (!authorized.ok) {
 		return authorized;
-	}
-
-	const identity = createCorporateAdministrationCommandFingerprint({
-		schema: registerCompanyIdentifierInputSchema,
-		organizationId: options.organizationId,
-		commandId:
-			"corporate-administration.legal-company.register-company-identifier",
-		input: parsed.data,
-	});
-	if (!identity.ok) {
-		return identity;
-	}
-	const approved = await requireCorporateAdministrationApprovalIfConfigured(
-		dependencies,
-		{
-			organizationId: options.organizationId,
-			actorUserId: options.actorUserId,
-			approvalRequestId: options.approvalRequestId,
-			approvalDecisionId: options.approvalDecisionId,
-			commandFingerprint: identity.data.fingerprint,
-		},
-	);
-	if (!approved.ok) {
-		return approved;
 	}
 
 	const nonTax = assertNonTaxCompanyIdentifierType(parsed.data.identifierType);
@@ -232,16 +201,13 @@ export async function registerCompanyIdentifier(
 		return effectiveRange;
 	}
 
-	return runDurableCompanyCommand({
-		commandId:
-			"corporate-administration.legal-company.register-company-identifier",
+	return executeCorporateAdministrationCommand({
+		authorization: authorized.data,
 		fingerprintSchema: registerCompanyIdentifierInputSchema,
 		fingerprintInput: parsed.data,
 		outputSchema: companyIdentifierSchema,
-		options,
 		dependencies,
 		event: {
-			type: "corporate_administration.legal_company.identifier_registered.v1",
 			operationType: "UPDATE",
 			targetType: "ca_company_identifier",
 			aggregateId: (result) => result.legalCompanyId,

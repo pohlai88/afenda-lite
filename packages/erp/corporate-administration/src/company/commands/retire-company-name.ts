@@ -1,29 +1,25 @@
 import { errorResult, type Result } from "@afenda/errors";
-import {
-	CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS,
-	type CorporateAdministrationApprovalVerificationDependencies,
-	requireCorporateAdministrationApprovalIfConfigured,
-	requireCorporateAdministrationPermission,
-} from "../../authorization";
-import { createCorporateAdministrationCommandFingerprint } from "../../command-identity";
+import type { CorporateAdministrationApprovalVerificationDependencies } from "../../authorization";
 import type {
 	CorporateAdministrationApprovalCommandOptions,
 	CorporateAdministrationCommandOptions,
 } from "../../command-options";
-import { toCanonicalInstant } from "../../kernel/dates";
-import { parseCorporateAdministrationInput } from "../../parse-input";
 import {
-	type CorporateAdministrationRuntimePorts,
-	commitCorporateAdministrationTransaction,
-	rollbackCorporateAdministrationTransaction,
-} from "../../ports";
+	authorizeCorporateAdministrationCommand,
+	type CorporateAdministrationCommandKernelDependencies,
+	executeCorporateAdministrationCommand,
+} from "../../internal/durable-command";
+import { parseCorporateAdministrationInput } from "../../parse-input";
 import { validateCompanyNameSupersession } from "../rules";
-import { retireCompanyNameInputSchema } from "../schemas";
+import { companyNameSchema, retireCompanyNameInputSchema } from "../schemas";
 import type { CompanyNameCommandDependencies } from "../store";
 import type { CompanyName, RetireCompanyNameInput } from "../types";
 
 type RetireCompanyNameDependencies = CompanyNameCommandDependencies &
-	Readonly<{ runtime: CorporateAdministrationRuntimePorts }> &
+	Pick<
+		CorporateAdministrationCommandKernelDependencies,
+		"runtime" | "createEventId"
+	> &
 	CorporateAdministrationApprovalVerificationDependencies;
 
 type RetireCompanyNameOptions = CorporateAdministrationCommandOptions &
@@ -47,40 +43,12 @@ export async function retireCompanyName(
 		return parsed;
 	}
 
-	const authorized = await requireCorporateAdministrationPermission(
-		options.authorization,
-		{
-			organizationId: options.organizationId,
-			actorUserId: options.actorUserId,
-			permission:
-				CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS.retireCompanyName,
-		},
+	const authorized = await authorizeCorporateAdministrationCommand(
+		"retireCompanyName",
+		options,
 	);
 	if (!authorized.ok) {
 		return authorized;
-	}
-
-	const identity = createCorporateAdministrationCommandFingerprint({
-		schema: retireCompanyNameInputSchema,
-		organizationId: options.organizationId,
-		commandId: "corporate-administration.legal-company.retire-company-name",
-		input: parsed.data,
-	});
-	if (!identity.ok) {
-		return identity;
-	}
-	const approved = await requireCorporateAdministrationApprovalIfConfigured(
-		dependencies,
-		{
-			organizationId: options.organizationId,
-			actorUserId: options.actorUserId,
-			approvalRequestId: options.approvalRequestId,
-			approvalDecisionId: options.approvalDecisionId,
-			commandFingerprint: identity.data.fingerprint,
-		},
-	);
-	if (!approved.ok) {
-		return approved;
 	}
 
 	const sourceDocument =
@@ -133,10 +101,35 @@ export async function retireCompanyName(
 		});
 	}
 
-	const occurredAt = toCanonicalInstant(dependencies.runtime.clock.now());
-	return dependencies.runtime.transaction.run<CompanyName>(
-		async (transaction) => {
-			const retired = await dependencies.nameStore.retireCompanyName({
+	return executeCorporateAdministrationCommand({
+		authorization: authorized.data,
+		fingerprintSchema: retireCompanyNameInputSchema,
+		fingerprintInput: parsed.data,
+		outputSchema: companyNameSchema,
+		dependencies,
+		event: {
+			operationType: "UPDATE",
+			targetType: "ca_company_name",
+			aggregateId: (result) => result.legalCompanyId,
+			aggregateVersion: (result) => result.version,
+			payload: (result, context) => ({
+				organizationId: context.organizationId,
+				legalCompanyId: result.legalCompanyId,
+				companyNameId: result.id,
+				nameType: result.nameType,
+				retiredAt: result.retiredAt?.toISOString() ?? parsed.data.retiredAt,
+				occurredAt: context.occurredAt,
+				actorUserId: context.actorUserId,
+				correlationId: context.correlationId,
+			}),
+			safeMetadata: {
+				change_type: "company_name_retirement",
+				name_type: eligible.data.nameType,
+			},
+		},
+		serializeResult: serializeCompanyNameForReplay,
+		work: (transaction) =>
+			dependencies.nameStore.retireCompanyName({
 				organizationId: options.organizationId,
 				legalCompanyId: parsed.data.legalCompanyId,
 				companyNameId: parsed.data.companyNameId,
@@ -147,41 +140,15 @@ export async function retireCompanyName(
 				correlationId: options.correlationId,
 				causationId: options.causationId,
 				transaction,
-			});
-			if (!retired.ok) {
-				return rollbackCorporateAdministrationTransaction(retired);
-			}
-			const audit = await dependencies.runtime.audit.record(
-				{
-					organizationId: options.organizationId,
-					actorUserId: options.actorUserId,
-					correlationId: options.correlationId,
-					causationId: options.causationId,
-					operationType: "UPDATE",
-					targetType: "ca_company_name",
-					targetId: retired.data.id,
-					occurredAt,
-					outcome: "SUCCESS",
-					safeMetadata: {
-						change_type: "company_name_retirement",
-						name_type: retired.data.nameType,
-					},
-				},
-				{ transaction },
-			);
-			if (!audit.ok) {
-				return rollbackCorporateAdministrationTransaction(
-					asCompanyNameFailure(audit),
-				);
-			}
-			return commitCorporateAdministrationTransaction(retired);
-		},
-	);
+			}),
+	});
 }
 
-function asCompanyNameFailure(result: Result<unknown>): Result<CompanyName> {
-	if (result.ok) {
-		throw new TypeError("Expected Corporate Administration failure Result");
-	}
-	return result;
+function serializeCompanyNameForReplay(result: CompanyName): unknown {
+	return {
+		...result,
+		recordedAt: result.recordedAt.toISOString(),
+		supersededAt: result.supersededAt?.toISOString() ?? null,
+		retiredAt: result.retiredAt?.toISOString() ?? null,
+	};
 }

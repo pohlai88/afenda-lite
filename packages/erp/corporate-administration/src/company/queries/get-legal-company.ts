@@ -1,10 +1,10 @@
 import type { Result } from "@afenda/errors";
 import type { z } from "zod";
-import {
-	CORPORATE_ADMINISTRATION_QUERY_PERMISSIONS,
-	requireCorporateAdministrationPermission,
-} from "../../authorization";
 import type { CorporateAdministrationQueryOptions } from "../../command-options";
+import {
+	type CorporateAdministrationQueryKernelDependencies,
+	executeCorporateAdministrationQuery,
+} from "../../internal/query";
 import { parseCorporateAdministrationInput } from "../../parse-input";
 import { getLegalCompanyInputSchema } from "../schemas";
 import type { LegalCompanyQueryDependencies } from "../store";
@@ -15,7 +15,8 @@ export type GetLegalCompanyInput = z.input<typeof getLegalCompanyInputSchema>;
 export async function getLegalCompany(
 	input: GetLegalCompanyInput,
 	options: CorporateAdministrationQueryOptions,
-	dependencies: LegalCompanyQueryDependencies,
+	dependencies: LegalCompanyQueryDependencies &
+		CorporateAdministrationQueryKernelDependencies,
 ): Promise<Result<LegalCompany | null>> {
 	const parsed = parseCorporateAdministrationInput(
 		getLegalCompanyInputSchema,
@@ -25,21 +26,15 @@ export async function getLegalCompany(
 		return parsed;
 	}
 
-	const authorized = await requireCorporateAdministrationPermission(
-		options.authorization,
-		{
-			organizationId: options.organizationId,
-			actorUserId: options.actorUserId,
-			permission: CORPORATE_ADMINISTRATION_QUERY_PERMISSIONS.getLegalCompany,
-		},
-	);
-	if (!authorized.ok) {
-		return authorized;
-	}
-
-	return dependencies.store.getLegalCompany({
-		organizationId: options.organizationId,
-		legalCompanyId: parsed.data.legalCompanyId,
-		knownAt: parsed.data.knownAt,
+	return await executeCorporateAdministrationQuery({
+		operationId: "getLegalCompany",
+		options,
+		dependencies,
+		work: async () =>
+			dependencies.store.getLegalCompany({
+				organizationId: options.organizationId,
+				legalCompanyId: parsed.data.legalCompanyId,
+				knownAt: parsed.data.knownAt,
+			}),
 	});
 }

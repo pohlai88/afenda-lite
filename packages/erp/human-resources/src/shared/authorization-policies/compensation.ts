@@ -18,6 +18,13 @@ import {
 	isPrivilegedActor,
 	isSubjectEmployee,
 } from "../authorization-policy-helpers";
+import {
+	HUMAN_RESOURCES_COMPENSATION_BENEFITS_POLICY_ID,
+	HUMAN_RESOURCES_COMPENSATION_CATALOG_POLICY_ID,
+	HUMAN_RESOURCES_COMPENSATION_EMPLOYEE_POLICY_ID,
+	HUMAN_RESOURCES_COMPENSATION_PAYROLL_HANDOFF_POLICY_ID,
+	HUMAN_RESOURCES_COMPENSATION_PROPOSAL_POLICY_ID,
+} from "../authorization-policy-ids";
 import type { HumanResourcesAuthorizationPolicy } from "../authorization-policy-types";
 import type { HumanResourcesAuthorizationRequest } from "../authorization-types";
 import {
@@ -25,32 +32,20 @@ import {
 	partitionCompensationFieldsByTier,
 } from "../field-projection";
 
-function isPayrollHandoffOperation(operationId: string): boolean {
-	return (
-		operationId.startsWith("human-resources.approved-compensation-handoff.") ||
-		operationId.startsWith("human-resources.approved-payroll-handoff.")
-	);
-}
+type CompensationPolicyDisposition =
+	| "benefits"
+	| "catalog"
+	| "employee"
+	| "payroll_handoff"
+	| "proposal";
 
-function isBenefitOperation(operationId: string): boolean {
-	return (
-		operationId.startsWith("human-resources.benefit-plan.") ||
-		operationId.startsWith("human-resources.benefit-enrollment.") ||
-		operationId.startsWith("human-resources.benefit-enrollment-dependent.")
-	);
-}
-
-function isCompensationProposalOperation(operationId: string): boolean {
-	return operationId.startsWith("human-resources.compensation-proposal.");
-}
-
-function administrativePermissionsForOperation(
-	operationId: string,
+function administrativePermissionsForDisposition(
+	disposition: CompensationPolicyDisposition,
 ): readonly HumanResourcesPermission[] {
-	if (isBenefitOperation(operationId)) {
+	if (disposition === "benefits") {
 		return [HUMAN_RESOURCES_PERMISSION_BENEFITS_MANAGE];
 	}
-	if (isCompensationProposalOperation(operationId)) {
+	if (disposition === "proposal") {
 		return [
 			HUMAN_RESOURCES_PERMISSION_COMPENSATION_PROPOSAL_CREATE,
 			HUMAN_RESOURCES_PERMISSION_COMPENSATION_PROPOSAL_AMEND,
@@ -63,45 +58,37 @@ function administrativePermissionsForOperation(
 
 function isOrganizationScopedCompensationRead(
 	request: HumanResourcesAuthorizationRequest,
+	disposition: CompensationPolicyDisposition,
 ): boolean {
-	if (
-		request.operationKind !== "query" ||
-		request.resource?.subjectEmployeeId !== undefined ||
-		isPayrollHandoffOperation(request.operationId)
-	) {
-		return false;
-	}
 	return (
-		request.operationId.startsWith("human-resources.compensation-grade.") ||
-		request.operationId.startsWith(
-			"human-resources.compensation-grade-progression-",
-		) ||
-		request.operationId.startsWith("human-resources.salary-band.") ||
-		request.operationId.startsWith("human-resources.compensation-review-cycle.")
+		disposition === "catalog" &&
+		request.operationKind === "query" &&
+		request.resource?.subjectEmployeeId === undefined
 	);
 }
 
 async function resolveCompensationTier(
 	request: HumanResourcesAuthorizationRequest,
 	options: HumanResourcesCommandOptions,
+	disposition: CompensationPolicyDisposition,
 ): Promise<CompensationFieldAccessTier | null> {
 	const { resource } = request;
 	if (resource === undefined) {
 		return null;
 	}
-	const isHandoff = isPayrollHandoffOperation(request.operationId);
+	const isHandoff = disposition === "payroll_handoff";
 	const isCompensationAdmin =
 		isPrivilegedActor(resource) ||
 		(await actorHoldsAnyPermission(
 			request,
 			options,
-			administrativePermissionsForOperation(request.operationId),
+			administrativePermissionsForDisposition(disposition),
 		));
 	if (isCompensationAdmin) {
 		return isHandoff ? "payroll" : "confidential";
 	}
 	if (
-		isOrganizationScopedCompensationRead(request) &&
+		isOrganizationScopedCompensationRead(request, disposition) &&
 		(await actorHoldsAnyPermission(request, options, [
 			HUMAN_RESOURCES_PERMISSION_COMPENSATION_READ,
 		]))
@@ -134,64 +121,81 @@ async function resolveCompensationTier(
 	return null;
 }
 
-export const compensationPolicy: HumanResourcesAuthorizationPolicy = {
-	id: "hr.compensation",
-	mode: "specialized",
-	resourceRequired: true,
-	operationPrefixes: [
-		"human-resources.compensation-grade.",
-		"human-resources.compensation-grade-progression-",
-		"human-resources.salary-band.",
-		"human-resources.employee-compensation.",
-		"human-resources.compensation-review.",
-		"human-resources.compensation-review-cycle.",
-		"human-resources.compensation-proposal.",
-		"human-resources.benefit-plan.",
-		"human-resources.benefit-enrollment.",
-		"human-resources.benefit-enrollment-dependent.",
-		"human-resources.approved-compensation-handoff.",
-		"human-resources.approved-payroll-handoff.",
-	],
-	async evaluate(
-		request: HumanResourcesAuthorizationRequest,
-		options: HumanResourcesCommandOptions,
-	) {
-		const { resource } = request;
-		if (resource === undefined) {
-			return denyAuthorization(
-				"resource_context_required",
-				"Resource context is required for policy hr.compensation",
-				"hr.compensation",
-			);
-		}
-
-		const tier = await resolveCompensationTier(request, options);
-		if (tier === null) {
-			return denyAuthorization(
-				"subject_scope_denied",
-				isPayrollHandoffOperation(request.operationId)
-					? "Managers cannot access payroll handoff data"
-					: "Actor is outside the allowed compensation scope",
-				"hr.compensation",
-			);
-		}
-
-		if (
-			request.operationKind === "command" ||
-			request.requestedFields === undefined ||
-			request.requestedFields.length === 0
+function createCompensationPolicy(
+	policyId:
+		| typeof HUMAN_RESOURCES_COMPENSATION_BENEFITS_POLICY_ID
+		| typeof HUMAN_RESOURCES_COMPENSATION_CATALOG_POLICY_ID
+		| typeof HUMAN_RESOURCES_COMPENSATION_EMPLOYEE_POLICY_ID
+		| typeof HUMAN_RESOURCES_COMPENSATION_PAYROLL_HANDOFF_POLICY_ID
+		| typeof HUMAN_RESOURCES_COMPENSATION_PROPOSAL_POLICY_ID,
+	disposition: CompensationPolicyDisposition,
+): HumanResourcesAuthorizationPolicy {
+	return {
+		id: policyId,
+		mode: "specialized",
+		resourceRequired: true,
+		async evaluate(
+			request: HumanResourcesAuthorizationRequest,
+			options: HumanResourcesCommandOptions,
 		) {
-			return allowAuthorization("hr.compensation");
-		}
+			const { resource } = request;
+			if (resource === undefined) {
+				return denyAuthorization(
+					"resource_context_required",
+					`Resource context is required for policy ${policyId}`,
+					policyId,
+				);
+			}
 
-		return decisionFromProjection({
-			policyId: "hr.compensation",
-			projection: partitionCompensationFieldsByTier({
-				requestedFields: request.requestedFields,
-				tier,
-			}),
-			denyReason:
-				"Actor cannot access any of the requested compensation fields",
-		});
-	},
-};
+			const tier = await resolveCompensationTier(request, options, disposition);
+			if (tier === null) {
+				return denyAuthorization(
+					"subject_scope_denied",
+					disposition === "payroll_handoff"
+						? "Managers cannot access payroll handoff data"
+						: "Actor is outside the allowed compensation scope",
+					policyId,
+				);
+			}
+
+			if (
+				request.operationKind === "command" ||
+				request.requestedFields === undefined ||
+				request.requestedFields.length === 0
+			) {
+				return allowAuthorization(policyId);
+			}
+
+			return decisionFromProjection({
+				policyId,
+				projection: partitionCompensationFieldsByTier({
+					requestedFields: request.requestedFields,
+					tier,
+				}),
+				denyReason:
+					"Actor cannot access any of the requested compensation fields",
+			});
+		},
+	};
+}
+
+export const compensationBenefitsPolicy = createCompensationPolicy(
+	HUMAN_RESOURCES_COMPENSATION_BENEFITS_POLICY_ID,
+	"benefits",
+);
+export const compensationCatalogPolicy = createCompensationPolicy(
+	HUMAN_RESOURCES_COMPENSATION_CATALOG_POLICY_ID,
+	"catalog",
+);
+export const employeeCompensationPolicy = createCompensationPolicy(
+	HUMAN_RESOURCES_COMPENSATION_EMPLOYEE_POLICY_ID,
+	"employee",
+);
+export const compensationPayrollHandoffPolicy = createCompensationPolicy(
+	HUMAN_RESOURCES_COMPENSATION_PAYROLL_HANDOFF_POLICY_ID,
+	"payroll_handoff",
+);
+export const compensationProposalPolicy = createCompensationPolicy(
+	HUMAN_RESOURCES_COMPENSATION_PROPOSAL_POLICY_ID,
+	"proposal",
+);

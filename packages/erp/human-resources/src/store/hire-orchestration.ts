@@ -38,6 +38,13 @@ export interface HireAttemptProgressUpdate {
 	workerId?: HireAttempt["workerId"] | undefined;
 }
 
+export interface HireAttemptCompletionInput {
+	actorUserId: string;
+	attemptId: HireAttempt["id"];
+	expectedVersion: number;
+	organizationId: string;
+}
+
 /**
  * Persistence contract for hire saga progress.
  *
@@ -45,6 +52,11 @@ export interface HireAttemptProgressUpdate {
  * records hire attempt state for replay and compensation bookkeeping.
  */
 export interface HumanResourcesHireOrchestrationStore {
+	completeHireAttempt: (
+		input: HireAttemptCompletionInput,
+		ports: MutationPorts,
+		meta: HumanResourcesMutationMeta,
+	) => Promise<Result<HireAttempt>>;
 	createHireAttempt: (
 		record: HireAttemptCreateRecord,
 		ports: MutationPorts,

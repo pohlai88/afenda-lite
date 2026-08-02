@@ -14,13 +14,13 @@ import {
 	getApprovedCompensationHandoffInputSchema,
 	waiveBenefitInputSchema,
 } from "../schemas/compensation";
-import {
-	runCompensationCommand,
-	runCompensationQuery,
-} from "../shared/compensation-command";
 import { fingerprintBenefitEnrollment } from "../shared/fingerprint";
 import { buildMutationMeta } from "../shared/mutation-meta";
 import type { ApprovedCompensationHandoff, BenefitEnrollment } from "../types";
+import {
+	runCompensationCapabilityCommand,
+	runCompensationCapabilityQuery,
+} from "./run-operation";
 
 export const HUMAN_RESOURCES_AGGREGATE_BENEFIT_ENROLLMENT =
 	"benefit_enrollment" as const;
@@ -31,7 +31,8 @@ export function enrolBenefit(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<BenefitEnrollment>> {
-	return runCompensationCommand(input, options, {
+	return runCompensationCapabilityCommand(input, options, {
+		storeMethods: ["enrolBenefit"],
 		schema: enrolBenefitInputSchema,
 		invalidMessage: "Invalid benefit enrolment input",
 		command: HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_ENROL,
@@ -77,7 +78,8 @@ export function endBenefitEnrollment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<BenefitEnrollment>> {
-	return runCompensationCommand(input, options, {
+	return runCompensationCapabilityCommand(input, options, {
+		storeMethods: ["endBenefitEnrollment"],
 		schema: endBenefitEnrollmentInputSchema,
 		invalidMessage: "Invalid benefit enrolment end input",
 		command: HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_END,
@@ -103,7 +105,8 @@ export function cancelBenefitEnrollment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<BenefitEnrollment>> {
-	return runCompensationCommand(input, options, {
+	return runCompensationCapabilityCommand(input, options, {
+		storeMethods: ["cancelBenefitEnrollment"],
 		schema: cancelBenefitEnrollmentInputSchema,
 		invalidMessage: "Invalid benefit enrolment cancel input",
 		command: HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_CANCEL,
@@ -128,7 +131,8 @@ export function waiveBenefit(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<BenefitEnrollment>> {
-	return runCompensationCommand(input, options, {
+	return runCompensationCapabilityCommand(input, options, {
+		storeMethods: ["waiveBenefit"],
 		schema: waiveBenefitInputSchema,
 		invalidMessage: "Invalid benefit waiver input",
 		command: HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_WAIVE,
@@ -155,7 +159,8 @@ export function getApprovedCompensationHandoff(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<ApprovedCompensationHandoff | null>> {
-	return runCompensationQuery(input, options, {
+	return runCompensationCapabilityQuery(input, options, {
+		storeMethods: ["getApprovedCompensationHandoff"],
 		schema: getApprovedCompensationHandoffInputSchema,
 		invalidMessage: "Invalid approved compensation handoff input",
 		query: HUMAN_RESOURCES_QUERY_APPROVED_COMPENSATION_HANDOFF_GET,

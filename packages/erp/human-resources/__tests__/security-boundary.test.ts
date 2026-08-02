@@ -3,13 +3,13 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { createMemoryHumanResourcesStore } from "../src/adapters/memory/store";
 import type { HumanResourcesAuthorizationPort } from "../src/authorization";
 import type { HumanResourcesEmployeeId } from "../src/brands";
+import { requireComplianceEmployeeReadScope } from "../src/compliance/run-operation";
 import type { HumanResourcesIdentityResolverPort } from "../src/identity-resolver";
 import { listEmployeeGoals } from "../src/performance/goal";
 import {
 	HUMAN_RESOURCES_PERMISSION_PERFORMANCE_MANAGER_MANAGE,
 	HUMAN_RESOURCES_PERMISSION_PERFORMANCE_OWN_READ,
 } from "../src/permissions";
-import { requireComplianceEmployeeReadScope } from "../src/shared/compliance-command";
 import { runSequential } from "../src/shared/run-sequential";
 import {
 	requireManagerResourceAccess,

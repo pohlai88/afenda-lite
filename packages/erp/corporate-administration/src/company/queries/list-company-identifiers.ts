@@ -1,9 +1,9 @@
 import { errorResult, type Result } from "@afenda/errors";
-import {
-	CORPORATE_ADMINISTRATION_QUERY_PERMISSIONS,
-	requireCorporateAdministrationPermission,
-} from "../../authorization";
 import type { CorporateAdministrationQueryOptions } from "../../command-options";
+import {
+	type CorporateAdministrationQueryKernelDependencies,
+	executeCorporateAdministrationQuery,
+} from "../../internal/query";
 import { toCanonicalInstant } from "../../kernel/dates";
 import { parseCorporateAdministrationInput } from "../../parse-input";
 import { listCompanyIdentifiersInputSchema } from "../schemas";
@@ -17,7 +17,8 @@ import type {
 export async function listCompanyIdentifiers(
 	input: ListCompanyIdentifiersInput,
 	options: CorporateAdministrationQueryOptions,
-	dependencies: CompanyIdentifierQueryDependencies,
+	dependencies: CompanyIdentifierQueryDependencies &
+		CorporateAdministrationQueryKernelDependencies,
 ): Promise<Result<CompanyIdentifierListPage>> {
 	const parsed = parseCorporateAdministrationInput(
 		listCompanyIdentifiersInputSchema,
@@ -27,56 +28,50 @@ export async function listCompanyIdentifiers(
 		return parsed;
 	}
 
-	const authorized = await requireCorporateAdministrationPermission(
-		options.authorization,
-		{
-			organizationId: options.organizationId,
-			actorUserId: options.actorUserId,
-			permission:
-				CORPORATE_ADMINISTRATION_QUERY_PERMISSIONS.listCompanyIdentifiers,
-		},
-	);
-	if (!authorized.ok) {
-		return authorized;
-	}
+	return await executeCorporateAdministrationQuery({
+		operationId: "listCompanyIdentifiers",
+		options,
+		dependencies,
+		work: async () => {
+			const current = await dependencies.store.getLegalCompany({
+				organizationId: options.organizationId,
+				legalCompanyId: parsed.data.legalCompanyId,
+			});
+			if (!current.ok) {
+				return current;
+			}
+			if (current.data === null) {
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage:
+						"Corporate Administration legal company was not found.",
+				});
+			}
 
-	const current = await dependencies.store.getLegalCompany({
-		organizationId: options.organizationId,
-		legalCompanyId: parsed.data.legalCompanyId,
-	});
-	if (!current.ok) {
-		return current;
-	}
-	if (current.data === null) {
-		return errorResult.fail("NOT_FOUND", {
-			publicMessage: "Corporate Administration legal company was not found.",
-		});
-	}
-
-	const identifiers = await dependencies.identifierStore.listCompanyIdentifiers(
-		{
-			organizationId: options.organizationId,
-			legalCompanyId: parsed.data.legalCompanyId,
-			identifierType: parsed.data.identifierType,
-			jurisdictionCode: parsed.data.jurisdictionCode,
-			issuingAuthorityCode:
-				parsed.data.issuingAuthorityCode ?? parsed.data.authorityCode,
-			activeAt: parsed.data.activeAt,
-			includeRetired: parsed.data.includeRetired ?? false,
-			cursor: parsed.data.cursor,
-			pageSize: parsed.data.pageSize,
-			knownAt:
-				parsed.data.knownAt === undefined
-					? undefined
-					: toCanonicalInstant(parsed.data.knownAt),
+			const identifiers =
+				await dependencies.identifierStore.listCompanyIdentifiers({
+					organizationId: options.organizationId,
+					legalCompanyId: parsed.data.legalCompanyId,
+					identifierType: parsed.data.identifierType,
+					jurisdictionCode: parsed.data.jurisdictionCode,
+					issuingAuthorityCode:
+						parsed.data.issuingAuthorityCode ?? parsed.data.authorityCode,
+					activeAt: parsed.data.activeAt,
+					includeRetired: parsed.data.includeRetired ?? false,
+					cursor: parsed.data.cursor,
+					pageSize: parsed.data.pageSize,
+					knownAt:
+						parsed.data.knownAt === undefined
+							? undefined
+							: toCanonicalInstant(parsed.data.knownAt),
+				});
+			if (!identifiers.ok) {
+				return identifiers;
+			}
+			return errorResult.ok({
+				...identifiers.data,
+				items: [...identifiers.data.items].sort(compareIdentifierListItems),
+			});
 		},
-	);
-	if (!identifiers.ok) {
-		return identifiers;
-	}
-	return errorResult.ok({
-		...identifiers.data,
-		items: [...identifiers.data.items].sort(compareIdentifierListItems),
 	});
 }
 

@@ -11,6 +11,7 @@ import {
 	HUMAN_RESOURCES_ERROR_NOT_FOUND,
 	humanResourcesErrorDetails,
 } from "../error-codes";
+import type { HumanResourcesEmploymentLifecycleCommandId } from "../module-ids";
 import {
 	HUMAN_RESOURCES_COMMAND_EMPLOYMENT_AMEND,
 	HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CORRECT,
@@ -128,10 +129,22 @@ export function createEmployment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Employment>> {
+	return createEmploymentForOperation(
+		input,
+		options,
+		HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CREATE,
+	);
+}
+
+export function createEmploymentForOperation(
+	input: unknown,
+	options: HumanResourcesCommandOptions,
+	command: HumanResourcesEmploymentLifecycleCommandId,
+): Promise<Result<Employment>> {
 	return runEmploymentLifecycleCommand(input, options, {
 		schema: createEmploymentInputSchema,
 		invalidMessage: "Invalid employment create input",
-		command: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CREATE,
+		command,
 		storeMethods: [
 			"findOpenEmploymentByEmployee",
 			"listEmploymentsByEmployee",
@@ -176,7 +189,7 @@ export function createEmployment(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operationId: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CREATE,
+					operationId: command,
 				}),
 			);
 		},
@@ -187,10 +200,22 @@ export function amendEmployment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Employment>> {
+	return amendEmploymentForOperation(
+		input,
+		options,
+		HUMAN_RESOURCES_COMMAND_EMPLOYMENT_AMEND,
+	);
+}
+
+export function amendEmploymentForOperation(
+	input: unknown,
+	options: HumanResourcesCommandOptions,
+	command: HumanResourcesEmploymentLifecycleCommandId,
+): Promise<Result<Employment>> {
 	return runEmploymentLifecycleCommand(input, options, {
 		schema: amendEmploymentInputSchema,
 		invalidMessage: "Invalid employment amend input",
-		command: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_AMEND,
+		command,
 		storeMethods: [
 			"getEmploymentById",
 			"listEmploymentsByEmployee",
@@ -220,7 +245,7 @@ export function amendEmployment(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operationId: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_AMEND,
+					operationId: command,
 				}),
 			);
 		},

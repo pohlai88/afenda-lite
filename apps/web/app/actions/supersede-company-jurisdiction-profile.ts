@@ -1,7 +1,10 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
-import { supersedeCompanyJurisdictionProfile } from "@afenda/corporate-administration";
+import {
+	corporateAdministrationPermissionFor,
+	supersedeCompanyJurisdictionProfile,
+} from "@afenda/corporate-administration";
 import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -46,7 +49,9 @@ export async function supersedeCompanyJurisdictionProfileAction(
 ): Promise<ActionResult<{ jurisdictionProfileId: string }>> {
 	return await runMemberPermissionAction({
 		path: "supersedeCompanyJurisdictionProfileAction",
-		permission: "corporate_administration.company.manage",
+		permission: corporateAdministrationPermissionFor(
+			"supersedeCompanyJurisdictionProfile",
+		),
 		safeMessage: "Could not supersede jurisdiction profile.",
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(

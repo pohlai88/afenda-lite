@@ -10,6 +10,7 @@ import {
 	HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_RENEW,
 	HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_SUSPEND,
 	HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_VERIFY,
+	HUMAN_RESOURCES_QUERY_WORK_ELIGIBILITY_GET,
 	HUMAN_RESOURCES_QUERY_WORK_ELIGIBILITY_LIST_RISK,
 } from "../module-ids";
 import {
@@ -21,17 +22,17 @@ import {
 	workEligibilityTransitionInputSchema,
 } from "../schemas/compliance";
 import {
-	runComplianceCommand,
-	runComplianceEmployeeScopedQuery,
-	runComplianceQuery,
-} from "../shared/compliance-command";
-import {
 	assertValidDocumentDateRange,
 	COMPLIANCE_NEARING_EXPIRY_DAYS,
 } from "../shared/compliance-guards";
 import { fingerprintWorkEligibilityRecord } from "../shared/fingerprint";
 import { buildMutationMeta } from "../shared/mutation-meta";
 import type { WorkEligibility, WorkEligibilityRiskListPage } from "../types";
+import {
+	runComplianceCapabilityCommand,
+	runComplianceCapabilityQuery,
+	runComplianceEmployeeScopedCapabilityQuery,
+} from "./run-operation";
 
 export const HUMAN_RESOURCES_AGGREGATE_WORK_ELIGIBILITY =
 	"work_eligibility" as const;
@@ -45,10 +46,14 @@ export function recordWorkEligibility(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<WorkEligibility>> {
-	return runComplianceCommand(input, options, {
+	return runComplianceCapabilityCommand(input, options, {
 		schema: recordWorkEligibilityInputSchema,
 		invalidMessage: "Invalid work eligibility record input",
 		command: HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_RECORD,
+		storeMethods: [
+			"findWorkEligibilityByIdempotencyKey",
+			"recordWorkEligibility",
+		],
 		execute: async (data, { store, ports, documentReference }) => {
 			const dateRange = assertValidDocumentDateRange({
 				issuedOn: data.issuedOn,
@@ -135,10 +140,11 @@ export function verifyWorkEligibility(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<WorkEligibility>> {
-	return runComplianceCommand(input, options, {
+	return runComplianceCapabilityCommand(input, options, {
 		schema: verifyWorkEligibilityInputSchema,
 		invalidMessage: "Invalid work eligibility verify input",
 		command: HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_VERIFY,
+		storeMethods: ["verifyWorkEligibility"],
 		execute: (data, { store, ports }) =>
 			store.verifyWorkEligibility(
 				{
@@ -161,10 +167,11 @@ export function suspendWorkEligibility(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<WorkEligibility>> {
-	return runComplianceCommand(input, options, {
+	return runComplianceCapabilityCommand(input, options, {
 		schema: workEligibilityTransitionInputSchema,
 		invalidMessage: "Invalid work eligibility suspend input",
 		command: HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_SUSPEND,
+		storeMethods: ["suspendWorkEligibility"],
 		execute: (data, { store, ports }) =>
 			store.suspendWorkEligibility(
 				{
@@ -186,10 +193,11 @@ export function renewWorkEligibility(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<WorkEligibility>> {
-	return runComplianceCommand(input, options, {
+	return runComplianceCapabilityCommand(input, options, {
 		schema: renewWorkEligibilityInputSchema,
 		invalidMessage: "Invalid work eligibility renew input",
 		command: HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_RENEW,
+		storeMethods: ["renewWorkEligibility"],
 		execute: async (data, { store, ports, documentReference }) => {
 			const dateRange = assertValidDocumentDateRange({
 				issuedOn: data.issuedOn,
@@ -242,10 +250,11 @@ export function closeWorkEligibility(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<WorkEligibility>> {
-	return runComplianceCommand(input, options, {
+	return runComplianceCapabilityCommand(input, options, {
 		schema: workEligibilityTransitionInputSchema,
 		invalidMessage: "Invalid work eligibility close input",
 		command: HUMAN_RESOURCES_COMMAND_WORK_ELIGIBILITY_CLOSE,
+		storeMethods: ["closeWorkEligibility"],
 		execute: (data, { store, ports }) =>
 			store.closeWorkEligibility(
 				{
@@ -267,7 +276,9 @@ export function getEmployeeWorkEligibility(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<WorkEligibility | null>> {
-	return runComplianceEmployeeScopedQuery(input, options, {
+	return runComplianceEmployeeScopedCapabilityQuery(input, options, {
+		query: HUMAN_RESOURCES_QUERY_WORK_ELIGIBILITY_GET,
+		storeMethods: ["getActiveWorkEligibilityForEmployee"],
 		schema: getEmployeeWorkEligibilityInputSchema,
 		invalidMessage: "Invalid work eligibility get input",
 		execute: async (data, { store }) =>
@@ -282,10 +293,11 @@ export function listEmployeesWithWorkEligibilityRisk(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<WorkEligibilityRiskListPage>> {
-	return runComplianceQuery(input, options, {
+	return runComplianceCapabilityQuery(input, options, {
 		schema: listEmployeesWithWorkEligibilityRiskInputSchema,
 		invalidMessage: "Invalid work eligibility risk list input",
 		query: HUMAN_RESOURCES_QUERY_WORK_ELIGIBILITY_LIST_RISK,
+		storeMethods: ["listEmployeesWithWorkEligibilityRisk"],
 		execute: (data, { store }) =>
 			store.listEmployeesWithWorkEligibilityRisk({
 				organizationId: data.organizationId,

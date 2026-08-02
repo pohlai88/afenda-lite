@@ -1,56 +1,32 @@
-import {
-	type CorporateAdministrationProductionRuntimeDependencies,
-	createCorporateAdministrationProductionRuntime,
-} from "@afenda/corporate-administration";
-import { describe, expect, it, vi } from "vitest";
-import { createFixedCorporateAdministrationClock } from "./helpers/fixed-clock";
-import { createMemoryCorporateAdministrationAuditFactPort } from "./helpers/memory-audit";
-import { createMemoryCorporateAdministrationIdempotencyPort } from "./helpers/memory-idempotency";
-import { createMemoryCorporateAdministrationOutboxPort } from "./helpers/memory-outbox";
+import { existsSync, readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { describe, expect, it } from "vitest";
 
 describe("Corporate Administration production runtime composition", () => {
-	function dependencies(): CorporateAdministrationProductionRuntimeDependencies {
-		return {
-			clock: createFixedCorporateAdministrationClock(
-				"2026-07-26T16:30:00.000Z",
-			),
-			transaction: {
-				nesting: "prohibited",
-				run: vi.fn(),
-			},
-			idempotency: createMemoryCorporateAdministrationIdempotencyPort(),
-			audit: createMemoryCorporateAdministrationAuditFactPort(),
-			outbox: createMemoryCorporateAdministrationOutboxPort(),
-		};
-	}
+	it("uses the single package runtime facade from the application root", () => {
+		const repositoryRoot = fileURLToPath(
+			new URL("../../../../", import.meta.url),
+		);
+		const sourceDirectory = fileURLToPath(new URL("../src/", import.meta.url));
+		const appRuntime = readFileSync(
+			`${repositoryRoot}/apps/web/lib/erp/corporate-administration-runtime.ts`,
+			"utf8",
+		);
+		const commandComposition = readFileSync(
+			`${repositoryRoot}/apps/web/lib/erp/corporate-administration-command-options.ts`,
+			"utf8",
+		);
 
-	it("validates already-created dependencies and returns a readonly runtime", () => {
-		const input = dependencies();
-		const runtime = createCorporateAdministrationProductionRuntime(input);
-
-		expect(runtime).toEqual(input);
-		expect(runtime.clock).toBe(input.clock);
-		expect(runtime.transaction).toBe(input.transaction);
-		expect(runtime.idempotency).toBe(input.idempotency);
-		expect(runtime.audit).toBe(input.audit);
-		expect(runtime.outbox).toBe(input.outbox);
-		expect(Object.isFrozen(runtime)).toBe(true);
-	});
-
-	it("rejects missing, unknown, or non-durable dependency shapes", () => {
-		const input = dependencies();
-
-		for (const invalid of [
-			{},
-			{ ...input, audit: undefined },
-			{ ...input, outbox: {} },
-			{ ...input, idempotency: { begin: vi.fn() } },
-			{ ...input, transaction: { nesting: "savepoint", run: vi.fn() } },
-			{ ...input, allowAllAuthorization: true },
-		]) {
-			expect(() =>
-				createCorporateAdministrationProductionRuntime(invalid),
-			).toThrow();
-		}
+		expect(appRuntime).toContain("createCorporateAdministrationRuntime");
+		expect(appRuntime).not.toContain(
+			"createCorporateAdministrationProductionRuntime",
+		);
+		expect(existsSync(`${sourceDirectory}/production-ports.ts`)).toBe(false);
+		expect(commandComposition).not.toContain(
+			"createCorporateAdministrationApprovalDecisionPort",
+		);
+		expect(commandComposition).not.toContain(
+			"verify: async () => errorResult.ok(null)",
+		);
 	});
 });

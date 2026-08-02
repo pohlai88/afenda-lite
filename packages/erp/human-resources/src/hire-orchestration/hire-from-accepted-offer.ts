@@ -4,7 +4,6 @@ import type { HumanResourcesCommandOptions } from "../command-options";
 import { createAssignment } from "../core/assignment";
 import { createEmployee } from "../core/employee";
 import { hireEmployment } from "../core/employment-management";
-import { appendRegistryGatedOutbox } from "../emissions/sql-side-effects";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
 	HUMAN_RESOURCES_ERROR_INVALID_STATE_TRANSITION,
@@ -22,15 +21,15 @@ import {
 	hireFromAcceptedOfferInputSchema,
 } from "../schemas/hire-orchestration";
 import { fingerprintHireFromAcceptedOffer } from "../shared/fingerprint";
-import { runHireOrchestrationCommand } from "../shared/hire-orchestration-command";
 import { buildMutationMeta } from "../shared/mutation-meta";
 import { runSequential, sequentialReturn } from "../shared/run-sequential";
-import type { HumanResourcesStore } from "../store";
 import type { OfferAcceptanceHandoff } from "../types";
 import { createPerson } from "../workforce-foundation/person";
 import { createWorker } from "../workforce-foundation/worker";
 import { listHeadcountReservations } from "../workforce-planning/headcount-reservation";
 import { compensateHireAttemptProgress } from "./compensation";
+import { runHireOrchestrationCapabilityCommand } from "./run-operation";
+import type { HumanResourcesHireOrchestrationCapabilityStore } from "./store";
 import {
 	type HireAttempt,
 	type HireFromAcceptedOfferResult,
@@ -41,7 +40,14 @@ import {
 
 interface SagaDeps {
 	ports: MutationPorts;
-	store: HumanResourcesStore;
+	store: Pick<
+		HumanResourcesHireOrchestrationCapabilityStore,
+		| "completeHireAttempt"
+		| "findHireAttemptByIdempotencyKey"
+		| "getApplicationById"
+		| "createHireAttempt"
+		| "updateHireAttemptProgress"
+	>;
 }
 
 interface SagaContext {
@@ -414,7 +420,6 @@ async function runOnboardingStep(
 	const updated = await persistAttemptProgress(ctx, {
 		currentStep: "onboarding_started",
 		onboardingCaseId: onboarded.data.id,
-		status: "completed",
 	});
 	if (!updated.ok) {
 		return failSaga(ctx, updated);
@@ -594,10 +599,17 @@ export async function hireFromAcceptedOffer(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<HireFromAcceptedOfferResult>> {
-	return await runHireOrchestrationCommand(input, options, {
+	return await runHireOrchestrationCapabilityCommand(input, options, {
 		schema: hireFromAcceptedOfferInputSchema,
 		invalidMessage: "Invalid hire from accepted offer input",
 		command: HUMAN_RESOURCES_COMMAND_HIRE_FROM_ACCEPTED_OFFER,
+		storeMethods: [
+			"completeHireAttempt",
+			"findHireAttemptByIdempotencyKey",
+			"getApplicationById",
+			"createHireAttempt",
+			"updateHireAttemptProgress",
+		],
 		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The domain workflow keeps ordered invariant validation and Result mapping explicit.
 		execute: async (data, deps) => {
 			const requestFingerprint = fingerprintHireFromAcceptedOffer({
@@ -711,22 +723,25 @@ export async function hireFromAcceptedOffer(
 				return finished;
 			}
 
-			const outbox = await appendRegistryGatedOutbox(deps.ports, {
-				commandId: HUMAN_RESOURCES_COMMAND_HIRE_FROM_ACCEPTED_OFFER,
-				meta: buildMutationMeta({
+			const completed = await deps.store.completeHireAttempt(
+				{
+					organizationId: data.organizationId,
+					attemptId: finished.data.id,
+					expectedVersion: finished.data.version,
+					actorUserId: data.actorUserId,
+				},
+				deps.ports,
+				buildMutationMeta({
 					correlationId: data.correlationId,
 					operationId: HUMAN_RESOURCES_COMMAND_HIRE_FROM_ACCEPTED_OFFER,
 				}),
-				organizationId: data.organizationId,
-				actorUserId: data.actorUserId,
-				aggregateId: finished.data.id,
-				eventEntityType: "hr_hire_attempt",
-			});
-			if (!outbox.ok) {
-				return outbox;
+			);
+			if (!completed.ok) {
+				return completed;
 			}
+			ctx.attempt = completed.data;
 
-			return errorResult.ok(toResult(ctx, finished.data));
+			return errorResult.ok(toResult(ctx, completed.data));
 		},
 	});
 }

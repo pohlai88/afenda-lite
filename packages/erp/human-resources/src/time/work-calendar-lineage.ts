@@ -2,15 +2,15 @@ import { errorResult, type Result } from "@afenda/errors";
 
 import type { HumanResourcesWorkCalendarId } from "../brands";
 import { selectEffectiveLineageRecord } from "../shared/effective-lineage";
-import type { HumanResourcesStore } from "../store";
 import type { WorkCalendar } from "../types";
+import type { HumanResourcesTimeCapabilityStore } from "./store";
 
 export function lineageEligibleWorkCalendar(calendar: WorkCalendar): boolean {
 	return calendar.status === "active" || calendar.status === "superseded";
 }
 
 export type WorkCalendarLineageStoreSlice = Pick<
-	HumanResourcesStore,
+	HumanResourcesTimeCapabilityStore,
 	"getWorkCalendar" | "listWorkCalendars"
 >;
 

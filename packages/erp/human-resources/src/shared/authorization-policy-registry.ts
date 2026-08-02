@@ -1,3 +1,4 @@
+import { HUMAN_RESOURCES_REGISTERED_OPERATION_DEFINITION_RECORD } from "../operation-registry/registry";
 import { HUMAN_RESOURCES_AUTHORIZATION_POLICIES } from "./authorization-policies/index";
 import {
 	type HumanResourcesAuthorizationPolicy,
@@ -23,25 +24,30 @@ export function resolveHumanResourcesAuthorizationPolicy(
 	operationId: HumanResourcesOperationId,
 	policies: readonly HumanResourcesAuthorizationPolicy[] = HUMAN_RESOURCES_AUTHORIZATION_POLICIES,
 ): HumanResourcesAuthorizationPolicy {
-	const matches = policies.filter((policyValue2) =>
-		policyValue2.operationPrefixes.some((prefix) =>
-			operationId.startsWith(prefix),
-		),
+	const definition =
+		HUMAN_RESOURCES_REGISTERED_OPERATION_DEFINITION_RECORD[operationId];
+	if (definition === undefined) {
+		throw new HumanResourcesAuthorizationPolicyResolveError(
+			"policy_not_registered",
+			`No HR operation definition registered for ${operationId}`,
+		);
+	}
+
+	const matches = policies.filter(
+		(candidate) => candidate.id === definition.authorizationPolicy,
 	);
 
 	if (matches.length === 0) {
 		throw new HumanResourcesAuthorizationPolicyResolveError(
 			"policy_not_registered",
-			`No HR authorization policy registered for ${operationId}`,
+			`No HR authorization policy registered for ${operationId}: expected ${definition.authorizationPolicy}`,
 		);
 	}
 
 	if (matches.length > 1) {
 		throw new HumanResourcesAuthorizationPolicyResolveError(
 			"ambiguous_policy",
-			`Ambiguous HR authorization policies for ${operationId}: ${matches
-				.map((policyValue) => policyValue.id)
-				.join(", ")}`,
+			`Ambiguous HR authorization policies for ${operationId}: duplicate ${definition.authorizationPolicy}`,
 		);
 	}
 

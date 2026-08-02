@@ -20,7 +20,10 @@ import {
 	createDrizzleCorporateAdministrationOutboxPort,
 	createDrizzleCorporateAdministrationTransactionPort,
 } from "@afenda/corporate-administration/adapters/drizzle";
-import { createMemoryCorporateAdministrationLegalCompanyStore } from "@afenda/corporate-administration/testing";
+import {
+	createMemoryCorporateAdministrationLegalCompanyStore,
+	createMemoryCorporateAdministrationObservabilityPort,
+} from "@afenda/corporate-administration/testing";
 import {
 	database as afendaDatabase,
 	caCompanyJurisdictionProfile,
@@ -296,11 +299,13 @@ export function createMemoryCompanyDependencies(input?: {
 			outbox: createMemoryCorporateAdministrationOutboxPort({
 				onAppend: (events) => input?.events?.push(...events),
 			}),
+			observability: createMemoryCorporateAdministrationObservabilityPort(),
 		},
 	};
 }
 
-export function createDrizzleCompanyDependencies() {
+export function createDrizzleCompanyDependencies(input?: { now?: string }) {
+	const now = input?.now ?? "2026-07-26T10:00:00.000Z";
 	return {
 		store: createDrizzleCorporateAdministrationLegalCompanyStore({
 			database: afendaDatabase.client,
@@ -311,16 +316,14 @@ export function createDrizzleCompanyDependencies() {
 		referenceData: caReferenceDataPort(),
 		createEventId: randomUUID,
 		runtime: {
-			clock: createFixedCorporateAdministrationClock(
-				"2026-07-26T10:00:00.000Z",
-			),
+			clock: createFixedCorporateAdministrationClock(now),
 			transaction: createDrizzleCorporateAdministrationTransactionPort({
 				execute: (buildQueries) => afendaDatabase.transaction(buildQueries),
 			}),
 			idempotency: createDrizzleCorporateAdministrationIdempotencyPort({
 				database: afendaDatabase.client,
 				createReservationToken: randomUUID,
-				now: () => new Date("2026-07-26T10:00:00.000Z"),
+				now: () => new Date(now),
 			}),
 			audit: createDrizzleCorporateAdministrationAuditFactPort({
 				store: {
@@ -335,6 +338,7 @@ export function createDrizzleCompanyDependencies() {
 			outbox: createDrizzleCorporateAdministrationOutboxPort({
 				appender: createNeonCorporateAdministrationPendingEventAppender(),
 			}),
+			observability: createMemoryCorporateAdministrationObservabilityPort(),
 		},
 	};
 }

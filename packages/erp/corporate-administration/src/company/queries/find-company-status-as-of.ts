@@ -1,10 +1,10 @@
 import { errorResult, type Result } from "@afenda/errors";
 
-import {
-	CORPORATE_ADMINISTRATION_QUERY_PERMISSIONS,
-	requireCorporateAdministrationPermission,
-} from "../../authorization";
 import type { CorporateAdministrationQueryOptions } from "../../command-options";
+import {
+	type CorporateAdministrationQueryKernelDependencies,
+	executeCorporateAdministrationQuery,
+} from "../../internal/query";
 import { toCanonicalInstant } from "../../kernel/dates";
 import { parseCorporateAdministrationInput } from "../../parse-input";
 import { findCompanyStatusAsOfInputSchema } from "../schemas";
@@ -17,7 +17,8 @@ import type {
 export async function findCompanyStatusAsOf(
 	input: FindCompanyStatusAsOfInput,
 	options: CorporateAdministrationQueryOptions,
-	dependencies: LegalCompanyQueryDependencies,
+	dependencies: LegalCompanyQueryDependencies &
+		CorporateAdministrationQueryKernelDependencies,
 ): Promise<Result<CompanyStatusHistory | null>> {
 	const parsed = parseCorporateAdministrationInput(
 		findCompanyStatusAsOfInputSchema,
@@ -27,39 +28,34 @@ export async function findCompanyStatusAsOf(
 		return parsed;
 	}
 
-	const authorized = await requireCorporateAdministrationPermission(
-		options.authorization,
-		{
-			organizationId: options.organizationId,
-			actorUserId: options.actorUserId,
-			permission:
-				CORPORATE_ADMINISTRATION_QUERY_PERMISSIONS.findCompanyStatusAsOf,
+	return await executeCorporateAdministrationQuery({
+		operationId: "findCompanyStatusAsOf",
+		options,
+		dependencies,
+		work: async () => {
+			const current = await dependencies.store.getLegalCompany({
+				organizationId: options.organizationId,
+				legalCompanyId: parsed.data.legalCompanyId,
+			});
+			if (!current.ok) {
+				return current;
+			}
+			if (current.data === null) {
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage:
+						"Corporate Administration legal company was not found.",
+				});
+			}
+
+			return dependencies.store.findCompanyStatusAsOf({
+				organizationId: options.organizationId,
+				legalCompanyId: parsed.data.legalCompanyId,
+				asOf: parsed.data.asOf,
+				knownAt:
+					parsed.data.knownAt === undefined
+						? undefined
+						: toCanonicalInstant(parsed.data.knownAt),
+			});
 		},
-	);
-	if (!authorized.ok) {
-		return authorized;
-	}
-
-	const current = await dependencies.store.getLegalCompany({
-		organizationId: options.organizationId,
-		legalCompanyId: parsed.data.legalCompanyId,
-	});
-	if (!current.ok) {
-		return current;
-	}
-	if (current.data === null) {
-		return errorResult.fail("NOT_FOUND", {
-			publicMessage: "Corporate Administration legal company was not found.",
-		});
-	}
-
-	return dependencies.store.findCompanyStatusAsOf({
-		organizationId: options.organizationId,
-		legalCompanyId: parsed.data.legalCompanyId,
-		asOf: parsed.data.asOf,
-		knownAt:
-			parsed.data.knownAt === undefined
-				? undefined
-				: toCanonicalInstant(parsed.data.knownAt),
 	});
 }

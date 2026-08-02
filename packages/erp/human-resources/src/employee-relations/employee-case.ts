@@ -38,10 +38,6 @@ import {
 	reopenEmployeeCaseInputSchema,
 	updateEmployeeCaseClassificationInputSchema,
 } from "../schemas/employee-relations";
-import {
-	runEmployeeRelationsCommand,
-	runEmployeeRelationsQuery,
-} from "../shared/employee-relations-command";
 import { fingerprintEmployeeCaseOpen } from "../shared/fingerprint";
 import { buildMutationMeta } from "../shared/mutation-meta";
 import {
@@ -49,6 +45,10 @@ import {
 	runAuthorizedEmployeeCaseReadQuery,
 } from "./authorized-case-read";
 import { projectEmployeeCaseFromDecision } from "./case-field-projection";
+import {
+	runEmployeeRelationsCapabilityCommand,
+	runEmployeeRelationsCapabilityQuery,
+} from "./run-operation";
 import type {
 	EmployeeCase,
 	EmployeeCaseListPage,
@@ -65,10 +65,11 @@ export function openEmployeeCase(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCase>> {
-	return runEmployeeRelationsCommand(input, options, {
+	return runEmployeeRelationsCapabilityCommand(input, options, {
 		schema: openEmployeeCaseInputSchema,
 		invalidMessage: "Invalid employee case open input",
 		command: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_OPEN,
+		storeMethods: ["findEmployeeCaseByIdempotencyKey", "openEmployeeCase"],
 		execute: async (data, { store, ports }) => {
 			const fingerprint = fingerprintEmployeeCaseOpen({
 				employeeId: data.employeeId,
@@ -126,10 +127,11 @@ export function updateEmployeeCaseClassification(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCase>> {
-	return runEmployeeRelationsCommand(input, options, {
+	return runEmployeeRelationsCapabilityCommand(input, options, {
 		schema: updateEmployeeCaseClassificationInputSchema,
 		invalidMessage: "Invalid employee case classification input",
 		command: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_UPDATE_CLASSIFICATION,
+		storeMethods: ["updateEmployeeCaseClassification"],
 		execute: (data, { store, ports }) =>
 			store.updateEmployeeCaseClassification(
 				{
@@ -153,10 +155,11 @@ export function assignEmployeeCaseOwner(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCase>> {
-	return runEmployeeRelationsCommand(input, options, {
+	return runEmployeeRelationsCapabilityCommand(input, options, {
 		schema: assignEmployeeCaseOwnerInputSchema,
 		invalidMessage: "Invalid employee case assign-owner input",
 		command: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_ASSIGN_OWNER,
+		storeMethods: ["assignEmployeeCaseOwner"],
 		execute: (data, { store, ports }) =>
 			store.assignEmployeeCaseOwner(
 				{
@@ -179,10 +182,11 @@ export function addEmployeeCaseParticipant(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCase>> {
-	return runEmployeeRelationsCommand(input, options, {
+	return runEmployeeRelationsCapabilityCommand(input, options, {
 		schema: addEmployeeCaseParticipantInputSchema,
 		invalidMessage: "Invalid employee case add-participant input",
 		command: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_ADD_PARTICIPANT,
+		storeMethods: ["addEmployeeCaseParticipant"],
 		execute: (data, { store, ports }) =>
 			store.addEmployeeCaseParticipant(
 				{
@@ -206,10 +210,11 @@ export function issueInterimEmployeeMeasure(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCase>> {
-	return runEmployeeRelationsCommand(input, options, {
+	return runEmployeeRelationsCapabilityCommand(input, options, {
 		schema: issueInterimEmployeeMeasureInputSchema,
 		invalidMessage: "Invalid interim employee measure input",
 		command: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_ISSUE_INTERIM_MEASURE,
+		storeMethods: ["issueInterimEmployeeMeasure"],
 		execute: (data, { store, ports }) =>
 			store.issueInterimEmployeeMeasure(
 				{
@@ -236,10 +241,11 @@ export function recordEmployeeCaseFinding(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCase>> {
-	return runEmployeeRelationsCommand(input, options, {
+	return runEmployeeRelationsCapabilityCommand(input, options, {
 		schema: recordEmployeeCaseFindingInputSchema,
 		invalidMessage: "Invalid employee case finding input",
 		command: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RECORD_FINDING,
+		storeMethods: ["recordEmployeeCaseFinding"],
 		execute: (data, { store, ports }) =>
 			store.recordEmployeeCaseFinding(
 				{
@@ -263,10 +269,11 @@ export function closeEmployeeCase(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCase>> {
-	return runEmployeeRelationsCommand(input, options, {
+	return runEmployeeRelationsCapabilityCommand(input, options, {
 		schema: closeEmployeeCaseInputSchema,
 		invalidMessage: "Invalid employee case close input",
 		command: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_CLOSE,
+		storeMethods: ["closeEmployeeCase"],
 		execute: (data, { store, ports }) =>
 			store.closeEmployeeCase(
 				{
@@ -289,10 +296,11 @@ export function reopenEmployeeCase(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCase>> {
-	return runEmployeeRelationsCommand(input, options, {
+	return runEmployeeRelationsCapabilityCommand(input, options, {
 		schema: reopenEmployeeCaseInputSchema,
 		invalidMessage: "Invalid employee case reopen input",
 		command: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_REOPEN,
+		storeMethods: ["reopenEmployeeCase"],
 		execute: (data, { store, ports }) =>
 			store.reopenEmployeeCase(
 				{
@@ -316,6 +324,7 @@ export function getEmployeeCaseById(
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<ProjectedEmployeeCase>> {
 	return runAuthorizedEmployeeCaseReadQuery<
+		readonly [],
 		typeof getEmployeeCaseByIdInputSchema,
 		EmployeeCase,
 		ProjectedEmployeeCase
@@ -323,6 +332,7 @@ export function getEmployeeCaseById(
 		schema: getEmployeeCaseByIdInputSchema,
 		invalidMessage: "Invalid employee case get input",
 		query: HUMAN_RESOURCES_QUERY_EMPLOYEE_CASE_GET,
+		storeMethods: [],
 		execute: async ({ employeeCase }) => errorResult.ok(employeeCase),
 		project: (value, projection) =>
 			projectEmployeeCaseFromDecision(value, projection),
@@ -333,10 +343,11 @@ export function listEmployeeCases(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCaseListPage>> {
-	return runEmployeeRelationsQuery(input, options, {
+	return runEmployeeRelationsCapabilityQuery(input, options, {
 		schema: listEmployeeCasesInputSchema,
 		invalidMessage: "Invalid employee case list input",
 		query: HUMAN_RESOURCES_QUERY_EMPLOYEE_CASE_LIST,
+		storeMethods: ["listEmployeeCases"],
 		execute: (data, { store }) =>
 			runAuthorizedEmployeeCaseListQuery(
 				{
@@ -361,10 +372,11 @@ export function listCasesAssignedToActor(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCaseListPage>> {
-	return runEmployeeRelationsQuery(input, options, {
+	return runEmployeeRelationsCapabilityQuery(input, options, {
 		schema: listCasesAssignedToActorInputSchema,
 		invalidMessage: "Invalid assigned employee case list input",
 		query: HUMAN_RESOURCES_QUERY_EMPLOYEE_CASE_LIST_ASSIGNED,
+		storeMethods: ["listCasesAssignedToActor"],
 		execute: (data, { store }) =>
 			runAuthorizedEmployeeCaseListQuery(
 				{
@@ -389,10 +401,11 @@ export function listOpenEmployeeRelationsCases(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCaseListPage>> {
-	return runEmployeeRelationsQuery(input, options, {
+	return runEmployeeRelationsCapabilityQuery(input, options, {
 		schema: listOpenEmployeeRelationsCasesInputSchema,
 		invalidMessage: "Invalid open employee case list input",
 		query: HUMAN_RESOURCES_QUERY_EMPLOYEE_CASE_LIST_OPEN,
+		storeMethods: ["listOpenEmployeeRelationsCases"],
 		execute: (data, { store }) =>
 			runAuthorizedEmployeeCaseListQuery(
 				{
@@ -416,10 +429,11 @@ export function getEmployeeRelationsHistoryByEmployee(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCaseListPage>> {
-	return runEmployeeRelationsQuery(input, options, {
+	return runEmployeeRelationsCapabilityQuery(input, options, {
 		schema: getEmployeeRelationsHistoryByEmployeeInputSchema,
 		invalidMessage: "Invalid employee relations history input",
 		query: HUMAN_RESOURCES_QUERY_EMPLOYEE_RELATIONS_HISTORY_BY_EMPLOYEE,
+		storeMethods: ["getEmployeeRelationsHistoryByEmployee"],
 		execute: (data, { store }) =>
 			runAuthorizedEmployeeCaseListQuery(
 				{
@@ -448,6 +462,7 @@ export function getEmployeeCaseTimeline(
 		schema: getEmployeeCaseTimelineInputSchema,
 		invalidMessage: "Invalid employee case timeline input",
 		query: HUMAN_RESOURCES_QUERY_EMPLOYEE_CASE_TIMELINE,
+		storeMethods: ["getEmployeeCaseTimeline"],
 		execute: ({ data, store }) =>
 			store.getEmployeeCaseTimeline({
 				organizationId: data.organizationId,
@@ -465,6 +480,7 @@ export function getEmployeeCaseOutcome(
 		schema: getEmployeeCaseOutcomeInputSchema,
 		invalidMessage: "Invalid employee case outcome input",
 		query: HUMAN_RESOURCES_QUERY_EMPLOYEE_CASE_OUTCOME,
+		storeMethods: ["getEmployeeCaseOutcome"],
 		execute: ({ data, store }) =>
 			store.getEmployeeCaseOutcome({
 				organizationId: data.organizationId,

@@ -14,16 +14,16 @@ import {
 	listCompensationGradeProgressionRulesFromGradeInputSchema,
 	listEligibleProgressionTargetsInputSchema,
 } from "../schemas/compensation";
-import {
-	runCompensationCommand,
-	runCompensationQuery,
-} from "../shared/compensation-command";
 import { notFound } from "../shared/domain-guards";
 import { buildMutationMeta } from "../shared/mutation-meta";
 import type {
 	CompensationGradeProgressionRule,
 	CompensationGradeProgressionRuleListPage,
 } from "../types";
+import {
+	runCompensationCapabilityCommand,
+	runCompensationCapabilityQuery,
+} from "./run-operation";
 
 export const HUMAN_RESOURCES_AGGREGATE_COMPENSATION_GRADE_PROGRESSION_RULE =
 	"compensation_grade_progression_rule" as const;
@@ -34,7 +34,8 @@ export function createCompensationGradeProgressionRule(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompensationGradeProgressionRule>> {
-	return runCompensationCommand(input, options, {
+	return runCompensationCapabilityCommand(input, options, {
+		storeMethods: ["createCompensationGradeProgressionRule"],
 		schema: createCompensationGradeProgressionRuleInputSchema,
 		invalidMessage: "Invalid compensation grade progression rule create input",
 		command: HUMAN_RESOURCES_COMMAND_COMPENSATION_GRADE_PROGRESSION_RULE_CREATE,
@@ -63,7 +64,8 @@ export function archiveCompensationGradeProgressionRule(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompensationGradeProgressionRule>> {
-	return runCompensationCommand(input, options, {
+	return runCompensationCapabilityCommand(input, options, {
+		storeMethods: ["archiveCompensationGradeProgressionRule"],
 		schema: archiveCompensationGradeProgressionRuleInputSchema,
 		invalidMessage: "Invalid compensation grade progression rule archive input",
 		command:
@@ -90,14 +92,15 @@ export function getCompensationGradeProgressionRule(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompensationGradeProgressionRule>> {
-	return runCompensationQuery<
-		typeof getCompensationGradeProgressionRuleInputSchema,
-		CompensationGradeProgressionRule
-	>(input, options, {
+	return runCompensationCapabilityQuery(input, options, {
+		storeMethods: ["getCompensationGradeProgressionRule"],
 		schema: getCompensationGradeProgressionRuleInputSchema,
 		invalidMessage: "Invalid compensation grade progression rule get input",
 		query: HUMAN_RESOURCES_QUERY_COMPENSATION_GRADE_PROGRESSION_RULE_GET,
-		execute: async (data, { store }) => {
+		execute: async (
+			data,
+			{ store },
+		): Promise<Result<CompensationGradeProgressionRule>> => {
 			const rule = await store.getCompensationGradeProgressionRule({
 				organizationId: data.organizationId,
 				progressionRuleId: data.progressionRuleId,
@@ -117,7 +120,8 @@ export function listCompensationGradeProgressionRulesFromGrade(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompensationGradeProgressionRuleListPage>> {
-	return runCompensationQuery(input, options, {
+	return runCompensationCapabilityQuery(input, options, {
+		storeMethods: ["listCompensationGradeProgressionRulesFromGrade"],
 		schema: listCompensationGradeProgressionRulesFromGradeInputSchema,
 		invalidMessage: "Invalid compensation grade progression rule list input",
 		query:
@@ -137,7 +141,8 @@ export function listEligibleProgressionTargets(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompensationGradeProgressionRule[]>> {
-	return runCompensationQuery(input, options, {
+	return runCompensationCapabilityQuery(input, options, {
+		storeMethods: ["listEligibleProgressionTargets"],
 		schema: listEligibleProgressionTargetsInputSchema,
 		invalidMessage: "Invalid eligible progression targets input",
 		query: HUMAN_RESOURCES_QUERY_COMPENSATION_GRADE_PROGRESSION_TARGETS_LIST,

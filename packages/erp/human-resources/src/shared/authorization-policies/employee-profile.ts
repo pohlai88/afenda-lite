@@ -9,5 +9,4 @@ export const employeeProfilePolicy = createScopedPolicy({
 	subjectPolicy: "subject_manager_or_privileged",
 	fieldClasses: [],
 	privilegedPermissions: [HUMAN_RESOURCES_PERMISSION_PERSON_READ],
-	operationPrefixes: ["human-resources.employee.profile."],
 });

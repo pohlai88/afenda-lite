@@ -247,7 +247,6 @@ import {
 	getInterview as getInterviewInternal,
 	getJobAsOf as getJobAsOfInternal,
 	getJob as getJobInternal,
-	getLearningAssignmentByAssignmentId as getLearningAssignmentByAssignmentIdInternal,
 	getLearningAssignment as getLearningAssignmentInternal,
 	getLearningAttendance as getLearningAttendanceInternal,
 	getLeaveBalance as getLeaveBalanceInternal,
@@ -306,7 +305,6 @@ import {
 	listActiveImprovementPlans as listActiveImprovementPlansInternal,
 	listApplicationStatusHistory as listApplicationStatusHistoryInternal,
 	listApplications as listApplicationsInternal,
-	listAssignments as listAssignmentsInternal,
 	listAttendanceAdjustments as listAttendanceAdjustmentsInternal,
 	listAttendanceBreakWaiverDecisions as listAttendanceBreakWaiverDecisionsInternal,
 	listAttendanceEvents as listAttendanceEventsInternal,
@@ -478,10 +476,8 @@ import {
 	resolveAttendanceSession as resolveAttendanceSessionInternal,
 	resolveEmployeeCaseAppeal as resolveEmployeeCaseAppealInternal,
 	resolveEmployeeOrgContextAsOf as resolveEmployeeOrgContextAsOfInternal,
-	resolveEmployeeProfileActorPermissions as resolveEmployeeProfileActorPermissionsInternal,
 	resolveEmployeeWorkCalendar as resolveEmployeeWorkCalendarInternal,
 	resolveEmploymentCalendar as resolveEmploymentCalendarInternal,
-	resolvePrimaryAssignmentAsOf as resolvePrimaryAssignmentAsOfInternal,
 	resolvePrimaryManager as resolvePrimaryManagerInternal,
 	resolveTimePolicy as resolveTimePolicyInternal,
 	retireCompetency as retireCompetencyInternal,
@@ -1280,9 +1276,6 @@ export const getJobAsOf = bindHumanResourcesCapability(getJobAsOfInternal);
 export const getLearningAssignment = bindHumanResourcesCapability(
 	getLearningAssignmentInternal,
 );
-export const getLearningAssignmentByAssignmentId = bindHumanResourcesCapability(
-	getLearningAssignmentByAssignmentIdInternal,
-);
 export const getLearningAttendance = bindHumanResourcesCapability(
 	getLearningAttendanceInternal,
 );
@@ -1439,9 +1432,6 @@ export const listApplicationStatusHistory = bindHumanResourcesCapability(
 );
 export const listApplications = bindHumanResourcesCapability(
 	listApplicationsInternal,
-);
-export const listAssignments = bindHumanResourcesCapability(
-	listAssignmentsInternal,
 );
 export const listAttendanceAdjustments = bindHumanResourcesCapability(
 	listAttendanceAdjustmentsInternal,
@@ -1945,16 +1935,11 @@ export const resolveEmployeeCaseAppeal = bindHumanResourcesCapability(
 export const resolveEmployeeOrgContextAsOf = bindHumanResourcesCapability(
 	resolveEmployeeOrgContextAsOfInternal,
 );
-export const resolveEmployeeProfileActorPermissions =
-	bindHumanResourcesCapability(resolveEmployeeProfileActorPermissionsInternal);
 export const resolveEmployeeWorkCalendar = bindHumanResourcesCapability(
 	resolveEmployeeWorkCalendarInternal,
 );
 export const resolveEmploymentCalendar = bindHumanResourcesCapability(
 	resolveEmploymentCalendarInternal,
-);
-export const resolvePrimaryAssignmentAsOf = bindHumanResourcesCapability(
-	resolvePrimaryAssignmentAsOfInternal,
 );
 export const resolvePrimaryManager = bindHumanResourcesCapability(
 	resolvePrimaryManagerInternal,

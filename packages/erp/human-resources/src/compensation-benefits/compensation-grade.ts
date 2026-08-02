@@ -14,13 +14,13 @@ import {
 	listCompensationGradesInputSchema,
 	updateCompensationGradeInputSchema,
 } from "../schemas/compensation";
-import {
-	runCompensationCommand,
-	runCompensationQuery,
-} from "../shared/compensation-command";
 import { notFound } from "../shared/domain-guards";
 import { buildMutationMeta } from "../shared/mutation-meta";
 import type { CompensationGrade, CompensationGradeListPage } from "../types";
+import {
+	runCompensationCapabilityCommand,
+	runCompensationCapabilityQuery,
+} from "./run-operation";
 
 export const HUMAN_RESOURCES_AGGREGATE_COMPENSATION_GRADE =
 	"compensation_grade" as const;
@@ -31,7 +31,8 @@ export function createCompensationGrade(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompensationGrade>> {
-	return runCompensationCommand(input, options, {
+	return runCompensationCapabilityCommand(input, options, {
+		storeMethods: ["createCompensationGrade"],
 		schema: createCompensationGradeInputSchema,
 		invalidMessage: "Invalid compensation grade create input",
 		command: HUMAN_RESOURCES_COMMAND_COMPENSATION_GRADE_CREATE,
@@ -56,7 +57,8 @@ export function updateCompensationGrade(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompensationGrade>> {
-	return runCompensationCommand(input, options, {
+	return runCompensationCapabilityCommand(input, options, {
+		storeMethods: ["updateCompensationGrade"],
 		schema: updateCompensationGradeInputSchema,
 		invalidMessage: "Invalid compensation grade update input",
 		command: HUMAN_RESOURCES_COMMAND_COMPENSATION_GRADE_UPDATE,
@@ -82,7 +84,8 @@ export function archiveCompensationGrade(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompensationGrade>> {
-	return runCompensationCommand(input, options, {
+	return runCompensationCapabilityCommand(input, options, {
+		storeMethods: ["archiveCompensationGrade"],
 		schema: archiveCompensationGradeInputSchema,
 		invalidMessage: "Invalid compensation grade archive input",
 		command: HUMAN_RESOURCES_COMMAND_COMPENSATION_GRADE_ARCHIVE,
@@ -107,14 +110,12 @@ export function getCompensationGrade(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompensationGrade>> {
-	return runCompensationQuery<
-		typeof getCompensationGradeInputSchema,
-		CompensationGrade
-	>(input, options, {
+	return runCompensationCapabilityQuery(input, options, {
+		storeMethods: ["getCompensationGrade"],
 		schema: getCompensationGradeInputSchema,
 		invalidMessage: "Invalid compensation grade get input",
 		query: HUMAN_RESOURCES_QUERY_COMPENSATION_GRADE_GET,
-		execute: async (data, { store }) => {
+		execute: async (data, { store }): Promise<Result<CompensationGrade>> => {
 			const grade = await store.getCompensationGrade({
 				organizationId: data.organizationId,
 				gradeId: data.gradeId,
@@ -134,7 +135,8 @@ export function listCompensationGrades(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompensationGradeListPage>> {
-	return runCompensationQuery(input, options, {
+	return runCompensationCapabilityQuery(input, options, {
+		storeMethods: ["listCompensationGrades"],
 		schema: listCompensationGradesInputSchema,
 		invalidMessage: "Invalid compensation grade list input",
 		query: HUMAN_RESOURCES_QUERY_COMPENSATION_GRADE_LIST,

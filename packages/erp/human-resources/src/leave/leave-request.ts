@@ -44,14 +44,6 @@ import {
 import { assertHumanResourcesSupplementalAuthorization } from "../shared/contextual-authorization";
 import { fingerprintLeaveRequestCreate } from "../shared/fingerprint";
 import {
-	assertLeaveRequestSensitiveReadAllowed,
-	requireLeaveCancelApprovedPermission,
-	requireLeaveRequestBackdatePermission,
-	requireLeaveRequestSensitiveRead,
-	runLeaveCommand,
-	runLeaveQuery,
-} from "../shared/leave-command";
-import {
 	assertApprovalDecisionMatchesRequestTransition,
 	assertApproverIsPrimaryManager,
 	assertEmploymentActiveForLeave,
@@ -69,13 +61,21 @@ import {
 	sequentialReturn,
 } from "../shared/run-sequential";
 import { resolveActorEmployeeIdentity } from "../shared/subject-aware-authorization";
-import type { HumanResourcesStore } from "../store";
 import type {
 	ApprovedLeaveHandoff,
 	LeaveRequest,
 	LeaveRequestListPage,
 	TeamCalendarLeavePage,
 } from "../types";
+import {
+	assertLeaveRequestSensitiveReadAllowed,
+	requireLeaveCancelApprovedPermission,
+	requireLeaveRequestBackdatePermission,
+	requireLeaveRequestSensitiveRead,
+	runLeaveCapabilityCommand,
+	runLeaveCapabilityQuery,
+} from "./run-operation";
+import type { HumanResourcesLeaveCapabilityStore } from "./store";
 
 export const HUMAN_RESOURCES_AGGREGATE_LEAVE_REQUEST = "leave_request" as const;
 
@@ -101,7 +101,10 @@ export type HumanResourcesLeaveRequestAggregate =
 
 /** Manager scope: actor-derived employee must be the effective primary manager at asOf. */
 async function assertActorIsPrimaryManager(
-	store: HumanResourcesStore,
+	store: Pick<
+		HumanResourcesLeaveCapabilityStore,
+		"getPrimaryManagerForEmployee"
+	>,
 	input: {
 		organizationId: string;
 		employeeId: HumanResourcesEmployeeId;
@@ -142,10 +145,17 @@ export async function createDraftLeaveRequest(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LeaveRequest>> {
-	return await runLeaveCommand(input, options, {
+	return await runLeaveCapabilityCommand(input, options, {
 		schema: createDraftLeaveRequestInputSchema,
 		invalidMessage: "Invalid leave request create input",
 		command: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_CREATE_DRAFT,
+		storeMethods: [
+			"findLeaveRequestByIdempotencyKey",
+			"getLeaveEntitlementById",
+			"getLeavePolicyById",
+			"getEmploymentById",
+			"createDraftLeaveRequest",
+		],
 		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The domain workflow keeps ordered invariant validation and Result mapping explicit.
 		execute: async (data, { store, ports, workCalendar }) => {
 			const backdate = await requireBackdatePermissionWhenNeeded(options, {
@@ -294,10 +304,15 @@ export async function amendLeaveRequest(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LeaveRequest>> {
-	return await runLeaveCommand(input, options, {
+	return await runLeaveCapabilityCommand(input, options, {
 		schema: amendLeaveRequestInputSchema,
 		invalidMessage: "Invalid leave request amend input",
 		command: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_AMEND,
+		storeMethods: [
+			"getLeaveRequestById",
+			"getLeavePolicyById",
+			"amendLeaveRequest",
+		],
 		execute: async (data, { store, ports, workCalendar }) => {
 			const backdate = await requireBackdatePermissionWhenNeeded(options, {
 				isBackdated: data.isBackdated === true,
@@ -390,10 +405,18 @@ export async function submitLeaveRequest(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LeaveRequest>> {
-	return await runLeaveCommand(input, options, {
+	return await runLeaveCapabilityCommand(input, options, {
 		schema: submitLeaveRequestInputSchema,
 		invalidMessage: "Invalid leave request submit input",
 		command: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_SUBMIT,
+		storeMethods: [
+			"getLeaveRequestById",
+			"getLeavePolicyById",
+			"getLeaveBalance",
+			"listLeaveRequestSegments",
+			"listOverlappingLeaveSegments",
+			"submitLeaveRequest",
+		],
 		execute: async (data, { store, ports }) => {
 			const request = await store.getLeaveRequestById({
 				organizationId: data.organizationId,
@@ -490,10 +513,19 @@ export async function approveLeaveRequest(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LeaveRequest>> {
-	return await runLeaveCommand(input, options, {
+	return await runLeaveCapabilityCommand(input, options, {
 		schema: approveLeaveRequestInputSchema,
 		invalidMessage: "Invalid leave request approve input",
 		command: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_APPROVE,
+		storeMethods: [
+			"getLeaveRequestById",
+			"getLeavePolicyById",
+			"getLeaveBalance",
+			"listLeaveRequestSegments",
+			"listOverlappingLeaveSegments",
+			"getPrimaryManagerForEmployee",
+			"approveLeaveRequest",
+		],
 		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The domain workflow keeps ordered invariant validation and Result mapping explicit.
 		execute: async (data, { store, ports, identityResolver }) => {
 			if (!identityResolver) {
@@ -649,10 +681,15 @@ export async function rejectLeaveRequest(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LeaveRequest>> {
-	return await runLeaveCommand(input, options, {
+	return await runLeaveCapabilityCommand(input, options, {
 		schema: rejectLeaveRequestInputSchema,
 		invalidMessage: "Invalid leave request reject input",
 		command: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_REJECT,
+		storeMethods: [
+			"getLeaveRequestById",
+			"getPrimaryManagerForEmployee",
+			"rejectLeaveRequest",
+		],
 		execute: async (data, { store, ports, identityResolver }) => {
 			if (!identityResolver) {
 				return errorResult.fail("UNAUTHORIZED");
@@ -719,10 +756,15 @@ export async function returnLeaveRequest(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LeaveRequest>> {
-	return await runLeaveCommand(input, options, {
+	return await runLeaveCapabilityCommand(input, options, {
 		schema: returnLeaveRequestInputSchema,
 		invalidMessage: "Invalid leave request return input",
 		command: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_RETURN,
+		storeMethods: [
+			"getLeaveRequestById",
+			"getPrimaryManagerForEmployee",
+			"returnLeaveRequest",
+		],
 		execute: async (data, { store, ports, identityResolver }) => {
 			if (!identityResolver) {
 				return errorResult.fail("UNAUTHORIZED");
@@ -789,10 +831,11 @@ export async function withdrawLeaveRequest(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LeaveRequest>> {
-	return await runLeaveCommand(input, options, {
+	return await runLeaveCapabilityCommand(input, options, {
 		schema: withdrawLeaveRequestInputSchema,
 		invalidMessage: "Invalid leave request withdraw input",
 		command: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_WITHDRAW,
+		storeMethods: ["withdrawLeaveRequest"],
 		execute: (data, { store, ports }) =>
 			store.withdrawLeaveRequest(
 				{
@@ -814,10 +857,11 @@ export async function cancelApprovedLeaveRequest(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LeaveRequest>> {
-	return await runLeaveCommand(input, options, {
+	return await runLeaveCapabilityCommand(input, options, {
 		schema: cancelApprovedLeaveRequestInputSchema,
 		invalidMessage: "Invalid leave request cancel input",
 		command: HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_CANCEL_APPROVED,
+		storeMethods: ["cancelApprovedLeaveRequest"],
 		authorize: (opts, data) =>
 			requireLeaveCancelApprovedPermission(opts, {
 				organizationId: data.organizationId,
@@ -847,10 +891,11 @@ export async function getLeaveRequest(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LeaveRequest | null>> {
-	return await runLeaveQuery(input, options, {
+	return await runLeaveCapabilityQuery(input, options, {
 		schema: getLeaveRequestInputSchema,
 		invalidMessage: "Invalid leave request get input",
 		query: HUMAN_RESOURCES_QUERY_LEAVE_REQUEST_GET,
+		storeMethods: ["getLeaveRequestById", "getLeavePolicyById"],
 		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The domain workflow keeps ordered invariant validation and Result mapping explicit.
 		execute: async (data, { store, identityResolver }) => {
 			const request = await store.getLeaveRequestById({
@@ -955,10 +1000,11 @@ export async function listLeaveRequests(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LeaveRequestListPage>> {
-	return await runLeaveQuery(input, options, {
+	return await runLeaveCapabilityQuery(input, options, {
 		schema: listLeaveRequestsInputSchema,
 		invalidMessage: "Invalid leave request list input",
 		query: HUMAN_RESOURCES_QUERY_LEAVE_REQUEST_LIST,
+		storeMethods: ["listLeaveRequests", "getLeavePolicyById"],
 		execute: async (data, { store, identityResolver }) => {
 			const actorIdentity = await resolveActorEmployeeIdentity(
 				identityResolver,
@@ -1048,10 +1094,11 @@ export async function listPendingApprovalLeaveRequests(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LeaveRequestListPage>> {
-	return await runLeaveQuery(input, options, {
+	return await runLeaveCapabilityQuery(input, options, {
 		schema: listPendingApprovalLeaveRequestsInputSchema,
 		invalidMessage: "Invalid pending approval leave request list input",
 		query: HUMAN_RESOURCES_QUERY_LEAVE_REQUEST_LIST_PENDING_APPROVAL,
+		storeMethods: ["listPendingApprovalLeaveRequests"],
 		execute: async (data, { store, identityResolver }) => {
 			if (!identityResolver) {
 				return errorResult.fail("UNAUTHORIZED");
@@ -1087,10 +1134,11 @@ export async function listTeamCalendarLeaveRequests(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<TeamCalendarLeavePage>> {
-	return await runLeaveQuery(input, options, {
+	return await runLeaveCapabilityQuery(input, options, {
 		schema: listTeamCalendarLeaveRequestsInputSchema,
 		invalidMessage: "Invalid team calendar leave request list input",
 		query: HUMAN_RESOURCES_QUERY_LEAVE_REQUEST_TEAM_CALENDAR,
+		storeMethods: ["listTeamCalendarLeaveRequests"],
 		execute: async (data, { store, identityResolver }) => {
 			if (!identityResolver) {
 				return errorResult.fail("UNAUTHORIZED");
@@ -1128,10 +1176,11 @@ export async function getApprovedLeaveHandoff(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<ApprovedLeaveHandoff | null>> {
-	return await runLeaveQuery(input, options, {
+	return await runLeaveCapabilityQuery(input, options, {
 		schema: getApprovedLeaveHandoffInputSchema,
 		invalidMessage: "Invalid approved leave handoff input",
 		query: HUMAN_RESOURCES_QUERY_APPROVED_LEAVE_HANDOFF_GET,
+		storeMethods: ["getApprovedLeaveHandoff"],
 		execute: (data, { store }) =>
 			store.getApprovedLeaveHandoff({
 				organizationId: data.organizationId,

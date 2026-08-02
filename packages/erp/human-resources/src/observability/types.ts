@@ -1,14 +1,17 @@
-export type HrObservabilityArea =
-	| "workforce"
-	| "compensation"
-	| "leave"
-	| "time"
-	| "talent"
-	| "compliance"
-	| "privacy"
-	| "bulk"
-	| "payroll_delivery"
-	| "integration";
+export const HR_OBSERVABILITY_AREAS = [
+	"workforce",
+	"compensation",
+	"leave",
+	"time",
+	"talent",
+	"compliance",
+	"privacy",
+	"bulk",
+	"payroll_delivery",
+	"integration",
+] as const;
+
+export type HrObservabilityArea = (typeof HR_OBSERVABILITY_AREAS)[number];
 
 export type HrOutcome = "success" | "failure";
 export type HrFailureReason =

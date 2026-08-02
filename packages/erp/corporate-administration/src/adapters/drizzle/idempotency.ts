@@ -34,7 +34,7 @@ export function createDrizzleCorporateAdministrationIdempotencyPort(
 	return new DrizzleCorporateAdministrationIdempotencyPort(dependencies);
 }
 
-export class DrizzleCorporateAdministrationIdempotencyPort
+class DrizzleCorporateAdministrationIdempotencyPort
 	implements CorporateAdministrationIdempotencyPort
 {
 	readonly #database: CorporateAdministrationDrizzleDatabase;

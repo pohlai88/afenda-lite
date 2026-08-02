@@ -14,8 +14,8 @@ import {
 	recordEmployeeCaseEventInputSchema,
 	redactEmployeeCaseEvidenceReferenceInputSchema,
 } from "../schemas/employee-relations";
-import { runEmployeeRelationsCommand } from "../shared/employee-relations-command";
 import { buildMutationMeta } from "../shared/mutation-meta";
+import { runEmployeeRelationsCapabilityCommand } from "./run-operation";
 import type { EmployeeCaseEvent } from "./types";
 
 export const HUMAN_RESOURCES_AGGREGATE_EMPLOYEE_CASE_EVENT =
@@ -27,10 +27,11 @@ export function recordEmployeeCaseEvent(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCaseEvent>> {
-	return runEmployeeRelationsCommand(input, options, {
+	return runEmployeeRelationsCapabilityCommand(input, options, {
 		schema: recordEmployeeCaseEventInputSchema,
 		invalidMessage: "Invalid employee case event input",
 		command: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RECORD_EVENT,
+		storeMethods: ["recordEmployeeCaseEvent"],
 		execute: (data, { store, ports }) =>
 			store.recordEmployeeCaseEvent(
 				{
@@ -58,10 +59,11 @@ export function addEmployeeCaseEvidenceReference(
 		return Promise.resolve(documentReference);
 	}
 
-	return runEmployeeRelationsCommand(input, options, {
+	return runEmployeeRelationsCapabilityCommand(input, options, {
 		schema: addEmployeeCaseEvidenceReferenceInputSchema,
 		invalidMessage: "Invalid employee case evidence reference input",
 		command: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_ADD_EVIDENCE_REFERENCE,
+		storeMethods: ["addEmployeeCaseEvidenceReference"],
 		execute: async (data, { store, ports }) => {
 			const refCheck = await documentReference.data.validateReference({
 				organizationId: data.organizationId,
@@ -95,10 +97,11 @@ export function redactEmployeeCaseEvidenceReference(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCaseEvent>> {
-	return runEmployeeRelationsCommand(input, options, {
+	return runEmployeeRelationsCapabilityCommand(input, options, {
 		schema: redactEmployeeCaseEvidenceReferenceInputSchema,
 		invalidMessage: "Invalid employee case evidence redact input",
 		command: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_REDACT_EVIDENCE_REFERENCE,
+		storeMethods: ["redactEmployeeCaseEvidenceReference"],
 		execute: (data, { store, ports }) =>
 			store.redactEmployeeCaseEvidenceReference(
 				{

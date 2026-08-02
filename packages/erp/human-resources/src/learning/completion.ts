@@ -16,12 +16,12 @@ import {
 	recordCompletionInputSchema,
 } from "../schemas/learning";
 import { fingerprintCompletionRecord } from "../shared/fingerprint";
-import {
-	runLearningCommand,
-	runLearningQuery,
-} from "../shared/learning-command";
 import { buildMutationMeta } from "../shared/mutation-meta";
 import type { CompletionListPage, LearningCompletion } from "../types";
+import {
+	runLearningCapabilityCommand,
+	runLearningCapabilityQuery,
+} from "./run-operation";
 
 export const HUMAN_RESOURCES_AGGREGATE_COMPLETION = "completion" as const;
 export type HumanResourcesCompletionAggregate =
@@ -31,10 +31,15 @@ export function recordCompletion(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LearningCompletion>> {
-	return runLearningCommand(input, options, {
+	return runLearningCapabilityCommand(input, options, {
 		schema: recordCompletionInputSchema,
 		invalidMessage: "Invalid completion record input",
 		command: HUMAN_RESOURCES_COMMAND_COMPLETION_RECORD,
+		storeMethods: [
+			"getLearningAssignmentById",
+			"findCompletionByIdempotencyKey",
+			"recordCompletion",
+		],
 		execute: async (data, { store, ports }) => {
 			const assignment = await store.getLearningAssignmentById({
 				organizationId: data.organizationId,
@@ -123,10 +128,11 @@ export function getCompletion(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LearningCompletion | null>> {
-	return runLearningQuery(input, options, {
+	return runLearningCapabilityQuery(input, options, {
 		schema: getCompletionByAssignmentInputSchema,
 		invalidMessage: "Invalid completion get input",
 		query: HUMAN_RESOURCES_QUERY_COMPLETION_GET_BY_ASSIGNMENT,
+		storeMethods: ["findCompletionByAssignmentId"],
 		execute: async (data, { store }) =>
 			await store.findCompletionByAssignmentId({
 				organizationId: data.organizationId,
@@ -139,10 +145,11 @@ export function listCompletions(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompletionListPage>> {
-	return runLearningQuery(input, options, {
+	return runLearningCapabilityQuery(input, options, {
 		schema: listCompletionsInputSchema,
 		invalidMessage: "Invalid completion list input",
 		query: HUMAN_RESOURCES_QUERY_COMPLETION_LIST,
+		storeMethods: ["listCompletions"],
 		execute: async (data, { store }) =>
 			await store.listCompletions({
 				organizationId: data.organizationId,

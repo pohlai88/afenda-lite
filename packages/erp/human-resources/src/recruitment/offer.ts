@@ -16,7 +16,6 @@ import {
 	HUMAN_RESOURCES_COMMAND_OFFER_WITHDRAW,
 	HUMAN_RESOURCES_QUERY_OFFER_GET,
 	HUMAN_RESOURCES_QUERY_OFFER_LIST,
-	type HumanResourcesCommandId,
 } from "../module-ids";
 import {
 	acceptOfferInputSchema,
@@ -28,16 +27,16 @@ import {
 } from "../schemas/recruitment";
 import { fingerprintOfferAccept } from "../shared/fingerprint";
 import { buildMutationMeta } from "../shared/mutation-meta";
-import {
-	runRecruitmentCommand,
-	runRecruitmentQuery,
-} from "../shared/recruitment-command";
 import type { OfferStatus } from "../shared/recruitment-status";
 import type {
 	EmploymentOffer,
 	OfferAcceptanceHandoff,
 	OfferListPage,
 } from "../types";
+import {
+	runRecruitmentCapabilityCommand,
+	runRecruitmentCapabilityQuery,
+} from "./run-operation";
 
 export const HUMAN_RESOURCES_AGGREGATE_OFFER = "offer" as const;
 export type HumanResourcesOfferAggregate =
@@ -51,10 +50,11 @@ export function createOffer(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmploymentOffer>> {
-	return runRecruitmentCommand(input, options, {
+	return runRecruitmentCapabilityCommand(input, options, {
 		schema: createOfferInputSchema,
 		invalidMessage: "Invalid offer create input",
 		command: HUMAN_RESOURCES_COMMAND_OFFER_CREATE,
+		storeMethods: ["createOffer"],
 		execute: (data, { store, ports }) =>
 			store.createOffer(
 				{
@@ -78,10 +78,11 @@ export function amendOfferDraft(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmploymentOffer>> {
-	return runRecruitmentCommand(input, options, {
+	return runRecruitmentCapabilityCommand(input, options, {
 		schema: amendOfferDraftInputSchema,
 		invalidMessage: "Invalid offer amend-draft input",
 		command: HUMAN_RESOURCES_COMMAND_OFFER_AMEND_DRAFT,
+		storeMethods: ["amendOfferDraft"],
 		execute: (data, { store, ports }) =>
 			store.amendOfferDraft(
 				{
@@ -107,15 +108,16 @@ function transitionOffer(
 	options: HumanResourcesCommandOptions,
 	config: {
 		invalidMessage: string;
-		command: HumanResourcesCommandId;
+		command: typeof import("./operation-registry").HUMAN_RESOURCES_RECRUITMENT_COMMAND_IDS[number];
 		status: Exclude<OfferStatus, "draft" | "accepted">;
 		asOfDate?: string;
 	},
 ): Promise<Result<EmploymentOffer>> {
-	return runRecruitmentCommand(input, options, {
+	return runRecruitmentCapabilityCommand(input, options, {
 		schema: offerStatusTransitionInputSchema,
 		invalidMessage: config.invalidMessage,
 		command: config.command,
+		storeMethods: ["transitionOfferStatus"],
 		execute: (data, { store, ports }) =>
 			store.transitionOfferStatus(
 				{
@@ -161,10 +163,11 @@ export function acceptOffer(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OfferAcceptanceHandoff>> {
-	return runRecruitmentCommand(input, options, {
+	return runRecruitmentCapabilityCommand(input, options, {
 		schema: acceptOfferInputSchema,
 		invalidMessage: "Invalid offer accept input",
 		command: HUMAN_RESOURCES_COMMAND_OFFER_ACCEPT,
+		storeMethods: ["acceptOffer", "findOfferByAcceptIdempotencyKey"],
 		execute: async (data, { store, ports }) => {
 			const asOfDate = data.asOfDate ?? todayUtcDate();
 			const requestFingerprint = fingerprintOfferAccept({
@@ -250,10 +253,11 @@ export function getOffer(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmploymentOffer>> {
-	return runRecruitmentQuery(input, options, {
+	return runRecruitmentCapabilityQuery(input, options, {
 		schema: getOfferInputSchema,
 		invalidMessage: "Invalid offer get input",
 		query: HUMAN_RESOURCES_QUERY_OFFER_GET,
+		storeMethods: ["getOfferById"],
 		execute: async (data, { store }) => {
 			const offer = await store.getOfferById({
 				organizationId: data.organizationId,
@@ -279,10 +283,11 @@ export function listOffers(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<OfferListPage>> {
-	return runRecruitmentQuery(input, options, {
+	return runRecruitmentCapabilityQuery(input, options, {
 		schema: listOffersInputSchema,
 		invalidMessage: "Invalid offer list input",
 		query: HUMAN_RESOURCES_QUERY_OFFER_LIST,
+		storeMethods: ["listOffers"],
 		execute: (data, { store }) =>
 			store.listOffers({
 				organizationId: data.organizationId,

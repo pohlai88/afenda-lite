@@ -11,6 +11,10 @@ import {
 	HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_REVOKE_VERIFICATION,
 	HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_UPDATE_METADATA,
 	HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_VERIFY,
+	HUMAN_RESOURCES_QUERY_EMPLOYEE_DOCUMENT_GET,
+	HUMAN_RESOURCES_QUERY_EMPLOYEE_DOCUMENT_LIST,
+	HUMAN_RESOURCES_QUERY_EMPLOYEE_DOCUMENT_LIST_EXPIRING,
+	HUMAN_RESOURCES_QUERY_EMPLOYEE_DOCUMENT_LIST_MISSING_REQUIRED,
 } from "../module-ids";
 import type {
 	DocumentReferencePort,
@@ -27,12 +31,6 @@ import {
 	updateEmployeeDocumentMetadataInputSchema,
 	verifyEmployeeDocumentInputSchema,
 } from "../schemas/compliance";
-import {
-	requireComplianceEmployeeReadScope,
-	requireIdentityDocumentSensitiveRead,
-	runComplianceCommand,
-	runComplianceEmployeeScopedQuery,
-} from "../shared/compliance-command";
 import { assertValidDocumentDateRange } from "../shared/compliance-guards";
 import {
 	fingerprintDocumentIdentifier,
@@ -49,6 +47,12 @@ import type {
 	EmployeeDocumentListPage,
 	EmployeeDocumentSensitiveDetail,
 } from "../types";
+import {
+	requireComplianceEmployeeReadScope,
+	requireIdentityDocumentSensitiveRead,
+	runComplianceCapabilityCommand,
+	runComplianceEmployeeScopedCapabilityQuery,
+} from "./run-operation";
 
 export const HUMAN_RESOURCES_AGGREGATE_EMPLOYEE_DOCUMENT =
 	"employee_document" as const;
@@ -93,10 +97,14 @@ export function registerEmployeeDocument(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeDocument>> {
-	return runComplianceCommand(input, options, {
+	return runComplianceCapabilityCommand(input, options, {
 		schema: registerEmployeeDocumentInputSchema,
 		invalidMessage: "Invalid employee document register input",
 		command: HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_REGISTER,
+		storeMethods: [
+			"findEmployeeDocumentByIdempotencyKey",
+			"registerEmployeeDocument",
+		],
 		execute: async (data, { store, ports, documentReference }) => {
 			const refCheck = await validateEmployeeDocumentRegistration(
 				documentReference,
@@ -182,10 +190,11 @@ export function updateEmployeeDocumentMetadata(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeDocument>> {
-	return runComplianceCommand(input, options, {
+	return runComplianceCapabilityCommand(input, options, {
 		schema: updateEmployeeDocumentMetadataInputSchema,
 		invalidMessage: "Invalid employee document metadata update input",
 		command: HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_UPDATE_METADATA,
+		storeMethods: ["getEmployeeDocumentById", "updateEmployeeDocumentMetadata"],
 		execute: async (data, { store, ports }) => {
 			if (data.expiresOn !== undefined && data.expiresOn !== null) {
 				const existing = await store.getEmployeeDocumentById({
@@ -234,10 +243,11 @@ export function verifyEmployeeDocument(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeDocument>> {
-	return runComplianceCommand(input, options, {
+	return runComplianceCapabilityCommand(input, options, {
 		schema: verifyEmployeeDocumentInputSchema,
 		invalidMessage: "Invalid employee document verify input",
 		command: HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_VERIFY,
+		storeMethods: ["verifyEmployeeDocument"],
 		execute: (data, { store, ports }) =>
 			store.verifyEmployeeDocument(
 				{
@@ -260,10 +270,11 @@ export function rejectEmployeeDocument(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeDocument>> {
-	return runComplianceCommand(input, options, {
+	return runComplianceCapabilityCommand(input, options, {
 		schema: rejectEmployeeDocumentInputSchema,
 		invalidMessage: "Invalid employee document reject input",
 		command: HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_REJECT,
+		storeMethods: ["rejectEmployeeDocument"],
 		execute: (data, { store, ports }) =>
 			store.rejectEmployeeDocument(
 				{
@@ -286,10 +297,11 @@ export function revokeEmployeeDocumentVerification(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeDocument>> {
-	return runComplianceCommand(input, options, {
+	return runComplianceCapabilityCommand(input, options, {
 		schema: employeeDocumentTransitionInputSchema,
 		invalidMessage: "Invalid employee document revoke verification input",
 		command: HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_REVOKE_VERIFICATION,
+		storeMethods: ["revokeEmployeeDocumentVerification"],
 		execute: (data, { store, ports }) =>
 			store.revokeEmployeeDocumentVerification(
 				{
@@ -312,10 +324,11 @@ export function markEmployeeDocumentExpired(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeDocument>> {
-	return runComplianceCommand(input, options, {
+	return runComplianceCapabilityCommand(input, options, {
 		schema: employeeDocumentTransitionInputSchema,
 		invalidMessage: "Invalid employee document mark expired input",
 		command: HUMAN_RESOURCES_COMMAND_EMPLOYEE_DOCUMENT_MARK_EXPIRED,
+		storeMethods: ["markEmployeeDocumentExpired"],
 		execute: (data, { store, ports }) =>
 			store.markEmployeeDocumentExpired(
 				{
@@ -337,7 +350,9 @@ export function getEmployeeDocument(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeDocumentListItem | EmployeeDocumentSensitiveDetail>> {
-	return runComplianceEmployeeScopedQuery(input, options, {
+	return runComplianceEmployeeScopedCapabilityQuery(input, options, {
+		query: HUMAN_RESOURCES_QUERY_EMPLOYEE_DOCUMENT_GET,
+		storeMethods: ["getEmployeeDocumentById"],
 		schema: getEmployeeDocumentInputSchema,
 		invalidMessage: "Invalid employee document get input",
 		execute: async (data, { store, identityResolver }) => {
@@ -389,7 +404,9 @@ export function listEmployeeDocuments(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeDocumentListPage>> {
-	return runComplianceEmployeeScopedQuery(input, options, {
+	return runComplianceEmployeeScopedCapabilityQuery(input, options, {
+		query: HUMAN_RESOURCES_QUERY_EMPLOYEE_DOCUMENT_LIST,
+		storeMethods: ["listEmployeeDocuments"],
 		schema: listEmployeeDocumentsInputSchema,
 		invalidMessage: "Invalid employee document list input",
 		execute: async (data, { store }) =>
@@ -407,7 +424,9 @@ export function listMissingRequiredDocuments(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<DocumentRequirementListPage>> {
-	return runComplianceEmployeeScopedQuery(input, options, {
+	return runComplianceEmployeeScopedCapabilityQuery(input, options, {
+		query: HUMAN_RESOURCES_QUERY_EMPLOYEE_DOCUMENT_LIST_MISSING_REQUIRED,
+		storeMethods: ["listMissingRequiredDocuments"],
 		schema: listMissingRequiredDocumentsInputSchema,
 		invalidMessage: "Invalid missing required documents list input",
 		execute: async (data, { store }) =>
@@ -424,7 +443,9 @@ export function listExpiringEmployeeDocuments(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeDocumentListPage>> {
-	return runComplianceEmployeeScopedQuery(input, options, {
+	return runComplianceEmployeeScopedCapabilityQuery(input, options, {
+		query: HUMAN_RESOURCES_QUERY_EMPLOYEE_DOCUMENT_LIST_EXPIRING,
+		storeMethods: ["listExpiringEmployeeDocuments"],
 		schema: listExpiringEmployeeDocumentsInputSchema,
 		invalidMessage: "Invalid expiring employee documents list input",
 		execute: async (data, { store }) =>

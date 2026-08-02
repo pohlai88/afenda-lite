@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { errorResult, type Result } from "@afenda/errors";
+import { HUMAN_RESOURCES_HIRE_FROM_ACCEPTED_OFFER_COMPLETED_EVENT } from "@afenda/events/schemas";
 import {
 	parseHumanResourcesAssignmentId,
 	parseHumanResourcesEmployeeId,
@@ -10,12 +11,15 @@ import {
 	parseHumanResourcesPersonId,
 	parseHumanResourcesWorkerId,
 } from "../../brands";
+import { emitHumanResourcesMutationOutcome } from "../../emissions/mutation-outcome";
+import { getHumanResourcesMutationEmission } from "../../emissions/resolve-emission";
 import type {
 	HireAttempt,
 	HireCompensationLogEntry,
 } from "../../hire-orchestration/types";
 import { assertExpectedVersion } from "../../shared/concurrency";
 import { conflict } from "../../shared/domain-guards";
+import { attachMutationExecutionContext } from "../../shared/mutation-meta";
 import { runSequential, sequentialReturn } from "../../shared/run-sequential";
 import type {
 	HumanResourcesHireOrchestrationStore,
@@ -68,6 +72,64 @@ export function createMemoryHireOrchestrationMethods(
 	state: HireOrchestrationMemoryState,
 ): HumanResourcesHireOrchestrationStore {
 	return {
+		async completeHireAttempt(input, ports, meta) {
+			const existing = state.attemptsById.get(input.attemptId);
+			if (
+				existing === undefined ||
+				existing.organizationId !== input.organizationId
+			) {
+				return conflict("Hire attempt not found");
+			}
+			const versionCheck = assertExpectedVersion(
+				existing.version,
+				input.expectedVersion,
+			);
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
+			const definition = getHumanResourcesMutationEmission(meta.operationId);
+			const emission = await emitHumanResourcesMutationOutcome(
+				{
+					commandId: meta.operationId,
+					meta: attachMutationExecutionContext(meta, {
+						organizationId: input.organizationId,
+						actorUserId: input.actorUserId,
+					}),
+					aggregateType: definition.aggregateType,
+					aggregateId: input.attemptId,
+					audit: {
+						entity: "hr_hire_attempt",
+						action: "UPDATE",
+						changes: [
+							{
+								field: "status",
+								oldValue: existing.status,
+								newValue: "completed",
+							},
+						],
+					},
+					event: {
+						type: HUMAN_RESOURCES_HIRE_FROM_ACCEPTED_OFFER_COMPLETED_EVENT,
+						entityType: "hr_hire_attempt",
+						payload: {},
+					},
+				},
+				ports,
+			);
+			if (!emission.ok) {
+				return emission;
+			}
+			return this.updateHireAttemptProgress(
+				{
+					...input,
+					currentStep: existing.currentStep,
+					status: "completed",
+				},
+				ports,
+				meta,
+			);
+		},
+
 		async findHireAttemptByIdempotencyKey(input) {
 			const record = state.idempotencyByKey.get(
 				idempotencyMapKey(input.organizationId, input.idempotencyKey),

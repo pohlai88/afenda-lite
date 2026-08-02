@@ -2,15 +2,18 @@ import { errorResult, type Result } from "@afenda/errors";
 
 import type { HumanResourcesEmployeeId } from "../brands";
 import { invalidState, notFound } from "../shared/domain-guards";
-import type { HumanResourcesStore } from "../store";
 import { isActiveEmploymentOnDate } from "../time/timesheet-generation";
+import type { HumanResourcesRecruitmentCapabilityStore } from "./store";
 
 export function mutationUtcDate(): string {
 	return new Date().toISOString().slice(0, 10);
 }
 
 export async function validateHiringManagerEmployee(
-	store: HumanResourcesStore,
+	store: Pick<
+		HumanResourcesRecruitmentCapabilityStore,
+		"findEmploymentByEmployeeAsOf" | "getEmployeeById"
+	>,
 	input: {
 		organizationId: string;
 		hiringManagerEmployeeId: HumanResourcesEmployeeId;

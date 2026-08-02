@@ -13,7 +13,6 @@ export const privacyPolicy = createScopedPolicy({
 	resourceRequired: true,
 	subjectPolicy: "privileged_only",
 	fieldClasses: ["personal_identifiers"],
-	operationPrefixes: ["human-resources.privacy."],
 	privilegedPermissions: [
 		HUMAN_RESOURCES_PERMISSION_PRIVACY_EXPORT,
 		HUMAN_RESOURCES_PERMISSION_PRIVACY_ANONYMIZE_EVALUATE,

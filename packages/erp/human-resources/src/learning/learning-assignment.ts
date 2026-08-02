@@ -19,12 +19,12 @@ import {
 	waiveLearningAssignmentInputSchema,
 } from "../schemas/learning";
 import { fingerprintLearningAssignmentCreate } from "../shared/fingerprint";
-import {
-	runLearningCommand,
-	runLearningQuery,
-} from "../shared/learning-command";
 import { buildMutationMeta } from "../shared/mutation-meta";
 import type { LearningAssignment, LearningAssignmentListPage } from "../types";
+import {
+	runLearningCapabilityCommand,
+	runLearningCapabilityQuery,
+} from "./run-operation";
 
 export const HUMAN_RESOURCES_AGGREGATE_LEARNING_ASSIGNMENT =
 	"learning_assignment" as const;
@@ -35,10 +35,14 @@ export function assignLearning(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LearningAssignment>> {
-	return runLearningCommand(input, options, {
+	return runLearningCapabilityCommand(input, options, {
 		schema: createLearningAssignmentInputSchema,
 		invalidMessage: "Invalid learning assignment create input",
 		command: HUMAN_RESOURCES_COMMAND_LEARNING_ASSIGNMENT_CREATE,
+		storeMethods: [
+			"findLearningAssignmentByIdempotencyKey",
+			"createLearningAssignment",
+		],
 		execute: async (data, { store, ports }) => {
 			const assignedAt = new Date();
 			const sessionId = data.sessionId ?? null;
@@ -101,10 +105,11 @@ export function enrolAssignment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LearningAssignment>> {
-	return runLearningCommand(input, options, {
+	return runLearningCapabilityCommand(input, options, {
 		schema: enrolLearningAssignmentInputSchema,
 		invalidMessage: "Invalid learning assignment enrol input",
 		command: HUMAN_RESOURCES_COMMAND_LEARNING_ASSIGNMENT_ENROL,
+		storeMethods: ["enrollLearningAssignment"],
 		execute: async (data, { store, ports }) =>
 			await store.enrollLearningAssignment(
 				{
@@ -127,10 +132,11 @@ export function waiveAssignment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LearningAssignment>> {
-	return runLearningCommand(input, options, {
+	return runLearningCapabilityCommand(input, options, {
 		schema: waiveLearningAssignmentInputSchema,
 		invalidMessage: "Invalid learning assignment waive input",
 		command: HUMAN_RESOURCES_COMMAND_LEARNING_ASSIGNMENT_WAIVE,
+		storeMethods: ["waiveLearningAssignment"],
 		execute: async (data, { store, ports }) =>
 			await store.waiveLearningAssignment(
 				{
@@ -148,14 +154,15 @@ export function waiveAssignment(
 	});
 }
 
-export function getLearningAssignmentByAssignmentId(
+export function getLearningAssignment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LearningAssignment | null>> {
-	return runLearningQuery(input, options, {
+	return runLearningCapabilityQuery(input, options, {
 		schema: getLearningAssignmentInputSchema,
 		invalidMessage: "Invalid learning assignment get input",
 		query: HUMAN_RESOURCES_QUERY_LEARNING_ASSIGNMENT_GET,
+		storeMethods: ["getLearningAssignmentById"],
 		execute: async (data, { store }) =>
 			await store.getLearningAssignmentById({
 				organizationId: data.organizationId,
@@ -164,21 +171,15 @@ export function getLearningAssignmentByAssignmentId(
 	});
 }
 
-export function getLearningAssignment(
-	input: unknown,
-	options: HumanResourcesCommandOptions = {},
-): Promise<Result<LearningAssignment | null>> {
-	return getLearningAssignmentByAssignmentId(input, options);
-}
-
-export function listAssignments(
+export function listLearningAssignments(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LearningAssignmentListPage>> {
-	return runLearningQuery(input, options, {
+	return runLearningCapabilityQuery(input, options, {
 		schema: listLearningAssignmentsInputSchema,
 		invalidMessage: "Invalid learning assignment list input",
 		query: HUMAN_RESOURCES_QUERY_LEARNING_ASSIGNMENT_LIST,
+		storeMethods: ["listLearningAssignments"],
 		execute: async (data, { store }) =>
 			await store.listLearningAssignments({
 				organizationId: data.organizationId,
@@ -189,11 +190,4 @@ export function listAssignments(
 				courseId: data.courseId,
 			}),
 	});
-}
-
-export function listLearningAssignments(
-	input: unknown,
-	options: HumanResourcesCommandOptions = {},
-): Promise<Result<LearningAssignmentListPage>> {
-	return listAssignments(input, options);
 }

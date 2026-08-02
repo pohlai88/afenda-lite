@@ -12,6 +12,7 @@ import {
 	HUMAN_RESOURCES_ERROR_NOT_FOUND,
 	humanResourcesErrorDetails,
 } from "../error-codes";
+import type { HumanResourcesEmploymentLifecycleCommandId } from "../module-ids";
 import {
 	HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_CORRECT,
 	HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_CREATE,
@@ -336,10 +337,22 @@ export function correctEmploymentContract(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmploymentContract>> {
+	return correctEmploymentContractForOperation(
+		input,
+		options,
+		HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_CORRECT,
+	);
+}
+
+export function correctEmploymentContractForOperation(
+	input: unknown,
+	options: HumanResourcesCommandOptions,
+	command: HumanResourcesEmploymentLifecycleCommandId,
+): Promise<Result<EmploymentContract>> {
 	return runEmploymentLifecycleCommand(input, options, {
 		schema: correctEmploymentContractInputSchema,
 		invalidMessage: "Invalid employment contract correct input",
-		command: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_CORRECT,
+		command,
 		storeMethods: [
 			"getEmploymentContractById",
 			"getEmploymentById",
@@ -413,7 +426,7 @@ export function correctEmploymentContract(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operationId: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_CORRECT,
+					operationId: command,
 				}),
 			);
 		},
@@ -426,10 +439,24 @@ export function supersedeEmploymentContract(
 ): Promise<
 	Result<{ superseded: EmploymentContract; successor: EmploymentContract }>
 > {
+	return supersedeEmploymentContractForOperation(
+		input,
+		options,
+		HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_SUPERSEDE,
+	);
+}
+
+export function supersedeEmploymentContractForOperation(
+	input: unknown,
+	options: HumanResourcesCommandOptions,
+	command: HumanResourcesEmploymentLifecycleCommandId,
+): Promise<
+	Result<{ superseded: EmploymentContract; successor: EmploymentContract }>
+> {
 	return runEmploymentLifecycleCommand(input, options, {
 		schema: supersedeEmploymentContractInputSchema,
 		invalidMessage: "Invalid employment contract supersede input",
-		command: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_SUPERSEDE,
+		command,
 		storeMethods: [
 			"getEmploymentContractById",
 			"getEmploymentById",
@@ -459,7 +486,7 @@ export function supersedeEmploymentContract(
 				ports,
 				buildMutationMeta({
 					correlationId: data.correlationId,
-					operationId: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_SUPERSEDE,
+					operationId: command,
 				}),
 			);
 		},

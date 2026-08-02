@@ -14,17 +14,17 @@ import {
 	getCompensationProposalInputSchema,
 	listCompensationProposalsInputSchema,
 } from "../schemas/compensation";
-import {
-	assertCurrencyExists,
-	runCompensationCommand,
-	runCompensationQuery,
-} from "../shared/compensation-command";
 import { notFound } from "../shared/domain-guards";
 import { buildMutationMeta } from "../shared/mutation-meta";
 import type {
 	CompensationProposal,
 	CompensationProposalListPage,
 } from "../types";
+import {
+	assertCurrencyExists,
+	runCompensationCapabilityCommand,
+	runCompensationCapabilityQuery,
+} from "./run-operation";
 
 export const HUMAN_RESOURCES_AGGREGATE_COMPENSATION_PROPOSAL =
 	"compensation_proposal" as const;
@@ -35,7 +35,8 @@ export function createCompensationProposal(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompensationProposal>> {
-	return runCompensationCommand(input, options, {
+	return runCompensationCapabilityCommand(input, options, {
+		storeMethods: ["createCompensationProposal"],
 		schema: createCompensationProposalInputSchema,
 		invalidMessage: "Invalid compensation proposal create input",
 		command: HUMAN_RESOURCES_COMMAND_COMPENSATION_PROPOSAL_CREATE,
@@ -75,7 +76,8 @@ export function amendCompensationProposal(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompensationProposal>> {
-	return runCompensationCommand(input, options, {
+	return runCompensationCapabilityCommand(input, options, {
+		storeMethods: ["amendCompensationProposal"],
 		schema: amendCompensationProposalInputSchema,
 		invalidMessage: "Invalid compensation proposal amend input",
 		command: HUMAN_RESOURCES_COMMAND_COMPENSATION_PROPOSAL_AMEND,
@@ -116,7 +118,8 @@ export function approveCompensationProposal(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompensationProposal>> {
-	return runCompensationCommand(input, options, {
+	return runCompensationCapabilityCommand(input, options, {
+		storeMethods: ["approveCompensationProposal"],
 		schema: approveCompensationProposalInputSchema,
 		invalidMessage: "Invalid compensation proposal approve input",
 		command: HUMAN_RESOURCES_COMMAND_COMPENSATION_PROPOSAL_APPROVE,
@@ -141,14 +144,12 @@ export function getCompensationProposal(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompensationProposal>> {
-	return runCompensationQuery<
-		typeof getCompensationProposalInputSchema,
-		CompensationProposal
-	>(input, options, {
+	return runCompensationCapabilityQuery(input, options, {
+		storeMethods: ["getCompensationProposal"],
 		schema: getCompensationProposalInputSchema,
 		invalidMessage: "Invalid compensation proposal get input",
 		query: HUMAN_RESOURCES_QUERY_COMPENSATION_PROPOSAL_GET,
-		execute: async (data, { store }) => {
+		execute: async (data, { store }): Promise<Result<CompensationProposal>> => {
 			const proposal = await store.getCompensationProposal({
 				organizationId: data.organizationId,
 				proposalId: data.proposalId,
@@ -168,7 +169,8 @@ export function listCompensationProposals(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompensationProposalListPage>> {
-	return runCompensationQuery(input, options, {
+	return runCompensationCapabilityQuery(input, options, {
+		storeMethods: ["listCompensationProposals"],
 		schema: listCompensationProposalsInputSchema,
 		invalidMessage: "Invalid compensation proposal list input",
 		query: HUMAN_RESOURCES_QUERY_COMPENSATION_PROPOSAL_LIST,

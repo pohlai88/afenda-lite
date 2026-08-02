@@ -1,9 +1,9 @@
+import { CORPORATE_ADMINISTRATION_PERMISSION_CODES } from "@afenda/corporate-administration";
+import { describe, expect, it } from "vitest";
 import {
 	CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS,
-	CORPORATE_ADMINISTRATION_PERMISSION_CODES,
 	CORPORATE_ADMINISTRATION_QUERY_PERMISSIONS,
-} from "@afenda/corporate-administration";
-import { describe, expect, it } from "vitest";
+} from "../../src/operation-registry/registry";
 
 describe("Corporate Administration company permission coverage", () => {
 	it("maps every CA-1.1 command to the company manage capability", () => {

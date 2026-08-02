@@ -23,16 +23,25 @@ events:
     id: corporate_administration.legal_company.name_superseded.v1
     moduleId: corporate-administration
   - direction: emits
+    id: corporate_administration.legal_company.name_retired.v1
+    moduleId: corporate-administration
+  - direction: emits
     id: corporate_administration.legal_company.legal_form_changed.v1
     moduleId: corporate-administration
   - direction: emits
     id: corporate_administration.legal_company.identifier_registered.v1
     moduleId: corporate-administration
   - direction: emits
+    id: corporate_administration.legal_company.identifier_retired.v1
+    moduleId: corporate-administration
+  - direction: emits
     id: corporate_administration.legal_company.financial_year_set.v1
     moduleId: corporate-administration
   - direction: emits
     id: corporate_administration.legal_company.activity_registered.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.legal_company.activity_ended.v1
     moduleId: corporate-administration
   - direction: emits
     id: corporate_administration.legal_company.activated.v1

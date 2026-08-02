@@ -44,6 +44,45 @@ constructed at the app composition root and validated by the package. Per-call
 options carry request facts only: organization, actor, correlation,
 authorization, idempotency key and optional causation.
 
+The root exposes one runtime factory, `createCorporateAdministrationRuntime`.
+After parsing and before any domain read, a private command capability derives
+the required permission from the operation registry and returns a registry-bound
+authorization token. The internal durable kernel accepts that token as its only
+source of operation identity and request facts; callers cannot authorize one
+operation and persist, audit, emit or observe another. The kernel then owns
+approval checks, idempotency reservation, transaction execution, audit
+recording, outbox append and idempotency completion. Domain handlers supply
+domain behavior; they do not reinterpret shared execution policy or depend on
+another domain's store contract.
+
+Approval semantics are registry-owned and evaluated by the command kernel:
+optional approval is enforced whenever a verifier is configured, legal-company
+lifecycle transitions always require a verified maker-checker decision, and
+officer appointment requires one when the resolved statutory office is a
+protected role. Required approval fails closed when the verifier, binding IDs,
+tenant/fingerprint match, affirmative decision or independent approver is
+missing. Application composition does not install an allow-all or synthetic
+approval verifier.
+
+Operation diagnostics are registry-driven and emitted once by the private
+command and query kernels. Every accepted operation invocation records a
+terminal `success`, governed `failure` with its canonical error code, or
+redacted `exception` observation. The private query kernel also owns the
+registry-ID-to-permission decision; query facades retain input parsing and
+domain behavior but cannot interpret authorization policy.
+The required runtime observability port is implemented at the application
+composition root through `@afenda/logger`; package code does not depend on the
+logger implementation or expose tenant, actor, payload, approval, SQL or stack
+data through the observation contract.
+
+Operation meaning is owned by the domain operation definitions composed into
+the canonical registry. Command/query identifiers, permissions, registered
+events and manifest inventories derive from that registry. Application
+consumers request a permission through
+`corporateAdministrationPermissionFor(operationId)` and cannot consume the
+registry's internal permission maps or low-level permission guard from the
+package root.
+
 The package owns `ca_*` mutation tables only through its stores and adapters.
 Shared audit and pending-event infrastructure remains platform-owned.
 
@@ -53,7 +92,8 @@ Shared audit and pending-event infrastructure remains platform-owned.
   queries and runtime contracts
 - `@afenda/corporate-administration/module-manifest` — governed manifest
 - `@afenda/corporate-administration/adapters/drizzle` — production adapter
-  factories for app composition
+  factories and structural dependency contracts for app composition; concrete
+  adapter classes remain private implementation details
 - `@afenda/corporate-administration/testing` — non-production fixtures, parity
   harnesses and memory stores
 

@@ -6,14 +6,4 @@ export const recruitmentPolicy = createScopedPolicy({
 	resourceRequired: false,
 	subjectPolicy: "privileged_only",
 	fieldClasses: ["background_check", "personal_identifiers"],
-	operationPrefixes: [
-		"human-resources.requisition.",
-		"human-resources.candidate.",
-		"human-resources.application.",
-		"human-resources.interview.",
-		"human-resources.interview-evaluation.",
-		"human-resources.offer.",
-		"human-resources.hire.",
-		"human-resources.recruitment.",
-	],
 });

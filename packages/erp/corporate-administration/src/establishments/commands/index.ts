@@ -1,15 +1,11 @@
 // biome-ignore-all lint/suspicious/useAwait: Command wrappers expose one asynchronous boundary for validation failures and delegated transactions.
 import { errorResult, type Result } from "@afenda/errors";
-
-import {
-	CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS,
-	requireCorporateAdministrationPermission,
-} from "../../authorization";
 import type { CorporateAdministrationCommandOptions } from "../../command-options";
 import {
-	type DurableLegalCompanyCommandDependencies,
-	runDurableCompanyCommand,
-} from "../../company/commands/durable-command";
+	authorizeCorporateAdministrationCommand,
+	type CorporateAdministrationCommandKernelDependencies,
+	executeCorporateAdministrationCommand,
+} from "../../internal/durable-command";
 import type { LegalCompanyId, LegalEstablishmentId } from "../../kernel/brands";
 import type { CanonicalDate } from "../../kernel/dates";
 import { parseCorporateAdministrationInput } from "../../parse-input";
@@ -49,7 +45,7 @@ import type {
 } from "../types";
 
 type Dependencies = EstablishmentCommandDependencies &
-	DurableLegalCompanyCommandDependencies;
+	CorporateAdministrationCommandKernelDependencies;
 
 export async function registerLegalEstablishment(
 	input: RegisterLegalEstablishmentInput,
@@ -63,7 +59,10 @@ export async function registerLegalEstablishment(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "registerLegalEstablishment");
+	const authorized = await authorizeCorporateAdministrationCommand(
+		"registerLegalEstablishment",
+		options,
+	);
 	if (!authorized.ok) {
 		return authorized;
 	}
@@ -99,18 +98,15 @@ export async function registerLegalEstablishment(
 		return references;
 	}
 
-	return runDurableCompanyCommand({
-		commandId: "corporate-administration.legal-establishment.register",
+	return executeCorporateAdministrationCommand({
+		authorization: authorized.data,
 		fingerprintSchema: registerLegalEstablishmentInputSchema,
 		fingerprintInput: parsed.data,
 		outputSchema: legalEstablishmentSchema,
-		options,
 		dependencies,
 		event: {
-			type: "corporate_administration.legal_establishment.registered.v1",
 			operationType: "CREATE",
 			targetType: "ca_legal_establishment",
-			aggregateType: "legal_establishment",
 			aggregateId: (result) => result.id,
 			aggregateVersion: (result) => result.version,
 			payload: (result, context) => ({
@@ -161,7 +157,10 @@ export async function updateLegalEstablishment(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "updateLegalEstablishment");
+	const authorized = await authorizeCorporateAdministrationCommand(
+		"updateLegalEstablishment",
+		options,
+	);
 	if (!authorized.ok) {
 		return authorized;
 	}
@@ -186,18 +185,15 @@ export async function updateLegalEstablishment(
 	if (!source.ok) {
 		return source;
 	}
-	return runDurableCompanyCommand({
-		commandId: "corporate-administration.legal-establishment.update",
+	return executeCorporateAdministrationCommand({
+		authorization: authorized.data,
 		fingerprintSchema: updateLegalEstablishmentInputSchema,
 		fingerprintInput: parsed.data,
 		outputSchema: legalEstablishmentSchema,
-		options,
 		dependencies,
 		event: {
-			type: "corporate_administration.legal_establishment.updated.v1",
 			operationType: "UPDATE",
 			targetType: "ca_legal_establishment",
-			aggregateType: "legal_establishment",
 			aggregateId: (result) => result.id,
 			aggregateVersion: (result) => result.version,
 			payload: (result, context) => ({
@@ -288,7 +284,10 @@ async function transitionEstablishment(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, commandId);
+	const authorized = await authorizeCorporateAdministrationCommand(
+		commandId,
+		options,
+	);
 	if (!authorized.ok) {
 		return authorized;
 	}
@@ -340,18 +339,15 @@ async function transitionEstablishment(
 	}
 	const previousStatus = current.data.currentStatus;
 
-	return runDurableCompanyCommand({
-		commandId: `corporate-administration.legal-establishment.${targetStatus}`,
+	return executeCorporateAdministrationCommand({
+		authorization: authorized.data,
 		fingerprintSchema: schema,
 		fingerprintInput: parsed.data,
 		outputSchema: legalEstablishmentSchema,
-		options,
 		dependencies,
 		event: {
-			type: "corporate_administration.legal_establishment.status_changed.v1",
 			operationType: "UPDATE",
 			targetType: "ca_establishment_status_history",
-			aggregateType: "legal_establishment",
 			aggregateId: (result) => result.id,
 			aggregateVersion: (result) => result.version,
 			payload: (result, context) => ({
@@ -396,7 +392,10 @@ export async function setRegisteredAddress(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "setRegisteredAddress");
+	const authorized = await authorizeCorporateAdministrationCommand(
+		"setRegisteredAddress",
+		options,
+	);
 	if (!authorized.ok) {
 		return authorized;
 	}
@@ -429,18 +428,15 @@ export async function setRegisteredAddress(
 		return overlap;
 	}
 
-	return runDurableCompanyCommand({
-		commandId: "corporate-administration.registered-address.set",
+	return executeCorporateAdministrationCommand({
+		authorization: authorized.data,
 		fingerprintSchema: setRegisteredAddressInputSchema,
 		fingerprintInput: parsed.data,
 		outputSchema: registeredAddressSchema,
-		options,
 		dependencies,
 		event: {
-			type: "corporate_administration.registered_address.set.v1",
 			operationType: "CREATE",
 			targetType: "ca_registered_address",
-			aggregateType: "registered_address",
 			aggregateId: (result) => result.id,
 			aggregateVersion: (result) => result.version,
 			payload: (result, context) => ({
@@ -488,7 +484,10 @@ export async function registerPremise(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "registerPremise");
+	const authorized = await authorizeCorporateAdministrationCommand(
+		"registerPremise",
+		options,
+	);
 	if (!authorized.ok) {
 		return authorized;
 	}
@@ -501,18 +500,15 @@ export async function registerPremise(
 		return prepared;
 	}
 
-	return runDurableCompanyCommand({
-		commandId: "corporate-administration.premise.register",
+	return executeCorporateAdministrationCommand({
+		authorization: authorized.data,
 		fingerprintSchema: registerPremiseInputSchema,
 		fingerprintInput: parsed.data,
 		outputSchema: premiseSchema,
-		options,
 		dependencies,
 		event: {
-			type: "corporate_administration.premise.registered.v1",
 			operationType: "CREATE",
 			targetType: "ca_premise",
-			aggregateType: "premise",
 			aggregateId: (result) => result.id,
 			aggregateVersion: (result) => result.version,
 			payload: (result, context) => ({
@@ -559,7 +555,10 @@ export async function endPremise(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "endPremise");
+	const authorized = await authorizeCorporateAdministrationCommand(
+		"endPremise",
+		options,
+	);
 	if (!authorized.ok) {
 		return authorized;
 	}
@@ -591,18 +590,15 @@ export async function endPremise(
 		return source;
 	}
 
-	return runDurableCompanyCommand({
-		commandId: "corporate-administration.premise.end",
+	return executeCorporateAdministrationCommand({
+		authorization: authorized.data,
 		fingerprintSchema: endPremiseInputSchema,
 		fingerprintInput: parsed.data,
 		outputSchema: premiseSchema,
-		options,
 		dependencies,
 		event: {
-			type: "corporate_administration.premise.ended.v1",
 			operationType: "UPDATE",
 			targetType: "ca_premise",
-			aggregateType: "premise",
 			aggregateId: (result) => result.id,
 			aggregateVersion: (result) => result.version,
 			payload: (result, context) => ({
@@ -757,17 +753,6 @@ async function validateSource(
 	return source.data === null || !source.data.active
 		? invalidReference("sourceDocumentId", source.data !== null)
 		: { ok: true as const, data: undefined };
-}
-
-function authorize(
-	options: CorporateAdministrationCommandOptions,
-	command: keyof typeof CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS,
-) {
-	return requireCorporateAdministrationPermission(options.authorization, {
-		organizationId: options.organizationId,
-		actorUserId: options.actorUserId,
-		permission: CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS[command],
-	});
 }
 
 function notFound(_entityType: string): Result<never> {

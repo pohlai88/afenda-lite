@@ -3,6 +3,7 @@ import {
 	projectHumanResourcesAuthorization,
 	projectHumanResourcesOperationIds,
 } from "../operation-registry/define-registry";
+import { HUMAN_RESOURCES_BACKGROUND_CHECK_SENSITIVITY } from "../operation-registry/sensitivity-defaults";
 import {
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYMENT_MANAGE,
@@ -45,10 +46,35 @@ export const HUMAN_RESOURCES_EMPLOYMENT_LIFECYCLE_COMMANDS =
 			id: "human-resources.employment.create",
 			publicName: "createEmployment",
 		},
+		hireEmployment: {
+			...EMPLOYMENT_COMMAND,
+			id: "human-resources.employment.hire",
+			publicName: "hireEmployment",
+		},
+		rehireEmployment: {
+			...EMPLOYMENT_COMMAND,
+			id: "human-resources.employment.rehire",
+			publicName: "rehireEmployment",
+		},
 		amendEmployment: {
 			...EMPLOYMENT_COMMAND,
 			id: "human-resources.employment.amend",
 			publicName: "amendEmployment",
+		},
+		suspendEmployment: {
+			...EMPLOYMENT_COMMAND,
+			id: "human-resources.employment.suspend",
+			publicName: "suspendEmployment",
+		},
+		reactivateEmployment: {
+			...EMPLOYMENT_COMMAND,
+			id: "human-resources.employment.reactivate",
+			publicName: "reactivateEmployment",
+		},
+		terminateEmployment: {
+			...EMPLOYMENT_COMMAND,
+			id: "human-resources.employment.terminate",
+			publicName: "terminateEmployment",
 		},
 		correctEmployment: {
 			...EMPLOYMENT_COMMAND,
@@ -65,10 +91,20 @@ export const HUMAN_RESOURCES_EMPLOYMENT_LIFECYCLE_COMMANDS =
 			id: "human-resources.employment-contract.correct",
 			publicName: "correctEmploymentContract",
 		},
+		amendEmploymentContract: {
+			...EMPLOYMENT_COMMAND,
+			id: "human-resources.employment-contract.amend",
+			publicName: "amendEmploymentContract",
+		},
 		supersedeEmploymentContract: {
 			...EMPLOYMENT_COMMAND,
 			id: "human-resources.employment-contract.supersede",
 			publicName: "supersedeEmploymentContract",
+		},
+		renewEmploymentContract: {
+			...EMPLOYMENT_COMMAND,
+			id: "human-resources.employment-contract.renew",
+			publicName: "renewEmploymentContract",
 		},
 		endEmploymentContract: {
 			...EMPLOYMENT_COMMAND,
@@ -181,6 +217,7 @@ export const HUMAN_RESOURCES_EMPLOYMENT_LIFECYCLE_COMMANDS =
 			publicName: "completeOffboardingTask",
 		},
 		recordExitInterview: {
+			sensitivity: HUMAN_RESOURCES_BACKGROUND_CHECK_SENSITIVITY,
 			...EMPLOYMENT_WORKFLOW_COMMAND,
 			id: "human-resources.offboarding.record-exit-interview",
 			permission: HUMAN_RESOURCES_PERMISSION_OFFBOARDING_MANAGE,
@@ -327,6 +364,7 @@ export const HUMAN_RESOURCES_EMPLOYMENT_LIFECYCLE_QUERIES =
 		getClearanceByOffboardingCase: {
 			...EMPLOYMENT_WORKFLOW_QUERY,
 			id: "human-resources.clearance.get-by-offboarding-case",
+			observabilityArea: "compliance",
 			publicName: "getClearanceByOffboardingCase",
 		},
 		getOffboardingAccessRevocationByCase: {
@@ -337,22 +375,37 @@ export const HUMAN_RESOURCES_EMPLOYMENT_LIFECYCLE_QUERIES =
 		getOffboardingPayrollHandoffByCase: {
 			...EMPLOYMENT_WORKFLOW_QUERY,
 			id: "human-resources.offboarding-payroll-handoff.get-by-case",
+			observabilityArea: "payroll_delivery",
 			publicName: "getOffboardingPayrollHandoffByCase",
 		},
 	});
 
 export const HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CREATE =
 	HUMAN_RESOURCES_EMPLOYMENT_LIFECYCLE_COMMANDS.createEmployment.id;
+export const HUMAN_RESOURCES_COMMAND_EMPLOYMENT_HIRE =
+	HUMAN_RESOURCES_EMPLOYMENT_LIFECYCLE_COMMANDS.hireEmployment.id;
+export const HUMAN_RESOURCES_COMMAND_EMPLOYMENT_REHIRE =
+	HUMAN_RESOURCES_EMPLOYMENT_LIFECYCLE_COMMANDS.rehireEmployment.id;
 export const HUMAN_RESOURCES_COMMAND_EMPLOYMENT_AMEND =
 	HUMAN_RESOURCES_EMPLOYMENT_LIFECYCLE_COMMANDS.amendEmployment.id;
+export const HUMAN_RESOURCES_COMMAND_EMPLOYMENT_SUSPEND =
+	HUMAN_RESOURCES_EMPLOYMENT_LIFECYCLE_COMMANDS.suspendEmployment.id;
+export const HUMAN_RESOURCES_COMMAND_EMPLOYMENT_REACTIVATE =
+	HUMAN_RESOURCES_EMPLOYMENT_LIFECYCLE_COMMANDS.reactivateEmployment.id;
+export const HUMAN_RESOURCES_COMMAND_EMPLOYMENT_TERMINATE =
+	HUMAN_RESOURCES_EMPLOYMENT_LIFECYCLE_COMMANDS.terminateEmployment.id;
 export const HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CORRECT =
 	HUMAN_RESOURCES_EMPLOYMENT_LIFECYCLE_COMMANDS.correctEmployment.id;
 export const HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_CREATE =
 	HUMAN_RESOURCES_EMPLOYMENT_LIFECYCLE_COMMANDS.createEmploymentContract.id;
 export const HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_CORRECT =
 	HUMAN_RESOURCES_EMPLOYMENT_LIFECYCLE_COMMANDS.correctEmploymentContract.id;
+export const HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_AMEND =
+	HUMAN_RESOURCES_EMPLOYMENT_LIFECYCLE_COMMANDS.amendEmploymentContract.id;
 export const HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_SUPERSEDE =
 	HUMAN_RESOURCES_EMPLOYMENT_LIFECYCLE_COMMANDS.supersedeEmploymentContract.id;
+export const HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_RENEW =
+	HUMAN_RESOURCES_EMPLOYMENT_LIFECYCLE_COMMANDS.renewEmploymentContract.id;
 export const HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_END =
 	HUMAN_RESOURCES_EMPLOYMENT_LIFECYCLE_COMMANDS.endEmploymentContract.id;
 export const HUMAN_RESOURCES_COMMAND_ASSIGNMENT_CREATE =

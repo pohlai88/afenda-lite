@@ -24,15 +24,15 @@ import {
 	reopenApplicationInputSchema,
 } from "../schemas/recruitment";
 import { buildMutationMeta } from "../shared/mutation-meta";
-import {
-	runRecruitmentCommand,
-	runRecruitmentQuery,
-} from "../shared/recruitment-command";
 import type {
 	ApplicationListPage,
 	ApplicationStatusHistory,
 	CandidateApplication,
 } from "../types";
+import {
+	runRecruitmentCapabilityCommand,
+	runRecruitmentCapabilityQuery,
+} from "./run-operation";
 
 export const HUMAN_RESOURCES_AGGREGATE_APPLICATION = "application" as const;
 export type HumanResourcesApplicationAggregate =
@@ -42,10 +42,11 @@ export function createApplication(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CandidateApplication>> {
-	return runRecruitmentCommand(input, options, {
+	return runRecruitmentCapabilityCommand(input, options, {
 		schema: createApplicationInputSchema,
 		invalidMessage: "Invalid application create input",
 		command: HUMAN_RESOURCES_COMMAND_APPLICATION_CREATE,
+		storeMethods: ["createApplication"],
 		execute: (data, { store, ports }) =>
 			store.createApplication(
 				{
@@ -76,10 +77,11 @@ function transitionApplication(
 		status: "in_review" | "interviewing" | "rejected" | "withdrawn";
 	},
 ): Promise<Result<CandidateApplication>> {
-	return runRecruitmentCommand(input, options, {
+	return runRecruitmentCapabilityCommand(input, options, {
 		schema: applicationStatusTransitionInputSchema,
 		invalidMessage: config.invalidMessage,
 		command: config.command,
+		storeMethods: ["transitionApplicationStatus"],
 		execute: (data, { store, ports }) =>
 			store.transitionApplicationStatus(
 				{
@@ -148,10 +150,11 @@ export function reopenApplication(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CandidateApplication>> {
-	return runRecruitmentCommand(input, options, {
+	return runRecruitmentCapabilityCommand(input, options, {
 		schema: reopenApplicationInputSchema,
 		invalidMessage: "Invalid application reopen input",
 		command: HUMAN_RESOURCES_COMMAND_APPLICATION_REOPEN,
+		storeMethods: ["reopenApplication"],
 		execute: (data, { store, ports }) =>
 			store.reopenApplication(
 				{
@@ -175,10 +178,11 @@ export function getApplication(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CandidateApplication>> {
-	return runRecruitmentQuery(input, options, {
+	return runRecruitmentCapabilityQuery(input, options, {
 		schema: getApplicationInputSchema,
 		invalidMessage: "Invalid application get input",
 		query: HUMAN_RESOURCES_QUERY_APPLICATION_GET,
+		storeMethods: ["getApplicationById"],
 		execute: async (data, { store }) => {
 			const application = await store.getApplicationById({
 				organizationId: data.organizationId,
@@ -204,10 +208,11 @@ export function listApplications(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<ApplicationListPage>> {
-	return runRecruitmentQuery(input, options, {
+	return runRecruitmentCapabilityQuery(input, options, {
 		schema: listApplicationsInputSchema,
 		invalidMessage: "Invalid application list input",
 		query: HUMAN_RESOURCES_QUERY_APPLICATION_LIST,
+		storeMethods: ["listApplications"],
 		execute: (data, { store }) =>
 			store.listApplications({
 				organizationId: data.organizationId,
@@ -224,10 +229,11 @@ export function listApplicationStatusHistory(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<ApplicationStatusHistory[]>> {
-	return runRecruitmentQuery(input, options, {
+	return runRecruitmentCapabilityQuery(input, options, {
 		schema: listApplicationStatusHistoryInputSchema,
 		invalidMessage: "Invalid application status history input",
 		query: HUMAN_RESOURCES_QUERY_APPLICATION_STATUS_HISTORY_LIST,
+		storeMethods: ["listApplicationStatusHistory"],
 		execute: async (data, { store }) => {
 			const history = await store.listApplicationStatusHistory({
 				organizationId: data.organizationId,

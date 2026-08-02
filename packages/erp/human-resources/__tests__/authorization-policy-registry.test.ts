@@ -17,7 +17,6 @@ import {
 } from "../src/permissions";
 import { HUMAN_RESOURCES_SENSITIVE_OPERATION_IDS } from "../src/sensitive-operation-policies";
 import {
-	HUMAN_RESOURCES_AUTHORIZATION_POLICIES,
 	HUMAN_RESOURCES_MANIFEST_ONLY_POLICY_ID,
 	type HumanResourcesAuthorizationPolicy,
 	resolveHumanResourcesAuthorizationPolicy,
@@ -97,7 +96,7 @@ function leaveQueryRequest(
 
 function stubPolicy(
 	overrides: Partial<HumanResourcesAuthorizationPolicy> &
-		Pick<HumanResourcesAuthorizationPolicy, "id" | "operationPrefixes">,
+		Pick<HumanResourcesAuthorizationPolicy, "id">,
 ): HumanResourcesAuthorizationPolicy {
 	return {
 		mode: "subject_scoped",
@@ -148,33 +147,26 @@ describe("authorization policy registry", () => {
 				HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_CREATE_DRAFT,
 				[
 					stubPolicy({
-						id: "prefix.a",
-						operationPrefixes: ["human-resources.leave-request."],
+						id: "hr.leave",
 					}),
 					stubPolicy({
-						id: "prefix.b",
-						operationPrefixes: ["human-resources.leave-request.create"],
+						id: "hr.leave",
 					}),
 				],
 			),
 		).toThrow(/Ambiguous HR authorization policies/);
 	});
 
-	it("rejects overlapping operation prefixes", () => {
-		const manifestOnlyPolicy = stubPolicy({
-			id: HUMAN_RESOURCES_MANIFEST_ONLY_POLICY_ID,
-			operationPrefixes: ["human-resources.employee-case."],
-		});
+	it("rejects duplicate exact policy identities", () => {
+		const policy = resolveHumanResourcesAuthorizationPolicy(
+			HUMAN_RESOURCES_QUERY_EMPLOYEE_CASE_GET,
+		);
 		const duplicatePolicies = [
 			{
-				...manifestOnlyPolicy,
-				id: "first",
-				operationPrefixes: ["human-resources.employee-case."],
+				...policy,
 			},
 			{
-				...manifestOnlyPolicy,
-				id: "second",
-				operationPrefixes: ["human-resources.employee-case."],
+				...policy,
 			},
 		] as const;
 
@@ -188,16 +180,10 @@ describe("authorization policy registry", () => {
 
 	it("classifies every sensitive operation exactly once", () => {
 		for (const operationId of HUMAN_RESOURCES_SENSITIVE_OPERATION_IDS) {
-			const matches = HUMAN_RESOURCES_AUTHORIZATION_POLICIES.filter((policy) =>
-				policy.operationPrefixes.some((prefix) =>
-					operationId.startsWith(prefix),
-				),
-			);
-
 			expect(
-				matches,
+				resolveHumanResourcesAuthorizationPolicy(operationId),
 				`${operationId} must have exactly one policy`,
-			).toHaveLength(1);
+			).toBeDefined();
 		}
 	});
 });
@@ -210,12 +196,10 @@ describe("authorizeHumanResourcesOperation facade", () => {
 				authorization: leaveOwnAuth(),
 				policies: [
 					stubPolicy({
-						id: "prefix.a",
-						operationPrefixes: ["human-resources.leave-request."],
+						id: "hr.leave",
 					}),
 					stubPolicy({
-						id: "prefix.b",
-						operationPrefixes: ["human-resources.leave-request.create"],
+						id: "hr.leave",
 					}),
 				],
 			},
@@ -311,9 +295,8 @@ describe("authorizeHumanResourcesOperation facade", () => {
 	it("allows manager scope only for the resource manager", async () => {
 		const policies: HumanResourcesAuthorizationPolicy[] = [
 			stubPolicy({
-				id: "custom.leave.manager",
+				id: "hr.leave",
 				mode: "resource_scoped",
-				operationPrefixes: ["human-resources.leave-request."],
 				async evaluate(request) {
 					const { resource } = request;
 					if (!resource) {
@@ -321,19 +304,19 @@ describe("authorizeHumanResourcesOperation facade", () => {
 							allowed: false,
 							code: "resource_context_required",
 							reason: "missing",
-							policyId: "custom.leave.manager",
+							policyId: "hr.leave",
 						};
 					}
 					const isManager =
 						request.actor.actorEmployeeId !== undefined &&
 						request.actor.actorEmployeeId === resource.managerEmployeeId;
 					return (await isManager)
-						? { allowed: true, policyId: "custom.leave.manager" }
+						? { allowed: true, policyId: "hr.leave" }
 						: {
 								allowed: false,
 								code: "subject_scope_denied",
 								reason: "not manager",
-								policyId: "custom.leave.manager",
+								policyId: "hr.leave",
 							};
 				},
 			}),

@@ -3,6 +3,7 @@ import {
 	projectHumanResourcesAuthorization,
 	projectHumanResourcesOperationIds,
 } from "../operation-registry/define-registry";
+import { HUMAN_RESOURCES_PERSONAL_IDENTIFIER_SENSITIVITY } from "../operation-registry/sensitivity-defaults";
 import {
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CREATE,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_READ,
@@ -24,6 +25,7 @@ const EMPLOYEE_PROFILE_POLICY = "hr.employee-profile" as const;
 export const HUMAN_RESOURCES_WORKFORCE_FOUNDATION_COMMANDS =
 	defineHumanResourcesOperationRegistry({
 		createPerson: {
+			sensitivity: HUMAN_RESOURCES_PERSONAL_IDENTIFIER_SENSITIVITY,
 			id: "human-resources.person.create",
 			kind: "command",
 			owner: WORKFORCE_FOUNDATION_OWNER,
@@ -32,6 +34,7 @@ export const HUMAN_RESOURCES_WORKFORCE_FOUNDATION_COMMANDS =
 			publicName: "createPerson",
 		},
 		updatePersonName: {
+			sensitivity: HUMAN_RESOURCES_PERSONAL_IDENTIFIER_SENSITIVITY,
 			id: "human-resources.person.update",
 			kind: "command",
 			owner: WORKFORCE_FOUNDATION_OWNER,
@@ -40,6 +43,7 @@ export const HUMAN_RESOURCES_WORKFORCE_FOUNDATION_COMMANDS =
 			publicName: "updatePersonName",
 		},
 		updatePersonPreferredName: {
+			sensitivity: HUMAN_RESOURCES_PERSONAL_IDENTIFIER_SENSITIVITY,
 			id: "human-resources.person.preferred-name.update",
 			kind: "command",
 			owner: WORKFORCE_FOUNDATION_OWNER,
@@ -48,6 +52,7 @@ export const HUMAN_RESOURCES_WORKFORCE_FOUNDATION_COMMANDS =
 			publicName: "updatePersonPreferredName",
 		},
 		setPersonPrivacyClassification: {
+			sensitivity: HUMAN_RESOURCES_PERSONAL_IDENTIFIER_SENSITIVITY,
 			id: "human-resources.person.privacy-classification.set",
 			kind: "command",
 			owner: WORKFORCE_FOUNDATION_OWNER,
@@ -56,6 +61,7 @@ export const HUMAN_RESOURCES_WORKFORCE_FOUNDATION_COMMANDS =
 			publicName: "setPersonPrivacyClassification",
 		},
 		addPersonContact: {
+			sensitivity: HUMAN_RESOURCES_PERSONAL_IDENTIFIER_SENSITIVITY,
 			id: "human-resources.person.contact.add",
 			kind: "command",
 			owner: WORKFORCE_FOUNDATION_OWNER,
@@ -64,6 +70,7 @@ export const HUMAN_RESOURCES_WORKFORCE_FOUNDATION_COMMANDS =
 			publicName: "addPersonContact",
 		},
 		updatePersonContact: {
+			sensitivity: HUMAN_RESOURCES_PERSONAL_IDENTIFIER_SENSITIVITY,
 			id: "human-resources.person.contact.update",
 			kind: "command",
 			owner: WORKFORCE_FOUNDATION_OWNER,
@@ -72,6 +79,7 @@ export const HUMAN_RESOURCES_WORKFORCE_FOUNDATION_COMMANDS =
 			publicName: "updatePersonContact",
 		},
 		retirePersonContact: {
+			sensitivity: HUMAN_RESOURCES_PERSONAL_IDENTIFIER_SENSITIVITY,
 			id: "human-resources.person.contact.retire",
 			kind: "command",
 			owner: WORKFORCE_FOUNDATION_OWNER,
@@ -80,6 +88,7 @@ export const HUMAN_RESOURCES_WORKFORCE_FOUNDATION_COMMANDS =
 			publicName: "retirePersonContact",
 		},
 		addPersonIdentifier: {
+			sensitivity: HUMAN_RESOURCES_PERSONAL_IDENTIFIER_SENSITIVITY,
 			id: "human-resources.person.identifier.add",
 			kind: "command",
 			owner: WORKFORCE_FOUNDATION_OWNER,
@@ -88,6 +97,7 @@ export const HUMAN_RESOURCES_WORKFORCE_FOUNDATION_COMMANDS =
 			publicName: "addPersonIdentifier",
 		},
 		retirePersonIdentifier: {
+			sensitivity: HUMAN_RESOURCES_PERSONAL_IDENTIFIER_SENSITIVITY,
 			id: "human-resources.person.identifier.retire",
 			kind: "command",
 			owner: WORKFORCE_FOUNDATION_OWNER,
@@ -140,6 +150,7 @@ export const HUMAN_RESOURCES_WORKFORCE_FOUNDATION_COMMANDS =
 export const HUMAN_RESOURCES_WORKFORCE_FOUNDATION_QUERIES =
 	defineHumanResourcesOperationRegistry({
 		getPersonById: {
+			sensitivity: HUMAN_RESOURCES_PERSONAL_IDENTIFIER_SENSITIVITY,
 			id: "human-resources.person.get",
 			kind: "query",
 			owner: WORKFORCE_FOUNDATION_OWNER,
@@ -148,6 +159,7 @@ export const HUMAN_RESOURCES_WORKFORCE_FOUNDATION_QUERIES =
 			publicName: "getPersonById",
 		},
 		getPersonAsOf: {
+			sensitivity: HUMAN_RESOURCES_PERSONAL_IDENTIFIER_SENSITIVITY,
 			id: "human-resources.person.get-as-of",
 			kind: "query",
 			owner: WORKFORCE_FOUNDATION_OWNER,
@@ -156,6 +168,7 @@ export const HUMAN_RESOURCES_WORKFORCE_FOUNDATION_QUERIES =
 			publicName: "getPersonAsOf",
 		},
 		listPersonContacts: {
+			sensitivity: HUMAN_RESOURCES_PERSONAL_IDENTIFIER_SENSITIVITY,
 			id: "human-resources.person.contacts.list",
 			kind: "query",
 			owner: WORKFORCE_FOUNDATION_OWNER,
@@ -164,6 +177,7 @@ export const HUMAN_RESOURCES_WORKFORCE_FOUNDATION_QUERIES =
 			publicName: "listPersonContacts",
 		},
 		listPersonIdentifiers: {
+			sensitivity: HUMAN_RESOURCES_PERSONAL_IDENTIFIER_SENSITIVITY,
 			id: "human-resources.person.identifiers.list",
 			kind: "query",
 			owner: WORKFORCE_FOUNDATION_OWNER,
@@ -172,6 +186,7 @@ export const HUMAN_RESOURCES_WORKFORCE_FOUNDATION_QUERIES =
 			publicName: "listPersonIdentifiers",
 		},
 		detectPersonDuplicates: {
+			sensitivity: HUMAN_RESOURCES_PERSONAL_IDENTIFIER_SENSITIVITY,
 			id: "human-resources.person.duplicates.detect",
 			kind: "query",
 			owner: WORKFORCE_FOUNDATION_OWNER,

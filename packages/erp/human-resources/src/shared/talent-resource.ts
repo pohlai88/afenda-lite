@@ -7,12 +7,15 @@ import {
 	parseHumanResourcesCompetencyAssessmentId,
 	parseHumanResourcesTalentProfileId,
 } from "../brands";
-import {
-	type HumanResourcesCommandOptions,
-	resolveCommandDeps,
-} from "../command-options";
+import type { HumanResourcesIdentityResolverPort } from "../identity-resolver";
+import type { HumanResourcesTalentAuthorizationStore } from "../talent/store";
 import type { HumanResourcesResourceContext } from "./authorization-types";
 import type { HumanResourcesAuthorizedActorInput } from "./run-authorized-operation";
+
+export interface TalentResourceDeps {
+	identityResolver: HumanResourcesIdentityResolverPort | undefined;
+	store: HumanResourcesTalentAuthorizationStore;
+}
 
 export function talentProfileResource(input: {
 	organizationId: string;
@@ -30,9 +33,8 @@ export function talentProfileResource(input: {
 async function withPrimaryManagerOnResource(
 	context: HumanResourcesResourceContext,
 	employeeId: HumanResourcesEmployeeId,
-	options: HumanResourcesCommandOptions,
+	store: HumanResourcesTalentAuthorizationStore,
 ): Promise<HumanResourcesResourceContext> {
-	const { store } = resolveCommandDeps(options);
 	const primaryManager = await store.getPrimaryManagerForEmployee({
 		organizationId: context.organizationId,
 		employeeId,
@@ -51,21 +53,21 @@ export async function resolveTalentProfileResourceForEmployee(
 		employeeId: HumanResourcesEmployeeId;
 		resourceId?: string | undefined;
 	},
-	options: HumanResourcesCommandOptions,
+	deps: TalentResourceDeps,
 ): Promise<HumanResourcesResourceContext> {
 	return await withPrimaryManagerOnResource(
 		talentProfileResource(input),
 		input.employeeId,
-		options,
+		deps.store,
 	);
 }
 
 /** Org-scoped talent admin ops still supply a resource shell for subject-scoped policies. */
 export async function resolveActorTalentProfileResource(
 	data: HumanResourcesAuthorizedActorInput,
-	options: HumanResourcesCommandOptions,
+	deps: TalentResourceDeps,
 ): Promise<HumanResourcesResourceContext> {
-	const { identityResolver } = resolveCommandDeps(options);
+	const { identityResolver } = deps;
 	if (identityResolver !== undefined) {
 		const identity = await identityResolver.resolveEmployeeForActor({
 			organizationId: data.organizationId,
@@ -86,14 +88,13 @@ export async function resolveActorTalentProfileResource(
 
 export async function resolveTalentProfileResourceFromCareerPlan(
 	data: { organizationId: string; careerPlanId: HumanResourcesCareerPlanId },
-	options: HumanResourcesCommandOptions,
+	deps: TalentResourceDeps,
 ): Promise<HumanResourcesResourceContext | undefined> {
 	const parsedId = parseHumanResourcesCareerPlanId(data.careerPlanId);
 	if (!parsedId.ok) {
 		return;
 	}
-	const { store } = resolveCommandDeps(options);
-	const loaded = await store.getCareerPlanById({
+	const loaded = await deps.store.getCareerPlanById({
 		organizationId: data.organizationId,
 		careerPlanId: parsedId.data,
 	});
@@ -107,7 +108,7 @@ export async function resolveTalentProfileResourceFromCareerPlan(
 			resourceId: data.careerPlanId,
 		}),
 		loaded.data.employeeId,
-		options,
+		deps.store,
 	);
 }
 
@@ -116,14 +117,13 @@ export async function resolveTalentProfileResourceFromTalentProfile(
 		organizationId: string;
 		talentProfileId: HumanResourcesTalentProfileId;
 	},
-	options: HumanResourcesCommandOptions,
+	deps: TalentResourceDeps,
 ): Promise<HumanResourcesResourceContext | undefined> {
 	const parsedId = parseHumanResourcesTalentProfileId(data.talentProfileId);
 	if (!parsedId.ok) {
 		return;
 	}
-	const { store } = resolveCommandDeps(options);
-	const loaded = await store.getTalentProfileById({
+	const loaded = await deps.store.getTalentProfileById({
 		organizationId: data.organizationId,
 		talentProfileId: parsedId.data,
 	});
@@ -137,7 +137,7 @@ export async function resolveTalentProfileResourceFromTalentProfile(
 			resourceId: data.talentProfileId,
 		}),
 		loaded.data.employeeId,
-		options,
+		deps.store,
 	);
 }
 
@@ -146,14 +146,13 @@ export async function resolveCompetencyAssessmentResource(
 		organizationId: string;
 		assessmentId: HumanResourcesCompetencyAssessmentId;
 	},
-	options: HumanResourcesCommandOptions,
+	deps: TalentResourceDeps,
 ): Promise<HumanResourcesResourceContext | undefined> {
 	const parsedId = parseHumanResourcesCompetencyAssessmentId(data.assessmentId);
 	if (!parsedId.ok) {
 		return;
 	}
-	const { store } = resolveCommandDeps(options);
-	const loaded = await store.getCompetencyAssessmentById({
+	const loaded = await deps.store.getCompetencyAssessmentById({
 		organizationId: data.organizationId,
 		assessmentId: parsedId.data,
 	});
@@ -166,5 +165,9 @@ export async function resolveCompetencyAssessmentResource(
 		subjectEmployeeId: loaded.data.employeeId,
 		resourceId: data.assessmentId,
 	};
-	return withPrimaryManagerOnResource(context, loaded.data.employeeId, options);
+	return withPrimaryManagerOnResource(
+		context,
+		loaded.data.employeeId,
+		deps.store,
+	);
 }

@@ -1,10 +1,10 @@
 import type { Result } from "@afenda/errors";
 import type { z } from "zod";
-import {
-	CORPORATE_ADMINISTRATION_QUERY_PERMISSIONS,
-	requireCorporateAdministrationPermission,
-} from "../../authorization";
 import type { CorporateAdministrationQueryOptions } from "../../command-options";
+import {
+	type CorporateAdministrationQueryKernelDependencies,
+	executeCorporateAdministrationQuery,
+} from "../../internal/query";
 import { cursorPaginationSchema } from "../../kernel/pagination";
 import { parseCorporateAdministrationInput } from "../../parse-input";
 import { listLegalCompaniesInputSchema } from "../schemas";
@@ -18,7 +18,8 @@ export type ListLegalCompaniesInput = z.input<
 export async function listLegalCompanies(
 	input: ListLegalCompaniesInput | undefined,
 	options: CorporateAdministrationQueryOptions,
-	dependencies: LegalCompanyQueryDependencies,
+	dependencies: LegalCompanyQueryDependencies &
+		CorporateAdministrationQueryKernelDependencies,
 ): Promise<Result<LegalCompanyListPage>> {
 	const parsed = parseCorporateAdministrationInput(
 		listLegalCompaniesInputSchema.optional(),
@@ -28,22 +29,16 @@ export async function listLegalCompanies(
 		return parsed;
 	}
 
-	const authorized = await requireCorporateAdministrationPermission(
-		options.authorization,
-		{
-			organizationId: options.organizationId,
-			actorUserId: options.actorUserId,
-			permission: CORPORATE_ADMINISTRATION_QUERY_PERMISSIONS.listLegalCompanies,
-		},
-	);
-	if (!authorized.ok) {
-		return authorized;
-	}
-
-	return dependencies.store.listLegalCompanies({
-		organizationId: options.organizationId,
-		asOf: parsed.data?.asOf,
-		knownAt: parsed.data?.knownAt,
-		pagination: cursorPaginationSchema.parse(parsed.data?.pagination ?? {}),
+	return await executeCorporateAdministrationQuery({
+		operationId: "listLegalCompanies",
+		options,
+		dependencies,
+		work: async () =>
+			dependencies.store.listLegalCompanies({
+				organizationId: options.organizationId,
+				asOf: parsed.data?.asOf,
+				knownAt: parsed.data?.knownAt,
+				pagination: cursorPaginationSchema.parse(parsed.data?.pagination ?? {}),
+			}),
 	});
 }

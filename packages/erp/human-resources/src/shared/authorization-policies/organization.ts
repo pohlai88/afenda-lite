@@ -5,8 +5,4 @@ export const organizationPolicy = createScopedPolicy({
 	mode: "manifest_only",
 	resourceRequired: false,
 	subjectPolicy: "manifest_only",
-	operationPrefixes: [
-		"human-resources.organization.",
-		"human-resources.reporting-line.",
-	],
 });

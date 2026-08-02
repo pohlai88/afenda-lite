@@ -36,7 +36,6 @@ import {
 	fingerprintSuccessionPlanCreate,
 } from "../shared/fingerprint";
 import { buildMutationMeta } from "../shared/mutation-meta";
-import { runTalentCommand, runTalentQuery } from "../shared/talent-command";
 import type {
 	PositionSuccessionCoverage,
 	SuccessionCandidate,
@@ -44,6 +43,10 @@ import type {
 	SuccessionPlan,
 	SuccessionPlanListPage,
 } from "../types";
+import {
+	runTalentCapabilityCommand,
+	runTalentCapabilityQuery,
+} from "./run-operation";
 import {
 	type ProjectedSuccessionCandidateListPage,
 	projectSuccessionCandidateListFromDecision,
@@ -60,7 +63,11 @@ export function createSuccessionPlan(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<SuccessionPlan>> {
-	return runTalentCommand(input, options, {
+	return runTalentCapabilityCommand(input, options, {
+		storeMethods: [
+			"createSuccessionPlan",
+			"findSuccessionPlanByIdempotencyKey",
+		],
 		schema: createSuccessionPlanInputSchema,
 		invalidMessage: "Invalid succession plan create input",
 		command: HUMAN_RESOURCES_COMMAND_SUCCESSION_PLAN_CREATE,
@@ -117,7 +124,8 @@ export function updateSuccessionPlan(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<SuccessionPlan>> {
-	return runTalentCommand(input, options, {
+	return runTalentCapabilityCommand(input, options, {
+		storeMethods: ["updateSuccessionPlan"],
 		schema: updateSuccessionPlanInputSchema,
 		invalidMessage: "Invalid succession plan update input",
 		command: HUMAN_RESOURCES_COMMAND_SUCCESSION_PLAN_UPDATE,
@@ -144,7 +152,11 @@ export function nominateSuccessionCandidate(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<SuccessionCandidate>> {
-	return runTalentCommand(input, options, {
+	return runTalentCapabilityCommand(input, options, {
+		storeMethods: [
+			"findSuccessionCandidateByIdempotencyKey",
+			"nominateSuccessionCandidate",
+		],
 		schema: nominateSuccessionCandidateInputSchema,
 		invalidMessage: "Invalid succession candidate nomination input",
 		command: HUMAN_RESOURCES_COMMAND_SUCCESSION_CANDIDATE_NOMINATE,
@@ -209,7 +221,8 @@ export function assessSuccessionReadiness(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<SuccessionCandidate>> {
-	return runTalentCommand(input, options, {
+	return runTalentCapabilityCommand(input, options, {
+		storeMethods: ["assessSuccessionReadiness"],
 		schema: assessSuccessionReadinessInputSchema,
 		invalidMessage: "Invalid succession readiness assessment input",
 		command: HUMAN_RESOURCES_COMMAND_SUCCESSION_CANDIDATE_ASSESS_READINESS,
@@ -238,7 +251,8 @@ export function approveSuccessionCandidate(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<SuccessionCandidate>> {
-	return runTalentCommand(input, options, {
+	return runTalentCapabilityCommand(input, options, {
+		storeMethods: ["approveSuccessionCandidate"],
 		schema: approveSuccessionCandidateInputSchema,
 		invalidMessage: "Invalid succession candidate approval input",
 		command: HUMAN_RESOURCES_COMMAND_SUCCESSION_CANDIDATE_APPROVE,
@@ -263,7 +277,8 @@ export function removeSuccessionCandidate(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<SuccessionCandidate>> {
-	return runTalentCommand(input, options, {
+	return runTalentCapabilityCommand(input, options, {
+		storeMethods: ["removeSuccessionCandidate"],
 		schema: removeSuccessionCandidateInputSchema,
 		invalidMessage: "Invalid succession candidate removal input",
 		command: HUMAN_RESOURCES_COMMAND_SUCCESSION_CANDIDATE_REMOVE,
@@ -288,7 +303,8 @@ export function closeSuccessionPlan(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<SuccessionPlan>> {
-	return runTalentCommand(input, options, {
+	return runTalentCapabilityCommand(input, options, {
+		storeMethods: ["closeSuccessionPlan"],
 		schema: successionPlanStatusTransitionInputSchema,
 		invalidMessage: "Invalid succession plan close input",
 		command: HUMAN_RESOURCES_COMMAND_SUCCESSION_PLAN_CLOSE,
@@ -313,7 +329,8 @@ export function getSuccessionPlanById(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<SuccessionPlan | null>> {
-	return runTalentQuery(input, options, {
+	return runTalentCapabilityQuery(input, options, {
+		storeMethods: ["getSuccessionPlanById"],
 		schema: getSuccessionPlanByIdInputSchema,
 		invalidMessage: "Invalid succession plan get input",
 		query: HUMAN_RESOURCES_QUERY_SUCCESSION_PLAN_GET,
@@ -329,7 +346,8 @@ export function listSuccessionPlans(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<SuccessionPlanListPage>> {
-	return runTalentQuery(input, options, {
+	return runTalentCapabilityQuery(input, options, {
+		storeMethods: ["listSuccessionPlans"],
 		schema: listSuccessionPlansInputSchema,
 		invalidMessage: "Invalid succession plan list input",
 		query: HUMAN_RESOURCES_QUERY_SUCCESSION_PLAN_LIST,
@@ -348,7 +366,8 @@ export function listSuccessionCandidates(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<ProjectedSuccessionCandidateListPage>> {
-	return runTalentQuery(input, options, {
+	return runTalentCapabilityQuery(input, options, {
+		storeMethods: ["listSuccessionCandidates"],
 		schema: listSuccessionCandidatesInputSchema,
 		invalidMessage: "Invalid succession candidate list input",
 		query: HUMAN_RESOURCES_QUERY_SUCCESSION_CANDIDATE_LIST,
@@ -374,7 +393,8 @@ export function getPositionSuccessionCoverage(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PositionSuccessionCoverage>> {
-	return runTalentQuery(input, options, {
+	return runTalentCapabilityQuery(input, options, {
+		storeMethods: ["getPositionSuccessionCoverage"],
 		schema: getPositionSuccessionCoverageInputSchema,
 		invalidMessage: "Invalid position succession coverage get input",
 		query: HUMAN_RESOURCES_QUERY_POSITION_SUCCESSION_COVERAGE_GET,

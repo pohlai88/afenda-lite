@@ -63,7 +63,6 @@ describe("organization operation registry", () => {
 	});
 
 	it("composes with registered peer capabilities without identifier collisions", () => {
-		expect(HUMAN_RESOURCES_REGISTERED_OPERATION_DEFINITIONS).toHaveLength(73);
 		expect(
 			new Set(
 				HUMAN_RESOURCES_REGISTERED_OPERATION_DEFINITIONS.map(

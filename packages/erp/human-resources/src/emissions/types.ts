@@ -27,6 +27,7 @@ interface HumanResourcesEmissionBase {
 	commandId: HumanResourcesCommandId;
 	correlationRequired: true;
 	domain: HumanResourcesDomain;
+	idempotencyRequired: true;
 }
 
 export interface HumanResourcesAuditOnlyEmission

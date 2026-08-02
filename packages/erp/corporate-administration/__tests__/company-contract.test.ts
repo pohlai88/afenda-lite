@@ -27,7 +27,10 @@ import {
 	updateLegalCompanyProfile,
 	userIdSchema,
 } from "@afenda/corporate-administration";
-import { createMemoryCorporateAdministrationLegalCompanyStore } from "@afenda/corporate-administration/testing";
+import {
+	createMemoryCorporateAdministrationLegalCompanyStore,
+	createMemoryCorporateAdministrationObservabilityPort,
+} from "@afenda/corporate-administration/testing";
 import { errorResult } from "@afenda/errors";
 import { describe, expect, it } from "vitest";
 import { createFixedCorporateAdministrationClock } from "./helpers/fixed-clock";
@@ -161,6 +164,16 @@ function durableCommandDependencies(store: LegalCompanyStore) {
 			idempotency: createMemoryCorporateAdministrationIdempotencyPort(),
 			audit: createMemoryCorporateAdministrationAuditFactPort(),
 			outbox: createMemoryCorporateAdministrationOutboxPort(),
+			observability: createMemoryCorporateAdministrationObservabilityPort(),
+		},
+	};
+}
+
+function queryDependencies(store: LegalCompanyStore) {
+	return {
+		store,
+		runtime: {
+			observability: createMemoryCorporateAdministrationObservabilityPort(),
 		},
 	};
 }
@@ -246,6 +259,7 @@ describe("Corporate Administration company contracts", () => {
 					outbox: createMemoryCorporateAdministrationOutboxPort({
 						onAppend: (appended) => events.push(...appended),
 					}),
+					observability: createMemoryCorporateAdministrationObservabilityPort(),
 				},
 			},
 		);
@@ -289,6 +303,7 @@ describe("Corporate Administration company contracts", () => {
 					idempotency: createMemoryCorporateAdministrationIdempotencyPort(),
 					audit: createMemoryCorporateAdministrationAuditFactPort(),
 					outbox: createMemoryCorporateAdministrationOutboxPort(),
+					observability: createMemoryCorporateAdministrationObservabilityPort(),
 				},
 			},
 		);
@@ -299,14 +314,12 @@ describe("Corporate Administration company contracts", () => {
 		const getResult = await getLegalCompany(
 			{ legalCompanyId: company().legalCompanyId },
 			deniedQueryOptions(),
-			{ store },
+			queryDependencies(store),
 		);
 		const listResult = await listLegalCompanies(
 			undefined,
 			deniedQueryOptions(),
-			{
-				store,
-			},
+			queryDependencies(store),
 		);
 		expect(getResult).toMatchObject({ ok: false, code: "FORBIDDEN" });
 		expect(listResult).toMatchObject({ ok: false, code: "FORBIDDEN" });
@@ -380,9 +393,11 @@ describe("Corporate Administration company contracts", () => {
 	});
 	it("lists legal companies with tenant scope and default pagination", async () => {
 		const store = createStore();
-		const result = await listLegalCompanies(undefined, queryOptions(), {
-			store,
-		});
+		const result = await listLegalCompanies(
+			undefined,
+			queryOptions(),
+			queryDependencies(store),
+		);
 		expect(result.ok).toBe(true);
 		expect(store.lastListPageOrganizationId).toBe(organizationId);
 	});

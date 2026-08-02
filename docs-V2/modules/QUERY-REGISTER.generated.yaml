@@ -286,6 +286,27 @@ queries:
   - id: human-resources.reporting-line.list-direct-reports
     moduleId: human-resources
     permission: human-resources.organization.read
+  - id: human-resources.work-calendar.get
+    moduleId: human-resources
+    permission: human-resources.time.calendar.read
+  - id: human-resources.work-calendar.list
+    moduleId: human-resources
+    permission: human-resources.time.calendar.read
+  - id: human-resources.work-calendar.holiday.list
+    moduleId: human-resources
+    permission: human-resources.time.calendar.read
+  - id: human-resources.employment-calendar.resolve
+    moduleId: human-resources
+    permission: human-resources.time.calendar.read
+  - id: human-resources.employee-work-calendar.resolve
+    moduleId: human-resources
+    permission: human-resources.time.calendar.read
+  - id: human-resources.time-policy.get
+    moduleId: human-resources
+    permission: human-resources.time.calendar.read
+  - id: human-resources.time-policy.resolve
+    moduleId: human-resources
+    permission: human-resources.time.calendar.read
   - id: human-resources.requisition.get
     moduleId: human-resources
     permission: human-resources.requisition.create
@@ -367,9 +388,6 @@ queries:
   - id: human-resources.approved-compensation-handoff.get
     moduleId: human-resources
     permission: human-resources.compensation.read
-  - id: human-resources.approved-payroll-handoff.get
-    moduleId: human-resources
-    permission: human-resources.compensation.read
   - id: human-resources.compensation-proposal.get
     moduleId: human-resources
     permission: human-resources.compensation-proposal.read
@@ -421,6 +439,9 @@ queries:
   - id: human-resources.benefit-plan.eligibility.get
     moduleId: human-resources
     permission: human-resources.benefits.manage
+  - id: human-resources.approved-payroll-handoff.get
+    moduleId: human-resources
+    permission: human-resources.compensation.read
   - id: human-resources.leave-policy.get
     moduleId: human-resources
     permission: human-resources.leave-policy.read
@@ -613,33 +634,15 @@ queries:
   - id: human-resources.policy-acknowledgement.list-outstanding
     moduleId: human-resources
     permission: human-resources.compliance.administer
+  - id: human-resources.policy-acknowledgement.list-overdue
+    moduleId: human-resources
+    permission: human-resources.compliance.administer
   - id: human-resources.employee-compliance-summary.get
     moduleId: human-resources
     permission: human-resources.compliance.administer
   - id: human-resources.compliance.expiry-operations.detect
     moduleId: human-resources
     permission: human-resources.compliance.administer
-  - id: human-resources.work-calendar.get
-    moduleId: human-resources
-    permission: human-resources.time.calendar.read
-  - id: human-resources.work-calendar.list
-    moduleId: human-resources
-    permission: human-resources.time.calendar.read
-  - id: human-resources.work-calendar.holiday.list
-    moduleId: human-resources
-    permission: human-resources.time.calendar.read
-  - id: human-resources.employment-calendar.resolve
-    moduleId: human-resources
-    permission: human-resources.time.calendar.read
-  - id: human-resources.employee-work-calendar.resolve
-    moduleId: human-resources
-    permission: human-resources.time.calendar.read
-  - id: human-resources.time-policy.get
-    moduleId: human-resources
-    permission: human-resources.time.calendar.read
-  - id: human-resources.time-policy.resolve
-    moduleId: human-resources
-    permission: human-resources.time.calendar.read
   - id: human-resources.shift.get
     moduleId: human-resources
     permission: human-resources.time.shift.read
@@ -650,6 +653,9 @@ queries:
     moduleId: human-resources
     permission: human-resources.time.shift.read
   - id: human-resources.shift-assignment.get
+    moduleId: human-resources
+    permission: human-resources.time.schedule.read
+  - id: human-resources.shift-assignment.segments.list
     moduleId: human-resources
     permission: human-resources.time.schedule.read
   - id: human-resources.shift-assignment.list

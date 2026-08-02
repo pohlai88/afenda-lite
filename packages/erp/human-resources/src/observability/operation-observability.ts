@@ -1,5 +1,5 @@
 import { errorResult, type Result } from "@afenda/errors";
-
+import { getHumanResourcesOperationDefinition } from "../operation-registry/registry";
 import type {
 	HumanResourcesAuthorizationDenyCode,
 	HumanResourcesOperationId,
@@ -18,127 +18,10 @@ import type {
 	HrPrivacyOperation,
 } from "./types";
 
-const COMPENSATION_SUBJECTS = new Set([
-	"approved-compensation-handoff",
-	"benefit-enrollment",
-	"benefit-enrollment-dependent",
-	"benefit-plan",
-	"compensation-grade",
-	"compensation-grade-progression-rule",
-	"compensation-grade-progression-targets",
-	"compensation-proposal",
-	"compensation-review",
-	"compensation-review-cycle",
-	"employee-compensation",
-	"salary-band",
-]);
-
-const LEAVE_SUBJECTS = new Set([
-	"approved-leave-handoff",
-	"leave-balance",
-	"leave-entitlement",
-	"leave-policy",
-	"leave-request",
-]);
-
-const PAYROLL_DELIVERY_SUBJECTS = new Set([
-	"approved-payroll-handoff",
-	"offboarding-payroll-handoff",
-]);
-
-const TIME_SUBJECTS = new Set([
-	"approved-time-handoff",
-	"attendance",
-	"attendance-adjustment",
-	"attendance-break-waiver",
-	"attendance-break-waiver-decision",
-	"attendance-event",
-	"attendance-events",
-	"attendance-exception",
-	"attendance-session",
-	"employee-work-calendar",
-	"employment-calendar",
-	"overtime-request",
-	"session",
-	"shift",
-	"shift-assignment",
-	"time-approval-authority",
-	"time-policy",
-	"timesheet",
-	"timesheet-approval-decision",
-	"work-calendar",
-]);
-
-const TALENT_SUBJECTS = new Set([
-	"career-plan",
-	"career-plan-action",
-	"certification",
-	"competency",
-	"competency-assessment",
-	"completion",
-	"course",
-	"critical-role-readiness",
-	"employee-competency-profile",
-	"employee-performance-history",
-	"improvement-plan",
-	"job-competency",
-	"learning-assignment",
-	"learning-attendance",
-	"performance-cycle",
-	"performance-goal",
-	"performance-review",
-	"position-succession-coverage",
-	"succession-candidate",
-	"succession-plan",
-	"talent-pool",
-	"talent-pool-member",
-	"talent-profile",
-	"talent-profile-assessment",
-	"talent-profile-mobility",
-]);
-
-const COMPLIANCE_SUBJECTS = new Set([
-	"clearance",
-	"compliance",
-	"document-requirement",
-	"employee-case",
-	"employee-compliance-summary",
-	"employee-document",
-	"employee-relations",
-	"policy-acknowledgement",
-	"work-eligibility",
-]);
-
-function operationSubject(operationId: HumanResourcesOperationId): string {
-	return operationId.split(".")[1] ?? "";
-}
-
 export function resolveHrOperationArea(
 	operationId: HumanResourcesOperationId,
 ): HrObservabilityArea {
-	const subject = operationSubject(operationId);
-	if (PAYROLL_DELIVERY_SUBJECTS.has(subject)) {
-		return "payroll_delivery";
-	}
-	if (COMPENSATION_SUBJECTS.has(subject)) {
-		return "compensation";
-	}
-	if (LEAVE_SUBJECTS.has(subject)) {
-		return "leave";
-	}
-	if (TIME_SUBJECTS.has(subject)) {
-		return "time";
-	}
-	if (TALENT_SUBJECTS.has(subject)) {
-		return "talent";
-	}
-	if (COMPLIANCE_SUBJECTS.has(subject)) {
-		return "compliance";
-	}
-	if (subject === "privacy") {
-		return "privacy";
-	}
-	return "workforce";
+	return getHumanResourcesOperationDefinition(operationId).observabilityArea;
 }
 
 export function classifyHrOperationFailure(code: string): HrFailureReason {

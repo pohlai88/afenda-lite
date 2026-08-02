@@ -39,10 +39,6 @@ import {
 } from "../schemas/performance";
 import { fingerprintPerformanceCycleCreate } from "../shared/fingerprint";
 import { buildMutationMeta } from "../shared/mutation-meta";
-import {
-	runPerformanceCommand,
-	runPerformanceQuery,
-} from "../shared/performance-command";
 import { assertRatingScaleUniqueCodes } from "../shared/performance-rating";
 import type {
 	PerformanceCycle,
@@ -51,6 +47,10 @@ import type {
 	PerformanceCycleParticipant,
 	PerformanceCycleReviewPeriod,
 } from "../types";
+import {
+	runPerformanceCapabilityCommand,
+	runPerformanceCapabilityQuery,
+} from "./run-operation";
 
 export const HUMAN_RESOURCES_AGGREGATE_PERFORMANCE_CYCLE =
 	"performance-cycle" as const;
@@ -61,7 +61,11 @@ export function createPerformanceCycle(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceCycle>> {
-	return runPerformanceCommand(input, options, {
+	return runPerformanceCapabilityCommand(input, options, {
+		storeMethods: [
+			"createPerformanceCycle",
+			"findPerformanceCycleByIdempotencyKey",
+		],
 		schema: createPerformanceCycleInputSchema,
 		invalidMessage: "Invalid performance cycle create input",
 		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_CREATE,
@@ -127,7 +131,8 @@ export function updatePerformanceCycle(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceCycle>> {
-	return runPerformanceCommand(input, options, {
+	return runPerformanceCapabilityCommand(input, options, {
+		storeMethods: ["updatePerformanceCycle"],
 		schema: updatePerformanceCycleInputSchema,
 		invalidMessage: "Invalid performance cycle update input",
 		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_UPDATE,
@@ -164,7 +169,8 @@ export function publishPerformanceCycle(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceCycle>> {
-	return runPerformanceCommand(input, options, {
+	return runPerformanceCapabilityCommand(input, options, {
+		storeMethods: ["publishPerformanceCycle"],
 		schema: performanceCycleStatusTransitionInputSchema,
 		invalidMessage: "Invalid performance cycle publish input",
 		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_PUBLISH,
@@ -189,7 +195,8 @@ export function openPerformanceCycle(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceCycle>> {
-	return runPerformanceCommand(input, options, {
+	return runPerformanceCapabilityCommand(input, options, {
+		storeMethods: ["openPerformanceCycle"],
 		schema: performanceCycleStatusTransitionInputSchema,
 		invalidMessage: "Invalid performance cycle open input",
 		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_OPEN,
@@ -214,7 +221,8 @@ export function closePerformanceCycle(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceCycle>> {
-	return runPerformanceCommand(input, options, {
+	return runPerformanceCapabilityCommand(input, options, {
+		storeMethods: ["closePerformanceCycle"],
 		schema: performanceCycleStatusTransitionInputSchema,
 		invalidMessage: "Invalid performance cycle close input",
 		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_CLOSE,
@@ -239,7 +247,8 @@ export function cancelPerformanceCycle(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceCycle>> {
-	return runPerformanceCommand(input, options, {
+	return runPerformanceCapabilityCommand(input, options, {
+		storeMethods: ["cancelPerformanceCycle"],
 		schema: performanceCycleStatusTransitionInputSchema,
 		invalidMessage: "Invalid performance cycle cancel input",
 		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_CANCEL,
@@ -264,7 +273,8 @@ export function setPerformanceCycleReviewPeriods(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceCycleReviewPeriod[]>> {
-	return runPerformanceCommand(input, options, {
+	return runPerformanceCapabilityCommand(input, options, {
+		storeMethods: ["setPerformanceCycleReviewPeriods"],
 		schema: setPerformanceCycleReviewPeriodsInputSchema,
 		invalidMessage: "Invalid performance cycle review periods input",
 		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_SET_REVIEW_PERIODS,
@@ -291,7 +301,8 @@ export function listPerformanceCycleReviewPeriods(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceCycleReviewPeriod[]>> {
-	return runPerformanceQuery(input, options, {
+	return runPerformanceCapabilityQuery(input, options, {
+		storeMethods: ["listPerformanceCycleReviewPeriods"],
 		schema: listPerformanceCycleReviewPeriodsInputSchema,
 		invalidMessage: "Invalid performance cycle review periods list input",
 		query: HUMAN_RESOURCES_QUERY_PERFORMANCE_CYCLE_LIST_REVIEW_PERIODS,
@@ -307,7 +318,8 @@ export function setPerformanceCycleEligibility(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceCycleEligibility>> {
-	return runPerformanceCommand(input, options, {
+	return runPerformanceCapabilityCommand(input, options, {
+		storeMethods: ["setPerformanceCycleEligibility"],
 		schema: setPerformanceCycleEligibilityInputSchema,
 		invalidMessage: "Invalid performance cycle eligibility input",
 		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_SET_ELIGIBILITY,
@@ -335,7 +347,8 @@ export function getPerformanceCycleEligibility(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceCycleEligibility | null>> {
-	return runPerformanceQuery(input, options, {
+	return runPerformanceCapabilityQuery(input, options, {
+		storeMethods: ["getPerformanceCycleEligibility"],
 		schema: getPerformanceCycleEligibilityInputSchema,
 		invalidMessage: "Invalid performance cycle eligibility get input",
 		query: HUMAN_RESOURCES_QUERY_PERFORMANCE_CYCLE_GET_ELIGIBILITY,
@@ -351,7 +364,8 @@ export function enrollEligibleCycleParticipants(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceCycleParticipant[]>> {
-	return runPerformanceCommand(input, options, {
+	return runPerformanceCapabilityCommand(input, options, {
+		storeMethods: ["enrollEligibleCycleParticipants"],
 		schema: enrollEligibleCycleParticipantsInputSchema,
 		invalidMessage: "Invalid performance cycle enrollment input",
 		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_ENROLL_ELIGIBLE,
@@ -377,7 +391,8 @@ export function addCycleParticipant(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceCycleParticipant>> {
-	return runPerformanceCommand(input, options, {
+	return runPerformanceCapabilityCommand(input, options, {
+		storeMethods: ["addCycleParticipant"],
 		schema: addCycleParticipantInputSchema,
 		invalidMessage: "Invalid cycle participant add input",
 		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_ADD_PARTICIPANT,
@@ -405,7 +420,8 @@ export function removeCycleParticipant(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceCycleParticipant>> {
-	return runPerformanceCommand(input, options, {
+	return runPerformanceCapabilityCommand(input, options, {
+		storeMethods: ["removeCycleParticipant"],
 		schema: removeCycleParticipantInputSchema,
 		invalidMessage: "Invalid cycle participant remove input",
 		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_CYCLE_REMOVE_PARTICIPANT,
@@ -432,7 +448,8 @@ export function getPerformanceCycleById(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceCycle | null>> {
-	return runPerformanceQuery(input, options, {
+	return runPerformanceCapabilityQuery(input, options, {
+		storeMethods: ["getPerformanceCycleById"],
 		schema: getPerformanceCycleByIdInputSchema,
 		invalidMessage: "Invalid performance cycle get input",
 		query: HUMAN_RESOURCES_QUERY_PERFORMANCE_CYCLE_GET,
@@ -448,7 +465,8 @@ export function listPerformanceCycles(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceCycleListPage>> {
-	return runPerformanceQuery(input, options, {
+	return runPerformanceCapabilityQuery(input, options, {
+		storeMethods: ["listPerformanceCycles"],
 		schema: listPerformanceCyclesInputSchema,
 		invalidMessage: "Invalid performance cycle list input",
 		query: HUMAN_RESOURCES_QUERY_PERFORMANCE_CYCLE_LIST,
@@ -466,7 +484,8 @@ export function listCycleParticipants(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceCycleParticipant[]>> {
-	return runPerformanceQuery(input, options, {
+	return runPerformanceCapabilityQuery(input, options, {
+		storeMethods: ["listCycleParticipants"],
 		schema: listCycleParticipantsInputSchema,
 		invalidMessage: "Invalid cycle participants list input",
 		query: HUMAN_RESOURCES_QUERY_PERFORMANCE_CYCLE_LIST_PARTICIPANTS,

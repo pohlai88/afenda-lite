@@ -52,22 +52,26 @@ import {
 	supersedeTimesheetInputSchema,
 	updateTimesheetEntryInputSchema,
 } from "../schemas/time";
-import { runTimeCommand, runTimeQuery } from "../shared/time-command";
 import type {
 	Timesheet,
 	TimesheetApprovalDecision,
 	TimesheetEntry,
 	TimesheetTotals,
 } from "../types";
+import {
+	runTimeCapabilityCommand,
+	runTimeCapabilityQuery,
+} from "./run-operation";
 
 export async function createTimesheet(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Timesheet>> {
-	return await runTimeCommand(input, options, {
+	return await runTimeCapabilityCommand(input, options, {
 		schema: createTimesheetInputSchema,
 		invalidMessage: "Invalid timesheet create input",
 		command: HUMAN_RESOURCES_COMMAND_TIMESHEET_CREATE,
+		storeMethods: ["createTimesheet", "findTimesheetByIdempotencyKey"],
 		execute: async (data, { store, ports }) => {
 			const fingerprint = JSON.stringify({
 				employeeId: data.employeeId,
@@ -115,10 +119,11 @@ export async function generateTimesheetEntries(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<{ timesheet: Timesheet; entries: TimesheetEntry[] }>> {
-	return await runTimeCommand(input, options, {
+	return await runTimeCapabilityCommand(input, options, {
 		schema: generateTimesheetEntriesInputSchema,
 		invalidMessage: "Invalid timesheet generate entries input",
 		command: HUMAN_RESOURCES_COMMAND_TIMESHEET_GENERATE_ENTRIES,
+		storeMethods: ["generateTimesheetEntries"],
 		execute: async (data, { store, ports }) => {
 			const approvedLeave = requireApprovedLeaveQuery(options);
 			if (!approvedLeave.ok) {
@@ -140,10 +145,11 @@ export async function addTimesheetEntry(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<TimesheetEntry>> {
-	return await runTimeCommand(input, options, {
+	return await runTimeCapabilityCommand(input, options, {
 		schema: addTimesheetEntryInputSchema,
 		invalidMessage: "Invalid timesheet entry add input",
 		command: HUMAN_RESOURCES_COMMAND_TIMESHEET_ENTRY_ADD,
+		storeMethods: ["addTimesheetEntry"],
 		execute: async (data, { store, ports }) =>
 			store.addTimesheetEntry(
 				{
@@ -183,10 +189,11 @@ export async function updateTimesheetEntry(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<TimesheetEntry>> {
-	return await runTimeCommand(input, options, {
+	return await runTimeCapabilityCommand(input, options, {
 		schema: updateTimesheetEntryInputSchema,
 		invalidMessage: "Invalid timesheet entry update input",
 		command: HUMAN_RESOURCES_COMMAND_TIMESHEET_ENTRY_UPDATE,
+		storeMethods: ["updateTimesheetEntry"],
 		execute: async (data, { store, ports }) =>
 			store.updateTimesheetEntry(
 				{
@@ -233,10 +240,11 @@ export async function removeTimesheetEntry(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<void>> {
-	return await runTimeCommand(input, options, {
+	return await runTimeCapabilityCommand(input, options, {
 		schema: removeTimesheetEntryInputSchema,
 		invalidMessage: "Invalid timesheet entry remove input",
 		command: HUMAN_RESOURCES_COMMAND_TIMESHEET_ENTRY_REMOVE,
+		storeMethods: ["removeTimesheetEntry"],
 		execute: async (data, { store, ports }) =>
 			store.removeTimesheetEntry(data, ports),
 	});
@@ -246,10 +254,11 @@ export async function submitTimesheet(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Timesheet>> {
-	return await runTimeCommand(input, options, {
+	return await runTimeCapabilityCommand(input, options, {
 		schema: submitTimesheetInputSchema,
 		invalidMessage: "Invalid timesheet submit input",
 		command: HUMAN_RESOURCES_COMMAND_TIMESHEET_SUBMIT,
+		storeMethods: ["getTimesheet", "resolveTimePolicy", "submitTimesheet"],
 		execute: async (data, { store, ports }) => {
 			const timesheet = await store.getTimesheet({
 				organizationId: data.organizationId,
@@ -291,10 +300,11 @@ export async function returnTimesheet(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Timesheet>> {
-	return await runTimeCommand(input, options, {
+	return await runTimeCapabilityCommand(input, options, {
 		schema: returnTimesheetInputSchema,
 		invalidMessage: "Invalid timesheet return input",
 		command: HUMAN_RESOURCES_COMMAND_TIMESHEET_RETURN,
+		storeMethods: ["returnTimesheet"],
 		execute: async (data, { store, ports }) =>
 			store.returnTimesheet(data, ports),
 	});
@@ -304,10 +314,11 @@ export async function approveTimesheet(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Timesheet>> {
-	return await runTimeCommand(input, options, {
+	return await runTimeCapabilityCommand(input, options, {
 		schema: approveTimesheetInputSchema,
 		invalidMessage: "Invalid timesheet approve input",
 		command: HUMAN_RESOURCES_COMMAND_TIMESHEET_APPROVE,
+		storeMethods: ["approveTimesheet", "resolveTimeApprovalAuthority"],
 		execute: async (data, { store, ports }) => {
 			const authority = await store.resolveTimeApprovalAuthority({
 				organizationId: data.organizationId,
@@ -346,10 +357,11 @@ export async function listTimesheetApprovalDecisions(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<TimesheetApprovalDecision[]>> {
-	return await runTimeQuery(input, options, {
+	return await runTimeCapabilityQuery(input, options, {
 		schema: listTimesheetApprovalDecisionsInputSchema,
 		invalidMessage: "Invalid timesheet approval decision list input",
 		query: HUMAN_RESOURCES_QUERY_TIMESHEET_APPROVAL_DECISION_LIST,
+		storeMethods: ["listTimesheetApprovalDecisions"],
 		execute: async (data, { store }) =>
 			store.listTimesheetApprovalDecisions({
 				organizationId: data.organizationId,
@@ -363,10 +375,11 @@ export async function rejectTimesheet(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Timesheet>> {
-	return await runTimeCommand(input, options, {
+	return await runTimeCapabilityCommand(input, options, {
 		schema: rejectTimesheetInputSchema,
 		invalidMessage: "Invalid timesheet reject input",
 		command: HUMAN_RESOURCES_COMMAND_TIMESHEET_REJECT,
+		storeMethods: ["rejectTimesheet"],
 		execute: async (data, { store, ports }) =>
 			store.rejectTimesheet(data, ports),
 	});
@@ -376,10 +389,11 @@ export async function reopenTimesheet(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Timesheet>> {
-	return await runTimeCommand(input, options, {
+	return await runTimeCapabilityCommand(input, options, {
 		schema: reopenTimesheetInputSchema,
 		invalidMessage: "Invalid timesheet reopen input",
 		command: HUMAN_RESOURCES_COMMAND_TIMESHEET_REOPEN,
+		storeMethods: ["reopenTimesheet"],
 		execute: async (data, { store, ports }) =>
 			store.reopenTimesheet(data, ports),
 	});
@@ -389,10 +403,11 @@ export async function lockTimesheet(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Timesheet>> {
-	return await runTimeCommand(input, options, {
+	return await runTimeCapabilityCommand(input, options, {
 		schema: lockTimesheetInputSchema,
 		invalidMessage: "Invalid timesheet lock input",
 		command: HUMAN_RESOURCES_COMMAND_TIMESHEET_LOCK,
+		storeMethods: ["lockTimesheet"],
 		execute: async (data, { store, ports }) => store.lockTimesheet(data, ports),
 	});
 }
@@ -401,10 +416,11 @@ export async function supersedeTimesheet(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Timesheet>> {
-	return await runTimeCommand(input, options, {
+	return await runTimeCapabilityCommand(input, options, {
 		schema: supersedeTimesheetInputSchema,
 		invalidMessage: "Invalid timesheet supersede input",
 		command: HUMAN_RESOURCES_COMMAND_TIMESHEET_SUPERSEDE,
+		storeMethods: ["supersedeTimesheet"],
 		execute: async (data, { store, ports }) => {
 			const fingerprint = JSON.stringify({
 				timesheetId: data.timesheetId,
@@ -430,10 +446,11 @@ export async function getTimesheet(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Timesheet | null>> {
-	return await runTimeQuery(input, options, {
+	return await runTimeCapabilityQuery(input, options, {
 		schema: getTimesheetInputSchema,
 		invalidMessage: "Invalid timesheet get input",
 		query: HUMAN_RESOURCES_QUERY_TIMESHEET_GET,
+		storeMethods: ["getTimesheet"],
 		execute: async (data, { store }) =>
 			store.getTimesheet({
 				organizationId: data.organizationId,
@@ -446,10 +463,11 @@ export async function getTimesheetForEmployeePeriod(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Timesheet | null>> {
-	return await runTimeQuery(input, options, {
+	return await runTimeCapabilityQuery(input, options, {
 		schema: getTimesheetForEmployeePeriodInputSchema,
 		invalidMessage: "Invalid timesheet for employee period input",
 		query: HUMAN_RESOURCES_QUERY_TIMESHEET_FOR_EMPLOYEE_PERIOD_GET,
+		storeMethods: ["findTimesheetForEmployeePeriod"],
 		execute: async (data, { store }) =>
 			store.findTimesheetForEmployeePeriod({
 				organizationId: data.organizationId,
@@ -464,10 +482,11 @@ export async function listTimesheets(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Timesheet[]>> {
-	return await runTimeQuery(input, options, {
+	return await runTimeCapabilityQuery(input, options, {
 		schema: listTimesheetsInputSchema,
 		invalidMessage: "Invalid timesheet list input",
 		query: HUMAN_RESOURCES_QUERY_TIMESHEET_LIST,
+		storeMethods: ["listTimesheets"],
 		execute: async (data, { store }) => store.listTimesheets(data),
 	});
 }
@@ -476,10 +495,11 @@ export async function listTimesheetEntries(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<TimesheetEntry[]>> {
-	return await runTimeQuery(input, options, {
+	return await runTimeCapabilityQuery(input, options, {
 		schema: listTimesheetEntriesInputSchema,
 		invalidMessage: "Invalid timesheet entry list input",
 		query: HUMAN_RESOURCES_QUERY_TIMESHEET_ENTRY_LIST,
+		storeMethods: ["listTimesheetEntries"],
 		execute: async (data, { store }) => store.listTimesheetEntries(data),
 	});
 }
@@ -488,10 +508,11 @@ export async function getTimesheetTotals(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<TimesheetTotals | null>> {
-	return await runTimeQuery(input, options, {
+	return await runTimeCapabilityQuery(input, options, {
 		schema: getTimesheetTotalsInputSchema,
 		invalidMessage: "Invalid timesheet totals input",
 		query: HUMAN_RESOURCES_QUERY_TIMESHEET_TOTALS_GET,
+		storeMethods: ["getTimesheetTotals"],
 		execute: async (data, { store }) =>
 			store.getTimesheetTotals({
 				organizationId: data.organizationId,

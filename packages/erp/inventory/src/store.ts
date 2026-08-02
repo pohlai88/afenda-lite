@@ -1,4 +1,9 @@
 import type { Result } from "@afenda/errors";
+import {
+	INVENTORY_CANCEL_RESERVATION_EMISSION,
+	INVENTORY_EXPIRE_RESERVATION_EMISSION,
+	INVENTORY_RELEASE_RESERVATION_EMISSION,
+} from "./operation-registry";
 
 import type { MutationPorts } from "./ports";
 import type {
@@ -91,20 +96,20 @@ export interface ReservationCreateRecord {
 export type ReservationTerminalStatus = "released" | "expired" | "cancelled";
 
 export type ReservationTerminalEventType =
-	| "inventory.reservation.released.v1"
-	| "inventory.reservation.expired.v1"
-	| "inventory.reservation.cancelled.v1";
+	| typeof INVENTORY_RELEASE_RESERVATION_EMISSION
+	| typeof INVENTORY_EXPIRE_RESERVATION_EMISSION
+	| typeof INVENTORY_CANCEL_RESERVATION_EMISSION;
 
 export function reservationTerminalEventType(
 	terminalStatus: ReservationTerminalStatus,
 ): ReservationTerminalEventType {
 	switch (terminalStatus) {
 		case "released":
-			return "inventory.reservation.released.v1";
+			return INVENTORY_RELEASE_RESERVATION_EMISSION;
 		case "expired":
-			return "inventory.reservation.expired.v1";
+			return INVENTORY_EXPIRE_RESERVATION_EMISSION;
 		case "cancelled":
-			return "inventory.reservation.cancelled.v1";
+			return INVENTORY_CANCEL_RESERVATION_EMISSION;
 		default: {
 			const _exhaustive: never = terminalStatus;
 			return _exhaustive;

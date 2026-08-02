@@ -11,13 +11,13 @@ import {
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_CASE_INVESTIGATE,
 } from "../permissions";
 import type { HumanResourcesAuthorizationPort } from "../shared/authorization-types";
-import type { HumanResourcesStore } from "../store";
 import {
 	BASIC_CASE_FIELDS,
 	caseProjectionFields,
 	INVESTIGATOR_CASE_FIELDS,
 	PARTICIPANT_CASE_FIELDS,
 } from "./case-field-projection";
+import type { HumanResourcesEmployeeRelationsCaseAccessStore } from "./store";
 import type { EmployeeCase } from "./types";
 
 export type CaseAccessType = "read" | "write" | "investigate" | "legal_hold";
@@ -52,7 +52,7 @@ async function hasPermissionAtIndex(
 }
 
 export async function evaluateCaseReadAccess(
-	store: HumanResourcesStore,
+	store: HumanResourcesEmployeeRelationsCaseAccessStore,
 	authorization: HumanResourcesAuthorizationPort,
 	input: {
 		organizationId: string;
@@ -182,7 +182,7 @@ export async function evaluateCaseReadAccess(
 }
 
 async function checkCaseInvestigatorAccess(
-	store: HumanResourcesStore,
+	store: HumanResourcesEmployeeRelationsCaseAccessStore,
 	input: {
 		organizationId: string;
 		employeeCase: EmployeeCase;
@@ -200,7 +200,7 @@ async function checkCaseInvestigatorAccess(
 }
 
 async function checkCaseParticipantAccess(
-	store: HumanResourcesStore,
+	store: HumanResourcesEmployeeRelationsCaseAccessStore,
 	input: {
 		organizationId: string;
 		employeeCase: EmployeeCase;
@@ -240,7 +240,7 @@ async function checkCaseParticipantAccess(
 }
 
 async function checkParticipantEmployeeAtIndex(
-	store: HumanResourcesStore,
+	store: HumanResourcesEmployeeRelationsCaseAccessStore,
 	input: { organizationId: string; employeeId: HumanResourcesEmployeeId },
 	participants: EmployeeCase["participants"],
 	index: number,
@@ -266,7 +266,7 @@ async function checkParticipantEmployeeAtIndex(
 }
 
 async function checkManagerCaseAccess(
-	store: HumanResourcesStore,
+	store: HumanResourcesEmployeeRelationsCaseAccessStore,
 	input: {
 		organizationId: string;
 		employeeCase: EmployeeCase;
@@ -303,7 +303,7 @@ async function checkManagerCaseAccess(
 }
 
 async function checkParticipantManagerAtIndex(
-	store: HumanResourcesStore,
+	store: HumanResourcesEmployeeRelationsCaseAccessStore,
 	input: {
 		organizationId: string;
 		managerEmployeeId: HumanResourcesEmployeeId;

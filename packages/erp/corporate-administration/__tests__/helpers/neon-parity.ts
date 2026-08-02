@@ -14,8 +14,14 @@ function requiresDatabaseTests(): boolean {
 }
 
 function assertNotProductionDatabaseTarget(): void {
+	const declaredTarget = process.env.AFENDA_DATABASE_TEST_TARGET;
+	if (declaredTarget !== "test" && declaredTarget !== "preview") {
+		throw new Error(
+			"Corporate Administration Neon parity requires AFENDA_DATABASE_TEST_TARGET=test or preview.",
+		);
+	}
+
 	for (const [name, value] of [
-		["AFENDA_DATABASE_TEST_TARGET", process.env.AFENDA_DATABASE_TEST_TARGET],
 		["VERCEL_ENV", process.env.VERCEL_ENV],
 		["NODE_ENV", process.env.NODE_ENV],
 	] as const) {

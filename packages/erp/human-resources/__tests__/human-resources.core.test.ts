@@ -8,7 +8,6 @@ import {
 	endAssignment,
 	getAssignmentAsOf,
 } from "../src/core/assignment";
-import { resolvePrimaryAssignmentAsOf } from "../src/core/assignment-management";
 import {
 	createEmployee,
 	listEmployees,
@@ -3788,7 +3787,7 @@ describe("@afenda/human-resources core operations", () => {
 			}
 		});
 
-		it("resolves primary assignment at as-of via facade alias", async () => {
+		it("resolves primary assignment at as-of via the canonical query", async () => {
 			const ready = harness();
 			const seeded = await seedSlice56Employment(ready);
 			if (!seeded) {
@@ -3813,7 +3812,7 @@ describe("@afenda/human-resources core operations", () => {
 				return;
 			}
 
-			const primary = await resolvePrimaryAssignmentAsOf(
+			const primary = await getAssignmentAsOf(
 				{
 					organizationId: ORG_A,
 					actorUserId: ACTOR,

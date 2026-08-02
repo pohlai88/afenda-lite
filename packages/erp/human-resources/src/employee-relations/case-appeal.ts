@@ -12,9 +12,9 @@ import {
 	recordEmployeeCaseAppealInputSchema,
 	resolveEmployeeCaseAppealInputSchema,
 } from "../schemas/employee-relations";
-import { runEmployeeRelationsCommand } from "../shared/employee-relations-command";
 import { fingerprintEmployeeCaseAppeal } from "../shared/fingerprint";
 import { buildMutationMeta } from "../shared/mutation-meta";
+import { runEmployeeRelationsCapabilityCommand } from "./run-operation";
 import type { EmployeeCaseAppeal } from "./types";
 
 export const HUMAN_RESOURCES_AGGREGATE_EMPLOYEE_CASE_APPEAL =
@@ -26,10 +26,15 @@ export function recordEmployeeCaseAppeal(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCaseAppeal>> {
-	return runEmployeeRelationsCommand(input, options, {
+	return runEmployeeRelationsCapabilityCommand(input, options, {
 		schema: recordEmployeeCaseAppealInputSchema,
 		invalidMessage: "Invalid employee case appeal record input",
 		command: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RECORD_APPEAL,
+		storeMethods: [
+			"getEmployeeCaseById",
+			"findEmployeeCaseAppealByIdempotencyKey",
+			"recordEmployeeCaseAppeal",
+		],
 		execute: async (data, { store, ports }) => {
 			const loaded = await store.getEmployeeCaseById({
 				organizationId: data.organizationId,
@@ -94,10 +99,11 @@ export function resolveEmployeeCaseAppeal(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCaseAppeal>> {
-	return runEmployeeRelationsCommand(input, options, {
+	return runEmployeeRelationsCapabilityCommand(input, options, {
 		schema: resolveEmployeeCaseAppealInputSchema,
 		invalidMessage: "Invalid employee case appeal resolve input",
 		command: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RESOLVE_APPEAL,
+		storeMethods: ["resolveEmployeeCaseAppeal"],
 		execute: (data, { store, ports }) =>
 			store.resolveEmployeeCaseAppeal(
 				{

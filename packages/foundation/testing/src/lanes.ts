@@ -99,6 +99,7 @@ const TESTING_LANE_DEFINITIONS = [
 			"pnpm --filter @afenda/corporate-administration test:parity",
 		],
 		include: [
+			"packages/erp/corporate-administration/__tests__/*.parity.test.ts",
 			"packages/erp/corporate-administration/__tests__/parity/**/*.parity.test.ts",
 			"packages/erp/corporate-administration/__tests__/concurrency/**/*.concurrency.test.ts",
 			"packages/erp/corporate-administration/__tests__/concurrency/**/*concurrency.test.ts",

@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 
 import {
 	addCompanyName,
+	corporateAdministrationPermissionFor,
 	endCompanyActivity,
 	registerCompanyActivity,
 	registerCompanyIdentifier,
@@ -297,7 +298,7 @@ export async function addCompanyNameAction(
 ): Promise<ActionResult<{ companyNameId: string; version: number }>> {
 	return await runMemberPermissionAction({
 		path: "addCompanyNameAction",
-		permission: "corporate_administration.company.manage",
+		permission: corporateAdministrationPermissionFor("addCompanyName"),
 		safeMessage: "Could not add company name.",
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(
@@ -350,7 +351,7 @@ export async function supersedeCompanyNameAction(
 ): Promise<ActionResult<{ companyNameId: string; version: number }>> {
 	return await runMemberPermissionAction({
 		path: "supersedeCompanyNameAction",
-		permission: "corporate_administration.company.manage",
+		permission: corporateAdministrationPermissionFor("supersedeCompanyName"),
 		safeMessage: "Could not supersede company name.",
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(
@@ -403,7 +404,7 @@ export async function retireCompanyNameAction(
 ): Promise<ActionResult<{ companyNameId: string; version: number }>> {
 	return await runMemberPermissionAction({
 		path: "retireCompanyNameAction",
-		permission: "corporate_administration.company.manage",
+		permission: corporateAdministrationPermissionFor("retireCompanyName"),
 		safeMessage: "Could not retire company name.",
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(
@@ -450,7 +451,7 @@ export async function setCompanyLegalFormAction(
 ): Promise<ActionResult<{ legalFormHistoryId: string; version: number }>> {
 	return await runMemberPermissionAction({
 		path: "setCompanyLegalFormAction",
-		permission: "corporate_administration.company.manage",
+		permission: corporateAdministrationPermissionFor("setCompanyLegalForm"),
 		safeMessage: "Could not set company legal form.",
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(
@@ -506,7 +507,9 @@ export async function supersedeCompanyLegalFormAction(
 ): Promise<ActionResult<{ legalFormHistoryId: string; version: number }>> {
 	return await runMemberPermissionAction({
 		path: "supersedeCompanyLegalFormAction",
-		permission: "corporate_administration.company.manage",
+		permission: corporateAdministrationPermissionFor(
+			"supersedeCompanyLegalForm",
+		),
 		safeMessage: "Could not supersede company legal form.",
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(
@@ -562,7 +565,9 @@ export async function registerCompanyIdentifierAction(
 ): Promise<ActionResult<{ companyIdentifierId: string; version: number }>> {
 	return await runMemberPermissionAction({
 		path: "registerCompanyIdentifierAction",
-		permission: "corporate_administration.company.manage",
+		permission: corporateAdministrationPermissionFor(
+			"registerCompanyIdentifier",
+		),
 		safeMessage: "Could not register company identifier.",
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(
@@ -619,7 +624,9 @@ export async function supersedeCompanyIdentifierAction(
 ): Promise<ActionResult<{ companyIdentifierId: string; version: number }>> {
 	return await runMemberPermissionAction({
 		path: "supersedeCompanyIdentifierAction",
-		permission: "corporate_administration.company.manage",
+		permission: corporateAdministrationPermissionFor(
+			"supersedeCompanyIdentifier",
+		),
 		safeMessage: "Could not supersede company identifier.",
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(
@@ -676,7 +683,7 @@ export async function retireCompanyIdentifierAction(
 ): Promise<ActionResult<{ companyIdentifierId: string; version: number }>> {
 	return await runMemberPermissionAction({
 		path: "retireCompanyIdentifierAction",
-		permission: "corporate_administration.company.manage",
+		permission: corporateAdministrationPermissionFor("retireCompanyIdentifier"),
 		safeMessage: "Could not retire company identifier.",
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(
@@ -725,7 +732,7 @@ export async function setCompanyFinancialYearAction(
 ): Promise<ActionResult<{ companyFinancialYearId: string; version: number }>> {
 	return await runMemberPermissionAction({
 		path: "setCompanyFinancialYearAction",
-		permission: "corporate_administration.company.manage",
+		permission: corporateAdministrationPermissionFor("setCompanyFinancialYear"),
 		safeMessage: "Could not set company financial year.",
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(
@@ -781,7 +788,7 @@ export async function registerCompanyActivityAction(
 ): Promise<ActionResult<{ companyActivityId: string; version: number }>> {
 	return await runMemberPermissionAction({
 		path: "registerCompanyActivityAction",
-		permission: "corporate_administration.company.manage",
+		permission: corporateAdministrationPermissionFor("registerCompanyActivity"),
 		safeMessage: "Could not register company activity.",
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(
@@ -835,7 +842,7 @@ export async function endCompanyActivityAction(
 ): Promise<ActionResult<{ companyActivityId: string; version: number }>> {
 	return await runMemberPermissionAction({
 		path: "endCompanyActivityAction",
-		permission: "corporate_administration.company.manage",
+		permission: corporateAdministrationPermissionFor("endCompanyActivity"),
 		safeMessage: "Could not end company activity.",
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(

@@ -18,17 +18,17 @@ import {
 	getCompensationReviewCycleInputSchema,
 	listCompensationReviewCyclesInputSchema,
 } from "../schemas/compensation";
-import {
-	assertCurrencyExists,
-	runCompensationCommand,
-	runCompensationQuery,
-} from "../shared/compensation-command";
 import { fingerprintCompensationReviewCycleCreate } from "../shared/fingerprint";
 import { buildMutationMeta } from "../shared/mutation-meta";
 import type {
 	CompensationReviewCycle,
 	CompensationReviewCycleListPage,
 } from "../types";
+import {
+	assertCurrencyExists,
+	runCompensationCapabilityCommand,
+	runCompensationCapabilityQuery,
+} from "./run-operation";
 
 export const HUMAN_RESOURCES_AGGREGATE_COMPENSATION_REVIEW_CYCLE =
 	"compensation_review_cycle" as const;
@@ -39,7 +39,11 @@ export function createCompensationReviewCycle(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompensationReviewCycle>> {
-	return runCompensationCommand(input, options, {
+	return runCompensationCapabilityCommand(input, options, {
+		storeMethods: [
+			"findCompensationReviewCycleByIdempotencyKey",
+			"createCompensationReviewCycle",
+		],
 		schema: createCompensationReviewCycleInputSchema,
 		invalidMessage: "Invalid compensation review cycle create input",
 		command: HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_CYCLE_CREATE,
@@ -111,7 +115,8 @@ export function openCompensationReviewCycle(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompensationReviewCycle>> {
-	return runCompensationCommand(input, options, {
+	return runCompensationCapabilityCommand(input, options, {
+		storeMethods: ["openCompensationReviewCycle"],
 		schema: compensationReviewCycleStatusTransitionInputSchema,
 		invalidMessage: "Invalid compensation review cycle open input",
 		command: HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_CYCLE_OPEN,
@@ -136,7 +141,8 @@ export function closeCompensationReviewCycle(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompensationReviewCycle>> {
-	return runCompensationCommand(input, options, {
+	return runCompensationCapabilityCommand(input, options, {
+		storeMethods: ["closeCompensationReviewCycle"],
 		schema: compensationReviewCycleStatusTransitionInputSchema,
 		invalidMessage: "Invalid compensation review cycle close input",
 		command: HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_CYCLE_CLOSE,
@@ -161,7 +167,8 @@ export function cancelCompensationReviewCycle(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompensationReviewCycle>> {
-	return runCompensationCommand(input, options, {
+	return runCompensationCapabilityCommand(input, options, {
+		storeMethods: ["cancelCompensationReviewCycle"],
 		schema: compensationReviewCycleStatusTransitionInputSchema,
 		invalidMessage: "Invalid compensation review cycle cancel input",
 		command: HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_CYCLE_CANCEL,
@@ -186,7 +193,8 @@ export function getCompensationReviewCycle(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompensationReviewCycle | null>> {
-	return runCompensationQuery(input, options, {
+	return runCompensationCapabilityQuery(input, options, {
+		storeMethods: ["getCompensationReviewCycle"],
 		schema: getCompensationReviewCycleInputSchema,
 		invalidMessage: "Invalid compensation review cycle get input",
 		query: HUMAN_RESOURCES_QUERY_COMPENSATION_REVIEW_CYCLE_GET,
@@ -202,7 +210,8 @@ export function listCompensationReviewCycles(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompensationReviewCycleListPage>> {
-	return runCompensationQuery(input, options, {
+	return runCompensationCapabilityQuery(input, options, {
+		storeMethods: ["listCompensationReviewCycles"],
 		schema: listCompensationReviewCyclesInputSchema,
 		invalidMessage: "Invalid compensation review cycle list input",
 		query: HUMAN_RESOURCES_QUERY_COMPENSATION_REVIEW_CYCLE_LIST,

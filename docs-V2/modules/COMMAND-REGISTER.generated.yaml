@@ -316,7 +316,22 @@ commands:
   - id: human-resources.employment.create
     moduleId: human-resources
     permission: human-resources.employment.manage
+  - id: human-resources.employment.hire
+    moduleId: human-resources
+    permission: human-resources.employment.manage
+  - id: human-resources.employment.rehire
+    moduleId: human-resources
+    permission: human-resources.employment.manage
   - id: human-resources.employment.amend
+    moduleId: human-resources
+    permission: human-resources.employment.manage
+  - id: human-resources.employment.suspend
+    moduleId: human-resources
+    permission: human-resources.employment.manage
+  - id: human-resources.employment.reactivate
+    moduleId: human-resources
+    permission: human-resources.employment.manage
+  - id: human-resources.employment.terminate
     moduleId: human-resources
     permission: human-resources.employment.manage
   - id: human-resources.employment.correct
@@ -328,7 +343,13 @@ commands:
   - id: human-resources.employment-contract.correct
     moduleId: human-resources
     permission: human-resources.employment.manage
+  - id: human-resources.employment-contract.amend
+    moduleId: human-resources
+    permission: human-resources.employment.manage
   - id: human-resources.employment-contract.supersede
+    moduleId: human-resources
+    permission: human-resources.employment.manage
+  - id: human-resources.employment-contract.renew
     moduleId: human-resources
     permission: human-resources.employment.manage
   - id: human-resources.employment-contract.end
@@ -454,6 +475,60 @@ commands:
   - id: human-resources.reporting-line.replace-primary
     moduleId: human-resources
     permission: human-resources.organization.manage
+  - id: human-resources.work-calendar.create
+    moduleId: human-resources
+    permission: human-resources.time.calendar.manage
+  - id: human-resources.work-calendar.update
+    moduleId: human-resources
+    permission: human-resources.time.calendar.manage
+  - id: human-resources.work-calendar.supersede
+    moduleId: human-resources
+    permission: human-resources.time.calendar.manage
+  - id: human-resources.work-calendar.archive
+    moduleId: human-resources
+    permission: human-resources.time.calendar.manage
+  - id: human-resources.work-calendar.holiday.add
+    moduleId: human-resources
+    permission: human-resources.time.calendar.manage
+  - id: human-resources.work-calendar.holiday.remove
+    moduleId: human-resources
+    permission: human-resources.time.calendar.manage
+  - id: human-resources.work-calendar.date-override.add
+    moduleId: human-resources
+    permission: human-resources.time.calendar.manage
+  - id: human-resources.work-calendar.date-override.remove
+    moduleId: human-resources
+    permission: human-resources.time.calendar.manage
+  - id: human-resources.employment-calendar.assign
+    moduleId: human-resources
+    permission: human-resources.time.calendar.manage
+  - id: human-resources.employment-calendar.end
+    moduleId: human-resources
+    permission: human-resources.time.calendar.manage
+  - id: human-resources.work-calendar.scope.assign
+    moduleId: human-resources
+    permission: human-resources.time.calendar.manage
+  - id: human-resources.work-calendar.scope.end
+    moduleId: human-resources
+    permission: human-resources.time.calendar.manage
+  - id: human-resources.time-policy.create
+    moduleId: human-resources
+    permission: human-resources.time.calendar.manage
+  - id: human-resources.time-policy.activate
+    moduleId: human-resources
+    permission: human-resources.time.calendar.manage
+  - id: human-resources.time-policy.supersede
+    moduleId: human-resources
+    permission: human-resources.time.calendar.manage
+  - id: human-resources.time-policy.assign
+    moduleId: human-resources
+    permission: human-resources.time.calendar.manage
+  - id: human-resources.time-approval-authority.assign
+    moduleId: human-resources
+    permission: human-resources.time.calendar.manage
+  - id: human-resources.time-approval-authority.end
+    moduleId: human-resources
+    permission: human-resources.time.calendar.manage
   - id: human-resources.requisition.create-draft
     moduleId: human-resources
     permission: human-resources.requisition.create
@@ -607,6 +682,36 @@ commands:
   - id: human-resources.certification.renew
     moduleId: human-resources
     permission: human-resources.certification.manage
+  - id: human-resources.benefit-plan.create
+    moduleId: human-resources
+    permission: human-resources.benefits.manage
+  - id: human-resources.benefit-plan.update
+    moduleId: human-resources
+    permission: human-resources.benefits.manage
+  - id: human-resources.benefit-plan.archive
+    moduleId: human-resources
+    permission: human-resources.benefits.manage
+  - id: human-resources.benefit-enrollment.enrol
+    moduleId: human-resources
+    permission: human-resources.benefits.manage
+  - id: human-resources.benefit-enrollment.end
+    moduleId: human-resources
+    permission: human-resources.benefits.manage
+  - id: human-resources.benefit-enrollment.cancel
+    moduleId: human-resources
+    permission: human-resources.benefits.manage
+  - id: human-resources.benefit-plan.eligibility.set
+    moduleId: human-resources
+    permission: human-resources.benefits.manage
+  - id: human-resources.benefit-enrollment.waive
+    moduleId: human-resources
+    permission: human-resources.benefits.manage
+  - id: human-resources.benefit-enrollment-dependent.add
+    moduleId: human-resources
+    permission: human-resources.benefits.manage
+  - id: human-resources.benefit-enrollment-dependent.end
+    moduleId: human-resources
+    permission: human-resources.benefits.manage
   - id: human-resources.compensation-grade.create
     moduleId: human-resources
     permission: human-resources.compensation.manage
@@ -614,42 +719,6 @@ commands:
     moduleId: human-resources
     permission: human-resources.compensation.manage
   - id: human-resources.compensation-grade.archive
-    moduleId: human-resources
-    permission: human-resources.compensation.manage
-  - id: human-resources.salary-band.create
-    moduleId: human-resources
-    permission: human-resources.compensation.manage
-  - id: human-resources.salary-band.supersede
-    moduleId: human-resources
-    permission: human-resources.compensation.manage
-  - id: human-resources.salary-band.archive
-    moduleId: human-resources
-    permission: human-resources.compensation.manage
-  - id: human-resources.compensation-grade-progression-rule.create
-    moduleId: human-resources
-    permission: human-resources.compensation.manage
-  - id: human-resources.compensation-grade-progression-rule.archive
-    moduleId: human-resources
-    permission: human-resources.compensation.manage
-  - id: human-resources.employee-compensation.create
-    moduleId: human-resources
-    permission: human-resources.compensation.manage
-  - id: human-resources.employee-compensation.amend
-    moduleId: human-resources
-    permission: human-resources.compensation.manage
-  - id: human-resources.employee-compensation.approve
-    moduleId: human-resources
-    permission: human-resources.compensation.manage
-  - id: human-resources.employee-compensation.schedule
-    moduleId: human-resources
-    permission: human-resources.compensation.manage
-  - id: human-resources.employee-compensation.activate
-    moduleId: human-resources
-    permission: human-resources.compensation.manage
-  - id: human-resources.employee-compensation.correct
-    moduleId: human-resources
-    permission: human-resources.compensation.manage
-  - id: human-resources.employee-compensation.end
     moduleId: human-resources
     permission: human-resources.compensation.manage
   - id: human-resources.compensation-review.create-draft
@@ -685,36 +754,42 @@ commands:
   - id: human-resources.compensation-proposal.approve
     moduleId: human-resources
     permission: human-resources.compensation-proposal.approve
-  - id: human-resources.benefit-plan.create
+  - id: human-resources.employee-compensation.create
     moduleId: human-resources
-    permission: human-resources.benefits.manage
-  - id: human-resources.benefit-plan.update
+    permission: human-resources.compensation.manage
+  - id: human-resources.employee-compensation.amend
     moduleId: human-resources
-    permission: human-resources.benefits.manage
-  - id: human-resources.benefit-plan.archive
+    permission: human-resources.compensation.manage
+  - id: human-resources.employee-compensation.approve
     moduleId: human-resources
-    permission: human-resources.benefits.manage
-  - id: human-resources.benefit-enrollment.enrol
+    permission: human-resources.compensation.manage
+  - id: human-resources.employee-compensation.schedule
     moduleId: human-resources
-    permission: human-resources.benefits.manage
-  - id: human-resources.benefit-enrollment.end
+    permission: human-resources.compensation.manage
+  - id: human-resources.employee-compensation.activate
     moduleId: human-resources
-    permission: human-resources.benefits.manage
-  - id: human-resources.benefit-enrollment.cancel
+    permission: human-resources.compensation.manage
+  - id: human-resources.employee-compensation.correct
     moduleId: human-resources
-    permission: human-resources.benefits.manage
-  - id: human-resources.benefit-plan.eligibility.set
+    permission: human-resources.compensation.manage
+  - id: human-resources.employee-compensation.end
     moduleId: human-resources
-    permission: human-resources.benefits.manage
-  - id: human-resources.benefit-enrollment.waive
+    permission: human-resources.compensation.manage
+  - id: human-resources.salary-band.create
     moduleId: human-resources
-    permission: human-resources.benefits.manage
-  - id: human-resources.benefit-enrollment-dependent.add
+    permission: human-resources.compensation.manage
+  - id: human-resources.salary-band.supersede
     moduleId: human-resources
-    permission: human-resources.benefits.manage
-  - id: human-resources.benefit-enrollment-dependent.end
+    permission: human-resources.compensation.manage
+  - id: human-resources.salary-band.archive
     moduleId: human-resources
-    permission: human-resources.benefits.manage
+    permission: human-resources.compensation.manage
+  - id: human-resources.compensation-grade-progression-rule.create
+    moduleId: human-resources
+    permission: human-resources.compensation.manage
+  - id: human-resources.compensation-grade-progression-rule.archive
+    moduleId: human-resources
+    permission: human-resources.compensation.manage
   - id: human-resources.employee-case.open
     moduleId: human-resources
     permission: human-resources.employee-case.open
@@ -1129,67 +1204,13 @@ commands:
   - id: human-resources.policy-acknowledgement.supersede
     moduleId: human-resources
     permission: human-resources.policy-acknowledgement.administer
-  - id: human-resources.work-calendar.create
-    moduleId: human-resources
-    permission: human-resources.time.calendar.manage
-  - id: human-resources.work-calendar.supersede
-    moduleId: human-resources
-    permission: human-resources.time.calendar.manage
-  - id: human-resources.work-calendar.update
-    moduleId: human-resources
-    permission: human-resources.time.calendar.manage
-  - id: human-resources.work-calendar.archive
-    moduleId: human-resources
-    permission: human-resources.time.calendar.manage
-  - id: human-resources.work-calendar.holiday.add
-    moduleId: human-resources
-    permission: human-resources.time.calendar.manage
-  - id: human-resources.work-calendar.holiday.remove
-    moduleId: human-resources
-    permission: human-resources.time.calendar.manage
-  - id: human-resources.work-calendar.date-override.add
-    moduleId: human-resources
-    permission: human-resources.time.calendar.manage
-  - id: human-resources.work-calendar.date-override.remove
-    moduleId: human-resources
-    permission: human-resources.time.calendar.manage
-  - id: human-resources.employment-calendar.assign
-    moduleId: human-resources
-    permission: human-resources.time.calendar.manage
-  - id: human-resources.employment-calendar.end
-    moduleId: human-resources
-    permission: human-resources.time.calendar.manage
-  - id: human-resources.work-calendar.scope.assign
-    moduleId: human-resources
-    permission: human-resources.time.calendar.manage
-  - id: human-resources.work-calendar.scope.end
-    moduleId: human-resources
-    permission: human-resources.time.calendar.manage
-  - id: human-resources.time-policy.create
-    moduleId: human-resources
-    permission: human-resources.time.calendar.manage
-  - id: human-resources.time-policy.activate
-    moduleId: human-resources
-    permission: human-resources.time.calendar.manage
-  - id: human-resources.time-policy.supersede
-    moduleId: human-resources
-    permission: human-resources.time.calendar.manage
-  - id: human-resources.time-policy.assign
-    moduleId: human-resources
-    permission: human-resources.time.calendar.manage
-  - id: human-resources.time-approval-authority.assign
-    moduleId: human-resources
-    permission: human-resources.time.calendar.manage
-  - id: human-resources.time-approval-authority.end
-    moduleId: human-resources
-    permission: human-resources.time.calendar.manage
   - id: human-resources.shift.create
     moduleId: human-resources
     permission: human-resources.time.shift.manage
-  - id: human-resources.shift.supersede
+  - id: human-resources.shift.update
     moduleId: human-resources
     permission: human-resources.time.shift.manage
-  - id: human-resources.shift.update
+  - id: human-resources.shift.supersede
     moduleId: human-resources
     permission: human-resources.time.shift.manage
   - id: human-resources.shift.activate
@@ -1220,6 +1241,21 @@ commands:
     moduleId: human-resources
     permission: human-resources.time.schedule.manage
   - id: human-resources.attendance-event.record
+    moduleId: human-resources
+    permission: human-resources.time.attendance.self.record
+  - id: human-resources.attendance-event.clock-in
+    moduleId: human-resources
+    permission: human-resources.time.attendance.self.record
+  - id: human-resources.attendance-event.clock-out
+    moduleId: human-resources
+    permission: human-resources.time.attendance.self.record
+  - id: human-resources.attendance-event.break-start
+    moduleId: human-resources
+    permission: human-resources.time.attendance.self.record
+  - id: human-resources.attendance-event.break-end
+    moduleId: human-resources
+    permission: human-resources.time.attendance.self.record
+  - id: human-resources.attendance-event.record-manual
     moduleId: human-resources
     permission: human-resources.time.attendance.self.record
   - id: human-resources.attendance-events.import

@@ -6,6 +6,10 @@ import {
 	type CanonicalJsonValue,
 	createCanonicalFingerprint,
 } from "./kernel/canonical-json";
+import {
+	type CorporateAdministrationCommandId,
+	getCorporateAdministrationOperationDefinition,
+} from "./operation-registry/registry";
 import { parseCorporateAdministrationInput } from "./parse-input";
 
 const commandIdentitySchema = z
@@ -48,16 +52,15 @@ export type CorporateAdministrationCommandIdentity<
  * object keys, while array order remains significant.
  */
 export function createCorporateAdministrationCommandFingerprint<
-	TCommandId extends string,
 	TSchema extends z.ZodType,
 >(
 	input: Readonly<{
 		schema: TSchema;
 		organizationId: OrganizationId;
-		commandId: TCommandId;
+		operationId: CorporateAdministrationCommandId;
 		input: unknown;
 	}>,
-): Result<CorporateAdministrationCommandIdentity<TCommandId>> {
+): Result<CorporateAdministrationCommandIdentity> {
 	const parsedInput = parseCorporateAdministrationInput(
 		input.schema,
 		input.input,
@@ -66,7 +69,10 @@ export function createCorporateAdministrationCommandFingerprint<
 		return parsedInput;
 	}
 
-	if (!commandIdentitySchema.safeParse(input.commandId).success) {
+	const commandId = getCorporateAdministrationOperationDefinition(
+		input.operationId,
+	).commandIdentity;
+	if (!commandIdentitySchema.safeParse(commandId).success) {
 		return errorResult.fail("VALIDATION_ERROR", {
 			publicMessage: "Corporate Administration command identity is invalid",
 		});
@@ -80,19 +86,18 @@ export function createCorporateAdministrationCommandFingerprint<
 		});
 	}
 
-	const envelope: CorporateAdministrationCommandFingerprintEnvelope<TCommandId> =
+	const envelope: CorporateAdministrationCommandFingerprintEnvelope =
 		Object.freeze({
 			namespace: "corporate-administration",
 			organizationId: input.organizationId,
-			commandId: input.commandId,
+			commandId,
 			input: parsedInput.data,
 		});
 
-	const identity: CorporateAdministrationCommandIdentity<TCommandId> =
-		Object.freeze({
-			envelope,
-			fingerprint: createCanonicalFingerprint(envelope),
-		});
+	const identity: CorporateAdministrationCommandIdentity = Object.freeze({
+		envelope,
+		fingerprint: createCanonicalFingerprint(envelope),
+	});
 
 	return errorResult.ok(identity);
 }

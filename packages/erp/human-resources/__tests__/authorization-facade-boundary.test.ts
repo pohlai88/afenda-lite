@@ -130,8 +130,8 @@ describe("@afenda/human-resources authorization facade boundary (Slice 2.10)", (
 	it("does not allow WFP or compensation runners to restore parity shells", () => {
 		const violations = findForbiddenSourceMarkers({
 			files: [
-				"shared/workforce-planning-command.ts",
-				"shared/compensation-command.ts",
+				"workforce-planning/run-operation.ts",
+				"compensation-benefits/run-operation.ts",
 			],
 			markers: [
 				"parityResourceKind",

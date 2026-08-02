@@ -9,17 +9,4 @@ export const manifestOnlyPolicy = createScopedPolicy({
 	mode: "manifest_only",
 	resourceRequired: false,
 	subjectPolicy: "manifest_only",
-	operationPrefixes: [
-		"human-resources.department.",
-		"human-resources.job.",
-		"human-resources.position.",
-		"human-resources.work-calendar.",
-		"human-resources.job-competency.",
-		// Explicit competency definition ops (avoid prefix clash with competency-assessment.)
-		"human-resources.competency.create",
-		"human-resources.competency.update",
-		"human-resources.competency.retire",
-		"human-resources.competency.get",
-		"human-resources.competency.list",
-	],
 });

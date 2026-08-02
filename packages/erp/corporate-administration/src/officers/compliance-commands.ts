@@ -1,14 +1,10 @@
 import { errorResult, type Result } from "@afenda/errors";
-
-import {
-	CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS,
-	requireCorporateAdministrationPermission,
-} from "../authorization";
 import type { CorporateAdministrationCommandOptions } from "../command-options";
 import {
-	type DurableLegalCompanyCommandDependencies,
-	runDurableCompanyCommand,
-} from "../company/commands/durable-command";
+	authorizeCorporateAdministrationCommand,
+	type CorporateAdministrationCommandKernelDependencies,
+	executeCorporateAdministrationCommand,
+} from "../internal/durable-command";
 import { parseCorporateAdministrationInput } from "../parse-input";
 import {
 	conflictDisclosureSchema,
@@ -35,7 +31,7 @@ import type {
 } from "./compliance-types";
 import type { OfficerReferencePort, OfficerStore } from "./store";
 
-type Dependencies = DurableLegalCompanyCommandDependencies &
+type Dependencies = CorporateAdministrationCommandKernelDependencies &
 	Readonly<{
 		officerStore: OfficerStore;
 		officerComplianceStore: OfficerComplianceStore;
@@ -54,7 +50,10 @@ export async function recordOfficerDeclaration(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "recordOfficerDeclaration");
+	const authorized = await authorizeCorporateAdministrationCommand(
+		"recordOfficerDeclaration",
+		options,
+	);
 	if (!authorized.ok) {
 		return authorized;
 	}
@@ -80,18 +79,15 @@ export async function recordOfficerDeclaration(
 	if (!source.ok) {
 		return source;
 	}
-	return runDurableCompanyCommand({
-		commandId: "corporate-administration.officer.record-declaration",
+	return executeCorporateAdministrationCommand({
+		authorization: authorized.data,
 		fingerprintSchema: recordOfficerDeclarationInputSchema,
 		fingerprintInput: parsed.data,
 		outputSchema: officerDeclarationSchema,
-		options,
 		dependencies,
 		event: {
-			type: "corporate_administration.officer.declaration_recorded.v1",
 			operationType: "CREATE",
 			targetType: "ca_officer_declaration",
-			aggregateType: "officer_declaration",
 			aggregateId: (result) => result.id,
 			aggregateVersion: (result) => result.version,
 			payload: (result, context) => ({
@@ -138,7 +134,10 @@ export async function supersedeOfficerDeclaration(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "supersedeOfficerDeclaration");
+	const authorized = await authorizeCorporateAdministrationCommand(
+		"supersedeOfficerDeclaration",
+		options,
+	);
 	if (!authorized.ok) {
 		return authorized;
 	}
@@ -175,18 +174,15 @@ export async function supersedeOfficerDeclaration(
 	if (!source.ok) {
 		return source;
 	}
-	return runDurableCompanyCommand({
-		commandId: "corporate-administration.officer.supersede-declaration",
+	return executeCorporateAdministrationCommand({
+		authorization: authorized.data,
 		fingerprintSchema: supersedeOfficerDeclarationInputSchema,
 		fingerprintInput: parsed.data,
 		outputSchema: officerDeclarationSchema,
-		options,
 		dependencies,
 		event: {
-			type: "corporate_administration.officer.declaration_superseded.v1",
 			operationType: "UPDATE",
 			targetType: "ca_officer_declaration",
-			aggregateType: "officer_declaration",
 			aggregateId: (result) => result.id,
 			aggregateVersion: (result) => result.version,
 			payload: (result, context) => ({
@@ -226,7 +222,10 @@ export async function recordOfficerDisqualification(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "recordOfficerDisqualification");
+	const authorized = await authorizeCorporateAdministrationCommand(
+		"recordOfficerDisqualification",
+		options,
+	);
 	if (!authorized.ok) {
 		return authorized;
 	}
@@ -252,18 +251,15 @@ export async function recordOfficerDisqualification(
 	if (!source.ok) {
 		return source;
 	}
-	return runDurableCompanyCommand({
-		commandId: "corporate-administration.officer.record-disqualification",
+	return executeCorporateAdministrationCommand({
+		authorization: authorized.data,
 		fingerprintSchema: recordOfficerDisqualificationInputSchema,
 		fingerprintInput: parsed.data,
 		outputSchema: officerDisqualificationSchema,
-		options,
 		dependencies,
 		event: {
-			type: "corporate_administration.officer.disqualified.v1",
 			operationType: "CREATE",
 			targetType: "ca_officer_disqualification",
-			aggregateType: "officer_disqualification",
 			aggregateId: (result) => result.id,
 			aggregateVersion: (result) => result.version,
 			payload: (result, context) => ({
@@ -309,7 +305,10 @@ export async function endOfficerDisqualification(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "endOfficerDisqualification");
+	const authorized = await authorizeCorporateAdministrationCommand(
+		"endOfficerDisqualification",
+		options,
+	);
 	if (!authorized.ok) {
 		return authorized;
 	}
@@ -338,18 +337,15 @@ export async function endOfficerDisqualification(
 	if (!source.ok) {
 		return source;
 	}
-	return runDurableCompanyCommand({
-		commandId: "corporate-administration.officer.end-disqualification",
+	return executeCorporateAdministrationCommand({
+		authorization: authorized.data,
 		fingerprintSchema: endOfficerDisqualificationInputSchema,
 		fingerprintInput: parsed.data,
 		outputSchema: officerDisqualificationSchema,
-		options,
 		dependencies,
 		event: {
-			type: "corporate_administration.officer.disqualification_ended.v1",
 			operationType: "UPDATE",
 			targetType: "ca_officer_disqualification",
-			aggregateType: "officer_disqualification",
 			aggregateId: (result) => result.id,
 			aggregateVersion: (result) => result.version,
 			payload: (result, context) => ({
@@ -390,7 +386,10 @@ export async function discloseConflict(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "discloseConflict");
+	const authorized = await authorizeCorporateAdministrationCommand(
+		"discloseConflict",
+		options,
+	);
 	if (!authorized.ok) {
 		return authorized;
 	}
@@ -416,18 +415,15 @@ export async function discloseConflict(
 	if (!source.ok) {
 		return source;
 	}
-	return runDurableCompanyCommand({
-		commandId: "corporate-administration.conflict.disclose",
+	return executeCorporateAdministrationCommand({
+		authorization: authorized.data,
 		fingerprintSchema: discloseConflictInputSchema,
 		fingerprintInput: parsed.data,
 		outputSchema: conflictDisclosureSchema,
-		options,
 		dependencies,
 		event: {
-			type: "corporate_administration.conflict.disclosed.v1",
 			operationType: "CREATE",
 			targetType: "ca_conflict_disclosure",
-			aggregateType: "conflict_disclosure",
 			aggregateId: (result) => result.id,
 			aggregateVersion: (result) => result.version,
 			payload: (result, context) => ({
@@ -477,7 +473,10 @@ export async function recordRecusal(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "recordRecusal");
+	const authorized = await authorizeCorporateAdministrationCommand(
+		"recordRecusal",
+		options,
+	);
 	if (!authorized.ok) {
 		return authorized;
 	}
@@ -503,18 +502,15 @@ export async function recordRecusal(
 	if (!source.ok) {
 		return source;
 	}
-	return runDurableCompanyCommand({
-		commandId: "corporate-administration.conflict.record-recusal",
+	return executeCorporateAdministrationCommand({
+		authorization: authorized.data,
 		fingerprintSchema: recordRecusalInputSchema,
 		fingerprintInput: parsed.data,
 		outputSchema: conflictDisclosureSchema,
-		options,
 		dependencies,
 		event: {
-			type: "corporate_administration.conflict.recusal_recorded.v1",
 			operationType: "UPDATE",
 			targetType: "ca_conflict_disclosure",
-			aggregateType: "conflict_disclosure",
 			aggregateId: (result) => result.id,
 			aggregateVersion: (result) => result.version,
 			payload: (result, context) => ({
@@ -541,17 +537,6 @@ export async function recordRecusal(
 				expectedVersion: parsed.data.expectedVersion,
 				transaction,
 			}),
-	});
-}
-
-function authorize(
-	options: CorporateAdministrationCommandOptions,
-	command: keyof typeof CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS,
-) {
-	return requireCorporateAdministrationPermission(options.authorization, {
-		organizationId: options.organizationId,
-		actorUserId: options.actorUserId,
-		permission: CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS[command],
 	});
 }
 

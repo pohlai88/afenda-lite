@@ -1,16 +1,15 @@
 // biome-ignore-all lint/style/useDestructuring: Explicit company state access keeps financial-year evidence visible.
 import { errorResult, type Result } from "@afenda/errors";
-import {
-	CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS,
-	type CorporateAdministrationApprovalVerificationDependencies,
-	requireCorporateAdministrationApprovalIfConfigured,
-	requireCorporateAdministrationPermission,
-} from "../../authorization";
-import { createCorporateAdministrationCommandFingerprint } from "../../command-identity";
+import type { CorporateAdministrationApprovalVerificationDependencies } from "../../authorization";
 import type {
 	CorporateAdministrationApprovalCommandOptions,
 	CorporateAdministrationCommandOptions,
 } from "../../command-options";
+import {
+	authorizeCorporateAdministrationCommand,
+	type CorporateAdministrationCommandKernelDependencies,
+	executeCorporateAdministrationCommand,
+} from "../../internal/durable-command";
 import { parseCorporateAdministrationInput } from "../../parse-input";
 import {
 	validateFinancialYearChronology,
@@ -25,14 +24,13 @@ import type {
 	CompanyFinancialYear,
 	SetCompanyFinancialYearInput,
 } from "../types";
-import {
-	type DurableLegalCompanyCommandDependencies,
-	runDurableCompanyCommand,
-} from "./durable-command";
 
 type SetCompanyFinancialYearDependencies =
 	CompanyFinancialYearCommandDependencies &
-		Pick<DurableLegalCompanyCommandDependencies, "runtime" | "createEventId"> &
+		Pick<
+			CorporateAdministrationCommandKernelDependencies,
+			"runtime" | "createEventId"
+		> &
 		CorporateAdministrationApprovalVerificationDependencies;
 
 type SetCompanyFinancialYearOptions = CorporateAdministrationCommandOptions &
@@ -56,40 +54,12 @@ export async function setCompanyFinancialYear(
 		return parsed;
 	}
 
-	const authorized = await requireCorporateAdministrationPermission(
-		options.authorization,
-		{
-			organizationId: options.organizationId,
-			actorUserId: options.actorUserId,
-			permission:
-				CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS.setCompanyFinancialYear,
-		},
+	const authorized = await authorizeCorporateAdministrationCommand(
+		"setCompanyFinancialYear",
+		options,
 	);
 	if (!authorized.ok) {
 		return authorized;
-	}
-
-	const identity = createCorporateAdministrationCommandFingerprint({
-		schema: setCompanyFinancialYearInputSchema,
-		organizationId: options.organizationId,
-		commandId: "corporate-administration.legal-company.set-financial-year",
-		input: parsed.data,
-	});
-	if (!identity.ok) {
-		return identity;
-	}
-	const approved = await requireCorporateAdministrationApprovalIfConfigured(
-		dependencies,
-		{
-			organizationId: options.organizationId,
-			actorUserId: options.actorUserId,
-			approvalRequestId: options.approvalRequestId,
-			approvalDecisionId: options.approvalDecisionId,
-			commandFingerprint: identity.data.fingerprint,
-		},
-	);
-	if (!approved.ok) {
-		return approved;
 	}
 
 	const financialYearEnd = validateFinancialYearEnd({
@@ -164,15 +134,13 @@ export async function setCompanyFinancialYear(
 		return chronology;
 	}
 
-	return runDurableCompanyCommand({
-		commandId: "corporate-administration.legal-company.set-financial-year",
+	return executeCorporateAdministrationCommand({
+		authorization: authorized.data,
 		fingerprintSchema: setCompanyFinancialYearInputSchema,
 		fingerprintInput: parsed.data,
 		outputSchema: companyFinancialYearSchema,
-		options,
 		dependencies,
 		event: {
-			type: "corporate_administration.legal_company.financial_year_set.v1",
 			operationType: "UPDATE",
 			targetType: "ca_company_financial_year",
 			aggregateId: (result) => result.legalCompanyId,

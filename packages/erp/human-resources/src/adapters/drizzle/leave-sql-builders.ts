@@ -1162,6 +1162,9 @@ export function buildCreateLeavePolicySql(params: {
 	eligibilityId: string;
 	minTenureDays: number | null;
 	allowedEmploymentStatuses: string[];
+	status?: "draft" | "published";
+	supersedesPolicyId?: string | null;
+	version?: number;
 }): string {
 	const { auditId } = generateTransactionIds();
 
@@ -1171,6 +1174,7 @@ export function buildCreateLeavePolicySql(params: {
 		leaveType: params.leaveType,
 		unit: params.unit,
 		paid: params.paid,
+		status: params.status ?? "draft",
 	});
 
 	const statusesJson = JSON.stringify(params.allowedEmploymentStatuses);
@@ -1183,7 +1187,8 @@ export function buildCreateLeavePolicySql(params: {
 				accrual_basis, accrual_frequency, accrual_quantity_per_period,
 				carry_forward_enabled, carry_forward_max_quantity,
 				entitlement_expiry_rule, entitlement_expiry_days,
-				effective_from, effective_to, status, version, created_by, updated_by
+				effective_from, effective_to, status, supersedes_policy_id, version,
+				created_by, updated_by
 			) VALUES (
 				'${params.policyId}', '${params.organizationId}', '${params.code}', '${params.name}',
 				'${params.leaveType}', '${params.unit}', ${params.paid}, ${params.sensitive},
@@ -1195,7 +1200,8 @@ export function buildCreateLeavePolicySql(params: {
 				'${params.entitlementExpiryRule}',
 				${params.entitlementExpiryDays ?? "NULL"},
 				'${params.effectiveFrom}', ${params.effectiveTo ? `'${params.effectiveTo}'` : "NULL"},
-				'draft', 1, '${params.createdBy}', '${params.createdBy}'
+				'${params.status ?? "draft"}', ${params.supersedesPolicyId ? `'${params.supersedesPolicyId}'` : "NULL"},
+				${params.version ?? 1}, '${params.createdBy}', '${params.createdBy}'
 			)
 			RETURNING *
 		),

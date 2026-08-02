@@ -1,6 +1,6 @@
 /**
  * Slice 3.8 — fail-closed HR mutation-emission registry CI gate.
- * Strict 348/348 — zero HR-AUD-06 exemptions.
+ * Strict 360/360 — zero HR-AUD-06 exemptions.
  */
 
 import { HumanResourcesEventSchemas } from "@afenda/events/schemas";
@@ -148,6 +148,21 @@ describe("Slice 3.8 — HR mutation-emission registry CI gate", () => {
 		}
 	});
 
+	it("Test 8 — requires idempotency for every classified mutation", () => {
+		const issues = validateHumanResourcesMutationEmissionRegistry();
+		expect(
+			issues.filter((issue) => issue.code === "missing_idempotency"),
+		).toEqual([]);
+
+		for (const definition of Object.values(
+			HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD,
+		)) {
+			if (definition !== undefined) {
+				expect(definition.idempotencyRequired).toBe(true);
+			}
+		}
+	});
+
 	it("Test 10 — gives every HR event catalog entry an owner and consumer disposition", () => {
 		for (const entry of Object.values(HUMAN_RESOURCES_EVENT_CATALOG)) {
 			expect(entry.ownerPackage).toBe("@afenda/human-resources");
@@ -158,14 +173,14 @@ describe("Slice 3.8 — HR mutation-emission registry CI gate", () => {
 		}
 	});
 
-	it("locks classified count at 348 and inventory alignment with zero unclassified", () => {
+	it("locks classified count at 360 and inventory alignment with zero unclassified", () => {
 		expect(
 			Object.keys(HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD),
-		).toHaveLength(348);
-		expect(HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY).toHaveLength(348);
-		expect(mutationInventoryFixture.classifiedMutationIds).toBe(348);
+		).toHaveLength(360);
+		expect(HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY).toHaveLength(360);
+		expect(mutationInventoryFixture.classifiedMutationIds).toBe(360);
 		expect(mutationInventoryFixture.unclassifiedMutationIds).toBe(0);
 		expect(mutationInventoryFixture.unclassified).toEqual([]);
-		expect(classifiedIds.size).toBe(348);
+		expect(classifiedIds.size).toBe(360);
 	});
 });

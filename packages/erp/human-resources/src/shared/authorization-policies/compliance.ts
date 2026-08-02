@@ -17,6 +17,11 @@ import {
 	isSubjectEmployee,
 	resolveActorPermissions,
 } from "../authorization-policy-helpers";
+import {
+	HUMAN_RESOURCES_COMPLIANCE_ADMIN_POLICY_ID,
+	HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_POLICY_ID,
+	HUMAN_RESOURCES_WORK_ELIGIBILITY_POLICY_ID,
+} from "../authorization-policy-ids";
 import type { HumanResourcesAuthorizationPolicy } from "../authorization-policy-types";
 import type {
 	HumanResourcesAuthorizationRequest,
@@ -41,17 +46,6 @@ const SUBJECT_COMPLIANCE_PERMISSIONS = [
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_DOCUMENT_OWN_READ,
 	HUMAN_RESOURCES_PERMISSION_EMPLOYEE_DOCUMENT_OWN_REGISTER,
 ] as const;
-
-function isEmployeeSensitiveComplianceOp(operationId: string): boolean {
-	return (
-		operationId.startsWith("human-resources.employee-document.") ||
-		operationId.startsWith("human-resources.work-eligibility.")
-	);
-}
-
-function isEmployeeDocumentRegister(operationId: string): boolean {
-	return operationId === "human-resources.employee-document.register";
-}
 
 async function canAccessComplianceSubject(
 	request: HumanResourcesAuthorizationRequest,
@@ -82,7 +76,8 @@ async function canAccessComplianceSubject(
 	// Own.register must not grant cross-employee reads/queries.
 	if (
 		request.operationKind === "command" &&
-		isEmployeeDocumentRegister(request.operationId) &&
+		request.requiredPermission ===
+			HUMAN_RESOURCES_PERMISSION_EMPLOYEE_DOCUMENT_OWN_REGISTER &&
 		(await actorHoldsAnyPermission(request, options, [
 			HUMAN_RESOURCES_PERMISSION_EMPLOYEE_DOCUMENT_OWN_REGISTER,
 		]))
@@ -152,52 +147,66 @@ async function projectComplianceFields(
 	return { allowedFields, deniedFields: [...denied] };
 }
 
-export const compliancePolicy: HumanResourcesAuthorizationPolicy = {
-	id: "hr.compliance",
-	mode: "specialized",
-	resourceRequired: false,
-	operationPrefixes: [
-		"human-resources.document-requirement.",
-		"human-resources.employee-document.",
-		"human-resources.work-eligibility.",
-		"human-resources.policy-acknowledgement.",
-		"human-resources.employee-compliance-summary.",
-		"human-resources.compliance.",
-	],
-	async evaluate(
-		request: HumanResourcesAuthorizationRequest,
-		options: HumanResourcesCommandOptions,
-	) {
-		// Definition / acknowledgement admin surfaces — manifest permission already enforced.
-		if (!isEmployeeSensitiveComplianceOp(request.operationId)) {
-			return allowAuthorization("hr.compliance");
-		}
+function createEmployeeCompliancePolicy(
+	policyId:
+		| typeof HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_POLICY_ID
+		| typeof HUMAN_RESOURCES_WORK_ELIGIBILITY_POLICY_ID,
+): HumanResourcesAuthorizationPolicy {
+	return {
+		id: policyId,
+		mode: "specialized",
+		resourceRequired: true,
+		async evaluate(
+			request: HumanResourcesAuthorizationRequest,
+			options: HumanResourcesCommandOptions,
+		) {
+			const { resource } = request;
+			if (resource === undefined) {
+				return denyAuthorization(
+					"resource_context_required",
+					"Resource context is required for employee compliance operations",
+					policyId,
+				);
+			}
 
-		const { resource } = request;
-		if (resource === undefined) {
-			return denyAuthorization(
-				"resource_context_required",
-				"Resource context is required for employee compliance operations",
-				"hr.compliance",
+			if (!(await canAccessComplianceSubject(request, options))) {
+				return denyAuthorization(
+					"subject_scope_denied",
+					"Actor is outside the allowed compliance subject scope",
+					policyId,
+				);
+			}
+
+			const projection = await projectComplianceFields(request, options);
+			if (projection === undefined) {
+				return allowAuthorization(policyId);
+			}
+			return decisionFromProjection({
+				policyId,
+				projection,
+				denyReason:
+					"Actor cannot access any of the requested compliance fields",
+			});
+		},
+	};
+}
+
+export const complianceAdministrativePolicy: HumanResourcesAuthorizationPolicy =
+	{
+		id: HUMAN_RESOURCES_COMPLIANCE_ADMIN_POLICY_ID,
+		mode: "manifest_only",
+		resourceRequired: false,
+		evaluate() {
+			return Promise.resolve(
+				allowAuthorization(HUMAN_RESOURCES_COMPLIANCE_ADMIN_POLICY_ID),
 			);
-		}
+		},
+	};
 
-		if (!(await canAccessComplianceSubject(request, options))) {
-			return denyAuthorization(
-				"subject_scope_denied",
-				"Actor is outside the allowed compliance subject scope",
-				"hr.compliance",
-			);
-		}
+export const employeeDocumentPolicy = createEmployeeCompliancePolicy(
+	HUMAN_RESOURCES_EMPLOYEE_DOCUMENT_POLICY_ID,
+);
 
-		const projection = await projectComplianceFields(request, options);
-		if (projection === undefined) {
-			return allowAuthorization("hr.compliance");
-		}
-		return decisionFromProjection({
-			policyId: "hr.compliance",
-			projection,
-			denyReason: "Actor cannot access any of the requested compliance fields",
-		});
-	},
-};
+export const workEligibilityPolicy = createEmployeeCompliancePolicy(
+	HUMAN_RESOURCES_WORK_ELIGIBILITY_POLICY_ID,
+);

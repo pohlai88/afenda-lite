@@ -18,6 +18,7 @@ import {
 	type CorporateAdministrationIdempotencyCompletionInput,
 	type CorporateAdministrationIdempotencyPort,
 	type CorporateAdministrationIdempotencyReleaseInput,
+	type CorporateAdministrationObservabilityPort,
 	type CorporateAdministrationOutboxPort,
 	type CorporateAdministrationPendingEvent,
 	type CorporateAdministrationTransactionContext,
@@ -44,6 +45,7 @@ import {
 import {
 	createMemoryCorporateAdministrationEstablishmentStore,
 	createMemoryCorporateAdministrationLegalCompanyStore,
+	createMemoryCorporateAdministrationObservabilityPort,
 } from "@afenda/corporate-administration/testing";
 import { errorResult, type Result } from "@afenda/errors";
 import { createElement } from "react";
@@ -115,6 +117,7 @@ type RealPackageDependencies = CompanyNameCommandDependencies &
 			idempotency: CorporateAdministrationIdempotencyPort;
 			audit: CorporateAdministrationAuditFactPort;
 			outbox: CorporateAdministrationOutboxPort;
+			observability: CorporateAdministrationObservabilityPort;
 		};
 		createEventId: () => string;
 	}>;
@@ -501,6 +504,7 @@ function createRealPackageDependencies(): RealPackageDependencies {
 			idempotency: createMemoryIdempotencyPort(),
 			audit: createMemoryAuditPort(),
 			outbox: createMemoryOutboxPort(),
+			observability: createMemoryCorporateAdministrationObservabilityPort(),
 		},
 		createEventId: createEventIdGenerator(),
 	};

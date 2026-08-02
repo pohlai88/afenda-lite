@@ -1,10 +1,53 @@
-import type { HumanResourcesOperationRegistry } from "./types";
+import {
+	defaultHumanResourcesOperationSensitivity,
+	type HUMAN_RESOURCES_POLICY_SENSITIVITY_DEFAULTS,
+} from "./sensitivity-defaults";
+import {
+	HUMAN_RESOURCES_CAPABILITY_OBSERVABILITY_AREAS,
+	type HumanResourcesOperationDeclaration,
+	type HumanResourcesOperationDeclarationRegistry,
+	type HumanResourcesOperationRegistry,
+} from "./types";
+
+type NormalizedHumanResourcesOperation<
+	TDeclaration extends HumanResourcesOperationDeclaration,
+> = Omit<TDeclaration, "observabilityArea" | "resourceKind" | "sensitivity"> & {
+	readonly observabilityArea: TDeclaration extends {
+		readonly observabilityArea: infer TArea;
+	}
+		? TArea
+		: (typeof HUMAN_RESOURCES_CAPABILITY_OBSERVABILITY_AREAS)[TDeclaration["owner"]];
+	readonly sensitivity: TDeclaration extends {
+		readonly sensitivity: infer TSensitivity;
+	}
+		? TSensitivity
+		: TDeclaration["authorizationPolicy"] extends keyof typeof HUMAN_RESOURCES_POLICY_SENSITIVITY_DEFAULTS
+			? (typeof HUMAN_RESOURCES_POLICY_SENSITIVITY_DEFAULTS)[TDeclaration["authorizationPolicy"]]
+			: null;
+	readonly resourceKind: TDeclaration extends {
+		readonly resourceKind: infer TResourceKind;
+	}
+		? TResourceKind
+		: null;
+};
+
+type NormalizedHumanResourcesOperationRegistry<
+	TRegistry extends HumanResourcesOperationDeclarationRegistry,
+> = {
+	readonly [TKey in keyof TRegistry]: NormalizedHumanResourcesOperation<
+		TRegistry[TKey]
+	>;
+};
 
 export function defineHumanResourcesOperationRegistry<
-	const TRegistry extends HumanResourcesOperationRegistry,
->(registry: TRegistry): Readonly<TRegistry> {
+	const TRegistry extends HumanResourcesOperationDeclarationRegistry,
+>(registry: TRegistry): NormalizedHumanResourcesOperationRegistry<TRegistry> {
 	const operationIds = new Set<string>();
 	const publicNames = new Set<string>();
+	const normalizedEntries: [
+		string,
+		HumanResourcesOperationDeclaration & { observabilityArea: string },
+	][] = [];
 
 	for (const [publicName, definition] of Object.entries(registry)) {
 		if (definition.publicName !== publicName) {
@@ -22,9 +65,28 @@ export function defineHumanResourcesOperationRegistry<
 		}
 		operationIds.add(definition.id);
 		publicNames.add(definition.publicName);
+		normalizedEntries.push([
+			publicName,
+			Object.freeze({
+				...definition,
+				observabilityArea:
+					definition.observabilityArea ??
+					HUMAN_RESOURCES_CAPABILITY_OBSERVABILITY_AREAS[definition.owner],
+				sensitivity:
+					definition.sensitivity === undefined
+						? defaultHumanResourcesOperationSensitivity(
+								definition.authorizationPolicy,
+							)
+						: definition.sensitivity,
+				resourceKind: definition.resourceKind ?? null,
+			}),
+		]);
 	}
 
-	return Object.freeze(registry);
+	const normalized = Object.freeze(Object.fromEntries(normalizedEntries));
+	// Every entry is reconstructed above from its declaration with one required,
+	// capability-derived observability area while preserving its literal fields.
+	return normalized as NormalizedHumanResourcesOperationRegistry<TRegistry>;
 }
 
 export function projectHumanResourcesOperationIds<

@@ -1,21 +1,11 @@
 import { errorResult, type Result } from "@afenda/errors";
 import { z } from "zod";
-
-import {
-	CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS,
-	requireCorporateAdministrationPermission,
-} from "../../authorization";
-import { createCorporateAdministrationCommandFingerprint } from "../../command-identity";
 import type { CorporateAdministrationCommandOptions } from "../../command-options";
-import { createCorporateAdministrationDomainEventEnvelope } from "../../domain-events";
-import { eventIdSchema } from "../../kernel/brands";
-import { toImmutableCanonicalJson } from "../../kernel/canonical-json";
-import { toCanonicalInstant } from "../../kernel/dates";
 import {
-	type CorporateAdministrationRuntimePorts,
-	commitCorporateAdministrationTransaction,
-	rollbackCorporateAdministrationTransaction,
-} from "../../ports";
+	authorizeCorporateAdministrationCommand,
+	type CorporateAdministrationCommandKernelDependencies,
+	executeCorporateAdministrationCommand,
+} from "../../internal/durable-command";
 import {
 	assertJurisdictionEntityTypeCompatible,
 	normalizeLegalCompanyCode,
@@ -33,13 +23,7 @@ export type RegisterLegalCompanyDraftInput = z.input<
 
 export type RegisterLegalCompanyDraftDependencies =
 	LegalCompanyCommandDependencies &
-		Readonly<{
-			runtime: CorporateAdministrationRuntimePorts;
-			createEventId: () => string;
-		}>;
-
-const REGISTER_LEGAL_COMPANY_DRAFT_COMMAND_ID =
-	"corporate-administration.legal-company.register-draft" as const;
+		CorporateAdministrationCommandKernelDependencies;
 
 const registerLegalCompanyDraftFingerprintSchema = z
 	.object({
@@ -68,14 +52,9 @@ export async function registerLegalCompanyDraft(
 		});
 	}
 
-	const authorized = await requireCorporateAdministrationPermission(
-		options.authorization,
-		{
-			organizationId: options.organizationId,
-			actorUserId: options.actorUserId,
-			permission:
-				CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS.registerLegalCompanyDraft,
-		},
+	const authorized = await authorizeCorporateAdministrationCommand(
+		"registerLegalCompanyDraft",
+		options,
 	);
 	if (!authorized.ok) {
 		return authorized;
@@ -88,71 +67,20 @@ export async function registerLegalCompanyDraft(
 		...parsed.data,
 		normalizedCompanyCode,
 	} as const;
-	const identity = createCorporateAdministrationCommandFingerprint({
-		schema: registerLegalCompanyDraftFingerprintSchema,
-		organizationId: options.organizationId,
-		commandId: REGISTER_LEGAL_COMPANY_DRAFT_COMMAND_ID,
-		input: normalizedInput,
-	});
-	if (!identity.ok) {
-		return identity;
-	}
-
-	const idempotencyScope = {
-		organizationId: options.organizationId,
-		commandId: REGISTER_LEGAL_COMPANY_DRAFT_COMMAND_ID,
-		idempotencyKey: options.idempotencyKey,
-	};
-	const reservation = await dependencies.runtime.idempotency.begin({
-		scope: idempotencyScope,
-		fingerprint: identity.data.fingerprint,
-	});
-	if (!reservation.ok) {
-		return reservation;
-	}
-	if (reservation.data.status === "replay") {
-		const replay = legalCompanySchema.safeParse(reservation.data.result);
-		return replay.success
-			? errorResult.ok(replay.data)
-			: errorResult.fail("SERVICE_UNAVAILABLE");
-	}
-	if (reservation.data.status === "conflict") {
-		return errorResult.fail("CONFLICT", {
-			publicMessage:
-				"Corporate Administration idempotency key was reused with different input.",
-		});
-	}
-	if (reservation.data.status === "in_progress") {
-		return errorResult.fail("CONFLICT", {
-			publicMessage: "Corporate Administration command is already in progress.",
-		});
-	}
-	const acquired = reservation.data;
-
-	const releaseReservation = async () =>
-		dependencies.runtime.idempotency.release({
-			scope: idempotencyScope,
-			fingerprint: identity.data.fingerprint,
-			reservationToken: acquired.reservationToken,
-		});
-
 	const party = await dependencies.partyReferences.getOrganizationParty({
 		organizationId: options.organizationId,
 		partyId: parsed.data.masterDataPartyId,
 	});
 	if (!party.ok) {
-		await releaseReservation();
 		return party;
 	}
 	if (party.data === null || party.data.kind !== "organization") {
-		await releaseReservation();
 		return errorResult.fail("VALIDATION_ERROR", {
 			publicMessage:
 				"Corporate Administration legal company requires an organization party.",
 		});
 	}
 	if (!party.data.active) {
-		await releaseReservation();
 		return errorResult.fail("CONFLICT", {
 			publicMessage:
 				"Corporate Administration legal company party is inactive.",
@@ -164,7 +92,6 @@ export async function registerLegalCompanyDraft(
 		jurisdictionCountryCode: parsed.data.homeJurisdictionCountryCode,
 	});
 	if (!rules.ok) {
-		await releaseReservation();
 		return rules;
 	}
 	const compatible = assertJurisdictionEntityTypeCompatible({
@@ -173,16 +100,41 @@ export async function registerLegalCompanyDraft(
 		rules: rules.data,
 	});
 	if (!compatible.ok) {
-		await releaseReservation();
 		return compatible;
 	}
 
-	const occurredAt = toCanonicalInstant(dependencies.runtime.clock.now());
-	const eventId = eventIdSchema.parse(dependencies.createEventId());
-
-	const mutation = await dependencies.runtime.transaction.run<LegalCompany>(
-		async (transaction) => {
-			const registered = await dependencies.store.registerLegalCompanyDraft({
+	return executeCorporateAdministrationCommand({
+		authorization: authorized.data,
+		fingerprintSchema: registerLegalCompanyDraftFingerprintSchema,
+		fingerprintInput: normalizedInput,
+		outputSchema: legalCompanySchema,
+		dependencies,
+		event: {
+			operationType: "CREATE",
+			targetType: "ca_legal_company",
+			aggregateId: (result) => result.legalCompanyId,
+			aggregateVersion: (result) => result.version,
+			payload: (result, context) => ({
+				organizationId: context.organizationId,
+				legalCompanyId: result.legalCompanyId,
+				companyCode: result.companyCode,
+				profileVersion: result.version,
+				state: result.state,
+				homeJurisdictionCountryCode: result.homeJurisdictionCountryCode,
+				occurredAt: context.occurredAt,
+				actorUserId: context.actorUserId,
+				correlationId: context.correlationId,
+				...(context.causationId === undefined
+					? {}
+					: { causationId: context.causationId }),
+			}),
+			safeMetadata: {
+				company_state: "draft",
+				home_jurisdiction: parsed.data.homeJurisdictionCountryCode,
+			},
+		},
+		work: (transaction, context) =>
+			dependencies.store.registerLegalCompanyDraft({
 				organizationId: options.organizationId,
 				companyCode: parsed.data.companyCode,
 				normalizedCompanyCode,
@@ -193,100 +145,8 @@ export async function registerLegalCompanyDraft(
 				createdByUserId: options.actorUserId,
 				correlationId: options.correlationId,
 				causationId: options.causationId,
-				createdAt: occurredAt,
+				createdAt: context.occurredAt,
 				transaction,
-			});
-			if (!registered.ok) {
-				return rollbackCorporateAdministrationTransaction(registered);
-			}
-
-			const audit = await dependencies.runtime.audit.record(
-				{
-					organizationId: options.organizationId,
-					actorUserId: options.actorUserId,
-					correlationId: options.correlationId,
-					causationId: options.causationId,
-					operationType: "CREATE",
-					targetType: "ca_legal_company",
-					targetId: registered.data.legalCompanyId,
-					occurredAt,
-					outcome: "SUCCESS",
-					safeMetadata: {
-						company_state: registered.data.state,
-						home_jurisdiction: registered.data.homeJurisdictionCountryCode,
-					},
-				},
-				{
-					transaction,
-				},
-			);
-			if (!audit.ok) {
-				return rollbackCorporateAdministrationTransaction(
-					asLegalCompanyFailure(audit),
-				);
-			}
-
-			const event = createCorporateAdministrationDomainEventEnvelope({
-				eventId,
-				eventType: "corporate_administration.legal_company.draft_registered.v1",
-				organizationId: options.organizationId,
-				aggregateType: "legal_company",
-				aggregateId: registered.data.legalCompanyId,
-				aggregateVersion: registered.data.version,
-				occurredAt,
-				actorUserId: options.actorUserId,
-				correlationId: options.correlationId,
-				causationId: options.causationId,
-				payload: {
-					organizationId: options.organizationId,
-					legalCompanyId: registered.data.legalCompanyId,
-					companyCode: registered.data.companyCode,
-					profileVersion: registered.data.version,
-					state: registered.data.state,
-					homeJurisdictionCountryCode:
-						registered.data.homeJurisdictionCountryCode,
-					occurredAt,
-					actorUserId: options.actorUserId,
-					correlationId: options.correlationId,
-					...(options.causationId === undefined
-						? {}
-						: { causationId: options.causationId }),
-				},
-			});
-			const outbox = await dependencies.runtime.outbox.append([event], {
-				transaction,
-			});
-			if (!outbox.ok) {
-				return rollbackCorporateAdministrationTransaction(
-					asLegalCompanyFailure(outbox),
-				);
-			}
-
-			return commitCorporateAdministrationTransaction(registered);
-		},
-	);
-
-	if (!mutation.ok) {
-		await releaseReservation();
-		return mutation;
-	}
-
-	const completed = await dependencies.runtime.idempotency.complete({
-		scope: idempotencyScope,
-		fingerprint: identity.data.fingerprint,
-		reservationToken: acquired.reservationToken,
-		result: toImmutableCanonicalJson(mutation.data),
+			}),
 	});
-	if (!completed.ok) {
-		return completed;
-	}
-
-	return mutation;
-}
-
-function asLegalCompanyFailure(result: Result<unknown>): Result<LegalCompany> {
-	if (result.ok) {
-		throw new TypeError("Expected Corporate Administration failure Result");
-	}
-	return result;
 }

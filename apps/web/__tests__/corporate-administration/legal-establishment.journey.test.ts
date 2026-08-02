@@ -35,7 +35,12 @@ vi.mock("@afenda/http", () => ({
 vi.mock("@/app/actions/permission-gate", () => ({
 	forbidUnlessPermission: permission.forbidUnlessPermission,
 }));
-vi.mock("@afenda/corporate-administration", () => commands);
+vi.mock("@afenda/corporate-administration", async (importOriginal) => ({
+	...(await importOriginal<
+		typeof import("@afenda/corporate-administration")
+	>()),
+	...commands,
+}));
 vi.mock("@/lib/erp/corporate-administration-command-options", () => ({
 	createCorporateAdministrationCommandOptions: composition.createOptions,
 	createCorporateAdministrationCompanyDependencies:

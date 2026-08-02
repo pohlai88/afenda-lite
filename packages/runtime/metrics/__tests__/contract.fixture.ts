@@ -1,4 +1,4 @@
-import { metrics } from "@afenda/metrics";
+import { metrics } from "@afenda/metrics/node";
 
 metrics.record.http({
 	method: "GET",

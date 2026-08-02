@@ -1,6 +1,12 @@
 import { randomUUID } from "node:crypto";
 
 import { errorResult, type Result } from "@afenda/errors";
+import {
+	INVENTORY_CANCEL_MOVEMENT_EMISSION,
+	INVENTORY_CREATE_MOVEMENT_EMISSION,
+	INVENTORY_POST_MOVEMENT_EMISSION,
+	INVENTORY_RESERVE_STOCK_EMISSION,
+} from "./operation-registry";
 import type { MutationPorts } from "./ports";
 import { resolveAsync } from "./resolve-async";
 import {
@@ -257,7 +263,7 @@ export class MemoryInventoryStore implements InventoryStore {
 			organizationId: movement.organizationId,
 			actorUserId: movement.createdBy,
 			correlationId: meta.correlationId,
-			type: "inventory.movement.created.v1",
+			type: INVENTORY_CREATE_MOVEMENT_EMISSION,
 			payload: {
 				organizationId: movement.organizationId,
 				entityType: "stock_movement",
@@ -507,7 +513,7 @@ export class MemoryInventoryStore implements InventoryStore {
 			organizationId: movement.organizationId,
 			actorUserId: record.actorUserId,
 			correlationId: meta.correlationId,
-			type: "inventory.movement.posted.v1",
+			type: INVENTORY_POST_MOVEMENT_EMISSION,
 			payload: {
 				organizationId: movement.organizationId,
 				entityType: "stock_movement",
@@ -606,7 +612,7 @@ export class MemoryInventoryStore implements InventoryStore {
 			organizationId: movement.organizationId,
 			actorUserId: record.actorUserId,
 			correlationId: meta.correlationId,
-			type: "inventory.movement.cancelled.v1",
+			type: INVENTORY_CANCEL_MOVEMENT_EMISSION,
 			payload: {
 				organizationId: movement.organizationId,
 				entityType: "stock_movement",
@@ -733,7 +739,7 @@ export class MemoryInventoryStore implements InventoryStore {
 			organizationId: reservation.organizationId,
 			actorUserId: reservation.createdBy,
 			correlationId: meta.correlationId,
-			type: "inventory.stock.reserved.v1",
+			type: INVENTORY_RESERVE_STOCK_EMISSION,
 			payload: {
 				organizationId: reservation.organizationId,
 				entityType: "stock_reservation",

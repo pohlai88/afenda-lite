@@ -1,4 +1,8 @@
-import type { CanonicalErrorCode } from "@afenda/errors";
+import {
+	type CanonicalErrorCode,
+	errorResult,
+	type Result,
+} from "@afenda/errors";
 import { z } from "zod";
 
 export const CORPORATE_ADMINISTRATION_ERROR_CODES = [
@@ -125,4 +129,14 @@ export function corporateAdministrationResultCode(
 	reason: CorporateAdministrationErrorCode,
 ): CanonicalErrorCode {
 	return CORPORATE_ADMINISTRATION_RESULT_CODE_BY_REASON[reason];
+}
+
+export function corporateAdministrationEffectiveRangeOverlapResult(): Result<never> {
+	return errorResult.fail("CONFLICT", {
+		publicMessage:
+			"Corporate Administration jurisdiction profile overlaps an existing profile.",
+		details: corporateAdministrationErrorDetails(
+			"CORPORATE_ADMINISTRATION_EFFECTIVE_RANGE_OVERLAP",
+		),
+	});
 }

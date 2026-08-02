@@ -5,12 +5,4 @@ export const learningPolicy = createScopedPolicy({
 	mode: "resource_scoped",
 	resourceRequired: true,
 	subjectPolicy: "subject_or_privileged",
-	operationPrefixes: [
-		"human-resources.course.",
-		"human-resources.session.",
-		"human-resources.learning-assignment.",
-		"human-resources.learning-attendance.",
-		"human-resources.completion.",
-		"human-resources.certification.",
-	],
 });

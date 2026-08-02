@@ -20,12 +20,12 @@ import {
 	updateCourseInputSchema,
 } from "../schemas/learning";
 import { fingerprintCourseCreate } from "../shared/fingerprint";
-import {
-	runLearningCommand,
-	runLearningQuery,
-} from "../shared/learning-command";
 import { buildMutationMeta } from "../shared/mutation-meta";
 import type { CourseListPage, LearningCourse } from "../types";
+import {
+	runLearningCapabilityCommand,
+	runLearningCapabilityQuery,
+} from "./run-operation";
 
 export const HUMAN_RESOURCES_AGGREGATE_COURSE = "course" as const;
 export type HumanResourcesCourseAggregate =
@@ -35,10 +35,11 @@ export function createCourse(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LearningCourse>> {
-	return runLearningCommand(input, options, {
+	return runLearningCapabilityCommand(input, options, {
 		schema: createCourseInputSchema,
 		invalidMessage: "Invalid course create input",
 		command: HUMAN_RESOURCES_COMMAND_COURSE_CREATE,
+		storeMethods: ["findCourseByIdempotencyKey", "createCourse"],
 		execute: async (data, { store, ports }) => {
 			const durationHours =
 				data.durationHours !== undefined && data.durationHours !== null
@@ -97,10 +98,11 @@ export function updateCourse(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LearningCourse>> {
-	return runLearningCommand(input, options, {
+	return runLearningCapabilityCommand(input, options, {
 		schema: updateCourseInputSchema,
 		invalidMessage: "Invalid course update input",
 		command: HUMAN_RESOURCES_COMMAND_COURSE_UPDATE,
+		storeMethods: ["updateCourse"],
 		execute: async (data, { store, ports }) => {
 			const durationHours =
 				data.durationHours !== undefined && data.durationHours !== null
@@ -130,10 +132,11 @@ export function activateCourse(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LearningCourse>> {
-	return runLearningCommand(input, options, {
+	return runLearningCapabilityCommand(input, options, {
 		schema: courseStatusTransitionInputSchema,
 		invalidMessage: "Invalid course activate input",
 		command: HUMAN_RESOURCES_COMMAND_COURSE_ACTIVATE,
+		storeMethods: ["activateCourse"],
 		execute: async (data, { store, ports }) =>
 			await store.activateCourse(
 				{
@@ -155,10 +158,11 @@ export function archiveCourse(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LearningCourse>> {
-	return runLearningCommand(input, options, {
+	return runLearningCapabilityCommand(input, options, {
 		schema: courseStatusTransitionInputSchema,
 		invalidMessage: "Invalid course archive input",
 		command: HUMAN_RESOURCES_COMMAND_COURSE_ARCHIVE,
+		storeMethods: ["archiveCourse"],
 		execute: async (data, { store, ports }) =>
 			await store.archiveCourse(
 				{
@@ -180,10 +184,11 @@ export function getCourse(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LearningCourse | null>> {
-	return runLearningQuery(input, options, {
+	return runLearningCapabilityQuery(input, options, {
 		schema: getCourseInputSchema,
 		invalidMessage: "Invalid course get input",
 		query: HUMAN_RESOURCES_QUERY_COURSE_GET,
+		storeMethods: ["getCourseById"],
 		execute: async (data, { store }) =>
 			await store.getCourseById({
 				organizationId: data.organizationId,
@@ -196,10 +201,11 @@ export function listCourses(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CourseListPage>> {
-	return runLearningQuery(input, options, {
+	return runLearningCapabilityQuery(input, options, {
 		schema: listCoursesInputSchema,
 		invalidMessage: "Invalid course list input",
 		query: HUMAN_RESOURCES_QUERY_COURSE_LIST,
+		storeMethods: ["listCourses"],
 		execute: async (data, { store }) =>
 			await store.listCourses({
 				organizationId: data.organizationId,

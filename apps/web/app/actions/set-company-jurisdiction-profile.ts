@@ -1,7 +1,10 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
-import { setCompanyJurisdictionProfile } from "@afenda/corporate-administration";
+import {
+	corporateAdministrationPermissionFor,
+	setCompanyJurisdictionProfile,
+} from "@afenda/corporate-administration";
 import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -45,7 +48,9 @@ export async function setCompanyJurisdictionProfileAction(
 ): Promise<ActionResult<{ jurisdictionProfileId: string }>> {
 	return await runMemberPermissionAction({
 		path: "setCompanyJurisdictionProfileAction",
-		permission: "corporate_administration.company.manage",
+		permission: corporateAdministrationPermissionFor(
+			"setCompanyJurisdictionProfile",
+		),
 		safeMessage: "Could not set jurisdiction profile.",
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(setCompanyJurisdictionProfileActionSchema, {

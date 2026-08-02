@@ -11,6 +11,9 @@ import {
 	HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_SUBMIT_DELEGATED_ASSESSMENT,
 	HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_SUBMIT_MANAGER_ASSESSMENT,
 	HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_SUBMIT_SELF_ASSESSMENT,
+	HUMAN_RESOURCES_QUERY_EMPLOYEE_PERFORMANCE_HISTORY_GET,
+	HUMAN_RESOURCES_QUERY_PERFORMANCE_REVIEW_GET,
+	HUMAN_RESOURCES_QUERY_PERFORMANCE_REVIEW_LIST_BY_EMPLOYEE,
 	HUMAN_RESOURCES_QUERY_PERFORMANCE_REVIEW_LIST_PENDING_MANAGER_ACTION,
 } from "../module-ids";
 import {
@@ -31,19 +34,19 @@ import {
 } from "../schemas/performance";
 import { fingerprintPerformanceReviewFinalize } from "../shared/fingerprint";
 import { buildMutationMeta } from "../shared/mutation-meta";
-import {
-	requirePerformanceConfidentialRead,
-	runPerformanceCommand,
-	runPerformanceEmployeeScopedQuery,
-	runPerformanceQuery,
-	runPerformanceResourceScopedQuery,
-} from "../shared/performance-command";
 import type {
 	EmployeePerformanceHistory,
 	PerformanceReview,
 	PerformanceReviewDetail,
 	PerformanceReviewListPage,
 } from "../types";
+import {
+	requirePerformanceConfidentialRead,
+	runPerformanceCapabilityCommand,
+	runPerformanceCapabilityQuery,
+	runPerformanceEmployeeScopedCapabilityQuery,
+	runPerformanceResourceScopedCapabilityQuery,
+} from "./run-operation";
 
 export const HUMAN_RESOURCES_AGGREGATE_REVIEW = "review" as const;
 export type HumanResourcesReviewAggregate =
@@ -53,7 +56,8 @@ export function startPerformanceReview(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceReview>> {
-	return runPerformanceCommand(input, options, {
+	return runPerformanceCapabilityCommand(input, options, {
+		storeMethods: ["startPerformanceReview"],
 		schema: startPerformanceReviewInputSchema,
 		invalidMessage: "Invalid performance review start input",
 		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_START,
@@ -80,7 +84,8 @@ export function submitSelfAssessment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceReview>> {
-	return runPerformanceCommand(input, options, {
+	return runPerformanceCapabilityCommand(input, options, {
+		storeMethods: ["submitSelfAssessment"],
 		schema: submitSelfAssessmentInputSchema,
 		invalidMessage: "Invalid self assessment submit input",
 		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_SUBMIT_SELF_ASSESSMENT,
@@ -109,7 +114,8 @@ export function submitManagerAssessment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceReview>> {
-	return runPerformanceCommand(input, options, {
+	return runPerformanceCapabilityCommand(input, options, {
+		storeMethods: ["submitManagerAssessment"],
 		schema: submitManagerAssessmentInputSchema,
 		invalidMessage: "Invalid manager assessment submit input",
 		command:
@@ -139,7 +145,8 @@ export function addDelegatedReviewer(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceReview>> {
-	return runPerformanceCommand(input, options, {
+	return runPerformanceCapabilityCommand(input, options, {
+		storeMethods: ["addDelegatedReviewer"],
 		schema: addDelegatedReviewerInputSchema,
 		invalidMessage: "Invalid delegated reviewer input",
 		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_ADD_DELEGATED_REVIEWER,
@@ -166,7 +173,8 @@ export function submitDelegatedAssessment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceReview>> {
-	return runPerformanceCommand(input, options, {
+	return runPerformanceCapabilityCommand(input, options, {
+		storeMethods: ["submitDelegatedAssessment"],
 		schema: submitDelegatedAssessmentInputSchema,
 		invalidMessage: "Invalid delegated assessment submit input",
 		command:
@@ -197,7 +205,8 @@ export function calibratePerformanceReview(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceReview>> {
-	return runPerformanceCommand(input, options, {
+	return runPerformanceCapabilityCommand(input, options, {
+		storeMethods: ["calibratePerformanceReview"],
 		schema: calibratePerformanceReviewInputSchema,
 		invalidMessage: "Invalid performance review calibration input",
 		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_CALIBRATE,
@@ -224,7 +233,8 @@ export function returnPerformanceReviewForCorrection(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceReview>> {
-	return runPerformanceCommand(input, options, {
+	return runPerformanceCapabilityCommand(input, options, {
+		storeMethods: ["returnPerformanceReviewForCorrection"],
 		schema: performanceReviewStatusTransitionInputSchema,
 		invalidMessage: "Invalid performance review return input",
 		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_RETURN_FOR_CORRECTION,
@@ -250,7 +260,8 @@ export function acknowledgePerformanceReview(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceReview>> {
-	return runPerformanceCommand(input, options, {
+	return runPerformanceCapabilityCommand(input, options, {
+		storeMethods: ["acknowledgePerformanceReview"],
 		schema: acknowledgePerformanceReviewInputSchema,
 		invalidMessage: "Invalid performance review acknowledge input",
 		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_ACKNOWLEDGE,
@@ -276,7 +287,8 @@ export function finalizePerformanceReview(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceReview>> {
-	return runPerformanceCommand(input, options, {
+	return runPerformanceCapabilityCommand(input, options, {
+		storeMethods: ["finalizePerformanceReview"],
 		schema: finalizePerformanceReviewInputSchema,
 		invalidMessage: "Invalid performance review finalize input",
 		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_FINALIZE,
@@ -309,7 +321,8 @@ export function reopenPerformanceReview(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceReview>> {
-	return runPerformanceCommand(input, options, {
+	return runPerformanceCapabilityCommand(input, options, {
+		storeMethods: ["reopenPerformanceReview"],
 		schema: reopenPerformanceReviewInputSchema,
 		invalidMessage: "Invalid performance review reopen input",
 		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_REVIEW_REOPEN,
@@ -335,7 +348,9 @@ export function getPerformanceReviewById(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceReviewDetail | null>> {
-	return runPerformanceResourceScopedQuery(input, options, {
+	return runPerformanceResourceScopedCapabilityQuery(input, options, {
+		storeMethods: ["getPerformanceReviewById"],
+		query: HUMAN_RESOURCES_QUERY_PERFORMANCE_REVIEW_GET,
 		schema: getPerformanceReviewByIdInputSchema,
 		invalidMessage: "Invalid performance review get input",
 		execute: async (data, { store }) => {
@@ -360,7 +375,9 @@ export function listEmployeePerformanceReviews(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceReviewListPage>> {
-	return runPerformanceEmployeeScopedQuery(input, options, {
+	return runPerformanceEmployeeScopedCapabilityQuery(input, options, {
+		storeMethods: ["listEmployeePerformanceReviews"],
+		query: HUMAN_RESOURCES_QUERY_PERFORMANCE_REVIEW_LIST_BY_EMPLOYEE,
 		schema: listEmployeePerformanceReviewsInputSchema,
 		invalidMessage: "Invalid employee performance reviews list input",
 		execute: async (data, { store }) => {
@@ -387,7 +404,8 @@ export function listReviewsPendingManagerAction(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceReviewListPage>> {
-	return runPerformanceQuery(input, options, {
+	return runPerformanceCapabilityQuery(input, options, {
+		storeMethods: ["listReviewsPendingManagerAction"],
 		schema: listReviewsPendingManagerActionInputSchema,
 		invalidMessage: "Invalid pending manager reviews list input",
 		query: HUMAN_RESOURCES_QUERY_PERFORMANCE_REVIEW_LIST_PENDING_MANAGER_ACTION,
@@ -405,7 +423,9 @@ export function getEmployeePerformanceHistory(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeePerformanceHistory>> {
-	return runPerformanceEmployeeScopedQuery(input, options, {
+	return runPerformanceEmployeeScopedCapabilityQuery(input, options, {
+		storeMethods: ["getEmployeePerformanceHistory"],
+		query: HUMAN_RESOURCES_QUERY_EMPLOYEE_PERFORMANCE_HISTORY_GET,
 		schema: getEmployeePerformanceHistoryInputSchema,
 		invalidMessage: "Invalid employee performance history get input",
 		execute: async (data, { store }) => {

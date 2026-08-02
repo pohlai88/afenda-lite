@@ -33,7 +33,6 @@ import {
 	computeLeaveBalance,
 	sortLeaveAdjustmentsForLedger,
 } from "../shared/leave-balance";
-import { runLeaveCommand, runLeaveQuery } from "../shared/leave-command";
 import {
 	assertLeaveAccrualAllowed,
 	assertLeaveAdjustmentBalanceAllowed,
@@ -52,6 +51,10 @@ import {
 	loadLeaveEntitlementForCommand,
 	loadPublishedLeavePolicyForEntitlement,
 } from "./entitlement-context";
+import {
+	runLeaveCapabilityCommand,
+	runLeaveCapabilityQuery,
+} from "./run-operation";
 
 export const HUMAN_RESOURCES_AGGREGATE_ENTITLEMENT = "entitlement" as const;
 export type HumanResourcesEntitlementAggregate =
@@ -61,10 +64,15 @@ export async function grantLeaveEntitlement(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LeaveEntitlement>> {
-	return await runLeaveCommand(input, options, {
+	return await runLeaveCapabilityCommand(input, options, {
 		schema: grantLeaveEntitlementInputSchema,
 		invalidMessage: "Invalid leave entitlement grant input",
 		command: HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_GRANT,
+		storeMethods: [
+			"findLeaveEntitlementByIdempotencyKey",
+			"getLeavePolicyById",
+			"grantLeaveEntitlement",
+		],
 		execute: async (data, { store, ports }) => {
 			const fingerprint = fingerprintLeaveEntitlementGrant({
 				employeeId: data.employeeId,
@@ -138,10 +146,15 @@ export async function accrueLeaveEntitlement(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LeaveAdjustment>> {
-	return await runLeaveCommand(input, options, {
+	return await runLeaveCapabilityCommand(input, options, {
 		schema: accrueLeaveEntitlementInputSchema,
 		invalidMessage: "Invalid leave entitlement accrual input",
 		command: HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_ACCRUE,
+		storeMethods: [
+			"getLeaveEntitlementById",
+			"getLeavePolicyById",
+			"adjustLeaveEntitlement",
+		],
 		execute: async (data, { store, ports }) => {
 			const entitlement = await loadLeaveEntitlementForCommand(store, {
 				organizationId: data.organizationId,
@@ -205,10 +218,16 @@ export async function carryForwardLeaveEntitlement(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LeaveEntitlement>> {
-	return await runLeaveCommand(input, options, {
+	return await runLeaveCapabilityCommand(input, options, {
 		schema: carryForwardLeaveEntitlementInputSchema,
 		invalidMessage: "Invalid leave entitlement carry-forward input",
 		command: HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_CARRY_FORWARD,
+		storeMethods: [
+			"getLeaveEntitlementById",
+			"getLeavePolicyById",
+			"getLeaveBalance",
+			"carryForwardLeaveEntitlement",
+		],
 		execute: async (data, { store, ports }) => {
 			const source = await loadLeaveEntitlementForCommand(store, {
 				organizationId: data.organizationId,
@@ -285,10 +304,11 @@ export async function expireLeaveEntitlement(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LeaveEntitlement>> {
-	return await runLeaveCommand(input, options, {
+	return await runLeaveCapabilityCommand(input, options, {
 		schema: expireLeaveEntitlementInputSchema,
 		invalidMessage: "Invalid leave entitlement expire input",
 		command: HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_EXPIRE,
+		storeMethods: ["expireLeaveEntitlement"],
 		execute: (data, { store, ports }) =>
 			store.expireLeaveEntitlement(
 				{
@@ -310,10 +330,16 @@ export async function adjustLeaveEntitlement(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LeaveAdjustment>> {
-	return await runLeaveCommand(input, options, {
+	return await runLeaveCapabilityCommand(input, options, {
 		schema: adjustLeaveEntitlementInputSchema,
 		invalidMessage: "Invalid leave entitlement adjust input",
 		command: HUMAN_RESOURCES_COMMAND_LEAVE_ENTITLEMENT_ADJUST,
+		storeMethods: [
+			"getLeaveEntitlementById",
+			"getLeavePolicyById",
+			"listPostedLeaveAdjustments",
+			"adjustLeaveEntitlement",
+		],
 		execute: async (data, { store, ports }) => {
 			const entitlement = await loadLeaveEntitlementForCommand(store, {
 				organizationId: data.organizationId,
@@ -385,10 +411,11 @@ export async function getLeaveEntitlement(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LeaveEntitlement | null>> {
-	return await runLeaveQuery(input, options, {
+	return await runLeaveCapabilityQuery(input, options, {
 		schema: getLeaveEntitlementInputSchema,
 		invalidMessage: "Invalid leave entitlement get input",
 		query: HUMAN_RESOURCES_QUERY_LEAVE_ENTITLEMENT_GET,
+		storeMethods: ["getLeaveEntitlementById"],
 		execute: (data, { store }) =>
 			store.getLeaveEntitlementById({
 				organizationId: data.organizationId,
@@ -401,10 +428,11 @@ export async function listLeaveEntitlements(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LeaveEntitlementListPage>> {
-	return await runLeaveQuery(input, options, {
+	return await runLeaveCapabilityQuery(input, options, {
 		schema: listLeaveEntitlementsInputSchema,
 		invalidMessage: "Invalid leave entitlement list input",
 		query: HUMAN_RESOURCES_QUERY_LEAVE_ENTITLEMENT_LIST,
+		storeMethods: ["listLeaveEntitlements"],
 		execute: (data, { store }) =>
 			store.listLeaveEntitlements({
 				organizationId: data.organizationId,
@@ -421,10 +449,11 @@ export async function reconcileLeaveBalance(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LeaveBalanceReconciliation | null>> {
-	return await runLeaveQuery(input, options, {
+	return await runLeaveCapabilityQuery(input, options, {
 		schema: getLeaveBalanceInputSchema,
 		invalidMessage: "Invalid leave balance reconciliation input",
 		query: HUMAN_RESOURCES_QUERY_LEAVE_BALANCE_RECONCILE,
+		storeMethods: ["getLeaveEntitlementById", "listPostedLeaveAdjustments"],
 		execute: async (data, { store }) => {
 			const entitlement = await store.getLeaveEntitlementById({
 				organizationId: data.organizationId,
@@ -472,10 +501,11 @@ export async function getLeaveBalance(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LeaveBalance | null>> {
-	return await runLeaveQuery(input, options, {
+	return await runLeaveCapabilityQuery(input, options, {
 		schema: getLeaveBalanceInputSchema,
 		invalidMessage: "Invalid leave balance get input",
 		query: HUMAN_RESOURCES_QUERY_LEAVE_BALANCE_GET,
+		storeMethods: ["getLeaveBalance"],
 		execute: (data, { store }) =>
 			store.getLeaveBalance({
 				organizationId: data.organizationId,

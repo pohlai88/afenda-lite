@@ -27,12 +27,7 @@ import { conflict } from "../shared/domain-guards";
 import { fingerprintHeadcountReservation } from "../shared/fingerprint";
 import { buildMutationMeta } from "../shared/mutation-meta";
 import { assertRequisitionAllowsHeadcountReservation } from "../shared/recruitment-guards";
-import {
-	runWorkforcePlanningCommand,
-	runWorkforcePlanningQuery,
-} from "../shared/workforce-planning-command";
 import { assertReservationWithinAvailability } from "../shared/workforce-planning-guards";
-import type { HumanResourcesStore } from "../store";
 import type {
 	HeadcountAvailability,
 	HeadcountPlanLine,
@@ -41,6 +36,11 @@ import type {
 	RecruitmentHeadcountHandoff,
 } from "../types";
 import { computeLineAvailability } from "./availability";
+import {
+	runWorkforcePlanningCapabilityCommand,
+	runWorkforcePlanningCapabilityQuery,
+} from "./run-operation";
+import type { HumanResourcesWorkforcePlanningCapabilityStore } from "./store";
 
 export const HUMAN_RESOURCES_AGGREGATE_HEADCOUNT_RESERVATION =
 	"headcount-reservation" as const;
@@ -48,11 +48,28 @@ export type HumanResourcesHeadcountReservationAggregate =
 	typeof HUMAN_RESOURCES_AGGREGATE_HEADCOUNT_RESERVATION;
 
 type ReserveHeadcountInput = z.infer<typeof reserveHeadcountInputSchema>;
+type ReservationReplayStore = Pick<
+	HumanResourcesWorkforcePlanningCapabilityStore,
+	"findHeadcountReservationByIdempotencyKey"
+>;
+type ReservablePlanLineStore = Pick<
+	HumanResourcesWorkforcePlanningCapabilityStore,
+	"getHeadcountPlanLineById" | "getHeadcountPlanById" | "getRequisitionById"
+>;
+type ReservationCapacityStore = Pick<
+	HumanResourcesWorkforcePlanningCapabilityStore,
+	| "findActiveHeadcountReservationForRequisition"
+	| "listHeadcountReservationsByPlanLineId"
+>;
+type ReserveHeadcountStore = ReservationReplayStore &
+	ReservablePlanLineStore &
+	ReservationCapacityStore &
+	Pick<HumanResourcesWorkforcePlanningCapabilityStore, "reserveHeadcount">;
 
 async function findReservationReplay(input: {
 	data: ReserveHeadcountInput;
 	requestFingerprint: string;
-	store: HumanResourcesStore;
+	store: ReservationReplayStore;
 }): Promise<Result<HeadcountReservation | null>> {
 	const existingByKey =
 		await input.store.findHeadcountReservationByIdempotencyKey({
@@ -80,7 +97,7 @@ async function findReservationReplay(input: {
 
 async function loadReservablePlanLine(input: {
 	data: ReserveHeadcountInput;
-	store: HumanResourcesStore;
+	store: ReservablePlanLineStore;
 }): Promise<Result<HeadcountPlanLine>> {
 	const line = await input.store.getHeadcountPlanLineById({
 		organizationId: input.data.organizationId,
@@ -142,7 +159,7 @@ async function loadReservablePlanLine(input: {
 async function assertReservationCapacity(input: {
 	data: ReserveHeadcountInput;
 	line: HeadcountPlanLine;
-	store: HumanResourcesStore;
+	store: ReservationCapacityStore;
 }): Promise<Result<void>> {
 	const existingActive =
 		await input.store.findActiveHeadcountReservationForRequisition({
@@ -177,7 +194,7 @@ async function assertReservationCapacity(input: {
 
 async function executeReserveHeadcount(
 	data: ReserveHeadcountInput,
-	deps: { store: HumanResourcesStore; ports: MutationPorts },
+	deps: { store: ReserveHeadcountStore; ports: MutationPorts },
 ): Promise<Result<HeadcountReservation>> {
 	const requestFingerprint = fingerprintHeadcountReservation({
 		planLineId: data.planLineId,
@@ -233,10 +250,19 @@ export function reserveHeadcount(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<HeadcountReservation>> {
-	return runWorkforcePlanningCommand(input, options, {
+	return runWorkforcePlanningCapabilityCommand(input, options, {
 		schema: reserveHeadcountInputSchema,
 		invalidMessage: "Invalid headcount reserve input",
 		command: HUMAN_RESOURCES_COMMAND_HEADCOUNT_RESERVE,
+		storeMethods: [
+			"findHeadcountReservationByIdempotencyKey",
+			"getHeadcountPlanLineById",
+			"getHeadcountPlanById",
+			"getRequisitionById",
+			"findActiveHeadcountReservationForRequisition",
+			"listHeadcountReservationsByPlanLineId",
+			"reserveHeadcount",
+		],
 		execute: executeReserveHeadcount,
 	});
 }
@@ -245,10 +271,11 @@ export function releaseHeadcountReservation(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<HeadcountReservation>> {
-	return runWorkforcePlanningCommand(input, options, {
+	return runWorkforcePlanningCapabilityCommand(input, options, {
 		schema: releaseHeadcountReservationInputSchema,
 		invalidMessage: "Invalid headcount reservation release input",
 		command: HUMAN_RESOURCES_COMMAND_HEADCOUNT_RESERVATION_RELEASE,
+		storeMethods: ["releaseHeadcountReservation"],
 		execute: (data, { store, ports }) =>
 			store.releaseHeadcountReservation(
 				{
@@ -270,10 +297,11 @@ export function consumeHeadcountReservation(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<HeadcountReservation>> {
-	return runWorkforcePlanningCommand(input, options, {
+	return runWorkforcePlanningCapabilityCommand(input, options, {
 		schema: consumeHeadcountReservationInputSchema,
 		invalidMessage: "Invalid headcount reservation consume input",
 		command: HUMAN_RESOURCES_COMMAND_HEADCOUNT_RESERVATION_CONSUME,
+		storeMethods: ["consumeHeadcountReservation"],
 		execute: (data, { store, ports }) =>
 			store.consumeHeadcountReservation(
 				{
@@ -295,10 +323,11 @@ export function getHeadcountAvailability(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<HeadcountAvailability>> {
-	return runWorkforcePlanningQuery(input, options, {
+	return runWorkforcePlanningCapabilityQuery(input, options, {
 		schema: getHeadcountAvailabilityInputSchema,
 		invalidMessage: "Invalid headcount availability get input",
 		query: HUMAN_RESOURCES_QUERY_HEADCOUNT_AVAILABILITY_GET,
+		storeMethods: ["getHeadcountAvailability"],
 		execute: async (data, { store }) => {
 			const availability = await store.getHeadcountAvailability({
 				organizationId: data.organizationId,
@@ -324,10 +353,11 @@ export function listHeadcountReservations(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<HeadcountReservationListPage>> {
-	return runWorkforcePlanningQuery(input, options, {
+	return runWorkforcePlanningCapabilityQuery(input, options, {
 		schema: listHeadcountReservationsInputSchema,
 		invalidMessage: "Invalid headcount reservation list input",
 		query: HUMAN_RESOURCES_QUERY_HEADCOUNT_RESERVATION_LIST,
+		storeMethods: ["listHeadcountReservations"],
 		execute: (data, { store }) =>
 			store.listHeadcountReservations({
 				organizationId: data.organizationId,
@@ -343,10 +373,11 @@ export function getRecruitmentHeadcountHandoff(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<RecruitmentHeadcountHandoff>> {
-	return runWorkforcePlanningQuery(input, options, {
+	return runWorkforcePlanningCapabilityQuery(input, options, {
 		schema: getRecruitmentHeadcountHandoffInputSchema,
 		invalidMessage: "Invalid recruitment headcount handoff get input",
 		query: HUMAN_RESOURCES_QUERY_RECRUITMENT_HEADCOUNT_HANDOFF_GET,
+		storeMethods: ["getRecruitmentHeadcountHandoff"],
 		execute: (data, { store }) =>
 			store.getRecruitmentHeadcountHandoff({
 				organizationId: data.organizationId,

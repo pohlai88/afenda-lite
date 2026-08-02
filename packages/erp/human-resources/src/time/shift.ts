@@ -31,18 +31,22 @@ import {
 } from "../schemas/time";
 import { invalidInput } from "../shared/domain-guards";
 import { previousIsoDate } from "../shared/effective-dates";
-import { runTimeCommand, runTimeQuery } from "../shared/time-command";
 import { computeIsOvernight } from "../shared/time-guards";
 import type { Shift, ShiftBreak } from "../types";
+import {
+	runTimeCapabilityCommand,
+	runTimeCapabilityQuery,
+} from "./run-operation";
 
 export async function createShift(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Shift>> {
-	return await runTimeCommand(input, options, {
+	return await runTimeCapabilityCommand(input, options, {
 		schema: createShiftInputSchema,
 		invalidMessage: "Invalid shift create input",
 		command: HUMAN_RESOURCES_COMMAND_SHIFT_CREATE,
+		storeMethods: ["createShift", "findShiftByIdempotencyKey"],
 		execute: async (data, { store, ports }) => {
 			const isOvernight =
 				data.isOvernight ?? computeIsOvernight(data.startLocal, data.endLocal);
@@ -111,10 +115,11 @@ export async function updateShift(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Shift>> {
-	return await runTimeCommand(input, options, {
+	return await runTimeCapabilityCommand(input, options, {
 		schema: updateShiftInputSchema,
 		invalidMessage: "Invalid shift update input",
 		command: HUMAN_RESOURCES_COMMAND_SHIFT_UPDATE,
+		storeMethods: ["updateShift"],
 		execute: async (data, { store, ports }) => store.updateShift(data, ports),
 	});
 }
@@ -123,10 +128,11 @@ export async function supersedeShift(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<{ superseded: Shift; successor: Shift }>> {
-	return await runTimeCommand(input, options, {
+	return await runTimeCapabilityCommand(input, options, {
 		schema: supersedeShiftInputSchema,
 		invalidMessage: "Invalid shift supersede input",
 		command: HUMAN_RESOURCES_COMMAND_SHIFT_SUPERSEDE,
+		storeMethods: ["findShiftByIdempotencyKey", "getShift", "supersedeShift"],
 		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The domain workflow keeps ordered invariant validation and Result mapping explicit.
 		execute: async (data, { store, ports }) => {
 			const predecessor = await store.getShift({
@@ -260,10 +266,11 @@ export async function activateShift(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Shift>> {
-	return await runTimeCommand(input, options, {
+	return await runTimeCapabilityCommand(input, options, {
 		schema: activateShiftInputSchema,
 		invalidMessage: "Invalid shift activate input",
 		command: HUMAN_RESOURCES_COMMAND_SHIFT_ACTIVATE,
+		storeMethods: ["activateShift"],
 		execute: async (data, { store, ports }) => store.activateShift(data, ports),
 	});
 }
@@ -272,10 +279,11 @@ export async function deactivateShift(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Shift>> {
-	return await runTimeCommand(input, options, {
+	return await runTimeCapabilityCommand(input, options, {
 		schema: deactivateShiftInputSchema,
 		invalidMessage: "Invalid shift deactivate input",
 		command: HUMAN_RESOURCES_COMMAND_SHIFT_DEACTIVATE,
+		storeMethods: ["deactivateShift"],
 		execute: async (data, { store, ports }) =>
 			store.deactivateShift(data, ports),
 	});
@@ -285,10 +293,11 @@ export async function getShift(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Shift | null>> {
-	return await runTimeQuery(input, options, {
+	return await runTimeCapabilityQuery(input, options, {
 		schema: getShiftInputSchema,
 		invalidMessage: "Invalid shift get input",
 		query: HUMAN_RESOURCES_QUERY_SHIFT_GET,
+		storeMethods: ["getShift"],
 		execute: async (data, { store }) =>
 			store.getShift({
 				organizationId: data.organizationId,
@@ -301,10 +310,11 @@ export async function listShifts(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Shift[]>> {
-	return await runTimeQuery(input, options, {
+	return await runTimeCapabilityQuery(input, options, {
 		schema: listShiftsInputSchema,
 		invalidMessage: "Invalid shift list input",
 		query: HUMAN_RESOURCES_QUERY_SHIFT_LIST,
+		storeMethods: ["listShifts"],
 		execute: async (data, { store }) => store.listShifts(data),
 	});
 }
@@ -313,10 +323,11 @@ export async function addShiftBreak(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<ShiftBreak>> {
-	return await runTimeCommand(input, options, {
+	return await runTimeCapabilityCommand(input, options, {
 		schema: addShiftBreakInputSchema,
 		invalidMessage: "Invalid shift break add input",
 		command: HUMAN_RESOURCES_COMMAND_SHIFT_BREAK_ADD,
+		storeMethods: ["addShiftBreak"],
 		execute: async (data, { store, ports }) =>
 			store.addShiftBreak(
 				{
@@ -338,10 +349,11 @@ export async function removeShiftBreak(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<void>> {
-	return await runTimeCommand(input, options, {
+	return await runTimeCapabilityCommand(input, options, {
 		schema: removeShiftBreakInputSchema,
 		invalidMessage: "Invalid shift break remove input",
 		command: HUMAN_RESOURCES_COMMAND_SHIFT_BREAK_REMOVE,
+		storeMethods: ["removeShiftBreak"],
 		execute: async (data, { store, ports }) =>
 			store.removeShiftBreak(
 				{
@@ -359,10 +371,11 @@ export async function listShiftBreaks(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<ShiftBreak[]>> {
-	return await runTimeQuery(input, options, {
+	return await runTimeCapabilityQuery(input, options, {
 		schema: listShiftBreaksInputSchema,
 		invalidMessage: "Invalid shift break list input",
 		query: HUMAN_RESOURCES_QUERY_SHIFT_BREAK_LIST,
+		storeMethods: ["listShiftBreaks"],
 		execute: async (data, { store }) => store.listShiftBreaks(data),
 	});
 }

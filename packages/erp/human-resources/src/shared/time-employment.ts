@@ -4,12 +4,12 @@ import type {
 	HumanResourcesEmployeeId,
 	HumanResourcesEmploymentId,
 } from "../brands";
-import type { HumanResourcesStore } from "../store";
+import type { HumanResourcesCoreStore } from "../store/core";
 import type { Employment } from "../types";
 import { invalidInput, notFound } from "./domain-guards";
 
 type TimeEmploymentStore = Pick<
-	HumanResourcesStore,
+	HumanResourcesCoreStore,
 	"findEmploymentByEmployeeAsOf" | "getEmploymentById"
 >;
 

@@ -1709,7 +1709,7 @@ describe("compensation & benefits (HR-07)", () => {
 			"src/compensation-benefits/compensation-review.ts",
 			"src/compensation-benefits/benefit-plan.ts",
 			"src/compensation-benefits/benefit-enrollment.ts",
-			"src/shared/compensation-command.ts",
+			"src/compensation-benefits/run-operation.ts",
 			"src/adapters/drizzle/compensation-benefits.ts",
 		];
 

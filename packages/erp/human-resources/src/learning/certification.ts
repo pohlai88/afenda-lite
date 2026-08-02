@@ -26,12 +26,12 @@ import {
 	fingerprintCertificationIssue,
 	fingerprintCertificationRenew,
 } from "../shared/fingerprint";
-import {
-	runLearningCommand,
-	runLearningQuery,
-} from "../shared/learning-command";
 import { buildMutationMeta } from "../shared/mutation-meta";
 import type { CertificationListPage, EmployeeCertification } from "../types";
+import {
+	runLearningCapabilityCommand,
+	runLearningCapabilityQuery,
+} from "./run-operation";
 
 export const HUMAN_RESOURCES_AGGREGATE_CERTIFICATION = "certification" as const;
 export type HumanResourcesCertificationAggregate =
@@ -41,10 +41,15 @@ export function issueCertification(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCertification>> {
-	return runLearningCommand(input, options, {
+	return runLearningCapabilityCommand(input, options, {
 		schema: issueCertificationInputSchema,
 		invalidMessage: "Invalid certification issue input",
 		command: HUMAN_RESOURCES_COMMAND_CERTIFICATION_ISSUE,
+		storeMethods: [
+			"getCompletionById",
+			"findCertificationByIdempotencyKey",
+			"issueCertification",
+		],
 		execute: async (data, { store, ports }) => {
 			const completionResult = await store.getCompletionById({
 				organizationId: data.organizationId,
@@ -122,10 +127,11 @@ export function expireCertification(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCertification>> {
-	return runLearningCommand(input, options, {
+	return runLearningCapabilityCommand(input, options, {
 		schema: certificationStatusTransitionInputSchema,
 		invalidMessage: "Invalid certification expire input",
 		command: HUMAN_RESOURCES_COMMAND_CERTIFICATION_EXPIRE,
+		storeMethods: ["expireCertification"],
 		execute: async (data, { store, ports }) =>
 			await store.expireCertification(
 				{
@@ -147,10 +153,11 @@ export function revokeCertification(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCertification>> {
-	return runLearningCommand(input, options, {
+	return runLearningCapabilityCommand(input, options, {
 		schema: certificationStatusTransitionInputSchema,
 		invalidMessage: "Invalid certification revoke input",
 		command: HUMAN_RESOURCES_COMMAND_CERTIFICATION_REVOKE,
+		storeMethods: ["revokeCertification"],
 		execute: async (data, { store, ports }) =>
 			await store.revokeCertification(
 				{
@@ -173,10 +180,16 @@ export function renewCertification(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCertification>> {
-	return runLearningCommand(input, options, {
+	return runLearningCapabilityCommand(input, options, {
 		schema: renewCertificationInputSchema,
 		invalidMessage: "Invalid certification renew input",
 		command: HUMAN_RESOURCES_COMMAND_CERTIFICATION_RENEW,
+		storeMethods: [
+			"getCertificationById",
+			"getCompletionById",
+			"findCertificationByIdempotencyKey",
+			"renewCertification",
+		],
 		execute: async (data, { store, ports }) => {
 			const priorResult = await store.getCertificationById({
 				organizationId: data.organizationId,
@@ -272,10 +285,11 @@ export function getCertification(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCertification | null>> {
-	return runLearningQuery(input, options, {
+	return runLearningCapabilityQuery(input, options, {
 		schema: getCertificationInputSchema,
 		invalidMessage: "Invalid certification get input",
 		query: HUMAN_RESOURCES_QUERY_CERTIFICATION_GET,
+		storeMethods: ["getCertificationById"],
 		execute: async (data, { store }) =>
 			await store.getCertificationById({
 				organizationId: data.organizationId,
@@ -288,10 +302,11 @@ export function listCertifications(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CertificationListPage>> {
-	return runLearningQuery(input, options, {
+	return runLearningCapabilityQuery(input, options, {
 		schema: listCertificationsInputSchema,
 		invalidMessage: "Invalid certification list input",
 		query: HUMAN_RESOURCES_QUERY_CERTIFICATION_LIST,
+		storeMethods: ["listCertifications"],
 		execute: async (data, { store }) =>
 			await store.listCertifications({
 				organizationId: data.organizationId,
@@ -308,10 +323,11 @@ export function listExpiringCertifications(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CertificationListPage>> {
-	return runLearningQuery(input, options, {
+	return runLearningCapabilityQuery(input, options, {
 		schema: listExpiringCertificationsInputSchema,
 		invalidMessage: "Invalid expiring certifications list input",
 		query: HUMAN_RESOURCES_QUERY_CERTIFICATION_LIST_EXPIRING,
+		storeMethods: ["listExpiringCertifications"],
 		execute: async (data, { store }) =>
 			await store.listExpiringCertifications({
 				organizationId: data.organizationId,

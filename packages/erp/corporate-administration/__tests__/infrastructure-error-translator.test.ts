@@ -48,6 +48,29 @@ describe("Corporate Administration infrastructure error translation", () => {
 		});
 	});
 
+	it("normalizes only the allowlisted jurisdiction overlap constraint to the CA-owned outcome", () => {
+		expect(
+			translateCorporateAdministrationInfrastructureError({
+				cause: {
+					code: "23P01",
+					constraint: "ca_company_jurisdiction_profile_no_overlap_excl",
+				},
+			}),
+		).toMatchObject({
+			ok: false,
+			code: "CONFLICT",
+			details: {
+				reason: "CORPORATE_ADMINISTRATION_EFFECTIVE_RANGE_OVERLAP",
+			},
+		});
+		expect(
+			translateCorporateAdministrationInfrastructureError({
+				code: "23P01",
+				constraint: "unknown_exclusion_constraint",
+			}),
+		).toMatchObject({ ok: false, code: "INTERNAL_ERROR" });
+	});
+
 	it("fails closed for hostile accessors and programming errors", () => {
 		const hostile = Object.defineProperties(
 			{},

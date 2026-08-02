@@ -4,9 +4,10 @@ import {
 	parseHumanResourcesEmployeeId,
 	parseHumanResourcesEmploymentId,
 } from "../brands";
-import type { HumanResourcesStore } from "../store";
+import type { HumanResourcesCoreStore } from "../store/core";
 import { resolveEmployeeWorkCalendar } from "./employee-work-calendar-resolution";
 import type { AssignmentContextQueryPort } from "./handoff/ports";
+import type { HumanResourcesTimeCapabilityStore } from "./store";
 import { createStoreAssignmentContextQuery } from "./store-assignment-context-query";
 import type {
 	ResolvedWorkCalendarContext,
@@ -15,9 +16,22 @@ import type {
 	WorkWeekDayPattern,
 } from "./work-calendar";
 
-/** Builds a WorkCalendarLookupPort backed by HumanResourcesStore (memory or Drizzle). */
+type StoreWorkCalendarLookupStore = Pick<
+	HumanResourcesTimeCapabilityStore,
+	| "getWorkCalendar"
+	| "listWorkCalendarHolidays"
+	| "listWorkCalendarScopeAssignments"
+	| "listWorkCalendars"
+	| "resolveEmploymentCalendar"
+> &
+	Pick<
+		HumanResourcesCoreStore,
+		"findAssignmentByEmploymentAsOf" | "getPositionById"
+	>;
+
+/** Builds a calendar lookup from the exact core and Time store capabilities it needs. */
 export function createStoreWorkCalendarLookup(input: {
-	store: HumanResourcesStore;
+	store: StoreWorkCalendarLookupStore;
 	assignmentContext?: AssignmentContextQueryPort;
 }): WorkCalendarLookupPort {
 	const { store } = input;

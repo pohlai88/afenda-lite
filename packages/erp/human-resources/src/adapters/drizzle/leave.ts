@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { audit as afendaAudit } from "@afenda/audit";
 import {
 	database as afendaDatabase,
 	and,
@@ -10,13 +11,11 @@ import {
 	hrLeaveRequest,
 	hrLeaveRequestSegment,
 	inArray,
-	sql,
 } from "@afenda/db";
 import { errorResult, type Result } from "@afenda/errors";
 import {
 	type HumanResourcesEmployeeId,
 	type HumanResourcesEmploymentId,
-	type HumanResourcesLeavePolicyId,
 	type HumanResourcesLeaveRequestSegmentId,
 	parseHumanResourcesEmployeeId,
 	parseHumanResourcesEmploymentId,
@@ -36,12 +35,7 @@ import {
 	HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_REJECT,
 	HUMAN_RESOURCES_COMMAND_LEAVE_REQUEST_SUBMIT,
 } from "../../module-ids";
-import {
-	emitHumanResourcesMutationOutcome,
-	getHumanResourcesMutationEmission,
-	getRegistryDomainEventType,
-} from "../../mutation-emission-registry";
-import type { MutationPorts } from "../../ports";
+import { getRegistryDomainEventType } from "../../mutation-emission-registry";
 import { assertExpectedVersion } from "../../shared/concurrency";
 import {
 	conflict,
@@ -67,7 +61,6 @@ import {
 import { mergeLeavePolicyBalanceRules } from "../../shared/leave-policy-balance-rules";
 import {
 	dayPortionSchema,
-	type LeavePolicyStatus,
 	type LeaveRequestStatus,
 	leaveAdjustmentKindSchema,
 	leaveAdjustmentStatusSchema,
@@ -80,10 +73,6 @@ import {
 	leaveTypeSchema,
 	leaveUnitSchema,
 } from "../../shared/leave-status";
-import {
-	attachMutationExecutionContext,
-	type HumanResourcesMutationMeta,
-} from "../../shared/mutation-meta";
 import {
 	isCreateIdempotencyUniqueViolation,
 	isPostgresUniqueViolation,
@@ -172,87 +161,6 @@ function mapLeaveRequestOverlapRow(
 		createdAt: row.created_at,
 		updatedAt: row.updated_at,
 	});
-}
-
-// Simple status transition helper function
-async function transitionLeavePolicyStatus(input: {
-	organizationId: string;
-	policyId: HumanResourcesLeavePolicyId;
-	expectedVersion: number;
-	actorUserId: string;
-	nextStatus: LeavePolicyStatus;
-	ports: MutationPorts;
-	meta: HumanResourcesMutationMeta;
-}): Promise<Result<LeavePolicy>> {
-	try {
-		const result = await afendaDatabase.client
-			.update(hrLeavePolicy)
-			.set({
-				status: input.nextStatus,
-				version: sql`${hrLeavePolicy.version} + 1`,
-				updatedBy: input.actorUserId,
-				updatedAt: new Date(),
-			})
-			.where(
-				and(
-					eq(hrLeavePolicy.organizationId, input.organizationId),
-					eq(hrLeavePolicy.id, input.policyId),
-					eq(hrLeavePolicy.version, input.expectedVersion),
-				),
-			)
-			.returning();
-
-		if (result.length === 0) {
-			return errorResult.fail("NOT_FOUND", {
-				publicMessage: "The requested resource was not found",
-			});
-		}
-
-		const policy = result.at(0);
-		if (!policy) {
-			return errorResult.fail("NOT_FOUND", {
-				publicMessage: "The requested resource was not found",
-			});
-		}
-
-		// Record audit via canonical emission executor
-		const definition = getHumanResourcesMutationEmission(
-			input.meta.operationId,
-		);
-		const emission = await emitHumanResourcesMutationOutcome(
-			{
-				commandId: input.meta.operationId,
-				meta: attachMutationExecutionContext(input.meta, {
-					organizationId: input.organizationId,
-					actorUserId: input.actorUserId,
-				}),
-				aggregateType: definition.aggregateType,
-				aggregateId: input.policyId,
-				audit: {
-					entity: "hr_leave_policy",
-					action: "UPDATE",
-					changes: [
-						{
-							field: "status",
-							oldValue: "active",
-							newValue: input.nextStatus,
-						},
-					],
-				},
-			},
-			input.ports,
-		);
-		if (!emission.ok) {
-			return emission;
-		}
-
-		return mapLeavePolicy(policy);
-	} catch (error) {
-		return mapPersistenceFailure(
-			error,
-			"Failed to transition leave policy status",
-		);
-	}
 }
 
 export type DrizzleLeaveMethods = Pick<
@@ -909,8 +817,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 		}
 	},
 
-	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
-	async updateLeavePolicy(input, ports, meta) {
+	async updateLeavePolicy(input, _ports, meta) {
 		const existing = await this.getLeavePolicyById({
 			organizationId: input.organizationId,
 			policyId: input.policyId,
@@ -921,115 +828,105 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 		if (existing.data === null) {
 			return notFound("Leave policy not found");
 		}
+		const currentPolicy = existing.data;
 		const versionCheck = assertExpectedVersion(
-			existing.data.version,
+			currentPolicy.version,
 			input.expectedVersion,
 		);
 		if (!versionCheck.ok) {
 			return versionCheck;
 		}
-		const editable = assertLeavePolicyEditable(existing.data.status);
+		const editable = assertLeavePolicyEditable(currentPolicy.status);
 		if (!editable.ok) {
 			return editable;
 		}
 
-		const balanceRules = mergeLeavePolicyBalanceRules(existing.data, input);
+		const balanceRules = mergeLeavePolicyBalanceRules(currentPolicy, input);
 		const nextVersion = input.expectedVersion + 1;
+		const auditId = randomUUID();
+		const preparedAudit = afendaAudit.transaction.prepare({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			module: "human-resources",
+			entity: "hr_leave_policy",
+			entityId: input.policyId,
+			action: "UPDATE",
+			oldValue: { version: currentPolicy.version },
+			newValue: { version: nextVersion },
+			eventContext: {
+				version: nextVersion,
+				outcome: "SUCCEEDED",
+				source: "human-resources.leave-drizzle",
+				causationId:
+					meta.causationId ?? meta.idempotencyKey ?? meta.correlationId,
+			},
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
+		const updateEligibility =
+			input.minTenureDays !== undefined ||
+			input.allowedEmploymentStatuses !== undefined;
+		const minTenureDays = input.minTenureDays ?? null;
+		const allowedEmploymentStatuses =
+			input.allowedEmploymentStatuses === undefined
+				? null
+				: JSON.stringify(input.allowedEmploymentStatuses);
 		try {
-			const updated = await afendaDatabase.client
-				.update(hrLeavePolicy)
-				.set({
-					name: input.name ?? existing.data.name,
-					paid: input.paid ?? existing.data.paid,
-					sensitive: input.sensitive ?? existing.data.sensitive,
-					allowsNegativeBalance:
-						input.allowsNegativeBalance ?? existing.data.allowsNegativeBalance,
-					allowSelfApproval:
-						input.allowSelfApproval ?? existing.data.allowSelfApproval,
-					allowsPartialDay:
-						input.allowsPartialDay ?? existing.data.allowsPartialDay,
-					...balanceRules,
-					effectiveTo:
-						input.effectiveTo === undefined
-							? existing.data.effectiveTo
-							: input.effectiveTo,
-					version: nextVersion,
-					updatedBy: input.actorUserId,
-					updatedAt: new Date(),
-				})
-				.where(
-					and(
-						eq(hrLeavePolicy.id, input.policyId),
-						eq(hrLeavePolicy.organizationId, input.organizationId),
-						eq(hrLeavePolicy.version, input.expectedVersion),
+			const [updatedRows] = await runLeaveTransaction((sqlTag) => [
+				sqlTag`
+					WITH mutated AS (
+						UPDATE hr_leave_policy SET
+							name = ${input.name ?? currentPolicy.name},
+							paid = ${input.paid ?? currentPolicy.paid},
+							sensitive = ${input.sensitive ?? currentPolicy.sensitive},
+							allows_negative_balance = ${input.allowsNegativeBalance ?? currentPolicy.allowsNegativeBalance},
+							allow_self_approval = ${input.allowSelfApproval ?? currentPolicy.allowSelfApproval},
+							allows_partial_day = ${input.allowsPartialDay ?? currentPolicy.allowsPartialDay},
+							accrual_basis = ${balanceRules.accrualBasis},
+							accrual_frequency = ${balanceRules.accrualFrequency},
+							accrual_quantity_per_period = ${balanceRules.accrualQuantityPerPeriod},
+							carry_forward_enabled = ${balanceRules.carryForwardEnabled},
+							carry_forward_max_quantity = ${balanceRules.carryForwardMaxQuantity},
+							entitlement_expiry_rule = ${balanceRules.entitlementExpiryRule},
+							entitlement_expiry_days = ${balanceRules.entitlementExpiryDays},
+							effective_to = ${input.effectiveTo === undefined ? currentPolicy.effectiveTo : input.effectiveTo},
+							version = ${nextVersion}, updated_by = ${input.actorUserId}, updated_at = NOW()
+						WHERE id = ${input.policyId} AND organization_id = ${input.organizationId}
+							AND version = ${input.expectedVersion} AND status = 'draft'
+						RETURNING id
 					),
-				)
-				.returning();
-			if (updated.length === 0) {
+					eligibility_updated AS (
+						UPDATE hr_leave_policy_eligibility SET
+							min_tenure_days = CASE WHEN ${updateEligibility && input.minTenureDays !== undefined} THEN ${minTenureDays} ELSE min_tenure_days END,
+							allowed_employment_statuses = CASE WHEN ${updateEligibility && input.allowedEmploymentStatuses !== undefined} THEN ${allowedEmploymentStatuses} ELSE allowed_employment_statuses END,
+							updated_by = ${input.actorUserId}, updated_at = NOW()
+						WHERE organization_id = ${input.organizationId} AND policy_id IN (SELECT id FROM mutated)
+						RETURNING id
+					),
+					audited AS (
+						INSERT INTO platform_audit_log (
+							id, organization_id, actor_user_id, correlation_id, module, entity,
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
+						)
+						SELECT ${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity}, ${audit.entityId},
+							${audit.action}, ${audit.changesJson}::jsonb, ${audit.oldValueJson}::jsonb,
+							${audit.newValueJson}::jsonb, ${audit.metadataJson}::jsonb,
+							${audit.ipAddress}, ${audit.userAgent}
+						FROM mutated RETURNING id
+					)
+					SELECT mutated.id FROM mutated, audited
+				`,
+			]);
+			if (updatedRows.length === 0) {
 				return notFound("Leave policy not found or stale version");
-			}
-
-			if (
-				input.minTenureDays !== undefined ||
-				input.allowedEmploymentStatuses !== undefined
-			) {
-				const eligibility = await this.getLeavePolicyEligibility({
-					organizationId: input.organizationId,
-					policyId: input.policyId,
-				});
-				if (!eligibility.ok) {
-					return eligibility;
-				}
-				if (eligibility.data !== null) {
-					await afendaDatabase.client
-						.update(hrLeavePolicyEligibility)
-						.set({
-							minTenureDays:
-								input.minTenureDays === undefined
-									? eligibility.data.minTenureDays
-									: input.minTenureDays,
-							allowedEmploymentStatuses:
-								input.allowedEmploymentStatuses === undefined
-									? JSON.stringify(eligibility.data.allowedEmploymentStatuses)
-									: JSON.stringify(input.allowedEmploymentStatuses),
-							updatedBy: input.actorUserId,
-							updatedAt: new Date(),
-						})
-						.where(
-							and(
-								eq(hrLeavePolicyEligibility.id, eligibility.data.id),
-								eq(
-									hrLeavePolicyEligibility.organizationId,
-									input.organizationId,
-								),
-							),
-						);
-				}
 			}
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to update leave policy");
-		}
-
-		const definition = getHumanResourcesMutationEmission(meta.operationId);
-		const emission = await emitHumanResourcesMutationOutcome(
-			{
-				commandId: meta.operationId,
-				meta: attachMutationExecutionContext(meta, {
-					organizationId: input.organizationId,
-					actorUserId: input.actorUserId,
-				}),
-				aggregateType: definition.aggregateType,
-				aggregateId: input.policyId,
-				audit: {
-					entity: "hr_leave_policy",
-					action: "UPDATE",
-					changes: [],
-				},
-			},
-			ports,
-		);
-		if (!emission.ok) {
-			return emission;
 		}
 
 		return this.getLeavePolicyById({
@@ -1072,7 +969,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			]);
 
 			const [row] = rows;
-			if (row === undefined) {
+			if (row === undefined || row === null) {
 				return notFound("Leave policy publication failed");
 			}
 
@@ -1108,7 +1005,7 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 			]);
 
 			const [row] = rows;
-			if (row === undefined) {
+			if (row === undefined || row === null) {
 				return notFound("Leave policy archival failed");
 			}
 
@@ -1118,90 +1015,88 @@ export const drizzleLeaveMethods: DrizzleLeaveMethods = {
 		}
 	},
 
-	async supersedeLeavePolicy(input, ports, meta) {
-		const superseded = await transitionLeavePolicyStatus.call(
-			this as LeaveHost,
-			{
-				organizationId: input.organizationId,
-				policyId: input.policyId,
-				expectedVersion: input.expectedVersion,
-				actorUserId: input.actorUserId,
-				nextStatus: "superseded",
-				ports,
-				meta,
-			},
+	async supersedeLeavePolicy(input, _ports, meta) {
+		const current = await this.getLeavePolicyById({
+			organizationId: input.organizationId,
+			policyId: input.policyId,
+		});
+		if (!current.ok) {
+			return current;
+		}
+		if (current.data === null) {
+			return notFound("Leave policy not found");
+		}
+		const versionCheck = assertExpectedVersion(
+			current.data.version,
+			input.expectedVersion,
 		);
-		if (!superseded.ok) {
-			return superseded;
+		if (!versionCheck.ok) {
+			return versionCheck;
+		}
+		if (current.data.status !== "published") {
+			return invalidState("Only published leave policies can be superseded");
 		}
 
-		const created = await this.createLeavePolicy(
-			{
-				organizationId: input.organizationId,
-				code: input.code,
-				name: input.name,
-				leaveType: input.leaveType,
-				unit: input.unit,
-				paid: input.paid,
-				sensitive: input.sensitive,
-				allowsNegativeBalance: input.allowsNegativeBalance,
-				allowSelfApproval: input.allowSelfApproval,
-				allowsPartialDay: input.allowsPartialDay,
-				accrualBasis: input.accrualBasis,
-				accrualFrequency: input.accrualFrequency,
-				accrualQuantityPerPeriod: input.accrualQuantityPerPeriod,
-				carryForwardEnabled: input.carryForwardEnabled,
-				carryForwardMaxQuantity: input.carryForwardMaxQuantity,
-				entitlementExpiryRule: input.entitlementExpiryRule,
-				entitlementExpiryDays: input.entitlementExpiryDays,
-				effectiveFrom: input.effectiveFrom,
-				effectiveTo: input.effectiveTo,
-				minTenureDays: input.minTenureDays,
-				allowedEmploymentStatuses: input.allowedEmploymentStatuses,
-				createdBy: input.actorUserId,
-			},
-			ports,
-			meta,
-		);
-		if (!created.ok) {
-			return created;
+		const successorId = parseHumanResourcesLeavePolicyId(randomUUID());
+		if (!successorId.ok) {
+			return successorId;
 		}
+		const eligibilityId = randomUUID();
+		const transitionSql = buildPolicyStatusTransitionSql({
+			policyId: input.policyId,
+			organizationId: input.organizationId,
+			expectedVersion: input.expectedVersion,
+			actorUserId: input.actorUserId,
+			correlationId: meta.correlationId,
+			nextStatus: "superseded",
+		});
+		const successorSql = buildCreateLeavePolicySql({
+			policyId: successorId.data,
+			organizationId: input.organizationId,
+			code: input.code,
+			name: input.name,
+			leaveType: input.leaveType,
+			unit: input.unit,
+			paid: input.paid,
+			sensitive: input.sensitive,
+			allowsNegativeBalance: input.allowsNegativeBalance,
+			allowSelfApproval: input.allowSelfApproval,
+			allowsPartialDay: input.allowsPartialDay,
+			accrualBasis: input.accrualBasis,
+			accrualFrequency: input.accrualFrequency,
+			accrualQuantityPerPeriod: input.accrualQuantityPerPeriod,
+			carryForwardEnabled: input.carryForwardEnabled,
+			carryForwardMaxQuantity: input.carryForwardMaxQuantity,
+			entitlementExpiryRule: input.entitlementExpiryRule,
+			entitlementExpiryDays: input.entitlementExpiryDays,
+			effectiveFrom: input.effectiveFrom,
+			effectiveTo: input.effectiveTo,
+			createdBy: input.actorUserId,
+			correlationId: meta.correlationId,
+			eligibilityId,
+			minTenureDays: input.minTenureDays,
+			allowedEmploymentStatuses: input.allowedEmploymentStatuses,
+			status: "published",
+			supersedesPolicyId: input.policyId,
+			version: 2,
+		});
 
 		try {
-			await afendaDatabase.client
-				.update(hrLeavePolicy)
-				.set({
-					status: "published",
-					supersedesPolicyId: input.policyId,
-					version: created.data.version + 1,
-					updatedBy: input.actorUserId,
-					updatedAt: new Date(),
-				})
-				.where(
-					and(
-						eq(hrLeavePolicy.id, created.data.id),
-						eq(hrLeavePolicy.organizationId, input.organizationId),
-					),
-				);
+			const [, successorRows] = await runLeaveTransaction((sqlClient) => [
+				sqlClient.query(transitionSql),
+				sqlClient.query(successorSql),
+			]);
+			const [successor] = successorRows;
+			if (successor === undefined) {
+				return notFound("Superseding leave policy creation failed");
+			}
+			return mapLeavePolicySqlRow(successor);
 		} catch (error) {
-			return mapPersistenceFailure(
-				error,
-				"Failed to publish superseding leave policy",
-			);
+			if (isPostgresUniqueViolation(error)) {
+				return conflict("Leave policy code already exists for effective date");
+			}
+			return mapPersistenceFailure(error, "Failed to supersede leave policy");
 		}
-
-		return this.getLeavePolicyById({
-			organizationId: input.organizationId,
-			policyId: created.data.id,
-		}).then((result) => {
-			if (!result.ok) {
-				return result;
-			}
-			if (result.data === null) {
-				return notFound("Leave policy not found");
-			}
-			return errorResult.ok(result.data);
-		});
 	},
 
 	async listLeavePolicies(input) {

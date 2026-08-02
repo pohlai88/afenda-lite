@@ -1,6 +1,5 @@
 import type { HumanResourcesCommandOptions } from "../../command-options";
 import type { HumanResourcesPermission } from "../../permissions";
-import type { HumanResourcesSubjectPolicy } from "../../sensitive-operation-policies";
 import {
 	actorHoldsAnyPermission,
 	allowAuthorization,
@@ -12,11 +11,11 @@ import {
 import type { HumanResourcesAuthorizationPolicy } from "../authorization-policy-types";
 import type { HumanResourcesAuthorizationRequest } from "../authorization-types";
 import type { HumanResourcesSensitiveFieldClass } from "../sensitive-field-types";
+import type { HumanResourcesSubjectPolicy } from "../sensitivity-types";
 
 export function createScopedPolicy(input: {
 	id: string;
 	mode: HumanResourcesAuthorizationPolicy["mode"];
-	operationPrefixes: readonly string[];
 	resourceRequired: boolean;
 	subjectPolicy: HumanResourcesSubjectPolicy | "manifest_only";
 	fieldClasses?: readonly HumanResourcesSensitiveFieldClass[];
@@ -30,7 +29,6 @@ export function createScopedPolicy(input: {
 	return {
 		id: input.id,
 		mode: input.mode,
-		operationPrefixes: input.operationPrefixes,
 		resourceRequired: input.resourceRequired,
 		async evaluate(
 			request: HumanResourcesAuthorizationRequest,

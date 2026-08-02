@@ -141,7 +141,6 @@ describe("Corporate Administration CA-0.4 package boundary", () => {
 				"parseCorporateAdministrationInput",
 				"createCorporateAdministrationCommandFingerprint",
 				"createCorporateAdministrationRuntime",
-				"createCorporateAdministrationProductionRuntime",
 				"createCorporateAdministrationDomainEventEnvelope",
 				"CORPORATE_ADMINISTRATION_MUTATION_TABLES",
 				"corporateAdministrationModuleManifest",
@@ -248,6 +247,25 @@ describe("Corporate Administration CA-0.4 package boundary", () => {
 		expect(packageRoot).not.toHaveProperty(
 			"createDrizzleCorporateAdministrationLegalCompanyStore",
 		);
+		for (const implementationClass of [
+			"DrizzleCorporateAdministrationIdempotencyPort",
+			"DrizzleCorporateAdministrationOutboxPort",
+			"DrizzleCorporateAdministrationTransactionPort",
+		]) {
+			expect(drizzleAdapters).not.toHaveProperty(implementationClass);
+			expect(readPackageSource("src/adapters/drizzle/index.ts")).not.toMatch(
+				new RegExp(`export\\s*\\{[^}]*\\b${implementationClass}\\b`),
+			);
+		}
+		for (const implementationSource of [
+			"src/adapters/drizzle/idempotency.ts",
+			"src/adapters/drizzle/outbox.ts",
+			"src/adapters/drizzle/transaction.ts",
+		]) {
+			expect(readPackageSource(implementationSource)).not.toMatch(
+				/export class DrizzleCorporateAdministration\w+Port/,
+			);
+		}
 	});
 
 	it("declares the CA-2.1 company, establishment and governance surface while remaining scaffolded", () => {
@@ -478,64 +496,7 @@ describe("Corporate Administration CA-0.4 package boundary", () => {
 		}
 		expect(corporateAdministrationModuleManifest.events).toEqual({
 			namespace: "corporate_administration",
-			emits: [
-				"corporate_administration.legal_company.draft_registered.v1",
-				"corporate_administration.legal_company.profile_updated.v1",
-				"corporate_administration.legal_company.jurisdiction_profile_set.v1",
-				"corporate_administration.legal_company.name_added.v1",
-				"corporate_administration.legal_company.name_superseded.v1",
-				"corporate_administration.legal_company.legal_form_changed.v1",
-				"corporate_administration.legal_company.identifier_registered.v1",
-				"corporate_administration.legal_company.financial_year_set.v1",
-				"corporate_administration.legal_company.activity_registered.v1",
-				"corporate_administration.legal_company.activated.v1",
-				"corporate_administration.legal_company.suspended.v1",
-				"corporate_administration.legal_company.struck_off_marked.v1",
-				"corporate_administration.legal_company.liquidation_entered.v1",
-				"corporate_administration.legal_company.dissolved.v1",
-				"corporate_administration.legal_company.restored.v1",
-				"corporate_administration.legal_company.archived.v1",
-				"corporate_administration.legal_establishment.registered.v1",
-				"corporate_administration.legal_establishment.updated.v1",
-				"corporate_administration.legal_establishment.status_changed.v1",
-				"corporate_administration.registered_address.set.v1",
-				"corporate_administration.premise.registered.v1",
-				"corporate_administration.premise.ended.v1",
-				"corporate_administration.governance_body.created.v1",
-				"corporate_administration.governance_body.amended.v1",
-				"corporate_administration.governance_body.retired.v1",
-				"corporate_administration.governance_membership.appointed.v1",
-				"corporate_administration.governance_membership.changed.v1",
-				"corporate_administration.governance_membership.ended.v1",
-				"corporate_administration.statutory_office.defined.v1",
-				"corporate_administration.officer.appointed.v1",
-				"corporate_administration.officer.appointment_amended.v1",
-				"corporate_administration.officer.qualification_recorded.v1",
-				"corporate_administration.officer.resigned.v1",
-				"corporate_administration.officer.removed.v1",
-				"corporate_administration.officer.declaration_recorded.v1",
-				"corporate_administration.officer.declaration_superseded.v1",
-				"corporate_administration.officer.disqualified.v1",
-				"corporate_administration.officer.disqualification_ended.v1",
-				"corporate_administration.conflict.disclosed.v1",
-				"corporate_administration.conflict.recusal_recorded.v1",
-				"corporate_administration.governance_meeting.scheduled.v1",
-				"corporate_administration.meeting_notice.issued.v1",
-				"corporate_administration.meeting_notice.delivered.v1",
-				"corporate_administration.meeting_notice.waived.v1",
-				"corporate_administration.meeting_participant.recorded.v1",
-				"corporate_administration.governance_meeting.opened.v1",
-				"corporate_administration.governance_meeting.quorum_recorded.v1",
-				"corporate_administration.governance_meeting.adjourned.v1",
-				"corporate_administration.governance_meeting.closed.v1",
-				"corporate_administration.meeting_vote.recorded.v1",
-				"corporate_administration.resolution.adopted.v1",
-				"corporate_administration.resolution.rejected.v1",
-				"corporate_administration.resolution.superseded.v1",
-				"corporate_administration.resolution.minutes_recorded.v1",
-				"corporate_administration.resolution.action_assigned.v1",
-				"corporate_administration.resolution.action_completed.v1",
-			],
+			emits: [...packageRoot.CORPORATE_ADMINISTRATION_EVENT_TYPES],
 			consumes: [],
 		});
 		expect(corporateAdministrationModuleManifest.permissions).toEqual({
@@ -800,7 +761,7 @@ describe("Corporate Administration CA-0.4 package boundary", () => {
 		}
 		expect(existsSync(path.join(sourceDirectory, "ports.ts"))).toBe(true);
 		expect(existsSync(path.join(sourceDirectory, "production-ports.ts"))).toBe(
-			true,
+			false,
 		);
 		expect(
 			existsSync(path.join(sourceDirectory, "adapters", "drizzle", "index.ts")),
@@ -873,33 +834,25 @@ describe("Corporate Administration CA-0.4 package boundary", () => {
 		expect(rootSource).not.toMatch(/from\s+["']drizzle-orm(?:\/[^"']*)?["']/);
 	});
 
-	it("keeps production runtime composition free of adapter construction and environment access", () => {
-		const productionSource = readFileSync(
-			path.join(sourceDirectory, "production-ports.ts"),
-			"utf8",
+	it("keeps one runtime facade and deletes the superseded production wrapper", () => {
+		expect(existsSync(path.join(sourceDirectory, "production-ports.ts"))).toBe(
+			false,
 		);
-
-		expect(productionSource).toContain(
+		expect(packageRoot).toHaveProperty("createCorporateAdministrationRuntime");
+		expect(packageRoot).not.toHaveProperty(
 			"createCorporateAdministrationProductionRuntime",
 		);
-		expect(productionSource).toContain(
-			"CorporateAdministrationProductionRuntimeDependencies",
+		expect(readPackageSource("src/index.ts")).not.toContain("production-ports");
+	});
+
+	it("exposes authorization as a capability rather than registry storage", () => {
+		expect(packageRoot).toHaveProperty("corporateAdministrationPermissionFor");
+		expect(packageRoot).not.toHaveProperty(
+			"CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS",
 		);
-		for (const forbidden of [
-			"process.env",
-			"@afenda/db",
-			"@afenda/audit",
-			"createDrizzle",
-			"createMemory",
-			"Inline",
-			"allowAll",
-			"globalThis",
-			"singleton",
-			"new Pool",
-			"neon(",
-		]) {
-			expect(productionSource).not.toContain(forbidden);
-		}
+		expect(packageRoot).not.toHaveProperty(
+			"CORPORATE_ADMINISTRATION_QUERY_PERMISSIONS",
+		);
 	});
 
 	it("requires explicit adapter dependencies and keeps singleton handles out of app composition", () => {
@@ -1004,7 +957,6 @@ describe("Corporate Administration CA-0.4 package boundary", () => {
 			"filing",
 		];
 		const approvedCompanyPaths = [
-			"src/company/commands/durable-command.ts",
 			"src/company/commands/add-company-name.ts",
 			"src/company/commands/change-legal-company-status.ts",
 			"src/company/commands/end-company-activity.ts",
@@ -1041,6 +993,7 @@ describe("Corporate Administration CA-0.4 package boundary", () => {
 		const approvedGovernancePaths = [
 			"src/governance/commands/index.ts",
 			"src/governance/index.ts",
+			"src/governance/operations.ts",
 			"src/governance/queries/index.ts",
 			"src/governance/rules.ts",
 			"src/governance/schemas.ts",
@@ -1241,11 +1194,41 @@ describe("Corporate Administration CA-0.4 package boundary", () => {
 		]) {
 			expect(cleanupSource).toContain(scopedPredicate);
 		}
+		expect(cleanupSource).not.toMatch(
+			/caGovernanceBody|caGovernanceMembership|ca_governance_body|ca_governance_membership/,
+		);
+		expect(
+			cleanupFunctionSource.match(/delete\(caCompanyStatusHistory\)/g),
+		).toHaveLength(1);
 		expect(cleanupSource).not.toMatch(/\btruncate\b/i);
 		expect(cleanupSource).not.toMatch(
 			/disable\s+trigger|session_replication_role/i,
 		);
 		expect(cleanupFunctionSource).not.toMatch(/catch\s*\(/);
+	});
+
+	it("requires database evidence in the canonical CA parity runner", () => {
+		const configSource = readFileSync(
+			path.join(
+				repositoryDirectory,
+				"testing",
+				"vitest.corporate-administration-parity.config.ts",
+			),
+			"utf8",
+		);
+
+		expect(configSource).toContain(
+			'setupFiles: ["@afenda/testing/setup/required-database"]',
+		);
+		expect(configSource).toContain('REQUIRE_DATABASE_TESTS: "1"');
+
+		const targetGuardSource = readFileSync(
+			path.join(packageDirectory, "__tests__", "helpers", "neon-parity.ts"),
+			"utf8",
+		);
+		expect(targetGuardSource).toContain(
+			'declaredTarget !== "test" && declaredTarget !== "preview"',
+		);
 	});
 
 	it("contains no business, persistence, app, or placeholder implementation", () => {
