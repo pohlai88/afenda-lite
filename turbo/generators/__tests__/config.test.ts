@@ -20,6 +20,7 @@ describe("generator registrations", () => {
 		expect(testFiles.sort()).toEqual([
 			"__tests__/config.test.ts",
 			"__tests__/contract-loader.test.ts",
+			"__tests__/diagnostic-protocol.test.ts",
 			"__tests__/workspace-discovery.test.ts",
 		]);
 	});
@@ -70,7 +71,18 @@ describe("generator registrations", () => {
 		);
 		for (const report of reports) {
 			expect(report).toContain("authoritative-capabilities=0");
-			expect(report).toContain("discovery-scope=workspace-candidates-only");
+			expect(report).toContain(
+				"scope=workspace-discovery-and-contract-diagnostics",
+			);
+			expect(report).toContain("workspace-count=38");
+			expect(report).toContain("kernel-candidates=18");
+			expect(report).toContain("erp-candidates=13");
+			expect(report).toContain("outside-family-scope=7");
+			expect(report).toContain("workspace-reconciliation=38=18+13+7");
+			expect(report).toContain("outside-generator-families");
+			expect(report).toContain("schema=afenda.generator-diagnostics/v1");
+			expect(report).toContain("outcomes=completed");
+			expect(report).toContain("exit=0");
 		}
 	});
 });

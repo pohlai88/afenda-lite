@@ -1,0 +1,88 @@
+{
+	"slice": "GEN-0.3",
+	"implementation": "complete",
+	"closure": "verified",
+	"prerequisite": {
+		"slice": "GEN-0.2",
+		"commit": "054dcf84",
+		"status": "closed",
+		"provides": "governed workspace discovery and family classification consumed by GEN-0.3"
+	},
+	"scope": [
+		"versioned diagnostic report schema",
+		"canonical diagnostic normalization",
+		"deterministic text and JSON rendering",
+		"fixed exit-code precedence",
+		"read-only doctor report integration",
+		"workspace-count reconciliation projection"
+	],
+	"scopeExclusions": [
+		"new workspace discovery or classification policy",
+		"authoritative generator capabilities",
+		"package topology or manifest certification",
+		"package locks or public API certification",
+		"dependency authorization",
+		"filesystem or package mutation",
+		"GEN-0.4 full workspace-state proof",
+		"G1 or later generator capabilities"
+	],
+	"authorityIntroduced": [],
+	"repositoryPackageMutations": [],
+	"protocol": {
+		"schema": "afenda.generator-diagnostics/v1",
+		"unknownSchemaVersionsFailClosed": true,
+		"ordering": [
+			"family",
+			"package",
+			"code",
+			"first-normalized-path",
+			"severity",
+			"treatment",
+			"owner",
+			"all-normalized-paths",
+			"expected-json",
+			"actual-json"
+		],
+		"exitPrecedence": [40, 30, 20, 10, 0],
+		"deeplyImmutable": true,
+		"repeatedDiagnosticsPreserved": true,
+		"caseDistinctPathsPreserved": true,
+		"prototypeSensitiveJsonKeysPreserved": true
+	},
+	"verification": {
+		"repositoryToolingTests": "70/70 pass",
+		"generatorScopeTypecheck": "pass",
+		"biome": "pass",
+		"independentTestAudit": {
+			"verdict": "adequate",
+			"criticalGaps": 0,
+			"importantGaps": 0
+		},
+		"doctorRuns": {
+			"kernelExit": 0,
+			"erpExit": 0,
+			"workspaceCount": 38,
+			"kernelCandidates": 18,
+			"erpCandidates": 13,
+			"outsideFamilyScope": 7,
+			"reconciled": true,
+			"gitStatusDelta": 0
+		},
+		"forwardChecks": {
+			"passed": 8,
+			"failedForGenerator": 0,
+			"unrelatedFailures": [
+				"check:env-consumers — apps/storybook/.storybook/main.ts:7 raw NODE_ENV",
+				"check:testing-governance — two packages/surfaces/ui-system test files outside declared lanes"
+			]
+		}
+	},
+	"repositoryTypecheckBaseline": {
+		"status": "blocked-by-pre-existing-unrelated-failure",
+		"owner": "OpenAPI generation lane",
+		"location": "scripts/generate-openapi.mts:136",
+		"typescriptCode": "TS2322",
+		"generatorRegressionAttribution": "none"
+	},
+	"nextEligibleSlice": "GEN-0.4"
+}

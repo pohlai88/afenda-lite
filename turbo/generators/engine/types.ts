@@ -1,4 +1,6 @@
-export type GeneratorFamily = "kernel" | "erp";
+export const GENERATOR_FAMILIES = ["kernel", "erp"] as const;
+
+export type GeneratorFamily = (typeof GENERATOR_FAMILIES)[number];
 
 export type GeneratorName = `${GeneratorFamily}-generator`;
 
@@ -88,16 +90,26 @@ export interface ProjectionDefinition {
 	readonly path: string;
 }
 
-export type DiagnosticSeverity = "info" | "warning" | "error" | "blocked";
+export const DIAGNOSTIC_SEVERITIES = [
+	"info",
+	"warning",
+	"error",
+	"blocked",
+] as const;
 
-export type DiagnosticTreatment =
-	| "auto-reconcile"
-	| "auto-upgrade"
-	| "auto-regenerate"
-	| "remove-superseded"
-	| "semantic-decision-required"
-	| "collision"
-	| "unsupported";
+export type DiagnosticSeverity = (typeof DIAGNOSTIC_SEVERITIES)[number];
+
+export const DIAGNOSTIC_TREATMENTS = [
+	"auto-reconcile",
+	"auto-upgrade",
+	"auto-regenerate",
+	"remove-superseded",
+	"semantic-decision-required",
+	"collision",
+	"unsupported",
+] as const;
+
+export type DiagnosticTreatment = (typeof DIAGNOSTIC_TREATMENTS)[number];
 
 export interface DiagnosticDefinition {
 	readonly capability: string;

@@ -3,13 +3,10 @@ import type {
 	ContractRelease,
 	DependencyPolicy,
 	DiagnosticDefinition,
-	DiagnosticSeverity,
-	DiagnosticTreatment,
 	EntrypointPolicy,
 	FileDispositionDefinition,
 	FileDispositionKind,
 	GeneratorContractRegistry,
-	GeneratorFamily,
 	GeneratorFamilyContractDefinition,
 	GeneratorModeDefinition,
 	GeneratorModeId,
@@ -21,6 +18,11 @@ import type {
 	ProjectionDefinition,
 	SemanticInputPolicy,
 	TaskPolicy,
+} from "./types.ts";
+import {
+	DIAGNOSTIC_SEVERITIES,
+	DIAGNOSTIC_TREATMENTS,
+	GENERATOR_FAMILIES,
 } from "./types.ts";
 
 export type ContractValidationIssueCode =
@@ -46,11 +48,6 @@ interface ValidationContext {
 	readonly issues: ContractValidationIssue[];
 }
 
-const GENERATOR_FAMILIES = [
-	"kernel",
-	"erp",
-] satisfies readonly GeneratorFamily[];
-
 const GENERATOR_MODE_IDS = [
 	"create",
 	"add-feature",
@@ -74,23 +71,6 @@ const PROJECTION_COMPLIANCE = [
 	"normative",
 	"informational",
 ] satisfies readonly ProjectionCompliance[];
-
-const DIAGNOSTIC_SEVERITIES = [
-	"info",
-	"warning",
-	"error",
-	"blocked",
-] satisfies readonly DiagnosticSeverity[];
-
-const DIAGNOSTIC_TREATMENTS = [
-	"auto-reconcile",
-	"auto-upgrade",
-	"auto-regenerate",
-	"remove-superseded",
-	"semantic-decision-required",
-	"collision",
-	"unsupported",
-] satisfies readonly DiagnosticTreatment[];
 
 const CONTRACT_KEYS = [
 	"family",
