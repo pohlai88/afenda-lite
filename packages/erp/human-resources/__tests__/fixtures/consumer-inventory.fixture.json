@@ -16946,7 +16946,7 @@
 			"package": "@afenda/audit",
 			"referenceKind": "filesystem",
 			"resolution": "not-applicable",
-			"symbol": "packages/erp/human-resources/src/adapters/drizzle/benefit-methods-drizzle.ts",
+			"symbol": "packages/erp/human-resources/src/features/compensation-benefits/adapters/benefit-methods-drizzle.drizzle.ts",
 			"useMode": "filesystem"
 		},
 		{
@@ -16957,7 +16957,7 @@
 			"package": "@afenda/audit",
 			"referenceKind": "filesystem",
 			"resolution": "not-applicable",
-			"symbol": "packages/erp/human-resources/src/adapters/drizzle/compensation-benefits.ts",
+			"symbol": "packages/erp/human-resources/src/features/compensation-benefits/adapters/compensation-benefits.drizzle.ts",
 			"useMode": "filesystem"
 		},
 		{
@@ -16968,7 +16968,7 @@
 			"package": "@afenda/audit",
 			"referenceKind": "filesystem",
 			"resolution": "not-applicable",
-			"symbol": "packages/erp/human-resources/src/adapters/drizzle/compensation-review-cycle-drizzle.ts",
+			"symbol": "packages/erp/human-resources/src/features/compensation-benefits/adapters/compensation-review-cycle-drizzle.drizzle.ts",
 			"useMode": "filesystem"
 		},
 		{
@@ -16979,7 +16979,7 @@
 			"package": "@afenda/audit",
 			"referenceKind": "filesystem",
 			"resolution": "not-applicable",
-			"symbol": "packages/erp/human-resources/src/adapters/drizzle/compliance.ts",
+			"symbol": "packages/erp/human-resources/src/features/compensation-benefits/adapters/employee-compensation-lifecycle-drizzle.drizzle.ts",
 			"useMode": "filesystem"
 		},
 		{
@@ -16990,7 +16990,7 @@
 			"package": "@afenda/audit",
 			"referenceKind": "filesystem",
 			"resolution": "not-applicable",
-			"symbol": "packages/erp/human-resources/src/adapters/drizzle/core.ts",
+			"symbol": "packages/erp/human-resources/src/features/compliance/adapters/compliance.drizzle.ts",
 			"useMode": "filesystem"
 		},
 		{
@@ -17001,7 +17001,7 @@
 			"package": "@afenda/audit",
 			"referenceKind": "filesystem",
 			"resolution": "not-applicable",
-			"symbol": "packages/erp/human-resources/src/adapters/drizzle/employee-compensation-lifecycle-drizzle.ts",
+			"symbol": "packages/erp/human-resources/src/features/employee-relations/adapters/employee-relations.drizzle.ts",
 			"useMode": "filesystem"
 		},
 		{
@@ -17012,7 +17012,7 @@
 			"package": "@afenda/audit",
 			"referenceKind": "filesystem",
 			"resolution": "not-applicable",
-			"symbol": "packages/erp/human-resources/src/adapters/drizzle/employee-relations.ts",
+			"symbol": "packages/erp/human-resources/src/features/employment-lifecycle/adapters/lifecycle.drizzle.ts",
 			"useMode": "filesystem"
 		},
 		{
@@ -17023,7 +17023,7 @@
 			"package": "@afenda/audit",
 			"referenceKind": "filesystem",
 			"resolution": "not-applicable",
-			"symbol": "packages/erp/human-resources/src/adapters/drizzle/learning.ts",
+			"symbol": "packages/erp/human-resources/src/features/hire-to-employee/adapters/hire-orchestration.drizzle.ts",
 			"useMode": "filesystem"
 		},
 		{
@@ -17034,7 +17034,7 @@
 			"package": "@afenda/audit",
 			"referenceKind": "filesystem",
 			"resolution": "not-applicable",
-			"symbol": "packages/erp/human-resources/src/adapters/drizzle/leave-sql-builders.ts",
+			"symbol": "packages/erp/human-resources/src/features/learning/adapters/learning.drizzle.ts",
 			"useMode": "filesystem"
 		},
 		{
@@ -17045,7 +17045,7 @@
 			"package": "@afenda/audit",
 			"referenceKind": "filesystem",
 			"resolution": "not-applicable",
-			"symbol": "packages/erp/human-resources/src/adapters/drizzle/leave-transactions.ts",
+			"symbol": "packages/erp/human-resources/src/features/leave/adapters/leave-sql-builders.drizzle.ts",
 			"useMode": "filesystem"
 		},
 		{
@@ -17056,7 +17056,7 @@
 			"package": "@afenda/audit",
 			"referenceKind": "filesystem",
 			"resolution": "not-applicable",
-			"symbol": "packages/erp/human-resources/src/adapters/drizzle/lifecycle.ts",
+			"symbol": "packages/erp/human-resources/src/features/leave/adapters/leave-transactions.drizzle.ts",
 			"useMode": "filesystem"
 		},
 		{
@@ -17067,7 +17067,7 @@
 			"package": "@afenda/audit",
 			"referenceKind": "filesystem",
 			"resolution": "not-applicable",
-			"symbol": "packages/erp/human-resources/src/adapters/drizzle/organization.ts",
+			"symbol": "packages/erp/human-resources/src/features/leave/adapters/leave.drizzle.ts",
 			"useMode": "filesystem"
 		},
 		{
@@ -17078,7 +17078,7 @@
 			"package": "@afenda/audit",
 			"referenceKind": "filesystem",
 			"resolution": "not-applicable",
-			"symbol": "packages/erp/human-resources/src/adapters/drizzle/performance.ts",
+			"symbol": "packages/erp/human-resources/src/features/organization/adapters/organization.drizzle.ts",
 			"useMode": "filesystem"
 		},
 		{
@@ -17089,7 +17089,7 @@
 			"package": "@afenda/audit",
 			"referenceKind": "filesystem",
 			"resolution": "not-applicable",
-			"symbol": "packages/erp/human-resources/src/adapters/drizzle/recruitment.ts",
+			"symbol": "packages/erp/human-resources/src/features/performance/adapters/performance.drizzle.ts",
 			"useMode": "filesystem"
 		},
 		{
@@ -17100,7 +17100,7 @@
 			"package": "@afenda/audit",
 			"referenceKind": "filesystem",
 			"resolution": "not-applicable",
-			"symbol": "packages/erp/human-resources/src/adapters/drizzle/talent.ts",
+			"symbol": "packages/erp/human-resources/src/features/recruitment/adapters/recruitment.drizzle.ts",
 			"useMode": "filesystem"
 		},
 		{
@@ -17111,7 +17111,7 @@
 			"package": "@afenda/audit",
 			"referenceKind": "filesystem",
 			"resolution": "not-applicable",
-			"symbol": "packages/erp/human-resources/src/adapters/drizzle/workforce-foundation.ts",
+			"symbol": "packages/erp/human-resources/src/features/talent/adapters/talent.drizzle.ts",
 			"useMode": "filesystem"
 		},
 		{
@@ -17122,18 +17122,51 @@
 			"package": "@afenda/audit",
 			"referenceKind": "filesystem",
 			"resolution": "not-applicable",
-			"symbol": "packages/erp/human-resources/src/adapters/drizzle/workforce-planning.ts",
+			"symbol": "packages/erp/human-resources/src/features/time/adapters/time-transactions.drizzle.ts",
 			"useMode": "filesystem"
 		},
 		{
 			"consumerClass": "testing",
 			"disposition": "manual-review",
 			"entrypoint": "filesystem",
-			"file": "packages/data-plane/db/__tests__/hr-leave-overlap-exclusion-register.test.ts",
-			"package": "@afenda/db",
+			"file": "packages/data-plane/audit/__tests__/direct-writer-boundary.test.ts",
+			"package": "@afenda/audit",
 			"referenceKind": "filesystem",
 			"resolution": "not-applicable",
-			"symbol": "../../../../packages/erp/human-resources/src/shared/leave-guards.ts",
+			"symbol": "packages/erp/human-resources/src/features/time/adapters/time.drizzle.ts",
+			"useMode": "filesystem"
+		},
+		{
+			"consumerClass": "testing",
+			"disposition": "manual-review",
+			"entrypoint": "filesystem",
+			"file": "packages/data-plane/audit/__tests__/direct-writer-boundary.test.ts",
+			"package": "@afenda/audit",
+			"referenceKind": "filesystem",
+			"resolution": "not-applicable",
+			"symbol": "packages/erp/human-resources/src/features/workforce-planning/adapters/workforce-planning.drizzle.ts",
+			"useMode": "filesystem"
+		},
+		{
+			"consumerClass": "testing",
+			"disposition": "manual-review",
+			"entrypoint": "filesystem",
+			"file": "packages/data-plane/audit/__tests__/direct-writer-boundary.test.ts",
+			"package": "@afenda/audit",
+			"referenceKind": "filesystem",
+			"resolution": "not-applicable",
+			"symbol": "packages/erp/human-resources/src/features/workforce-records/employment/adapters/core.drizzle.ts",
+			"useMode": "filesystem"
+		},
+		{
+			"consumerClass": "testing",
+			"disposition": "manual-review",
+			"entrypoint": "filesystem",
+			"file": "packages/data-plane/audit/__tests__/direct-writer-boundary.test.ts",
+			"package": "@afenda/audit",
+			"referenceKind": "filesystem",
+			"resolution": "not-applicable",
+			"symbol": "packages/erp/human-resources/src/features/workforce-records/identity/adapters/workforce-foundation.drizzle.ts",
 			"useMode": "filesystem"
 		},
 		{
@@ -17146,6 +17179,17 @@
 			"resolution": "not-applicable",
 			"symbol": "*",
 			"useMode": "generated"
+		},
+		{
+			"consumerClass": "production",
+			"disposition": "manual-review",
+			"entrypoint": "filesystem",
+			"file": "packages/data-plane/db/src/system-sql-policy.ts",
+			"package": "@afenda/db",
+			"referenceKind": "filesystem",
+			"resolution": "not-applicable",
+			"symbol": "packages/erp/human-resources/src/kernel/reliability/adapters/drizzle.ts",
+			"useMode": "filesystem"
 		},
 		{
 			"consumerClass": "testing",
@@ -17236,6 +17280,28 @@
 			"useMode": "filesystem"
 		},
 		{
+			"consumerClass": "testing",
+			"disposition": "manual-review",
+			"entrypoint": "filesystem",
+			"file": "scripts/check-tenant-sql-safety.test.mjs",
+			"package": "afenda-lite",
+			"referenceKind": "filesystem",
+			"resolution": "not-applicable",
+			"symbol": "\n\t\texport const SYSTEM_SQL_OPERATION_POLICIES = {\n\t\t\t\"human-resources.reliability.claim-due\": {\n\t\t\t\townerSource: \"packages/erp/human-resources/src/kernel/reliability/adapters/drizzle.ts\",\n\t\t\t\thardTenantTables: [\"hr_reliability_work_item\"],\n\t\t\t},\n\t\t} as const;\n\t",
+			"useMode": "filesystem"
+		},
+		{
+			"consumerClass": "testing",
+			"disposition": "manual-review",
+			"entrypoint": "filesystem",
+			"file": "scripts/check-tenant-sql-safety.test.mjs",
+			"package": "afenda-lite",
+			"referenceKind": "filesystem",
+			"resolution": "not-applicable",
+			"symbol": "packages/erp/human-resources/src/kernel/reliability/adapters/drizzle.ts",
+			"useMode": "filesystem"
+		},
+		{
 			"consumerClass": "tooling",
 			"disposition": "manual-review",
 			"entrypoint": "generated",
@@ -17267,6 +17333,39 @@
 			"resolution": "not-applicable",
 			"symbol": "*",
 			"useMode": "generated"
+		},
+		{
+			"consumerClass": "testing",
+			"disposition": "manual-review",
+			"entrypoint": "filesystem",
+			"file": "turbo/generators/__tests__/erp-layout-authority.test.ts",
+			"package": "afenda-lite",
+			"referenceKind": "filesystem",
+			"resolution": "not-applicable",
+			"symbol": "packages/erp/human-resources/src/composition/module.manifest.ts",
+			"useMode": "filesystem"
+		},
+		{
+			"consumerClass": "testing",
+			"disposition": "manual-review",
+			"entrypoint": "filesystem",
+			"file": "turbo/generators/__tests__/erp-layout-authority.test.ts",
+			"package": "afenda-lite",
+			"referenceKind": "filesystem",
+			"resolution": "not-applicable",
+			"symbol": "packages/erp/human-resources/src/features/leave/index.ts",
+			"useMode": "filesystem"
+		},
+		{
+			"consumerClass": "testing",
+			"disposition": "manual-review",
+			"entrypoint": "filesystem",
+			"file": "turbo/generators/__tests__/erp-layout-authority.test.ts",
+			"package": "afenda-lite",
+			"referenceKind": "filesystem",
+			"resolution": "not-applicable",
+			"symbol": "packages/erp/human-resources/src/kernel/operations/registry.ts",
+			"useMode": "filesystem"
 		}
 	],
 	"schemaVersion": 1
