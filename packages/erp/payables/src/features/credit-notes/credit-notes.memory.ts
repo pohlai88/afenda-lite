@@ -69,7 +69,10 @@ export function createMemoryCreditNoteMethods(
 			};
 			credit.lines.push(line);
 			credit.totalAmount = format(
-				credit.lines.reduce((total, row) => total + decimal(row.lineAmount), 0n),
+				credit.lines.reduce(
+					(total, row) => total + decimal(row.lineAmount),
+					0n,
+				),
 			);
 			credit.version += 1;
 			credit.updatedBy = record.actorUserId;

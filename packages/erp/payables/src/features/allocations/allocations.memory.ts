@@ -75,8 +75,7 @@ export function createMemoryAllocationMethods(
 				id: randomUUID(),
 				invoiceId: invoice.id,
 				organizationId: record.organizationId,
-				paymentApplicationInstructionId:
-					record.paymentApplicationInstructionId,
+				paymentApplicationInstructionId: record.paymentApplicationInstructionId,
 				paymentId: record.paymentId,
 				reversedAt: null,
 				reversedBy: null,

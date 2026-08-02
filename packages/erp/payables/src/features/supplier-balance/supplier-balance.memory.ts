@@ -24,8 +24,7 @@ export function createMemorySupplierBalanceMethods(
 						.filter((row) => row.supplierId === supplierId)
 						.filter(
 							(row) =>
-								currencyCode === undefined ||
-								row.currencyCode === currencyCode,
+								currencyCode === undefined || row.currencyCode === currencyCode,
 						)
 						.map((row) => {
 							const documents = [...state.invoices.values()].filter(

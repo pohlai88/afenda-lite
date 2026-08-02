@@ -5,7 +5,10 @@ import type {
 	ThreeWayMatchEvidence,
 	ThreeWayMatchStatus,
 } from "../../kernel/contracts/domain";
-import type { GoodsReceiptMatchBasis, PurchaseOrderMatchBasis } from "../../kernel/contracts/ports";
+import type {
+	GoodsReceiptMatchBasis,
+	PurchaseOrderMatchBasis,
+} from "../../kernel/contracts/ports";
 
 const SCALE = 1_000_000n;
 const TRAILING_ZERO_PATTERN = /0+$/;

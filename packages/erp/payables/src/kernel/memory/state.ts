@@ -1,14 +1,13 @@
 import { randomUUID } from "node:crypto";
 
 import { errorResult, type Result } from "@afenda/errors";
-
-import { decimal, format } from "../money";
 import type {
 	SupplierAllocation,
 	SupplierBalance,
 	SupplierInvoice,
 	SupplierInvoiceCreateRecord,
 } from "../contracts/domain";
+import { decimal, format } from "../money";
 
 /**
  * Shared in-memory domain state for the parity adapter.

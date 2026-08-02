@@ -111,7 +111,10 @@ export const drizzleCreditNoteMethods: PayablesCreditNotesStore = {
 			}
 			return errorResult.ok(mapCredit(credit, [], "0"));
 		} catch (error) {
-			return failFromPersistence(error, "Failed to create supplier credit note");
+			return failFromPersistence(
+				error,
+				"Failed to create supplier credit note",
+			);
 		}
 	},
 

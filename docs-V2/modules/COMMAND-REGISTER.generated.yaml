@@ -1630,6 +1630,9 @@ commands:
   - id: payables.invoice.post
     moduleId: payables
     permission: payables.manage
+  - id: payables.invoice.cancel
+    moduleId: payables
+    permission: payables.manage
   - id: payables.credit_note.issue
     moduleId: payables
     permission: payables.manage
@@ -1649,9 +1652,6 @@ commands:
     moduleId: payables
     permission: payables.manage
   - id: payables.payment_application.reverse
-    moduleId: payables
-    permission: payables.manage
-  - id: payables.invoice.cancel
     moduleId: payables
     permission: payables.manage
   - id: payments.account.create

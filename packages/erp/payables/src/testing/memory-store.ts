@@ -1,9 +1,9 @@
+import { composeStoreSlices } from "../composition/store/compose-slices";
+import type { PayablesStore } from "../composition/store/contract";
 import { createMemoryAllocationMethods } from "../features/allocations/allocations.memory";
 import { createMemoryCreditNoteMethods } from "../features/credit-notes/credit-notes.memory";
 import { createMemoryInvoiceLifecycleMethods } from "../features/invoice-lifecycle/invoice-lifecycle.memory";
 import { createMemorySupplierBalanceMethods } from "../features/supplier-balance/supplier-balance.memory";
-import { composeStoreSlices } from "../composition/store/compose-slices";
-import type { PayablesStore } from "../composition/store/contract";
 import { createMemoryPayablesState } from "../kernel/memory/state";
 
 export type MemoryPayablesStore = PayablesStore;
