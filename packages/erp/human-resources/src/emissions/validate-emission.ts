@@ -15,6 +15,7 @@ export interface HumanResourcesEmissionRegistryIssue {
 		| "audit_only_with_event"
 		| "domain_event_without_event"
 		| "missing_correlation"
+		| "missing_idempotency"
 		| "missing_audit"
 		| "domain_mismatch"
 		| "missing_catalog_entry";
@@ -40,6 +41,13 @@ function validateEmissionFlags(input: {
 			commandId: input.commandId,
 			code: "missing_correlation",
 			message: `${input.commandId} must require correlation.`,
+		});
+	}
+	if (!input.definition.idempotencyRequired) {
+		input.issues.push({
+			commandId: input.commandId,
+			code: "missing_idempotency",
+			message: `${input.commandId} must require idempotency.`,
 		});
 	}
 	if (

@@ -8,9 +8,9 @@ import {
 	addBenefitEnrollmentDependentInputSchema,
 	endBenefitEnrollmentDependentInputSchema,
 } from "../schemas/compensation";
-import { runCompensationCommand } from "../shared/compensation-command";
 import { buildMutationMeta } from "../shared/mutation-meta";
 import type { BenefitEnrollmentDependent } from "../types";
+import { runCompensationCapabilityCommand } from "./run-operation";
 
 export const HUMAN_RESOURCES_AGGREGATE_BENEFIT_ENROLLMENT_DEPENDENT =
 	"benefit_enrollment_dependent" as const;
@@ -21,7 +21,8 @@ export function addBenefitEnrollmentDependent(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<BenefitEnrollmentDependent>> {
-	return runCompensationCommand(input, options, {
+	return runCompensationCapabilityCommand(input, options, {
+		storeMethods: ["addBenefitEnrollmentDependent"],
 		schema: addBenefitEnrollmentDependentInputSchema,
 		invalidMessage: "Invalid benefit enrollment dependent add input",
 		command: HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_DEPENDENT_ADD,
@@ -48,7 +49,8 @@ export function endBenefitEnrollmentDependent(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<BenefitEnrollmentDependent>> {
-	return runCompensationCommand(input, options, {
+	return runCompensationCapabilityCommand(input, options, {
+		storeMethods: ["endBenefitEnrollmentDependent"],
 		schema: endBenefitEnrollmentDependentInputSchema,
 		invalidMessage: "Invalid benefit enrollment dependent end input",
 		command: HUMAN_RESOURCES_COMMAND_BENEFIT_ENROLLMENT_DEPENDENT_END,

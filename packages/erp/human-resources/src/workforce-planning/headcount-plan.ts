@@ -17,7 +17,6 @@ import {
 	HUMAN_RESOURCES_QUERY_HEADCOUNT_PLAN_GET,
 	HUMAN_RESOURCES_QUERY_HEADCOUNT_PLAN_LIST,
 	HUMAN_RESOURCES_QUERY_WORKFORCE_PLAN_VARIANCE_GET,
-	type HumanResourcesCommandId,
 } from "../module-ids";
 import {
 	createHeadcountPlanInputSchema,
@@ -31,16 +30,17 @@ import {
 } from "../schemas/workforce-planning";
 import { fingerprintHeadcountPlanCreate } from "../shared/fingerprint";
 import { buildMutationMeta } from "../shared/mutation-meta";
-import {
-	runWorkforcePlanningCommand,
-	runWorkforcePlanningQuery,
-} from "../shared/workforce-planning-command";
 import type { HeadcountPlanStatus } from "../shared/workforce-planning-status";
 import type {
 	HeadcountPlan,
 	HeadcountPlanListPage,
 	WorkforcePlanVariance,
 } from "../types";
+import type { HUMAN_RESOURCES_WORKFORCE_PLANNING_COMMAND_IDS } from "./operation-registry";
+import {
+	runWorkforcePlanningCapabilityCommand,
+	runWorkforcePlanningCapabilityQuery,
+} from "./run-operation";
 
 export const HUMAN_RESOURCES_AGGREGATE_HEADCOUNT_PLAN =
 	"headcount-plan" as const;
@@ -51,10 +51,11 @@ export function createHeadcountPlan(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<HeadcountPlan>> {
-	return runWorkforcePlanningCommand(input, options, {
+	return runWorkforcePlanningCapabilityCommand(input, options, {
 		schema: createHeadcountPlanInputSchema,
 		invalidMessage: "Invalid headcount plan create input",
 		command: HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_CREATE,
+		storeMethods: ["findHeadcountPlanByIdempotencyKey", "createHeadcountPlan"],
 		execute: async (data, { store, ports }) => {
 			const requestFingerprint = fingerprintHeadcountPlanCreate({
 				code: data.code,
@@ -113,10 +114,11 @@ export function updateHeadcountPlan(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<HeadcountPlan>> {
-	return runWorkforcePlanningCommand(input, options, {
+	return runWorkforcePlanningCapabilityCommand(input, options, {
 		schema: updateHeadcountPlanInputSchema,
 		invalidMessage: "Invalid headcount plan update input",
 		command: HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_UPDATE,
+		storeMethods: ["updateHeadcountPlan"],
 		execute: (data, { store, ports }) =>
 			store.updateHeadcountPlan(
 				{
@@ -142,14 +144,15 @@ function transitionHeadcountPlan(
 	options: HumanResourcesCommandOptions,
 	config: {
 		invalidMessage: string;
-		command: HumanResourcesCommandId;
+		command: (typeof HUMAN_RESOURCES_WORKFORCE_PLANNING_COMMAND_IDS)[number];
 		status: Exclude<HeadcountPlanStatus, "draft">;
 	},
 ): Promise<Result<HeadcountPlan>> {
-	return runWorkforcePlanningCommand(input, options, {
+	return runWorkforcePlanningCapabilityCommand(input, options, {
 		schema: headcountPlanStatusTransitionInputSchema,
 		invalidMessage: config.invalidMessage,
 		command: config.command,
+		storeMethods: ["transitionHeadcountPlanStatus"],
 		execute: (data, { store, ports }) =>
 			store.transitionHeadcountPlanStatus(
 				{
@@ -217,10 +220,15 @@ export function supersedeHeadcountPlan(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<HeadcountPlan>> {
-	return runWorkforcePlanningCommand(input, options, {
+	return runWorkforcePlanningCapabilityCommand(input, options, {
 		schema: supersedeHeadcountPlanInputSchema,
 		invalidMessage: "Invalid headcount plan supersede input",
 		command: HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_SUPERSEDE,
+		storeMethods: [
+			"getHeadcountPlanById",
+			"findHeadcountPlanByIdempotencyKey",
+			"supersedeHeadcountPlan",
+		],
 		execute: async (data, { store, ports }) => {
 			const source = await store.getHeadcountPlanById({
 				organizationId: data.organizationId,
@@ -292,10 +300,11 @@ export function getHeadcountPlanById(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<HeadcountPlan>> {
-	return runWorkforcePlanningQuery(input, options, {
+	return runWorkforcePlanningCapabilityQuery(input, options, {
 		schema: getHeadcountPlanByIdInputSchema,
 		invalidMessage: "Invalid headcount plan get input",
 		query: HUMAN_RESOURCES_QUERY_HEADCOUNT_PLAN_GET,
+		storeMethods: ["getHeadcountPlanById"],
 		execute: async (data, { store }) => {
 			const plan = await store.getHeadcountPlanById({
 				organizationId: data.organizationId,
@@ -321,10 +330,11 @@ export function listHeadcountPlans(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<HeadcountPlanListPage>> {
-	return runWorkforcePlanningQuery(input, options, {
+	return runWorkforcePlanningCapabilityQuery(input, options, {
 		schema: listHeadcountPlansInputSchema,
 		invalidMessage: "Invalid headcount plan list input",
 		query: HUMAN_RESOURCES_QUERY_HEADCOUNT_PLAN_LIST,
+		storeMethods: ["listHeadcountPlans"],
 		execute: (data, { store }) =>
 			store.listHeadcountPlans({
 				organizationId: data.organizationId,
@@ -340,10 +350,11 @@ export function getApprovedHeadcountPlan(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<HeadcountPlan>> {
-	return runWorkforcePlanningQuery(input, options, {
+	return runWorkforcePlanningCapabilityQuery(input, options, {
 		schema: getApprovedHeadcountPlanInputSchema,
 		invalidMessage: "Invalid approved headcount plan get input",
 		query: HUMAN_RESOURCES_QUERY_HEADCOUNT_PLAN_APPROVED_GET,
+		storeMethods: ["findApprovedHeadcountPlanForScope"],
 		execute: async (data, { store }) => {
 			const plan = await store.findApprovedHeadcountPlanForScope({
 				organizationId: data.organizationId,
@@ -371,10 +382,11 @@ export function getWorkforcePlanVariance(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<WorkforcePlanVariance>> {
-	return runWorkforcePlanningQuery(input, options, {
+	return runWorkforcePlanningCapabilityQuery(input, options, {
 		schema: getWorkforcePlanVarianceInputSchema,
 		invalidMessage: "Invalid workforce plan variance get input",
 		query: HUMAN_RESOURCES_QUERY_WORKFORCE_PLAN_VARIANCE_GET,
+		storeMethods: ["getWorkforcePlanVariance"],
 		execute: (data, { store }) =>
 			store.getWorkforcePlanVariance({
 				organizationId: data.organizationId,

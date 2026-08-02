@@ -1,7 +1,10 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
-import { registerLegalCompanyDraft } from "@afenda/corporate-administration";
+import {
+	corporateAdministrationPermissionFor,
+	registerLegalCompanyDraft,
+} from "@afenda/corporate-administration";
 import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -30,7 +33,9 @@ export async function registerLegalCompanyDraftAction(
 ): Promise<ActionResult<{ legalCompanyId: string }>> {
 	return await runMemberPermissionAction({
 		path: "registerLegalCompanyDraftAction",
-		permission: "corporate_administration.company.manage",
+		permission: corporateAdministrationPermissionFor(
+			"registerLegalCompanyDraft",
+		),
 		safeMessage: "Could not register legal company draft.",
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(registerLegalCompanyDraftActionSchema, {

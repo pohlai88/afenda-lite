@@ -3,7 +3,6 @@ import { randomUUID } from "node:crypto";
 import { audit as afendaAudit } from "@afenda/audit";
 import {
 	type AddressReferencePort,
-	type ApprovalDecisionPort,
 	type ClockPort,
 	type CompanyActivityCommandDependencies,
 	type CompanyActivityQueryDependencies,
@@ -23,15 +22,22 @@ import {
 	type DocumentObjectPort,
 	type EstablishmentCommandDependencies,
 	type EstablishmentQueryDependencies,
+	type GovernanceCommandDependencies,
+	type GovernanceQueryDependencies,
 	idempotencyKeySchema,
+	type MeetingQueryDependencies,
 	organizationIdSchema,
 	type RegisterLegalCompanyDraftDependencies,
+	type ResolutionQueryDependencies,
 	type TaxRegistrationReadPort,
 	userIdSchema,
 } from "@afenda/corporate-administration";
 import {
 	createDrizzleCorporateAdministrationEstablishmentStore,
+	createDrizzleCorporateAdministrationGovernanceStore,
 	createDrizzleCorporateAdministrationLegalCompanyStore,
+	createDrizzleCorporateAdministrationMeetingStore,
+	createDrizzleCorporateAdministrationResolutionStore,
 } from "@afenda/corporate-administration/adapters/drizzle";
 import {
 	database as afendaDatabase,
@@ -345,12 +351,6 @@ const taxRegistrations: TaxRegistrationReadPort = {
 	},
 };
 
-export function createCorporateAdministrationApprovalDecisionPort(): ApprovalDecisionPort {
-	return {
-		verify: async () => errorResult.ok(null),
-	};
-}
-
 export function createCorporateAdministrationCommandOptions(input: {
 	organizationId: string;
 	actorUserId: string;
@@ -436,6 +436,44 @@ export function createCorporateAdministrationCompanyDependencies(): RegisterLega
 			createAuditId: randomUUID,
 		}),
 		createEventId: randomUUID,
+	};
+}
+
+export function createCorporateAdministrationGovernanceDependencies(): ReturnType<
+	typeof createCorporateAdministrationCompanyDependencies
+> &
+	GovernanceCommandDependencies &
+	GovernanceQueryDependencies &
+	MeetingQueryDependencies &
+	ResolutionQueryDependencies &
+	Readonly<{
+		meetingStore: ReturnType<
+			typeof createDrizzleCorporateAdministrationMeetingStore
+		>;
+		resolutionStore: ReturnType<
+			typeof createDrizzleCorporateAdministrationResolutionStore
+		>;
+	}> {
+	const companyDependencies =
+		createCorporateAdministrationCompanyDependencies();
+	const governanceStore = createDrizzleCorporateAdministrationGovernanceStore({
+		database: afendaDatabase.client,
+		createId: randomUUID,
+	});
+	const meetingStore = createDrizzleCorporateAdministrationMeetingStore({
+		database: afendaDatabase.client,
+		createId: randomUUID,
+	});
+	const resolutionStore = createDrizzleCorporateAdministrationResolutionStore({
+		database: afendaDatabase.client,
+		createId: randomUUID,
+	});
+
+	return {
+		...companyDependencies,
+		governanceStore,
+		meetingStore,
+		resolutionStore,
 	};
 }
 

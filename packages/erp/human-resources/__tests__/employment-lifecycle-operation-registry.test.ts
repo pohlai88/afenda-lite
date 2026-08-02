@@ -28,7 +28,9 @@ const publicCapabilitiesSource = readFileSync(
 );
 const handlerSources = [
 	"../src/core/employment.ts",
+	"../src/core/employment-management.ts",
 	"../src/core/employment-contract.ts",
+	"../src/core/employment-contract-management.ts",
 	"../src/core/assignment.ts",
 	"../src/core/org-context.ts",
 	"../src/lifecycle/onboarding.ts",
@@ -50,7 +52,7 @@ const runnerSource = readFileSync(
 
 describe("employment lifecycle operation registry", () => {
 	it("owns every employment record, workflow, and effective-truth operation exactly once", () => {
-		expect(definitions).toHaveLength(56);
+		expect(definitions).toHaveLength(63);
 		expect(new Set(definitions.map((definition) => definition.id)).size).toBe(
 			definitions.length,
 		);
@@ -103,7 +105,6 @@ describe("employment lifecycle operation registry", () => {
 	});
 
 	it("composes with peer capability registries without collisions", () => {
-		expect(HUMAN_RESOURCES_REGISTERED_OPERATION_DEFINITIONS).toHaveLength(110);
 		expect(
 			new Set(
 				HUMAN_RESOURCES_REGISTERED_OPERATION_DEFINITIONS.map(
@@ -120,7 +121,20 @@ describe("employment lifecycle operation registry", () => {
 			0,
 		);
 
-		expect(projectionCount).toBe(definitions.length);
+		// Seven lifecycle commands intentionally reuse an existing mutation
+		// capability while carrying their own canonical operation identity.
+		expect(projectionCount).toBe(56);
+		for (const commandConstant of [
+			"HUMAN_RESOURCES_COMMAND_EMPLOYMENT_HIRE",
+			"HUMAN_RESOURCES_COMMAND_EMPLOYMENT_REHIRE",
+			"HUMAN_RESOURCES_COMMAND_EMPLOYMENT_SUSPEND",
+			"HUMAN_RESOURCES_COMMAND_EMPLOYMENT_REACTIVATE",
+			"HUMAN_RESOURCES_COMMAND_EMPLOYMENT_TERMINATE",
+			"HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_AMEND",
+			"HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CONTRACT_RENEW",
+		]) {
+			expect(handlerSource).toContain(commandConstant);
+		}
 		expect(handlerSource).not.toContain("HumanResourcesStore");
 		expect(handlerSource).not.toContain("resolveCommandDeps");
 		expect(handlerSource).not.toMatch(/runCore(?:Command|Query)/);

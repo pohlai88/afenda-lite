@@ -31,6 +31,7 @@ import {
 	organizationIdSchema,
 	userIdSchema,
 } from "../../src/kernel/brands";
+import { createMemoryCorporateAdministrationObservabilityPort } from "../../src/testing/observability";
 
 const organizationId = organizationIdSchema.parse("org-ca-name");
 const legalCompanyId = legalCompanySchema.parse({
@@ -135,6 +136,9 @@ describe("company name and legal-form contracts", () => {
 			authorization: { can: async () => true },
 		};
 		const dependencies = {
+			runtime: {
+				observability: createMemoryCorporateAdministrationObservabilityPort(),
+			},
 			store: {
 				getLegalCompany: async () => errorResult.ok(legalCompany),
 			},

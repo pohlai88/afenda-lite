@@ -1,4 +1,5 @@
 import {
+	type CorporateAdministrationCommandId,
 	createCorporateAdministrationCommandFingerprint,
 	decimalInputSchema,
 	normalizedCodeSchema,
@@ -19,12 +20,12 @@ describe("Corporate Administration command identity", () => {
 	function fingerprint(
 		input: unknown,
 		organizationId = "org_1",
-		commandId = "corporate-administration.test.create",
+		operationId: CorporateAdministrationCommandId = "registerLegalCompanyDraft",
 	) {
 		const result = createCorporateAdministrationCommandFingerprint({
 			schema: commandSchema,
 			organizationId: organizationIdSchema.parse(organizationId),
-			commandId,
+			operationId,
 			input,
 		});
 		if (!result.ok) {
@@ -49,7 +50,7 @@ describe("Corporate Administration command identity", () => {
 		expect(first.envelope).toEqual({
 			namespace: "corporate-administration",
 			organizationId: "org_1",
-			commandId: "corporate-administration.test.create",
+			commandId: "corporate-administration.legal-company.register-draft",
 			input: {
 				code: "CA-01",
 				amount: "10.5",
@@ -72,8 +73,7 @@ describe("Corporate Administration command identity", () => {
 			fingerprint(base, "org_2").fingerprint,
 		);
 		expect(fingerprint(base).fingerprint).not.toBe(
-			fingerprint(base, "org_1", "corporate-administration.test.update")
-				.fingerprint,
+			fingerprint(base, "org_1", "updateLegalCompanyProfile").fingerprint,
 		);
 	});
 	it("excludes delivery metadata from the fingerprint envelope", () => {
@@ -107,7 +107,7 @@ describe("Corporate Administration command identity", () => {
 		const omitted = createCorporateAdministrationCommandFingerprint({
 			schema: optionalSchema,
 			organizationId: organizationIdSchema.parse("org_1"),
-			commandId: "corporate-administration.test.create",
+			operationId: "registerLegalCompanyDraft",
 			input: {
 				code: "ca-01",
 				nested: { label: "kept" },
@@ -116,7 +116,7 @@ describe("Corporate Administration command identity", () => {
 		const explicitUndefined = createCorporateAdministrationCommandFingerprint({
 			schema: optionalSchema,
 			organizationId: organizationIdSchema.parse("org_1"),
-			commandId: "corporate-administration.test.create",
+			operationId: "registerLegalCompanyDraft",
 			input: {
 				code: "ca-01",
 				reason: undefined,
@@ -138,7 +138,7 @@ describe("Corporate Administration command identity", () => {
 		const invalid = createCorporateAdministrationCommandFingerprint({
 			schema: commandSchema,
 			organizationId: organizationIdSchema.parse("org_1"),
-			commandId: "corporate-administration.test.create",
+			operationId: "registerLegalCompanyDraft",
 			input: { raw: "unparsed" },
 		});
 		expect(invalid).toMatchObject({
@@ -149,7 +149,7 @@ describe("Corporate Administration command identity", () => {
 		const nonCanonical = createCorporateAdministrationCommandFingerprint({
 			schema: unsupportedSchema,
 			organizationId: organizationIdSchema.parse("org_1"),
-			commandId: "corporate-administration.test.create",
+			operationId: "registerLegalCompanyDraft",
 			input: "2026-01-01T00:00:00.000Z",
 		});
 		expect(nonCanonical).toMatchObject({
@@ -157,35 +157,15 @@ describe("Corporate Administration command identity", () => {
 			code: "VALIDATION_ERROR",
 		});
 	});
-	it("rejects command IDs outside the Corporate Administration namespace", () => {
-		const result = createCorporateAdministrationCommandFingerprint({
-			schema: commandSchema,
-			organizationId: organizationIdSchema.parse("org_1"),
-			commandId: "inventory.item.create",
-			input: {
-				code: "CA-01",
-				amount: "10.50",
-				lines: [],
-				nested: { left: 1, right: 2 },
-			},
+	it("derives the durable command identity from the registered operation", () => {
+		const result = fingerprint({
+			code: "CA-01",
+			amount: "10.50",
+			lines: [],
+			nested: { left: 1, right: 2 },
 		});
-		expect(result).toMatchObject({
-			ok: false,
-			code: "VALIDATION_ERROR",
-		});
-	});
-	it("rejects surrounding command-ID whitespace", () => {
-		const result = createCorporateAdministrationCommandFingerprint({
-			schema: commandSchema,
-			organizationId: organizationIdSchema.parse("org_1"),
-			commandId: " corporate-administration.test.create ",
-			input: {
-				code: "CA-01",
-				amount: "10.50",
-				lines: [],
-				nested: { left: 1, right: 2 },
-			},
-		});
-		expect(result.ok).toBe(false);
+		expect(result.envelope.commandId).toBe(
+			"corporate-administration.legal-company.register-draft",
+		);
 	});
 });

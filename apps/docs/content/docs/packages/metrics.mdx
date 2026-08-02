@@ -14,7 +14,8 @@ description: "Canonical metric registry, names, labels, recording capabilities, 
 
 | Import path | Export key |
 | --- | --- |
-| `@afenda/metrics` | `.` |
+| `@afenda/metrics/core` | `./core` |
+| `@afenda/metrics/node` | `./node` |
 | `@afenda/metrics/testing` | `./testing` |
 
 ## Package README
@@ -23,10 +24,10 @@ Canonical metric registry, names, labels, recording capabilities, and Prometheus
 
 ## Consume
 
-Use the single root capability:
+Use the explicit Node runtime capability:
 
 ```ts
-import { metrics } from "@afenda/metrics";
+import { metrics } from "@afenda/metrics/node";
 
 metrics.record.http({
 	method: "GET",
@@ -52,15 +53,16 @@ Database and cache adapters use `metrics.record.db` and `metrics.record.cache`. 
 
 ## Runtime boundary
 
-The root is Node-only because it owns the real `prom-client` implementation. Node Route Handlers must explicitly declare `runtime = "nodejs"`. No Edge no-op facade is maintained.
+The `/node` subpath owns the real `prom-client` implementation. Node Route Handlers must explicitly declare `runtime = "nodejs"`. No Edge no-op facade is maintained.
 
-Tests may use `@afenda/metrics/testing` for isolated capabilities and state reset. Production consumers must use only `@afenda/metrics`.
+Type-only consumers use `@afenda/metrics/core`. Tests may use `@afenda/metrics/testing` for isolated capabilities and state reset. Production consumers that record or render metrics must use `@afenda/metrics/node`.
 
 ## Ownership
 
 | Owner | Meaning |
 |---|---|
-| `@afenda/metrics` | Registry definitions, metric names, labels, buckets, recording, validation, exposition |
+| `@afenda/metrics/core` | Type-only metric capability and input contracts |
+| `@afenda/metrics/node` | Registry definitions, metric names, labels, buckets, recording, validation, exposition |
 | `apps/web` | Scrape authorization, Node Route Handler response, and HTTP pipeline composition |
 | `@afenda/http` | Per-response `Server-Timing`, correlation, and Fetch mechanics |
 | `@afenda/logger` | Structured diagnostic events |

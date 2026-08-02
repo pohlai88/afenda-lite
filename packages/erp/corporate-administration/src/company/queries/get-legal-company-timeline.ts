@@ -1,10 +1,10 @@
 import type { Result } from "@afenda/errors";
 import type { z } from "zod";
-import {
-	CORPORATE_ADMINISTRATION_QUERY_PERMISSIONS,
-	requireCorporateAdministrationPermission,
-} from "../../authorization";
 import type { CorporateAdministrationQueryOptions } from "../../command-options";
+import {
+	type CorporateAdministrationQueryKernelDependencies,
+	executeCorporateAdministrationQuery,
+} from "../../internal/query";
 import { parseCorporateAdministrationInput } from "../../parse-input";
 import { getLegalCompanyTimelineInputSchema } from "../schemas";
 import type { LegalCompanyQueryDependencies } from "../store";
@@ -17,7 +17,8 @@ export type GetLegalCompanyTimelineInput = z.input<
 export async function getLegalCompanyTimeline(
 	input: GetLegalCompanyTimelineInput,
 	options: CorporateAdministrationQueryOptions,
-	dependencies: LegalCompanyQueryDependencies,
+	dependencies: LegalCompanyQueryDependencies &
+		CorporateAdministrationQueryKernelDependencies,
 ): Promise<Result<readonly LegalCompanyTimelineEntry[]>> {
 	const parsed = parseCorporateAdministrationInput(
 		getLegalCompanyTimelineInputSchema,
@@ -27,22 +28,15 @@ export async function getLegalCompanyTimeline(
 		return parsed;
 	}
 
-	const authorized = await requireCorporateAdministrationPermission(
-		options.authorization,
-		{
-			organizationId: options.organizationId,
-			actorUserId: options.actorUserId,
-			permission:
-				CORPORATE_ADMINISTRATION_QUERY_PERMISSIONS.getLegalCompanyTimeline,
-		},
-	);
-	if (!authorized.ok) {
-		return authorized;
-	}
-
-	return dependencies.store.getLegalCompanyTimeline({
-		organizationId: options.organizationId,
-		legalCompanyId: parsed.data.legalCompanyId,
-		knownAt: parsed.data.knownAt,
+	return await executeCorporateAdministrationQuery({
+		operationId: "getLegalCompanyTimeline",
+		options,
+		dependencies,
+		work: async () =>
+			dependencies.store.getLegalCompanyTimeline({
+				organizationId: options.organizationId,
+				legalCompanyId: parsed.data.legalCompanyId,
+				knownAt: parsed.data.knownAt,
+			}),
 	});
 }

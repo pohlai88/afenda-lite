@@ -1,20 +1,18 @@
 import { errorResult, type Result } from "@afenda/errors";
 import type { z } from "zod";
-import {
-	CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS,
-	requireCorporateAdministrationPermission,
-} from "../../authorization";
 import type { CorporateAdministrationCommandOptions } from "../../command-options";
+import {
+	authorizeCorporateAdministrationCommand,
+	type CorporateAdministrationCommandKernelDependencies,
+	executeCorporateAdministrationCommand,
+} from "../../internal/durable-command";
 import { parseCorporateAdministrationInput } from "../../parse-input";
 import {
 	legalCompanySchema,
 	updateLegalCompanyProfileInputSchema,
 } from "../schemas";
+import type { LegalCompanyCommandDependencies } from "../store";
 import type { LegalCompany } from "../types";
-import {
-	type DurableLegalCompanyCommandDependencies,
-	runDurableCompanyCommand,
-} from "./durable-command";
 
 export type UpdateLegalCompanyProfileInput = z.input<
 	typeof updateLegalCompanyProfileInputSchema
@@ -23,7 +21,8 @@ export type UpdateLegalCompanyProfileInput = z.input<
 export async function updateLegalCompanyProfile(
 	input: UpdateLegalCompanyProfileInput,
 	options: CorporateAdministrationCommandOptions,
-	dependencies: DurableLegalCompanyCommandDependencies,
+	dependencies: CorporateAdministrationCommandKernelDependencies &
+		LegalCompanyCommandDependencies,
 ): Promise<Result<LegalCompany>> {
 	const parsed = parseCorporateAdministrationInput(
 		updateLegalCompanyProfileInputSchema,
@@ -33,14 +32,9 @@ export async function updateLegalCompanyProfile(
 		return parsed;
 	}
 
-	const authorized = await requireCorporateAdministrationPermission(
-		options.authorization,
-		{
-			organizationId: options.organizationId,
-			actorUserId: options.actorUserId,
-			permission:
-				CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS.updateLegalCompanyProfile,
-		},
+	const authorized = await authorizeCorporateAdministrationCommand(
+		"updateLegalCompanyProfile",
+		options,
 	);
 	if (!authorized.ok) {
 		return authorized;
@@ -65,15 +59,13 @@ export async function updateLegalCompanyProfile(
 		});
 	}
 
-	return runDurableCompanyCommand({
-		commandId: "corporate-administration.legal-company.update-profile",
+	return executeCorporateAdministrationCommand({
+		authorization: authorized.data,
 		fingerprintSchema: updateLegalCompanyProfileInputSchema,
 		fingerprintInput: parsed.data,
 		outputSchema: legalCompanySchema,
-		options,
 		dependencies,
 		event: {
-			type: "corporate_administration.legal_company.profile_updated.v1",
 			operationType: "UPDATE",
 			targetType: "ca_legal_company",
 			aggregateId: (result) => result.legalCompanyId,

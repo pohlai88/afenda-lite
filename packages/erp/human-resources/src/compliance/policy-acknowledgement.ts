@@ -9,6 +9,9 @@ import {
 	HUMAN_RESOURCES_COMMAND_POLICY_ACKNOWLEDGEMENT_ISSUE,
 	HUMAN_RESOURCES_COMMAND_POLICY_ACKNOWLEDGEMENT_REVOKE,
 	HUMAN_RESOURCES_COMMAND_POLICY_ACKNOWLEDGEMENT_SUPERSEDE,
+	HUMAN_RESOURCES_QUERY_POLICY_ACKNOWLEDGEMENT_LIST_OUTSTANDING,
+	HUMAN_RESOURCES_QUERY_POLICY_ACKNOWLEDGEMENT_LIST_OVERDUE,
+	HUMAN_RESOURCES_QUERY_POLICY_ACKNOWLEDGEMENT_STATUS_GET,
 } from "../module-ids";
 import {
 	acknowledgePolicyInputSchema,
@@ -19,16 +22,16 @@ import {
 	revokePolicyAcknowledgementInputSchema,
 	supersedePolicyAcknowledgementRequirementInputSchema,
 } from "../schemas/compliance";
-import {
-	runComplianceCommand,
-	runComplianceEmployeeScopedQuery,
-} from "../shared/compliance-command";
 import { fingerprintPolicyAcknowledgementIssue } from "../shared/fingerprint";
 import { buildMutationMeta } from "../shared/mutation-meta";
 import type {
 	PolicyAcknowledgement,
 	PolicyAcknowledgementListPage,
 } from "../types";
+import {
+	runComplianceCapabilityCommand,
+	runComplianceEmployeeScopedCapabilityQuery,
+} from "./run-operation";
 
 export const HUMAN_RESOURCES_AGGREGATE_POLICY_ACKNOWLEDGEMENT =
 	"policy_acknowledgement" as const;
@@ -42,10 +45,14 @@ export function issuePolicyAcknowledgementRequirement(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PolicyAcknowledgement>> {
-	return runComplianceCommand(input, options, {
+	return runComplianceCapabilityCommand(input, options, {
 		schema: issuePolicyAcknowledgementRequirementInputSchema,
 		invalidMessage: "Invalid policy acknowledgement issue input",
 		command: HUMAN_RESOURCES_COMMAND_POLICY_ACKNOWLEDGEMENT_ISSUE,
+		storeMethods: [
+			"findPolicyAcknowledgementByIdempotencyKey",
+			"issuePolicyAcknowledgementRequirement",
+		],
 		execute: async (data, { store, ports }) => {
 			const requestFingerprint = fingerprintPolicyAcknowledgementIssue({
 				employeeId: data.employeeId,
@@ -101,10 +108,11 @@ export function acknowledgePolicy(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PolicyAcknowledgement>> {
-	return runComplianceCommand(input, options, {
+	return runComplianceCapabilityCommand(input, options, {
 		schema: acknowledgePolicyInputSchema,
 		invalidMessage: "Invalid policy acknowledgement input",
 		command: HUMAN_RESOURCES_COMMAND_POLICY_ACKNOWLEDGEMENT_ACKNOWLEDGE,
+		storeMethods: ["acknowledgePolicy"],
 		execute: (data, { store, ports }) =>
 			store.acknowledgePolicy(
 				{
@@ -127,10 +135,11 @@ export function revokePolicyAcknowledgement(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PolicyAcknowledgement>> {
-	return runComplianceCommand(input, options, {
+	return runComplianceCapabilityCommand(input, options, {
 		schema: revokePolicyAcknowledgementInputSchema,
 		invalidMessage: "Invalid policy acknowledgement revoke input",
 		command: HUMAN_RESOURCES_COMMAND_POLICY_ACKNOWLEDGEMENT_REVOKE,
+		storeMethods: ["revokePolicyAcknowledgement"],
 		execute: (data, { store, ports }) =>
 			store.revokePolicyAcknowledgement(
 				{
@@ -152,10 +161,11 @@ export function supersedePolicyAcknowledgementRequirement(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PolicyAcknowledgement>> {
-	return runComplianceCommand(input, options, {
+	return runComplianceCapabilityCommand(input, options, {
 		schema: supersedePolicyAcknowledgementRequirementInputSchema,
 		invalidMessage: "Invalid policy acknowledgement supersede input",
 		command: HUMAN_RESOURCES_COMMAND_POLICY_ACKNOWLEDGEMENT_SUPERSEDE,
+		storeMethods: ["supersedePolicyAcknowledgementRequirement"],
 		execute: (data, { store, ports }) =>
 			store.supersedePolicyAcknowledgementRequirement(
 				{
@@ -179,7 +189,9 @@ export function getPolicyAcknowledgementStatus(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PolicyAcknowledgement | null>> {
-	return runComplianceEmployeeScopedQuery(input, options, {
+	return runComplianceEmployeeScopedCapabilityQuery(input, options, {
+		query: HUMAN_RESOURCES_QUERY_POLICY_ACKNOWLEDGEMENT_STATUS_GET,
+		storeMethods: ["getPolicyAcknowledgementStatus"],
 		schema: getPolicyAcknowledgementStatusInputSchema,
 		invalidMessage: "Invalid policy acknowledgement status get input",
 		execute: async (data, { store }) =>
@@ -196,7 +208,9 @@ export function listOutstandingPolicyAcknowledgements(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PolicyAcknowledgementListPage>> {
-	return runComplianceEmployeeScopedQuery(input, options, {
+	return runComplianceEmployeeScopedCapabilityQuery(input, options, {
+		query: HUMAN_RESOURCES_QUERY_POLICY_ACKNOWLEDGEMENT_LIST_OUTSTANDING,
+		storeMethods: ["listOutstandingPolicyAcknowledgements"],
 		schema: listOutstandingPolicyAcknowledgementsInputSchema,
 		invalidMessage: "Invalid outstanding policy acknowledgements list input",
 		execute: async (data, { store }) =>
@@ -213,7 +227,9 @@ export function listOverduePolicyAcknowledgements(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PolicyAcknowledgementListPage>> {
-	return runComplianceEmployeeScopedQuery(input, options, {
+	return runComplianceEmployeeScopedCapabilityQuery(input, options, {
+		query: HUMAN_RESOURCES_QUERY_POLICY_ACKNOWLEDGEMENT_LIST_OVERDUE,
+		storeMethods: ["listOverduePolicyAcknowledgements"],
 		schema: listOverduePolicyAcknowledgementsInputSchema,
 		invalidMessage: "Invalid overdue policy acknowledgements list input",
 		execute: async (data, { store }) =>

@@ -159,10 +159,6 @@ export const employeeRelationsCasePolicy: HumanResourcesAuthorizationPolicy = {
 	id: EMPLOYEE_RELATIONS_CASE_POLICY_ID,
 	mode: "specialized",
 	resourceRequired: true,
-	operationPrefixes: [
-		"human-resources.employee-case.",
-		"human-resources.employee-relations.",
-	],
 
 	evaluate(request, options) {
 		const { resource } = request;

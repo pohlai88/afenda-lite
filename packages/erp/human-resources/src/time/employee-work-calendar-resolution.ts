@@ -10,7 +10,6 @@ import {
 	HUMAN_RESOURCES_ERROR_NOT_FOUND,
 	humanResourcesErrorDetails,
 } from "../error-codes";
-import type { HumanResourcesStore } from "../store";
 import type {
 	WorkCalendarScopeAssignment,
 	WorkCalendarScopeType,
@@ -20,10 +19,11 @@ import {
 	selectScopedWorkCalendarAssignment,
 } from "./calendar-scope-resolution";
 import type { AssignmentContextQueryPort } from "./handoff/ports";
+import type { HumanResourcesTimeCapabilityStore } from "./store";
 import { resolveWorkCalendarLineageAtAsOf } from "./work-calendar-lineage";
 
 type EmployeeWorkCalendarStoreSlice = Pick<
-	HumanResourcesStore,
+	HumanResourcesTimeCapabilityStore,
 	| "listWorkCalendarScopeAssignments"
 	| "listWorkCalendars"
 	| "resolveEmploymentCalendar"

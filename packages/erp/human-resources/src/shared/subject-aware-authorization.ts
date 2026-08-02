@@ -10,7 +10,7 @@ import type {
 	HumanResourcesIdentityResolverPort,
 } from "../identity-resolver";
 import type { HumanResourcesPermission } from "../permissions";
-import type { HumanResourcesStore } from "../store";
+import type { HumanResourcesLeaveStore } from "../store/leave";
 import type { HumanResourcesAuthorizationPort } from "./authorization-types";
 import { requireHumanResourcesManifestPermission } from "./contextual-authorization";
 
@@ -120,7 +120,7 @@ export async function requireOwnResourceAccess(
 
 export async function requireManagerResourceAccess(
 	identityResolver: HumanResourcesIdentityResolverPort,
-	store: HumanResourcesStore,
+	store: Pick<HumanResourcesLeaveStore, "getPrimaryManagerForEmployee">,
 	options: {
 		authorization?: HumanResourcesAuthorizationPort | undefined;
 	},

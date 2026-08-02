@@ -18,10 +18,9 @@ import type { CursorPagination } from "./kernel/pagination";
  * pass request identity and authorization only; they never hand infrastructure
  * objects to individual operations.
  *
- * `authorization` is required on every production execution path. The lower-level
- * `requireCorporateAdministrationPermission` guard may still accept `undefined`
- * as a defensive utility and must fail closed — that escape hatch is not a
- * license to omit authorization from this context.
+ * `authorization` is required on every production execution path. Private
+ * execution kernels fail closed when evaluating the injected capability; no
+ * public low-level guard permits callers to supply a separate permission.
  */
 export type CorporateAdministrationExecutionContext = Readonly<{
 	organizationId: OrganizationId;

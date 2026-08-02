@@ -17,15 +17,16 @@ export function defineAuditOnlyEmission(
 	commandId: HumanResourcesCommandId,
 	definition: CommonDefinition,
 ): HumanResourcesAuditOnlyEmission {
-	return {
+	return Object.freeze({
 		commandId,
 		emissionMode: "audit_only",
-		eventTypes: [],
+		eventTypes: [] as const,
 		auditRequired: true,
 		correlationRequired: true,
+		idempotencyRequired: true,
 		domain: definition.domain,
 		aggregateType: definition.aggregateType,
-	};
+	});
 }
 
 export function defineDomainEventEmission(
@@ -37,13 +38,14 @@ export function defineDomainEventEmission(
 		];
 	},
 ): HumanResourcesDomainEventEmission {
-	return {
+	return Object.freeze({
 		commandId,
 		emissionMode: "domain_event",
 		eventTypes: definition.eventTypes,
 		auditRequired: true,
 		correlationRequired: true,
+		idempotencyRequired: true,
 		domain: definition.domain,
 		aggregateType: definition.aggregateType,
-	};
+	});
 }

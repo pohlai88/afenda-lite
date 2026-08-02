@@ -12,7 +12,6 @@ import {
 	hrAttendanceEvent,
 	hrAttendanceException,
 	hrAttendanceImportBatch,
-	hrAttendanceImportError,
 	hrAttendanceSession,
 	hrEmployee,
 	hrEmployment,
@@ -183,10 +182,19 @@ import type {
 	WorkWeekDayPatternJson,
 } from "../../types";
 import {
+	attendanceBreakWaiverDecisionFromSql,
 	attendanceEventFromSql,
+	attendanceExceptionFromSql,
+	buildTimeAuditInsert,
+	buildTimeOutboxInsert,
+	type EmploymentCalendarAssignmentSqlRow,
+	employmentCalendarAssignmentFromSql,
+	prepareTimeAudit,
 	runTimeTransaction,
+	type ShiftBreakSqlRow,
 	type ShiftSqlRow,
 	shiftAssignmentFromSql,
+	shiftBreakFromSql,
 	shiftFromSql,
 	type TimePolicySqlRow,
 	timeApprovalAuthorityAssignmentFromSql,
@@ -194,8 +202,12 @@ import {
 	timePolicyFromSql,
 	timesheetApprovalDecisionFromSql,
 	timesheetFromSql,
+	type WorkCalendarHolidaySqlRow,
+	type WorkCalendarScopeAssignmentSqlRow,
 	type WorkCalendarSqlRow,
 	workCalendarFromSql,
+	workCalendarHolidayFromSql,
+	workCalendarScopeAssignmentFromSql,
 } from "./time-transactions";
 
 const HR_REGEX_1 = /hr_attendance_event_org_source_ref_uidx|source_reference/i;
@@ -1349,6 +1361,44 @@ function pageOffset(
 	return { limit: size, offset: (current - 1) * size };
 }
 
+function resolveShiftUpdate(
+	shift: Shift,
+	input: Parameters<HumanResourcesTimeStore["updateShift"]>[0],
+) {
+	return {
+		name: input.name ?? shift.name,
+		shiftKind: input.shiftKind ?? shift.shiftKind,
+		startLocal: input.startLocal ?? shift.startLocal,
+		endLocal: input.endLocal ?? shift.endLocal,
+		isOvernight: input.isOvernight ?? shift.isOvernight,
+		expectedMinutes: input.expectedMinutes ?? shift.expectedMinutes,
+		graceEarlyMinutes: input.graceEarlyMinutes ?? shift.graceEarlyMinutes,
+		graceLateMinutes: input.graceLateMinutes ?? shift.graceLateMinutes,
+		minDurationMinutes:
+			input.minDurationMinutes === undefined
+				? shift.minDurationMinutes
+				: input.minDurationMinutes,
+		maxDurationMinutes:
+			input.maxDurationMinutes === undefined
+				? shift.maxDurationMinutes
+				: input.maxDurationMinutes,
+		earliestClockInLocal:
+			input.earliestClockInLocal === undefined
+				? shift.earliestClockInLocal
+				: input.earliestClockInLocal,
+		latestClockOutLocal:
+			input.latestClockOutLocal === undefined
+				? shift.latestClockOutLocal
+				: input.latestClockOutLocal,
+		overtimeEligible: input.overtimeEligible ?? shift.overtimeEligible,
+		timezone: input.timezone === undefined ? shift.timezone : input.timezone,
+		locationKey:
+			input.locationKey === undefined ? shift.locationKey : input.locationKey,
+		effectiveTo:
+			input.effectiveTo === undefined ? shift.effectiveTo : input.effectiveTo,
+	};
+}
+
 export const drizzleTimeMethods: HumanResourcesTimeStore = {
 	async findWorkCalendarByIdempotencyKey(input) {
 		try {
@@ -1379,47 +1429,43 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 		}
 	},
 
-	async createWorkCalendar(input, ports) {
+	async createWorkCalendar(input, _ports) {
 		try {
 			const id = randomUUID();
-			const now = new Date();
-			const [row] = await afendaDatabase.client
-				.insert(hrWorkCalendar)
-				.values({
-					id,
+			const workWeekJson = JSON.stringify([...input.workWeek]);
+			const [rows] = await runTimeTransaction((sqlTag) => [
+				sqlTag`
+					INSERT INTO hr_work_calendar (
+						id, organization_id, code, name, timezone, calendar_version,
+						work_week_json, standard_hours_per_day, status, effective_from,
+						effective_to, version, create_idempotency_key,
+						create_request_fingerprint, created_by, updated_by
+					) VALUES (
+						${id}, ${input.organizationId}, ${input.code}, ${input.name},
+						${input.timezone}, ${input.calendarVersion}, ${workWeekJson}::jsonb,
+						${input.standardHoursPerDay}, 'active', ${input.effectiveFrom},
+						${input.effectiveTo}, 1, ${input.idempotencyKey},
+						${input.createRequestFingerprint}, ${input.createdBy}, ${input.createdBy}
+					)
+					RETURNING *
+				`,
+				buildTimeAuditInsert(sqlTag, {
 					organizationId: input.organizationId,
-					code: input.code,
-					name: input.name,
-					timezone: input.timezone,
-					calendarVersion: input.calendarVersion,
-					workWeekJson: input.workWeek,
-					standardHoursPerDay: input.standardHoursPerDay,
-					status: "active",
-					effectiveFrom: input.effectiveFrom,
-					effectiveTo: input.effectiveTo,
-					version: 1,
-					createIdempotencyKey: input.idempotencyKey,
-					createRequestFingerprint: input.createRequestFingerprint,
-					createdBy: input.createdBy,
-					updatedBy: input.createdBy,
-					createdAt: now,
-					updatedAt: now,
-				})
-				.returning();
-			const mapped = mapCalendar(requirePersistenceRow(row));
+					actorUserId: input.createdBy,
+					correlationId: input.correlationId,
+					entity: "hr_work_calendar",
+					entityId: id,
+					action: "CREATE",
+					reasonCode: "WORK_CALENDAR_CREATE",
+				}),
+			]);
+			const mapped = mapCalendar(
+				workCalendarFromSql(
+					requirePersistenceRow(rows[0]) as WorkCalendarSqlRow,
+				),
+			);
 			if (!mapped.ok) {
 				return mapped;
-			}
-			const recorded = await audit(ports, {
-				organizationId: input.organizationId,
-				actorUserId: input.createdBy,
-				correlationId: input.correlationId,
-				entity: "hr_work_calendar",
-				entityId: mapped.data.id,
-				action: "CREATE",
-			});
-			if (!recorded.ok) {
-				return recorded;
 			}
 			return errorResult.ok(mapped.data);
 		} catch (error) {
@@ -1450,7 +1496,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			expectedVersion: number;
 			predecessorEffectiveTo: string;
 		},
-		ports,
+		_ports,
 	) {
 		try {
 			const predecessor = await this.getWorkCalendar({
@@ -1492,6 +1538,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 							version = ${predecessorCalendar.version + 1},
 							updated_by = ${input.createdBy},
 							updated_at = ${now}
+						FROM locked
 						WHERE organization_id = ${input.organizationId}
 							AND id = ${input.calendarId}
 							AND status = 'active'
@@ -1550,6 +1597,21 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					SELECT 'successor'::text AS row_kind, successor.*
 					FROM successor
 				`,
+				sqlTag`
+					SELECT 1 / COUNT(*) AS mutation_guard
+					FROM hr_work_calendar
+					WHERE organization_id = ${input.organizationId}
+						AND id = ${successorId} AND supersedes_calendar_id = ${input.calendarId}
+				`,
+				buildTimeAuditInsert(sqlTag, {
+					organizationId: input.organizationId,
+					actorUserId: input.createdBy,
+					correlationId: input.correlationId,
+					entity: "hr_work_calendar",
+					entityId: successorId,
+					action: "CREATE",
+					reasonCode: "WORK_CALENDAR_SUPERSEDE",
+				}),
 			]);
 			const supersededSql = supersedeRows.find(
 				(row: WorkCalendarSqlRow & { row_kind: string }) =>
@@ -1574,40 +1636,6 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (!successor.ok) {
 				return successor;
 			}
-			const recorded = await audit(ports, {
-				organizationId: input.organizationId,
-				actorUserId: input.createdBy,
-				correlationId: input.correlationId,
-				entity: "hr_work_calendar",
-				entityId: successor.data.id,
-				action: "CREATE",
-			});
-			if (!recorded.ok) {
-				await runTimeTransaction((sqlTag) => [
-					sqlTag`
-						DELETE FROM hr_work_calendar_holiday
-						WHERE organization_id = ${input.organizationId}
-							AND calendar_id = ${successor.data.id}
-					`,
-					sqlTag`
-						DELETE FROM hr_work_calendar
-						WHERE organization_id = ${input.organizationId}
-							AND id = ${successor.data.id}
-					`,
-					sqlTag`
-						UPDATE hr_work_calendar
-						SET status = ${predecessorCalendar.status},
-							effective_to = ${predecessorCalendar.effectiveTo},
-							version = ${predecessorCalendar.version},
-							updated_by = ${predecessorCalendar.updatedBy},
-							updated_at = ${predecessorCalendar.updatedAt}
-						WHERE organization_id = ${input.organizationId}
-							AND id = ${predecessorCalendar.id}
-							AND version = ${predecessorCalendar.version + 1}
-					`,
-				]);
-				return recorded;
-			}
 			return errorResult.ok({
 				superseded: superseded.data,
 				successor: successor.data,
@@ -1622,7 +1650,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 		}
 	},
 
-	async updateWorkCalendar(input, ports) {
+	async updateWorkCalendar(input, _ports) {
 		try {
 			const existing = await this.getWorkCalendar({
 				organizationId: input.organizationId,
@@ -1631,7 +1659,8 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (!existing.ok) {
 				return existing;
 			}
-			if (existing.data === null) {
+			const calendar = existing.data;
+			if (calendar === null) {
 				return notFound("Work calendar not found");
 			}
 			if (
@@ -1646,55 +1675,49 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				);
 			}
 			const versionCheck = assertExpectedVersion(
-				existing.data.version,
+				calendar.version,
 				input.expectedVersion,
 			);
 			if (!versionCheck.ok) {
 				return versionCheck;
 			}
-			const [row] = await afendaDatabase.client
-				.update(hrWorkCalendar)
-				.set({
-					name: input.name ?? existing.data.name,
-					timezone: input.timezone ?? existing.data.timezone,
-					calendarVersion:
-						input.calendarVersion ?? existing.data.calendarVersion,
-					workWeekJson: input.workWeek ?? existing.data.workWeek,
-					standardHoursPerDay:
-						input.standardHoursPerDay ?? existing.data.standardHoursPerDay,
-					effectiveTo:
-						input.effectiveTo === undefined
-							? existing.data.effectiveTo
-							: input.effectiveTo,
-					version: existing.data.version + 1,
-					updatedBy: input.actorUserId,
-					updatedAt: new Date(),
-				})
-				.where(
-					and(
-						eq(hrWorkCalendar.organizationId, input.organizationId),
-						eq(hrWorkCalendar.id, input.calendarId),
-						eq(hrWorkCalendar.version, input.expectedVersion),
-					),
-				)
-				.returning();
+			const updatedAt = new Date();
+			const [rows] = await runTimeTransaction((sqlTag) => [
+				sqlTag`
+					WITH mutated AS (
+						UPDATE hr_work_calendar SET
+							name = ${input.name ?? calendar.name},
+							version = ${calendar.version + 1},
+							updated_by = ${input.actorUserId}, updated_at = ${updatedAt}
+						WHERE organization_id = ${input.organizationId}
+							AND id = ${input.calendarId} AND version = ${input.expectedVersion}
+						RETURNING *
+					)
+					SELECT * FROM mutated
+				`,
+				sqlTag`
+					SELECT 1 / COUNT(*) AS mutation_guard
+					FROM hr_work_calendar
+					WHERE organization_id = ${input.organizationId} AND id = ${input.calendarId}
+						AND version = ${calendar.version + 1} AND updated_at = ${updatedAt}
+				`,
+				buildTimeAuditInsert(sqlTag, {
+					organizationId: input.organizationId,
+					actorUserId: input.actorUserId,
+					correlationId: input.correlationId,
+					entity: "hr_work_calendar",
+					entityId: input.calendarId,
+					action: "UPDATE",
+					reasonCode: "WORK_CALENDAR_UPDATE",
+				}),
+			]);
+			const row = rows[0] as WorkCalendarSqlRow | undefined;
 			if (!row) {
 				return notFound("Work calendar not found");
 			}
-			const mapped = mapCalendar(row);
+			const mapped = mapCalendar(workCalendarFromSql(row));
 			if (!mapped.ok) {
 				return mapped;
-			}
-			const recorded = await audit(ports, {
-				organizationId: input.organizationId,
-				actorUserId: input.actorUserId,
-				correlationId: input.correlationId,
-				entity: "hr_work_calendar",
-				entityId: mapped.data.id,
-				action: "UPDATE",
-			});
-			if (!recorded.ok) {
-				return recorded;
 			}
 			return errorResult.ok(mapped.data);
 		} catch (error) {
@@ -1702,7 +1725,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 		}
 	},
 
-	async archiveWorkCalendar(input, ports) {
+	async archiveWorkCalendar(input, _ports) {
 		try {
 			const existing = await this.getWorkCalendar({
 				organizationId: input.organizationId,
@@ -1711,52 +1734,56 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (!existing.ok) {
 				return existing;
 			}
-			if (existing.data === null) {
+			const calendar = existing.data;
+			if (calendar === null) {
 				return notFound("Work calendar not found");
 			}
 			const versionCheck = assertExpectedVersion(
-				existing.data.version,
+				calendar.version,
 				input.expectedVersion,
 			);
 			if (!versionCheck.ok) {
 				return versionCheck;
 			}
-			if (existing.data.status === "archived") {
+			if (calendar.status === "archived") {
 				return invalidState("Work calendar is already archived");
 			}
-			const [row] = await afendaDatabase.client
-				.update(hrWorkCalendar)
-				.set({
-					status: "archived",
-					version: existing.data.version + 1,
-					updatedBy: input.actorUserId,
-					updatedAt: new Date(),
-				})
-				.where(
-					and(
-						eq(hrWorkCalendar.organizationId, input.organizationId),
-						eq(hrWorkCalendar.id, input.calendarId),
-						eq(hrWorkCalendar.version, input.expectedVersion),
-					),
-				)
-				.returning();
+			const updatedAt = new Date();
+			const [rows] = await runTimeTransaction((sqlTag) => [
+				sqlTag`
+					WITH mutated AS (
+						UPDATE hr_work_calendar SET status = 'archived',
+							version = ${calendar.version + 1},
+							updated_by = ${input.actorUserId}, updated_at = ${updatedAt}
+						WHERE organization_id = ${input.organizationId}
+							AND id = ${input.calendarId} AND version = ${input.expectedVersion}
+						RETURNING *
+					)
+					SELECT * FROM mutated
+				`,
+				sqlTag`
+					SELECT 1 / COUNT(*) AS mutation_guard
+					FROM hr_work_calendar
+					WHERE organization_id = ${input.organizationId} AND id = ${input.calendarId}
+						AND version = ${calendar.version + 1} AND updated_at = ${updatedAt}
+				`,
+				buildTimeAuditInsert(sqlTag, {
+					organizationId: input.organizationId,
+					actorUserId: input.actorUserId,
+					correlationId: input.correlationId,
+					entity: "hr_work_calendar",
+					entityId: input.calendarId,
+					action: "UPDATE",
+					reasonCode: "WORK_CALENDAR_ARCHIVE",
+				}),
+			]);
+			const row = rows[0] as WorkCalendarSqlRow | undefined;
 			if (!row) {
 				return notFound("Work calendar not found");
 			}
-			const mapped = mapCalendar(row);
+			const mapped = mapCalendar(workCalendarFromSql(row));
 			if (!mapped.ok) {
 				return mapped;
-			}
-			const recorded = await audit(ports, {
-				organizationId: input.organizationId,
-				actorUserId: input.actorUserId,
-				correlationId: input.correlationId,
-				entity: "hr_work_calendar",
-				entityId: mapped.data.id,
-				action: "UPDATE",
-			});
-			if (!recorded.ok) {
-				return recorded;
 			}
 			return errorResult.ok(mapped.data);
 		} catch (error) {
@@ -1814,7 +1841,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 		}
 	},
 
-	async addWorkCalendarHoliday(input, ports) {
+	async addWorkCalendarHoliday(input, _ports) {
 		try {
 			const calendar = await this.getWorkCalendar({
 				organizationId: input.organizationId,
@@ -1827,40 +1854,37 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				return notFound("Work calendar not found");
 			}
 			const id = randomUUID();
-			const now = new Date();
-			const [row] = await afendaDatabase.client
-				.insert(hrWorkCalendarHoliday)
-				.values({
-					id,
+			const [rows] = await runTimeTransaction((sqlTag) => [
+				sqlTag`
+					INSERT INTO hr_work_calendar_holiday (
+						id, organization_id, calendar_id, holiday_date, label,
+						location_code, jurisdiction, override_kind, is_working_day,
+						expected_minutes, created_by, updated_by
+					) VALUES (
+						${id}, ${input.organizationId}, ${input.calendarId}, ${input.holidayDate},
+						${input.label}, ${input.locationCode}, ${input.jurisdiction},
+						${input.overrideKind}, ${input.isWorkingDay}, ${input.expectedMinutes},
+						${input.createdBy}, ${input.createdBy}
+					)
+					RETURNING *
+				`,
+				buildTimeAuditInsert(sqlTag, {
 					organizationId: input.organizationId,
-					calendarId: input.calendarId,
-					holidayDate: input.holidayDate,
-					label: input.label,
-					locationCode: input.locationCode,
-					jurisdiction: input.jurisdiction,
-					overrideKind: input.overrideKind,
-					isWorkingDay: input.isWorkingDay,
-					expectedMinutes: input.expectedMinutes,
-					createdBy: input.createdBy,
-					updatedBy: input.createdBy,
-					createdAt: now,
-					updatedAt: now,
-				})
-				.returning();
-			const mapped = mapHoliday(requirePersistenceRow(row));
+					actorUserId: input.createdBy,
+					correlationId: input.correlationId,
+					entity: "hr_work_calendar_holiday",
+					entityId: id,
+					action: "CREATE",
+					reasonCode: "WORK_CALENDAR_HOLIDAY_ADD",
+				}),
+			]);
+			const mapped = mapHoliday(
+				workCalendarHolidayFromSql(
+					requirePersistenceRow(rows[0]) as WorkCalendarHolidaySqlRow,
+				),
+			);
 			if (!mapped.ok) {
 				return mapped;
-			}
-			const recorded = await audit(ports, {
-				organizationId: input.organizationId,
-				actorUserId: input.createdBy,
-				correlationId: input.correlationId,
-				entity: "hr_work_calendar_holiday",
-				entityId: mapped.data.id,
-				action: "CREATE",
-			});
-			if (!recorded.ok) {
-				return recorded;
 			}
 			return errorResult.ok(mapped.data);
 		} catch (error) {
@@ -1871,31 +1895,40 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 		}
 	},
 
-	async removeWorkCalendarHoliday(input, ports) {
+	async removeWorkCalendarHoliday(input, _ports) {
 		try {
-			const deleted = await afendaDatabase.client
-				.delete(hrWorkCalendarHoliday)
+			const existing = await afendaDatabase.client
+				.select({ id: hrWorkCalendarHoliday.id })
+				.from(hrWorkCalendarHoliday)
 				.where(
 					and(
 						eq(hrWorkCalendarHoliday.organizationId, input.organizationId),
 						eq(hrWorkCalendarHoliday.id, input.holidayId),
 					),
 				)
-				.returning({ id: hrWorkCalendarHoliday.id });
-			if (deleted.length === 0) {
+				.limit(1);
+			if (existing.length === 0) {
 				return notFound("Work calendar holiday not found");
 			}
-			const recorded = await audit(ports, {
-				organizationId: input.organizationId,
-				actorUserId: input.actorUserId,
-				correlationId: input.correlationId,
-				entity: "hr_work_calendar_holiday",
-				entityId: requirePersistenceRow(deleted[0]).id,
-				action: "DELETE",
-			});
-			if (!recorded.ok) {
-				return recorded;
-			}
+			await runTimeTransaction((sqlTag) => [
+				sqlTag`
+					WITH deleted AS (
+						DELETE FROM hr_work_calendar_holiday
+						WHERE organization_id = ${input.organizationId} AND id = ${input.holidayId}
+						RETURNING id
+					)
+					SELECT 1 / COUNT(*) AS mutation_guard FROM deleted
+				`,
+				buildTimeAuditInsert(sqlTag, {
+					organizationId: input.organizationId,
+					actorUserId: input.actorUserId,
+					correlationId: input.correlationId,
+					entity: "hr_work_calendar_holiday",
+					entityId: input.holidayId,
+					action: "DELETE",
+					reasonCode: "WORK_CALENDAR_HOLIDAY_REMOVE",
+				}),
+			]);
 			return errorResult.ok(undefined);
 		} catch (error) {
 			return mapPersistenceFailure(
@@ -1938,7 +1971,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 		}
 	},
 
-	async assignEmploymentCalendar(input, ports) {
+	async assignEmploymentCalendar(input, _ports) {
 		try {
 			const calendar = await this.getWorkCalendar({
 				organizationId: input.organizationId,
@@ -1951,40 +1984,37 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				return notFound("Work calendar not found");
 			}
 			const id = randomUUID();
-			const now = new Date();
-			const [row] = await afendaDatabase.client
-				.insert(hrEmploymentCalendarAssignment)
-				.values({
-					id,
+			const [rows] = await runTimeTransaction((sqlTag) => [
+				sqlTag`
+					INSERT INTO hr_employment_calendar_assignment (
+						id, organization_id, employee_id, employment_id, calendar_id,
+						effective_from, effective_to, location_code, jurisdiction,
+						version, created_by, updated_by
+					) VALUES (
+						${id}, ${input.organizationId}, ${input.employeeId}, ${input.employmentId},
+						${input.calendarId}, ${input.effectiveFrom}, ${input.effectiveTo},
+						${input.locationCode}, ${input.jurisdiction}, 1,
+						${input.createdBy}, ${input.createdBy}
+					)
+					RETURNING *
+				`,
+				buildTimeAuditInsert(sqlTag, {
 					organizationId: input.organizationId,
-					employeeId: input.employeeId,
-					employmentId: input.employmentId,
-					calendarId: input.calendarId,
-					effectiveFrom: input.effectiveFrom,
-					effectiveTo: input.effectiveTo,
-					locationCode: input.locationCode,
-					jurisdiction: input.jurisdiction,
-					version: 1,
-					createdBy: input.createdBy,
-					updatedBy: input.createdBy,
-					createdAt: now,
-					updatedAt: now,
-				})
-				.returning();
-			const mapped = mapEmploymentCalendar(requirePersistenceRow(row));
+					actorUserId: input.createdBy,
+					correlationId: input.correlationId,
+					entity: "hr_employment_calendar_assignment",
+					entityId: id,
+					action: "CREATE",
+					reasonCode: "EMPLOYMENT_CALENDAR_ASSIGN",
+				}),
+			]);
+			const mapped = mapEmploymentCalendar(
+				employmentCalendarAssignmentFromSql(
+					requirePersistenceRow(rows[0]) as EmploymentCalendarAssignmentSqlRow,
+				),
+			);
 			if (!mapped.ok) {
 				return mapped;
-			}
-			const recorded = await audit(ports, {
-				organizationId: input.organizationId,
-				actorUserId: input.createdBy,
-				correlationId: input.correlationId,
-				entity: "hr_employment_calendar_assignment",
-				entityId: mapped.data.id,
-				action: "CREATE",
-			});
-			if (!recorded.ok) {
-				return recorded;
 			}
 			return errorResult.ok(mapped.data);
 		} catch (error) {
@@ -1995,7 +2025,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 		}
 	},
 
-	async endEmploymentCalendarAssignment(input, ports) {
+	async endEmploymentCalendarAssignment(input, _ports) {
 		try {
 			const rows = await afendaDatabase.client
 				.select()
@@ -2030,42 +2060,43 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (input.effectiveTo < existing.data.effectiveFrom) {
 				return invalidState("effectiveTo must be on or after effectiveFrom");
 			}
-			const [row] = await afendaDatabase.client
-				.update(hrEmploymentCalendarAssignment)
-				.set({
-					effectiveTo: input.effectiveTo,
-					version: existing.data.version + 1,
-					updatedBy: input.actorUserId,
-					updatedAt: new Date(),
-				})
-				.where(
-					and(
-						eq(
-							hrEmploymentCalendarAssignment.organizationId,
-							input.organizationId,
-						),
-						eq(hrEmploymentCalendarAssignment.id, input.assignmentId),
-						eq(hrEmploymentCalendarAssignment.version, input.expectedVersion),
-					),
-				)
-				.returning();
+			const updatedAt = new Date();
+			const [transactionRows] = await runTimeTransaction((sqlTag) => [
+				sqlTag`
+					UPDATE hr_employment_calendar_assignment
+					SET effective_to = ${input.effectiveTo}, version = ${existing.data.version + 1},
+						updated_by = ${input.actorUserId}, updated_at = ${updatedAt}
+					WHERE organization_id = ${input.organizationId} AND id = ${input.assignmentId}
+						AND version = ${input.expectedVersion}
+					RETURNING *
+				`,
+				sqlTag`
+					SELECT 1 / COUNT(*) AS mutation_guard
+					FROM hr_employment_calendar_assignment
+					WHERE organization_id = ${input.organizationId} AND id = ${input.assignmentId}
+						AND version = ${existing.data.version + 1} AND updated_at = ${updatedAt}
+				`,
+				buildTimeAuditInsert(sqlTag, {
+					organizationId: input.organizationId,
+					actorUserId: input.actorUserId,
+					correlationId: input.correlationId,
+					entity: "hr_employment_calendar_assignment",
+					entityId: input.assignmentId,
+					action: "UPDATE",
+					reasonCode: "EMPLOYMENT_CALENDAR_ASSIGNMENT_END",
+				}),
+			]);
+			const row = transactionRows[0] as
+				| EmploymentCalendarAssignmentSqlRow
+				| undefined;
 			if (!row) {
 				return notFound("Employment calendar assignment not found");
 			}
-			const mapped = mapEmploymentCalendar(row);
+			const mapped = mapEmploymentCalendar(
+				employmentCalendarAssignmentFromSql(row),
+			);
 			if (!mapped.ok) {
 				return mapped;
-			}
-			const recorded = await audit(ports, {
-				organizationId: input.organizationId,
-				actorUserId: input.actorUserId,
-				correlationId: input.correlationId,
-				entity: "hr_employment_calendar_assignment",
-				entityId: mapped.data.id,
-				action: "UPDATE",
-			});
-			if (!recorded.ok) {
-				return recorded;
 			}
 			return errorResult.ok(mapped.data);
 		} catch (error) {
@@ -2116,7 +2147,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 		}
 	},
 
-	async assignWorkCalendarScope(input, ports) {
+	async assignWorkCalendarScope(input, _ports) {
 		try {
 			const calendar = await this.getWorkCalendar({
 				organizationId: input.organizationId,
@@ -2159,38 +2190,35 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			}
 
 			const id = randomUUID();
-			const now = new Date();
-			const [row] = await afendaDatabase.client
-				.insert(hrWorkCalendarScopeAssignment)
-				.values({
-					id,
+			const [rows] = await runTimeTransaction((sqlTag) => [
+				sqlTag`
+					INSERT INTO hr_work_calendar_scope_assignment (
+						id, organization_id, scope_type, scope_key, calendar_id,
+						effective_from, effective_to, version, created_by, updated_by
+					) VALUES (
+						${id}, ${input.organizationId}, ${input.scopeType}, ${input.scopeKey},
+						${input.calendarId}, ${input.effectiveFrom}, ${input.effectiveTo}, 1,
+						${input.createdBy}, ${input.createdBy}
+					)
+					RETURNING *
+				`,
+				buildTimeAuditInsert(sqlTag, {
 					organizationId: input.organizationId,
-					scopeType: input.scopeType,
-					scopeKey: input.scopeKey,
-					calendarId: input.calendarId,
-					effectiveFrom: input.effectiveFrom,
-					effectiveTo: input.effectiveTo,
-					version: 1,
-					createdBy: input.createdBy,
-					updatedBy: input.createdBy,
-					createdAt: now,
-					updatedAt: now,
-				})
-				.returning();
-			const mapped = mapWorkCalendarScopeAssignment(requirePersistenceRow(row));
+					actorUserId: input.createdBy,
+					correlationId: input.correlationId,
+					entity: "hr_work_calendar_scope_assignment",
+					entityId: id,
+					action: "CREATE",
+					reasonCode: "WORK_CALENDAR_SCOPE_ASSIGN",
+				}),
+			]);
+			const mapped = mapWorkCalendarScopeAssignment(
+				workCalendarScopeAssignmentFromSql(
+					requirePersistenceRow(rows[0]) as WorkCalendarScopeAssignmentSqlRow,
+				),
+			);
 			if (!mapped.ok) {
 				return mapped;
-			}
-			const recorded = await audit(ports, {
-				organizationId: input.organizationId,
-				actorUserId: input.createdBy,
-				correlationId: input.correlationId,
-				entity: "hr_work_calendar_scope_assignment",
-				entityId: mapped.data.id,
-				action: "CREATE",
-			});
-			if (!recorded.ok) {
-				return recorded;
 			}
 			return errorResult.ok(mapped.data);
 		} catch (error) {
@@ -2201,7 +2229,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 		}
 	},
 
-	async endWorkCalendarScopeAssignment(input, ports) {
+	async endWorkCalendarScopeAssignment(input, _ports) {
 		try {
 			const rows = await afendaDatabase.client
 				.select()
@@ -2238,42 +2266,43 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (input.effectiveTo < existing.data.effectiveFrom) {
 				return invalidState("effectiveTo must be on or after effectiveFrom");
 			}
-			const [row] = await afendaDatabase.client
-				.update(hrWorkCalendarScopeAssignment)
-				.set({
-					effectiveTo: input.effectiveTo,
-					version: existing.data.version + 1,
-					updatedBy: input.actorUserId,
-					updatedAt: new Date(),
-				})
-				.where(
-					and(
-						eq(
-							hrWorkCalendarScopeAssignment.organizationId,
-							input.organizationId,
-						),
-						eq(hrWorkCalendarScopeAssignment.id, input.assignmentId),
-						eq(hrWorkCalendarScopeAssignment.version, input.expectedVersion),
-					),
-				)
-				.returning();
+			const updatedAt = new Date();
+			const [transactionRows] = await runTimeTransaction((sqlTag) => [
+				sqlTag`
+					UPDATE hr_work_calendar_scope_assignment
+					SET effective_to = ${input.effectiveTo}, version = ${existing.data.version + 1},
+						updated_by = ${input.actorUserId}, updated_at = ${updatedAt}
+					WHERE organization_id = ${input.organizationId} AND id = ${input.assignmentId}
+						AND version = ${input.expectedVersion}
+					RETURNING *
+				`,
+				sqlTag`
+					SELECT 1 / COUNT(*) AS mutation_guard
+					FROM hr_work_calendar_scope_assignment
+					WHERE organization_id = ${input.organizationId} AND id = ${input.assignmentId}
+						AND version = ${existing.data.version + 1} AND updated_at = ${updatedAt}
+				`,
+				buildTimeAuditInsert(sqlTag, {
+					organizationId: input.organizationId,
+					actorUserId: input.actorUserId,
+					correlationId: input.correlationId,
+					entity: "hr_work_calendar_scope_assignment",
+					entityId: input.assignmentId,
+					action: "UPDATE",
+					reasonCode: "WORK_CALENDAR_SCOPE_ASSIGNMENT_END",
+				}),
+			]);
+			const row = transactionRows[0] as
+				| WorkCalendarScopeAssignmentSqlRow
+				| undefined;
 			if (!row) {
 				return notFound("Work calendar scope assignment not found");
 			}
-			const mapped = mapWorkCalendarScopeAssignment(row);
+			const mapped = mapWorkCalendarScopeAssignment(
+				workCalendarScopeAssignmentFromSql(row),
+			);
 			if (!mapped.ok) {
 				return mapped;
-			}
-			const recorded = await audit(ports, {
-				organizationId: input.organizationId,
-				actorUserId: input.actorUserId,
-				correlationId: input.correlationId,
-				entity: "hr_work_calendar_scope_assignment",
-				entityId: mapped.data.id,
-				action: "UPDATE",
-			});
-			if (!recorded.ok) {
-				return recorded;
 			}
 			return errorResult.ok(mapped.data);
 		} catch (error) {
@@ -2383,55 +2412,42 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 		}
 	},
 
-	async createTimePolicy(input: TimePolicyCreateRecord, ports) {
+	async createTimePolicy(input: TimePolicyCreateRecord, _ports) {
 		try {
-			const now = new Date();
-			const [row] = await afendaDatabase.client
-				.insert(hrTimePolicy)
-				.values({
-					id: randomUUID(),
+			const id = randomUUID();
+			const approvalStepsJson = JSON.stringify([...input.approvalSteps]);
+			const [rows] = await runTimeTransaction((sqlTag) => [
+				sqlTag`
+					INSERT INTO hr_time_policy (
+						id, organization_id, code, name, status, effective_from, effective_to,
+						minimum_rest_minutes, automatic_break_after_minutes,
+						automatic_break_minutes, approval_steps, supersedes_policy_id,
+						version, create_idempotency_key, create_request_fingerprint,
+						created_by, updated_by
+					) VALUES (
+						${id}, ${input.organizationId}, ${input.code}, ${input.name}, 'draft',
+						${input.effectiveFrom}, ${input.effectiveTo}, ${input.minimumRestMinutes},
+						${input.automaticBreakAfterMinutes}, ${input.automaticBreakMinutes},
+						${approvalStepsJson}::jsonb, NULL, 1, ${input.idempotencyKey},
+						${input.createRequestFingerprint}, ${input.createdBy}, ${input.createdBy}
+					)
+					RETURNING *
+				`,
+				buildTimeAuditInsert(sqlTag, {
 					organizationId: input.organizationId,
-					code: input.code,
-					name: input.name,
-					status: "draft",
-					effectiveFrom: input.effectiveFrom,
-					effectiveTo: input.effectiveTo,
-					minimumRestMinutes: input.minimumRestMinutes,
-					automaticBreakAfterMinutes: input.automaticBreakAfterMinutes,
-					automaticBreakMinutes: input.automaticBreakMinutes,
-					approvalSteps: [...input.approvalSteps],
-					supersedesPolicyId: null,
-					version: 1,
-					createIdempotencyKey: input.idempotencyKey,
-					createRequestFingerprint: input.createRequestFingerprint,
-					createdBy: input.createdBy,
-					updatedBy: input.createdBy,
-					createdAt: now,
-					updatedAt: now,
-				})
-				.returning();
-			const mapped = mapTimePolicy(requirePersistenceRow(row));
+					actorUserId: input.createdBy,
+					correlationId: input.correlationId,
+					entity: "hr_time_policy",
+					entityId: id,
+					action: "CREATE",
+					reasonCode: "TIME_POLICY_CREATE",
+				}),
+			]);
+			const mapped = mapTimePolicy(
+				timePolicyFromSql(requirePersistenceRow(rows[0]) as TimePolicySqlRow),
+			);
 			if (!mapped.ok) {
 				return mapped;
-			}
-			const recorded = await audit(ports, {
-				organizationId: input.organizationId,
-				actorUserId: input.createdBy,
-				correlationId: input.correlationId,
-				entity: "hr_time_policy",
-				entityId: mapped.data.id,
-				action: "CREATE",
-			});
-			if (!recorded.ok) {
-				await afendaDatabase.client
-					.delete(hrTimePolicy)
-					.where(
-						and(
-							eq(hrTimePolicy.organizationId, input.organizationId),
-							eq(hrTimePolicy.id, mapped.data.id),
-						),
-					);
-				return recorded;
 			}
 			return errorResult.ok(mapped.data);
 		} catch (error) {
@@ -2442,7 +2458,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 		}
 	},
 
-	async supersedeTimePolicy(input, ports) {
+	async supersedeTimePolicy(input, _ports) {
 		try {
 			const predecessor = await this.getTimePolicy({
 				organizationId: input.organizationId,
@@ -2507,6 +2523,20 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					SELECT 'successor'::text AS row_kind, successor.*
 					FROM successor
 				`,
+				sqlTag`
+					SELECT 1 / COUNT(*) AS mutation_guard FROM hr_time_policy
+					WHERE organization_id = ${input.organizationId} AND id = ${successorId}
+						AND supersedes_policy_id = ${input.policyId}
+				`,
+				buildTimeAuditInsert(sqlTag, {
+					organizationId: input.organizationId,
+					actorUserId: input.createdBy,
+					correlationId: input.correlationId,
+					entity: "hr_time_policy",
+					entityId: successorId,
+					action: "CREATE",
+					reasonCode: "TIME_POLICY_SUPERSEDE",
+				}),
 			]);
 			const supersededSql = supersedeRows.find(
 				(row: TimePolicySqlRow & { row_kind: string }) =>
@@ -2531,35 +2561,6 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (!successor.ok) {
 				return successor;
 			}
-			const recorded = await audit(ports, {
-				organizationId: input.organizationId,
-				actorUserId: input.createdBy,
-				correlationId: input.correlationId,
-				entity: "hr_time_policy",
-				entityId: successor.data.id,
-				action: "CREATE",
-			});
-			if (!recorded.ok) {
-				await runTimeTransaction((sqlTag) => [
-					sqlTag`
-						DELETE FROM hr_time_policy
-						WHERE organization_id = ${input.organizationId}
-							AND id = ${successor.data.id}
-					`,
-					sqlTag`
-						UPDATE hr_time_policy
-						SET status = ${predecessorPolicy.status},
-							effective_to = ${predecessorPolicy.effectiveTo},
-							version = ${predecessorPolicy.version},
-							updated_by = ${predecessorPolicy.updatedBy},
-							updated_at = ${predecessorPolicy.updatedAt}
-						WHERE organization_id = ${input.organizationId}
-							AND id = ${predecessorPolicy.id}
-							AND version = ${predecessorPolicy.version + 1}
-					`,
-				]);
-				return recorded;
-			}
 			return errorResult.ok({
 				superseded: superseded.data,
 				successor: successor.data,
@@ -2574,7 +2575,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 		}
 	},
 
-	async activateTimePolicy(input, ports) {
+	async activateTimePolicy(input, _ports) {
 		try {
 			const existing = await this.getTimePolicy({
 				organizationId: input.organizationId,
@@ -2586,63 +2587,48 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (existing.data === null) {
 				return notFound("Time policy not found");
 			}
+			const policy = existing.data;
 			const versionCheck = assertExpectedVersion(
-				existing.data.version,
+				policy.version,
 				input.expectedVersion,
 			);
 			if (!versionCheck.ok) {
 				return versionCheck;
 			}
-			if (existing.data.status !== "draft") {
+			if (policy.status !== "draft") {
 				return invalidState("Only draft time policies can be activated");
 			}
-			const [row] = await afendaDatabase.client
-				.update(hrTimePolicy)
-				.set({
-					status: "active",
-					version: existing.data.version + 1,
-					updatedBy: input.actorUserId,
-					updatedAt: new Date(),
-				})
-				.where(
-					and(
-						eq(hrTimePolicy.organizationId, input.organizationId),
-						eq(hrTimePolicy.id, input.policyId),
-						eq(hrTimePolicy.version, input.expectedVersion),
-					),
-				)
-				.returning();
+			const updatedAt = new Date();
+			const [rows] = await runTimeTransaction((sqlTag) => [
+				sqlTag`
+					UPDATE hr_time_policy SET status = 'active', version = ${policy.version + 1},
+						updated_by = ${input.actorUserId}, updated_at = ${updatedAt}
+					WHERE organization_id = ${input.organizationId} AND id = ${input.policyId}
+						AND version = ${input.expectedVersion} AND status = 'draft'
+					RETURNING *
+				`,
+				sqlTag`
+					SELECT 1 / COUNT(*) AS mutation_guard FROM hr_time_policy
+					WHERE organization_id = ${input.organizationId} AND id = ${input.policyId}
+						AND version = ${policy.version + 1} AND updated_at = ${updatedAt}
+				`,
+				buildTimeAuditInsert(sqlTag, {
+					organizationId: input.organizationId,
+					actorUserId: input.actorUserId,
+					correlationId: input.correlationId,
+					entity: "hr_time_policy",
+					entityId: input.policyId,
+					action: "UPDATE",
+					reasonCode: "TIME_POLICY_ACTIVATE",
+				}),
+			]);
+			const row = rows[0] as TimePolicySqlRow | undefined;
 			if (!row) {
 				return notFound("Time policy not found");
 			}
-			const mapped = mapTimePolicy(row);
+			const mapped = mapTimePolicy(timePolicyFromSql(row));
 			if (!mapped.ok) {
 				return mapped;
-			}
-			const recorded = await audit(ports, {
-				organizationId: input.organizationId,
-				actorUserId: input.actorUserId,
-				correlationId: input.correlationId,
-				entity: "hr_time_policy",
-				entityId: mapped.data.id,
-				action: "UPDATE",
-			});
-			if (!recorded.ok) {
-				await afendaDatabase.client
-					.update(hrTimePolicy)
-					.set({
-						status: existing.data.status,
-						version: existing.data.version,
-						updatedBy: existing.data.updatedBy,
-						updatedAt: existing.data.updatedAt,
-					})
-					.where(
-						and(
-							eq(hrTimePolicy.organizationId, input.organizationId),
-							eq(hrTimePolicy.id, input.policyId),
-						),
-					);
-				return recorded;
 			}
 			return errorResult.ok(mapped.data);
 		} catch (error) {
@@ -2650,7 +2636,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 		}
 	},
 
-	async assignTimePolicy(input, ports) {
+	async assignTimePolicy(input, _ports) {
 		try {
 			const policy = await this.getTimePolicy({
 				organizationId: input.organizationId,
@@ -2677,6 +2663,20 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			}
 			const now = new Date();
 			const assignmentId = randomUUID();
+			const auditId = randomUUID();
+			const preparedAudit = prepareTimeAudit({
+				organizationId: input.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: input.correlationId,
+				entity: "hr_time_policy_assignment",
+				entityId: assignmentId,
+				action: "CREATE",
+				reasonCode: "TIME_POLICY_ASSIGN",
+			});
+			if (!preparedAudit.ok) {
+				return preparedAudit;
+			}
+			const auditEntry = preparedAudit.data;
 			const [[insertionRow]] = await runTimeTransaction((sqlTag) => [
 				sqlTag`
 					WITH locked AS (
@@ -2697,6 +2697,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 								)
 								AND COALESCE(effective_to, DATE '9999-12-31') >= ${input.effectiveFrom}::date
 						) AS found
+						FROM locked
 					),
 					inserted AS (
 						INSERT INTO hr_time_policy_assignment (
@@ -2710,6 +2711,20 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 							1, ${input.actorUserId}, ${input.actorUserId}, ${now}, ${now}
 						WHERE NOT (SELECT found FROM overlap)
 						RETURNING *
+					),
+					audited AS (
+						INSERT INTO platform_audit_log (
+							id, organization_id, actor_user_id, correlation_id, module, entity,
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
+						)
+						SELECT ${auditId}, ${auditEntry.organizationId}, ${auditEntry.actorUserId},
+							${auditEntry.correlationId}, ${auditEntry.module}, ${auditEntry.entity},
+							inserted.id, ${auditEntry.action}, ${auditEntry.changesJson}::jsonb,
+							${auditEntry.oldValueJson}::jsonb, ${auditEntry.newValueJson}::jsonb,
+							${auditEntry.metadataJson}::jsonb, ${auditEntry.ipAddress},
+							${auditEntry.userAgent}
+						FROM inserted RETURNING id
 					)
 					SELECT
 						(SELECT found FROM overlap) AS overlap,
@@ -2727,25 +2742,6 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			);
 			if (!mapped.ok) {
 				return mapped;
-			}
-			const recorded = await audit(ports, {
-				organizationId: input.organizationId,
-				actorUserId: input.actorUserId,
-				correlationId: input.correlationId,
-				entity: "hr_time_policy_assignment",
-				entityId: mapped.data.id,
-				action: "CREATE",
-			});
-			if (!recorded.ok) {
-				await afendaDatabase.client
-					.delete(hrTimePolicyAssignment)
-					.where(
-						and(
-							eq(hrTimePolicyAssignment.organizationId, input.organizationId),
-							eq(hrTimePolicyAssignment.id, mapped.data.id),
-						),
-					);
-				return recorded;
 			}
 			return errorResult.ok(mapped.data);
 		} catch (error) {
@@ -2833,10 +2829,24 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 		}
 	},
 
-	async assignTimeApprovalAuthority(input, ports) {
+	async assignTimeApprovalAuthority(input, _ports) {
 		try {
 			const now = new Date();
 			const assignmentId = randomUUID();
+			const auditId = randomUUID();
+			const preparedAudit = prepareTimeAudit({
+				organizationId: input.organizationId,
+				actorUserId: input.createdBy,
+				correlationId: input.correlationId,
+				entity: "hr_time_approval_authority_assignment",
+				entityId: assignmentId,
+				action: "CREATE",
+				reasonCode: "TIME_APPROVAL_AUTHORITY_ASSIGN",
+			});
+			if (!preparedAudit.ok) {
+				return preparedAudit;
+			}
+			const auditEntry = preparedAudit.data;
 			const lockKey = `${input.targetActorUserId}:${input.authority}`;
 			const [[insertionRow]] = await runTimeTransaction((sqlTag) => [
 				sqlTag`
@@ -2859,6 +2869,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 								)
 								AND COALESCE(effective_to, DATE '9999-12-31') >= ${input.effectiveFrom}::date
 						) AS found
+						FROM locked
 					),
 					inserted AS (
 						INSERT INTO hr_time_approval_authority_assignment (
@@ -2872,6 +2883,20 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 							1, ${input.createdBy}, ${input.createdBy}, ${now}, ${now}
 						WHERE NOT (SELECT found FROM overlap)
 						RETURNING *
+					),
+					audited AS (
+						INSERT INTO platform_audit_log (
+							id, organization_id, actor_user_id, correlation_id, module, entity,
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
+						)
+						SELECT ${auditId}, ${auditEntry.organizationId}, ${auditEntry.actorUserId},
+							${auditEntry.correlationId}, ${auditEntry.module}, ${auditEntry.entity},
+							inserted.id, ${auditEntry.action}, ${auditEntry.changesJson}::jsonb,
+							${auditEntry.oldValueJson}::jsonb, ${auditEntry.newValueJson}::jsonb,
+							${auditEntry.metadataJson}::jsonb, ${auditEntry.ipAddress},
+							${auditEntry.userAgent}
+						FROM inserted RETURNING id
 					)
 					SELECT
 						(SELECT found FROM overlap) AS overlap,
@@ -2890,28 +2915,6 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (!mapped.ok) {
 				return mapped;
 			}
-			const recorded = await audit(ports, {
-				organizationId: input.organizationId,
-				actorUserId: input.createdBy,
-				correlationId: input.correlationId,
-				entity: "hr_time_approval_authority_assignment",
-				entityId: mapped.data.id,
-				action: "CREATE",
-			});
-			if (!recorded.ok) {
-				await afendaDatabase.client
-					.delete(hrTimeApprovalAuthorityAssignment)
-					.where(
-						and(
-							eq(
-								hrTimeApprovalAuthorityAssignment.organizationId,
-								input.organizationId,
-							),
-							eq(hrTimeApprovalAuthorityAssignment.id, mapped.data.id),
-						),
-					);
-				return recorded;
-			}
 			return errorResult.ok(mapped.data);
 		} catch (error) {
 			return mapPersistenceFailure(
@@ -2921,7 +2924,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 		}
 	},
 
-	async endTimeApprovalAuthorityAssignment(input, ports) {
+	async endTimeApprovalAuthorityAssignment(input, _ports) {
 		try {
 			const rows = await afendaDatabase.client
 				.select()
@@ -2955,66 +2958,44 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (input.effectiveTo < current.data.effectiveFrom) {
 				return invalidState("effectiveTo must be on or after effectiveFrom");
 			}
-			const [row] = await afendaDatabase.client
-				.update(hrTimeApprovalAuthorityAssignment)
-				.set({
-					effectiveTo: input.effectiveTo,
-					version: current.data.version + 1,
-					updatedBy: input.actorUserId,
-					updatedAt: new Date(),
-				})
-				.where(
-					and(
-						eq(
-							hrTimeApprovalAuthorityAssignment.organizationId,
-							input.organizationId,
-						),
-						eq(hrTimeApprovalAuthorityAssignment.id, input.assignmentId),
-						eq(
-							hrTimeApprovalAuthorityAssignment.version,
-							input.expectedVersion,
-						),
-					),
-				)
-				.returning();
+			const currentAssignment = current.data;
+			const updatedAt = new Date();
+			const [transactionRows] = await runTimeTransaction((sqlTag) => [
+				sqlTag`
+					UPDATE hr_time_approval_authority_assignment
+					SET effective_to = ${input.effectiveTo}, version = ${currentAssignment.version + 1},
+						updated_by = ${input.actorUserId}, updated_at = ${updatedAt}
+					WHERE organization_id = ${input.organizationId} AND id = ${input.assignmentId}
+						AND version = ${input.expectedVersion}
+					RETURNING *
+				`,
+				sqlTag`
+					SELECT 1 / COUNT(*) AS mutation_guard
+					FROM hr_time_approval_authority_assignment
+					WHERE organization_id = ${input.organizationId} AND id = ${input.assignmentId}
+						AND version = ${currentAssignment.version + 1} AND updated_at = ${updatedAt}
+				`,
+				buildTimeAuditInsert(sqlTag, {
+					organizationId: input.organizationId,
+					actorUserId: input.actorUserId,
+					correlationId: input.correlationId,
+					entity: "hr_time_approval_authority_assignment",
+					entityId: input.assignmentId,
+					action: "UPDATE",
+					reasonCode: "TIME_APPROVAL_AUTHORITY_ASSIGNMENT_END",
+				}),
+			]);
+			const row = transactionRows[0] as
+				| Parameters<typeof timeApprovalAuthorityAssignmentFromSql>[0]
+				| undefined;
 			if (row === undefined) {
 				return conflict("Approval authority assignment changed concurrently");
 			}
-			const mapped = mapTimeApprovalAuthorityAssignment(row);
+			const mapped = mapTimeApprovalAuthorityAssignment(
+				timeApprovalAuthorityAssignmentFromSql(row),
+			);
 			if (!mapped.ok) {
 				return mapped;
-			}
-			const recorded = await audit(ports, {
-				organizationId: input.organizationId,
-				actorUserId: input.actorUserId,
-				correlationId: input.correlationId,
-				entity: "hr_time_approval_authority_assignment",
-				entityId: mapped.data.id,
-				action: "UPDATE",
-			});
-			if (!recorded.ok) {
-				await afendaDatabase.client
-					.update(hrTimeApprovalAuthorityAssignment)
-					.set({
-						effectiveTo: current.data.effectiveTo,
-						version: current.data.version,
-						updatedBy: current.data.updatedBy,
-						updatedAt: current.data.updatedAt,
-					})
-					.where(
-						and(
-							eq(
-								hrTimeApprovalAuthorityAssignment.organizationId,
-								input.organizationId,
-							),
-							eq(hrTimeApprovalAuthorityAssignment.id, current.data.id),
-							eq(
-								hrTimeApprovalAuthorityAssignment.version,
-								current.data.version + 1,
-							),
-						),
-					);
-				return recorded;
 			}
 			return errorResult.ok(mapped.data);
 		} catch (error) {
@@ -3090,57 +3071,46 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 		}
 	},
 
-	async createShift(input, ports) {
+	async createShift(input, _ports) {
 		try {
 			const id = randomUUID();
-			const now = new Date();
-			const [row] = await afendaDatabase.client
-				.insert(hrShift)
-				.values({
-					id,
+			const [rows] = await runTimeTransaction((sqlTag) => [
+				sqlTag`
+					INSERT INTO hr_shift (
+						id, organization_id, code, name, shift_kind, start_local, end_local,
+						is_overnight, expected_minutes, grace_early_minutes, grace_late_minutes,
+						min_duration_minutes, max_duration_minutes, earliest_clock_in_local,
+						latest_clock_out_local, overtime_eligible, timezone, location_key,
+						status, effective_from, effective_to, version, create_idempotency_key,
+						create_request_fingerprint, created_by, updated_by
+					) VALUES (
+						${id}, ${input.organizationId}, ${input.code}, ${input.name},
+						${input.shiftKind}, ${input.startLocal}, ${input.endLocal},
+						${input.isOvernight}, ${input.expectedMinutes}, ${input.graceEarlyMinutes},
+						${input.graceLateMinutes}, ${input.minDurationMinutes},
+						${input.maxDurationMinutes}, ${input.earliestClockInLocal},
+						${input.latestClockOutLocal}, ${input.overtimeEligible}, ${input.timezone},
+						${input.locationKey}, 'draft', ${input.effectiveFrom}, ${input.effectiveTo},
+						1, ${input.idempotencyKey}, ${input.createRequestFingerprint},
+						${input.createdBy}, ${input.createdBy}
+					)
+					RETURNING *
+				`,
+				buildTimeAuditInsert(sqlTag, {
 					organizationId: input.organizationId,
-					code: input.code,
-					name: input.name,
-					shiftKind: input.shiftKind,
-					startLocal: input.startLocal,
-					endLocal: input.endLocal,
-					isOvernight: input.isOvernight,
-					expectedMinutes: input.expectedMinutes,
-					graceEarlyMinutes: input.graceEarlyMinutes,
-					graceLateMinutes: input.graceLateMinutes,
-					minDurationMinutes: input.minDurationMinutes,
-					maxDurationMinutes: input.maxDurationMinutes,
-					earliestClockInLocal: input.earliestClockInLocal,
-					latestClockOutLocal: input.latestClockOutLocal,
-					overtimeEligible: input.overtimeEligible,
-					timezone: input.timezone,
-					locationKey: input.locationKey,
-					status: "draft",
-					effectiveFrom: input.effectiveFrom,
-					effectiveTo: input.effectiveTo,
-					version: 1,
-					createIdempotencyKey: input.idempotencyKey,
-					createRequestFingerprint: input.createRequestFingerprint,
-					createdBy: input.createdBy,
-					updatedBy: input.createdBy,
-					createdAt: now,
-					updatedAt: now,
-				})
-				.returning();
-			const mapped = mapShift(requirePersistenceRow(row));
+					actorUserId: input.createdBy,
+					correlationId: input.correlationId,
+					entity: "hr_shift",
+					entityId: id,
+					action: "CREATE",
+					reasonCode: "SHIFT_CREATE",
+				}),
+			]);
+			const mapped = mapShift(
+				shiftFromSql(requirePersistenceRow(rows[0]) as ShiftSqlRow),
+			);
 			if (!mapped.ok) {
 				return mapped;
-			}
-			const recorded = await audit(ports, {
-				organizationId: input.organizationId,
-				actorUserId: input.createdBy,
-				correlationId: input.correlationId,
-				entity: "hr_shift",
-				entityId: mapped.data.id,
-				action: "CREATE",
-			});
-			if (!recorded.ok) {
-				return recorded;
 			}
 			return errorResult.ok(mapped.data);
 		} catch (error) {
@@ -3171,7 +3141,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			expectedVersion: number;
 			predecessorEffectiveTo: string;
 		},
-		ports,
+		_ports,
 	) {
 		try {
 			const predecessor = await this.getShift({
@@ -3212,6 +3182,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 							version = ${predecessorShift.version + 1},
 							updated_by = ${input.createdBy},
 							updated_at = ${now}
+						FROM locked
 						WHERE organization_id = ${input.organizationId}
 							AND id = ${input.shiftId}
 							AND status = 'active'
@@ -3271,6 +3242,20 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					SELECT 'successor'::text AS row_kind, successor.*
 					FROM successor
 				`,
+				sqlTag`
+					SELECT 1 / COUNT(*) AS mutation_guard FROM hr_shift
+					WHERE organization_id = ${input.organizationId} AND id = ${successorId}
+						AND supersedes_shift_id = ${input.shiftId}
+				`,
+				buildTimeAuditInsert(sqlTag, {
+					organizationId: input.organizationId,
+					actorUserId: input.createdBy,
+					correlationId: input.correlationId,
+					entity: "hr_shift",
+					entityId: successorId,
+					action: "CREATE",
+					reasonCode: "SHIFT_SUPERSEDE",
+				}),
 			]);
 			const supersededSql = supersedeRows.find(
 				(row: ShiftSqlRow & { row_kind: string }) =>
@@ -3295,40 +3280,6 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (!successor.ok) {
 				return successor;
 			}
-			const recorded = await audit(ports, {
-				organizationId: input.organizationId,
-				actorUserId: input.createdBy,
-				correlationId: input.correlationId,
-				entity: "hr_shift",
-				entityId: successor.data.id,
-				action: "CREATE",
-			});
-			if (!recorded.ok) {
-				await runTimeTransaction((sqlTag) => [
-					sqlTag`
-						DELETE FROM hr_shift_break
-						WHERE organization_id = ${input.organizationId}
-							AND shift_id = ${successor.data.id}
-					`,
-					sqlTag`
-						DELETE FROM hr_shift
-						WHERE organization_id = ${input.organizationId}
-							AND id = ${successor.data.id}
-					`,
-					sqlTag`
-						UPDATE hr_shift
-						SET status = ${predecessorShift.status},
-							effective_to = ${predecessorShift.effectiveTo},
-							version = ${predecessorShift.version},
-							updated_by = ${predecessorShift.updatedBy},
-							updated_at = ${predecessorShift.updatedAt}
-						WHERE organization_id = ${input.organizationId}
-							AND id = ${predecessorShift.id}
-							AND version = ${predecessorShift.version + 1}
-					`,
-				]);
-				return recorded;
-			}
 			return errorResult.ok({
 				superseded: superseded.data,
 				successor: successor.data,
@@ -3341,8 +3292,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 		}
 	},
 
-	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
-	async updateShift(input, ports) {
+	async updateShift(input, _ports) {
 		try {
 			const existing = await this.getShift({
 				organizationId: input.organizationId,
@@ -3354,89 +3304,63 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (existing.data === null) {
 				return notFound("Shift not found");
 			}
-			if (existing.data.status !== "draft") {
+			const shift = existing.data;
+			if (shift.status !== "draft") {
 				return invalidState("Only draft shifts can be updated");
 			}
 			const versionCheck = assertExpectedVersion(
-				existing.data.version,
+				shift.version,
 				input.expectedVersion,
 			);
 			if (!versionCheck.ok) {
 				return versionCheck;
 			}
-			const [row] = await afendaDatabase.client
-				.update(hrShift)
-				.set({
-					name: input.name ?? existing.data.name,
-					shiftKind: input.shiftKind ?? existing.data.shiftKind,
-					startLocal: input.startLocal ?? existing.data.startLocal,
-					endLocal: input.endLocal ?? existing.data.endLocal,
-					isOvernight: input.isOvernight ?? existing.data.isOvernight,
-					expectedMinutes:
-						input.expectedMinutes ?? existing.data.expectedMinutes,
-					graceEarlyMinutes:
-						input.graceEarlyMinutes ?? existing.data.graceEarlyMinutes,
-					graceLateMinutes:
-						input.graceLateMinutes ?? existing.data.graceLateMinutes,
-					minDurationMinutes:
-						input.minDurationMinutes === undefined
-							? existing.data.minDurationMinutes
-							: input.minDurationMinutes,
-					maxDurationMinutes:
-						input.maxDurationMinutes === undefined
-							? existing.data.maxDurationMinutes
-							: input.maxDurationMinutes,
-					earliestClockInLocal:
-						input.earliestClockInLocal === undefined
-							? existing.data.earliestClockInLocal
-							: input.earliestClockInLocal,
-					latestClockOutLocal:
-						input.latestClockOutLocal === undefined
-							? existing.data.latestClockOutLocal
-							: input.latestClockOutLocal,
-					overtimeEligible:
-						input.overtimeEligible ?? existing.data.overtimeEligible,
-					timezone:
-						input.timezone === undefined
-							? existing.data.timezone
-							: input.timezone,
-					locationKey:
-						input.locationKey === undefined
-							? existing.data.locationKey
-							: input.locationKey,
-					effectiveTo:
-						input.effectiveTo === undefined
-							? existing.data.effectiveTo
-							: input.effectiveTo,
-					version: existing.data.version + 1,
-					updatedBy: input.actorUserId,
-					updatedAt: new Date(),
-				})
-				.where(
-					and(
-						eq(hrShift.organizationId, input.organizationId),
-						eq(hrShift.id, input.shiftId),
-						eq(hrShift.version, input.expectedVersion),
-					),
-				)
-				.returning();
+			const nextShift = resolveShiftUpdate(shift, input);
+			const updatedAt = new Date();
+			const [rows] = await runTimeTransaction((sqlTag) => [
+				sqlTag`
+					UPDATE hr_shift SET
+						name = ${nextShift.name}, shift_kind = ${nextShift.shiftKind},
+						start_local = ${nextShift.startLocal}, end_local = ${nextShift.endLocal},
+						is_overnight = ${nextShift.isOvernight},
+						expected_minutes = ${nextShift.expectedMinutes},
+						grace_early_minutes = ${nextShift.graceEarlyMinutes},
+						grace_late_minutes = ${nextShift.graceLateMinutes},
+						min_duration_minutes = ${nextShift.minDurationMinutes},
+						max_duration_minutes = ${nextShift.maxDurationMinutes},
+						earliest_clock_in_local = ${nextShift.earliestClockInLocal},
+						latest_clock_out_local = ${nextShift.latestClockOutLocal},
+						overtime_eligible = ${nextShift.overtimeEligible},
+						timezone = ${nextShift.timezone}, location_key = ${nextShift.locationKey},
+						effective_to = ${nextShift.effectiveTo},
+						version = ${shift.version + 1}, updated_by = ${input.actorUserId},
+						updated_at = ${updatedAt}
+					WHERE organization_id = ${input.organizationId} AND id = ${input.shiftId}
+						AND version = ${input.expectedVersion} AND status = 'draft'
+					RETURNING *
+				`,
+				sqlTag`
+					SELECT 1 / COUNT(*) AS mutation_guard FROM hr_shift
+					WHERE organization_id = ${input.organizationId} AND id = ${input.shiftId}
+						AND version = ${shift.version + 1} AND updated_at = ${updatedAt}
+				`,
+				buildTimeAuditInsert(sqlTag, {
+					organizationId: input.organizationId,
+					actorUserId: input.actorUserId,
+					correlationId: input.correlationId,
+					entity: "hr_shift",
+					entityId: input.shiftId,
+					action: "UPDATE",
+					reasonCode: "SHIFT_UPDATE",
+				}),
+			]);
+			const row = rows[0] as ShiftSqlRow | undefined;
 			if (!row) {
 				return notFound("Shift not found");
 			}
-			const mapped = mapShift(row);
+			const mapped = mapShift(shiftFromSql(row));
 			if (!mapped.ok) {
 				return mapped;
-			}
-			const recorded = await audit(ports, {
-				organizationId: input.organizationId,
-				actorUserId: input.actorUserId,
-				correlationId: input.correlationId,
-				entity: "hr_shift",
-				entityId: mapped.data.id,
-				action: "UPDATE",
-			});
-			if (!recorded.ok) {
-				return recorded;
 			}
 			return errorResult.ok(mapped.data);
 		} catch (error) {
@@ -3499,7 +3423,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 		}
 	},
 
-	async addShiftBreak(input, ports) {
+	async addShiftBreak(input, _ports) {
 		try {
 			const shift = await this.getShift({
 				organizationId: input.organizationId,
@@ -3511,37 +3435,35 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (shift.data === null) {
 				return notFound("Shift not found");
 			}
+			const existingShift = shift.data;
 			const id = randomUUID();
-			const now = new Date();
-			const [row] = await afendaDatabase.client
-				.insert(hrShiftBreak)
-				.values({
-					id,
+			const [rows] = await runTimeTransaction((sqlTag) => [
+				sqlTag`
+					INSERT INTO hr_shift_break (
+						id, organization_id, shift_id, break_order, start_offset_minutes,
+						duration_minutes, is_paid, label
+					) VALUES (
+						${id}, ${input.organizationId}, ${input.shiftId}, ${input.breakOrder},
+						${input.startOffsetMinutes}, ${input.durationMinutes}, ${input.isPaid},
+						${input.label}
+					)
+					RETURNING *
+				`,
+				buildTimeAuditInsert(sqlTag, {
 					organizationId: input.organizationId,
-					shiftId: input.shiftId,
-					breakOrder: input.breakOrder,
-					startOffsetMinutes: input.startOffsetMinutes,
-					durationMinutes: input.durationMinutes,
-					isPaid: input.isPaid,
-					label: input.label,
-					createdAt: now,
-					updatedAt: now,
-				})
-				.returning();
-			const mapped = mapShiftBreak(requirePersistenceRow(row));
+					actorUserId: existingShift.updatedBy,
+					correlationId: input.correlationId,
+					entity: "hr_shift_break",
+					entityId: id,
+					action: "CREATE",
+					reasonCode: "SHIFT_BREAK_ADD",
+				}),
+			]);
+			const mapped = mapShiftBreak(
+				shiftBreakFromSql(requirePersistenceRow(rows[0]) as ShiftBreakSqlRow),
+			);
 			if (!mapped.ok) {
 				return mapped;
-			}
-			const recorded = await audit(ports, {
-				organizationId: input.organizationId,
-				actorUserId: shift.data.updatedBy,
-				correlationId: input.correlationId,
-				entity: "hr_shift_break",
-				entityId: mapped.data.id,
-				action: "CREATE",
-			});
-			if (!recorded.ok) {
-				return recorded;
 			}
 			return errorResult.ok(mapped.data);
 		} catch (error) {
@@ -3549,31 +3471,40 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 		}
 	},
 
-	async removeShiftBreak(input, ports) {
+	async removeShiftBreak(input, _ports) {
 		try {
-			const deleted = await afendaDatabase.client
-				.delete(hrShiftBreak)
+			const existing = await afendaDatabase.client
+				.select({ id: hrShiftBreak.id })
+				.from(hrShiftBreak)
 				.where(
 					and(
 						eq(hrShiftBreak.organizationId, input.organizationId),
 						eq(hrShiftBreak.id, input.breakId),
 					),
 				)
-				.returning({ id: hrShiftBreak.id });
-			if (deleted.length === 0) {
+				.limit(1);
+			if (existing.length === 0) {
 				return notFound("Shift break not found");
 			}
-			const recorded = await audit(ports, {
-				organizationId: input.organizationId,
-				actorUserId: input.actorUserId,
-				correlationId: input.correlationId,
-				entity: "hr_shift_break",
-				entityId: requirePersistenceRow(deleted[0]).id,
-				action: "DELETE",
-			});
-			if (!recorded.ok) {
-				return recorded;
-			}
+			await runTimeTransaction((sqlTag) => [
+				sqlTag`
+					WITH deleted AS (
+						DELETE FROM hr_shift_break
+						WHERE organization_id = ${input.organizationId} AND id = ${input.breakId}
+						RETURNING id
+					)
+					SELECT 1 / COUNT(*) AS mutation_guard FROM deleted
+				`,
+				buildTimeAuditInsert(sqlTag, {
+					organizationId: input.organizationId,
+					actorUserId: input.actorUserId,
+					correlationId: input.correlationId,
+					entity: "hr_shift_break",
+					entityId: input.breakId,
+					action: "DELETE",
+					reasonCode: "SHIFT_BREAK_REMOVE",
+				}),
+			]);
 			return errorResult.ok(undefined);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to remove shift break");
@@ -3634,7 +3565,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 		}
 	},
 
-	async assignShift(input, ports) {
+	async assignShift(input, _ports) {
 		try {
 			const shift = await this.getShift({
 				organizationId: input.organizationId,
@@ -3663,14 +3594,42 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			}
 			const id = randomUUID();
 			const now = new Date();
+			const auditId = randomUUID();
+			const preparedAudit = prepareTimeAudit({
+				organizationId: input.organizationId,
+				actorUserId: input.createdBy,
+				correlationId: input.correlationId,
+				entity: "hr_shift_assignment",
+				entityId: id,
+				action: "CREATE",
+				reasonCode: "SHIFT_ASSIGN",
+			});
+			if (!preparedAudit.ok) {
+				return preparedAudit;
+			}
+			const auditEntry = preparedAudit.data;
 			const segmentOrders = input.segments.map(
 				(segment) => segment.segmentOrder,
 			);
 			const segmentStarts = input.segments.map((segment) => segment.startsAt);
 			const segmentEnds = input.segments.map((segment) => segment.endsAt);
-			const [assignmentRows] = await runTimeTransaction((sqlTag) => [
+			const [[assignmentResult]] = await runTimeTransaction((sqlTag) => [
 				sqlTag`
-						WITH created AS (
+						WITH locked AS (
+							SELECT pg_advisory_xact_lock(
+								hashtext(${input.organizationId}), hashtext(${input.employeeId})
+							)
+						),
+						overlap AS (
+							SELECT EXISTS (
+								SELECT 1 FROM hr_shift_assignment
+								WHERE organization_id = ${input.organizationId}
+									AND employee_id = ${input.employeeId}
+									AND starts_at < ${input.endsAt} AND ends_at > ${input.startsAt}
+									AND publication_status NOT IN ('cancelled', 'completed')
+							) AS found FROM locked
+						),
+						created AS (
 							INSERT INTO hr_shift_assignment (
 								id, organization_id, employee_id, employment_id, shift_id,
 								scheduled_date, starts_at, ends_at, location_key, timezone,
@@ -3678,14 +3637,14 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 								create_idempotency_key, create_request_fingerprint,
 								created_by, updated_by, created_at, updated_at
 							)
-							VALUES (
+							SELECT
 								${id}, ${input.organizationId}, ${input.employeeId},
 								${input.employmentId}, ${input.shiftId}, ${input.scheduledDate},
 								${input.startsAt}, ${input.endsAt}, ${input.locationKey},
 								${input.timezone}, 'planned', ${input.assignmentSource}, 1,
 								${input.idempotencyKey}, ${input.createRequestFingerprint},
 								${input.createdBy}, ${input.createdBy}, ${now}, ${now}
-							)
+							WHERE NOT (SELECT found FROM overlap)
 							RETURNING *
 						),
 						segments AS (
@@ -3709,40 +3668,36 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 								${segmentEnds}::timestamptz[]
 							) AS seg(segment_order, starts_at, ends_at)
 							RETURNING id
+						),
+						audited AS (
+							INSERT INTO platform_audit_log (
+								id, organization_id, actor_user_id, correlation_id, module, entity,
+								entity_id, action, changes, old_value, new_value, metadata,
+								ip_address, user_agent
+							)
+							SELECT ${auditId}, ${auditEntry.organizationId}, ${auditEntry.actorUserId},
+								${auditEntry.correlationId}, ${auditEntry.module}, ${auditEntry.entity},
+								created.id, ${auditEntry.action}, ${auditEntry.changesJson}::jsonb,
+								${auditEntry.oldValueJson}::jsonb, ${auditEntry.newValueJson}::jsonb,
+								${auditEntry.metadataJson}::jsonb, ${auditEntry.ipAddress},
+								${auditEntry.userAgent}
+							FROM created RETURNING id
 						)
-						SELECT created.* FROM created
+						SELECT (SELECT found FROM overlap) AS overlap,
+							(SELECT row_to_json(created.*) FROM created) AS row
 					`,
 			]);
-			const [assignmentRow] = assignmentRows;
-			if (assignmentRow === undefined) {
+			if (assignmentResult.overlap) {
+				return conflict("Shift assignment overlaps an existing assignment");
+			}
+			if (assignmentResult.row === null) {
 				throw new Error("Shift assignment insert returned no row");
 			}
-			const mapped = mapAssignment(shiftAssignmentFromSql(assignmentRow));
+			const mapped = mapAssignment(
+				shiftAssignmentFromSql(assignmentResult.row),
+			);
 			if (!mapped.ok) {
 				return mapped;
-			}
-			const recorded = await audit(ports, {
-				organizationId: input.organizationId,
-				actorUserId: input.createdBy,
-				correlationId: input.correlationId,
-				entity: "hr_shift_assignment",
-				entityId: mapped.data.id,
-				action: "CREATE",
-			});
-			if (!recorded.ok) {
-				await runTimeTransaction((sqlTag) => [
-					sqlTag`
-						DELETE FROM hr_shift_assignment_segment
-						WHERE organization_id = ${input.organizationId}
-							AND assignment_id = ${mapped.data.id}
-					`,
-					sqlTag`
-						DELETE FROM hr_shift_assignment
-						WHERE organization_id = ${input.organizationId}
-							AND id = ${mapped.data.id}
-					`,
-				]);
-				return recorded;
 			}
 			return errorResult.ok(mapped.data);
 		} catch (error) {
@@ -3849,7 +3804,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 		return await transitionAssignment(this, ports, input, "completed");
 	},
 
-	async changeShiftAssignment(input, ports) {
+	async changeShiftAssignment(input, _ports) {
 		try {
 			const existing = await this.getShiftAssignment({
 				organizationId: input.organizationId,
@@ -3861,8 +3816,9 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (existing.data === null) {
 				return notFound("Shift assignment not found");
 			}
+			const assignment = existing.data;
 			const versionCheck = assertExpectedVersion(
-				existing.data.version,
+				assignment.version,
 				input.expectedVersion,
 			);
 			if (!versionCheck.ok) {
@@ -3876,13 +3832,10 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 						eq(hrAttendanceEvent.organizationId, input.organizationId),
 						isNull(hrAttendanceEvent.voidedAt),
 						or(
-							eq(hrAttendanceEvent.shiftAssignmentId, existing.data.id),
+							eq(hrAttendanceEvent.shiftAssignmentId, assignment.id),
 							and(
-								eq(hrAttendanceEvent.employeeId, existing.data.employeeId),
-								eq(
-									hrAttendanceEvent.localWorkDate,
-									existing.data.scheduledDate,
-								),
+								eq(hrAttendanceEvent.employeeId, assignment.employeeId),
+								eq(hrAttendanceEvent.localWorkDate, assignment.scheduledDate),
 							),
 						),
 					),
@@ -3894,20 +3847,20 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				);
 			}
 			const transition = assertAssignmentStatusTransition(
-				existing.data.publicationStatus,
+				assignment.publicationStatus,
 				"changed",
 			);
 			if (!transition.ok) {
 				return transition;
 			}
-			const startsAt = input.startsAt ?? existing.data.startsAt;
-			const endsAt = input.endsAt ?? existing.data.endsAt;
+			const startsAt = input.startsAt ?? assignment.startsAt;
+			const endsAt = input.endsAt ?? assignment.endsAt;
 			const overlaps = await this.findOverlappingShiftAssignments({
 				organizationId: input.organizationId,
-				employeeId: existing.data.employeeId,
+				employeeId: assignment.employeeId,
 				startsAt,
 				endsAt,
-				excludeAssignmentId: existing.data.id,
+				excludeAssignmentId: assignment.id,
 			});
 			if (!overlaps.ok) {
 				return overlaps;
@@ -3915,48 +3868,45 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (overlaps.data.length > 0) {
 				return conflict("Shift assignment overlaps an existing assignment");
 			}
-			const [row] = await afendaDatabase.client
-				.update(hrShiftAssignment)
-				.set({
-					shiftId: input.shiftId ?? existing.data.shiftId,
-					scheduledDate: input.scheduledDate ?? existing.data.scheduledDate,
-					startsAt,
-					endsAt,
-					locationKey:
-						input.locationKey === undefined
-							? existing.data.locationKey
-							: input.locationKey,
-					timezone: input.timezone ?? existing.data.timezone,
-					publicationStatus: "changed",
-					version: existing.data.version + 1,
-					updatedBy: input.actorUserId,
-					updatedAt: new Date(),
-				})
-				.where(
-					and(
-						eq(hrShiftAssignment.organizationId, input.organizationId),
-						eq(hrShiftAssignment.id, input.assignmentId),
-						eq(hrShiftAssignment.version, input.expectedVersion),
-					),
-				)
-				.returning();
+			const updatedAt = new Date();
+			const [rows] = await runTimeTransaction((sqlTag) => [
+				sqlTag`
+					UPDATE hr_shift_assignment SET
+						shift_id = ${input.shiftId ?? assignment.shiftId},
+						scheduled_date = ${input.scheduledDate ?? assignment.scheduledDate},
+						starts_at = ${startsAt}, ends_at = ${endsAt},
+						location_key = ${input.locationKey === undefined ? assignment.locationKey : input.locationKey},
+						timezone = ${input.timezone ?? assignment.timezone}, publication_status = 'changed',
+						version = ${assignment.version + 1}, updated_by = ${input.actorUserId},
+						updated_at = ${updatedAt}
+					WHERE organization_id = ${input.organizationId} AND id = ${input.assignmentId}
+						AND version = ${input.expectedVersion}
+					RETURNING *
+				`,
+				sqlTag`
+					SELECT 1 / COUNT(*) AS mutation_guard FROM hr_shift_assignment
+					WHERE organization_id = ${input.organizationId} AND id = ${input.assignmentId}
+						AND version = ${assignment.version + 1} AND updated_at = ${updatedAt}
+				`,
+				buildTimeAuditInsert(sqlTag, {
+					organizationId: input.organizationId,
+					actorUserId: input.actorUserId,
+					correlationId: input.correlationId,
+					entity: "hr_shift_assignment",
+					entityId: input.assignmentId,
+					action: "UPDATE",
+					reasonCode: "SHIFT_ASSIGNMENT_CHANGE",
+				}),
+			]);
+			const row = rows[0] as
+				| Parameters<typeof shiftAssignmentFromSql>[0]
+				| undefined;
 			if (!row) {
 				return notFound("Shift assignment not found");
 			}
-			const mapped = mapAssignment(row);
+			const mapped = mapAssignment(shiftAssignmentFromSql(row));
 			if (!mapped.ok) {
 				return mapped;
-			}
-			const recorded = await audit(ports, {
-				organizationId: input.organizationId,
-				actorUserId: input.actorUserId,
-				correlationId: input.correlationId,
-				entity: "hr_shift_assignment",
-				entityId: mapped.data.id,
-				action: "UPDATE",
-			});
-			if (!recorded.ok) {
-				return recorded;
 			}
 			return errorResult.ok(mapped.data);
 		} catch (error) {
@@ -4556,21 +4506,60 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			};
 
 			try {
-				await afendaDatabase.client.insert(hrAttendanceImportBatch).values({
-					id: importBatchId,
-					organizationId: input.organizationId,
-					batchId: input.batchId,
-					sourceKey: input.sourceKey,
-					status,
-					acceptedCount: accepted.length,
-					skippedCount: skipped.length,
-					rejectedCount: rejected.length,
-					createIdempotencyKey: input.idempotencyKey,
-					createRequestFingerprint: input.createRequestFingerprint,
-					resultSnapshot: result,
-					createdBy: input.createdBy,
-					createdAt: now,
-					completedAt: now,
+				const resultJson = JSON.stringify(result);
+				await runTimeTransaction((sqlTag) => {
+					const queries = [
+						sqlTag`
+							INSERT INTO hr_attendance_import_batch (
+								id, organization_id, batch_id, source_key, status,
+								accepted_count, skipped_count, rejected_count,
+								create_idempotency_key, create_request_fingerprint,
+								result_snapshot, created_by, created_at, completed_at
+							) VALUES (
+								${importBatchId}, ${input.organizationId}, ${input.batchId},
+								${input.sourceKey}, ${status}, ${accepted.length}, ${skipped.length},
+								${rejected.length}, ${input.idempotencyKey},
+								${input.createRequestFingerprint}, ${resultJson}::jsonb,
+								${input.createdBy}, ${now}, ${now}
+							)
+							RETURNING id
+						`,
+					];
+					if (errorRows.length > 0) {
+						queries.push(sqlTag`
+							INSERT INTO hr_attendance_import_error (
+								id, organization_id, import_batch_id, row_index, source_reference,
+								error_code, error_message, payload_checksum, created_at
+							)
+							SELECT error_row.id, ${input.organizationId}, ${importBatchId},
+								error_row.row_index, error_row.source_reference, error_row.error_code,
+								error_row.error_message, error_row.payload_checksum, ${now}
+							FROM unnest(
+								${errorRows.map((row) => row.id)}::uuid[],
+								${errorRows.map((row) => row.rowIndex)}::int4[],
+								${errorRows.map((row) => row.sourceReference)}::text[],
+								${errorRows.map((row) => row.errorCode)}::text[],
+								${errorRows.map((row) => row.errorMessage)}::text[],
+								${errorRows.map((row) => row.payloadChecksum)}::text[]
+							) AS error_row(
+								id, row_index, source_reference, error_code, error_message,
+								payload_checksum
+							)
+							RETURNING id
+						`);
+					}
+					queries.push(
+						buildTimeAuditInsert(sqlTag, {
+							organizationId: input.organizationId,
+							actorUserId: input.createdBy,
+							correlationId: input.correlationId,
+							entity: "hr_attendance_import_batch",
+							entityId: importBatchId,
+							action: "CREATE",
+							reasonCode: "ATTENDANCE_IMPORT_BATCH_CREATE",
+						}),
+					);
+					return queries;
 				});
 			} catch (error) {
 				if (isCreateIdempotencyUniqueViolation(error)) {
@@ -4592,26 +4581,6 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				}
 				return mapPersistenceFailure(error, "Failed to persist import batch");
 			}
-
-			if (errorRows.length > 0) {
-				await afendaDatabase.client
-					.insert(hrAttendanceImportError)
-					.values(errorRows);
-			}
-
-			const audited = await audit(ports, {
-				organizationId: input.organizationId,
-				actorUserId: input.createdBy,
-				...(input.correlationId === undefined
-					? {}
-					: { correlationId: input.correlationId }),
-				entity: "hr_attendance_import_batch",
-				entityId: importBatchId,
-				action: "CREATE",
-			});
-			if (!audited.ok) {
-				return audited;
-			}
 			return errorResult.ok(result);
 		} catch (error) {
 			return mapPersistenceFailure(error, "Failed to import attendance events");
@@ -4619,7 +4588,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 	},
 
 	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
-	async recordAttendanceEvent(input, ports) {
+	async recordAttendanceEvent(input, _ports) {
 		try {
 			const maxRows = await afendaDatabase.client
 				.select({
@@ -4642,66 +4611,61 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					: { explicit: input.sourceSequence }),
 			});
 			const id = randomUUID();
-			const now = new Date();
-			const [row] = await afendaDatabase.client
-				.insert(hrAttendanceEvent)
-				.values({
-					id,
+			const correlationId =
+				input.correlationId ?? `hr-time-hr_attendance_event-${id}`;
+			const deviceMetadataJson =
+				input.deviceMetadata === undefined || input.deviceMetadata === null
+					? null
+					: JSON.stringify(input.deviceMetadata);
+			const [rows] = await runTimeTransaction((sqlTag) => [
+				sqlTag`
+					INSERT INTO hr_attendance_event (
+						id, organization_id, employee_id, employment_id, shift_assignment_id,
+						event_type, captured_occurred_at, occurred_at, source_sequence,
+						source_timezone, local_work_date, source, source_reference,
+						device_metadata, location_key, captured_notes, notes, payload_checksum,
+						voided_at, void_reason, version, create_idempotency_key,
+						create_request_fingerprint, created_by, updated_by
+					) VALUES (
+						${id}, ${input.organizationId}, ${input.employeeId}, ${input.employmentId ?? null},
+						${input.shiftAssignmentId ?? null}, ${input.eventType}, ${input.occurredAt},
+						${input.occurredAt}, ${sourceSequence}, ${input.sourceTimezone},
+						${input.localWorkDate}, ${input.source}, ${input.sourceReference ?? null},
+						${deviceMetadataJson}::jsonb, ${input.locationKey ?? null}, ${input.notes ?? null},
+						${input.notes ?? null}, ${input.payloadChecksum ?? null}, NULL, NULL, 1,
+						${input.idempotencyKey}, ${input.createRequestFingerprint},
+						${input.createdBy}, ${input.createdBy}
+					)
+					RETURNING *
+				`,
+				buildTimeAuditInsert(sqlTag, {
 					organizationId: input.organizationId,
-					employeeId: input.employeeId,
-					employmentId: input.employmentId ?? null,
-					shiftAssignmentId: input.shiftAssignmentId ?? null,
-					eventType: input.eventType,
-					capturedOccurredAt: input.occurredAt,
-					occurredAt: input.occurredAt,
-					sourceSequence,
-					sourceTimezone: input.sourceTimezone,
-					localWorkDate: input.localWorkDate,
-					source: input.source,
-					sourceReference: input.sourceReference ?? null,
-					deviceMetadata: input.deviceMetadata ?? null,
-					locationKey: input.locationKey ?? null,
-					payloadChecksum: input.payloadChecksum ?? null,
-					capturedNotes: input.notes ?? null,
-					notes: input.notes ?? null,
-					voidedAt: null,
-					voidReason: null,
-					version: 1,
-					createIdempotencyKey: input.idempotencyKey,
-					createRequestFingerprint: input.createRequestFingerprint,
-					createdBy: input.createdBy,
-					updatedBy: input.createdBy,
-					createdAt: now,
-					updatedAt: now,
-				})
-				.returning();
-			const mapped = mapEvent(requirePersistenceRow(row));
+					actorUserId: input.createdBy,
+					correlationId,
+					entity: "hr_attendance_event",
+					entityId: id,
+					action: "CREATE",
+					reasonCode: "ATTENDANCE_EVENT_RECORD",
+				}),
+				buildTimeOutboxInsert(sqlTag, {
+					eventId: randomUUID(),
+					organizationId: input.organizationId,
+					actorUserId: input.createdBy,
+					correlationId,
+					eventType: HUMAN_RESOURCES_TIME_ATTENDANCE_RECORDED_EVENT,
+					entityType: "hr_attendance_event",
+					entityId: id,
+				}),
+			]);
+			const mapped = mapEvent(
+				attendanceEventFromSql(
+					requirePersistenceRow(rows[0]) as Parameters<
+						typeof attendanceEventFromSql
+					>[0],
+				),
+			);
 			if (!mapped.ok) {
 				return mapped;
-			}
-			const correlationId =
-				input.correlationId ?? `hr-time-hr_attendance_event-${mapped.data.id}`;
-			const recorded = await audit(ports, {
-				organizationId: input.organizationId,
-				actorUserId: input.createdBy,
-				correlationId,
-				entity: "hr_attendance_event",
-				entityId: mapped.data.id,
-				action: "CREATE",
-			});
-			if (!recorded.ok) {
-				return recorded;
-			}
-			const event = await emitOutbox(ports, {
-				organizationId: input.organizationId,
-				actorUserId: input.createdBy,
-				correlationId,
-				eventType: HUMAN_RESOURCES_TIME_ATTENDANCE_RECORDED_EVENT,
-				entityType: "hr_attendance_event",
-				entityId: mapped.data.id,
-			});
-			if (!event.ok) {
-				return event;
 			}
 			return errorResult.ok(mapped.data);
 		} catch (error) {
@@ -4753,7 +4717,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 		}
 	},
 
-	async correctAttendanceEvent(input, ports) {
+	async correctAttendanceEvent(input, _ports) {
 		const predecessor =
 			attendanceCorrectionTails.get(input.eventId) ?? Promise.resolve();
 		let release: () => void = () => undefined;
@@ -4790,39 +4754,6 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			const nextNotes = input.notes === undefined ? current.notes : input.notes;
 			const correlationId =
 				input.correlationId ?? `hr-time-hr_attendance_event-${current.id}`;
-			const recorded = await audit(ports, {
-				organizationId: input.organizationId,
-				actorUserId: input.actorUserId,
-				correlationId,
-				entity: "hr_attendance_event",
-				entityId: current.id,
-				action: "UPDATE",
-			});
-			if (!recorded.ok) {
-				return recorded;
-			}
-			const event = await emitOutbox(ports, {
-				organizationId: input.organizationId,
-				actorUserId: input.actorUserId,
-				correlationId,
-				eventType: HUMAN_RESOURCES_TIME_ATTENDANCE_CORRECTED_EVENT,
-				entityType: "hr_attendance_event",
-				entityId: current.id,
-			});
-			if (!event.ok) {
-				const compensationAudit = await audit(ports, {
-					organizationId: input.organizationId,
-					actorUserId: input.actorUserId,
-					correlationId,
-					entity: "hr_attendance_adjustment",
-					entityId: adjustmentId,
-					action: "DELETE",
-				});
-				if (!compensationAudit.ok) {
-					return compensationAudit;
-				}
-				return event;
-			}
 			const [correctionRows] = await runTimeTransaction((sqlTag) => [
 				sqlTag`
 					WITH corrected AS (
@@ -4858,6 +4789,29 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 					SELECT corrected.*, adjustment.id AS adjustment_id
 					FROM corrected, adjustment
 				`,
+				sqlTag`
+					SELECT 1 / COUNT(*) AS mutation_guard FROM hr_attendance_event
+					WHERE organization_id = ${input.organizationId} AND id = ${input.eventId}
+						AND version = ${current.version + 1} AND updated_at = ${now}
+				`,
+				buildTimeAuditInsert(sqlTag, {
+					organizationId: input.organizationId,
+					actorUserId: input.actorUserId,
+					correlationId,
+					entity: "hr_attendance_event",
+					entityId: current.id,
+					action: "UPDATE",
+					reasonCode: "ATTENDANCE_EVENT_CORRECT",
+				}),
+				buildTimeOutboxInsert(sqlTag, {
+					eventId: randomUUID(),
+					organizationId: input.organizationId,
+					actorUserId: input.actorUserId,
+					correlationId,
+					eventType: HUMAN_RESOURCES_TIME_ATTENDANCE_CORRECTED_EVENT,
+					entityType: "hr_attendance_event",
+					entityId: current.id,
+				}),
 			]);
 			const [correctionRow] = correctionRows;
 			if (correctionRow === undefined) {
@@ -4878,7 +4832,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 		}
 	},
 
-	async voidAttendanceEvent(input, ports) {
+	async voidAttendanceEvent(input, _ports) {
 		try {
 			const existing = await this.getAttendanceEvent({
 				organizationId: input.organizationId,
@@ -4890,50 +4844,52 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 			if (existing.data === null) {
 				return notFound("Attendance event not found");
 			}
+			const attendanceEvent = existing.data;
 			const versionCheck = assertExpectedVersion(
-				existing.data.version,
+				attendanceEvent.version,
 				input.expectedVersion,
 			);
 			if (!versionCheck.ok) {
 				return versionCheck;
 			}
-			if (existing.data.voidedAt !== null) {
+			if (attendanceEvent.voidedAt !== null) {
 				return invalidState("Attendance event is already voided");
 			}
-			const [row] = await afendaDatabase.client
-				.update(hrAttendanceEvent)
-				.set({
-					voidedAt: new Date(),
-					voidReason: input.voidReason,
-					version: existing.data.version + 1,
-					updatedBy: input.actorUserId,
-					updatedAt: new Date(),
-				})
-				.where(
-					and(
-						eq(hrAttendanceEvent.organizationId, input.organizationId),
-						eq(hrAttendanceEvent.id, input.eventId),
-						eq(hrAttendanceEvent.version, input.expectedVersion),
-					),
-				)
-				.returning();
+			const now = new Date();
+			const [rows] = await runTimeTransaction((sqlTag) => [
+				sqlTag`
+					UPDATE hr_attendance_event
+					SET voided_at = ${now}, void_reason = ${input.voidReason},
+						version = ${attendanceEvent.version + 1}, updated_by = ${input.actorUserId},
+						updated_at = ${now}
+					WHERE organization_id = ${input.organizationId} AND id = ${input.eventId}
+						AND version = ${input.expectedVersion} AND voided_at IS NULL
+					RETURNING *
+				`,
+				sqlTag`
+					SELECT 1 / COUNT(*) AS mutation_guard FROM hr_attendance_event
+					WHERE organization_id = ${input.organizationId} AND id = ${input.eventId}
+						AND version = ${attendanceEvent.version + 1} AND updated_at = ${now}
+				`,
+				buildTimeAuditInsert(sqlTag, {
+					organizationId: input.organizationId,
+					actorUserId: input.actorUserId,
+					correlationId: input.correlationId,
+					entity: "hr_attendance_event",
+					entityId: input.eventId,
+					action: "UPDATE",
+					reasonCode: "ATTENDANCE_EVENT_VOID",
+				}),
+			]);
+			const row = rows[0] as
+				| Parameters<typeof attendanceEventFromSql>[0]
+				| undefined;
 			if (!row) {
 				return notFound("Attendance event not found");
 			}
-			const mapped = mapEvent(row);
+			const mapped = mapEvent(attendanceEventFromSql(row));
 			if (!mapped.ok) {
 				return mapped;
-			}
-			const recorded = await audit(ports, {
-				organizationId: input.organizationId,
-				actorUserId: input.actorUserId,
-				correlationId: input.correlationId,
-				entity: "hr_attendance_event",
-				entityId: mapped.data.id,
-				action: "UPDATE",
-			});
-			if (!recorded.ok) {
-				return recorded;
 			}
 			return errorResult.ok(mapped.data);
 		} catch (error) {
@@ -5299,7 +5255,7 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 		}
 	},
 
-	async approveAttendanceBreakWaiver(input, ports) {
+	async approveAttendanceBreakWaiver(input, _ports) {
 		try {
 			const sessionResult = await this.getAttendanceSession({
 				organizationId: input.organizationId,
@@ -5414,53 +5370,42 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 				);
 			}
 			const now = new Date();
-			const [row] = await afendaDatabase.client
-				.insert(hrAttendanceBreakWaiverDecision)
-				.values({
-					id: randomUUID(),
+			const id = randomUUID();
+			const [rows] = await runTimeTransaction((sqlTag) => [
+				sqlTag`
+					INSERT INTO hr_attendance_break_waiver_decision (
+						id, organization_id, session_id, policy_id, authority_assignment_id,
+						authority, actor_user_id, reason, evidence_reference,
+						automatic_break_minutes, recorded_break_minutes, session_version,
+						correlation_id, decided_at, created_at
+					) VALUES (
+						${id}, ${input.organizationId}, ${input.sessionId}, ${input.policyId},
+						${input.authorityAssignmentId}, ${input.authority}, ${input.actorUserId},
+						${input.reason}, ${input.evidenceReference}, ${automaticBreak.minutes},
+						${recordedBreakMinutes}, ${session.version}, ${input.correlationId},
+						${now}, ${now}
+					)
+					RETURNING *
+				`,
+				buildTimeAuditInsert(sqlTag, {
 					organizationId: input.organizationId,
-					sessionId: input.sessionId,
-					policyId: input.policyId,
-					authorityAssignmentId: input.authorityAssignmentId,
-					authority: input.authority,
 					actorUserId: input.actorUserId,
-					reason: input.reason,
-					evidenceReference: input.evidenceReference,
-					automaticBreakMinutes: automaticBreak.minutes,
-					recordedBreakMinutes,
-					sessionVersion: session.version,
 					correlationId: input.correlationId,
-					decidedAt: now,
-					createdAt: now,
-				})
-				.returning();
+					entity: "hr_attendance_break_waiver_decision",
+					entityId: id,
+					action: "CREATE",
+					reasonCode: "ATTENDANCE_BREAK_WAIVER_APPROVE",
+				}),
+			]);
 			const mapped = mapAttendanceBreakWaiverDecision(
-				requirePersistenceRow(row),
+				attendanceBreakWaiverDecisionFromSql(
+					requirePersistenceRow(rows[0]) as Parameters<
+						typeof attendanceBreakWaiverDecisionFromSql
+					>[0],
+				),
 			);
 			if (!mapped.ok) {
 				return mapped;
-			}
-			const recorded = await audit(ports, {
-				organizationId: input.organizationId,
-				actorUserId: input.actorUserId,
-				correlationId: input.correlationId,
-				entity: "hr_attendance_break_waiver_decision",
-				entityId: mapped.data.id,
-				action: "CREATE",
-			});
-			if (!recorded.ok) {
-				await afendaDatabase.client
-					.delete(hrAttendanceBreakWaiverDecision)
-					.where(
-						and(
-							eq(
-								hrAttendanceBreakWaiverDecision.organizationId,
-								input.organizationId,
-							),
-							eq(hrAttendanceBreakWaiverDecision.id, mapped.data.id),
-						),
-					);
-				return recorded;
 			}
 			return errorResult.ok(mapped.data);
 		} catch (error) {
@@ -5570,61 +5515,54 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 		}
 	},
 
-	async createAttendanceException(input, ports) {
+	async createAttendanceException(input, _ports) {
 		try {
 			const id = randomUUID();
-			const now = new Date();
-			const [row] = await afendaDatabase.client
-				.insert(hrAttendanceException)
-				.values({
-					id,
+			const correlationId =
+				input.correlationId ?? `hr-time-hr_attendance_exception-${id}`;
+			const [rows] = await runTimeTransaction((sqlTag) => [
+				sqlTag`
+					INSERT INTO hr_attendance_exception (
+						id, organization_id, employee_id, session_id, event_id,
+						shift_assignment_id, exception_type, severity, detected_facts,
+						review_status, resolution, reviewer_user_id, evidence_reference,
+						remarks, version, created_by, updated_by
+					) VALUES (
+						${id}, ${input.organizationId}, ${input.employeeId}, ${input.sessionId},
+						${input.eventId}, ${input.shiftAssignmentId}, ${input.exceptionType},
+						${input.severity}, NULL, 'open', NULL, NULL, NULL, ${input.remarks},
+						1, ${input.createdBy}, ${input.createdBy}
+					)
+					RETURNING *
+				`,
+				buildTimeAuditInsert(sqlTag, {
 					organizationId: input.organizationId,
-					employeeId: input.employeeId,
-					sessionId: input.sessionId,
-					eventId: input.eventId,
-					shiftAssignmentId: input.shiftAssignmentId,
-					exceptionType: input.exceptionType,
-					severity: input.severity,
-					reviewStatus: "open",
-					resolution: null,
-					reviewerUserId: null,
-					evidenceReference: null,
-					remarks: input.remarks,
-					version: 1,
-					createdBy: input.createdBy,
-					updatedBy: input.createdBy,
-					createdAt: now,
-					updatedAt: now,
-				})
-				.returning();
-			const mapped = mapException(requirePersistenceRow(row));
+					actorUserId: input.createdBy,
+					correlationId,
+					entity: "hr_attendance_exception",
+					entityId: id,
+					action: "CREATE",
+					reasonCode: "ATTENDANCE_EXCEPTION_CREATE",
+				}),
+				buildTimeOutboxInsert(sqlTag, {
+					eventId: randomUUID(),
+					organizationId: input.organizationId,
+					actorUserId: input.createdBy,
+					correlationId,
+					eventType: HUMAN_RESOURCES_TIME_EXCEPTION_CREATED_EVENT,
+					entityType: "hr_attendance_exception",
+					entityId: id,
+				}),
+			]);
+			const mapped = mapException(
+				attendanceExceptionFromSql(
+					requirePersistenceRow(rows[0]) as Parameters<
+						typeof attendanceExceptionFromSql
+					>[0],
+				),
+			);
 			if (!mapped.ok) {
 				return mapped;
-			}
-			const correlationId =
-				input.correlationId ??
-				`hr-time-hr_attendance_exception-${mapped.data.id}`;
-			const recorded = await audit(ports, {
-				organizationId: input.organizationId,
-				actorUserId: input.createdBy,
-				correlationId,
-				entity: "hr_attendance_exception",
-				entityId: mapped.data.id,
-				action: "CREATE",
-			});
-			if (!recorded.ok) {
-				return recorded;
-			}
-			const event = await emitOutbox(ports, {
-				organizationId: input.organizationId,
-				actorUserId: input.createdBy,
-				correlationId,
-				eventType: HUMAN_RESOURCES_TIME_EXCEPTION_CREATED_EVENT,
-				entityType: "hr_attendance_exception",
-				entityId: mapped.data.id,
-			});
-			if (!event.ok) {
-				return event;
 			}
 			return errorResult.ok(mapped.data);
 		} catch (error) {
@@ -7482,7 +7420,7 @@ async function recomputeTimesheetTotals(
 
 async function transitionShiftStatus(
 	store: HumanResourcesTimeStore,
-	ports: MutationPorts,
+	_ports: MutationPorts,
 	input: {
 		organizationId: string;
 		shiftId: Shift["id"];
@@ -7514,39 +7452,38 @@ async function transitionShiftStatus(
 		return transition;
 	}
 	try {
-		const [row] = await afendaDatabase.client
-			.update(hrShift)
-			.set({
-				status: next,
-				version: existing.data.version + 1,
-				updatedBy: input.actorUserId,
-				updatedAt: new Date(),
-			})
-			.where(
-				and(
-					eq(hrShift.organizationId, input.organizationId),
-					eq(hrShift.id, input.shiftId),
-					eq(hrShift.version, input.expectedVersion),
-				),
-			)
-			.returning();
+		const shift = existing.data;
+		const updatedAt = new Date();
+		const [rows] = await runTimeTransaction((sqlTag) => [
+			sqlTag`
+				UPDATE hr_shift SET status = ${next}, version = ${shift.version + 1},
+					updated_by = ${input.actorUserId}, updated_at = ${updatedAt}
+				WHERE organization_id = ${input.organizationId} AND id = ${input.shiftId}
+					AND version = ${input.expectedVersion}
+				RETURNING *
+			`,
+			sqlTag`
+				SELECT 1 / COUNT(*) AS mutation_guard FROM hr_shift
+				WHERE organization_id = ${input.organizationId} AND id = ${input.shiftId}
+					AND version = ${shift.version + 1} AND updated_at = ${updatedAt}
+			`,
+			buildTimeAuditInsert(sqlTag, {
+				organizationId: input.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: input.correlationId,
+				entity: "hr_shift",
+				entityId: input.shiftId,
+				action: "UPDATE",
+				reasonCode: `SHIFT_STATUS_${next.toUpperCase()}`,
+			}),
+		]);
+		const row = rows[0] as ShiftSqlRow | undefined;
 		if (!row) {
 			return notFound("Shift not found");
 		}
-		const mapped = mapShift(row);
+		const mapped = mapShift(shiftFromSql(row));
 		if (!mapped.ok) {
 			return mapped;
-		}
-		const recorded = await audit(ports, {
-			organizationId: input.organizationId,
-			actorUserId: input.actorUserId,
-			correlationId: input.correlationId,
-			entity: "hr_shift",
-			entityId: mapped.data.id,
-			action: "UPDATE",
-		});
-		if (!recorded.ok) {
-			return recorded;
 		}
 		return errorResult.ok(mapped.data);
 	} catch (error) {
@@ -7637,7 +7574,7 @@ async function restoreShiftAssignmentPublication(
 
 async function transitionAssignment(
 	store: HumanResourcesTimeStore,
-	ports: MutationPorts,
+	_ports: MutationPorts,
 	input: {
 		organizationId: string;
 		assignmentId: ShiftAssignment["id"];
@@ -7672,54 +7609,59 @@ async function transitionAssignment(
 		return transition;
 	}
 	try {
-		const [row] = await afendaDatabase.client
-			.update(hrShiftAssignment)
-			.set({
-				publicationStatus: next,
-				version: existing.data.version + 1,
-				updatedBy: input.actorUserId,
-				updatedAt: new Date(),
-			})
-			.where(
-				and(
-					eq(hrShiftAssignment.organizationId, input.organizationId),
-					eq(hrShiftAssignment.id, input.assignmentId),
-					eq(hrShiftAssignment.version, input.expectedVersion),
-				),
-			)
-			.returning();
+		const assignment = existing.data;
+		const updatedAt = new Date();
+		const correlationId =
+			input.correlationId ?? `hr-time-hr_shift_assignment-${assignment.id}`;
+		const results = await runTimeTransaction((sqlTag) => {
+			const queries = [
+				sqlTag`
+					UPDATE hr_shift_assignment
+					SET publication_status = ${next}, version = ${assignment.version + 1},
+						updated_by = ${input.actorUserId}, updated_at = ${updatedAt}
+					WHERE organization_id = ${input.organizationId} AND id = ${input.assignmentId}
+						AND version = ${input.expectedVersion}
+					RETURNING *
+				`,
+				sqlTag`
+					SELECT 1 / COUNT(*) AS mutation_guard FROM hr_shift_assignment
+					WHERE organization_id = ${input.organizationId} AND id = ${input.assignmentId}
+						AND version = ${assignment.version + 1} AND updated_at = ${updatedAt}
+				`,
+				buildTimeAuditInsert(sqlTag, {
+					organizationId: input.organizationId,
+					actorUserId: input.actorUserId,
+					correlationId,
+					entity: "hr_shift_assignment",
+					entityId: input.assignmentId,
+					action: "UPDATE",
+					reasonCode: `SHIFT_ASSIGNMENT_STATUS_${next.toUpperCase()}`,
+				}),
+			];
+			if (next === "published") {
+				queries.push(
+					buildTimeOutboxInsert(sqlTag, {
+						eventId: randomUUID(),
+						organizationId: input.organizationId,
+						actorUserId: input.actorUserId,
+						correlationId,
+						eventType: HUMAN_RESOURCES_TIME_SCHEDULE_PUBLISHED_EVENT,
+						entityType: "hr_shift_assignment",
+						entityId: input.assignmentId,
+					}),
+				);
+			}
+			return queries;
+		});
+		const row = results[0]?.[0] as
+			| Parameters<typeof shiftAssignmentFromSql>[0]
+			| undefined;
 		if (!row) {
 			return notFound("Shift assignment not found");
 		}
-		const mapped = mapAssignment(row);
+		const mapped = mapAssignment(shiftAssignmentFromSql(row));
 		if (!mapped.ok) {
 			return mapped;
-		}
-		const correlationId =
-			input.correlationId ?? `hr-time-hr_shift_assignment-${mapped.data.id}`;
-		const recorded = await audit(ports, {
-			organizationId: input.organizationId,
-			actorUserId: input.actorUserId,
-			correlationId,
-			entity: "hr_shift_assignment",
-			entityId: mapped.data.id,
-			action: "UPDATE",
-		});
-		if (!recorded.ok) {
-			return recorded;
-		}
-		if (next === "published") {
-			const event = await emitOutbox(ports, {
-				organizationId: input.organizationId,
-				actorUserId: input.actorUserId,
-				correlationId,
-				eventType: HUMAN_RESOURCES_TIME_SCHEDULE_PUBLISHED_EVENT,
-				entityType: "hr_shift_assignment",
-				entityId: mapped.data.id,
-			});
-			if (!event.ok) {
-				return event;
-			}
 		}
 		return errorResult.ok(mapped.data);
 	} catch (error) {
@@ -7729,7 +7671,7 @@ async function transitionAssignment(
 
 async function transitionException(
 	store: HumanResourcesTimeStore,
-	ports: MutationPorts,
+	_ports: MutationPorts,
 	input: {
 		organizationId: string;
 		exceptionId: AttendanceException["id"];
@@ -7753,60 +7695,63 @@ async function transitionException(
 	if (existing.data === null) {
 		return notFound("Attendance exception not found");
 	}
+	const attendanceException = existing.data;
 	const versionCheck = assertExpectedVersion(
-		existing.data.version,
+		attendanceException.version,
 		input.expectedVersion,
 	);
 	if (!versionCheck.ok) {
 		return versionCheck;
 	}
 	const transition = assertExceptionStatusTransition(
-		existing.data.reviewStatus,
+		attendanceException.reviewStatus,
 		next,
 	);
 	if (!transition.ok) {
 		return transition;
 	}
 	try {
-		const [row] = await afendaDatabase.client
-			.update(hrAttendanceException)
-			.set({
-				reviewStatus: next,
-				reviewerUserId: input.actorUserId,
-				resolution: extra?.resolution ?? existing.data.resolution,
-				evidenceReference:
-					extra?.evidenceReference === undefined
-						? existing.data.evidenceReference
-						: extra.evidenceReference,
-				version: existing.data.version + 1,
-				updatedBy: input.actorUserId,
-				updatedAt: new Date(),
-			})
-			.where(
-				and(
-					eq(hrAttendanceException.organizationId, input.organizationId),
-					eq(hrAttendanceException.id, input.exceptionId),
-					eq(hrAttendanceException.version, input.expectedVersion),
-				),
-			)
-			.returning();
+		const resolution = extra?.resolution ?? attendanceException.resolution;
+		const evidenceReference =
+			extra?.evidenceReference === undefined
+				? attendanceException.evidenceReference
+				: extra.evidenceReference;
+		const updatedAt = new Date();
+		const [rows] = await runTimeTransaction((sqlTag) => [
+			sqlTag`
+				UPDATE hr_attendance_exception
+				SET review_status = ${next}, reviewer_user_id = ${input.actorUserId},
+					resolution = ${resolution}, evidence_reference = ${evidenceReference},
+					version = ${attendanceException.version + 1},
+					updated_by = ${input.actorUserId}, updated_at = ${updatedAt}
+				WHERE organization_id = ${input.organizationId} AND id = ${input.exceptionId}
+					AND version = ${input.expectedVersion}
+				RETURNING *
+			`,
+			sqlTag`
+				SELECT 1 / COUNT(*) AS mutation_guard FROM hr_attendance_exception
+				WHERE organization_id = ${input.organizationId} AND id = ${input.exceptionId}
+					AND version = ${attendanceException.version + 1} AND updated_at = ${updatedAt}
+			`,
+			buildTimeAuditInsert(sqlTag, {
+				organizationId: input.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: input.correlationId,
+				entity: "hr_attendance_exception",
+				entityId: input.exceptionId,
+				action: "UPDATE",
+				reasonCode: `ATTENDANCE_EXCEPTION_STATUS_${next.toUpperCase()}`,
+			}),
+		]);
+		const row = rows[0] as
+			| Parameters<typeof attendanceExceptionFromSql>[0]
+			| undefined;
 		if (!row) {
 			return notFound("Attendance exception not found");
 		}
-		const mapped = mapException(row);
+		const mapped = mapException(attendanceExceptionFromSql(row));
 		if (!mapped.ok) {
 			return mapped;
-		}
-		const recorded = await audit(ports, {
-			organizationId: input.organizationId,
-			actorUserId: input.actorUserId,
-			correlationId: input.correlationId,
-			entity: "hr_attendance_exception",
-			entityId: mapped.data.id,
-			action: "UPDATE",
-		});
-		if (!recorded.ok) {
-			return recorded;
 		}
 		return errorResult.ok(mapped.data);
 	} catch (error) {

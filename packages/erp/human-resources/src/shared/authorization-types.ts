@@ -5,6 +5,9 @@ import type {
 	HumanResourcesQueryId,
 } from "../module-ids";
 import type { HumanResourcesPermission } from "../permissions";
+import type { HumanResourcesResourceKind } from "./authorization-resource-kind";
+
+export type { HumanResourcesResourceKind } from "./authorization-resource-kind";
 
 export interface HumanResourcesAuthorizationPort {
 	can: (input: {
@@ -43,29 +46,6 @@ export type HumanResourcesOperationId =
 	| HumanResourcesQueryId;
 
 export type HumanResourcesOperationKind = "command" | "query";
-
-export type HumanResourcesResourceKind =
-	| "person"
-	| "worker"
-	| "employee"
-	| "employment"
-	| "assignment"
-	| "candidate"
-	| "interview"
-	| "offer"
-	| "leave_request"
-	| "timesheet"
-	| "overtime_request"
-	| "compensation"
-	| "performance_review"
-	| "employee_case"
-	| "employee_document"
-	| "work_eligibility"
-	| "competency_assessment"
-	| "talent_profile"
-	| "succession_plan"
-	| "headcount_plan"
-	| "privacy_subject";
 
 export interface HumanResourcesActorContext {
 	actorEmployeeId?: string | undefined;

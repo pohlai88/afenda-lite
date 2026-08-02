@@ -30,20 +30,20 @@ import {
 import { fingerprintCandidateCreate } from "../shared/fingerprint";
 import { buildMutationMeta } from "../shared/mutation-meta";
 import {
-	runRecruitmentCommand,
-	runRecruitmentQuery,
-} from "../shared/recruitment-command";
-import {
 	assertCandidateAnonymizationEligible,
 	assertCandidateNotAnonymized,
 	normalizeCandidateEmail,
 } from "../shared/recruitment-guards";
-import type { HumanResourcesRecruitmentStore } from "../store/recruitment";
 import type {
 	Candidate,
 	CandidateDuplicateMatch,
 	CandidateListPage,
 } from "../types";
+import {
+	runRecruitmentCapabilityCommand,
+	runRecruitmentCapabilityQuery,
+} from "./run-operation";
+import type { HumanResourcesRecruitmentCapabilityStore } from "./store";
 
 export const HUMAN_RESOURCES_AGGREGATE_CANDIDATE = "candidate" as const;
 export type HumanResourcesCandidateAggregate =
@@ -53,10 +53,11 @@ export function createCandidate(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Candidate>> {
-	return runRecruitmentCommand(input, options, {
+	return runRecruitmentCapabilityCommand(input, options, {
 		schema: createCandidateInputSchema,
 		invalidMessage: "Invalid candidate create input",
 		command: HUMAN_RESOURCES_COMMAND_CANDIDATE_CREATE,
+		storeMethods: ["createCandidate", "findCandidateByIdempotencyKey"],
 		execute: async (data, { store, ports }) => {
 			const normalizedEmail = normalizeCandidateEmail(data.email);
 			const phone = data.phone ?? null;
@@ -120,10 +121,11 @@ export function updateCandidateProfile(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Candidate>> {
-	return runRecruitmentCommand(input, options, {
+	return runRecruitmentCapabilityCommand(input, options, {
 		schema: updateCandidateProfileInputSchema,
 		invalidMessage: "Invalid candidate update-profile input",
 		command: HUMAN_RESOURCES_COMMAND_CANDIDATE_UPDATE_PROFILE,
+		storeMethods: ["getCandidateById", "updateCandidateProfile"],
 		execute: async (data, { store, ports }) => {
 			const existing = await loadExistingCandidate(
 				store,
@@ -161,10 +163,11 @@ export function withdrawCandidateConsent(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Candidate>> {
-	return runRecruitmentCommand(input, options, {
+	return runRecruitmentCapabilityCommand(input, options, {
 		schema: withdrawCandidateConsentInputSchema,
 		invalidMessage: "Invalid candidate withdraw-consent input",
 		command: HUMAN_RESOURCES_COMMAND_CANDIDATE_WITHDRAW_CONSENT,
+		storeMethods: ["getCandidateById", "withdrawCandidateConsent"],
 		execute: async (data, { store, ports }) => {
 			const existing = await loadExistingCandidate(
 				store,
@@ -200,10 +203,11 @@ export function changeCandidateRetention(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Candidate>> {
-	return runRecruitmentCommand(input, options, {
+	return runRecruitmentCapabilityCommand(input, options, {
 		schema: changeCandidateRetentionInputSchema,
 		invalidMessage: "Invalid candidate change-retention input",
 		command: HUMAN_RESOURCES_COMMAND_CANDIDATE_CHANGE_RETENTION,
+		storeMethods: ["changeCandidateRetention", "getCandidateById"],
 		execute: async (data, { store, ports }) => {
 			const existing = await loadExistingCandidate(
 				store,
@@ -252,10 +256,11 @@ export function anonymizeCandidate(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Candidate>> {
-	return runRecruitmentCommand(input, options, {
+	return runRecruitmentCapabilityCommand(input, options, {
 		schema: anonymizeCandidateInputSchema,
 		invalidMessage: "Invalid candidate anonymize input",
 		command: HUMAN_RESOURCES_COMMAND_CANDIDATE_ANONYMIZE,
+		storeMethods: ["anonymizeCandidate", "getCandidateById"],
 		execute: async (data, { store, ports }) => {
 			const existing = await loadExistingCandidate(
 				store,
@@ -298,10 +303,11 @@ export function getCandidate(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Candidate>> {
-	return runRecruitmentQuery(input, options, {
+	return runRecruitmentCapabilityQuery(input, options, {
 		schema: getCandidateInputSchema,
 		invalidMessage: "Invalid candidate get input",
 		query: HUMAN_RESOURCES_QUERY_CANDIDATE_GET,
+		storeMethods: ["getCandidateById"],
 		execute: async (data, { store }) => {
 			const candidate = await store.getCandidateById({
 				organizationId: data.organizationId,
@@ -327,10 +333,11 @@ export function listCandidates(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CandidateListPage>> {
-	return runRecruitmentQuery(input, options, {
+	return runRecruitmentCapabilityQuery(input, options, {
 		schema: listCandidatesInputSchema,
 		invalidMessage: "Invalid candidate list input",
 		query: HUMAN_RESOURCES_QUERY_CANDIDATE_LIST,
+		storeMethods: ["listCandidates"],
 		execute: (data, { store }) =>
 			store.listCandidates({
 				organizationId: data.organizationId,
@@ -347,10 +354,11 @@ export function detectCandidateDuplicates(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<readonly CandidateDuplicateMatch[]>> {
-	return runRecruitmentQuery(input, options, {
+	return runRecruitmentCapabilityQuery(input, options, {
 		schema: detectCandidateDuplicatesInputSchema,
 		invalidMessage: "Invalid candidate duplicates detect input",
 		query: HUMAN_RESOURCES_QUERY_CANDIDATE_DUPLICATES_DETECT,
+		storeMethods: ["detectCandidateDuplicates"],
 		execute: (data, { store }) =>
 			store.detectCandidateDuplicates({
 				organizationId: data.organizationId,
@@ -361,7 +369,7 @@ export function detectCandidateDuplicates(
 }
 
 async function loadExistingCandidate(
-	store: HumanResourcesRecruitmentStore,
+	store: Pick<HumanResourcesRecruitmentCapabilityStore, "getCandidateById">,
 	organizationId: string,
 	candidateId: HumanResourcesCandidateId,
 ): Promise<Result<Candidate>> {

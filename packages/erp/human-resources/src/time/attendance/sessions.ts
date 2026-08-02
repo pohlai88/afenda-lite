@@ -15,18 +15,28 @@ import {
 	listAttendanceSessionsInputSchema,
 	resolveAttendanceSessionInputSchema,
 } from "../../schemas/time";
-import { runTimeCommand, runTimeQuery } from "../../shared/time-command";
 import { resolveActiveTimeEmployment } from "../../shared/time-employment";
 import type { AttendanceSession } from "../../types";
+import {
+	runTimeCapabilityCommand,
+	runTimeCapabilityQuery,
+} from "../run-operation";
 
 export async function resolveAttendanceSession(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<AttendanceSession>> {
-	return await runTimeCommand(input, options, {
+	return await runTimeCapabilityCommand(input, options, {
 		schema: resolveAttendanceSessionInputSchema,
 		invalidMessage: "Invalid attendance session resolve input",
 		command: HUMAN_RESOURCES_COMMAND_ATTENDANCE_SESSION_RESOLVE,
+		storeMethods: [
+			"findAttendanceSessionByIdempotencyKey",
+			"findEmploymentByEmployeeAsOf",
+			"getEmploymentById",
+			"resolveAttendanceSession",
+			"resolveTimePolicy",
+		],
 		execute: async (data, { store, ports }) => {
 			const employment = await resolveActiveTimeEmployment(store, {
 				organizationId: data.organizationId,
@@ -100,10 +110,11 @@ export async function getAttendanceSession(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<AttendanceSession | null>> {
-	return await runTimeQuery(input, options, {
+	return await runTimeCapabilityQuery(input, options, {
 		schema: getAttendanceSessionInputSchema,
 		invalidMessage: "Invalid attendance session get input",
 		query: HUMAN_RESOURCES_QUERY_ATTENDANCE_SESSION_GET,
+		storeMethods: ["getAttendanceSession"],
 		execute: async (data, { store }) =>
 			store.getAttendanceSession({
 				organizationId: data.organizationId,
@@ -116,10 +127,11 @@ export async function listAttendanceSessions(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<AttendanceSession[]>> {
-	return await runTimeQuery(input, options, {
+	return await runTimeCapabilityQuery(input, options, {
 		schema: listAttendanceSessionsInputSchema,
 		invalidMessage: "Invalid attendance session list input",
 		query: HUMAN_RESOURCES_QUERY_ATTENDANCE_SESSION_LIST,
+		storeMethods: ["listAttendanceSessions"],
 		execute: async (data, { store }) => store.listAttendanceSessions(data),
 	});
 }

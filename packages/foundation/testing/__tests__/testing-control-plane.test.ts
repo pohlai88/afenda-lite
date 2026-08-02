@@ -102,6 +102,22 @@ describe("testing control plane registry", () => {
 		]);
 	});
 
+	it("projects the complete Corporate Administration database evidence lane", () => {
+		expect(
+			testingVitest.include({
+				lane: "corporate-administration-parity",
+				projectPath: "packages/erp/corporate-administration",
+			}),
+		).toEqual([
+			"__tests__/*.parity.test.ts",
+			"__tests__/parity/**/*.parity.test.ts",
+			"__tests__/concurrency/**/*.concurrency.test.ts",
+			"__tests__/concurrency/**/*concurrency.test.ts",
+			"__tests__/database/**/*.neon.test.ts",
+			"__tests__/failure-injection/**/*.test.ts",
+		]);
+	});
+
 	it("normalizes lane excludes for package-local Vitest roots", () => {
 		expect(testingVitest.exclude({ lane: "unit" })).toEqual([
 			"**/*.interaction.test.tsx",

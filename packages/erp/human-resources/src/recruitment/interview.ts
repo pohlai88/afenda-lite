@@ -28,10 +28,6 @@ import {
 } from "../schemas/recruitment";
 import { actorHoldsAnyPermission } from "../shared/authorization-policy-helpers";
 import { buildMutationMeta } from "../shared/mutation-meta";
-import {
-	runRecruitmentCommand,
-	runRecruitmentQuery,
-} from "../shared/recruitment-command";
 import { assertInterviewInterviewerAssignable } from "../shared/recruitment-guards";
 import type {
 	Interview,
@@ -39,6 +35,10 @@ import type {
 	InterviewListPage,
 } from "../types";
 import { projectInterviewEvaluationForReader } from "./interview-field-projection";
+import {
+	runRecruitmentCapabilityCommand,
+	runRecruitmentCapabilityQuery,
+} from "./run-operation";
 
 export const HUMAN_RESOURCES_AGGREGATE_INTERVIEW = "interview" as const;
 export type HumanResourcesInterviewAggregate =
@@ -48,10 +48,11 @@ export function scheduleInterview(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Interview>> {
-	return runRecruitmentCommand(input, options, {
+	return runRecruitmentCapabilityCommand(input, options, {
 		schema: scheduleInterviewInputSchema,
 		invalidMessage: "Invalid interview schedule input",
 		command: HUMAN_RESOURCES_COMMAND_INTERVIEW_SCHEDULE,
+		storeMethods: ["scheduleInterview"],
 		execute: (data, { store, ports }) =>
 			store.scheduleInterview(
 				{
@@ -74,10 +75,11 @@ export function cancelInterview(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Interview>> {
-	return runRecruitmentCommand(input, options, {
+	return runRecruitmentCapabilityCommand(input, options, {
 		schema: cancelInterviewInputSchema,
 		invalidMessage: "Invalid interview cancel input",
 		command: HUMAN_RESOURCES_COMMAND_INTERVIEW_CANCEL,
+		storeMethods: ["cancelInterview"],
 		execute: (data, { store, ports }) =>
 			store.cancelInterview(
 				{
@@ -99,10 +101,11 @@ export function assignInterviewInterviewer(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Interview>> {
-	return runRecruitmentCommand(input, options, {
+	return runRecruitmentCapabilityCommand(input, options, {
 		schema: assignInterviewInterviewerInputSchema,
 		invalidMessage: "Invalid interview assign-interviewer input",
 		command: HUMAN_RESOURCES_COMMAND_INTERVIEW_ASSIGN_INTERVIEWER,
+		storeMethods: ["assignInterviewInterviewer", "getInterviewById"],
 		execute: async (data, { store, ports }) => {
 			const interview = await store.getInterviewById({
 				organizationId: data.organizationId,
@@ -149,10 +152,11 @@ export function recordInterviewEvaluation(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<InterviewEvaluation>> {
-	return runRecruitmentCommand(input, options, {
+	return runRecruitmentCapabilityCommand(input, options, {
 		schema: recordInterviewEvaluationInputSchema,
 		invalidMessage: "Invalid interview record-evaluation input",
 		command: HUMAN_RESOURCES_COMMAND_INTERVIEW_RECORD_EVALUATION,
+		storeMethods: ["recordInterviewEvaluation"],
 		execute: (data, { store, ports }) =>
 			store.recordInterviewEvaluation(
 				{
@@ -178,10 +182,11 @@ export function getInterview(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Interview>> {
-	return runRecruitmentQuery(input, options, {
+	return runRecruitmentCapabilityQuery(input, options, {
 		schema: getInterviewInputSchema,
 		invalidMessage: "Invalid interview get input",
 		query: HUMAN_RESOURCES_QUERY_INTERVIEW_GET,
+		storeMethods: ["getInterviewById"],
 		execute: async (data, { store }) => {
 			const interview = await store.getInterviewById({
 				organizationId: data.organizationId,
@@ -207,10 +212,11 @@ export function listInterviews(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<InterviewListPage>> {
-	return runRecruitmentQuery(input, options, {
+	return runRecruitmentCapabilityQuery(input, options, {
 		schema: listInterviewsInputSchema,
 		invalidMessage: "Invalid interview list input",
 		query: HUMAN_RESOURCES_QUERY_INTERVIEW_LIST,
+		storeMethods: ["listInterviews"],
 		execute: (data, { store }) =>
 			store.listInterviews({
 				organizationId: data.organizationId,
@@ -225,10 +231,11 @@ export function getInterviewEvaluation(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<InterviewEvaluation>> {
-	return runRecruitmentQuery(input, options, {
+	return runRecruitmentCapabilityQuery(input, options, {
 		schema: getInterviewEvaluationInputSchema,
 		invalidMessage: "Invalid interview evaluation get input",
 		query: HUMAN_RESOURCES_QUERY_INTERVIEW_EVALUATION_GET,
+		storeMethods: ["getInterviewEvaluationByInterviewId"],
 		execute: async (data, { store }) => {
 			const evaluation = await store.getInterviewEvaluationByInterviewId({
 				organizationId: data.organizationId,

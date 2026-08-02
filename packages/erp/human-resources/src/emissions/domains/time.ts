@@ -14,7 +14,11 @@ import {
 } from "@afenda/events/schemas";
 
 import {
+	HUMAN_RESOURCES_COMMAND_ATTENDANCE_BREAK_END,
+	HUMAN_RESOURCES_COMMAND_ATTENDANCE_BREAK_START,
 	HUMAN_RESOURCES_COMMAND_ATTENDANCE_BREAK_WAIVER_APPROVE,
+	HUMAN_RESOURCES_COMMAND_ATTENDANCE_CLOCK_IN,
+	HUMAN_RESOURCES_COMMAND_ATTENDANCE_CLOCK_OUT,
 	HUMAN_RESOURCES_COMMAND_ATTENDANCE_EVENT_CORRECT,
 	HUMAN_RESOURCES_COMMAND_ATTENDANCE_EVENT_RECORD,
 	HUMAN_RESOURCES_COMMAND_ATTENDANCE_EVENT_VOID,
@@ -24,6 +28,7 @@ import {
 	HUMAN_RESOURCES_COMMAND_ATTENDANCE_EXCEPTION_REJECT,
 	HUMAN_RESOURCES_COMMAND_ATTENDANCE_EXCEPTION_RESOLVE,
 	HUMAN_RESOURCES_COMMAND_ATTENDANCE_EXCEPTION_REVIEW,
+	HUMAN_RESOURCES_COMMAND_ATTENDANCE_MANUAL_RECORD,
 	HUMAN_RESOURCES_COMMAND_ATTENDANCE_SESSION_RESOLVE,
 	HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CALENDAR_ASSIGN,
 	HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CALENDAR_END,
@@ -80,270 +85,285 @@ import {
 	defineAuditOnlyEmission,
 	defineDomainEventEmission,
 } from "../define-emission";
-import { inferEmissionMetadata } from "../infer-emission-metadata";
 import type { HumanResourcesMutationEmissionDefinition } from "../types";
+
+function timeEmissionMetadata<const TAggregateType extends string>(
+	aggregateType: TAggregateType,
+) {
+	return { aggregateType, domain: "time" as const };
+}
 
 export const HUMAN_RESOURCES_TIME_EMISSIONS = {
 	[HUMAN_RESOURCES_COMMAND_WORK_CALENDAR_CREATE]: defineAuditOnlyEmission(
 		HUMAN_RESOURCES_COMMAND_WORK_CALENDAR_CREATE,
 		{
-			...inferEmissionMetadata(HUMAN_RESOURCES_COMMAND_WORK_CALENDAR_CREATE),
+			...timeEmissionMetadata("work_calendar"),
 		},
 	),
 	[HUMAN_RESOURCES_COMMAND_WORK_CALENDAR_SUPERSEDE]: defineAuditOnlyEmission(
 		HUMAN_RESOURCES_COMMAND_WORK_CALENDAR_SUPERSEDE,
 		{
-			...inferEmissionMetadata(HUMAN_RESOURCES_COMMAND_WORK_CALENDAR_SUPERSEDE),
+			...timeEmissionMetadata("work_calendar"),
 		},
 	),
 	[HUMAN_RESOURCES_COMMAND_WORK_CALENDAR_UPDATE]: defineAuditOnlyEmission(
 		HUMAN_RESOURCES_COMMAND_WORK_CALENDAR_UPDATE,
 		{
-			...inferEmissionMetadata(HUMAN_RESOURCES_COMMAND_WORK_CALENDAR_UPDATE),
+			...timeEmissionMetadata("work_calendar"),
 		},
 	),
 	[HUMAN_RESOURCES_COMMAND_WORK_CALENDAR_ARCHIVE]: defineAuditOnlyEmission(
 		HUMAN_RESOURCES_COMMAND_WORK_CALENDAR_ARCHIVE,
 		{
-			...inferEmissionMetadata(HUMAN_RESOURCES_COMMAND_WORK_CALENDAR_ARCHIVE),
+			...timeEmissionMetadata("work_calendar"),
 		},
 	),
 	[HUMAN_RESOURCES_COMMAND_WORK_CALENDAR_HOLIDAY_ADD]: defineAuditOnlyEmission(
 		HUMAN_RESOURCES_COMMAND_WORK_CALENDAR_HOLIDAY_ADD,
 		{
-			...inferEmissionMetadata(
-				HUMAN_RESOURCES_COMMAND_WORK_CALENDAR_HOLIDAY_ADD,
-			),
+			...timeEmissionMetadata("work_calendar"),
 		},
 	),
 	[HUMAN_RESOURCES_COMMAND_WORK_CALENDAR_HOLIDAY_REMOVE]:
 		defineAuditOnlyEmission(
 			HUMAN_RESOURCES_COMMAND_WORK_CALENDAR_HOLIDAY_REMOVE,
 			{
-				...inferEmissionMetadata(
-					HUMAN_RESOURCES_COMMAND_WORK_CALENDAR_HOLIDAY_REMOVE,
-				),
+				...timeEmissionMetadata("work_calendar"),
 			},
 		),
 	[HUMAN_RESOURCES_COMMAND_WORK_CALENDAR_DATE_OVERRIDE_ADD]:
 		defineAuditOnlyEmission(
 			HUMAN_RESOURCES_COMMAND_WORK_CALENDAR_DATE_OVERRIDE_ADD,
 			{
-				...inferEmissionMetadata(
-					HUMAN_RESOURCES_COMMAND_WORK_CALENDAR_DATE_OVERRIDE_ADD,
-				),
+				...timeEmissionMetadata("work_calendar"),
 			},
 		),
 	[HUMAN_RESOURCES_COMMAND_WORK_CALENDAR_DATE_OVERRIDE_REMOVE]:
 		defineAuditOnlyEmission(
 			HUMAN_RESOURCES_COMMAND_WORK_CALENDAR_DATE_OVERRIDE_REMOVE,
 			{
-				...inferEmissionMetadata(
-					HUMAN_RESOURCES_COMMAND_WORK_CALENDAR_DATE_OVERRIDE_REMOVE,
-				),
+				...timeEmissionMetadata("work_calendar"),
 			},
 		),
 	[HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CALENDAR_ASSIGN]: defineAuditOnlyEmission(
 		HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CALENDAR_ASSIGN,
 		{
-			...inferEmissionMetadata(
-				HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CALENDAR_ASSIGN,
-			),
+			...timeEmissionMetadata("employment_calendar"),
 		},
 	),
 	[HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CALENDAR_END]: defineAuditOnlyEmission(
 		HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CALENDAR_END,
 		{
-			...inferEmissionMetadata(HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CALENDAR_END),
+			...timeEmissionMetadata("employment_calendar"),
 		},
 	),
 	[HUMAN_RESOURCES_COMMAND_WORK_CALENDAR_SCOPE_ASSIGN]: defineAuditOnlyEmission(
 		HUMAN_RESOURCES_COMMAND_WORK_CALENDAR_SCOPE_ASSIGN,
 		{
-			...inferEmissionMetadata(
-				HUMAN_RESOURCES_COMMAND_WORK_CALENDAR_SCOPE_ASSIGN,
-			),
+			...timeEmissionMetadata("work_calendar"),
 		},
 	),
 	[HUMAN_RESOURCES_COMMAND_WORK_CALENDAR_SCOPE_END]: defineAuditOnlyEmission(
 		HUMAN_RESOURCES_COMMAND_WORK_CALENDAR_SCOPE_END,
 		{
-			...inferEmissionMetadata(HUMAN_RESOURCES_COMMAND_WORK_CALENDAR_SCOPE_END),
+			...timeEmissionMetadata("work_calendar"),
 		},
 	),
 	[HUMAN_RESOURCES_COMMAND_TIME_POLICY_CREATE]: defineAuditOnlyEmission(
 		HUMAN_RESOURCES_COMMAND_TIME_POLICY_CREATE,
 		{
-			...inferEmissionMetadata(HUMAN_RESOURCES_COMMAND_TIME_POLICY_CREATE),
+			...timeEmissionMetadata("time_policy"),
 		},
 	),
 	[HUMAN_RESOURCES_COMMAND_TIME_POLICY_ACTIVATE]: defineAuditOnlyEmission(
 		HUMAN_RESOURCES_COMMAND_TIME_POLICY_ACTIVATE,
 		{
-			...inferEmissionMetadata(HUMAN_RESOURCES_COMMAND_TIME_POLICY_ACTIVATE),
+			...timeEmissionMetadata("time_policy"),
 		},
 	),
 	[HUMAN_RESOURCES_COMMAND_TIME_POLICY_SUPERSEDE]: defineAuditOnlyEmission(
 		HUMAN_RESOURCES_COMMAND_TIME_POLICY_SUPERSEDE,
 		{
-			...inferEmissionMetadata(HUMAN_RESOURCES_COMMAND_TIME_POLICY_SUPERSEDE),
+			...timeEmissionMetadata("time_policy"),
 		},
 	),
 	[HUMAN_RESOURCES_COMMAND_TIME_POLICY_ASSIGN]: defineAuditOnlyEmission(
 		HUMAN_RESOURCES_COMMAND_TIME_POLICY_ASSIGN,
 		{
-			...inferEmissionMetadata(HUMAN_RESOURCES_COMMAND_TIME_POLICY_ASSIGN),
+			...timeEmissionMetadata("time_policy"),
 		},
 	),
 	[HUMAN_RESOURCES_COMMAND_TIME_APPROVAL_AUTHORITY_ASSIGN]:
 		defineAuditOnlyEmission(
 			HUMAN_RESOURCES_COMMAND_TIME_APPROVAL_AUTHORITY_ASSIGN,
 			{
-				...inferEmissionMetadata(
-					HUMAN_RESOURCES_COMMAND_TIME_APPROVAL_AUTHORITY_ASSIGN,
-				),
+				...timeEmissionMetadata("time_approval_authority"),
 			},
 		),
 	[HUMAN_RESOURCES_COMMAND_TIME_APPROVAL_AUTHORITY_END]:
 		defineAuditOnlyEmission(
 			HUMAN_RESOURCES_COMMAND_TIME_APPROVAL_AUTHORITY_END,
 			{
-				...inferEmissionMetadata(
-					HUMAN_RESOURCES_COMMAND_TIME_APPROVAL_AUTHORITY_END,
-				),
+				...timeEmissionMetadata("time_approval_authority"),
 			},
 		),
 	[HUMAN_RESOURCES_COMMAND_SHIFT_CREATE]: defineAuditOnlyEmission(
 		HUMAN_RESOURCES_COMMAND_SHIFT_CREATE,
 		{
-			...inferEmissionMetadata(HUMAN_RESOURCES_COMMAND_SHIFT_CREATE),
+			...timeEmissionMetadata("shift"),
 		},
 	),
 	[HUMAN_RESOURCES_COMMAND_SHIFT_SUPERSEDE]: defineAuditOnlyEmission(
 		HUMAN_RESOURCES_COMMAND_SHIFT_SUPERSEDE,
 		{
-			...inferEmissionMetadata(HUMAN_RESOURCES_COMMAND_SHIFT_SUPERSEDE),
+			...timeEmissionMetadata("shift"),
 		},
 	),
 	[HUMAN_RESOURCES_COMMAND_SHIFT_UPDATE]: defineAuditOnlyEmission(
 		HUMAN_RESOURCES_COMMAND_SHIFT_UPDATE,
 		{
-			...inferEmissionMetadata(HUMAN_RESOURCES_COMMAND_SHIFT_UPDATE),
+			...timeEmissionMetadata("shift"),
 		},
 	),
 	[HUMAN_RESOURCES_COMMAND_SHIFT_ACTIVATE]: defineAuditOnlyEmission(
 		HUMAN_RESOURCES_COMMAND_SHIFT_ACTIVATE,
 		{
-			...inferEmissionMetadata(HUMAN_RESOURCES_COMMAND_SHIFT_ACTIVATE),
+			...timeEmissionMetadata("shift"),
 		},
 	),
 	[HUMAN_RESOURCES_COMMAND_SHIFT_DEACTIVATE]: defineAuditOnlyEmission(
 		HUMAN_RESOURCES_COMMAND_SHIFT_DEACTIVATE,
 		{
-			...inferEmissionMetadata(HUMAN_RESOURCES_COMMAND_SHIFT_DEACTIVATE),
+			...timeEmissionMetadata("shift"),
 		},
 	),
 	[HUMAN_RESOURCES_COMMAND_SHIFT_BREAK_ADD]: defineAuditOnlyEmission(
 		HUMAN_RESOURCES_COMMAND_SHIFT_BREAK_ADD,
 		{
-			...inferEmissionMetadata(HUMAN_RESOURCES_COMMAND_SHIFT_BREAK_ADD),
+			...timeEmissionMetadata("shift"),
 		},
 	),
 	[HUMAN_RESOURCES_COMMAND_SHIFT_BREAK_REMOVE]: defineAuditOnlyEmission(
 		HUMAN_RESOURCES_COMMAND_SHIFT_BREAK_REMOVE,
 		{
-			...inferEmissionMetadata(HUMAN_RESOURCES_COMMAND_SHIFT_BREAK_REMOVE),
+			...timeEmissionMetadata("shift"),
 		},
 	),
 	[HUMAN_RESOURCES_COMMAND_SHIFT_ASSIGN]: defineAuditOnlyEmission(
 		HUMAN_RESOURCES_COMMAND_SHIFT_ASSIGN,
 		{
-			...inferEmissionMetadata(HUMAN_RESOURCES_COMMAND_SHIFT_ASSIGN),
+			...timeEmissionMetadata("shift"),
 		},
 	),
 	[HUMAN_RESOURCES_COMMAND_SHIFT_ASSIGNMENT_PUBLISH]: defineDomainEventEmission(
 		HUMAN_RESOURCES_COMMAND_SHIFT_ASSIGNMENT_PUBLISH,
 		{
-			...inferEmissionMetadata(
-				HUMAN_RESOURCES_COMMAND_SHIFT_ASSIGNMENT_PUBLISH,
-			),
+			...timeEmissionMetadata("shift_assignment"),
 			eventTypes: [HUMAN_RESOURCES_TIME_SCHEDULE_PUBLISHED_EVENT] as const,
 		},
 	),
 	[HUMAN_RESOURCES_COMMAND_SHIFT_ASSIGNMENT_CANCEL]: defineAuditOnlyEmission(
 		HUMAN_RESOURCES_COMMAND_SHIFT_ASSIGNMENT_CANCEL,
 		{
-			...inferEmissionMetadata(HUMAN_RESOURCES_COMMAND_SHIFT_ASSIGNMENT_CANCEL),
+			...timeEmissionMetadata("shift_assignment"),
 		},
 	),
 	[HUMAN_RESOURCES_COMMAND_SHIFT_ASSIGNMENT_CHANGE]: defineAuditOnlyEmission(
 		HUMAN_RESOURCES_COMMAND_SHIFT_ASSIGNMENT_CHANGE,
 		{
-			...inferEmissionMetadata(HUMAN_RESOURCES_COMMAND_SHIFT_ASSIGNMENT_CHANGE),
+			...timeEmissionMetadata("shift_assignment"),
 		},
 	),
 	[HUMAN_RESOURCES_COMMAND_SHIFT_ASSIGNMENT_COMPLETE]: defineAuditOnlyEmission(
 		HUMAN_RESOURCES_COMMAND_SHIFT_ASSIGNMENT_COMPLETE,
 		{
-			...inferEmissionMetadata(
-				HUMAN_RESOURCES_COMMAND_SHIFT_ASSIGNMENT_COMPLETE,
-			),
+			...timeEmissionMetadata("shift_assignment"),
 		},
 	),
 	[HUMAN_RESOURCES_COMMAND_ATTENDANCE_EVENT_RECORD]: defineDomainEventEmission(
 		HUMAN_RESOURCES_COMMAND_ATTENDANCE_EVENT_RECORD,
 		{
-			...inferEmissionMetadata(HUMAN_RESOURCES_COMMAND_ATTENDANCE_EVENT_RECORD),
+			...timeEmissionMetadata("attendance_event"),
+			eventTypes: [HUMAN_RESOURCES_TIME_ATTENDANCE_RECORDED_EVENT] as const,
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_ATTENDANCE_CLOCK_IN]: defineDomainEventEmission(
+		HUMAN_RESOURCES_COMMAND_ATTENDANCE_CLOCK_IN,
+		{
+			domain: "time",
+			aggregateType: "attendance_event",
+			eventTypes: [HUMAN_RESOURCES_TIME_ATTENDANCE_RECORDED_EVENT] as const,
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_ATTENDANCE_CLOCK_OUT]: defineDomainEventEmission(
+		HUMAN_RESOURCES_COMMAND_ATTENDANCE_CLOCK_OUT,
+		{
+			domain: "time",
+			aggregateType: "attendance_event",
+			eventTypes: [HUMAN_RESOURCES_TIME_ATTENDANCE_RECORDED_EVENT] as const,
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_ATTENDANCE_BREAK_START]: defineDomainEventEmission(
+		HUMAN_RESOURCES_COMMAND_ATTENDANCE_BREAK_START,
+		{
+			domain: "time",
+			aggregateType: "attendance_event",
+			eventTypes: [HUMAN_RESOURCES_TIME_ATTENDANCE_RECORDED_EVENT] as const,
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_ATTENDANCE_BREAK_END]: defineDomainEventEmission(
+		HUMAN_RESOURCES_COMMAND_ATTENDANCE_BREAK_END,
+		{
+			domain: "time",
+			aggregateType: "attendance_event",
+			eventTypes: [HUMAN_RESOURCES_TIME_ATTENDANCE_RECORDED_EVENT] as const,
+		},
+	),
+	[HUMAN_RESOURCES_COMMAND_ATTENDANCE_MANUAL_RECORD]: defineDomainEventEmission(
+		HUMAN_RESOURCES_COMMAND_ATTENDANCE_MANUAL_RECORD,
+		{
+			domain: "time",
+			aggregateType: "attendance_event",
 			eventTypes: [HUMAN_RESOURCES_TIME_ATTENDANCE_RECORDED_EVENT] as const,
 		},
 	),
 	[HUMAN_RESOURCES_COMMAND_ATTENDANCE_EVENTS_IMPORT]: defineAuditOnlyEmission(
 		HUMAN_RESOURCES_COMMAND_ATTENDANCE_EVENTS_IMPORT,
 		{
-			...inferEmissionMetadata(
-				HUMAN_RESOURCES_COMMAND_ATTENDANCE_EVENTS_IMPORT,
-			),
+			...timeEmissionMetadata("attendance_event_batch"),
 		},
 	),
 	[HUMAN_RESOURCES_COMMAND_ATTENDANCE_EVENT_CORRECT]: defineDomainEventEmission(
 		HUMAN_RESOURCES_COMMAND_ATTENDANCE_EVENT_CORRECT,
 		{
-			...inferEmissionMetadata(
-				HUMAN_RESOURCES_COMMAND_ATTENDANCE_EVENT_CORRECT,
-			),
+			...timeEmissionMetadata("attendance_event"),
 			eventTypes: [HUMAN_RESOURCES_TIME_ATTENDANCE_CORRECTED_EVENT] as const,
 		},
 	),
 	[HUMAN_RESOURCES_COMMAND_ATTENDANCE_EVENT_VOID]: defineAuditOnlyEmission(
 		HUMAN_RESOURCES_COMMAND_ATTENDANCE_EVENT_VOID,
 		{
-			...inferEmissionMetadata(HUMAN_RESOURCES_COMMAND_ATTENDANCE_EVENT_VOID),
+			...timeEmissionMetadata("attendance_event"),
 		},
 	),
 	[HUMAN_RESOURCES_COMMAND_ATTENDANCE_SESSION_RESOLVE]: defineAuditOnlyEmission(
 		HUMAN_RESOURCES_COMMAND_ATTENDANCE_SESSION_RESOLVE,
 		{
-			...inferEmissionMetadata(
-				HUMAN_RESOURCES_COMMAND_ATTENDANCE_SESSION_RESOLVE,
-			),
+			...timeEmissionMetadata("attendance_session"),
 		},
 	),
 	[HUMAN_RESOURCES_COMMAND_ATTENDANCE_BREAK_WAIVER_APPROVE]:
 		defineAuditOnlyEmission(
 			HUMAN_RESOURCES_COMMAND_ATTENDANCE_BREAK_WAIVER_APPROVE,
 			{
-				...inferEmissionMetadata(
-					HUMAN_RESOURCES_COMMAND_ATTENDANCE_BREAK_WAIVER_APPROVE,
-				),
+				...timeEmissionMetadata("attendance_break_waiver"),
 			},
 		),
 	[HUMAN_RESOURCES_COMMAND_ATTENDANCE_EXCEPTION_CREATE]:
 		defineDomainEventEmission(
 			HUMAN_RESOURCES_COMMAND_ATTENDANCE_EXCEPTION_CREATE,
 			{
-				...inferEmissionMetadata(
-					HUMAN_RESOURCES_COMMAND_ATTENDANCE_EXCEPTION_CREATE,
-				),
+				...timeEmissionMetadata("attendance_exception"),
 				eventTypes: [HUMAN_RESOURCES_TIME_EXCEPTION_CREATED_EVENT] as const,
 			},
 		),
@@ -351,87 +371,77 @@ export const HUMAN_RESOURCES_TIME_EMISSIONS = {
 		defineAuditOnlyEmission(
 			HUMAN_RESOURCES_COMMAND_ATTENDANCE_EXCEPTION_REVIEW,
 			{
-				...inferEmissionMetadata(
-					HUMAN_RESOURCES_COMMAND_ATTENDANCE_EXCEPTION_REVIEW,
-				),
+				...timeEmissionMetadata("attendance_exception"),
 			},
 		),
 	[HUMAN_RESOURCES_COMMAND_ATTENDANCE_EXCEPTION_EXCUSE]:
 		defineAuditOnlyEmission(
 			HUMAN_RESOURCES_COMMAND_ATTENDANCE_EXCEPTION_EXCUSE,
 			{
-				...inferEmissionMetadata(
-					HUMAN_RESOURCES_COMMAND_ATTENDANCE_EXCEPTION_EXCUSE,
-				),
+				...timeEmissionMetadata("attendance_exception"),
 			},
 		),
 	[HUMAN_RESOURCES_COMMAND_ATTENDANCE_EXCEPTION_REJECT]:
 		defineAuditOnlyEmission(
 			HUMAN_RESOURCES_COMMAND_ATTENDANCE_EXCEPTION_REJECT,
 			{
-				...inferEmissionMetadata(
-					HUMAN_RESOURCES_COMMAND_ATTENDANCE_EXCEPTION_REJECT,
-				),
+				...timeEmissionMetadata("attendance_exception"),
 			},
 		),
 	[HUMAN_RESOURCES_COMMAND_ATTENDANCE_EXCEPTION_RESOLVE]:
 		defineAuditOnlyEmission(
 			HUMAN_RESOURCES_COMMAND_ATTENDANCE_EXCEPTION_RESOLVE,
 			{
-				...inferEmissionMetadata(
-					HUMAN_RESOURCES_COMMAND_ATTENDANCE_EXCEPTION_RESOLVE,
-				),
+				...timeEmissionMetadata("attendance_exception"),
 			},
 		),
 	[HUMAN_RESOURCES_COMMAND_TIMESHEET_CREATE]: defineAuditOnlyEmission(
 		HUMAN_RESOURCES_COMMAND_TIMESHEET_CREATE,
 		{
-			...inferEmissionMetadata(HUMAN_RESOURCES_COMMAND_TIMESHEET_CREATE),
+			...timeEmissionMetadata("timesheet"),
 		},
 	),
 	[HUMAN_RESOURCES_COMMAND_TIMESHEET_GENERATE_ENTRIES]: defineAuditOnlyEmission(
 		HUMAN_RESOURCES_COMMAND_TIMESHEET_GENERATE_ENTRIES,
 		{
-			...inferEmissionMetadata(
-				HUMAN_RESOURCES_COMMAND_TIMESHEET_GENERATE_ENTRIES,
-			),
+			...timeEmissionMetadata("timesheet"),
 		},
 	),
 	[HUMAN_RESOURCES_COMMAND_TIMESHEET_ENTRY_ADD]: defineAuditOnlyEmission(
 		HUMAN_RESOURCES_COMMAND_TIMESHEET_ENTRY_ADD,
 		{
-			...inferEmissionMetadata(HUMAN_RESOURCES_COMMAND_TIMESHEET_ENTRY_ADD),
+			...timeEmissionMetadata("timesheet_entry"),
 		},
 	),
 	[HUMAN_RESOURCES_COMMAND_TIMESHEET_ENTRY_UPDATE]: defineAuditOnlyEmission(
 		HUMAN_RESOURCES_COMMAND_TIMESHEET_ENTRY_UPDATE,
 		{
-			...inferEmissionMetadata(HUMAN_RESOURCES_COMMAND_TIMESHEET_ENTRY_UPDATE),
+			...timeEmissionMetadata("timesheet_entry"),
 		},
 	),
 	[HUMAN_RESOURCES_COMMAND_TIMESHEET_ENTRY_REMOVE]: defineAuditOnlyEmission(
 		HUMAN_RESOURCES_COMMAND_TIMESHEET_ENTRY_REMOVE,
 		{
-			...inferEmissionMetadata(HUMAN_RESOURCES_COMMAND_TIMESHEET_ENTRY_REMOVE),
+			...timeEmissionMetadata("timesheet_entry"),
 		},
 	),
 	[HUMAN_RESOURCES_COMMAND_TIMESHEET_SUBMIT]: defineDomainEventEmission(
 		HUMAN_RESOURCES_COMMAND_TIMESHEET_SUBMIT,
 		{
-			...inferEmissionMetadata(HUMAN_RESOURCES_COMMAND_TIMESHEET_SUBMIT),
+			...timeEmissionMetadata("timesheet"),
 			eventTypes: [HUMAN_RESOURCES_TIME_TIMESHEET_SUBMITTED_EVENT] as const,
 		},
 	),
 	[HUMAN_RESOURCES_COMMAND_TIMESHEET_RETURN]: defineAuditOnlyEmission(
 		HUMAN_RESOURCES_COMMAND_TIMESHEET_RETURN,
 		{
-			...inferEmissionMetadata(HUMAN_RESOURCES_COMMAND_TIMESHEET_RETURN),
+			...timeEmissionMetadata("timesheet"),
 		},
 	),
 	[HUMAN_RESOURCES_COMMAND_TIMESHEET_APPROVE]: defineDomainEventEmission(
 		HUMAN_RESOURCES_COMMAND_TIMESHEET_APPROVE,
 		{
-			...inferEmissionMetadata(HUMAN_RESOURCES_COMMAND_TIMESHEET_APPROVE),
+			...timeEmissionMetadata("timesheet"),
 			eventTypes: [
 				HUMAN_RESOURCES_TIME_TIMESHEET_APPROVAL_STEP_RECORDED_EVENT,
 				HUMAN_RESOURCES_TIMESHEET_APPROVED_EVENT,
@@ -441,20 +451,20 @@ export const HUMAN_RESOURCES_TIME_EMISSIONS = {
 	[HUMAN_RESOURCES_COMMAND_TIMESHEET_REJECT]: defineAuditOnlyEmission(
 		HUMAN_RESOURCES_COMMAND_TIMESHEET_REJECT,
 		{
-			...inferEmissionMetadata(HUMAN_RESOURCES_COMMAND_TIMESHEET_REJECT),
+			...timeEmissionMetadata("timesheet"),
 		},
 	),
 	[HUMAN_RESOURCES_COMMAND_TIMESHEET_REOPEN]: defineDomainEventEmission(
 		HUMAN_RESOURCES_COMMAND_TIMESHEET_REOPEN,
 		{
-			...inferEmissionMetadata(HUMAN_RESOURCES_COMMAND_TIMESHEET_REOPEN),
+			...timeEmissionMetadata("timesheet"),
 			eventTypes: [HUMAN_RESOURCES_TIME_TIMESHEET_REOPENED_EVENT] as const,
 		},
 	),
 	[HUMAN_RESOURCES_COMMAND_TIMESHEET_LOCK]: defineDomainEventEmission(
 		HUMAN_RESOURCES_COMMAND_TIMESHEET_LOCK,
 		{
-			...inferEmissionMetadata(HUMAN_RESOURCES_COMMAND_TIMESHEET_LOCK),
+			...timeEmissionMetadata("timesheet"),
 			eventTypes: [
 				HUMAN_RESOURCES_TIME_TIMESHEET_LOCKED_EVENT,
 				HUMAN_RESOURCES_TIME_PAYROLL_HANDOFF_READY_EVENT,
@@ -464,49 +474,45 @@ export const HUMAN_RESOURCES_TIME_EMISSIONS = {
 	[HUMAN_RESOURCES_COMMAND_TIMESHEET_SUPERSEDE]: defineAuditOnlyEmission(
 		HUMAN_RESOURCES_COMMAND_TIMESHEET_SUPERSEDE,
 		{
-			...inferEmissionMetadata(HUMAN_RESOURCES_COMMAND_TIMESHEET_SUPERSEDE),
+			...timeEmissionMetadata("timesheet"),
 		},
 	),
 	[HUMAN_RESOURCES_COMMAND_OVERTIME_REQUEST_CREATE]: defineAuditOnlyEmission(
 		HUMAN_RESOURCES_COMMAND_OVERTIME_REQUEST_CREATE,
 		{
-			...inferEmissionMetadata(HUMAN_RESOURCES_COMMAND_OVERTIME_REQUEST_CREATE),
+			...timeEmissionMetadata("overtime_request"),
 		},
 	),
 	[HUMAN_RESOURCES_COMMAND_OVERTIME_REQUEST_APPROVE]: defineDomainEventEmission(
 		HUMAN_RESOURCES_COMMAND_OVERTIME_REQUEST_APPROVE,
 		{
-			...inferEmissionMetadata(
-				HUMAN_RESOURCES_COMMAND_OVERTIME_REQUEST_APPROVE,
-			),
+			...timeEmissionMetadata("overtime_request"),
 			eventTypes: [HUMAN_RESOURCES_TIME_OVERTIME_APPROVED_EVENT] as const,
 		},
 	),
 	[HUMAN_RESOURCES_COMMAND_OVERTIME_REQUEST_REJECT]: defineAuditOnlyEmission(
 		HUMAN_RESOURCES_COMMAND_OVERTIME_REQUEST_REJECT,
 		{
-			...inferEmissionMetadata(HUMAN_RESOURCES_COMMAND_OVERTIME_REQUEST_REJECT),
+			...timeEmissionMetadata("overtime_request"),
 		},
 	),
 	[HUMAN_RESOURCES_COMMAND_OVERTIME_REQUEST_CANCEL]: defineAuditOnlyEmission(
 		HUMAN_RESOURCES_COMMAND_OVERTIME_REQUEST_CANCEL,
 		{
-			...inferEmissionMetadata(HUMAN_RESOURCES_COMMAND_OVERTIME_REQUEST_CANCEL),
+			...timeEmissionMetadata("overtime_request"),
 		},
 	),
 	[HUMAN_RESOURCES_COMMAND_OVERTIME_REQUEST_RECORD_ACTUAL]:
 		defineAuditOnlyEmission(
 			HUMAN_RESOURCES_COMMAND_OVERTIME_REQUEST_RECORD_ACTUAL,
 			{
-				...inferEmissionMetadata(
-					HUMAN_RESOURCES_COMMAND_OVERTIME_REQUEST_RECORD_ACTUAL,
-				),
+				...timeEmissionMetadata("overtime_request"),
 			},
 		),
 	[HUMAN_RESOURCES_COMMAND_OVERTIME_REQUEST_VERIFY]: defineAuditOnlyEmission(
 		HUMAN_RESOURCES_COMMAND_OVERTIME_REQUEST_VERIFY,
 		{
-			...inferEmissionMetadata(HUMAN_RESOURCES_COMMAND_OVERTIME_REQUEST_VERIFY),
+			...timeEmissionMetadata("overtime_request"),
 		},
 	),
 } satisfies Record<

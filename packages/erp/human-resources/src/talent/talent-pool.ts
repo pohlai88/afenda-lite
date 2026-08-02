@@ -27,17 +27,17 @@ import {
 	fingerprintTalentPoolMemberCreate,
 } from "../shared/fingerprint";
 import { buildMutationMeta } from "../shared/mutation-meta";
-import {
-	resolveActorTalentProfileResource,
-	resolveTalentProfileResourceForEmployee,
-	runTalentCommand,
-	runTalentQuery,
-} from "../shared/talent-command";
 import type {
 	TalentPool,
 	TalentPoolMember,
 	TalentPoolMemberListPage,
 } from "../types";
+import {
+	resolveActorTalentProfileResource,
+	resolveTalentProfileResourceForEmployee,
+	runTalentCapabilityCommand,
+	runTalentCapabilityQuery,
+} from "./run-operation";
 import {
 	projectTalentPoolMemberListFromDecision,
 	talentSensitiveQueryRequestedFields,
@@ -51,7 +51,8 @@ export function createTalentPool(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<TalentPool>> {
-	return runTalentCommand(input, options, {
+	return runTalentCapabilityCommand(input, options, {
+		storeMethods: ["createTalentPool", "findTalentPoolByIdempotencyKey"],
 		schema: createTalentPoolInputSchema,
 		invalidMessage: "Invalid talent pool create input",
 		command: HUMAN_RESOURCES_COMMAND_TALENT_POOL_CREATE,
@@ -108,7 +109,8 @@ export function updateTalentPool(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<TalentPool>> {
-	return runTalentCommand(input, options, {
+	return runTalentCapabilityCommand(input, options, {
+		storeMethods: ["updateTalentPool"],
 		schema: updateTalentPoolInputSchema,
 		invalidMessage: "Invalid talent pool update input",
 		command: HUMAN_RESOURCES_COMMAND_TALENT_POOL_UPDATE,
@@ -137,7 +139,8 @@ export function closeTalentPool(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<TalentPool>> {
-	return runTalentCommand(input, options, {
+	return runTalentCapabilityCommand(input, options, {
+		storeMethods: ["closeTalentPool"],
 		schema: closeTalentPoolInputSchema,
 		invalidMessage: "Invalid talent pool close input",
 		command: HUMAN_RESOURCES_COMMAND_TALENT_POOL_CLOSE,
@@ -164,7 +167,11 @@ export function nominateTalentPoolMember(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<TalentPoolMember>> {
-	return runTalentCommand(input, options, {
+	return runTalentCapabilityCommand(input, options, {
+		storeMethods: [
+			"findTalentPoolMemberByIdempotencyKey",
+			"nominateTalentPoolMember",
+		],
 		schema: nominateTalentPoolMemberInputSchema,
 		invalidMessage: "Invalid talent pool member nomination input",
 		command: HUMAN_RESOURCES_COMMAND_TALENT_POOL_MEMBER_NOMINATE,
@@ -228,7 +235,8 @@ export function approveTalentPoolMember(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<TalentPoolMember>> {
-	return runTalentCommand(input, options, {
+	return runTalentCapabilityCommand(input, options, {
+		storeMethods: ["approveTalentPoolMember"],
 		schema: approveTalentPoolMemberInputSchema,
 		invalidMessage: "Invalid talent pool member approval input",
 		command: HUMAN_RESOURCES_COMMAND_TALENT_POOL_MEMBER_APPROVE,
@@ -256,7 +264,8 @@ export function removeTalentPoolMember(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<TalentPoolMember>> {
-	return runTalentCommand(input, options, {
+	return runTalentCapabilityCommand(input, options, {
+		storeMethods: ["removeTalentPoolMember"],
 		schema: removeTalentPoolMemberInputSchema,
 		invalidMessage: "Invalid talent pool member removal input",
 		command: HUMAN_RESOURCES_COMMAND_TALENT_POOL_MEMBER_REMOVE,
@@ -283,7 +292,8 @@ export function listTalentPoolMembers(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<TalentPoolMemberListPage>> {
-	return runTalentQuery(input, options, {
+	return runTalentCapabilityQuery(input, options, {
+		storeMethods: ["listTalentPoolMembers"],
 		schema: listTalentPoolMembersInputSchema,
 		invalidMessage: "Invalid talent pool member list input",
 		query: HUMAN_RESOURCES_QUERY_TALENT_POOL_MEMBER_LIST,

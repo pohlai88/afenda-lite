@@ -6,15 +6,6 @@ import {
 	resolveCommandDeps,
 } from "../command-options";
 import {
-	HUMAN_RESOURCES_COMMAND_PRIVACY_LEGAL_HOLD_PLACE,
-	HUMAN_RESOURCES_COMMAND_PRIVACY_LEGAL_HOLD_RELEASE,
-	HUMAN_RESOURCES_COMMAND_PRIVACY_SUBJECT_ANONYMIZE,
-	HUMAN_RESOURCES_QUERY_PRIVACY_ANONYMIZATION_EVALUATE,
-	HUMAN_RESOURCES_QUERY_PRIVACY_CASE_GET,
-	HUMAN_RESOURCES_QUERY_PRIVACY_RETENTION_EVALUATE,
-	HUMAN_RESOURCES_QUERY_PRIVACY_SUBJECT_EXPORT,
-} from "../module-ids";
-import {
 	authorizationReasonFromFailure,
 	observeAuthorizedOperationResult,
 	observeHrPrivacyOperationResult,
@@ -43,6 +34,16 @@ import type {
 } from "../shared/authorization-types";
 import { authorizeHumanResourcesOperation } from "../shared/contextual-authorization";
 import { authorizationDecisionToFailure } from "../shared/run-authorized-operation";
+import {
+	HUMAN_RESOURCES_COMMAND_PRIVACY_LEGAL_HOLD_PLACE,
+	HUMAN_RESOURCES_COMMAND_PRIVACY_LEGAL_HOLD_RELEASE,
+	HUMAN_RESOURCES_COMMAND_PRIVACY_SUBJECT_ANONYMIZE,
+	HUMAN_RESOURCES_QUERY_PRIVACY_ANONYMIZATION_EVALUATE,
+	HUMAN_RESOURCES_QUERY_PRIVACY_CASE_GET,
+	HUMAN_RESOURCES_QUERY_PRIVACY_RETENTION_EVALUATE,
+	HUMAN_RESOURCES_QUERY_PRIVACY_SUBJECT_EXPORT,
+} from "./operation-registry";
+import { projectHumanResourcesPrivacyExportStore } from "./store";
 import { collectHumanResourcesSubjectData } from "./subject-data-collector";
 
 export interface HumanResourcesPrivacyOperationInput {
@@ -208,7 +209,7 @@ async function exportHumanResourcesSubjectDataCore(
 		organizationId: input.organizationId,
 		subjectEmployeeId: input.personId,
 		correlationId: input.correlationId,
-		store,
+		store: projectHumanResourcesPrivacyExportStore(store),
 		...(input.requestedAt === undefined
 			? {}
 			: { generatedAt: input.requestedAt }),

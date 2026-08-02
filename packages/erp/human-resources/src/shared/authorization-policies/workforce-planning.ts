@@ -68,13 +68,6 @@ export const workforcePlanningPolicy: HumanResourcesAuthorizationPolicy = {
 	id: "hr.workforce-planning",
 	mode: "specialized",
 	resourceRequired: false,
-	operationPrefixes: [
-		"human-resources.headcount-plan.",
-		"human-resources.headcount-plan-line.",
-		"human-resources.headcount.",
-		"human-resources.headcount-reservation.",
-		"human-resources.workforce-plan.",
-	],
 	async evaluate(
 		request: HumanResourcesAuthorizationRequest,
 		options: HumanResourcesCommandOptions,

@@ -38,7 +38,7 @@ export function createDrizzleCorporateAdministrationOutboxPort(
 	return new DrizzleCorporateAdministrationOutboxPort(dependencies);
 }
 
-export class DrizzleCorporateAdministrationOutboxPort
+class DrizzleCorporateAdministrationOutboxPort
 	implements CorporateAdministrationOutboxPort
 {
 	readonly #appender: CorporateAdministrationPendingEventAppender;

@@ -16,11 +16,11 @@ import {
 	documentRequirementTransitionInputSchema,
 	updateDocumentRequirementInputSchema,
 } from "../schemas/compliance";
-import { runComplianceCommand } from "../shared/compliance-command";
 import type { DocumentRequirementApplicability } from "../shared/compliance-status";
 import { buildMutationMeta } from "../shared/mutation-meta";
-import type { HumanResourcesStore } from "../store";
 import type { DocumentRequirement } from "../types";
+import { runComplianceCapabilityCommand } from "./run-operation";
+import type { HumanResourcesComplianceCapabilityStore } from "./store";
 
 export const HUMAN_RESOURCES_AGGREGATE_DOCUMENT_REQUIREMENT =
 	"document_requirement" as const;
@@ -32,7 +32,7 @@ type EmployeeSpecificApplicability = Extract<
 >;
 
 function validateApplicabilityReferences(
-	store: Pick<HumanResourcesStore, "getEmployeeById">,
+	store: Pick<HumanResourcesComplianceCapabilityStore, "getEmployeeById">,
 	input: {
 		organizationId: string;
 		applicability: DocumentRequirementApplicability;
@@ -49,7 +49,7 @@ function validateApplicabilityReferences(
 }
 
 async function validateApplicabilityEmployeeAtIndex(
-	store: Pick<HumanResourcesStore, "getEmployeeById">,
+	store: Pick<HumanResourcesComplianceCapabilityStore, "getEmployeeById">,
 	input: {
 		organizationId: string;
 		employeeIds: EmployeeSpecificApplicability["employeeIds"];
@@ -85,10 +85,15 @@ export function createDocumentRequirement(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<DocumentRequirement>> {
-	return runComplianceCommand(input, options, {
+	return runComplianceCapabilityCommand(input, options, {
 		schema: createDocumentRequirementInputSchema,
 		invalidMessage: "Invalid document requirement create input",
 		command: HUMAN_RESOURCES_COMMAND_DOCUMENT_REQUIREMENT_CREATE,
+		storeMethods: [
+			"getEmployeeById",
+			"findDocumentRequirementByCode",
+			"createDocumentRequirement",
+		],
 		execute: async (data, { store, ports }) => {
 			const applicability = await validateApplicabilityReferences(store, {
 				organizationId: data.organizationId,
@@ -139,10 +144,11 @@ export function updateDocumentRequirement(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<DocumentRequirement>> {
-	return runComplianceCommand(input, options, {
+	return runComplianceCapabilityCommand(input, options, {
 		schema: updateDocumentRequirementInputSchema,
 		invalidMessage: "Invalid document requirement update input",
 		command: HUMAN_RESOURCES_COMMAND_DOCUMENT_REQUIREMENT_UPDATE,
+		storeMethods: ["getEmployeeById", "updateDocumentRequirement"],
 		execute: async (data, { store, ports }) => {
 			if (data.applicability !== undefined) {
 				const applicability = await validateApplicabilityReferences(store, {
@@ -179,10 +185,11 @@ export function publishDocumentRequirement(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<DocumentRequirement>> {
-	return runComplianceCommand(input, options, {
+	return runComplianceCapabilityCommand(input, options, {
 		schema: documentRequirementTransitionInputSchema,
 		invalidMessage: "Invalid document requirement publish input",
 		command: HUMAN_RESOURCES_COMMAND_DOCUMENT_REQUIREMENT_PUBLISH,
+		storeMethods: ["publishDocumentRequirement"],
 		execute: (data, { store, ports }) =>
 			store.publishDocumentRequirement(
 				{
@@ -204,10 +211,11 @@ export function retireDocumentRequirement(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<DocumentRequirement>> {
-	return runComplianceCommand(input, options, {
+	return runComplianceCapabilityCommand(input, options, {
 		schema: documentRequirementTransitionInputSchema,
 		invalidMessage: "Invalid document requirement retire input",
 		command: HUMAN_RESOURCES_COMMAND_DOCUMENT_REQUIREMENT_RETIRE,
+		storeMethods: ["retireDocumentRequirement"],
 		execute: (data, { store, ports }) =>
 			store.retireDocumentRequirement(
 				{

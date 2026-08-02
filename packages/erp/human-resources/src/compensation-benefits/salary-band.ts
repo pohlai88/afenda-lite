@@ -16,14 +16,14 @@ import {
 	listSalaryBandsByGradeInputSchema,
 	supersedeSalaryBandInputSchema,
 } from "../schemas/compensation";
-import {
-	assertCurrencyExists,
-	runCompensationCommand,
-	runCompensationQuery,
-} from "../shared/compensation-command";
 import { notFound } from "../shared/domain-guards";
 import { buildMutationMeta } from "../shared/mutation-meta";
 import type { SalaryBand, SalaryBandListPage } from "../types";
+import {
+	assertCurrencyExists,
+	runCompensationCapabilityCommand,
+	runCompensationCapabilityQuery,
+} from "./run-operation";
 
 export const HUMAN_RESOURCES_AGGREGATE_SALARY_BAND = "salary_band" as const;
 export type HumanResourcesSalaryBandAggregate =
@@ -33,7 +33,8 @@ export function createSalaryBand(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<SalaryBand>> {
-	return runCompensationCommand(input, options, {
+	return runCompensationCapabilityCommand(input, options, {
+		storeMethods: ["createSalaryBand"],
 		schema: createSalaryBandInputSchema,
 		invalidMessage: "Invalid salary band create input",
 		command: HUMAN_RESOURCES_COMMAND_SALARY_BAND_CREATE,
@@ -72,7 +73,8 @@ export function supersedeSalaryBand(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<SalaryBand>> {
-	return runCompensationCommand(input, options, {
+	return runCompensationCapabilityCommand(input, options, {
+		storeMethods: ["supersedeSalaryBand"],
 		schema: supersedeSalaryBandInputSchema,
 		invalidMessage: "Invalid salary band supersede input",
 		command: HUMAN_RESOURCES_COMMAND_SALARY_BAND_SUPERSEDE,
@@ -116,7 +118,8 @@ export function archiveSalaryBand(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<SalaryBand>> {
-	return runCompensationCommand(input, options, {
+	return runCompensationCapabilityCommand(input, options, {
+		storeMethods: ["archiveSalaryBand"],
 		schema: archiveSalaryBandInputSchema,
 		invalidMessage: "Invalid salary band archive input",
 		command: HUMAN_RESOURCES_COMMAND_SALARY_BAND_ARCHIVE,
@@ -141,42 +144,37 @@ export function getSalaryBand(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<SalaryBand>> {
-	return runCompensationQuery<typeof getSalaryBandInputSchema, SalaryBand>(
-		input,
-		options,
-		{
-			schema: getSalaryBandInputSchema,
-			invalidMessage: "Invalid salary band get input",
-			query: HUMAN_RESOURCES_QUERY_SALARY_BAND_GET,
-			execute: async (data, { store }) => {
-				const band = await store.getSalaryBand({
-					organizationId: data.organizationId,
-					salaryBandId: data.salaryBandId,
-				});
-				if (!band.ok) {
-					return band;
-				}
-				if (band.data === null) {
-					return notFound("Salary band not found");
-				}
-				return { ok: true, data: band.data };
-			},
+	return runCompensationCapabilityQuery(input, options, {
+		storeMethods: ["getSalaryBand"],
+		schema: getSalaryBandInputSchema,
+		invalidMessage: "Invalid salary band get input",
+		query: HUMAN_RESOURCES_QUERY_SALARY_BAND_GET,
+		execute: async (data, { store }): Promise<Result<SalaryBand>> => {
+			const band = await store.getSalaryBand({
+				organizationId: data.organizationId,
+				salaryBandId: data.salaryBandId,
+			});
+			if (!band.ok) {
+				return band;
+			}
+			if (band.data === null) {
+				return notFound("Salary band not found");
+			}
+			return { ok: true, data: band.data };
 		},
-	);
+	});
 }
 
 export function listSalaryBandsByGrade(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<SalaryBandListPage>> {
-	return runCompensationQuery<
-		typeof listSalaryBandsByGradeInputSchema,
-		SalaryBandListPage
-	>(input, options, {
+	return runCompensationCapabilityQuery(input, options, {
+		storeMethods: ["listSalaryBandsByGrade"],
 		schema: listSalaryBandsByGradeInputSchema,
 		invalidMessage: "Invalid salary band list input",
 		query: HUMAN_RESOURCES_QUERY_SALARY_BAND_LIST_BY_GRADE,
-		execute: (data, { store }) =>
+		execute: (data, { store }): Promise<Result<SalaryBandListPage>> =>
 			store.listSalaryBandsByGrade({
 				organizationId: data.organizationId,
 				gradeId: data.gradeId,
@@ -191,14 +189,12 @@ export function findSalaryBandByGradeAndCurrencyAsOf(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<SalaryBand>> {
-	return runCompensationQuery<
-		typeof findSalaryBandByGradeAndCurrencyAsOfInputSchema,
-		SalaryBand
-	>(input, options, {
+	return runCompensationCapabilityQuery(input, options, {
+		storeMethods: ["findSalaryBandByGradeAndCurrencyAsOf"],
 		schema: findSalaryBandByGradeAndCurrencyAsOfInputSchema,
 		invalidMessage: "Invalid salary band as-of input",
 		query: HUMAN_RESOURCES_QUERY_SALARY_BAND_FIND_AS_OF,
-		execute: async (data, { store }) => {
+		execute: async (data, { store }): Promise<Result<SalaryBand>> => {
 			const band = await store.findSalaryBandByGradeAndCurrencyAsOf({
 				organizationId: data.organizationId,
 				gradeId: data.gradeId,

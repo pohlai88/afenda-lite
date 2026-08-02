@@ -1,15 +1,12 @@
 // biome-ignore-all lint/complexity/noExcessiveCognitiveComplexity: Governance commands coordinate policy, CAS, idempotency, audit, and outbox atomically.
 import { errorResult, type Result } from "@afenda/errors";
-
-import {
-	CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS,
-	requireCorporateAdministrationPermission,
-} from "../../authorization";
 import type { CorporateAdministrationCommandOptions } from "../../command-options";
 import {
-	type DurableLegalCompanyCommandDependencies,
-	runDurableCompanyCommand,
-} from "../../company/commands/durable-command";
+	authorizeCorporateAdministrationCommand,
+	type CorporateAdministrationAuthorizedCommandExecution,
+	type CorporateAdministrationCommandKernelDependencies,
+	executeCorporateAdministrationCommand,
+} from "../../internal/durable-command";
 import type { GovernanceMembershipId } from "../../kernel/brands";
 import { parseCorporateAdministrationInput } from "../../parse-input";
 import {
@@ -40,7 +37,7 @@ import type {
 } from "../types";
 
 type Dependencies = GovernanceCommandDependencies &
-	DurableLegalCompanyCommandDependencies;
+	CorporateAdministrationCommandKernelDependencies;
 
 export async function createGovernanceBody(
 	input: CreateGovernanceBodyInput,
@@ -54,7 +51,10 @@ export async function createGovernanceBody(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "createGovernanceBody");
+	const authorized = await authorizeCorporateAdministrationCommand(
+		"createGovernanceBody",
+		options,
+	);
 	if (!authorized.ok) {
 		return authorized;
 	}
@@ -81,18 +81,15 @@ export async function createGovernanceBody(
 		return source;
 	}
 
-	return runDurableCompanyCommand({
-		commandId: "corporate-administration.governance-body.create",
+	return executeCorporateAdministrationCommand({
+		authorization: authorized.data,
 		fingerprintSchema: createGovernanceBodyInputSchema,
 		fingerprintInput: parsed.data,
 		outputSchema: governanceBodySchema,
-		options,
 		dependencies,
 		event: {
-			type: "corporate_administration.governance_body.created.v1",
 			operationType: "CREATE",
 			targetType: "ca_governance_body",
-			aggregateType: "governance_body",
 			aggregateId: (result) => result.id,
 			aggregateVersion: (result) => result.version,
 			payload: (result, context) => ({
@@ -139,7 +136,10 @@ export async function amendGovernanceBody(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "amendGovernanceBody");
+	const authorized = await authorizeCorporateAdministrationCommand(
+		"amendGovernanceBody",
+		options,
+	);
 	if (!authorized.ok) {
 		return authorized;
 	}
@@ -165,8 +165,8 @@ export async function amendGovernanceBody(
 		return source;
 	}
 	return runGovernanceBodyUpdate({
-		commandId: "corporate-administration.governance-body.amend",
-		eventType: "corporate_administration.governance_body.amended.v1",
+		authorization: authorized.data,
+		operationId: "amendGovernanceBody",
 		inputSchema: amendGovernanceBodyInputSchema,
 		input: parsed.data,
 		options,
@@ -198,7 +198,10 @@ export async function retireGovernanceBody(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "retireGovernanceBody");
+	const authorized = await authorizeCorporateAdministrationCommand(
+		"retireGovernanceBody",
+		options,
+	);
 	if (!authorized.ok) {
 		return authorized;
 	}
@@ -239,8 +242,8 @@ export async function retireGovernanceBody(
 		return source;
 	}
 	return runGovernanceBodyUpdate({
-		commandId: "corporate-administration.governance-body.retire",
-		eventType: "corporate_administration.governance_body.retired.v1",
+		authorization: authorized.data,
+		operationId: "retireGovernanceBody",
 		inputSchema: retireGovernanceBodyInputSchema,
 		input: parsed.data,
 		options,
@@ -272,7 +275,10 @@ export async function appointGovernanceMember(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "appointGovernanceMember");
+	const authorized = await authorizeCorporateAdministrationCommand(
+		"appointGovernanceMember",
+		options,
+	);
 	if (!authorized.ok) {
 		return authorized;
 	}
@@ -350,8 +356,9 @@ export async function appointGovernanceMember(
 		return conflictCheck;
 	}
 	return runGovernanceMembershipUpdate({
-		commandId: "corporate-administration.governance-membership.appoint",
-		eventType: "corporate_administration.governance_membership.appointed.v1",
+		authorization: authorized.data,
+		operationId: "appointGovernanceMember",
+		operationType: "CREATE",
 		inputSchema: appointGovernanceMemberInputSchema,
 		input: parsed.data,
 		options,
@@ -395,7 +402,10 @@ export async function changeGovernanceMembership(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "changeGovernanceMembership");
+	const authorized = await authorizeCorporateAdministrationCommand(
+		"changeGovernanceMembership",
+		options,
+	);
 	if (!authorized.ok) {
 		return authorized;
 	}
@@ -459,8 +469,9 @@ export async function changeGovernanceMembership(
 		return source;
 	}
 	return runGovernanceMembershipUpdate({
-		commandId: "corporate-administration.governance-membership.change",
-		eventType: "corporate_administration.governance_membership.changed.v1",
+		authorization: authorized.data,
+		operationId: "changeGovernanceMembership",
+		operationType: "UPDATE",
 		inputSchema: changeGovernanceMembershipInputSchema,
 		input: parsed.data,
 		options,
@@ -496,7 +507,10 @@ export async function endGovernanceMembership(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "endGovernanceMembership");
+	const authorized = await authorizeCorporateAdministrationCommand(
+		"endGovernanceMembership",
+		options,
+	);
 	if (!authorized.ok) {
 		return authorized;
 	}
@@ -525,8 +539,9 @@ export async function endGovernanceMembership(
 		return source;
 	}
 	return runGovernanceMembershipUpdate({
-		commandId: "corporate-administration.governance-membership.end",
-		eventType: "corporate_administration.governance_membership.ended.v1",
+		authorization: authorized.data,
+		operationId: "endGovernanceMembership",
+		operationType: "UPDATE",
 		inputSchema: endGovernanceMembershipInputSchema,
 		input: parsed.data,
 		options,
@@ -547,30 +562,27 @@ export async function endGovernanceMembership(
 }
 
 function runGovernanceBodyUpdate(input: {
-	commandId: string;
-	eventType:
-		| "corporate_administration.governance_body.amended.v1"
-		| "corporate_administration.governance_body.retired.v1";
+	authorization: CorporateAdministrationAuthorizedCommandExecution;
+	operationId: "amendGovernanceBody" | "retireGovernanceBody";
 	inputSchema:
 		| typeof amendGovernanceBodyInputSchema
 		| typeof retireGovernanceBodyInputSchema;
 	input: unknown;
 	options: CorporateAdministrationCommandOptions;
 	dependencies: Dependencies;
-	work: Parameters<typeof runDurableCompanyCommand<GovernanceBody>>[0]["work"];
+	work: Parameters<
+		typeof executeCorporateAdministrationCommand<GovernanceBody>
+	>[0]["work"];
 }) {
-	return runDurableCompanyCommand({
-		commandId: input.commandId,
+	return executeCorporateAdministrationCommand({
+		authorization: input.authorization,
 		fingerprintSchema: input.inputSchema,
 		fingerprintInput: input.input,
 		outputSchema: governanceBodySchema,
-		options: input.options,
 		dependencies: input.dependencies,
 		event: {
-			type: input.eventType,
 			operationType: "UPDATE",
 			targetType: "ca_governance_body",
-			aggregateType: "governance_body",
 			aggregateId: (result) => result.id,
 			aggregateVersion: (result) => result.version,
 			payload: (result, context) => ({
@@ -589,11 +601,12 @@ function runGovernanceBodyUpdate(input: {
 }
 
 function runGovernanceMembershipUpdate(input: {
-	commandId: string;
-	eventType:
-		| "corporate_administration.governance_membership.appointed.v1"
-		| "corporate_administration.governance_membership.changed.v1"
-		| "corporate_administration.governance_membership.ended.v1";
+	authorization: CorporateAdministrationAuthorizedCommandExecution;
+	operationId:
+		| "appointGovernanceMember"
+		| "changeGovernanceMembership"
+		| "endGovernanceMembership";
+	operationType: "CREATE" | "UPDATE";
 	inputSchema:
 		| typeof appointGovernanceMemberInputSchema
 		| typeof changeGovernanceMembershipInputSchema
@@ -602,23 +615,18 @@ function runGovernanceMembershipUpdate(input: {
 	options: CorporateAdministrationCommandOptions;
 	dependencies: Dependencies;
 	work: Parameters<
-		typeof runDurableCompanyCommand<GovernanceMembership>
+		typeof executeCorporateAdministrationCommand<GovernanceMembership>
 	>[0]["work"];
 }) {
-	return runDurableCompanyCommand({
-		commandId: input.commandId,
+	return executeCorporateAdministrationCommand({
+		authorization: input.authorization,
 		fingerprintSchema: input.inputSchema,
 		fingerprintInput: input.input,
 		outputSchema: governanceMembershipSchema,
-		options: input.options,
 		dependencies: input.dependencies,
 		event: {
-			type: input.eventType,
-			operationType: input.eventType.endsWith("appointed.v1")
-				? "CREATE"
-				: "UPDATE",
+			operationType: input.operationType,
 			targetType: "ca_governance_membership",
-			aggregateType: "governance_membership",
 			aggregateId: (result) => result.id,
 			aggregateVersion: (result) => result.version,
 			payload: (result, context) => ({
@@ -634,17 +642,6 @@ function runGovernanceMembershipUpdate(input: {
 		},
 		serializeResult: serializeGovernanceMembership,
 		work: input.work,
-	});
-}
-
-function authorize(
-	options: CorporateAdministrationCommandOptions,
-	command: keyof typeof CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS,
-) {
-	return requireCorporateAdministrationPermission(options.authorization, {
-		organizationId: options.organizationId,
-		actorUserId: options.actorUserId,
-		permission: CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS[command],
 	});
 }
 

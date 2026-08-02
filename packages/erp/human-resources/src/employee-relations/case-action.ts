@@ -12,9 +12,9 @@ import {
 	approveEmployeeCaseActionInputSchema,
 	recommendEmployeeCaseActionInputSchema,
 } from "../schemas/employee-relations";
-import { runEmployeeRelationsCommand } from "../shared/employee-relations-command";
 import { fingerprintEmployeeCaseActionRecommend } from "../shared/fingerprint";
 import { buildMutationMeta } from "../shared/mutation-meta";
+import { runEmployeeRelationsCapabilityCommand } from "./run-operation";
 import type { EmployeeCaseAction } from "./types";
 
 export const HUMAN_RESOURCES_AGGREGATE_EMPLOYEE_CASE_ACTION =
@@ -26,10 +26,14 @@ export function recommendEmployeeCaseAction(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCaseAction>> {
-	return runEmployeeRelationsCommand(input, options, {
+	return runEmployeeRelationsCapabilityCommand(input, options, {
 		schema: recommendEmployeeCaseActionInputSchema,
 		invalidMessage: "Invalid employee case action recommend input",
 		command: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_RECOMMEND_ACTION,
+		storeMethods: [
+			"findEmployeeCaseActionByIdempotencyKey",
+			"recommendEmployeeCaseAction",
+		],
 		execute: async (data, { store, ports }) => {
 			const fingerprint = fingerprintEmployeeCaseActionRecommend({
 				caseId: data.caseId,
@@ -78,10 +82,11 @@ export function approveEmployeeCaseAction(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCaseAction>> {
-	return runEmployeeRelationsCommand(input, options, {
+	return runEmployeeRelationsCapabilityCommand(input, options, {
 		schema: approveEmployeeCaseActionInputSchema,
 		invalidMessage: "Invalid employee case action approve input",
 		command: HUMAN_RESOURCES_COMMAND_EMPLOYEE_CASE_APPROVE_ACTION,
+		storeMethods: ["approveEmployeeCaseAction"],
 		execute: (data, { store, ports }) =>
 			store.approveEmployeeCaseAction(
 				{

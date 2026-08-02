@@ -1,6 +1,5 @@
 import { errorResult, type Result } from "@afenda/errors";
 import type { HumanResourcesCommandOptions } from "../command-options";
-import { resolveCommandDeps } from "../command-options";
 import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
 	humanResourcesErrorDetails,
@@ -27,11 +26,6 @@ import {
 } from "../schemas/talent";
 import { fingerprintCareerPlanCreate } from "../shared/fingerprint";
 import { buildMutationMeta } from "../shared/mutation-meta";
-import {
-	resolveTalentProfileResourceForEmployee,
-	resolveTalentProfileResourceFromCareerPlan,
-	runTalentCommand,
-} from "../shared/talent-command";
 import type {
 	CareerPlan,
 	CareerPlanAction,
@@ -42,6 +36,11 @@ import {
 	runAuthorizedTalentLoadedReadQuery,
 	runAuthorizedTalentSubjectListQuery,
 } from "./authorized-talent-read";
+import {
+	resolveTalentProfileResourceForEmployee,
+	resolveTalentProfileResourceFromCareerPlan,
+	runTalentCapabilityCommand,
+} from "./run-operation";
 import {
 	projectCareerPlanFromDecision,
 	projectCareerPlanWithActionsFromDecision,
@@ -56,7 +55,8 @@ export function createCareerPlan(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CareerPlan>> {
-	return runTalentCommand(input, options, {
+	return runTalentCapabilityCommand(input, options, {
+		storeMethods: ["createCareerPlan", "findCareerPlanByIdempotencyKey"],
 		schema: createCareerPlanInputSchema,
 		invalidMessage: "Invalid career plan create input",
 		command: HUMAN_RESOURCES_COMMAND_CAREER_PLAN_CREATE,
@@ -121,7 +121,8 @@ export function updateCareerPlan(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CareerPlan>> {
-	return runTalentCommand(input, options, {
+	return runTalentCapabilityCommand(input, options, {
+		storeMethods: ["updateCareerPlan"],
 		schema: updateCareerPlanInputSchema,
 		invalidMessage: "Invalid career plan update input",
 		command: HUMAN_RESOURCES_COMMAND_CAREER_PLAN_UPDATE,
@@ -149,7 +150,8 @@ export function acknowledgeCareerPlan(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CareerPlan>> {
-	return runTalentCommand(input, options, {
+	return runTalentCapabilityCommand(input, options, {
+		storeMethods: ["acknowledgeCareerPlan"],
 		schema: acknowledgeCareerPlanInputSchema,
 		invalidMessage: "Invalid career plan acknowledge input",
 		command: HUMAN_RESOURCES_COMMAND_CAREER_PLAN_ACKNOWLEDGE,
@@ -176,7 +178,8 @@ export function addCareerPlanAction(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CareerPlanAction>> {
-	return runTalentCommand(input, options, {
+	return runTalentCapabilityCommand(input, options, {
+		storeMethods: ["addCareerPlanAction"],
 		schema: addCareerPlanActionInputSchema,
 		invalidMessage: "Invalid career plan action add input",
 		command: HUMAN_RESOURCES_COMMAND_CAREER_PLAN_ACTION_ADD,
@@ -205,13 +208,13 @@ export function completeCareerPlanAction(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CareerPlanAction>> {
-	return runTalentCommand(input, options, {
+	return runTalentCapabilityCommand(input, options, {
+		storeMethods: ["completeCareerPlanAction", "getCareerPlanActionById"],
 		schema: completeCareerPlanActionInputSchema,
 		invalidMessage: "Invalid career plan action complete input",
 		command: HUMAN_RESOURCES_COMMAND_CAREER_PLAN_ACTION_COMPLETE,
-		resolveResource: async (data, opts) => {
-			const { store } = resolveCommandDeps(opts);
-			const action = await store.getCareerPlanActionById({
+		resolveResource: async (data, deps) => {
+			const action = await deps.store.getCareerPlanActionById({
 				organizationId: data.organizationId,
 				actionId: data.actionId,
 			});
@@ -223,7 +226,7 @@ export function completeCareerPlanAction(
 					organizationId: data.organizationId,
 					careerPlanId: action.data.careerPlanId,
 				},
-				opts,
+				deps,
 			);
 		},
 		execute: async (data, { store, ports }) =>
@@ -247,7 +250,8 @@ export function closeCareerPlan(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CareerPlan>> {
-	return runTalentCommand(input, options, {
+	return runTalentCapabilityCommand(input, options, {
+		storeMethods: ["closeCareerPlan"],
 		schema: closeCareerPlanInputSchema,
 		invalidMessage: "Invalid career plan close input",
 		command: HUMAN_RESOURCES_COMMAND_CAREER_PLAN_CLOSE,
@@ -275,6 +279,7 @@ export function getCareerPlanById(
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CareerPlanWithActions | null>> {
 	return runAuthorizedTalentLoadedReadQuery(input, options, {
+		storeMethods: ["getCareerPlanById"],
 		schema: getCareerPlanByIdInputSchema,
 		invalidMessage: "Invalid career plan get input",
 		query: HUMAN_RESOURCES_QUERY_CAREER_PLAN_GET,
@@ -303,19 +308,14 @@ export function listEmployeeCareerPlans(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CareerPlanListPage>> {
-	return runAuthorizedTalentSubjectListQuery<
-		typeof listEmployeeCareerPlansInputSchema,
-		"careerPlans",
-		CareerPlan,
-		CareerPlan,
-		CareerPlanListPage
-	>(input, options, {
+	return runAuthorizedTalentSubjectListQuery(input, options, {
+		storeMethods: ["listEmployeeCareerPlans"],
 		schema: listEmployeeCareerPlansInputSchema,
 		invalidMessage: "Invalid employee career plan list input",
 		query: HUMAN_RESOURCES_QUERY_CAREER_PLAN_LIST_BY_EMPLOYEE,
 		itemsKey: "careerPlans",
 		resolveRequestedFields: () => talentSensitiveQueryRequestedFields(),
-		projectItem: (plan, projection) =>
+		projectItem: (plan: CareerPlan, projection) =>
 			projectCareerPlanFromDecision(plan, projection),
 		loadPage: async ({ data, store }) =>
 			store.listEmployeeCareerPlans({

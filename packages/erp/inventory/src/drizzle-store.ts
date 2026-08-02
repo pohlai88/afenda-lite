@@ -23,6 +23,12 @@ import {
 	errorResult,
 	type Result,
 } from "@afenda/errors";
+import {
+	INVENTORY_CANCEL_MOVEMENT_EMISSION,
+	INVENTORY_CREATE_MOVEMENT_EMISSION,
+	INVENTORY_POST_MOVEMENT_EMISSION,
+	INVENTORY_RESERVE_STOCK_EMISSION,
+} from "./operation-registry";
 import type { MutationPorts } from "./ports";
 import { runSequentiallyUntil } from "./resolve-async";
 import {
@@ -979,7 +985,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 							payload, status, attempts
 						)
 						SELECT
-							${eventId}, organization_id, 'inventory.movement.created.v1', 'inventory',
+							${eventId}, organization_id, ${INVENTORY_CREATE_MOVEMENT_EMISSION}, 'inventory',
 							${meta.correlationId}, created_by, ${payloadJson}::jsonb, 'pending', 0
 						FROM mutated
 						RETURNING id
@@ -1297,7 +1303,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 								payload, status, attempts
 							)
 							SELECT
-								${eventId}, organization_id, 'inventory.movement.posted.v1', 'inventory',
+								${eventId}, organization_id, ${INVENTORY_POST_MOVEMENT_EMISSION}, 'inventory',
 								${meta.correlationId}, ${record.actorUserId}, ${payloadJson}::jsonb, 'pending', 0
 							FROM mutated
 							RETURNING id
@@ -1576,7 +1582,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 							payload, status, attempts
 						)
 						SELECT
-							${eventId}, ${record.organizationId}, 'inventory.movement.cancelled.v1', 'inventory',
+							${eventId}, ${record.organizationId}, ${INVENTORY_CANCEL_MOVEMENT_EMISSION}, 'inventory',
 							${meta.correlationId}, ${record.actorUserId}, ${payloadJson}::jsonb, 'pending', 0
 						WHERE EXISTS (SELECT 1 FROM mutated)
 						RETURNING id
@@ -1784,7 +1790,7 @@ export class DrizzleInventoryStore implements InventoryStore {
 							payload, status, attempts
 						)
 						SELECT
-							${eventId}, ${record.organizationId}, 'inventory.stock.reserved.v1', 'inventory',
+							${eventId}, ${record.organizationId}, ${INVENTORY_RESERVE_STOCK_EMISSION}, 'inventory',
 							${meta.correlationId}, ${record.createdBy}, ${payloadJson}::jsonb, 'pending', 0
 						WHERE EXISTS (SELECT 1 FROM created)
 						RETURNING id

@@ -17,7 +17,6 @@ import {
 	HUMAN_RESOURCES_COMMAND_REQUISITION_SUBMIT,
 	HUMAN_RESOURCES_QUERY_REQUISITION_GET,
 	HUMAN_RESOURCES_QUERY_REQUISITION_LIST,
-	type HumanResourcesCommandId,
 } from "../module-ids";
 import {
 	amendRequisitionInputSchema,
@@ -30,27 +29,27 @@ import {
 import { fingerprintRequisitionCreate } from "../shared/fingerprint";
 import { buildMutationMeta } from "../shared/mutation-meta";
 import {
-	runRecruitmentCommand,
-	runRecruitmentQuery,
-} from "../shared/recruitment-command";
-import {
 	assertRequisitionHasHiringManager,
 	assertRequisitionHiringManagerAssignable,
 } from "../shared/recruitment-guards";
 import type { RequisitionStatus } from "../shared/recruitment-status";
-import type { HumanResourcesStore } from "../store";
 import type { JobRequisition, RequisitionListPage } from "../types";
 import {
 	mutationUtcDate,
 	validateHiringManagerEmployee,
 } from "./hiring-manager-validation";
+import {
+	runRecruitmentCapabilityCommand,
+	runRecruitmentCapabilityQuery,
+} from "./run-operation";
+import type { HumanResourcesRecruitmentCapabilityStore } from "./store";
 
 export const HUMAN_RESOURCES_AGGREGATE_REQUISITION = "requisition" as const;
 export type HumanResourcesRequisitionAggregate =
 	typeof HUMAN_RESOURCES_AGGREGATE_REQUISITION;
 
 async function ensureRequisitionHasHiringManagerForTransition(
-	store: HumanResourcesStore,
+	store: Pick<HumanResourcesRecruitmentCapabilityStore, "getRequisitionById">,
 	input: {
 		organizationId: string;
 		requisitionId: JobRequisition["id"];
@@ -79,10 +78,16 @@ export function createDraftRequisition(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<JobRequisition>> {
-	return runRecruitmentCommand(input, options, {
+	return runRecruitmentCapabilityCommand(input, options, {
 		schema: createDraftRequisitionInputSchema,
 		invalidMessage: "Invalid requisition create-draft input",
 		command: HUMAN_RESOURCES_COMMAND_REQUISITION_CREATE_DRAFT,
+		storeMethods: [
+			"createDraftRequisition",
+			"findEmploymentByEmployeeAsOf",
+			"findRequisitionByIdempotencyKey",
+			"getEmployeeById",
+		],
 		execute: async (data, { store, ports }) => {
 			const jobId = data.jobId ?? null;
 			const positionId = data.positionId ?? null;
@@ -155,10 +160,15 @@ export function amendRequisition(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<JobRequisition>> {
-	return runRecruitmentCommand(input, options, {
+	return runRecruitmentCapabilityCommand(input, options, {
 		schema: amendRequisitionInputSchema,
 		invalidMessage: "Invalid requisition amend input",
 		command: HUMAN_RESOURCES_COMMAND_REQUISITION_AMEND,
+		storeMethods: [
+			"amendRequisition",
+			"findEmploymentByEmployeeAsOf",
+			"getEmployeeById",
+		],
 		execute: async (data, { store, ports }) => {
 			if (
 				data.hiringManagerEmployeeId !== undefined &&
@@ -199,10 +209,16 @@ export function assignHiringManager(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<JobRequisition>> {
-	return runRecruitmentCommand(input, options, {
+	return runRecruitmentCapabilityCommand(input, options, {
 		schema: assignHiringManagerInputSchema,
 		invalidMessage: "Invalid requisition assign-hiring-manager input",
 		command: HUMAN_RESOURCES_COMMAND_REQUISITION_ASSIGN_HIRING_MANAGER,
+		storeMethods: [
+			"assignHiringManager",
+			"findEmploymentByEmployeeAsOf",
+			"getEmployeeById",
+			"getRequisitionById",
+		],
 		execute: async (data, { store, ports }) => {
 			const requisition = await store.getRequisitionById({
 				organizationId: data.organizationId,
@@ -260,16 +276,17 @@ function transitionRequisition(
 	options: HumanResourcesCommandOptions,
 	config: {
 		invalidMessage: string;
-		command: HumanResourcesCommandId;
+		command: typeof import("./operation-registry").HUMAN_RESOURCES_RECRUITMENT_COMMAND_IDS[number];
 		status: Exclude<RequisitionStatus, "draft">;
 		emitApprovedEvent?: boolean;
 		requireHiringManager?: boolean;
 	},
 ): Promise<Result<JobRequisition>> {
-	return runRecruitmentCommand(input, options, {
+	return runRecruitmentCapabilityCommand(input, options, {
 		schema: requisitionStatusTransitionInputSchema,
 		invalidMessage: config.invalidMessage,
 		command: config.command,
+		storeMethods: ["getRequisitionById", "transitionRequisitionStatus"],
 		execute: async (data, { store, ports }) => {
 			if (config.requireHiringManager) {
 				const guarded = await ensureRequisitionHasHiringManagerForTransition(
@@ -377,10 +394,11 @@ export function getRequisition(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<JobRequisition>> {
-	return runRecruitmentQuery(input, options, {
+	return runRecruitmentCapabilityQuery(input, options, {
 		schema: getRequisitionInputSchema,
 		invalidMessage: "Invalid requisition get input",
 		query: HUMAN_RESOURCES_QUERY_REQUISITION_GET,
+		storeMethods: ["getRequisitionById"],
 		execute: async (data, { store }) => {
 			const requisition = await store.getRequisitionById({
 				organizationId: data.organizationId,
@@ -406,10 +424,11 @@ export function listRequisitions(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<RequisitionListPage>> {
-	return runRecruitmentQuery(input, options, {
+	return runRecruitmentCapabilityQuery(input, options, {
 		schema: listRequisitionsInputSchema,
 		invalidMessage: "Invalid requisition list input",
 		query: HUMAN_RESOURCES_QUERY_REQUISITION_LIST,
+		storeMethods: ["listRequisitions"],
 		execute: (data, { store }) =>
 			store.listRequisitions({
 				organizationId: data.organizationId,

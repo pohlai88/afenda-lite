@@ -5,20 +5,119 @@
  * infer shapes consumed by the time adapter mappers.
  */
 
+import { audit as afendaAudit } from "@afenda/audit";
 import {
 	database as afendaDatabase,
 	type hrAttendanceAdjustment,
+	type hrAttendanceBreakWaiverDecision,
 	type hrAttendanceEvent,
+	type hrAttendanceException,
+	type hrEmploymentCalendarAssignment,
 	type hrShift,
 	type hrShiftAssignment,
+	type hrShiftBreak,
 	type hrTimeApprovalAuthorityAssignment,
 	type hrTimePolicy,
 	type hrTimePolicyAssignment,
 	type hrTimesheet,
 	type hrTimesheetApprovalDecision,
 	type hrWorkCalendar,
+	type hrWorkCalendarHoliday,
+	type hrWorkCalendarScopeAssignment,
+	type NeonHttpSql,
+	type NeonHttpTransactionQuery,
 	type NeonHttpTransactionResults,
 } from "@afenda/db";
+import type { HumanResourcesEventType } from "@afenda/events";
+
+const TIME_AUDIT_SOURCE = "human-resources.time-drizzle";
+
+export interface TimeAuditInput {
+	action: "CREATE" | "UPDATE" | "DELETE";
+	actorUserId: string;
+	correlationId?: string | undefined;
+	entity: string;
+	entityId: string;
+	newValue?: Record<string, unknown> | null;
+	oldValue?: Record<string, unknown> | null;
+	organizationId: string;
+	reasonCode: string;
+}
+
+function timeAuditCommand(input: TimeAuditInput) {
+	const correlationId =
+		input.correlationId ?? `hr-time-${input.entity}-${input.entityId}`;
+	return {
+		organizationId: input.organizationId,
+		actorUserId: input.actorUserId,
+		correlationId,
+		module: "human-resources",
+		entity: input.entity,
+		entityId: input.entityId,
+		action: input.action,
+		oldValue: input.oldValue ?? null,
+		newValue: input.newValue ?? null,
+		eventContext: {
+			version: 1 as const,
+			outcome: "SUCCEEDED" as const,
+			source: TIME_AUDIT_SOURCE,
+			causationId: correlationId,
+			reasonCode: input.reasonCode,
+		},
+	};
+}
+
+export function prepareTimeAudit(
+	input: TimeAuditInput,
+): ReturnType<typeof afendaAudit.transaction.prepare> {
+	return afendaAudit.transaction.prepare(timeAuditCommand(input));
+}
+
+export function buildTimeAuditInsert(
+	sql: NeonHttpSql,
+	input: TimeAuditInput,
+): NeonHttpTransactionQuery {
+	const built = afendaAudit.transaction.buildInsert({
+		sql,
+		input: timeAuditCommand(input),
+	});
+	if (!built.ok) {
+		throw new TypeError("Invalid generated Time audit command");
+	}
+	return built.data;
+}
+
+export function buildTimeOutboxInsert(
+	sql: NeonHttpSql,
+	input: {
+		actorUserId: string;
+		correlationId: string;
+		entityId: string;
+		entityType: string;
+		eventId: string;
+		eventType: HumanResourcesEventType;
+		organizationId: string;
+	},
+): NeonHttpTransactionQuery {
+	const payload = JSON.stringify({
+		organizationId: input.organizationId,
+		entityType: input.entityType,
+		entityId: input.entityId,
+		actorId: input.actorUserId,
+		correlationId: input.correlationId,
+	});
+	return sql`
+		INSERT INTO platform_domain_event (
+			id, organization_id, type, source_module, correlation_id, actor_user_id,
+			payload, status, attempts
+		) VALUES (
+			${input.eventId}, ${input.organizationId}, ${input.eventType},
+			'human-resources', ${input.correlationId}, ${input.actorUserId},
+			${payload}::jsonb, 'pending', 0
+		)
+		RETURNING id
+	`;
+}
 
 function parseDate(value: Date | string): Date {
 	return value instanceof Date ? value : new Date(value);
@@ -51,6 +150,55 @@ export interface WorkCalendarSqlRow {
 	updated_by: string;
 	version: number;
 	work_week_json: unknown;
+}
+
+export interface WorkCalendarHolidaySqlRow {
+	calendar_id: string;
+	created_at: Date;
+	created_by: string;
+	expected_minutes: number | null;
+	holiday_date: string;
+	id: string;
+	is_working_day: boolean;
+	jurisdiction: string | null;
+	label: string | null;
+	location_code: string | null;
+	organization_id: string;
+	override_kind: string;
+	updated_at: Date;
+	updated_by: string;
+}
+
+export interface EmploymentCalendarAssignmentSqlRow {
+	calendar_id: string;
+	created_at: Date;
+	created_by: string;
+	effective_from: string;
+	effective_to: string | null;
+	employee_id: string;
+	employment_id: string;
+	id: string;
+	jurisdiction: string | null;
+	location_code: string | null;
+	organization_id: string;
+	updated_at: Date;
+	updated_by: string;
+	version: number;
+}
+
+export interface WorkCalendarScopeAssignmentSqlRow {
+	calendar_id: string;
+	created_at: Date;
+	created_by: string;
+	effective_from: string;
+	effective_to: string | null;
+	id: string;
+	organization_id: string;
+	scope_key: string;
+	scope_type: string;
+	updated_at: Date;
+	updated_by: string;
+	version: number;
 }
 
 export interface TimePolicySqlRow {
@@ -157,6 +305,19 @@ export interface ShiftAssignmentSqlRow {
 	version: number;
 }
 
+export interface ShiftBreakSqlRow {
+	break_order: number;
+	created_at: Date;
+	duration_minutes: number;
+	id: string;
+	is_paid: boolean;
+	label: string | null;
+	organization_id: string;
+	shift_id: string;
+	start_offset_minutes: number;
+	updated_at: Date;
+}
+
 export interface AttendanceEventSqlRow {
 	captured_notes: string | null;
 	captured_occurred_at: Date | null;
@@ -203,6 +364,46 @@ export interface AttendanceAdjustmentSqlRow {
 	previous_notes: string | null;
 	previous_occurred_at: Date;
 	sequence: number | null;
+}
+
+export interface AttendanceExceptionSqlRow {
+	created_at: Date;
+	created_by: string;
+	detected_facts: unknown;
+	employee_id: string;
+	event_id: string | null;
+	evidence_reference: string | null;
+	exception_type: string;
+	id: string;
+	organization_id: string;
+	remarks: string | null;
+	resolution: string | null;
+	review_status: string;
+	reviewer_user_id: string | null;
+	session_id: string | null;
+	severity: string;
+	shift_assignment_id: string | null;
+	updated_at: Date;
+	updated_by: string;
+	version: number;
+}
+
+export interface AttendanceBreakWaiverDecisionSqlRow {
+	actor_user_id: string;
+	authority: string;
+	authority_assignment_id: string;
+	automatic_break_minutes: number;
+	correlation_id: string;
+	created_at: Date;
+	decided_at: Date;
+	evidence_reference: string;
+	id: string;
+	organization_id: string;
+	policy_id: string;
+	reason: string;
+	recorded_break_minutes: number;
+	session_id: string;
+	session_version: number;
 }
 
 export interface TimesheetSqlRow {
@@ -283,6 +484,67 @@ export function workCalendarFromSql(
 		version: row.version,
 		createIdempotencyKey: row.create_idempotency_key,
 		createRequestFingerprint: row.create_request_fingerprint,
+		createdBy: row.created_by,
+		updatedBy: row.updated_by,
+		createdAt: parseDate(row.created_at),
+		updatedAt: parseDate(row.updated_at),
+	};
+}
+
+export function workCalendarHolidayFromSql(
+	row: WorkCalendarHolidaySqlRow,
+): typeof hrWorkCalendarHoliday.$inferSelect {
+	return {
+		id: row.id,
+		organizationId: row.organization_id,
+		calendarId: row.calendar_id,
+		holidayDate: row.holiday_date,
+		label: row.label,
+		locationCode: row.location_code,
+		jurisdiction: row.jurisdiction,
+		overrideKind: row.override_kind,
+		isWorkingDay: row.is_working_day,
+		expectedMinutes: row.expected_minutes,
+		createdBy: row.created_by,
+		updatedBy: row.updated_by,
+		createdAt: parseDate(row.created_at),
+		updatedAt: parseDate(row.updated_at),
+	};
+}
+
+export function employmentCalendarAssignmentFromSql(
+	row: EmploymentCalendarAssignmentSqlRow,
+): typeof hrEmploymentCalendarAssignment.$inferSelect {
+	return {
+		id: row.id,
+		organizationId: row.organization_id,
+		employeeId: row.employee_id,
+		employmentId: row.employment_id,
+		calendarId: row.calendar_id,
+		effectiveFrom: row.effective_from,
+		effectiveTo: row.effective_to,
+		locationCode: row.location_code,
+		jurisdiction: row.jurisdiction,
+		version: row.version,
+		createdBy: row.created_by,
+		updatedBy: row.updated_by,
+		createdAt: parseDate(row.created_at),
+		updatedAt: parseDate(row.updated_at),
+	};
+}
+
+export function workCalendarScopeAssignmentFromSql(
+	row: WorkCalendarScopeAssignmentSqlRow,
+): typeof hrWorkCalendarScopeAssignment.$inferSelect {
+	return {
+		id: row.id,
+		organizationId: row.organization_id,
+		scopeType: row.scope_type,
+		scopeKey: row.scope_key,
+		calendarId: row.calendar_id,
+		effectiveFrom: row.effective_from,
+		effectiveTo: row.effective_to,
+		version: row.version,
 		createdBy: row.created_by,
 		updatedBy: row.updated_by,
 		createdAt: parseDate(row.created_at),
@@ -412,6 +674,23 @@ export function shiftAssignmentFromSql(
 	};
 }
 
+export function shiftBreakFromSql(
+	row: ShiftBreakSqlRow,
+): typeof hrShiftBreak.$inferSelect {
+	return {
+		id: row.id,
+		organizationId: row.organization_id,
+		shiftId: row.shift_id,
+		breakOrder: row.break_order,
+		startOffsetMinutes: row.start_offset_minutes,
+		durationMinutes: row.duration_minutes,
+		isPaid: row.is_paid,
+		label: row.label,
+		createdAt: parseDate(row.created_at),
+		updatedAt: parseDate(row.updated_at),
+	};
+}
+
 export function attendanceEventFromSql(
 	row: AttendanceEventSqlRow,
 ): typeof hrAttendanceEvent.$inferSelect {
@@ -464,6 +743,54 @@ export function attendanceAdjustmentFromSql(
 		evidenceReference: row.evidence_reference,
 		actorUserId: row.actor_user_id,
 		correlationId: row.correlation_id,
+		createdAt: parseDate(row.created_at),
+	};
+}
+
+export function attendanceExceptionFromSql(
+	row: AttendanceExceptionSqlRow,
+): typeof hrAttendanceException.$inferSelect {
+	return {
+		id: row.id,
+		organizationId: row.organization_id,
+		employeeId: row.employee_id,
+		sessionId: row.session_id,
+		eventId: row.event_id,
+		shiftAssignmentId: row.shift_assignment_id,
+		exceptionType: row.exception_type,
+		severity: row.severity,
+		detectedFacts: row.detected_facts,
+		reviewStatus: row.review_status,
+		resolution: row.resolution,
+		reviewerUserId: row.reviewer_user_id,
+		evidenceReference: row.evidence_reference,
+		remarks: row.remarks,
+		version: row.version,
+		createdBy: row.created_by,
+		updatedBy: row.updated_by,
+		createdAt: parseDate(row.created_at),
+		updatedAt: parseDate(row.updated_at),
+	};
+}
+
+export function attendanceBreakWaiverDecisionFromSql(
+	row: AttendanceBreakWaiverDecisionSqlRow,
+): typeof hrAttendanceBreakWaiverDecision.$inferSelect {
+	return {
+		id: row.id,
+		organizationId: row.organization_id,
+		sessionId: row.session_id,
+		policyId: row.policy_id,
+		authorityAssignmentId: row.authority_assignment_id,
+		authority: row.authority,
+		actorUserId: row.actor_user_id,
+		reason: row.reason,
+		evidenceReference: row.evidence_reference,
+		automaticBreakMinutes: row.automatic_break_minutes,
+		recordedBreakMinutes: row.recorded_break_minutes,
+		sessionVersion: row.session_version,
+		correlationId: row.correlation_id,
+		decidedAt: parseDate(row.decided_at),
 		createdAt: parseDate(row.created_at),
 	};
 }

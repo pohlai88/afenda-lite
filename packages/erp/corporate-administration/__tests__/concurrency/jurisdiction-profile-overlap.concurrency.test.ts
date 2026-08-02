@@ -60,20 +60,12 @@ describe.skipIf(!RUN_CORPORATE_ADMINISTRATION_NEON_PARITY)(
 				const outcomes = [first, second];
 				expect(outcomes.filter((result) => result.ok)).toHaveLength(1);
 				expect(
-					outcomes.map((result) =>
-						result.ok
-							? "ok"
-							: `${result.code}:${result.details?.reason ?? "no_reason"}`,
-					),
-				).toContain(
-					"CONFLICT:CORPORATE_ADMINISTRATION_EFFECTIVE_RANGE_OVERLAP",
-				);
-				expect(
 					outcomes.filter(
 						(result) =>
 							!result.ok &&
-							result.details?.reason ===
-								"CORPORATE_ADMINISTRATION_EFFECTIVE_RANGE_OVERLAP",
+							result.code === "CONFLICT" &&
+							result.message ===
+								"Corporate Administration jurisdiction profile overlaps an existing profile.",
 					),
 				).toHaveLength(1);
 				await expect(countCaLegalCompanies(organizationId)).resolves.toBe(1);

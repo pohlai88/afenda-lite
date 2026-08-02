@@ -16,11 +16,6 @@ import {
 	listCompensationReviewsByEmployeeInputSchema,
 	recordCompensationRecommendationInputSchema,
 } from "../schemas/compensation";
-import {
-	assertCurrencyExists,
-	runCompensationCommand,
-	runCompensationQuery,
-} from "../shared/compensation-command";
 import { fingerprintCompensationReviewDraft } from "../shared/fingerprint";
 import { buildMutationMeta } from "../shared/mutation-meta";
 import type {
@@ -28,6 +23,11 @@ import type {
 	CompensationReviewListPage,
 	EmployeeCompensation,
 } from "../types";
+import {
+	assertCurrencyExists,
+	runCompensationCapabilityCommand,
+	runCompensationCapabilityQuery,
+} from "./run-operation";
 
 export const HUMAN_RESOURCES_AGGREGATE_COMPENSATION_REVIEW =
 	"compensation_review" as const;
@@ -38,7 +38,8 @@ export function createCompensationReviewDraft(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompensationReview>> {
-	return runCompensationCommand(input, options, {
+	return runCompensationCapabilityCommand(input, options, {
+		storeMethods: ["createCompensationReviewDraft"],
 		schema: createCompensationReviewDraftInputSchema,
 		invalidMessage: "Invalid compensation review draft create input",
 		command: HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_CREATE_DRAFT,
@@ -72,7 +73,8 @@ export function recordCompensationRecommendation(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompensationReview>> {
-	return runCompensationCommand(input, options, {
+	return runCompensationCapabilityCommand(input, options, {
+		storeMethods: ["recordCompensationRecommendation"],
 		schema: recordCompensationRecommendationInputSchema,
 		invalidMessage: "Invalid compensation recommendation input",
 		command: HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_RECORD_RECOMMENDATION,
@@ -113,7 +115,8 @@ export function finalizeCompensationReview(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompensationReview>> {
-	return runCompensationCommand(input, options, {
+	return runCompensationCapabilityCommand(input, options, {
+		storeMethods: ["finalizeCompensationReview"],
 		schema: finalizeCompensationReviewInputSchema,
 		invalidMessage: "Invalid compensation review finalize input",
 		command: HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_FINALIZE,
@@ -138,7 +141,8 @@ export function applyApprovedCompensationResult(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCompensation>> {
-	return runCompensationCommand(input, options, {
+	return runCompensationCapabilityCommand(input, options, {
+		storeMethods: ["applyApprovedCompensationResult"],
 		schema: applyApprovedCompensationResultInputSchema,
 		invalidMessage: "Invalid apply approved compensation result input",
 		command: HUMAN_RESOURCES_COMMAND_COMPENSATION_REVIEW_APPLY_APPROVED_RESULT,
@@ -165,7 +169,8 @@ export function getCompensationReview(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompensationReview | null>> {
-	return runCompensationQuery(input, options, {
+	return runCompensationCapabilityQuery(input, options, {
+		storeMethods: ["getCompensationReview"],
 		schema: getCompensationReviewInputSchema,
 		invalidMessage: "Invalid compensation review get input",
 		query: HUMAN_RESOURCES_QUERY_COMPENSATION_REVIEW_GET,
@@ -181,7 +186,8 @@ export function listCompensationReviewsByEmployee(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompensationReviewListPage>> {
-	return runCompensationQuery(input, options, {
+	return runCompensationCapabilityQuery(input, options, {
+		storeMethods: ["listCompensationReviewsByEmployee"],
 		schema: listCompensationReviewsByEmployeeInputSchema,
 		invalidMessage: "Invalid compensation review list input",
 		query: HUMAN_RESOURCES_QUERY_COMPENSATION_REVIEW_LIST_BY_EMPLOYEE,

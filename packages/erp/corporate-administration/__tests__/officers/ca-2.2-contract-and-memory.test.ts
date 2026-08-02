@@ -11,12 +11,12 @@ import {
 	officerQualificationIdSchema,
 	officerQualificationMatchesAsOf,
 	organizationIdSchema,
-	requireCorporateAdministrationApprovalIfConfigured,
 	statutoryOfficeIdSchema,
 	userIdSchema,
 } from "@afenda/corporate-administration";
 import { createMemoryCorporateAdministrationOfficerStore } from "@afenda/corporate-administration/testing";
 import { describe, expect, it } from "vitest";
+import { verifyCorporateAdministrationApproval } from "../../src/authorization";
 import {
 	approvalDecisionIdSchema,
 	approvalRequestIdSchema,
@@ -137,7 +137,7 @@ describe("CA-2.2 statutory office contracts and rules", () => {
 			"00000000-0000-4000-8000-000000000227",
 		);
 		const commandFingerprint = commandFingerprintSchema.parse("0".repeat(64));
-		const rejected = await requireCorporateAdministrationApprovalIfConfigured(
+		const rejected = await verifyCorporateAdministrationApproval(
 			{
 				approvalDecisions: {
 					async verify() {
@@ -164,7 +164,7 @@ describe("CA-2.2 statutory office contracts and rules", () => {
 			},
 		);
 		expect(rejected.ok).toBe(false);
-		const approved = await requireCorporateAdministrationApprovalIfConfigured(
+		const approved = await verifyCorporateAdministrationApproval(
 			{
 				approvalDecisions: {
 					async verify() {

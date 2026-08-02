@@ -30,10 +30,6 @@ import {
 } from "../schemas/performance";
 import { fingerprintImprovementPlanCreate } from "../shared/fingerprint";
 import { buildMutationMeta } from "../shared/mutation-meta";
-import {
-	runPerformanceCommand,
-	runPerformanceQuery,
-} from "../shared/performance-command";
 import { assertImprovementPlanMilestones } from "../shared/performance-guards";
 import type {
 	PerformanceImprovementCheckpoint,
@@ -41,6 +37,10 @@ import type {
 	PerformanceImprovementPlan,
 	PerformanceImprovementPlanListPage,
 } from "../types";
+import {
+	runPerformanceCapabilityCommand,
+	runPerformanceCapabilityQuery,
+} from "./run-operation";
 
 export const HUMAN_RESOURCES_AGGREGATE_IMPROVEMENT_PLAN =
 	"improvement-plan" as const;
@@ -66,7 +66,11 @@ export function createImprovementPlan(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceImprovementPlan>> {
-	return runPerformanceCommand(input, options, {
+	return runPerformanceCapabilityCommand(input, options, {
+		storeMethods: [
+			"createImprovementPlan",
+			"findImprovementPlanByIdempotencyKey",
+		],
 		schema: createImprovementPlanInputSchema,
 		invalidMessage: "Invalid improvement plan create input",
 		command: HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_CREATE,
@@ -141,7 +145,8 @@ export function openImprovementPlan(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceImprovementPlan>> {
-	return runPerformanceCommand(input, options, {
+	return runPerformanceCapabilityCommand(input, options, {
+		storeMethods: ["openImprovementPlan"],
 		schema: improvementPlanStatusTransitionInputSchema,
 		invalidMessage: "Invalid improvement plan open input",
 		command: HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_OPEN,
@@ -166,7 +171,8 @@ export function acknowledgeImprovementPlan(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceImprovementPlan>> {
-	return runPerformanceCommand(input, options, {
+	return runPerformanceCapabilityCommand(input, options, {
+		storeMethods: ["acknowledgeImprovementPlan"],
 		schema: improvementPlanStatusTransitionInputSchema,
 		invalidMessage: "Invalid improvement plan acknowledge input",
 		command: HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_ACKNOWLEDGE,
@@ -191,7 +197,8 @@ export function recordImprovementCheckpoint(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceImprovementCheckpoint>> {
-	return runPerformanceCommand(input, options, {
+	return runPerformanceCapabilityCommand(input, options, {
+		storeMethods: ["recordImprovementCheckpoint"],
 		schema: recordImprovementCheckpointInputSchema,
 		invalidMessage: "Invalid improvement checkpoint record input",
 		command: HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_RECORD_CHECKPOINT,
@@ -220,7 +227,8 @@ export function amendImprovementPlan(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceImprovementPlan>> {
-	return runPerformanceCommand(input, options, {
+	return runPerformanceCapabilityCommand(input, options, {
+		storeMethods: ["amendImprovementPlan"],
 		schema: amendImprovementPlanInputSchema,
 		invalidMessage: "Invalid improvement plan amend input",
 		command: HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_AMEND,
@@ -252,7 +260,8 @@ export function completeImprovementPlan(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceImprovementPlan>> {
-	return runPerformanceCommand(input, options, {
+	return runPerformanceCapabilityCommand(input, options, {
+		storeMethods: ["completeImprovementPlan"],
 		schema: completeImprovementPlanInputSchema,
 		invalidMessage: "Invalid improvement plan complete input",
 		command: HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_COMPLETE,
@@ -279,7 +288,8 @@ export function closeImprovementPlanUnsuccessful(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceImprovementPlan>> {
-	return runPerformanceCommand(input, options, {
+	return runPerformanceCapabilityCommand(input, options, {
+		storeMethods: ["closeImprovementPlanUnsuccessful"],
 		schema: closeImprovementPlanUnsuccessfulInputSchema,
 		invalidMessage: "Invalid improvement plan close unsuccessful input",
 		command: HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_CLOSE_UNSUCCESSFUL,
@@ -307,7 +317,8 @@ export function cancelImprovementPlan(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceImprovementPlan>> {
-	return runPerformanceCommand(input, options, {
+	return runPerformanceCapabilityCommand(input, options, {
+		storeMethods: ["cancelImprovementPlan"],
 		schema: improvementPlanStatusTransitionInputSchema,
 		invalidMessage: "Invalid improvement plan cancel input",
 		command: HUMAN_RESOURCES_COMMAND_IMPROVEMENT_PLAN_CANCEL,
@@ -332,7 +343,8 @@ export function getImprovementPlanById(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceImprovementPlan | null>> {
-	return runPerformanceQuery(input, options, {
+	return runPerformanceCapabilityQuery(input, options, {
+		storeMethods: ["getImprovementPlanById"],
 		schema: getImprovementPlanByIdInputSchema,
 		invalidMessage: "Invalid improvement plan get input",
 		query: HUMAN_RESOURCES_QUERY_IMPROVEMENT_PLAN_GET,
@@ -348,7 +360,8 @@ export function listActiveImprovementPlans(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceImprovementPlanListPage>> {
-	return runPerformanceQuery(input, options, {
+	return runPerformanceCapabilityQuery(input, options, {
+		storeMethods: ["listActiveImprovementPlans"],
 		schema: listActiveImprovementPlansInputSchema,
 		invalidMessage: "Invalid active improvement plans list input",
 		query: HUMAN_RESOURCES_QUERY_IMPROVEMENT_PLAN_LIST_ACTIVE,
@@ -365,7 +378,8 @@ export function listImprovementPlanCheckpoints(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceImprovementCheckpointListPage>> {
-	return runPerformanceQuery(input, options, {
+	return runPerformanceCapabilityQuery(input, options, {
+		storeMethods: ["listImprovementPlanCheckpoints"],
 		schema: listImprovementPlanCheckpointsInputSchema,
 		invalidMessage: "Invalid improvement plan checkpoints list input",
 		query: HUMAN_RESOURCES_QUERY_IMPROVEMENT_PLAN_LIST_CHECKPOINTS,

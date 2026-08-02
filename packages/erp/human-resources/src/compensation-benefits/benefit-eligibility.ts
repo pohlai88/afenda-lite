@@ -8,12 +8,12 @@ import {
 	getBenefitPlanEligibilityInputSchema,
 	setBenefitPlanEligibilityInputSchema,
 } from "../schemas/compensation";
-import {
-	runCompensationCommand,
-	runCompensationQuery,
-} from "../shared/compensation-command";
 import { buildMutationMeta } from "../shared/mutation-meta";
 import type { BenefitPlanEligibility } from "../types";
+import {
+	runCompensationCapabilityCommand,
+	runCompensationCapabilityQuery,
+} from "./run-operation";
 
 export const HUMAN_RESOURCES_AGGREGATE_BENEFIT_PLAN_ELIGIBILITY =
 	"benefit_plan_eligibility" as const;
@@ -24,7 +24,8 @@ export function setBenefitPlanEligibility(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<BenefitPlanEligibility>> {
-	return runCompensationCommand(input, options, {
+	return runCompensationCapabilityCommand(input, options, {
+		storeMethods: ["setBenefitPlanEligibility"],
 		schema: setBenefitPlanEligibilityInputSchema,
 		invalidMessage: "Invalid benefit plan eligibility input",
 		command: HUMAN_RESOURCES_COMMAND_BENEFIT_PLAN_ELIGIBILITY_SET,
@@ -50,7 +51,8 @@ export function getBenefitPlanEligibility(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<BenefitPlanEligibility | null>> {
-	return runCompensationQuery(input, options, {
+	return runCompensationCapabilityQuery(input, options, {
+		storeMethods: ["getBenefitPlanEligibility"],
 		schema: getBenefitPlanEligibilityInputSchema,
 		invalidMessage: "Invalid benefit plan eligibility query input",
 		query: HUMAN_RESOURCES_QUERY_BENEFIT_PLAN_ELIGIBILITY_GET,

@@ -1,9 +1,12 @@
 import { errorResult, type Result } from "@afenda/errors";
 import { inventoryModuleManifest } from "./module.manifest";
-import type { InventoryCommandId, InventoryQueryId } from "./module-ids";
-import type { INVENTORY_PERMISSION_CODES } from "./permissions";
+import type {
+	InventoryCommandId,
+	InventoryQueryId,
+} from "./operation-registry";
+import type { InventoryPermission } from "./permissions";
 
-export type InventoryPermission = (typeof INVENTORY_PERMISSION_CODES)[number];
+export type { InventoryPermission } from "./permissions";
 
 export interface InventoryAuthorizationPort {
 	can: (input: {

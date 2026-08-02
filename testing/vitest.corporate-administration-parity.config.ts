@@ -28,9 +28,13 @@ export default defineConfig({
 						corporateAdministrationRoot,
 					),
 					environment: "node",
+					setupFiles: ["@afenda/testing/setup/required-database"],
 					...laneTimeoutOptions("corporate-administration-parity"),
 					fileParallelism: false,
 					maxWorkers: 1,
+					env: {
+						REQUIRE_DATABASE_TESTS: "1",
+					},
 				},
 			},
 		],

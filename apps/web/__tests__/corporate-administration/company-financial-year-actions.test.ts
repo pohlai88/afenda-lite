@@ -50,7 +50,10 @@ vi.mock("@/app/actions/permission-gate", () => ({
 	forbidUnlessPermission: permissionMocks.forbidUnlessPermission,
 }));
 
-vi.mock("@afenda/corporate-administration", () => ({
+vi.mock("@afenda/corporate-administration", async (importOriginal) => ({
+	...(await importOriginal<
+		typeof import("@afenda/corporate-administration")
+	>()),
 	addCompanyName: corporateAdministrationMocks.addCompanyName,
 	endCompanyActivity: corporateAdministrationMocks.endCompanyActivity,
 	registerCompanyActivity: corporateAdministrationMocks.registerCompanyActivity,

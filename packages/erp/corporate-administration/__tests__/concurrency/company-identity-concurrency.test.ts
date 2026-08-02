@@ -34,8 +34,8 @@ type CompanyIdentityStore = LegalCompanyStore &
 	CompanyFinancialYearStore &
 	CompanyActivityStore;
 
-function createIdentityDependencies() {
-	const dependencies = createDrizzleCompanyDependencies();
+function createIdentityDependencies(now?: string) {
+	const dependencies = createDrizzleCompanyDependencies({ now });
 	const store = dependencies.store as CompanyIdentityStore;
 	return {
 		...dependencies,
@@ -200,6 +200,9 @@ describe.skipIf(!RUN_CORPORATE_ADMINISTRATION_NEON_PARITY)(
 					dependencies,
 				);
 				expectOk(identifier);
+				const successorDependencies = createIdentityDependencies(
+					"2026-07-26T10:00:01.000Z",
+				);
 
 				const attempts = await Promise.all([
 					supersedeCompanyIdentifier(
@@ -210,7 +213,7 @@ describe.skipIf(!RUN_CORPORATE_ADMINISTRATION_NEON_PARITY)(
 							"2027-00000001",
 						),
 						{ ...options, idempotencyKey: "idem-id-successor-1" },
-						dependencies,
+						successorDependencies,
 					),
 					supersedeCompanyIdentifier(
 						successorInput(
@@ -220,7 +223,7 @@ describe.skipIf(!RUN_CORPORATE_ADMINISTRATION_NEON_PARITY)(
 							"2027-00000002",
 						),
 						{ ...options, idempotencyKey: "idem-id-successor-2" },
-						dependencies,
+						successorDependencies,
 					),
 				]);
 

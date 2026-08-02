@@ -1,16 +1,14 @@
 // biome-ignore-all lint/style/noNestedTernary: Resolution decision timestamps mirror the three-state decision model.
 // biome-ignore-all lint/suspicious/useAwait: Command wrappers expose one asynchronous boundary for delegated resolution transitions.
 import { errorResult, type Result } from "@afenda/errors";
-
-import {
-	CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS,
-	requireCorporateAdministrationPermission,
-} from "../authorization";
 import type { CorporateAdministrationCommandOptions } from "../command-options";
 import {
-	type DurableLegalCompanyCommandDependencies,
-	runDurableCompanyCommand,
-} from "../company/commands/durable-command";
+	authorizeCorporateAdministrationCommand,
+	type CorporateAdministrationAuthorizedCommandExecution,
+	type CorporateAdministrationCommandKernelDependencies,
+	executeCorporateAdministrationCommand,
+} from "../internal/durable-command";
+import type { OrganizationId } from "../kernel/brands";
 import type { MeetingStore } from "../meetings/store";
 import { parseCorporateAdministrationInput } from "../parse-input";
 import { assertResolutionCanFollowVote, calculateVoteOutcome } from "./rules";
@@ -44,12 +42,12 @@ import type {
 
 export type ResolutionReferencePort = Readonly<{
 	validateSourceDocument: (input: {
-		organizationId: string;
+		organizationId: OrganizationId;
 		sourceDocumentId: string;
 	}) => Promise<Result<{ sourceDocumentId: string; active: boolean } | null>>;
 }>;
 
-type Dependencies = DurableLegalCompanyCommandDependencies &
+type Dependencies = CorporateAdministrationCommandKernelDependencies &
 	Readonly<{
 		meetingStore: MeetingStore;
 		resolutionStore: ResolutionStore;
@@ -68,7 +66,10 @@ export async function recordMeetingVote(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "recordMeetingVote");
+	const authorized = await authorizeCorporateAdministrationCommand(
+		"recordMeetingVote",
+		options,
+	);
 	if (!authorized.ok) {
 		return authorized;
 	}
@@ -98,18 +99,15 @@ export async function recordMeetingVote(
 	if (!source.ok) {
 		return source;
 	}
-	return runDurableCompanyCommand({
-		commandId: "corporate-administration.resolution.record-meeting-vote",
+	return executeCorporateAdministrationCommand({
+		authorization: authorized.data,
 		fingerprintSchema: recordMeetingVoteInputSchema,
 		fingerprintInput: parsed.data,
 		outputSchema: meetingVoteSchema,
-		options,
 		dependencies,
 		event: {
-			type: "corporate_administration.meeting_vote.recorded.v1",
 			operationType: "CREATE",
 			targetType: "ca_meeting_vote",
-			aggregateType: "meeting_vote",
 			aggregateId: (result) => result.id,
 			aggregateVersion: (result) => result.version,
 			payload: (result, context) => votePayload(result, context),
@@ -148,9 +146,9 @@ export async function adoptResolution(
 		options,
 		dependencies,
 		inputSchema: adoptResolutionInputSchema,
+		operationId: "adoptResolution",
 		status: "adopted",
 		decidedAtField: "approvedAt",
-		eventType: "corporate_administration.resolution.adopted.v1",
 	});
 }
 
@@ -164,9 +162,9 @@ export async function rejectResolution(
 		options,
 		dependencies,
 		inputSchema: rejectResolutionInputSchema,
+		operationId: "rejectResolution",
 		status: "rejected",
 		decidedAtField: "rejectedAt",
-		eventType: "corporate_administration.resolution.rejected.v1",
 	});
 }
 
@@ -182,7 +180,10 @@ export async function recordWrittenResolution(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "recordWrittenResolution");
+	const authorized = await authorizeCorporateAdministrationCommand(
+		"recordWrittenResolution",
+		options,
+	);
 	if (!authorized.ok) {
 		return authorized;
 	}
@@ -211,14 +212,13 @@ export async function recordWrittenResolution(
 	if (!source.ok) {
 		return source;
 	}
-	return runDurableCompanyCommand({
-		commandId: "corporate-administration.resolution.record-written",
+	return executeCorporateAdministrationCommand({
+		authorization: authorized.data,
 		fingerprintSchema: recordWrittenResolutionInputSchema,
 		fingerprintInput: parsed.data,
 		outputSchema: resolutionSchema,
-		options,
 		dependencies,
-		event: resolutionEvent("corporate_administration.resolution.adopted.v1"),
+		event: resolutionEvent("CREATE"),
 		serializeResult: serializeResolution,
 		work: (transaction, context) =>
 			dependencies.resolutionStore.recordResolution({
@@ -255,7 +255,10 @@ export async function supersedeResolution(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "supersedeResolution");
+	const authorized = await authorizeCorporateAdministrationCommand(
+		"supersedeResolution",
+		options,
+	);
 	if (!authorized.ok) {
 		return authorized;
 	}
@@ -280,14 +283,13 @@ export async function supersedeResolution(
 	if (!source.ok) {
 		return source;
 	}
-	return runDurableCompanyCommand({
-		commandId: "corporate-administration.resolution.supersede",
+	return executeCorporateAdministrationCommand({
+		authorization: authorized.data,
 		fingerprintSchema: supersedeResolutionInputSchema,
 		fingerprintInput: parsed.data,
 		outputSchema: resolutionSchema,
-		options,
 		dependencies,
-		event: resolutionEvent("corporate_administration.resolution.superseded.v1"),
+		event: resolutionEvent("UPDATE"),
 		serializeResult: serializeResolution,
 		work: (transaction, context) =>
 			dependencies.resolutionStore.supersedeResolution({
@@ -315,7 +317,10 @@ export async function assignResolutionAction(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "assignResolutionAction");
+	const authorized = await authorizeCorporateAdministrationCommand(
+		"assignResolutionAction",
+		options,
+	);
 	if (!authorized.ok) {
 		return authorized;
 	}
@@ -344,16 +349,13 @@ export async function assignResolutionAction(
 	if (!source.ok) {
 		return source;
 	}
-	return runDurableCompanyCommand({
-		commandId: "corporate-administration.resolution.assign-action",
+	return executeCorporateAdministrationCommand({
+		authorization: authorized.data,
 		fingerprintSchema: assignResolutionActionInputSchema,
 		fingerprintInput: parsed.data,
 		outputSchema: resolutionActionSchema,
-		options,
 		dependencies,
-		event: actionEvent(
-			"corporate_administration.resolution.action_assigned.v1",
-		),
+		event: actionEvent("CREATE"),
 		serializeResult: serializeAction,
 		work: (transaction, context) =>
 			dependencies.resolutionStore.assignResolutionAction({
@@ -384,7 +386,10 @@ export async function completeResolutionAction(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "completeResolutionAction");
+	const authorized = await authorizeCorporateAdministrationCommand(
+		"completeResolutionAction",
+		options,
+	);
 	if (!authorized.ok) {
 		return authorized;
 	}
@@ -397,10 +402,10 @@ export async function completeResolutionAction(
 		return source;
 	}
 	return runActionUpdate({
-		commandId: "corporate-administration.resolution.complete-action",
+		authorization: authorized.data,
+		operationId: "completeResolutionAction",
 		input: parsed.data,
 		inputSchema: completeResolutionActionInputSchema,
-		eventType: "corporate_administration.resolution.action_completed.v1",
 		options,
 		dependencies,
 		work: (transaction, context) =>
@@ -431,7 +436,10 @@ export async function recordMinutesDocument(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "recordMinutesDocument");
+	const authorized = await authorizeCorporateAdministrationCommand(
+		"recordMinutesDocument",
+		options,
+	);
 	if (!authorized.ok) {
 		return authorized;
 	}
@@ -443,16 +451,13 @@ export async function recordMinutesDocument(
 	if (!source.ok) {
 		return source;
 	}
-	return runDurableCompanyCommand({
-		commandId: "corporate-administration.resolution.record-minutes",
+	return executeCorporateAdministrationCommand({
+		authorization: authorized.data,
 		fingerprintSchema: recordMinutesDocumentInputSchema,
 		fingerprintInput: parsed.data,
 		outputSchema: resolutionSchema,
-		options,
 		dependencies,
-		event: resolutionEvent(
-			"corporate_administration.resolution.minutes_recorded.v1",
-		),
+		event: resolutionEvent("UPDATE"),
 		serializeResult: serializeResolution,
 		work: (transaction, context) =>
 			dependencies.resolutionStore.recordMinutesDocument({
@@ -475,11 +480,9 @@ function recordVoteResolution(input: {
 	inputSchema:
 		| typeof adoptResolutionInputSchema
 		| typeof rejectResolutionInputSchema;
+	operationId: "adoptResolution" | "rejectResolution";
 	status: "adopted" | "rejected";
 	decidedAtField: "approvedAt" | "rejectedAt";
-	eventType:
-		| "corporate_administration.resolution.adopted.v1"
-		| "corporate_administration.resolution.rejected.v1";
 }): Promise<Result<Resolution>> {
 	const parsed = parseCorporateAdministrationInput(
 		input.inputSchema,
@@ -501,15 +504,13 @@ async function recordVoteResolutionParsed(input: {
 	inputSchema:
 		| typeof adoptResolutionInputSchema
 		| typeof rejectResolutionInputSchema;
+	operationId: "adoptResolution" | "rejectResolution";
 	status: "adopted" | "rejected";
 	decidedAtField: "approvedAt" | "rejectedAt";
-	eventType:
-		| "corporate_administration.resolution.adopted.v1"
-		| "corporate_administration.resolution.rejected.v1";
 }): Promise<Result<Resolution>> {
-	const authorized = await authorize(
+	const authorized = await authorizeCorporateAdministrationCommand(
+		input.operationId,
 		input.options,
-		input.status === "adopted" ? "adoptResolution" : "rejectResolution",
 	);
 	if (!authorized.ok) {
 		return authorized;
@@ -557,14 +558,13 @@ async function recordVoteResolutionParsed(input: {
 	if (!chronology.ok) {
 		return chronology;
 	}
-	return runDurableCompanyCommand({
-		commandId: `corporate-administration.resolution.${input.status}`,
+	return executeCorporateAdministrationCommand({
+		authorization: authorized.data,
 		fingerprintSchema: input.inputSchema,
 		fingerprintInput: input.parsed,
 		outputSchema: resolutionSchema,
-		options: input.options,
 		dependencies: input.dependencies,
-		event: resolutionEvent(input.eventType),
+		event: resolutionEvent("CREATE"),
 		serializeResult: serializeResolution,
 		work: (transaction, context) =>
 			input.dependencies.resolutionStore.recordResolution({
@@ -590,44 +590,32 @@ async function recordVoteResolutionParsed(input: {
 }
 
 function runActionUpdate(input: {
-	commandId: string;
+	authorization: CorporateAdministrationAuthorizedCommandExecution;
+	operationId: "completeResolutionAction";
 	input: unknown;
 	inputSchema: typeof completeResolutionActionInputSchema;
-	eventType: "corporate_administration.resolution.action_completed.v1";
 	options: CorporateAdministrationCommandOptions;
 	dependencies: Dependencies;
 	work: Parameters<
-		typeof runDurableCompanyCommand<ResolutionAction>
+		typeof executeCorporateAdministrationCommand<ResolutionAction>
 	>[0]["work"];
 }) {
-	return runDurableCompanyCommand({
-		commandId: input.commandId,
+	return executeCorporateAdministrationCommand({
+		authorization: input.authorization,
 		fingerprintSchema: input.inputSchema,
 		fingerprintInput: input.input,
 		outputSchema: resolutionActionSchema,
-		options: input.options,
 		dependencies: input.dependencies,
-		event: actionEvent(input.eventType),
+		event: actionEvent("UPDATE"),
 		serializeResult: serializeAction,
 		work: input.work,
 	});
 }
 
-function resolutionEvent(
-	type:
-		| "corporate_administration.resolution.adopted.v1"
-		| "corporate_administration.resolution.rejected.v1"
-		| "corporate_administration.resolution.superseded.v1"
-		| "corporate_administration.resolution.minutes_recorded.v1",
-) {
+function resolutionEvent(operationType: "CREATE" | "UPDATE") {
 	return {
-		type,
-		operationType:
-			type.includes("adopted") || type.includes("rejected")
-				? "CREATE"
-				: "UPDATE",
+		operationType,
 		targetType: "ca_resolution",
-		aggregateType: "resolution",
 		aggregateId: (result: Resolution) => result.id,
 		aggregateVersion: (result: Resolution) => result.version,
 		payload: (result: Resolution, context: EventContext) => ({
@@ -643,16 +631,10 @@ function resolutionEvent(
 	} as const;
 }
 
-function actionEvent(
-	type:
-		| "corporate_administration.resolution.action_assigned.v1"
-		| "corporate_administration.resolution.action_completed.v1",
-) {
+function actionEvent(operationType: "CREATE" | "UPDATE") {
 	return {
-		type,
-		operationType: type.includes("assigned") ? "CREATE" : "UPDATE",
+		operationType,
 		targetType: "ca_resolution_action",
-		aggregateType: "resolution_action",
 		aggregateId: (result: ResolutionAction) => result.id,
 		aggregateVersion: (result: ResolutionAction) => result.version,
 		payload: (result: ResolutionAction, context: EventContext) => ({
@@ -695,7 +677,7 @@ type EventContext = Readonly<{
 
 async function validateSource(
 	dependencies: Dependencies,
-	organizationId: string,
+	organizationId: OrganizationId,
 	sourceDocumentId: string,
 ): Promise<Result<void>> {
 	const result = await dependencies.referenceData.validateSourceDocument({
@@ -711,17 +693,6 @@ async function validateSource(
 		});
 	}
 	return errorResult.ok(undefined);
-}
-
-function authorize(
-	options: CorporateAdministrationCommandOptions,
-	command: keyof typeof CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS,
-) {
-	return requireCorporateAdministrationPermission(options.authorization, {
-		organizationId: options.organizationId,
-		actorUserId: options.actorUserId,
-		permission: CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS[command],
-	});
 }
 
 function notFound(_entityType: string): Result<never> {

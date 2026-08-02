@@ -1,10 +1,10 @@
 import { errorResult, type Result } from "@afenda/errors";
 
-import {
-	CORPORATE_ADMINISTRATION_QUERY_PERMISSIONS,
-	requireCorporateAdministrationPermission,
-} from "../authorization";
 import type { CorporateAdministrationQueryOptions } from "../command-options";
+import {
+	type CorporateAdministrationQueryKernelDependencies,
+	executeCorporateAdministrationQuery,
+} from "../internal/query";
 import { parseCorporateAdministrationInput } from "../parse-input";
 import {
 	calculateResolutionExecutionStatus,
@@ -27,9 +27,11 @@ import type {
 	ResolutionExecutionStatus,
 } from "./types";
 
-export type ResolutionQueryDependencies = Readonly<{
-	resolutionStore: ResolutionStore;
-}>;
+export type ResolutionQueryDependencies =
+	CorporateAdministrationQueryKernelDependencies &
+		Readonly<{
+			resolutionStore: ResolutionStore;
+		}>;
 
 export async function getResolution(
 	input: GetResolutionInput,
@@ -43,13 +45,15 @@ export async function getResolution(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "getResolution");
-	if (!authorized.ok) {
-		return authorized;
-	}
-	return dependencies.resolutionStore.getResolution({
-		organizationId: options.organizationId,
-		resolutionId: parsed.data.resolutionId,
+	return await executeCorporateAdministrationQuery({
+		operationId: "getResolution",
+		options,
+		dependencies,
+		work: () =>
+			dependencies.resolutionStore.getResolution({
+				organizationId: options.organizationId,
+				resolutionId: parsed.data.resolutionId,
+			}),
 	});
 }
 
@@ -65,15 +69,17 @@ export async function listResolutionsAsOf(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "listResolutionsAsOf");
-	if (!authorized.ok) {
-		return authorized;
-	}
-	return dependencies.resolutionStore.listResolutionsAsOf({
-		organizationId: options.organizationId,
-		legalCompanyId: parsed.data.legalCompanyId,
-		asOf: parsed.data.asOf,
-		status: parsed.data.status,
+	return await executeCorporateAdministrationQuery({
+		operationId: "listResolutionsAsOf",
+		options,
+		dependencies,
+		work: () =>
+			dependencies.resolutionStore.listResolutionsAsOf({
+				organizationId: options.organizationId,
+				legalCompanyId: parsed.data.legalCompanyId,
+				asOf: parsed.data.asOf,
+				status: parsed.data.status,
+			}),
 	});
 }
 
@@ -89,34 +95,37 @@ export async function getResolutionExecutionStatus(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "getResolutionExecutionStatus");
-	if (!authorized.ok) {
-		return authorized;
-	}
-	const resolution = await dependencies.resolutionStore.getResolution({
-		organizationId: options.organizationId,
-		resolutionId: parsed.data.resolutionId,
+	return await executeCorporateAdministrationQuery({
+		operationId: "getResolutionExecutionStatus",
+		options,
+		dependencies,
+		work: async () => {
+			const resolution = await dependencies.resolutionStore.getResolution({
+				organizationId: options.organizationId,
+				resolutionId: parsed.data.resolutionId,
+			});
+			if (!resolution.ok) {
+				return resolution;
+			}
+			if (resolution.data === null) {
+				return notFound("resolution");
+			}
+			const actions = await dependencies.resolutionStore.listResolutionActions({
+				organizationId: options.organizationId,
+				resolutionId: parsed.data.resolutionId,
+			});
+			if (!actions.ok) {
+				return actions;
+			}
+			return errorResult.ok(
+				calculateResolutionExecutionStatus({
+					resolution: resolution.data,
+					actions: actions.data,
+					asOf: resolution.data.effectiveFrom,
+				}),
+			);
+		},
 	});
-	if (!resolution.ok) {
-		return resolution;
-	}
-	if (resolution.data === null) {
-		return notFound("resolution");
-	}
-	const actions = await dependencies.resolutionStore.listResolutionActions({
-		organizationId: options.organizationId,
-		resolutionId: parsed.data.resolutionId,
-	});
-	if (!actions.ok) {
-		return actions;
-	}
-	return errorResult.ok(
-		calculateResolutionExecutionStatus({
-			resolution: resolution.data,
-			actions: actions.data,
-			asOf: resolution.data.effectiveFrom,
-		}),
-	);
 }
 
 export async function listOverdueResolutionActions(
@@ -131,34 +140,26 @@ export async function listOverdueResolutionActions(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "listOverdueResolutionActions");
-	if (!authorized.ok) {
-		return authorized;
-	}
-	const actions =
-		await dependencies.resolutionStore.listOverdueResolutionActions({
-			organizationId: options.organizationId,
-			legalCompanyId: parsed.data.legalCompanyId,
-			asOf: parsed.data.asOf,
-		});
-	if (!actions.ok) {
-		return actions;
-	}
-	return errorResult.ok(
-		actions.data.filter((action) =>
-			isResolutionActionOverdue({ action, asOf: parsed.data.asOf }),
-		),
-	);
-}
-
-function authorize(
-	options: CorporateAdministrationQueryOptions,
-	query: keyof typeof CORPORATE_ADMINISTRATION_QUERY_PERMISSIONS,
-) {
-	return requireCorporateAdministrationPermission(options.authorization, {
-		organizationId: options.organizationId,
-		actorUserId: options.actorUserId,
-		permission: CORPORATE_ADMINISTRATION_QUERY_PERMISSIONS[query],
+	return await executeCorporateAdministrationQuery({
+		operationId: "listOverdueResolutionActions",
+		options,
+		dependencies,
+		work: async () => {
+			const actions =
+				await dependencies.resolutionStore.listOverdueResolutionActions({
+					organizationId: options.organizationId,
+					legalCompanyId: parsed.data.legalCompanyId,
+					asOf: parsed.data.asOf,
+				});
+			if (!actions.ok) {
+				return actions;
+			}
+			return errorResult.ok(
+				actions.data.filter((action) =>
+					isResolutionActionOverdue({ action, asOf: parsed.data.asOf }),
+				),
+			);
+		},
 	});
 }
 

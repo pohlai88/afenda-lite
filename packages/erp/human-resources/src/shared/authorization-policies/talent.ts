@@ -13,10 +13,6 @@ export const talentAssessmentPolicy = createScopedPolicy({
 	subjectPolicy: "subject_manager_or_privileged",
 	fieldClasses: ["succession"],
 	privilegedPermissions: [HUMAN_RESOURCES_PERMISSION_TALENT_ADMIN],
-	operationPrefixes: [
-		"human-resources.competency-assessment.",
-		"human-resources.employee-competency-profile.",
-	],
 });
 
 /**
@@ -30,16 +26,6 @@ export const talentProfilePolicy = createScopedPolicy({
 	subjectPolicy: "subject_manager_or_privileged",
 	fieldClasses: ["succession"],
 	privilegedPermissions: [HUMAN_RESOURCES_PERMISSION_TALENT_ADMIN],
-	operationPrefixes: [
-		"human-resources.talent-profile.",
-		"human-resources.talent-profile-assessment.",
-		"human-resources.talent-profile-mobility.",
-		"human-resources.critical-role-readiness.",
-		"human-resources.talent-pool.",
-		"human-resources.talent-pool-member.",
-		"human-resources.career-plan.",
-		"human-resources.career-plan-action.",
-	],
 });
 
 /** Succession information — privileged only. */
@@ -53,10 +39,5 @@ export const successionPolicy = createScopedPolicy({
 		HUMAN_RESOURCES_PERMISSION_SUCCESSION_ADMIN,
 		HUMAN_RESOURCES_PERMISSION_SUCCESSION_EXECUTIVE_READ,
 		HUMAN_RESOURCES_PERMISSION_TALENT_ADMIN,
-	],
-	operationPrefixes: [
-		"human-resources.succession-plan.",
-		"human-resources.succession-candidate.",
-		"human-resources.position-succession-coverage.",
 	],
 });

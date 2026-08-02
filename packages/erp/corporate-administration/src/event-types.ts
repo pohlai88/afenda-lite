@@ -63,10 +63,13 @@ export const CORPORATE_ADMINISTRATION_EVENT_TYPES = [
 	"corporate_administration.legal_company.jurisdiction_profile_set.v1",
 	"corporate_administration.legal_company.name_added.v1",
 	"corporate_administration.legal_company.name_superseded.v1",
+	"corporate_administration.legal_company.name_retired.v1",
 	"corporate_administration.legal_company.legal_form_changed.v1",
 	"corporate_administration.legal_company.identifier_registered.v1",
+	"corporate_administration.legal_company.identifier_retired.v1",
 	"corporate_administration.legal_company.financial_year_set.v1",
 	"corporate_administration.legal_company.activity_registered.v1",
+	"corporate_administration.legal_company.activity_ended.v1",
 	"corporate_administration.legal_company.activated.v1",
 	"corporate_administration.legal_company.suspended.v1",
 	"corporate_administration.legal_company.struck_off_marked.v1",
@@ -115,6 +118,9 @@ export const CORPORATE_ADMINISTRATION_EVENT_TYPES = [
 	"corporate_administration.resolution.action_assigned.v1",
 	"corporate_administration.resolution.action_completed.v1",
 ] as const;
+
+export type CorporateAdministrationRegisteredEventType =
+	(typeof CORPORATE_ADMINISTRATION_EVENT_TYPES)[number];
 
 export type CreateCorporateAdministrationEventTypeInput = Readonly<{
 	aggregate: string;

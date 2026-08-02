@@ -1,17 +1,16 @@
 // biome-ignore-all lint/complexity/noExcessiveCognitiveComplexity: Legal-form supersession coordinates policy, CAS, idempotency, audit, and outbox atomically.
 // biome-ignore-all lint/style/useDestructuring: Explicit predecessor access keeps supersession evidence visible.
 import { errorResult, type Result } from "@afenda/errors";
-import {
-	CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS,
-	type CorporateAdministrationApprovalVerificationDependencies,
-	requireCorporateAdministrationApprovalIfConfigured,
-	requireCorporateAdministrationPermission,
-} from "../../authorization";
-import { createCorporateAdministrationCommandFingerprint } from "../../command-identity";
+import type { CorporateAdministrationApprovalVerificationDependencies } from "../../authorization";
 import type {
 	CorporateAdministrationApprovalCommandOptions,
 	CorporateAdministrationCommandOptions,
 } from "../../command-options";
+import {
+	authorizeCorporateAdministrationCommand,
+	type CorporateAdministrationCommandKernelDependencies,
+	executeCorporateAdministrationCommand,
+} from "../../internal/durable-command";
 import { parseCorporateAdministrationInput } from "../../parse-input";
 import { validateLegalFormSupersession } from "../rules";
 import {
@@ -23,14 +22,13 @@ import type {
 	CompanyLegalForm,
 	SupersedeCompanyLegalFormInput,
 } from "../types";
-import {
-	type DurableLegalCompanyCommandDependencies,
-	runDurableCompanyCommand,
-} from "./durable-command";
 
 type SupersedeCompanyLegalFormDependencies =
 	CompanyLegalFormCommandDependencies &
-		Pick<DurableLegalCompanyCommandDependencies, "runtime" | "createEventId"> &
+		Pick<
+			CorporateAdministrationCommandKernelDependencies,
+			"runtime" | "createEventId"
+		> &
 		CorporateAdministrationApprovalVerificationDependencies;
 
 type SupersedeCompanyLegalFormOptions = CorporateAdministrationCommandOptions &
@@ -54,41 +52,12 @@ export async function supersedeCompanyLegalForm(
 		return parsed;
 	}
 
-	const authorized = await requireCorporateAdministrationPermission(
-		options.authorization,
-		{
-			organizationId: options.organizationId,
-			actorUserId: options.actorUserId,
-			permission:
-				CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS.supersedeCompanyLegalForm,
-		},
+	const authorized = await authorizeCorporateAdministrationCommand(
+		"supersedeCompanyLegalForm",
+		options,
 	);
 	if (!authorized.ok) {
 		return authorized;
-	}
-
-	const identity = createCorporateAdministrationCommandFingerprint({
-		schema: supersedeCompanyLegalFormInputSchema,
-		organizationId: options.organizationId,
-		commandId:
-			"corporate-administration.legal-company.supersede-company-legal-form",
-		input: parsed.data,
-	});
-	if (!identity.ok) {
-		return identity;
-	}
-	const approved = await requireCorporateAdministrationApprovalIfConfigured(
-		dependencies,
-		{
-			organizationId: options.organizationId,
-			actorUserId: options.actorUserId,
-			approvalRequestId: options.approvalRequestId,
-			approvalDecisionId: options.approvalDecisionId,
-			commandFingerprint: identity.data.fingerprint,
-		},
-	);
-	if (!approved.ok) {
-		return approved;
 	}
 
 	const sourceDocument =
@@ -213,16 +182,13 @@ export async function supersedeCompanyLegalForm(
 		to: parsed.data.replacement.effectiveTo ?? null,
 	} as const;
 
-	return runDurableCompanyCommand({
-		commandId:
-			"corporate-administration.legal-company.supersede-company-legal-form",
+	return executeCorporateAdministrationCommand({
+		authorization: authorized.data,
 		fingerprintSchema: supersedeCompanyLegalFormInputSchema,
 		fingerprintInput: parsed.data,
 		outputSchema: companyLegalFormSchema,
-		options,
 		dependencies,
 		event: {
-			type: "corporate_administration.legal_company.legal_form_changed.v1",
 			operationType: "UPDATE",
 			targetType: "ca_company_legal_form_history",
 			aggregateId: (result) => result.legalCompanyId,

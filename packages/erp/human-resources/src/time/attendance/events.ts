@@ -6,9 +6,14 @@ import {
 	humanResourcesErrorDetails,
 } from "../../error-codes";
 import {
+	HUMAN_RESOURCES_COMMAND_ATTENDANCE_BREAK_END,
+	HUMAN_RESOURCES_COMMAND_ATTENDANCE_BREAK_START,
+	HUMAN_RESOURCES_COMMAND_ATTENDANCE_CLOCK_IN,
+	HUMAN_RESOURCES_COMMAND_ATTENDANCE_CLOCK_OUT,
 	HUMAN_RESOURCES_COMMAND_ATTENDANCE_EVENT_CORRECT,
 	HUMAN_RESOURCES_COMMAND_ATTENDANCE_EVENT_RECORD,
 	HUMAN_RESOURCES_COMMAND_ATTENDANCE_EVENT_VOID,
+	HUMAN_RESOURCES_COMMAND_ATTENDANCE_MANUAL_RECORD,
 	HUMAN_RESOURCES_QUERY_ATTENDANCE_ADJUSTMENT_LIST,
 	HUMAN_RESOURCES_QUERY_ATTENDANCE_EVENT_GET,
 	HUMAN_RESOURCES_QUERY_ATTENDANCE_EVENT_LIST,
@@ -26,13 +31,16 @@ import {
 	recordManualAttendanceInputSchema,
 	voidAttendanceEventInputSchema,
 } from "../../schemas/time";
-import { runTimeCommand, runTimeQuery } from "../../shared/time-command";
 import { resolveActiveTimeEmployment } from "../../shared/time-employment";
 import type {
 	AttendanceAdjustment,
 	AttendanceEvent,
 	AttendanceEventType,
 } from "../../types";
+import {
+	runTimeCapabilityCommand,
+	runTimeCapabilityQuery,
+} from "../run-operation";
 
 async function recordTypedAttendanceEvent(
 	input: unknown,
@@ -45,12 +53,23 @@ async function recordTypedAttendanceEvent(
 			| typeof recordBreakEndInputSchema;
 		invalidMessage: string;
 		eventType: AttendanceEventType;
+		command:
+			| typeof HUMAN_RESOURCES_COMMAND_ATTENDANCE_CLOCK_IN
+			| typeof HUMAN_RESOURCES_COMMAND_ATTENDANCE_CLOCK_OUT
+			| typeof HUMAN_RESOURCES_COMMAND_ATTENDANCE_BREAK_START
+			| typeof HUMAN_RESOURCES_COMMAND_ATTENDANCE_BREAK_END;
 	},
 ): Promise<Result<AttendanceEvent>> {
-	return await runTimeCommand(input, options, {
+	return await runTimeCapabilityCommand(input, options, {
 		schema: config.schema,
 		invalidMessage: config.invalidMessage,
-		command: HUMAN_RESOURCES_COMMAND_ATTENDANCE_EVENT_RECORD,
+		command: config.command,
+		storeMethods: [
+			"findAttendanceEventByIdempotencyKey",
+			"findEmploymentByEmployeeAsOf",
+			"getEmploymentById",
+			"recordAttendanceEvent",
+		],
 		execute: async (data, { store, ports }) => {
 			const employment = await resolveActiveTimeEmployment(store, {
 				organizationId: data.organizationId,
@@ -120,10 +139,16 @@ export async function recordAttendanceEvent(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<AttendanceEvent>> {
-	return await runTimeCommand(input, options, {
+	return await runTimeCapabilityCommand(input, options, {
 		schema: recordAttendanceEventInputSchema,
 		invalidMessage: "Invalid attendance event record input",
 		command: HUMAN_RESOURCES_COMMAND_ATTENDANCE_EVENT_RECORD,
+		storeMethods: [
+			"findAttendanceEventByIdempotencyKey",
+			"findEmploymentByEmployeeAsOf",
+			"getEmploymentById",
+			"recordAttendanceEvent",
+		],
 		execute: async (data, { store, ports }) => {
 			const employment = await resolveActiveTimeEmployment(store, {
 				organizationId: data.organizationId,
@@ -197,6 +222,7 @@ export async function recordClockIn(
 		schema: recordClockInInputSchema,
 		invalidMessage: "Invalid clock-in input",
 		eventType: "clock_in",
+		command: HUMAN_RESOURCES_COMMAND_ATTENDANCE_CLOCK_IN,
 	});
 }
 
@@ -209,6 +235,7 @@ export async function recordClockOut(
 		schema: recordClockOutInputSchema,
 		invalidMessage: "Invalid clock-out input",
 		eventType: "clock_out",
+		command: HUMAN_RESOURCES_COMMAND_ATTENDANCE_CLOCK_OUT,
 	});
 }
 
@@ -221,6 +248,7 @@ export async function recordBreakStart(
 		schema: recordBreakStartInputSchema,
 		invalidMessage: "Invalid break-start input",
 		eventType: "break_start",
+		command: HUMAN_RESOURCES_COMMAND_ATTENDANCE_BREAK_START,
 	});
 }
 
@@ -233,6 +261,7 @@ export async function recordBreakEnd(
 		schema: recordBreakEndInputSchema,
 		invalidMessage: "Invalid break-end input",
 		eventType: "break_end",
+		command: HUMAN_RESOURCES_COMMAND_ATTENDANCE_BREAK_END,
 	});
 }
 
@@ -241,10 +270,16 @@ export async function recordManualAttendance(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<AttendanceEvent>> {
-	return await runTimeCommand(input, options, {
+	return await runTimeCapabilityCommand(input, options, {
 		schema: recordManualAttendanceInputSchema,
 		invalidMessage: "Invalid manual attendance input",
-		command: HUMAN_RESOURCES_COMMAND_ATTENDANCE_EVENT_RECORD,
+		command: HUMAN_RESOURCES_COMMAND_ATTENDANCE_MANUAL_RECORD,
+		storeMethods: [
+			"findAttendanceEventByIdempotencyKey",
+			"findEmploymentByEmployeeAsOf",
+			"getEmploymentById",
+			"recordAttendanceEvent",
+		],
 		execute: async (data, { store, ports }) => {
 			const employment = await resolveActiveTimeEmployment(store, {
 				organizationId: data.organizationId,
@@ -313,10 +348,11 @@ export async function correctAttendanceEvent(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<AttendanceEvent>> {
-	return await runTimeCommand(input, options, {
+	return await runTimeCapabilityCommand(input, options, {
 		schema: correctAttendanceEventInputSchema,
 		invalidMessage: "Invalid attendance event correct input",
 		command: HUMAN_RESOURCES_COMMAND_ATTENDANCE_EVENT_CORRECT,
+		storeMethods: ["correctAttendanceEvent"],
 		execute: async (data, { store, ports }) =>
 			store.correctAttendanceEvent(
 				{
@@ -339,10 +375,11 @@ export async function voidAttendanceEvent(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<AttendanceEvent>> {
-	return await runTimeCommand(input, options, {
+	return await runTimeCapabilityCommand(input, options, {
 		schema: voidAttendanceEventInputSchema,
 		invalidMessage: "Invalid attendance event void input",
 		command: HUMAN_RESOURCES_COMMAND_ATTENDANCE_EVENT_VOID,
+		storeMethods: ["voidAttendanceEvent"],
 		execute: async (data, { store, ports }) =>
 			store.voidAttendanceEvent(data, ports),
 	});
@@ -352,10 +389,11 @@ export async function getAttendanceEvent(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<AttendanceEvent | null>> {
-	return await runTimeQuery(input, options, {
+	return await runTimeCapabilityQuery(input, options, {
 		schema: getAttendanceEventInputSchema,
 		invalidMessage: "Invalid attendance event get input",
 		query: HUMAN_RESOURCES_QUERY_ATTENDANCE_EVENT_GET,
+		storeMethods: ["getAttendanceEvent"],
 		execute: async (data, { store }) =>
 			store.getAttendanceEvent({
 				organizationId: data.organizationId,
@@ -368,10 +406,11 @@ export async function listAttendanceEvents(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<AttendanceEvent[]>> {
-	return await runTimeQuery(input, options, {
+	return await runTimeCapabilityQuery(input, options, {
 		schema: listAttendanceEventsInputSchema,
 		invalidMessage: "Invalid attendance event list input",
 		query: HUMAN_RESOURCES_QUERY_ATTENDANCE_EVENT_LIST,
+		storeMethods: ["listAttendanceEvents"],
 		execute: async (data, { store }) => store.listAttendanceEvents(data),
 	});
 }
@@ -380,10 +419,11 @@ export async function listAttendanceAdjustments(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<AttendanceAdjustment[]>> {
-	return await runTimeQuery(input, options, {
+	return await runTimeCapabilityQuery(input, options, {
 		schema: listAttendanceAdjustmentsInputSchema,
 		invalidMessage: "Invalid attendance adjustment list input",
 		query: HUMAN_RESOURCES_QUERY_ATTENDANCE_ADJUSTMENT_LIST,
+		storeMethods: ["listAttendanceAdjustments"],
 		execute: async (data, { store }) =>
 			store.listAttendanceAdjustments({
 				organizationId: data.organizationId,

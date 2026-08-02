@@ -27,21 +27,25 @@ import {
 } from "../schemas/time";
 import { invalidInput } from "../shared/domain-guards";
 import { previousIsoDate } from "../shared/effective-dates";
-import { runTimeCommand, runTimeQuery } from "../shared/time-command";
 import type {
 	TimeApprovalAuthorityAssignment,
 	TimePolicy,
 	TimePolicyAssignment,
 } from "../types";
+import {
+	runTimeCapabilityCommand,
+	runTimeCapabilityQuery,
+} from "./run-operation";
 
 export async function createTimePolicy(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<TimePolicy>> {
-	return await runTimeCommand(input, options, {
+	return await runTimeCapabilityCommand(input, options, {
 		schema: createTimePolicyInputSchema,
 		invalidMessage: "Invalid time policy create input",
 		command: HUMAN_RESOURCES_COMMAND_TIME_POLICY_CREATE,
+		storeMethods: ["createTimePolicy", "findTimePolicyByIdempotencyKey"],
 		execute: async (data, { store, ports }) => {
 			if (
 				data.effectiveTo !== undefined &&
@@ -116,10 +120,11 @@ export async function activateTimePolicy(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<TimePolicy>> {
-	return await runTimeCommand(input, options, {
+	return await runTimeCapabilityCommand(input, options, {
 		schema: activateTimePolicyInputSchema,
 		invalidMessage: "Invalid time policy activate input",
 		command: HUMAN_RESOURCES_COMMAND_TIME_POLICY_ACTIVATE,
+		storeMethods: ["activateTimePolicy"],
 		execute: async (data, { store, ports }) =>
 			store.activateTimePolicy(data, ports),
 	});
@@ -129,10 +134,15 @@ export async function supersedeTimePolicy(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<{ superseded: TimePolicy; successor: TimePolicy }>> {
-	return await runTimeCommand(input, options, {
+	return await runTimeCapabilityCommand(input, options, {
 		schema: supersedeTimePolicyInputSchema,
 		invalidMessage: "Invalid time policy supersede input",
 		command: HUMAN_RESOURCES_COMMAND_TIME_POLICY_SUPERSEDE,
+		storeMethods: [
+			"findTimePolicyByIdempotencyKey",
+			"getTimePolicy",
+			"supersedeTimePolicy",
+		],
 		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The domain workflow keeps ordered invariant validation and Result mapping explicit.
 		execute: async (data, { store, ports }) => {
 			const predecessor = await store.getTimePolicy({
@@ -244,10 +254,11 @@ export async function assignTimePolicy(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<TimePolicyAssignment>> {
-	return await runTimeCommand(input, options, {
+	return await runTimeCapabilityCommand(input, options, {
 		schema: assignTimePolicyInputSchema,
 		invalidMessage: "Invalid time policy assignment input",
 		command: HUMAN_RESOURCES_COMMAND_TIME_POLICY_ASSIGN,
+		storeMethods: ["assignTimePolicy"],
 		execute: async (data, { store, ports }) => {
 			if (
 				data.effectiveTo !== undefined &&
@@ -273,10 +284,11 @@ export async function assignTimeApprovalAuthority(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<TimeApprovalAuthorityAssignment>> {
-	return await runTimeCommand(input, options, {
+	return await runTimeCapabilityCommand(input, options, {
 		schema: assignTimeApprovalAuthorityInputSchema,
 		invalidMessage: "Invalid time approval authority assignment input",
 		command: HUMAN_RESOURCES_COMMAND_TIME_APPROVAL_AUTHORITY_ASSIGN,
+		storeMethods: ["assignTimeApprovalAuthority"],
 		execute: async (data, { store, ports }) => {
 			if (
 				data.effectiveTo !== undefined &&
@@ -307,10 +319,11 @@ export async function endTimeApprovalAuthorityAssignment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<TimeApprovalAuthorityAssignment>> {
-	return await runTimeCommand(input, options, {
+	return await runTimeCapabilityCommand(input, options, {
 		schema: endTimeApprovalAuthorityAssignmentInputSchema,
 		invalidMessage: "Invalid time approval authority end input",
 		command: HUMAN_RESOURCES_COMMAND_TIME_APPROVAL_AUTHORITY_END,
+		storeMethods: ["endTimeApprovalAuthorityAssignment"],
 		execute: async (data, { store, ports }) =>
 			store.endTimeApprovalAuthorityAssignment(data, ports),
 	});
@@ -320,10 +333,11 @@ export async function getTimePolicy(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<TimePolicy | null>> {
-	return await runTimeQuery(input, options, {
+	return await runTimeCapabilityQuery(input, options, {
 		schema: getTimePolicyInputSchema,
 		invalidMessage: "Invalid time policy get input",
 		query: HUMAN_RESOURCES_QUERY_TIME_POLICY_GET,
+		storeMethods: ["getTimePolicy"],
 		execute: async (data, { store }) => store.getTimePolicy(data),
 	});
 }
@@ -332,10 +346,11 @@ export async function resolveTimePolicy(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<TimePolicy | null>> {
-	return await runTimeQuery(input, options, {
+	return await runTimeCapabilityQuery(input, options, {
 		schema: resolveTimePolicyInputSchema,
 		invalidMessage: "Invalid time policy resolve input",
 		query: HUMAN_RESOURCES_QUERY_TIME_POLICY_RESOLVE,
+		storeMethods: ["resolveTimePolicy"],
 		execute: async (data, { store }) => store.resolveTimePolicy(data),
 	});
 }

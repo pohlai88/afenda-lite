@@ -1,10 +1,10 @@
 import { errorResult, type Result } from "@afenda/errors";
 
-import {
-	CORPORATE_ADMINISTRATION_QUERY_PERMISSIONS,
-	requireCorporateAdministrationPermission,
-} from "../authorization";
 import type { CorporateAdministrationQueryOptions } from "../command-options";
+import {
+	type CorporateAdministrationQueryKernelDependencies,
+	executeCorporateAdministrationQuery,
+} from "../internal/query";
 import { parseCorporateAdministrationInput } from "../parse-input";
 import { calculateOfficerEligibilityAsOf } from "./compliance-rules";
 import {
@@ -25,9 +25,11 @@ import type {
 	OfficerEligibilityAsOf,
 } from "./compliance-types";
 
-export type OfficerComplianceQueryDependencies = Readonly<{
-	officerComplianceStore: OfficerComplianceStore;
-}>;
+export type OfficerComplianceQueryDependencies =
+	CorporateAdministrationQueryKernelDependencies &
+		Readonly<{
+			officerComplianceStore: OfficerComplianceStore;
+		}>;
 
 export async function getOfficerEligibilityAsOf(
 	input: GetOfficerEligibilityAsOfInput,
@@ -41,34 +43,37 @@ export async function getOfficerEligibilityAsOf(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "getOfficerEligibilityAsOf");
-	if (!authorized.ok) {
-		return authorized;
-	}
-	const declarations =
-		await dependencies.officerComplianceStore.listOfficerDeclarations({
-			organizationId: options.organizationId,
-			officerAppointmentId: parsed.data.officerAppointmentId,
-		});
-	if (!declarations.ok) {
-		return declarations;
-	}
-	const disqualifications =
-		await dependencies.officerComplianceStore.listOfficerDisqualifications({
-			organizationId: options.organizationId,
-			officerAppointmentId: parsed.data.officerAppointmentId,
-		});
-	if (!disqualifications.ok) {
-		return disqualifications;
-	}
-	return errorResult.ok(
-		calculateOfficerEligibilityAsOf({
-			officerAppointmentId: parsed.data.officerAppointmentId,
-			asOf: parsed.data.asOf,
-			declarations: declarations.data,
-			disqualifications: disqualifications.data,
-		}),
-	);
+	return await executeCorporateAdministrationQuery({
+		operationId: "getOfficerEligibilityAsOf",
+		options,
+		dependencies,
+		work: async () => {
+			const declarations =
+				await dependencies.officerComplianceStore.listOfficerDeclarations({
+					organizationId: options.organizationId,
+					officerAppointmentId: parsed.data.officerAppointmentId,
+				});
+			if (!declarations.ok) {
+				return declarations;
+			}
+			const disqualifications =
+				await dependencies.officerComplianceStore.listOfficerDisqualifications({
+					organizationId: options.organizationId,
+					officerAppointmentId: parsed.data.officerAppointmentId,
+				});
+			if (!disqualifications.ok) {
+				return disqualifications;
+			}
+			return errorResult.ok(
+				calculateOfficerEligibilityAsOf({
+					officerAppointmentId: parsed.data.officerAppointmentId,
+					asOf: parsed.data.asOf,
+					declarations: declarations.data,
+					disqualifications: disqualifications.data,
+				}),
+			);
+		},
+	});
 }
 
 export async function listExpiringDeclarations(
@@ -83,16 +88,18 @@ export async function listExpiringDeclarations(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "listExpiringDeclarations");
-	if (!authorized.ok) {
-		return authorized;
-	}
-	return dependencies.officerComplianceStore.listExpiringDeclarations({
-		organizationId: options.organizationId,
-		legalCompanyId: parsed.data.legalCompanyId,
-		asOf: parsed.data.asOf,
-		windowDays: parsed.data.windowDays,
-		declarationType: parsed.data.declarationType,
+	return await executeCorporateAdministrationQuery({
+		operationId: "listExpiringDeclarations",
+		options,
+		dependencies,
+		work: () =>
+			dependencies.officerComplianceStore.listExpiringDeclarations({
+				organizationId: options.organizationId,
+				legalCompanyId: parsed.data.legalCompanyId,
+				asOf: parsed.data.asOf,
+				windowDays: parsed.data.windowDays,
+				declarationType: parsed.data.declarationType,
+			}),
 	});
 }
 
@@ -108,15 +115,17 @@ export async function listActiveDisqualifications(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "listActiveDisqualifications");
-	if (!authorized.ok) {
-		return authorized;
-	}
-	return dependencies.officerComplianceStore.listActiveDisqualifications({
-		organizationId: options.organizationId,
-		legalCompanyId: parsed.data.legalCompanyId,
-		asOf: parsed.data.asOf,
-		officerAppointmentId: parsed.data.officerAppointmentId,
+	return await executeCorporateAdministrationQuery({
+		operationId: "listActiveDisqualifications",
+		options,
+		dependencies,
+		work: () =>
+			dependencies.officerComplianceStore.listActiveDisqualifications({
+				organizationId: options.organizationId,
+				legalCompanyId: parsed.data.legalCompanyId,
+				asOf: parsed.data.asOf,
+				officerAppointmentId: parsed.data.officerAppointmentId,
+			}),
 	});
 }
 
@@ -132,27 +141,18 @@ export async function listConflictsForMatter(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "listConflictsForMatter");
-	if (!authorized.ok) {
-		return authorized;
-	}
-	return dependencies.officerComplianceStore.listConflictsForMatter({
-		organizationId: options.organizationId,
-		legalCompanyId: parsed.data.legalCompanyId,
-		matterType: parsed.data.matterType,
-		matterId: parsed.data.matterId,
-		includeCleared: parsed.data.includeCleared,
-	});
-}
-
-function authorize(
-	options: CorporateAdministrationQueryOptions,
-	query: keyof typeof CORPORATE_ADMINISTRATION_QUERY_PERMISSIONS,
-) {
-	return requireCorporateAdministrationPermission(options.authorization, {
-		organizationId: options.organizationId,
-		actorUserId: options.actorUserId,
-		permission: CORPORATE_ADMINISTRATION_QUERY_PERMISSIONS[query],
+	return await executeCorporateAdministrationQuery({
+		operationId: "listConflictsForMatter",
+		options,
+		dependencies,
+		work: () =>
+			dependencies.officerComplianceStore.listConflictsForMatter({
+				organizationId: options.organizationId,
+				legalCompanyId: parsed.data.legalCompanyId,
+				matterType: parsed.data.matterType,
+				matterId: parsed.data.matterId,
+				includeCleared: parsed.data.includeCleared,
+			}),
 	});
 }
 

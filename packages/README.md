@@ -71,7 +71,7 @@ Unregistered package folders are not governed catalog entries until they are add
 | [`@afenda/logger`](./runtime/logger/README.md) | Node + Edge | `.` (Node), `/edge` | Active | Pino Node logger + edge-safe console emit |
 | [`@afenda/http`](./runtime/http/README.md) | Universal | `.` | Active | Fetch compose · correlation · pagination · rate-limit / timing headers |
 | [`@afenda/security`](./runtime/security/README.md) | Universal | `.` | Active | Security headers · CSP · CORS builders |
-| [`@afenda/metrics`](./runtime/metrics/README.md) | Node + Edge | `.` → split planned | Active | Prometheus registry · HTTP/DB/cache instruments |
+| [`@afenda/metrics`](./runtime/metrics/README.md) | Node | `/core`, `/node`, `/testing` | Active | Prometheus registry · HTTP/DB/cache instruments |
 | [`@afenda/openapi`](./runtime/openapi/README.md) | Universal + Node emit | `.`, `/node` | Active | Canonical schema registry · envelopes · stamped document generation |
 | [`@afenda/rate-limit`](./runtime/rate-limit/README.md) | Universal | `.`, `/testing` | Active | Canonical quota decisions · key policy · bounded Upstash normalization |
 | [`@afenda/cache`](./runtime/cache/README.md) | Universal | `.`, `/testing` | Active | Canonical namespaces · opaque keys · L1/L2 policy · JSON and failure ownership |

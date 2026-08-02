@@ -1,9 +1,9 @@
-import type { Result } from "@afenda/errors";
+import type { CanonicalErrorCode, Result } from "@afenda/errors";
 import { z } from "zod";
-import type { CorporateAdministrationApprovalDecisionPort } from "./authorization";
 import type { CorporateAdministrationPendingEvent } from "./domain-events";
 import type { CorporateAdministrationIdempotencyPort } from "./idempotency";
 import {
+	type CorrelationId,
 	causationIdSchema,
 	correlationIdSchema,
 	type DocumentObjectRef,
@@ -12,6 +12,8 @@ import {
 	userIdSchema,
 } from "./kernel/brands";
 import { type CanonicalDate, canonicalInstantSchema } from "./kernel/dates";
+import type { CorporateAdministrationOperationId } from "./operation-registry/registry";
+import type { CorporateAdministrationOperationOwner } from "./operation-registry/types";
 
 export type ClockPort = Readonly<{
 	now: () => Date;
@@ -202,8 +204,6 @@ export type MasterDataReconciliationPort = Readonly<{
 	) => Promise<Result<void>>;
 }>;
 
-export type ApprovalDecisionPort = CorporateAdministrationApprovalDecisionPort;
-
 /**
  * Atomic execution boundary for Corporate Administration commands.
  *
@@ -385,6 +385,39 @@ export type CorporateAdministrationAuditFactPort = Readonly<{
 	) => Promise<Result<{ id: string }>>;
 }>;
 
+type CorporateAdministrationOperationObservationBase = Readonly<{
+	operationId: CorporateAdministrationOperationId;
+	kind: "command" | "query";
+	owner: CorporateAdministrationOperationOwner;
+	observabilityClass: "corporate_administration_operation";
+	correlationId: CorrelationId;
+}>;
+
+export type CorporateAdministrationOperationObservation =
+	| (CorporateAdministrationOperationObservationBase &
+			Readonly<{ outcome: "success" }>)
+	| (CorporateAdministrationOperationObservationBase &
+			Readonly<{
+				outcome: "failure";
+				errorCode: CanonicalErrorCode;
+			}>)
+	| (CorporateAdministrationOperationObservationBase &
+			Readonly<{ outcome: "exception" }>);
+
+/**
+ * Opaque operation-diagnostics boundary.
+ *
+ * The private command and query kernels emit one terminal observation per
+ * accepted invocation.
+ * Implementations must be synchronous, non-throwing, and free of tenant,
+ * actor, payload, approval, SQL, stack, or open-metadata fields.
+ */
+export type CorporateAdministrationObservabilityPort = Readonly<{
+	recordOperation: (
+		observation: CorporateAdministrationOperationObservation,
+	) => void;
+}>;
+
 /**
  * CA-0.3 runtime infrastructure composition.
  *
@@ -402,6 +435,7 @@ export type CorporateAdministrationRuntimePorts = Readonly<{
 	idempotency: CorporateAdministrationIdempotencyPort;
 	audit: CorporateAdministrationAuditFactPort;
 	outbox: CorporateAdministrationOutboxPort;
+	observability: CorporateAdministrationObservabilityPort;
 }>;
 
 function isObject(value: unknown): value is Record<PropertyKey, unknown> {
@@ -448,6 +482,11 @@ const auditSchema = z.custom<CorporateAdministrationAuditFactPort>(
 	{ message: "Corporate Administration audit fact port is required" },
 );
 
+const observabilitySchema = z.custom<CorporateAdministrationObservabilityPort>(
+	(value) => isObject(value) && hasFunction(value, "recordOperation"),
+	{ message: "Corporate Administration observability port is required" },
+);
+
 const runtimePortsSchema = z
 	.object({
 		clock: clockSchema,
@@ -455,6 +494,7 @@ const runtimePortsSchema = z
 		idempotency: idempotencySchema,
 		audit: auditSchema,
 		outbox: outboxSchema,
+		observability: observabilitySchema,
 	})
 	.strict()
 	.readonly();

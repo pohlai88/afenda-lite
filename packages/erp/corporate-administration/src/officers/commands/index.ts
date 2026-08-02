@@ -1,18 +1,14 @@
 import { errorResult, type Result } from "@afenda/errors";
-import {
-	CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS,
-	requireCorporateAdministrationApprovalIfConfigured,
-	requireCorporateAdministrationPermission,
-} from "../../authorization";
-import { createCorporateAdministrationCommandFingerprint } from "../../command-identity";
 import type {
 	CorporateAdministrationApprovalCommandOptions,
 	CorporateAdministrationCommandOptions,
 } from "../../command-options";
 import {
-	type DurableLegalCompanyCommandDependencies,
-	runDurableCompanyCommand,
-} from "../../company/commands/durable-command";
+	authorizeCorporateAdministrationCommand,
+	type CorporateAdministrationAuthorizedCommandExecution,
+	type CorporateAdministrationCommandKernelDependencies,
+	executeCorporateAdministrationCommand,
+} from "../../internal/durable-command";
 import type { OfficerAppointmentId } from "../../kernel/brands";
 import { parseCorporateAdministrationInput } from "../../parse-input";
 import {
@@ -44,7 +40,7 @@ import type {
 } from "../types";
 
 type Dependencies = OfficerCommandDependencies &
-	DurableLegalCompanyCommandDependencies;
+	CorporateAdministrationCommandKernelDependencies;
 
 type OfficerApprovalOptions = CorporateAdministrationCommandOptions &
 	Partial<
@@ -66,7 +62,10 @@ export async function defineStatutoryOffice(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "defineStatutoryOffice");
+	const authorized = await authorizeCorporateAdministrationCommand(
+		"defineStatutoryOffice",
+		options,
+	);
 	if (!authorized.ok) {
 		return authorized;
 	}
@@ -93,18 +92,15 @@ export async function defineStatutoryOffice(
 		return source;
 	}
 
-	return runDurableCompanyCommand({
-		commandId: "corporate-administration.statutory-office.define",
+	return executeCorporateAdministrationCommand({
+		authorization: authorized.data,
 		fingerprintSchema: defineStatutoryOfficeInputSchema,
 		fingerprintInput: parsed.data,
 		outputSchema: statutoryOfficeSchema,
-		options,
 		dependencies,
 		event: {
-			type: "corporate_administration.statutory_office.defined.v1",
 			operationType: "CREATE",
 			targetType: "ca_statutory_office",
-			aggregateType: "statutory_office",
 			aggregateId: (result) => result.id,
 			aggregateVersion: (result) => result.version,
 			payload: (result, context) => ({
@@ -156,7 +152,10 @@ export async function appointOfficer(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "appointOfficer");
+	const authorized = await authorizeCorporateAdministrationCommand(
+		"appointOfficer",
+		options,
+	);
 	if (!authorized.ok) {
 		return authorized;
 	}
@@ -185,30 +184,6 @@ export async function appointOfficer(
 	});
 	if (!withinOffice.ok) {
 		return withinOffice;
-	}
-	if (office.data.protectedRole) {
-		const identity = createCorporateAdministrationCommandFingerprint({
-			schema: appointOfficerInputSchema,
-			organizationId: options.organizationId,
-			commandId: "corporate-administration.officer.appoint",
-			input: parsed.data,
-		});
-		if (!identity.ok) {
-			return identity;
-		}
-		const approved = await requireCorporateAdministrationApprovalIfConfigured(
-			dependencies,
-			{
-				organizationId: options.organizationId,
-				actorUserId: options.actorUserId,
-				approvalRequestId: options.approvalRequestId,
-				approvalDecisionId: options.approvalDecisionId,
-				commandFingerprint: identity.data.fingerprint,
-			},
-		);
-		if (!approved.ok) {
-			return approved;
-		}
 	}
 	const references = await validateAppointmentReferences(
 		dependencies,
@@ -245,13 +220,16 @@ export async function appointOfficer(
 	}
 	const statutoryOffice = office.data;
 	return runOfficerAppointmentUpdate({
-		commandId: "corporate-administration.officer.appoint",
-		eventType: "corporate_administration.officer.appointed.v1",
+		authorization: authorized.data,
+		operationId: "appointOfficer",
 		operationType: "CREATE",
 		inputSchema: appointOfficerInputSchema,
 		input: parsed.data,
 		options,
 		dependencies,
+		approvalRequirement: office.data.protectedRole
+			? "required"
+			: "not_required",
 		work: (transaction, context) =>
 			dependencies.officerStore.appointOfficer({
 				organizationId: options.organizationId,
@@ -285,7 +263,10 @@ export async function amendOfficerAppointment(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "amendOfficerAppointment");
+	const authorized = await authorizeCorporateAdministrationCommand(
+		"amendOfficerAppointment",
+		options,
+	);
 	if (!authorized.ok) {
 		return authorized;
 	}
@@ -335,8 +316,8 @@ export async function amendOfficerAppointment(
 		return consent;
 	}
 	return runOfficerAppointmentUpdate({
-		commandId: "corporate-administration.officer.amend-appointment",
-		eventType: "corporate_administration.officer.appointment_amended.v1",
+		authorization: authorized.data,
+		operationId: "amendOfficerAppointment",
 		operationType: "UPDATE",
 		inputSchema: amendOfficerAppointmentInputSchema,
 		input: parsed.data,
@@ -373,7 +354,10 @@ export async function recordOfficerQualification(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "recordOfficerQualification");
+	const authorized = await authorizeCorporateAdministrationCommand(
+		"recordOfficerQualification",
+		options,
+	);
 	if (!authorized.ok) {
 		return authorized;
 	}
@@ -399,18 +383,15 @@ export async function recordOfficerQualification(
 	if (!source.ok) {
 		return source;
 	}
-	return runDurableCompanyCommand({
-		commandId: "corporate-administration.officer.record-qualification",
+	return executeCorporateAdministrationCommand({
+		authorization: authorized.data,
 		fingerprintSchema: recordOfficerQualificationInputSchema,
 		fingerprintInput: parsed.data,
 		outputSchema: officerQualificationSchema,
-		options,
 		dependencies,
 		event: {
-			type: "corporate_administration.officer.qualification_recorded.v1",
 			operationType: "CREATE",
 			targetType: "ca_officer_qualification",
-			aggregateType: "officer_qualification",
 			aggregateId: (result) => result.id,
 			aggregateVersion: (result) => result.version,
 			payload: (result, context) => ({
@@ -453,8 +434,7 @@ export function resignOfficer(
 	dependencies: Dependencies,
 ): Promise<Result<OfficerAppointment>> {
 	return endOfficer(input, options, dependencies, {
-		commandId: "corporate-administration.officer.resign",
-		eventType: "corporate_administration.officer.resigned.v1",
+		operationId: "resignOfficer",
 		status: "resigned",
 		dateField: "resignedOn",
 		inputSchema: resignOfficerInputSchema,
@@ -467,8 +447,7 @@ export function removeOfficer(
 	dependencies: Dependencies,
 ): Promise<Result<OfficerAppointment>> {
 	return endOfficer(input, options, dependencies, {
-		commandId: "corporate-administration.officer.remove",
-		eventType: "corporate_administration.officer.removed.v1",
+		operationId: "removeOfficer",
 		status: "removed",
 		dateField: "removedOn",
 		inputSchema: removeOfficerInputSchema,
@@ -480,10 +459,7 @@ async function endOfficer(
 	options: CorporateAdministrationCommandOptions,
 	dependencies: Dependencies,
 	config: Readonly<{
-		commandId: string;
-		eventType:
-			| "corporate_administration.officer.resigned.v1"
-			| "corporate_administration.officer.removed.v1";
+		operationId: "resignOfficer" | "removeOfficer";
 		status: "resigned" | "removed";
 		dateField: "resignedOn" | "removedOn";
 		inputSchema:
@@ -495,9 +471,9 @@ async function endOfficer(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(
+	const authorized = await authorizeCorporateAdministrationCommand(
+		config.operationId,
 		options,
-		config.status === "resigned" ? "resignOfficer" : "removeOfficer",
 	);
 	if (!authorized.ok) {
 		return authorized;
@@ -529,8 +505,8 @@ async function endOfficer(
 		return source;
 	}
 	return runOfficerAppointmentUpdate({
-		commandId: config.commandId,
-		eventType: config.eventType,
+		authorization: authorized.data,
+		operationId: config.operationId,
 		operationType: "UPDATE",
 		inputSchema: config.inputSchema,
 		input: parsed.data,
@@ -553,12 +529,12 @@ async function endOfficer(
 }
 
 function runOfficerAppointmentUpdate(input: {
-	commandId: string;
-	eventType:
-		| "corporate_administration.officer.appointed.v1"
-		| "corporate_administration.officer.appointment_amended.v1"
-		| "corporate_administration.officer.resigned.v1"
-		| "corporate_administration.officer.removed.v1";
+	authorization: CorporateAdministrationAuthorizedCommandExecution;
+	operationId:
+		| "appointOfficer"
+		| "amendOfficerAppointment"
+		| "resignOfficer"
+		| "removeOfficer";
 	operationType: "CREATE" | "UPDATE";
 	inputSchema:
 		| typeof appointOfficerInputSchema
@@ -568,22 +544,21 @@ function runOfficerAppointmentUpdate(input: {
 	input: unknown;
 	options: CorporateAdministrationCommandOptions;
 	dependencies: Dependencies;
+	approvalRequirement?: "required" | "not_required" | undefined;
 	work: Parameters<
-		typeof runDurableCompanyCommand<OfficerAppointment>
+		typeof executeCorporateAdministrationCommand<OfficerAppointment>
 	>[0]["work"];
 }) {
-	return runDurableCompanyCommand({
-		commandId: input.commandId,
+	return executeCorporateAdministrationCommand({
+		authorization: input.authorization,
 		fingerprintSchema: input.inputSchema,
 		fingerprintInput: input.input,
 		outputSchema: officerAppointmentSchema,
-		options: input.options,
 		dependencies: input.dependencies,
+		approvalRequirement: input.approvalRequirement,
 		event: {
-			type: input.eventType,
 			operationType: input.operationType,
 			targetType: "ca_officer_appointment",
-			aggregateType: "officer_appointment",
 			aggregateId: (result) => result.id,
 			aggregateVersion: (result) => result.version,
 			payload: (result, context) => ({
@@ -599,17 +574,6 @@ function runOfficerAppointmentUpdate(input: {
 		},
 		serializeResult: serializeOfficerAppointment,
 		work: input.work,
-	});
-}
-
-function authorize(
-	options: CorporateAdministrationCommandOptions,
-	command: keyof typeof CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS,
-) {
-	return requireCorporateAdministrationPermission(options.authorization, {
-		organizationId: options.organizationId,
-		actorUserId: options.actorUserId,
-		permission: CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS[command],
 	});
 }
 

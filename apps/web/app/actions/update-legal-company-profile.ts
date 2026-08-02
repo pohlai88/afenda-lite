@@ -1,7 +1,10 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
-import { updateLegalCompanyProfile } from "@afenda/corporate-administration";
+import {
+	corporateAdministrationPermissionFor,
+	updateLegalCompanyProfile,
+} from "@afenda/corporate-administration";
 import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -28,7 +31,9 @@ export async function updateLegalCompanyProfileAction(
 ): Promise<ActionResult<{ legalCompanyId: string; version: number }>> {
 	return await runMemberPermissionAction({
 		path: "updateLegalCompanyProfileAction",
-		permission: "corporate_administration.company.manage",
+		permission: corporateAdministrationPermissionFor(
+			"updateLegalCompanyProfile",
+		),
 		safeMessage: "Could not update legal company profile.",
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(updateLegalCompanyProfileActionSchema, {

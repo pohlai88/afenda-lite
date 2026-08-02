@@ -1,5 +1,6 @@
 // biome-ignore-all lint/style/noNestedTernary: Three-state date normalization remains adjacent to its policy rule.
 import { errorResult, type Result } from "@afenda/errors";
+import { corporateAdministrationEffectiveRangeOverlapResult } from "../error-codes";
 import type { CanonicalDate, CanonicalInstant } from "../kernel/dates";
 import { compareCanonicalDates } from "../kernel/dates";
 import {
@@ -792,10 +793,7 @@ export function assertNoJurisdictionProfileOverlap(input: {
 	if (overlap === undefined) {
 		return errorResult.ok(undefined);
 	}
-	return errorResult.fail("CONFLICT", {
-		publicMessage:
-			"Corporate Administration jurisdiction profile overlaps an existing profile.",
-	});
+	return corporateAdministrationEffectiveRangeOverlapResult();
 }
 
 export function assertNoCompanyNameOverlap(input: {

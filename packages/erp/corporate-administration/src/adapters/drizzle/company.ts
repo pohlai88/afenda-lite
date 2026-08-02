@@ -1697,6 +1697,11 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 			input,
 		);
 		if (input.transaction !== undefined) {
+			enqueueIdentifierPredecessorLock(input.transaction, {
+				organizationId: input.organizationId,
+				legalCompanyId: input.legalCompanyId,
+				companyIdentifierId: input.companyIdentifierId,
+			});
 			enqueueIdentifierScopeLock(input.transaction, {
 				organizationId: input.organizationId,
 				identifierType: input.replacement.identifierType,
@@ -3357,6 +3362,26 @@ function enqueueIdentifierScopeLock(
 	transaction.enqueue((database) => {
 		const txSql = asTransactionSql(database);
 		return txSql`SELECT pg_advisory_xact_lock(hashtextextended(${identifierLockKey(input)}, 0))`;
+	});
+}
+
+function enqueueIdentifierPredecessorLock(
+	transaction: CorporateAdministrationTransactionContext,
+	input: Readonly<{
+		organizationId: string;
+		legalCompanyId: string;
+		companyIdentifierId: string;
+	}>,
+): void {
+	transaction.enqueue((database) => {
+		const txSql = asTransactionSql(database);
+		const lockKey = [
+			"ca_company_identifier_predecessor",
+			input.organizationId,
+			input.legalCompanyId,
+			input.companyIdentifierId,
+		].join(":");
+		return txSql`SELECT pg_advisory_xact_lock(hashtextextended(${lockKey}, 0))`;
 	});
 }
 

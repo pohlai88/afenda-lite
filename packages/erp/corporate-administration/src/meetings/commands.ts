@@ -1,19 +1,17 @@
 import { errorResult, type Result } from "@afenda/errors";
-
-import {
-	CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS,
-	requireCorporateAdministrationPermission,
-} from "../authorization";
 import type { CorporateAdministrationCommandOptions } from "../command-options";
-import {
-	type DurableLegalCompanyCommandDependencies,
-	runDurableCompanyCommand,
-} from "../company/commands/durable-command";
 import type { GovernanceStore } from "../governance/store";
 import type { GovernanceMembership } from "../governance/types";
+import {
+	authorizeCorporateAdministrationCommand,
+	type CorporateAdministrationAuthorizedCommandExecution,
+	type CorporateAdministrationCommandKernelDependencies,
+	executeCorporateAdministrationCommand,
+} from "../internal/durable-command";
 import type {
 	GovernanceMeetingId,
 	GovernanceMembershipId,
+	OrganizationId,
 } from "../kernel/brands";
 import { parseCorporateAdministrationInput } from "../parse-input";
 import {
@@ -56,12 +54,12 @@ import type {
 
 export type MeetingReferencePort = Readonly<{
 	validateSourceDocument: (input: {
-		organizationId: string;
+		organizationId: OrganizationId;
 		sourceDocumentId: string;
 	}) => Promise<Result<{ sourceDocumentId: string; active: boolean } | null>>;
 }>;
 
-type Dependencies = DurableLegalCompanyCommandDependencies &
+type Dependencies = CorporateAdministrationCommandKernelDependencies &
 	Readonly<{
 		governanceStore: GovernanceStore;
 		meetingStore: MeetingStore;
@@ -80,7 +78,10 @@ export async function scheduleGovernanceMeeting(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "scheduleGovernanceMeeting");
+	const authorized = await authorizeCorporateAdministrationCommand(
+		"scheduleGovernanceMeeting",
+		options,
+	);
 	if (!authorized.ok) {
 		return authorized;
 	}
@@ -108,18 +109,15 @@ export async function scheduleGovernanceMeeting(
 	if (!source.ok) {
 		return source;
 	}
-	return runDurableCompanyCommand({
-		commandId: "corporate-administration.meeting.schedule",
+	return executeCorporateAdministrationCommand({
+		authorization: authorized.data,
 		fingerprintSchema: scheduleGovernanceMeetingInputSchema,
 		fingerprintInput: parsed.data,
 		outputSchema: governanceMeetingSchema,
-		options,
 		dependencies,
 		event: {
-			type: "corporate_administration.governance_meeting.scheduled.v1",
 			operationType: "CREATE",
 			targetType: "ca_governance_meeting",
-			aggregateType: "governance_meeting",
 			aggregateId: (result) => result.id,
 			aggregateVersion: (result) => result.version,
 			payload: (result, context) => meetingPayload(result, context),
@@ -158,7 +156,10 @@ export async function issueMeetingNotice(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "issueMeetingNotice");
+	const authorized = await authorizeCorporateAdministrationCommand(
+		"issueMeetingNotice",
+		options,
+	);
 	if (!authorized.ok) {
 		return authorized;
 	}
@@ -189,18 +190,15 @@ export async function issueMeetingNotice(
 	if (!source.ok) {
 		return source;
 	}
-	return runDurableCompanyCommand({
-		commandId: "corporate-administration.meeting.issue-notice",
+	return executeCorporateAdministrationCommand({
+		authorization: authorized.data,
 		fingerprintSchema: issueMeetingNoticeInputSchema,
 		fingerprintInput: parsed.data,
 		outputSchema: meetingNoticeSchema,
-		options,
 		dependencies,
 		event: {
-			type: "corporate_administration.meeting_notice.issued.v1",
 			operationType: "CREATE",
 			targetType: "ca_meeting_notice",
-			aggregateType: "meeting_notice",
 			aggregateId: (result) => result.id,
 			aggregateVersion: (result) => result.version,
 			payload: (result, context) => noticePayload(result, context),
@@ -236,7 +234,10 @@ export async function recordNoticeDelivery(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "recordNoticeDelivery");
+	const authorized = await authorizeCorporateAdministrationCommand(
+		"recordNoticeDelivery",
+		options,
+	);
 	if (!authorized.ok) {
 		return authorized;
 	}
@@ -262,8 +263,8 @@ export async function recordNoticeDelivery(
 		return source;
 	}
 	return runNoticeUpdateCommand({
-		commandId: "corporate-administration.meeting.record-notice-delivery",
-		eventType: "corporate_administration.meeting_notice.delivered.v1",
+		authorization: authorized.data,
+		operationId: "recordNoticeDelivery",
 		input: parsed.data,
 		inputSchema: recordNoticeDeliveryInputSchema,
 		options,
@@ -294,7 +295,10 @@ export async function waiveNotice(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "waiveNotice");
+	const authorized = await authorizeCorporateAdministrationCommand(
+		"waiveNotice",
+		options,
+	);
 	if (!authorized.ok) {
 		return authorized;
 	}
@@ -320,8 +324,8 @@ export async function waiveNotice(
 		return source;
 	}
 	return runNoticeUpdateCommand({
-		commandId: "corporate-administration.meeting.waive-notice",
-		eventType: "corporate_administration.meeting_notice.waived.v1",
+		authorization: authorized.data,
+		operationId: "waiveNotice",
 		input: parsed.data,
 		inputSchema: waiveNoticeInputSchema,
 		options,
@@ -353,7 +357,10 @@ export async function recordMeetingParticipant(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "recordMeetingParticipant");
+	const authorized = await authorizeCorporateAdministrationCommand(
+		"recordMeetingParticipant",
+		options,
+	);
 	if (!authorized.ok) {
 		return authorized;
 	}
@@ -379,18 +386,15 @@ export async function recordMeetingParticipant(
 	if (membership.data.governanceBodyId !== meeting.data.governanceBodyId) {
 		return invalidReference("governanceMembershipId");
 	}
-	return runDurableCompanyCommand({
-		commandId: "corporate-administration.meeting.record-participant",
+	return executeCorporateAdministrationCommand({
+		authorization: authorized.data,
 		fingerprintSchema: recordMeetingParticipantInputSchema,
 		fingerprintInput: parsed.data,
 		outputSchema: meetingParticipantSchema,
-		options,
 		dependencies,
 		event: {
-			type: "corporate_administration.meeting_participant.recorded.v1",
 			operationType: "CREATE",
 			targetType: "ca_meeting_participant",
-			aggregateType: "meeting_participant",
 			aggregateId: (result) => result.id,
 			aggregateVersion: (result) => result.version,
 			payload: (result, context) => ({
@@ -436,7 +440,10 @@ export async function openMeeting(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "openMeeting");
+	const authorized = await authorizeCorporateAdministrationCommand(
+		"openMeeting",
+		options,
+	);
 	if (!authorized.ok) {
 		return authorized;
 	}
@@ -460,8 +467,8 @@ export async function openMeeting(
 		return source;
 	}
 	return runMeetingStatusCommand({
-		commandId: "corporate-administration.meeting.open",
-		eventType: "corporate_administration.governance_meeting.opened.v1",
+		authorization: authorized.data,
+		operationId: "openMeeting",
 		input: parsed.data,
 		inputSchema: openMeetingInputSchema,
 		options,
@@ -493,7 +500,10 @@ export async function recordQuorum(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "recordQuorum");
+	const authorized = await authorizeCorporateAdministrationCommand(
+		"recordQuorum",
+		options,
+	);
 	if (!authorized.ok) {
 		return authorized;
 	}
@@ -544,18 +554,15 @@ export async function recordQuorum(
 	if (!source.ok) {
 		return source;
 	}
-	return runDurableCompanyCommand({
-		commandId: "corporate-administration.meeting.record-quorum",
+	return executeCorporateAdministrationCommand({
+		authorization: authorized.data,
 		fingerprintSchema: recordQuorumInputSchema,
 		fingerprintInput: parsed.data,
 		outputSchema: meetingQuorumResultSchema,
-		options,
 		dependencies,
 		event: {
-			type: "corporate_administration.governance_meeting.quorum_recorded.v1",
 			operationType: "CREATE",
 			targetType: "ca_meeting_quorum_result",
-			aggregateType: "meeting_quorum_result",
 			aggregateId: (result) => result.id,
 			aggregateVersion: (result) => result.version,
 			payload: (result, context) => ({
@@ -605,13 +612,16 @@ export async function adjournMeeting(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "adjournMeeting");
+	const authorized = await authorizeCorporateAdministrationCommand(
+		"adjournMeeting",
+		options,
+	);
 	if (!authorized.ok) {
 		return authorized;
 	}
 	return changeMeeting({
-		commandId: "corporate-administration.meeting.adjourn",
-		eventType: "corporate_administration.governance_meeting.adjourned.v1",
+		authorization: authorized.data,
+		operationId: "adjournMeeting",
 		input: parsed.data,
 		inputSchema: adjournMeetingInputSchema,
 		options,
@@ -644,7 +654,10 @@ export async function closeMeeting(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "closeMeeting");
+	const authorized = await authorizeCorporateAdministrationCommand(
+		"closeMeeting",
+		options,
+	);
 	if (!authorized.ok) {
 		return authorized;
 	}
@@ -674,8 +687,8 @@ export async function closeMeeting(
 		return closeable;
 	}
 	return changeMeeting({
-		commandId: "corporate-administration.meeting.close",
-		eventType: "corporate_administration.governance_meeting.closed.v1",
+		authorization: authorized.data,
+		operationId: "closeMeeting",
 		input: parsed.data,
 		inputSchema: closeMeetingInputSchema,
 		options,
@@ -696,10 +709,8 @@ export async function closeMeeting(
 }
 
 function changeMeeting(input: {
-	commandId: string;
-	eventType:
-		| "corporate_administration.governance_meeting.adjourned.v1"
-		| "corporate_administration.governance_meeting.closed.v1";
+	authorization: CorporateAdministrationAuthorizedCommandExecution;
+	operationId: "adjournMeeting" | "closeMeeting";
 	input: unknown;
 	inputSchema:
 		| typeof adjournMeetingInputSchema
@@ -707,18 +718,15 @@ function changeMeeting(input: {
 	options: CorporateAdministrationCommandOptions;
 	dependencies: Dependencies;
 	work: Parameters<
-		typeof runDurableCompanyCommand<GovernanceMeeting>
+		typeof executeCorporateAdministrationCommand<GovernanceMeeting>
 	>[0]["work"];
 }) {
 	return runMeetingStatusCommand(input);
 }
 
 function runMeetingStatusCommand(input: {
-	commandId: string;
-	eventType:
-		| "corporate_administration.governance_meeting.opened.v1"
-		| "corporate_administration.governance_meeting.adjourned.v1"
-		| "corporate_administration.governance_meeting.closed.v1";
+	authorization: CorporateAdministrationAuthorizedCommandExecution;
+	operationId: "openMeeting" | "adjournMeeting" | "closeMeeting";
 	input: unknown;
 	inputSchema:
 		| typeof openMeetingInputSchema
@@ -727,21 +735,18 @@ function runMeetingStatusCommand(input: {
 	options: CorporateAdministrationCommandOptions;
 	dependencies: Dependencies;
 	work: Parameters<
-		typeof runDurableCompanyCommand<GovernanceMeeting>
+		typeof executeCorporateAdministrationCommand<GovernanceMeeting>
 	>[0]["work"];
 }) {
-	return runDurableCompanyCommand({
-		commandId: input.commandId,
+	return executeCorporateAdministrationCommand({
+		authorization: input.authorization,
 		fingerprintSchema: input.inputSchema,
 		fingerprintInput: input.input,
 		outputSchema: governanceMeetingSchema,
-		options: input.options,
 		dependencies: input.dependencies,
 		event: {
-			type: input.eventType,
 			operationType: "UPDATE",
 			targetType: "ca_governance_meeting",
-			aggregateType: "governance_meeting",
 			aggregateId: (result) => result.id,
 			aggregateVersion: (result) => result.version,
 			payload: (result, context) => meetingPayload(result, context),
@@ -752,30 +757,27 @@ function runMeetingStatusCommand(input: {
 }
 
 function runNoticeUpdateCommand(input: {
-	commandId: string;
-	eventType:
-		| "corporate_administration.meeting_notice.delivered.v1"
-		| "corporate_administration.meeting_notice.waived.v1";
+	authorization: CorporateAdministrationAuthorizedCommandExecution;
+	operationId: "recordNoticeDelivery" | "waiveNotice";
 	input: unknown;
 	inputSchema:
 		| typeof recordNoticeDeliveryInputSchema
 		| typeof waiveNoticeInputSchema;
 	options: CorporateAdministrationCommandOptions;
 	dependencies: Dependencies;
-	work: Parameters<typeof runDurableCompanyCommand<MeetingNotice>>[0]["work"];
+	work: Parameters<
+		typeof executeCorporateAdministrationCommand<MeetingNotice>
+	>[0]["work"];
 }) {
-	return runDurableCompanyCommand({
-		commandId: input.commandId,
+	return executeCorporateAdministrationCommand({
+		authorization: input.authorization,
 		fingerprintSchema: input.inputSchema,
 		fingerprintInput: input.input,
 		outputSchema: meetingNoticeSchema,
-		options: input.options,
 		dependencies: input.dependencies,
 		event: {
-			type: input.eventType,
 			operationType: "UPDATE",
 			targetType: "ca_meeting_notice",
-			aggregateType: "meeting_notice",
 			aggregateId: (result) => result.id,
 			aggregateVersion: (result) => result.version,
 			payload: (result, context) => noticePayload(result, context),
@@ -804,7 +806,7 @@ async function loadMeeting(
 
 async function loadMembership(
 	dependencies: Dependencies,
-	organizationId: string,
+	organizationId: OrganizationId,
 	governanceMembershipId: string,
 ): Promise<Result<GovernanceMembership>> {
 	const membership = await dependencies.governanceStore.getGovernanceMembership(
@@ -823,7 +825,7 @@ async function loadMembership(
 
 async function validateSource(
 	dependencies: Dependencies,
-	organizationId: string,
+	organizationId: OrganizationId,
 	sourceDocumentId: string,
 ): Promise<Result<void>> {
 	const result = await dependencies.referenceData.validateSourceDocument({
@@ -842,17 +844,6 @@ async function validateSource(
 		});
 	}
 	return errorResult.ok(undefined);
-}
-
-function authorize(
-	options: CorporateAdministrationCommandOptions,
-	command: keyof typeof CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS,
-) {
-	return requireCorporateAdministrationPermission(options.authorization, {
-		organizationId: options.organizationId,
-		actorUserId: options.actorUserId,
-		permission: CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS[command],
-	});
 }
 
 function notFound(_entityType: string): Result<never> {

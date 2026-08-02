@@ -4,7 +4,9 @@ import { randomUUID } from "node:crypto";
 
 import {
 	activateLegalEstablishment,
+	type CorporateAdministrationCommandId,
 	closeLegalEstablishment,
+	corporateAdministrationPermissionFor,
 	endPremise,
 	registerLegalEstablishment,
 	registerPremise,
@@ -134,6 +136,7 @@ export async function registerLegalEstablishmentAction(
 	formData: FormData,
 ): Promise<ActionResult<VersionedResult>> {
 	return await runEstablishmentAction({
+		operationId: "registerLegalEstablishment",
 		path: "registerLegalEstablishmentAction",
 		safeMessage: "Could not register the legal establishment.",
 		schema: registerSchema,
@@ -146,6 +149,7 @@ export async function updateLegalEstablishmentAction(
 	formData: FormData,
 ): Promise<ActionResult<VersionedResult>> {
 	return await runEstablishmentAction({
+		operationId: "updateLegalEstablishment",
 		path: "updateLegalEstablishmentAction",
 		safeMessage: "Could not update the legal establishment.",
 		schema: updateSchema,
@@ -158,6 +162,7 @@ export async function activateLegalEstablishmentAction(
 	formData: FormData,
 ): Promise<ActionResult<VersionedResult>> {
 	return await runEstablishmentAction({
+		operationId: "activateLegalEstablishment",
 		path: "activateLegalEstablishmentAction",
 		safeMessage: "Could not activate the legal establishment.",
 		schema: transitionSchema,
@@ -170,6 +175,7 @@ export async function suspendLegalEstablishmentAction(
 	formData: FormData,
 ): Promise<ActionResult<VersionedResult>> {
 	return await runEstablishmentAction({
+		operationId: "suspendLegalEstablishment",
 		path: "suspendLegalEstablishmentAction",
 		safeMessage: "Could not suspend the legal establishment.",
 		schema: transitionSchema,
@@ -182,6 +188,7 @@ export async function closeLegalEstablishmentAction(
 	formData: FormData,
 ): Promise<ActionResult<VersionedResult>> {
 	return await runEstablishmentAction({
+		operationId: "closeLegalEstablishment",
 		path: "closeLegalEstablishmentAction",
 		safeMessage: "Could not close the legal establishment.",
 		schema: transitionSchema,
@@ -194,6 +201,7 @@ export async function setRegisteredAddressAction(
 	formData: FormData,
 ): Promise<ActionResult<VersionedResult>> {
 	return await runEstablishmentAction({
+		operationId: "setRegisteredAddress",
 		path: "setRegisteredAddressAction",
 		safeMessage: "Could not set the statutory address.",
 		schema: addressSchema,
@@ -206,6 +214,7 @@ export async function registerPremiseAction(
 	formData: FormData,
 ): Promise<ActionResult<VersionedResult>> {
 	return await runEstablishmentAction({
+		operationId: "registerPremise",
 		path: "registerPremiseAction",
 		safeMessage: "Could not register the premise.",
 		schema: premiseSchema,
@@ -218,6 +227,7 @@ export async function endPremiseAction(
 	formData: FormData,
 ): Promise<ActionResult<VersionedResult>> {
 	return await runEstablishmentAction({
+		operationId: "endPremise",
 		path: "endPremiseAction",
 		safeMessage: "Could not end the premise.",
 		schema: endPremiseSchema,
@@ -283,6 +293,17 @@ export async function endPremiseFormAction(
 }
 
 async function runEstablishmentAction<TSchema extends z.ZodTypeAny>(input: {
+	operationId: Extract<
+		CorporateAdministrationCommandId,
+		| "registerLegalEstablishment"
+		| "updateLegalEstablishment"
+		| "activateLegalEstablishment"
+		| "suspendLegalEstablishment"
+		| "closeLegalEstablishment"
+		| "setRegisteredAddress"
+		| "registerPremise"
+		| "endPremise"
+	>;
 	path: string;
 	safeMessage: string;
 	schema: TSchema;
@@ -297,7 +318,7 @@ async function runEstablishmentAction<TSchema extends z.ZodTypeAny>(input: {
 }): Promise<ActionResult<VersionedResult>> {
 	return await runMemberPermissionAction({
 		path: input.path,
-		permission: "corporate_administration.establishment.manage",
+		permission: corporateAdministrationPermissionFor(input.operationId),
 		safeMessage: input.safeMessage,
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(input.schema, formDataObject(input.formData));

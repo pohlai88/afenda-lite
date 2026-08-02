@@ -2,6 +2,8 @@
  * Hire orchestration saga (HR-COREORG-HIRE-ORCHESTRATION / Slice 6.6).
  */
 
+import { errorResult } from "@afenda/errors";
+import { HUMAN_RESOURCES_HIRE_FROM_ACCEPTED_OFFER_COMPLETED_EVENT } from "@afenda/events/schemas";
 import { describe, expect, it } from "vitest";
 
 import { createEmployee } from "../src/core/employee";
@@ -422,6 +424,51 @@ describe("@afenda/human-resources hire orchestration (Slice 6.6)", () => {
 		expect(replay.data.assignmentId).toBe(first.data.assignmentId);
 		expect(replay.data.onboardingCaseId).toBe(first.data.onboardingCaseId);
 		expect(replay.data.attempt.id).toBe(first.data.attempt.id);
+	});
+
+	it("does not mark the saga completed when completion emission fails", async () => {
+		const ready = createHrParityHarness("memory");
+		const tag = suffix();
+		const seeded = await seedAcceptedOfferPipeline(ready, tag);
+		expect(seeded.ok).toBe(true);
+		if (!seeded.ok || ready.store === undefined) {
+			return;
+		}
+
+		const originalAppend = ready.ports.outbox.append;
+		let completionAttempts = 0;
+		ready.ports.outbox.append = (outboxInput) => {
+			if (
+				outboxInput.type ===
+				HUMAN_RESOURCES_HIRE_FROM_ACCEPTED_OFFER_COMPLETED_EVENT
+			) {
+				const currentAttempt = completionAttempts;
+				completionAttempts += 1;
+				if (currentAttempt === 0) {
+					return Promise.resolve(errorResult.fail("INTERNAL_ERROR"));
+				}
+			}
+			return originalAppend(outboxInput);
+		};
+
+		const hireRequest = hireInput(seeded.data);
+		const failed = await hireFromAcceptedOffer(hireRequest, ready);
+		expect(failed.ok).toBe(false);
+		const persisted = await ready.store.findHireAttemptByIdempotencyKey({
+			organizationId: ORG,
+			idempotencyKey: hireRequest.idempotencyKey,
+		});
+		expect(persisted.ok).toBe(true);
+		if (!persisted.ok || persisted.data === null) {
+			return;
+		}
+		expect(persisted.data.attempt.status).toBe("in_progress");
+
+		const replay = await hireFromAcceptedOffer(hireRequest, ready);
+		expect(replay.ok).toBe(true);
+		if (replay.ok) {
+			expect(replay.data.attempt.status).toBe("completed");
+		}
 	});
 
 	it("rejects idempotency key reuse with different payload fingerprint", async () => {

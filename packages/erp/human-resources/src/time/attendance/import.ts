@@ -11,13 +11,13 @@ import {
 	attendanceImportEventRowSchema,
 	importAttendanceEventsInputSchema,
 } from "../../schemas/time";
-import { runTimeCommand } from "../../shared/time-command";
 import type { AttendanceImportStoreInput } from "../../store/time";
 import type {
 	AttendanceImportEventRowInput,
 	AttendanceImportResult,
 } from "../../types";
 import type { AttendanceSourceRejectedRow } from "../handoff/ports";
+import { runTimeCapabilityCommand } from "../run-operation";
 import { namespacedImportSourceReference } from "./import-keys";
 
 function resolveSourceRowIndexes(input: {
@@ -83,10 +83,11 @@ export async function importAttendanceEvents(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<AttendanceImportResult>> {
-	return await runTimeCommand(input, options, {
+	return await runTimeCapabilityCommand(input, options, {
 		schema: importAttendanceEventsInputSchema,
 		invalidMessage: "Invalid attendance import input",
 		command: HUMAN_RESOURCES_COMMAND_ATTENDANCE_EVENTS_IMPORT,
+		storeMethods: ["importAttendanceEvents"],
 		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The domain workflow keeps ordered invariant validation and Result mapping explicit.
 		execute: async (data, { store, ports }) => {
 			let nextCursor: string | undefined;

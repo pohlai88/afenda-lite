@@ -1,10 +1,10 @@
 import type { Result } from "@afenda/errors";
 
-import {
-	CORPORATE_ADMINISTRATION_QUERY_PERMISSIONS,
-	requireCorporateAdministrationPermission,
-} from "../authorization";
 import type { CorporateAdministrationQueryOptions } from "../command-options";
+import {
+	type CorporateAdministrationQueryKernelDependencies,
+	executeCorporateAdministrationQuery,
+} from "../internal/query";
 import { parseCorporateAdministrationInput } from "../parse-input";
 import {
 	getGovernanceMeetingInputSchema,
@@ -23,9 +23,11 @@ import type {
 	MeetingQuorumResult,
 } from "./types";
 
-export type MeetingQueryDependencies = Readonly<{
-	meetingStore: MeetingStore;
-}>;
+export type MeetingQueryDependencies =
+	CorporateAdministrationQueryKernelDependencies &
+		Readonly<{
+			meetingStore: MeetingStore;
+		}>;
 
 export async function getGovernanceMeeting(
 	input: GetGovernanceMeetingInput,
@@ -39,13 +41,15 @@ export async function getGovernanceMeeting(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "getGovernanceMeeting");
-	if (!authorized.ok) {
-		return authorized;
-	}
-	return dependencies.meetingStore.getGovernanceMeeting({
-		organizationId: options.organizationId,
-		governanceMeetingId: parsed.data.governanceMeetingId,
+	return await executeCorporateAdministrationQuery({
+		operationId: "getGovernanceMeeting",
+		options,
+		dependencies,
+		work: () =>
+			dependencies.meetingStore.getGovernanceMeeting({
+				organizationId: options.organizationId,
+				governanceMeetingId: parsed.data.governanceMeetingId,
+			}),
 	});
 }
 
@@ -61,15 +65,17 @@ export async function listGovernanceMeetings(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "listGovernanceMeetings");
-	if (!authorized.ok) {
-		return authorized;
-	}
-	return dependencies.meetingStore.listGovernanceMeetings({
-		organizationId: options.organizationId,
-		legalCompanyId: parsed.data.legalCompanyId,
-		governanceBodyId: parsed.data.governanceBodyId,
-		status: parsed.data.status,
+	return await executeCorporateAdministrationQuery({
+		operationId: "listGovernanceMeetings",
+		options,
+		dependencies,
+		work: () =>
+			dependencies.meetingStore.listGovernanceMeetings({
+				organizationId: options.organizationId,
+				legalCompanyId: parsed.data.legalCompanyId,
+				governanceBodyId: parsed.data.governanceBodyId,
+				status: parsed.data.status,
+			}),
 	});
 }
 
@@ -85,13 +91,15 @@ export async function getMeetingAttendance(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "getMeetingAttendance");
-	if (!authorized.ok) {
-		return authorized;
-	}
-	return dependencies.meetingStore.listMeetingParticipants({
-		organizationId: options.organizationId,
-		governanceMeetingId: parsed.data.governanceMeetingId,
+	return await executeCorporateAdministrationQuery({
+		operationId: "getMeetingAttendance",
+		options,
+		dependencies,
+		work: () =>
+			dependencies.meetingStore.listMeetingParticipants({
+				organizationId: options.organizationId,
+				governanceMeetingId: parsed.data.governanceMeetingId,
+			}),
 	});
 }
 
@@ -107,23 +115,14 @@ export async function getMeetingQuorumStatus(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "getMeetingQuorumStatus");
-	if (!authorized.ok) {
-		return authorized;
-	}
-	return dependencies.meetingStore.getLatestQuorumResult({
-		organizationId: options.organizationId,
-		governanceMeetingId: parsed.data.governanceMeetingId,
-	});
-}
-
-function authorize(
-	options: CorporateAdministrationQueryOptions,
-	query: keyof typeof CORPORATE_ADMINISTRATION_QUERY_PERMISSIONS,
-) {
-	return requireCorporateAdministrationPermission(options.authorization, {
-		organizationId: options.organizationId,
-		actorUserId: options.actorUserId,
-		permission: CORPORATE_ADMINISTRATION_QUERY_PERMISSIONS[query],
+	return await executeCorporateAdministrationQuery({
+		operationId: "getMeetingQuorumStatus",
+		options,
+		dependencies,
+		work: () =>
+			dependencies.meetingStore.getLatestQuorumResult({
+				organizationId: options.organizationId,
+				governanceMeetingId: parsed.data.governanceMeetingId,
+			}),
 	});
 }

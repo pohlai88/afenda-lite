@@ -1,10 +1,10 @@
 import { errorResult, type Result } from "@afenda/errors";
 
-import {
-	CORPORATE_ADMINISTRATION_QUERY_PERMISSIONS,
-	requireCorporateAdministrationPermission,
-} from "../../authorization";
 import type { CorporateAdministrationQueryOptions } from "../../command-options";
+import {
+	type CorporateAdministrationQueryKernelDependencies,
+	executeCorporateAdministrationQuery,
+} from "../../internal/query";
 import { toCanonicalInstant } from "../../kernel/dates";
 import { parseCorporateAdministrationInput } from "../../parse-input";
 import {
@@ -24,10 +24,13 @@ import type {
 	RegisteredAddress,
 } from "../types";
 
+type Dependencies = EstablishmentQueryDependencies &
+	CorporateAdministrationQueryKernelDependencies;
+
 export async function getLegalEstablishment(
 	input: GetLegalEstablishmentInput,
 	options: CorporateAdministrationQueryOptions,
-	dependencies: EstablishmentQueryDependencies,
+	dependencies: Dependencies,
 ): Promise<Result<LegalEstablishment>> {
 	const parsed = parseCorporateAdministrationInput(
 		getLegalEstablishmentInputSchema,
@@ -36,26 +39,30 @@ export async function getLegalEstablishment(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "getLegalEstablishment");
-	if (!authorized.ok) {
-		return authorized;
-	}
-	const result = await dependencies.establishmentStore.getLegalEstablishment({
-		organizationId: options.organizationId,
-		legalEstablishmentId: parsed.data.legalEstablishmentId,
+	return await executeCorporateAdministrationQuery<LegalEstablishment>({
+		operationId: "getLegalEstablishment",
+		options,
+		dependencies,
+		work: async () => {
+			const result =
+				await dependencies.establishmentStore.getLegalEstablishment({
+					organizationId: options.organizationId,
+					legalEstablishmentId: parsed.data.legalEstablishmentId,
+				});
+			if (!result.ok) {
+				return result;
+			}
+			return result.data === null
+				? notFound("legalEstablishment")
+				: { ok: true, data: result.data };
+		},
 	});
-	if (!result.ok) {
-		return result;
-	}
-	return result.data === null
-		? notFound("legalEstablishment")
-		: { ok: true, data: result.data };
 }
 
 export async function listLegalEstablishmentsAsOf(
 	input: ListLegalEstablishmentsAsOfInput,
 	options: CorporateAdministrationQueryOptions,
-	dependencies: EstablishmentQueryDependencies,
+	dependencies: Dependencies,
 ): Promise<Result<readonly LegalEstablishment[]>> {
 	const parsed = parseCorporateAdministrationInput(
 		listLegalEstablishmentsAsOfInputSchema,
@@ -64,26 +71,28 @@ export async function listLegalEstablishmentsAsOf(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "listLegalEstablishmentsAsOf");
-	if (!authorized.ok) {
-		return authorized;
-	}
-	return dependencies.establishmentStore.listLegalEstablishmentsAsOf({
-		organizationId: options.organizationId,
-		legalCompanyId: parsed.data.legalCompanyId,
-		asOf: parsed.data.asOf,
-		knownAt:
-			parsed.data.knownAt === undefined
-				? undefined
-				: toCanonicalInstant(parsed.data.knownAt),
-		status: parsed.data.status,
+	return await executeCorporateAdministrationQuery({
+		operationId: "listLegalEstablishmentsAsOf",
+		options,
+		dependencies,
+		work: () =>
+			dependencies.establishmentStore.listLegalEstablishmentsAsOf({
+				organizationId: options.organizationId,
+				legalCompanyId: parsed.data.legalCompanyId,
+				asOf: parsed.data.asOf,
+				knownAt:
+					parsed.data.knownAt === undefined
+						? undefined
+						: toCanonicalInstant(parsed.data.knownAt),
+				status: parsed.data.status,
+			}),
 	});
 }
 
 export async function findRegisteredAddressAsOf(
 	input: FindRegisteredAddressAsOfInput,
 	options: CorporateAdministrationQueryOptions,
-	dependencies: EstablishmentQueryDependencies,
+	dependencies: Dependencies,
 ): Promise<Result<RegisteredAddress | null>> {
 	const parsed = parseCorporateAdministrationInput(
 		findRegisteredAddressAsOfInputSchema,
@@ -92,27 +101,29 @@ export async function findRegisteredAddressAsOf(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "findRegisteredAddressAsOf");
-	if (!authorized.ok) {
-		return authorized;
-	}
-	return dependencies.establishmentStore.findRegisteredAddressAsOf({
-		organizationId: options.organizationId,
-		legalCompanyId: parsed.data.legalCompanyId,
-		legalEstablishmentId: parsed.data.legalEstablishmentId ?? null,
-		addressType: parsed.data.addressType,
-		asOf: parsed.data.asOf,
-		knownAt:
-			parsed.data.knownAt === undefined
-				? undefined
-				: toCanonicalInstant(parsed.data.knownAt),
+	return await executeCorporateAdministrationQuery({
+		operationId: "findRegisteredAddressAsOf",
+		options,
+		dependencies,
+		work: () =>
+			dependencies.establishmentStore.findRegisteredAddressAsOf({
+				organizationId: options.organizationId,
+				legalCompanyId: parsed.data.legalCompanyId,
+				legalEstablishmentId: parsed.data.legalEstablishmentId ?? null,
+				addressType: parsed.data.addressType,
+				asOf: parsed.data.asOf,
+				knownAt:
+					parsed.data.knownAt === undefined
+						? undefined
+						: toCanonicalInstant(parsed.data.knownAt),
+			}),
 	});
 }
 
 export async function listPremisesAsOf(
 	input: ListPremisesAsOfInput,
 	options: CorporateAdministrationQueryOptions,
-	dependencies: EstablishmentQueryDependencies,
+	dependencies: Dependencies,
 ): Promise<Result<readonly Premise[]>> {
 	const parsed = parseCorporateAdministrationInput(
 		listPremisesAsOfInputSchema,
@@ -121,31 +132,22 @@ export async function listPremisesAsOf(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "listPremisesAsOf");
-	if (!authorized.ok) {
-		return authorized;
-	}
-	return dependencies.establishmentStore.listPremisesAsOf({
-		organizationId: options.organizationId,
-		legalCompanyId: parsed.data.legalCompanyId,
-		legalEstablishmentId: parsed.data.legalEstablishmentId,
-		premiseType: parsed.data.premiseType,
-		asOf: parsed.data.asOf,
-		knownAt:
-			parsed.data.knownAt === undefined
-				? undefined
-				: toCanonicalInstant(parsed.data.knownAt),
-	});
-}
-
-function authorize(
-	options: CorporateAdministrationQueryOptions,
-	query: keyof typeof CORPORATE_ADMINISTRATION_QUERY_PERMISSIONS,
-) {
-	return requireCorporateAdministrationPermission(options.authorization, {
-		organizationId: options.organizationId,
-		actorUserId: options.actorUserId,
-		permission: CORPORATE_ADMINISTRATION_QUERY_PERMISSIONS[query],
+	return await executeCorporateAdministrationQuery({
+		operationId: "listPremisesAsOf",
+		options,
+		dependencies,
+		work: () =>
+			dependencies.establishmentStore.listPremisesAsOf({
+				organizationId: options.organizationId,
+				legalCompanyId: parsed.data.legalCompanyId,
+				legalEstablishmentId: parsed.data.legalEstablishmentId,
+				premiseType: parsed.data.premiseType,
+				asOf: parsed.data.asOf,
+				knownAt:
+					parsed.data.knownAt === undefined
+						? undefined
+						: toCanonicalInstant(parsed.data.knownAt),
+			}),
 	});
 }
 

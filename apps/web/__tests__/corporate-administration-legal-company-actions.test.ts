@@ -66,7 +66,10 @@ vi.mock("@afenda/http", () => ({
 	http: { correlation: { create: () => "corr-ca-action-test" } },
 }));
 
-vi.mock("@afenda/corporate-administration", () => ({
+vi.mock("@afenda/corporate-administration", async (importOriginal) => ({
+	...(await importOriginal<
+		typeof import("@afenda/corporate-administration")
+	>()),
 	registerLegalCompanyDraft:
 		corporateAdministrationMocks.registerLegalCompanyDraft,
 	updateLegalCompanyProfile:

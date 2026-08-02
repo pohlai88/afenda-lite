@@ -2,12 +2,15 @@ import { describe, expect, it } from "vitest";
 
 import {
 	AllEventSchemas,
+	corporateAdministrationLegalCompanyActivityEndedPayloadSchema,
 	corporateAdministrationLegalCompanyActivityRegisteredPayloadSchema,
 	corporateAdministrationLegalCompanyFinancialYearSetPayloadSchema,
 	corporateAdministrationLegalCompanyIdentifierRegisteredPayloadSchema,
+	corporateAdministrationLegalCompanyIdentifierRetiredPayloadSchema,
 	corporateAdministrationLegalCompanyJurisdictionProfileSetPayloadSchema,
 	corporateAdministrationLegalCompanyLegalFormChangedPayloadSchema,
 	corporateAdministrationLegalCompanyNameAddedPayloadSchema,
+	corporateAdministrationLegalCompanyNameRetiredPayloadSchema,
 	corporateAdministrationLegalCompanyNameSupersededPayloadSchema,
 	corporateAdministrationLegalCompanyProfileUpdatedPayloadSchema,
 	corporateAdministrationLegalEstablishmentRegisteredPayloadSchema,
@@ -22,7 +25,7 @@ describe("@afenda/events schemas", () => {
 		const livingTypes = Object.keys(AllEventSchemas).toSorted();
 
 		expect(new Set(livingTypes).size).toBe(livingTypes.length);
-		expect(livingTypes).toHaveLength(371);
+		expect(livingTypes).toHaveLength(374);
 		expect(livingTypes).toEqual([...livingTypes].toSorted());
 		expect(livingTypes).toEqual(
 			expect.arrayContaining([
@@ -30,6 +33,9 @@ describe("@afenda/events schemas", () => {
 				"corporate_administration.governance_body.created.v1",
 				"corporate_administration.governance_meeting.scheduled.v1",
 				"corporate_administration.legal_company.draft_registered.v1",
+				"corporate_administration.legal_company.activity_ended.v1",
+				"corporate_administration.legal_company.identifier_retired.v1",
+				"corporate_administration.legal_company.name_retired.v1",
 				"corporate_administration.officer.appointed.v1",
 				"corporate_administration.resolution.adopted.v1",
 				"fulfillment.delivery.created.v1",
@@ -377,6 +383,58 @@ describe("@afenda/events schemas", () => {
 					...activityPayload,
 					classification: "regulated",
 					regulatorCode: "SC",
+				},
+			).success,
+		).toBe(false);
+	});
+
+	it("accepts redacted Corporate Administration retirement and activity-end events", () => {
+		const base = {
+			organizationId: "org-1",
+			legalCompanyId: "company-1",
+			occurredAt: "2026-07-26T10:15:30.000Z",
+			actorUserId: "user-1",
+			correlationId: "corr-1",
+		};
+
+		expect(
+			corporateAdministrationLegalCompanyNameRetiredPayloadSchema.safeParse({
+				...base,
+				companyNameId: "name-1",
+				nameType: "trading",
+				retiredAt: "2026-07-26T10:00:00.000Z",
+			}).success,
+		).toBe(true);
+		expect(
+			corporateAdministrationLegalCompanyIdentifierRetiredPayloadSchema.safeParse(
+				{
+					...base,
+					companyIdentifierId: "identifier-1",
+					identifierType: "company_registration",
+					jurisdictionCode: "MY",
+					retiredAt: "2026-07-26T10:00:00.000Z",
+				},
+			).success,
+		).toBe(true);
+		expect(
+			corporateAdministrationLegalCompanyActivityEndedPayloadSchema.safeParse({
+				...base,
+				companyActivityId: "activity-1",
+				activityType: "regulated",
+				activityCode: "64999",
+				jurisdictionCode: "MY",
+				endedAt: "2026-07-26",
+			}).success,
+		).toBe(true);
+		expect(
+			corporateAdministrationLegalCompanyIdentifierRetiredPayloadSchema.safeParse(
+				{
+					...base,
+					companyIdentifierId: "identifier-1",
+					identifierType: "company_registration",
+					jurisdictionCode: "MY",
+					retiredAt: "2026-07-26T10:00:00.000Z",
+					identifierValue: "2026-01234567",
 				},
 			).success,
 		).toBe(false);

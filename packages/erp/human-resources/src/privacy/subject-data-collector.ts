@@ -14,7 +14,7 @@ import type {
 	HumanResourcesSubjectExportRecord,
 } from "../privacy";
 import { HUMAN_RESOURCES_SUBJECT_EXPORT_SCHEMA_VERSION } from "../privacy";
-import type { HumanResourcesStore } from "../store";
+import type { HumanResourcesPrivacyExportStore } from "./store";
 
 const DEFAULT_PAGE_SIZE = 100;
 
@@ -22,7 +22,7 @@ export interface CollectHumanResourcesSubjectDataInput {
 	correlationId: string;
 	generatedAt?: string | undefined;
 	organizationId: string;
-	store: HumanResourcesStore;
+	store: HumanResourcesPrivacyExportStore;
 	subjectEmployeeId: HumanResourcesEmployeeId;
 }
 
@@ -701,7 +701,7 @@ export async function collectHumanResourcesSubjectData(
 export async function listHumanResourcesSubjectInventoryRecords(input: {
 	organizationId: string;
 	subjectEmployeeId: HumanResourcesEmployeeId;
-	store: HumanResourcesStore;
+	store: HumanResourcesPrivacyExportStore;
 }): Promise<Result<readonly HumanResourcesPrivacySubjectRecord[]>> {
 	const collected = await collectHumanResourcesSubjectData({
 		organizationId: input.organizationId,

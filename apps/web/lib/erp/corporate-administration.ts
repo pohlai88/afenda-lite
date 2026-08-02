@@ -2,6 +2,7 @@ export { createCorporateAdministrationAuthorizationPort } from "./corporate-admi
 export {
 	createCorporateAdministrationCommandOptions,
 	createCorporateAdministrationCompanyDependencies,
+	createCorporateAdministrationGovernanceDependencies,
 	createCorporateAdministrationLegalCompanyDependencies,
 	createCorporateAdministrationQueryOptions,
 	listCorporateAdministrationActiveOrganizationParties,

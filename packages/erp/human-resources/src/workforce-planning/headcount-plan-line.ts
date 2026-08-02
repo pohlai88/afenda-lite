@@ -11,8 +11,8 @@ import {
 	updateHeadcountPlanLineInputSchema,
 } from "../schemas/workforce-planning";
 import { buildMutationMeta } from "../shared/mutation-meta";
-import { runWorkforcePlanningCommand } from "../shared/workforce-planning-command";
 import type { HeadcountPlanLine } from "../types";
+import { runWorkforcePlanningCapabilityCommand } from "./run-operation";
 
 export const HUMAN_RESOURCES_AGGREGATE_HEADCOUNT_PLAN_LINE =
 	"headcount-plan-line" as const;
@@ -23,10 +23,11 @@ export function addHeadcountPlanLine(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<HeadcountPlanLine>> {
-	return runWorkforcePlanningCommand(input, options, {
+	return runWorkforcePlanningCapabilityCommand(input, options, {
 		schema: addHeadcountPlanLineInputSchema,
 		invalidMessage: "Invalid headcount plan line add input",
 		command: HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_LINE_ADD,
+		storeMethods: ["addHeadcountPlanLine"],
 		execute: (data, { store, ports }) =>
 			store.addHeadcountPlanLine(
 				{
@@ -56,10 +57,11 @@ export function updateHeadcountPlanLine(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<HeadcountPlanLine>> {
-	return runWorkforcePlanningCommand(input, options, {
+	return runWorkforcePlanningCapabilityCommand(input, options, {
 		schema: updateHeadcountPlanLineInputSchema,
 		invalidMessage: "Invalid headcount plan line update input",
 		command: HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_LINE_UPDATE,
+		storeMethods: ["updateHeadcountPlanLine"],
 		execute: (data, { store, ports }) =>
 			store.updateHeadcountPlanLine(
 				{
@@ -90,10 +92,11 @@ export function removeHeadcountPlanLine(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<void>> {
-	return runWorkforcePlanningCommand(input, options, {
+	return runWorkforcePlanningCapabilityCommand(input, options, {
 		schema: removeHeadcountPlanLineInputSchema,
 		invalidMessage: "Invalid headcount plan line remove input",
 		command: HUMAN_RESOURCES_COMMAND_HEADCOUNT_PLAN_LINE_REMOVE,
+		storeMethods: ["removeHeadcountPlanLine"],
 		execute: (data, { store, ports }) =>
 			store.removeHeadcountPlanLine(
 				{

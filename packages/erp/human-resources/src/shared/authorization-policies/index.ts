@@ -1,6 +1,16 @@
 import type { HumanResourcesAuthorizationPolicy } from "../authorization-policy-types";
-import { compensationPolicy } from "./compensation";
-import { compliancePolicy } from "./compliance";
+import {
+	compensationBenefitsPolicy,
+	compensationCatalogPolicy,
+	compensationPayrollHandoffPolicy,
+	compensationProposalPolicy,
+	employeeCompensationPolicy,
+} from "./compensation";
+import {
+	complianceAdministrativePolicy,
+	employeeDocumentPolicy,
+	workEligibilityPolicy,
+} from "./compliance";
 import { employeeProfilePolicy } from "./employee-profile";
 import { employeeRelationsCasePolicy } from "./employee-relations";
 import { employeeSubjectPolicy } from "./employee-subject";
@@ -20,8 +30,18 @@ import {
 import { timePolicy } from "./time";
 import { workforcePlanningPolicy } from "./workforce-planning";
 
-export { compensationPolicy } from "./compensation";
-export { compliancePolicy } from "./compliance";
+export {
+	compensationBenefitsPolicy,
+	compensationCatalogPolicy,
+	compensationPayrollHandoffPolicy,
+	compensationProposalPolicy,
+	employeeCompensationPolicy,
+} from "./compensation";
+export {
+	complianceAdministrativePolicy,
+	employeeDocumentPolicy,
+	workEligibilityPolicy,
+} from "./compliance";
 export { employeeProfilePolicy } from "./employee-profile";
 export { employeeRelationsCasePolicy } from "./employee-relations";
 export { employeeSubjectPolicy } from "./employee-subject";
@@ -48,9 +68,15 @@ export const HUMAN_RESOURCES_AUTHORIZATION_POLICIES = [
 	leavePolicy,
 	timePolicy,
 	employeeRelationsCasePolicy,
-	compensationPolicy,
+	compensationBenefitsPolicy,
+	compensationCatalogPolicy,
+	employeeCompensationPolicy,
+	compensationPayrollHandoffPolicy,
+	compensationProposalPolicy,
 	performancePolicy,
-	compliancePolicy,
+	complianceAdministrativePolicy,
+	employeeDocumentPolicy,
+	workEligibilityPolicy,
 	talentAssessmentPolicy,
 	talentProfilePolicy,
 	successionPolicy,

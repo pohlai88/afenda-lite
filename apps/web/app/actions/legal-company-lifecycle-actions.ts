@@ -5,6 +5,8 @@ import { randomUUID } from "node:crypto";
 import {
 	activateLegalCompany,
 	archiveLegalCompany,
+	type CorporateAdministrationCommandId,
+	corporateAdministrationPermissionFor,
 	dissolveLegalCompany,
 	enterLiquidation,
 	markCompanyStruckOff,
@@ -101,6 +103,7 @@ export async function activateLegalCompanyAction(
 	formData: FormData,
 ): Promise<ActionResult<LifecycleResult>> {
 	return await runLifecycleAction({
+		operationId: "activateLegalCompany",
 		path: "activateLegalCompanyAction",
 		safeMessage: "Could not activate the legal company.",
 		schema: baseLifecycleActionSchema,
@@ -113,6 +116,7 @@ export async function suspendLegalCompanyAction(
 	formData: FormData,
 ): Promise<ActionResult<LifecycleResult>> {
 	return await runLifecycleAction({
+		operationId: "suspendLegalCompany",
 		path: "suspendLegalCompanyAction",
 		safeMessage: "Could not suspend the legal company.",
 		schema: reasonedLifecycleActionSchema,
@@ -125,6 +129,7 @@ export async function markCompanyStruckOffAction(
 	formData: FormData,
 ): Promise<ActionResult<LifecycleResult>> {
 	return await runLifecycleAction({
+		operationId: "markCompanyStruckOff",
 		path: "markCompanyStruckOffAction",
 		safeMessage: "Could not mark the legal company struck off.",
 		schema: reasonedLifecycleActionSchema,
@@ -137,6 +142,7 @@ export async function enterLiquidationAction(
 	formData: FormData,
 ): Promise<ActionResult<LifecycleResult>> {
 	return await runLifecycleAction({
+		operationId: "enterLiquidation",
 		path: "enterLiquidationAction",
 		safeMessage: "Could not enter liquidation.",
 		schema: reasonedLifecycleActionSchema,
@@ -149,6 +155,7 @@ export async function dissolveLegalCompanyAction(
 	formData: FormData,
 ): Promise<ActionResult<LifecycleResult>> {
 	return await runLifecycleAction({
+		operationId: "dissolveLegalCompany",
 		path: "dissolveLegalCompanyAction",
 		safeMessage: "Could not dissolve the legal company.",
 		schema: reasonedLifecycleActionSchema,
@@ -161,6 +168,7 @@ export async function restoreLegalCompanyAction(
 	formData: FormData,
 ): Promise<ActionResult<LifecycleResult>> {
 	return await runLifecycleAction({
+		operationId: "restoreLegalCompany",
 		path: "restoreLegalCompanyAction",
 		safeMessage: "Could not restore the legal company.",
 		schema: reasonedLifecycleActionSchema,
@@ -173,6 +181,7 @@ export async function archiveLegalCompanyAction(
 	formData: FormData,
 ): Promise<ActionResult<LifecycleResult>> {
 	return await runLifecycleAction({
+		operationId: "archiveLegalCompany",
 		path: "archiveLegalCompanyAction",
 		safeMessage: "Could not archive the legal company.",
 		schema: reasonedLifecycleActionSchema,
@@ -231,6 +240,16 @@ export async function archiveLegalCompanyFormAction(
 }
 
 async function runLifecycleAction<TPayload extends LifecyclePayload>(input: {
+	operationId: Extract<
+		CorporateAdministrationCommandId,
+		| "activateLegalCompany"
+		| "suspendLegalCompany"
+		| "markCompanyStruckOff"
+		| "enterLiquidation"
+		| "dissolveLegalCompany"
+		| "restoreLegalCompany"
+		| "archiveLegalCompany"
+	>;
 	path: string;
 	safeMessage: string;
 	schema: z.ZodType<TPayload>;
@@ -239,7 +258,7 @@ async function runLifecycleAction<TPayload extends LifecyclePayload>(input: {
 }): Promise<ActionResult<LifecycleResult>> {
 	return await runMemberPermissionAction({
 		path: input.path,
-		permission: "corporate_administration.company.manage",
+		permission: corporateAdministrationPermissionFor(input.operationId),
 		safeMessage: input.safeMessage,
 		execute: async (session, correlationId) => {
 			const parsed = parseSchema(input.schema, formDataObject(input.formData));

@@ -10,9 +10,9 @@ import {
 	createBenefitPlanInputSchema,
 	updateBenefitPlanInputSchema,
 } from "../schemas/compensation";
-import { runCompensationCommand } from "../shared/compensation-command";
 import { buildMutationMeta } from "../shared/mutation-meta";
 import type { BenefitPlan } from "../types";
+import { runCompensationCapabilityCommand } from "./run-operation";
 
 export const HUMAN_RESOURCES_AGGREGATE_BENEFIT_PLAN = "benefit_plan" as const;
 export type HumanResourcesBenefitPlanAggregate =
@@ -22,7 +22,8 @@ export function createBenefitPlan(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<BenefitPlan>> {
-	return runCompensationCommand(input, options, {
+	return runCompensationCapabilityCommand(input, options, {
+		storeMethods: ["createBenefitPlan"],
 		schema: createBenefitPlanInputSchema,
 		invalidMessage: "Invalid benefit plan create input",
 		command: HUMAN_RESOURCES_COMMAND_BENEFIT_PLAN_CREATE,
@@ -48,7 +49,8 @@ export function updateBenefitPlan(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<BenefitPlan>> {
-	return runCompensationCommand(input, options, {
+	return runCompensationCapabilityCommand(input, options, {
+		storeMethods: ["updateBenefitPlan"],
 		schema: updateBenefitPlanInputSchema,
 		invalidMessage: "Invalid benefit plan update input",
 		command: HUMAN_RESOURCES_COMMAND_BENEFIT_PLAN_UPDATE,
@@ -75,7 +77,8 @@ export function archiveBenefitPlan(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<BenefitPlan>> {
-	return runCompensationCommand(input, options, {
+	return runCompensationCapabilityCommand(input, options, {
+		storeMethods: ["archiveBenefitPlan"],
 		schema: archiveBenefitPlanInputSchema,
 		invalidMessage: "Invalid benefit plan archive input",
 		command: HUMAN_RESOURCES_COMMAND_BENEFIT_PLAN_ARCHIVE,

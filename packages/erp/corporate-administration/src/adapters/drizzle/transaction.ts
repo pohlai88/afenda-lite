@@ -22,7 +22,7 @@ export function createDrizzleCorporateAdministrationTransactionPort(
 	return new DrizzleCorporateAdministrationTransactionPort(dependencies);
 }
 
-export class DrizzleCorporateAdministrationTransactionPort
+class DrizzleCorporateAdministrationTransactionPort
 	implements CorporateAdministrationTransactionPort
 {
 	readonly nesting = "prohibited" as const;

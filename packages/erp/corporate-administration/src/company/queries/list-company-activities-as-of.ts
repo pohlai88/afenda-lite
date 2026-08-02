@@ -1,9 +1,9 @@
 import { errorResult, type Result } from "@afenda/errors";
-import {
-	CORPORATE_ADMINISTRATION_QUERY_PERMISSIONS,
-	requireCorporateAdministrationPermission,
-} from "../../authorization";
 import type { CorporateAdministrationQueryOptions } from "../../command-options";
+import {
+	type CorporateAdministrationQueryKernelDependencies,
+	executeCorporateAdministrationQuery,
+} from "../../internal/query";
 import { toCanonicalInstant } from "../../kernel/dates";
 import { parseCorporateAdministrationInput } from "../../parse-input";
 import { listCompanyActivitiesAsOfInputSchema } from "../schemas";
@@ -13,7 +13,8 @@ import type { CompanyActivity, ListCompanyActivitiesAsOfInput } from "../types";
 export async function listCompanyActivitiesAsOf(
 	input: ListCompanyActivitiesAsOfInput,
 	options: CorporateAdministrationQueryOptions,
-	dependencies: CompanyActivityQueryDependencies,
+	dependencies: CompanyActivityQueryDependencies &
+		CorporateAdministrationQueryKernelDependencies,
 ): Promise<Result<readonly CompanyActivity[]>> {
 	const parsed = parseCorporateAdministrationInput(
 		listCompanyActivitiesAsOfInputSchema,
@@ -23,52 +24,49 @@ export async function listCompanyActivitiesAsOf(
 		return parsed;
 	}
 
-	const authorized = await requireCorporateAdministrationPermission(
-		options.authorization,
-		{
-			organizationId: options.organizationId,
-			actorUserId: options.actorUserId,
-			permission:
-				CORPORATE_ADMINISTRATION_QUERY_PERMISSIONS.listCompanyActivitiesAsOf,
-		},
-	);
-	if (!authorized.ok) {
-		return authorized;
-	}
+	return await executeCorporateAdministrationQuery({
+		operationId: "listCompanyActivitiesAsOf",
+		options,
+		dependencies,
+		work: async () => {
+			const current = await dependencies.store.getLegalCompany({
+				organizationId: options.organizationId,
+				legalCompanyId: parsed.data.legalCompanyId,
+			});
+			if (!current.ok) {
+				return current;
+			}
+			if (current.data === null) {
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage:
+						"Corporate Administration legal company was not found.",
+				});
+			}
 
-	const current = await dependencies.store.getLegalCompany({
-		organizationId: options.organizationId,
-		legalCompanyId: parsed.data.legalCompanyId,
+			const activities =
+				await dependencies.activityStore.listCompanyActivitiesAsOf({
+					organizationId: options.organizationId,
+					legalCompanyId: parsed.data.legalCompanyId,
+					classification:
+						parsed.data.classification ?? parsed.data.activityType,
+					classificationSystem: parsed.data.classificationSystem,
+					jurisdictionCode: parsed.data.jurisdictionCode,
+					regulatorCode: parsed.data.regulatorCode,
+					primaryOnly: parsed.data.primaryOnly,
+					asOf: parsed.data.asOf,
+					knownAt:
+						parsed.data.knownAt === undefined
+							? undefined
+							: toCanonicalInstant(parsed.data.knownAt),
+				});
+			if (!activities.ok) {
+				return activities;
+			}
+			return errorResult.ok(
+				[...activities.data].sort(compareCompanyActivities),
+			);
+		},
 	});
-	if (!current.ok) {
-		return current;
-	}
-	if (current.data === null) {
-		return errorResult.fail("NOT_FOUND", {
-			publicMessage: "Corporate Administration legal company was not found.",
-		});
-	}
-
-	const activities = await dependencies.activityStore.listCompanyActivitiesAsOf(
-		{
-			organizationId: options.organizationId,
-			legalCompanyId: parsed.data.legalCompanyId,
-			classification: parsed.data.classification ?? parsed.data.activityType,
-			classificationSystem: parsed.data.classificationSystem,
-			jurisdictionCode: parsed.data.jurisdictionCode,
-			regulatorCode: parsed.data.regulatorCode,
-			primaryOnly: parsed.data.primaryOnly,
-			asOf: parsed.data.asOf,
-			knownAt:
-				parsed.data.knownAt === undefined
-					? undefined
-					: toCanonicalInstant(parsed.data.knownAt),
-		},
-	);
-	if (!activities.ok) {
-		return activities;
-	}
-	return errorResult.ok([...activities.data].sort(compareCompanyActivities));
 }
 
 function compareCompanyActivities(

@@ -18,10 +18,14 @@ describe("@afenda/metrics package contract", () => {
 		expect(typeof resetMetricsForTests).toBe("function");
 	});
 
-	it("declares only root and testing exports", () => {
+	it("declares only explicit runtime and testing exports", () => {
 		const manifest = JSON.parse(
 			readFileSync(join(import.meta.dirname, "..", "package.json"), "utf8"),
 		);
-		expect(Object.keys(manifest.exports)).toEqual([".", "./testing"]);
+		expect(Object.keys(manifest.exports)).toEqual([
+			"./core",
+			"./node",
+			"./testing",
+		]);
 	});
 });

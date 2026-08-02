@@ -1,10 +1,10 @@
 import { errorResult, type Result } from "@afenda/errors";
 
-import {
-	CORPORATE_ADMINISTRATION_QUERY_PERMISSIONS,
-	requireCorporateAdministrationPermission,
-} from "../../authorization";
 import type { CorporateAdministrationQueryOptions } from "../../command-options";
+import {
+	type CorporateAdministrationQueryKernelDependencies,
+	executeCorporateAdministrationQuery,
+} from "../../internal/query";
 import { parseCorporateAdministrationInput } from "../../parse-input";
 import { calculateOfficerVacancyStatus } from "../rules";
 import {
@@ -24,10 +24,13 @@ import type {
 	StatutoryOffice,
 } from "../types";
 
+type Dependencies = OfficerQueryDependencies &
+	CorporateAdministrationQueryKernelDependencies;
+
 export async function listRequiredStatutoryOffices(
 	input: ListRequiredStatutoryOfficesInput,
 	options: CorporateAdministrationQueryOptions,
-	dependencies: OfficerQueryDependencies,
+	dependencies: Dependencies,
 ): Promise<Result<readonly StatutoryOffice[]>> {
 	const parsed = parseCorporateAdministrationInput(
 		listRequiredStatutoryOfficesInputSchema,
@@ -36,23 +39,25 @@ export async function listRequiredStatutoryOffices(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "listRequiredStatutoryOffices");
-	if (!authorized.ok) {
-		return authorized;
-	}
-	return dependencies.officerStore.listRequiredStatutoryOffices({
-		organizationId: options.organizationId,
-		legalCompanyId: parsed.data.legalCompanyId,
-		asOf: parsed.data.asOf,
-		jurisdictionCode: parsed.data.jurisdictionCode,
-		includeOptional: parsed.data.includeOptional,
+	return await executeCorporateAdministrationQuery({
+		operationId: "listRequiredStatutoryOffices",
+		options,
+		dependencies,
+		work: () =>
+			dependencies.officerStore.listRequiredStatutoryOffices({
+				organizationId: options.organizationId,
+				legalCompanyId: parsed.data.legalCompanyId,
+				asOf: parsed.data.asOf,
+				jurisdictionCode: parsed.data.jurisdictionCode,
+				includeOptional: parsed.data.includeOptional,
+			}),
 	});
 }
 
 export async function listOfficersAsOf(
 	input: ListOfficersAsOfInput,
 	options: CorporateAdministrationQueryOptions,
-	dependencies: OfficerQueryDependencies,
+	dependencies: Dependencies,
 ): Promise<Result<readonly OfficerAppointment[]>> {
 	const parsed = parseCorporateAdministrationInput(
 		listOfficersAsOfInputSchema,
@@ -61,23 +66,25 @@ export async function listOfficersAsOf(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "listOfficersAsOf");
-	if (!authorized.ok) {
-		return authorized;
-	}
-	return dependencies.officerStore.listOfficersAsOf({
-		organizationId: options.organizationId,
-		legalCompanyId: parsed.data.legalCompanyId,
-		asOf: parsed.data.asOf,
-		statutoryOfficeId: parsed.data.statutoryOfficeId,
-		officerPartyId: parsed.data.officerPartyId,
+	return await executeCorporateAdministrationQuery({
+		operationId: "listOfficersAsOf",
+		options,
+		dependencies,
+		work: () =>
+			dependencies.officerStore.listOfficersAsOf({
+				organizationId: options.organizationId,
+				legalCompanyId: parsed.data.legalCompanyId,
+				asOf: parsed.data.asOf,
+				statutoryOfficeId: parsed.data.statutoryOfficeId,
+				officerPartyId: parsed.data.officerPartyId,
+			}),
 	});
 }
 
 export async function getOfficerAppointment(
 	input: GetOfficerAppointmentInput,
 	options: CorporateAdministrationQueryOptions,
-	dependencies: OfficerQueryDependencies,
+	dependencies: Dependencies,
 ): Promise<Result<OfficerAppointment>> {
 	const parsed = parseCorporateAdministrationInput(
 		getOfficerAppointmentInputSchema,
@@ -86,26 +93,29 @@ export async function getOfficerAppointment(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "getOfficerAppointment");
-	if (!authorized.ok) {
-		return authorized;
-	}
-	const result = await dependencies.officerStore.getOfficerAppointment({
-		organizationId: options.organizationId,
-		officerAppointmentId: parsed.data.officerAppointmentId,
+	return await executeCorporateAdministrationQuery({
+		operationId: "getOfficerAppointment",
+		options,
+		dependencies,
+		work: async () => {
+			const result = await dependencies.officerStore.getOfficerAppointment({
+				organizationId: options.organizationId,
+				officerAppointmentId: parsed.data.officerAppointmentId,
+			});
+			if (!result.ok) {
+				return result;
+			}
+			return result.data === null
+				? notFound("officerAppointment")
+				: errorResult.ok(result.data);
+		},
 	});
-	if (!result.ok) {
-		return result;
-	}
-	return result.data === null
-		? notFound("officerAppointment")
-		: errorResult.ok(result.data);
 }
 
 export async function getOfficerVacancyStatus(
 	input: GetOfficerVacancyStatusInput,
 	options: CorporateAdministrationQueryOptions,
-	dependencies: OfficerQueryDependencies,
+	dependencies: Dependencies,
 ): Promise<Result<OfficerVacancyStatus>> {
 	const parsed = parseCorporateAdministrationInput(
 		getOfficerVacancyStatusInputSchema,
@@ -114,44 +124,37 @@ export async function getOfficerVacancyStatus(
 	if (!parsed.ok) {
 		return parsed;
 	}
-	const authorized = await authorize(options, "getOfficerVacancyStatus");
-	if (!authorized.ok) {
-		return authorized;
-	}
-	const office = await dependencies.officerStore.getStatutoryOffice({
-		organizationId: options.organizationId,
-		statutoryOfficeId: parsed.data.statutoryOfficeId,
-	});
-	if (!office.ok) {
-		return office;
-	}
-	if (office.data === null) {
-		return notFound("statutoryOffice");
-	}
-	const appointments = await dependencies.officerStore.listOfficerAppointments({
-		organizationId: options.organizationId,
-		statutoryOfficeId: parsed.data.statutoryOfficeId,
-	});
-	if (!appointments.ok) {
-		return appointments;
-	}
-	return errorResult.ok(
-		calculateOfficerVacancyStatus({
-			office: office.data,
-			activeAppointments: appointments.data,
-			asOf: parsed.data.asOf,
-		}),
-	);
-}
-
-function authorize(
-	options: CorporateAdministrationQueryOptions,
-	query: keyof typeof CORPORATE_ADMINISTRATION_QUERY_PERMISSIONS,
-) {
-	return requireCorporateAdministrationPermission(options.authorization, {
-		organizationId: options.organizationId,
-		actorUserId: options.actorUserId,
-		permission: CORPORATE_ADMINISTRATION_QUERY_PERMISSIONS[query],
+	return await executeCorporateAdministrationQuery({
+		operationId: "getOfficerVacancyStatus",
+		options,
+		dependencies,
+		work: async () => {
+			const office = await dependencies.officerStore.getStatutoryOffice({
+				organizationId: options.organizationId,
+				statutoryOfficeId: parsed.data.statutoryOfficeId,
+			});
+			if (!office.ok) {
+				return office;
+			}
+			if (office.data === null) {
+				return notFound("statutoryOffice");
+			}
+			const appointments =
+				await dependencies.officerStore.listOfficerAppointments({
+					organizationId: options.organizationId,
+					statutoryOfficeId: parsed.data.statutoryOfficeId,
+				});
+			if (!appointments.ok) {
+				return appointments;
+			}
+			return errorResult.ok(
+				calculateOfficerVacancyStatus({
+					office: office.data,
+					activeAppointments: appointments.data,
+					asOf: parsed.data.asOf,
+				}),
+			);
+		},
 	});
 }
 

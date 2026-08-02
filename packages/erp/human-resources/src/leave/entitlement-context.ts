@@ -8,7 +8,7 @@ import type { HumanResourcesLeaveStore } from "../store/leave";
 import type { LeaveEntitlement, LeavePolicy } from "../types";
 
 export async function loadLeaveEntitlementForCommand(
-	store: HumanResourcesLeaveStore,
+	store: Pick<HumanResourcesLeaveStore, "getLeaveEntitlementById">,
 	input: {
 		organizationId: string;
 		entitlementId: HumanResourcesLeaveEntitlementId;
@@ -27,7 +27,7 @@ export async function loadLeaveEntitlementForCommand(
 }
 
 export async function loadPublishedLeavePolicyForEntitlement(
-	store: HumanResourcesLeaveStore,
+	store: Pick<HumanResourcesLeaveStore, "getLeavePolicyById">,
 	input: {
 		organizationId: string;
 		entitlement: LeaveEntitlement;

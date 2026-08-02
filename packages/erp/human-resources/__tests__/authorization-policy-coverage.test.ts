@@ -31,7 +31,7 @@ describe("authorization policy coverage", () => {
 		] as const;
 		for (const operationId of operations) {
 			const policy = resolveHumanResourcesAuthorizationPolicy(operationId);
-			expect(policy.id).toBe("hr.compensation");
+			expect(policy.id).toBe("hr.compensation.catalog");
 		}
 	});
 
@@ -60,35 +60,12 @@ describe("authorization policy coverage", () => {
 		}
 	});
 
-	it("has no overlapping operationPrefixes across catalog policies", () => {
-		const policies = [...HUMAN_RESOURCES_AUTHORIZATION_POLICIES];
-		for (let i = 0; i < policies.length; i += 1) {
-			const left = policies[i];
-			if (left === undefined) {
-				continue;
-			}
-			for (let j = i + 1; j < policies.length; j += 1) {
-				const right = policies[j];
-				if (right === undefined) {
-					continue;
-				}
-				for (const leftPrefix of left.operationPrefixes) {
-					for (const rightPrefix of right.operationPrefixes) {
-						const overlaps =
-							leftPrefix.startsWith(rightPrefix) ||
-							rightPrefix.startsWith(leftPrefix);
-						expect({
-							left: left.id,
-							right: right.id,
-							leftPrefix,
-							rightPrefix,
-							overlaps,
-						}).toMatchObject({ overlaps: false });
-					}
-				}
-			}
-		}
-	}, 15_000);
+	it("has unique exact policy identities", () => {
+		const policyIds = HUMAN_RESOURCES_AUTHORIZATION_POLICIES.map(
+			(policy) => policy.id,
+		);
+		expect(new Set(policyIds).size).toBe(policyIds.length);
+	});
 
 	it("fails closed with a typed resolve error when unregistered", () => {
 		try {

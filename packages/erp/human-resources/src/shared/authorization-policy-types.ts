@@ -19,7 +19,6 @@ export interface HumanResourcesAuthorizationPolicy {
 	) => Promise<HumanResourcesAuthorizationDecision>;
 	id: string;
 	mode: HumanResourcesPolicyMode;
-	operationPrefixes: readonly string[];
 	resourceRequired: boolean;
 }
 

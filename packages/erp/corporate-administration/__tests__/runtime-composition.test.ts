@@ -4,8 +4,10 @@ import type {
 } from "@afenda/corporate-administration";
 import {
 	CORPORATE_ADMINISTRATION_EVENT_TYPES,
+	corporateAdministrationModuleManifest,
 	createCorporateAdministrationRuntime,
 } from "@afenda/corporate-administration";
+import { createMemoryCorporateAdministrationObservabilityPort } from "@afenda/corporate-administration/testing";
 import { describe, expect, expectTypeOf, it, vi } from "vitest";
 import { createFixedCorporateAdministrationClock } from "./helpers/fixed-clock";
 import { createInlineCorporateAdministrationTransactionPort } from "./helpers/inline-transaction";
@@ -23,18 +25,24 @@ describe("Corporate Administration runtime composition", () => {
 			idempotency: createMemoryCorporateAdministrationIdempotencyPort(),
 			audit: createMemoryCorporateAdministrationAuditFactPort(),
 			outbox: createMemoryCorporateAdministrationOutboxPort(),
+			observability: createMemoryCorporateAdministrationObservabilityPort(),
 		};
 	}
 
 	it("requires every runtime port without installing fallbacks", () => {
 		const input = ports();
+		const { observability: _observability, ...withoutObservability } = input;
 		const runtime = createCorporateAdministrationRuntime(input);
 		expect(runtime.clock).toBe(input.clock);
 		expect(runtime.transaction).toBe(input.transaction);
 		expect(runtime.idempotency).toBe(input.idempotency);
 		expect(runtime.audit).toBe(input.audit);
 		expect(runtime.outbox).toBe(input.outbox);
+		expect(runtime.observability).toBe(input.observability);
 		expect(Object.isFrozen(runtime)).toBe(true);
+		expect(() =>
+			createCorporateAdministrationRuntime(withoutObservability),
+		).toThrow();
 
 		for (const incomplete of [
 			{},
@@ -86,6 +94,12 @@ describe("Corporate Administration runtime composition", () => {
 		expect(() =>
 			createCorporateAdministrationRuntime({
 				...input,
+				observability: {},
+			}),
+		).toThrow();
+		expect(() =>
+			createCorporateAdministrationRuntime({
+				...input,
 				unapprovedPort: {},
 			}),
 		).toThrow();
@@ -111,6 +125,9 @@ describe("Corporate Administration runtime composition", () => {
 		const audit = {
 			record: vi.fn(),
 		};
+		const observability = {
+			recordOperation: vi.fn(),
+		};
 
 		createCorporateAdministrationRuntime({
 			clock,
@@ -118,6 +135,7 @@ describe("Corporate Administration runtime composition", () => {
 			idempotency,
 			audit,
 			outbox,
+			observability,
 		});
 
 		expect(clock.now).not.toHaveBeenCalled();
@@ -128,6 +146,7 @@ describe("Corporate Administration runtime composition", () => {
 		expect(idempotency.release).not.toHaveBeenCalled();
 		expect(audit.record).not.toHaveBeenCalled();
 		expect(outbox.append).not.toHaveBeenCalled();
+		expect(observability.recordOperation).not.toHaveBeenCalled();
 	});
 
 	it("is deterministic and contains infrastructure only", () => {
@@ -137,65 +156,17 @@ describe("Corporate Administration runtime composition", () => {
 		);
 		expect(
 			Object.keys(createCorporateAdministrationRuntime(input)).sort(),
-		).toEqual(["audit", "clock", "idempotency", "outbox", "transaction"]);
-		expect(CORPORATE_ADMINISTRATION_EVENT_TYPES).toEqual([
-			"corporate_administration.legal_company.draft_registered.v1",
-			"corporate_administration.legal_company.profile_updated.v1",
-			"corporate_administration.legal_company.jurisdiction_profile_set.v1",
-			"corporate_administration.legal_company.name_added.v1",
-			"corporate_administration.legal_company.name_superseded.v1",
-			"corporate_administration.legal_company.legal_form_changed.v1",
-			"corporate_administration.legal_company.identifier_registered.v1",
-			"corporate_administration.legal_company.financial_year_set.v1",
-			"corporate_administration.legal_company.activity_registered.v1",
-			"corporate_administration.legal_company.activated.v1",
-			"corporate_administration.legal_company.suspended.v1",
-			"corporate_administration.legal_company.struck_off_marked.v1",
-			"corporate_administration.legal_company.liquidation_entered.v1",
-			"corporate_administration.legal_company.dissolved.v1",
-			"corporate_administration.legal_company.restored.v1",
-			"corporate_administration.legal_company.archived.v1",
-			"corporate_administration.legal_establishment.registered.v1",
-			"corporate_administration.legal_establishment.updated.v1",
-			"corporate_administration.legal_establishment.status_changed.v1",
-			"corporate_administration.registered_address.set.v1",
-			"corporate_administration.premise.registered.v1",
-			"corporate_administration.premise.ended.v1",
-			"corporate_administration.governance_body.created.v1",
-			"corporate_administration.governance_body.amended.v1",
-			"corporate_administration.governance_body.retired.v1",
-			"corporate_administration.governance_membership.appointed.v1",
-			"corporate_administration.governance_membership.changed.v1",
-			"corporate_administration.governance_membership.ended.v1",
-			"corporate_administration.statutory_office.defined.v1",
-			"corporate_administration.officer.appointed.v1",
-			"corporate_administration.officer.appointment_amended.v1",
-			"corporate_administration.officer.qualification_recorded.v1",
-			"corporate_administration.officer.resigned.v1",
-			"corporate_administration.officer.removed.v1",
-			"corporate_administration.officer.declaration_recorded.v1",
-			"corporate_administration.officer.declaration_superseded.v1",
-			"corporate_administration.officer.disqualified.v1",
-			"corporate_administration.officer.disqualification_ended.v1",
-			"corporate_administration.conflict.disclosed.v1",
-			"corporate_administration.conflict.recusal_recorded.v1",
-			"corporate_administration.governance_meeting.scheduled.v1",
-			"corporate_administration.meeting_notice.issued.v1",
-			"corporate_administration.meeting_notice.delivered.v1",
-			"corporate_administration.meeting_notice.waived.v1",
-			"corporate_administration.meeting_participant.recorded.v1",
-			"corporate_administration.governance_meeting.opened.v1",
-			"corporate_administration.governance_meeting.quorum_recorded.v1",
-			"corporate_administration.governance_meeting.adjourned.v1",
-			"corporate_administration.governance_meeting.closed.v1",
-			"corporate_administration.meeting_vote.recorded.v1",
-			"corporate_administration.resolution.adopted.v1",
-			"corporate_administration.resolution.rejected.v1",
-			"corporate_administration.resolution.superseded.v1",
-			"corporate_administration.resolution.minutes_recorded.v1",
-			"corporate_administration.resolution.action_assigned.v1",
-			"corporate_administration.resolution.action_completed.v1",
+		).toEqual([
+			"audit",
+			"clock",
+			"idempotency",
+			"observability",
+			"outbox",
+			"transaction",
 		]);
+		expect(corporateAdministrationModuleManifest.events.emits).toEqual(
+			CORPORATE_ADMINISTRATION_EVENT_TYPES,
+		);
 	});
 
 	it("uses composed runtime model while caller context requires authorization", () => {

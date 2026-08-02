@@ -11,17 +11,20 @@ import {
 	HUMAN_RESOURCES_ERROR_NOT_FOUND,
 	humanResourcesErrorDetails,
 } from "../error-codes";
-import type { HumanResourcesQueryId } from "../module-ids";
 import { parseHumanResourcesInput } from "../parse-input";
 import type { HumanResourcesFieldProjection } from "../shared/authorization-types";
 import { authorizeHumanResourcesOperation } from "../shared/contextual-authorization";
-import { requireEmployeeRelationsIdentityResolver } from "../shared/employee-relations-command";
 import { resolveManifestOperationPermission } from "../shared/manifest-permission";
 import type { HumanResourcesAuthorizedActorInput } from "../shared/run-authorized-operation";
 import { runDomainAuthorizedOperation } from "../shared/run-authorized-operation";
-import type { HumanResourcesStore } from "../store";
 import { employeeCaseToResourceContext } from "./case-authorization-policy";
 import { projectEmployeeCaseFromDecision } from "./case-field-projection";
+import type { HUMAN_RESOURCES_EMPLOYEE_RELATIONS_QUERY_IDS } from "./operation-registry";
+import { requireEmployeeRelationsIdentityResolver } from "./run-operation";
+import type {
+	HumanResourcesEmployeeRelationsCapabilityStore,
+	HumanResourcesEmployeeRelationsStoreMethod,
+} from "./store";
 import type {
 	EmployeeCase,
 	EmployeeCaseListPage,
@@ -31,12 +34,19 @@ import type {
 type CaseScopedInput = HumanResourcesAuthorizedActorInput & {
 	caseId: EmployeeCase["id"];
 };
+type AuthorizedCaseReadStore<
+	TMethods extends readonly HumanResourcesEmployeeRelationsStoreMethod[],
+> = Pick<
+	HumanResourcesEmployeeRelationsCapabilityStore,
+	"findEmployeeCaseInOrganization" | TMethods[number]
+>;
 
 /**
  * Load case (NOT_FOUND if missing) → facade authorize with resource facts → execute.
  * Shared by get / timeline / outcome so ACL and deny codes stay one path.
  */
 export async function runAuthorizedEmployeeCaseReadQuery<
+	const TMethods extends readonly HumanResourcesEmployeeRelationsStoreMethod[],
 	TSchema extends z.ZodType<CaseScopedInput>,
 	TOut,
 	TProjected = TOut,
@@ -46,11 +56,12 @@ export async function runAuthorizedEmployeeCaseReadQuery<
 	config: {
 		schema: TSchema;
 		invalidMessage: string;
-		query: HumanResourcesQueryId;
+		query: (typeof HUMAN_RESOURCES_EMPLOYEE_RELATIONS_QUERY_IDS)[number];
+		storeMethods: TMethods;
 		execute: (ctx: {
 			data: z.infer<TSchema>;
 			employeeCase: EmployeeCase;
-			store: HumanResourcesStore;
+			store: AuthorizedCaseReadStore<TMethods>;
 		}) => Promise<Result<TOut>>;
 		project?:
 			| ((
@@ -70,7 +81,8 @@ export async function runAuthorizedEmployeeCaseReadQuery<
 	}
 
 	const { store } = resolveCommandDeps(options);
-	const loaded = await store.findEmployeeCaseInOrganization({
+	const projectedStore: AuthorizedCaseReadStore<TMethods> = store;
+	const loaded = await projectedStore.findEmployeeCaseInOrganization({
 		organizationId: parsed.data.organizationId,
 		caseId: parsed.data.caseId,
 	});
@@ -97,7 +109,7 @@ export async function runAuthorizedEmployeeCaseReadQuery<
 			config.execute({
 				data: parsed.data,
 				employeeCase,
-				store,
+				store: projectedStore,
 			}),
 		...(config.project === undefined ? {} : { project: config.project }),
 	});
@@ -111,7 +123,7 @@ export async function runAuthorizedEmployeeCaseListQuery(
 		correlationId?: string;
 		page?: number;
 		pageSize?: number;
-		queryId: HumanResourcesQueryId;
+		queryId: (typeof HUMAN_RESOURCES_EMPLOYEE_RELATIONS_QUERY_IDS)[number];
 	},
 	options: HumanResourcesCommandOptions,
 	loadCandidates: () => Promise<Result<EmployeeCase[]>>,

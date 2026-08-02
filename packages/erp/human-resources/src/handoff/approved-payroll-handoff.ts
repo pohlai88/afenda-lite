@@ -18,8 +18,8 @@ import {
 	humanResourcesMutationContextSchema,
 	isoDateSchema,
 } from "../schemas/common";
-import { runCompensationQuery } from "../shared/compensation-command";
 import { mapApprovedPayrollHandoff } from "./map-approved-payroll-handoff";
+import { runPayrollHandoffCapabilityQuery } from "./run-operation";
 
 export const assembleApprovedPayrollHandoffInputSchema =
 	humanResourcesMutationContextSchema
@@ -42,14 +42,20 @@ export function assembleApprovedPayrollHandoff(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<ApprovedPayrollHandoff | null>> {
-	return runCompensationQuery<
-		typeof assembleApprovedPayrollHandoffInputSchema,
-		ApprovedPayrollHandoff | null
-	>(input, options, {
+	return runPayrollHandoffCapabilityQuery(input, options, {
+		storeMethods: [
+			"getApprovedCompensationHandoff",
+			"findAssignmentByEmploymentAsOf",
+			"getApprovedLeaveHandoff",
+			"getApprovedTimeHandoff",
+		],
 		schema: assembleApprovedPayrollHandoffInputSchema,
 		invalidMessage: "Invalid approved payroll handoff assembly input",
 		query: HUMAN_RESOURCES_QUERY_APPROVED_PAYROLL_HANDOFF_GET,
-		execute: async (data, { store }) => {
+		execute: async (
+			data,
+			{ store },
+		): Promise<Result<ApprovedPayrollHandoff | null>> => {
 			const compensationHandoff = await store.getApprovedCompensationHandoff({
 				organizationId: data.organizationId,
 				employeeId: data.employeeId,

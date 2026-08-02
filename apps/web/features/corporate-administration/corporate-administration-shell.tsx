@@ -2,6 +2,8 @@ import { randomUUID } from "node:crypto";
 
 import { authServer } from "@afenda/auth";
 import {
+	canonicalDateSchema,
+	corporateAdministrationPermissionFor,
 	findCompanyFinancialYearAsOf,
 	findCompanyLegalFormAsOf,
 	findRegisteredAddressAsOf,
@@ -10,9 +12,12 @@ import {
 	listCompanyActivitiesAsOf,
 	listCompanyIdentifiers,
 	listCompanyNames,
+	listGovernanceMeetings,
 	listLegalCompanies,
 	listLegalEstablishmentsAsOf,
+	listOverdueResolutionActions,
 	listPremisesAsOf,
+	listResolutionsAsOf,
 } from "@afenda/corporate-administration";
 import {
 	Alert,
@@ -24,6 +29,12 @@ import {
 } from "@afenda/ui-system";
 
 import { requirePermission } from "@/features/auth/require-permission";
+import {
+	type GovernanceDecisionMeeting,
+	type GovernanceDecisionOverdueAction,
+	type GovernanceDecisionResolution,
+	GovernanceDecisionWorkspace,
+} from "@/features/corporate-administration/governance-decision-workspace";
 import {
 	type LegalCompanyIdentityActivity,
 	type LegalCompanyIdentityFinancialYear,
@@ -40,6 +51,7 @@ import { LegalCompanyWorkspace } from "@/features/corporate-administration/legal
 import { LegalEstablishmentWorkspace } from "@/features/corporate-administration/legal-establishment-workspace";
 import {
 	createCorporateAdministrationCompanyDependencies,
+	createCorporateAdministrationGovernanceDependencies,
 	createCorporateAdministrationQueryOptions,
 	listCorporateAdministrationActiveOrganizationParties,
 	listCorporateAdministrationPartyAddresses,
@@ -55,6 +67,10 @@ interface CorporateAdministrationShellProps {
 	surface: "admin" | "client";
 }
 
+type GovernanceLegalCompanyId = Parameters<
+	typeof listGovernanceMeetings
+>[0]["legalCompanyId"];
+
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The RSC composes independently authorized corporate administration surfaces.
 export async function CorporateAdministrationShell({
 	surface,
@@ -63,11 +79,30 @@ export async function CorporateAdministrationShell({
 		surface === "admin"
 			? await authServer.session.requireRole("operator")
 			: await authServer.session.get();
-	await requirePermission(session, "corporate_administration.company.read");
-	const canWrite = await sessionHasPermission(
+	await requirePermission(
 		session,
-		"corporate_administration.company.manage",
+		corporateAdministrationPermissionFor("listLegalCompanies"),
 	);
+	const [canWrite, canReadMeetings, canReadResolutions, canManageResolutions] =
+		await Promise.all([
+			sessionHasPermission(
+				session,
+				corporateAdministrationPermissionFor("updateLegalCompanyProfile"),
+			),
+			sessionHasPermission(
+				session,
+				corporateAdministrationPermissionFor("listGovernanceMeetings"),
+			),
+			sessionHasPermission(
+				session,
+				corporateAdministrationPermissionFor("listResolutionsAsOf"),
+			),
+			sessionHasPermission(
+				session,
+				corporateAdministrationPermissionFor("adoptResolution"),
+			),
+		]);
+	const canReadGovernanceDecisions = canReadMeetings && canReadResolutions;
 	const correlationId = `ca-page-${randomUUID()}`;
 	const dependencies = createCorporateAdministrationCompanyDependencies();
 	const queryOptions = createCorporateAdministrationQueryOptions({
@@ -78,7 +113,7 @@ export async function CorporateAdministrationShell({
 	const companiesResult = await listLegalCompanies(
 		{ pagination: { limit: 50 } },
 		queryOptions,
-		{ store: dependencies.store },
+		dependencies,
 	);
 	const detailedCompanies = companiesResult.ok
 		? await Promise.all(
@@ -86,7 +121,7 @@ export async function CorporateAdministrationShell({
 					const detail = await getLegalCompany(
 						{ legalCompanyId: company.legalCompanyId },
 						queryOptions,
-						{ store: dependencies.store },
+						dependencies,
 					);
 					return detail.ok ? detail.data : null;
 				}),
@@ -143,6 +178,13 @@ export async function CorporateAdministrationShell({
 					legalCompanyId: selectedCompany.legalCompanyId,
 					queryOptions,
 					dependencies,
+				});
+	const governanceDecisionState =
+		selectedCompany === undefined || !canReadGovernanceDecisions
+			? null
+			: await loadGovernanceDecisions({
+					legalCompanyId: selectedCompany.legalCompanyId,
+					queryOptions,
 				});
 	const partyAddresses =
 		selectedCompany === undefined
@@ -256,11 +298,96 @@ export async function CorporateAdministrationShell({
 							}
 							organizationSlug="client"
 						/>
+						{governanceDecisionState?.ok === false ? (
+							<Alert role="alert" variant="destructive">
+								<AlertTitle>Governance decisions unavailable</AlertTitle>
+								<AlertDescription>
+									{governanceDecisionState.message}
+								</AlertDescription>
+							</Alert>
+						) : null}
+						{governanceDecisionState?.ok === true ? (
+							<GovernanceDecisionWorkspace
+								canManage={canManageResolutions}
+								meetings={governanceDecisionState.meetings}
+								organizationSlug="client"
+								overdueActions={governanceDecisionState.overdueActions}
+								resolutions={governanceDecisionState.resolutions}
+							/>
+						) : null}
 					</>
 				)}
 			</WorkspacePageContent>
 		</WorkspacePage>
 	);
+}
+
+async function loadGovernanceDecisions(input: {
+	legalCompanyId: GovernanceLegalCompanyId;
+	queryOptions: ReturnType<typeof createCorporateAdministrationQueryOptions>;
+}): Promise<
+	| Readonly<{
+			ok: true;
+			meetings: readonly GovernanceDecisionMeeting[];
+			resolutions: readonly GovernanceDecisionResolution[];
+			overdueActions: readonly GovernanceDecisionOverdueAction[];
+	  }>
+	| Readonly<{ ok: false; message: string }>
+> {
+	const dependencies = createCorporateAdministrationGovernanceDependencies();
+	const asOf = canonicalDateSchema.parse(new Date().toISOString().slice(0, 10));
+	const [meetings, resolutions, overdueActions] = await Promise.all([
+		listGovernanceMeetings(
+			{ legalCompanyId: input.legalCompanyId },
+			input.queryOptions,
+			dependencies,
+		),
+		listResolutionsAsOf(
+			{ legalCompanyId: input.legalCompanyId, asOf },
+			input.queryOptions,
+			dependencies,
+		),
+		listOverdueResolutionActions(
+			{ legalCompanyId: input.legalCompanyId, asOf },
+			input.queryOptions,
+			dependencies,
+		),
+	]);
+	const failed = [meetings, resolutions, overdueActions].find(
+		(result) => !result.ok,
+	);
+	if (failed !== undefined && !failed.ok) {
+		return { ok: false, message: failed.message };
+	}
+	if (!(meetings.ok && resolutions.ok && overdueActions.ok)) {
+		return { ok: false, message: "Governance decision data is unavailable." };
+	}
+	return {
+		ok: true,
+		meetings: meetings.data.map((meeting) => ({
+			id: meeting.id,
+			title: meeting.title,
+			status: meeting.status,
+			scheduledStartAt: meeting.scheduledStartAt.toISOString(),
+			version: meeting.version,
+		})),
+		resolutions: resolutions.data.map((resolution) => ({
+			id: resolution.id,
+			code: resolution.resolutionCode,
+			title: resolution.title,
+			status: resolution.status,
+			effectiveFrom: resolution.effectiveFrom,
+			version: resolution.version,
+			minutesDocumentId: resolution.minutesDocumentId,
+		})),
+		overdueActions: overdueActions.data.map((action) => ({
+			id: action.id,
+			resolutionId: action.resolutionId,
+			actionTypeCode: action.actionTypeCode,
+			dueOn: action.dueOn,
+			version: action.version,
+		})),
+	};
 }
 
 async function loadLegalCompanyLifecycle(input: {
@@ -278,15 +405,7 @@ async function loadLegalCompanyLifecycle(input: {
 	const completeness = await getCompanyCompletenessForActivation(
 		{ legalCompanyId: input.legalCompanyId, asOf: today },
 		input.queryOptions,
-		{
-			store: input.dependencies.store,
-			nameStore: input.dependencies.nameStore,
-			legalFormStore: input.dependencies.legalFormStore,
-			identifierStore: input.dependencies.identifierStore,
-			financialYearStore: input.dependencies.financialYearStore,
-			activityStore: input.dependencies.activityStore,
-			establishmentStore: input.dependencies.establishmentStore,
-		},
+		input.dependencies,
 	);
 	if (!completeness.ok) {
 		return { ok: false, message: LEGAL_COMPANY_LIFECYCLE_UNAVAILABLE_MESSAGE };
@@ -346,7 +465,7 @@ async function loadLegalPresence(input: {
 	const establishments = await listLegalEstablishmentsAsOf(
 		{ legalCompanyId: input.legalCompanyId, asOf: today },
 		input.queryOptions,
-		{ establishmentStore: input.dependencies.establishmentStore },
+		input.dependencies,
 	);
 	if (!establishments.ok) {
 		return establishments;
@@ -369,7 +488,7 @@ async function loadLegalPresence(input: {
 							asOf: today,
 						},
 						input.queryOptions,
-						{ establishmentStore: input.dependencies.establishmentStore },
+						input.dependencies,
 					),
 				),
 			),
@@ -377,7 +496,7 @@ async function loadLegalPresence(input: {
 		listPremisesAsOf(
 			{ legalCompanyId: input.legalCompanyId, asOf: today },
 			input.queryOptions,
-			{ establishmentStore: input.dependencies.establishmentStore },
+			input.dependencies,
 		),
 	]);
 	const failedAddress = addressResults.find((result) => !result.ok);
@@ -461,18 +580,12 @@ async function loadLegalCompanyIdentity(input: {
 					pageSize: 50,
 				},
 				input.queryOptions,
-				{
-					store: input.dependencies.store,
-					nameStore: input.dependencies.nameStore,
-				},
+				input.dependencies,
 			),
 			findCompanyLegalFormAsOf(
 				{ legalCompanyId: input.legalCompanyId, asOf: today },
 				input.queryOptions,
-				{
-					store: input.dependencies.store,
-					legalFormStore: input.dependencies.legalFormStore,
-				},
+				input.dependencies,
 			),
 			listCompanyIdentifiers(
 				{
@@ -481,26 +594,17 @@ async function loadLegalCompanyIdentity(input: {
 					pageSize: 50,
 				},
 				input.queryOptions,
-				{
-					store: input.dependencies.store,
-					identifierStore: input.dependencies.identifierStore,
-				},
+				input.dependencies,
 			),
 			findCompanyFinancialYearAsOf(
 				{ legalCompanyId: input.legalCompanyId, asOf: today },
 				input.queryOptions,
-				{
-					store: input.dependencies.store,
-					financialYearStore: input.dependencies.financialYearStore,
-				},
+				input.dependencies,
 			),
 			listCompanyActivitiesAsOf(
 				{ legalCompanyId: input.legalCompanyId, asOf: today },
 				input.queryOptions,
-				{
-					store: input.dependencies.store,
-					activityStore: input.dependencies.activityStore,
-				},
+				input.dependencies,
 			),
 		]);
 

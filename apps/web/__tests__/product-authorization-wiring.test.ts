@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-
+import { corporateAdministrationPermissionFor } from "@afenda/corporate-administration";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const session = {
@@ -146,12 +146,6 @@ describe("N11 product authorization wiring", () => {
 				"master_data.import_validate",
 			],
 			"app/actions/apply-master-data-import.ts": ["master_data.import_apply"],
-			"app/actions/register-legal-company-draft.ts": [
-				"corporate_administration.company.manage",
-			],
-			"app/actions/set-company-jurisdiction-profile.ts": [
-				"corporate_administration.company.manage",
-			],
 			"app/actions/list-sales-orders.ts": ["sales.order.list"],
 			"app/actions/get-sales-order.ts": ["sales.order.read"],
 			"app/actions/create-sales-order.ts": ["sales.order.create"],
@@ -373,10 +367,6 @@ describe("N11 product authorization wiring", () => {
 				"accounting.journal.read",
 				"accounting.journal.create",
 			],
-			"features/corporate-administration/corporate-administration-shell.tsx": [
-				"corporate_administration.company.read",
-				"corporate_administration.company.manage",
-			],
 		} as const;
 
 		for (const [relativePath, codes] of Object.entries(expectedCodesByPort)) {
@@ -386,6 +376,32 @@ describe("N11 product authorization wiring", () => {
 					code,
 				);
 			}
+		}
+
+		for (const [relativePath, operationId] of Object.entries({
+			"app/actions/register-legal-company-draft.ts":
+				"registerLegalCompanyDraft",
+			"app/actions/set-company-jurisdiction-profile.ts":
+				"setCompanyJurisdictionProfile",
+			"features/corporate-administration/corporate-administration-shell.tsx":
+				"listLegalCompanies",
+		} as const)) {
+			const portSource = source(relativePath);
+			expect(
+				corporateAdministrationPermissionFor(operationId),
+				`${relativePath} must resolve permission from the CA operation registry`,
+			).toMatch(/^corporate_administration\.company\.(?:read|manage)$/u);
+			expect(
+				portSource,
+				`${relativePath} must use CA permission facade`,
+			).toContain("corporateAdministrationPermissionFor");
+			expect(portSource, `${relativePath} must declare operation id`).toContain(
+				operationId,
+			);
+			expect(
+				portSource,
+				`${relativePath} must not duplicate CA permission literals`,
+			).not.toMatch(/corporate_administration\.company\.(?:read|manage)/u);
 		}
 
 		for (const relativePath of [

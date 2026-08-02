@@ -15,6 +15,7 @@ import {
 	HUMAN_RESOURCES_QUERY_SHIFT_ASSIGNMENT_LIST,
 	HUMAN_RESOURCES_QUERY_SHIFT_ASSIGNMENT_LOCATION_SCHEDULE_LIST,
 	HUMAN_RESOURCES_QUERY_SHIFT_ASSIGNMENT_SCHEDULED_FOR_DATE,
+	HUMAN_RESOURCES_QUERY_SHIFT_ASSIGNMENT_SEGMENTS_LIST,
 } from "../module-ids";
 import {
 	assignShiftInputSchema,
@@ -28,9 +29,12 @@ import {
 	publishShiftAssignmentInputSchema,
 } from "../schemas/time";
 import { invalidInput } from "../shared/domain-guards";
-import { runTimeCommand, runTimeQuery } from "../shared/time-command";
 import { resolveActiveTimeEmployment } from "../shared/time-employment";
 import type { ShiftAssignment, ShiftAssignmentSegment } from "../types";
+import {
+	runTimeCapabilityCommand,
+	runTimeCapabilityQuery,
+} from "./run-operation";
 
 type PreparedShiftSegment = Pick<
 	ShiftAssignmentSegment,
@@ -85,10 +89,17 @@ export async function assignShift(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<ShiftAssignment>> {
-	return await runTimeCommand(input, options, {
+	return await runTimeCapabilityCommand(input, options, {
 		schema: assignShiftInputSchema,
 		invalidMessage: "Invalid shift assign input",
 		command: HUMAN_RESOURCES_COMMAND_SHIFT_ASSIGN,
+		storeMethods: [
+			"assignShift",
+			"findEmploymentByEmployeeAsOf",
+			"findOverlappingShiftAssignments",
+			"findShiftAssignmentByIdempotencyKey",
+			"getEmploymentById",
+		],
 		execute: async (data, { store, ports }) => {
 			const startsAt = new Date(data.startsAt);
 			const endsAt = new Date(data.endsAt);
@@ -189,10 +200,11 @@ export async function publishShiftAssignment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<ShiftAssignment>> {
-	return await runTimeCommand(input, options, {
+	return await runTimeCapabilityCommand(input, options, {
 		schema: publishShiftAssignmentInputSchema,
 		invalidMessage: "Invalid shift assignment publish input",
 		command: HUMAN_RESOURCES_COMMAND_SHIFT_ASSIGNMENT_PUBLISH,
+		storeMethods: ["publishShiftAssignment"],
 		execute: async (data, { store, ports }) =>
 			store.publishShiftAssignment(data, ports),
 	});
@@ -202,10 +214,11 @@ export async function cancelShiftAssignment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<ShiftAssignment>> {
-	return await runTimeCommand(input, options, {
+	return await runTimeCapabilityCommand(input, options, {
 		schema: cancelShiftAssignmentInputSchema,
 		invalidMessage: "Invalid shift assignment cancel input",
 		command: HUMAN_RESOURCES_COMMAND_SHIFT_ASSIGNMENT_CANCEL,
+		storeMethods: ["cancelShiftAssignment"],
 		execute: async (data, { store, ports }) =>
 			store.cancelShiftAssignment(data, ports),
 	});
@@ -215,10 +228,11 @@ export async function changeShiftAssignment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<ShiftAssignment>> {
-	return await runTimeCommand(input, options, {
+	return await runTimeCapabilityCommand(input, options, {
 		schema: changeShiftAssignmentInputSchema,
 		invalidMessage: "Invalid shift assignment change input",
 		command: HUMAN_RESOURCES_COMMAND_SHIFT_ASSIGNMENT_CHANGE,
+		storeMethods: ["changeShiftAssignment"],
 		execute: async (data, { store, ports }) =>
 			store.changeShiftAssignment(
 				{
@@ -244,10 +258,11 @@ export async function completeShiftAssignment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<ShiftAssignment>> {
-	return await runTimeCommand(input, options, {
+	return await runTimeCapabilityCommand(input, options, {
 		schema: completeShiftAssignmentInputSchema,
 		invalidMessage: "Invalid shift assignment complete input",
 		command: HUMAN_RESOURCES_COMMAND_SHIFT_ASSIGNMENT_COMPLETE,
+		storeMethods: ["completeShiftAssignment"],
 		execute: async (data, { store, ports }) =>
 			store.completeShiftAssignment(data, ports),
 	});
@@ -257,10 +272,11 @@ export async function getShiftAssignment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<ShiftAssignment | null>> {
-	return await runTimeQuery(input, options, {
+	return await runTimeCapabilityQuery(input, options, {
 		schema: getShiftAssignmentInputSchema,
 		invalidMessage: "Invalid shift assignment get input",
 		query: HUMAN_RESOURCES_QUERY_SHIFT_ASSIGNMENT_GET,
+		storeMethods: ["getShiftAssignment"],
 		execute: async (data, { store }) =>
 			store.getShiftAssignment({
 				organizationId: data.organizationId,
@@ -273,10 +289,11 @@ export async function listShiftAssignmentSegments(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<ShiftAssignmentSegment[]>> {
-	return await runTimeQuery(input, options, {
+	return await runTimeCapabilityQuery(input, options, {
 		schema: getShiftAssignmentInputSchema,
 		invalidMessage: "Invalid shift assignment segment list input",
-		query: HUMAN_RESOURCES_QUERY_SHIFT_ASSIGNMENT_GET,
+		query: HUMAN_RESOURCES_QUERY_SHIFT_ASSIGNMENT_SEGMENTS_LIST,
+		storeMethods: ["listShiftAssignmentSegments"],
 		execute: async (data, { store }) =>
 			store.listShiftAssignmentSegments({
 				organizationId: data.organizationId,
@@ -289,10 +306,11 @@ export async function listShiftAssignments(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<ShiftAssignment[]>> {
-	return await runTimeQuery(input, options, {
+	return await runTimeCapabilityQuery(input, options, {
 		schema: listShiftAssignmentsInputSchema,
 		invalidMessage: "Invalid shift assignment list input",
 		query: HUMAN_RESOURCES_QUERY_SHIFT_ASSIGNMENT_LIST,
+		storeMethods: ["listShiftAssignments"],
 		execute: async (data, { store }) => store.listShiftAssignments(data),
 	});
 }
@@ -301,10 +319,11 @@ export async function getScheduledShiftForEmployeeDate(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<ShiftAssignment | null>> {
-	return await runTimeQuery(input, options, {
+	return await runTimeCapabilityQuery(input, options, {
 		schema: getScheduledShiftForEmployeeDateInputSchema,
 		invalidMessage: "Invalid scheduled shift for employee date input",
 		query: HUMAN_RESOURCES_QUERY_SHIFT_ASSIGNMENT_SCHEDULED_FOR_DATE,
+		storeMethods: ["getScheduledShiftForEmployeeDate"],
 		execute: async (data, { store }) =>
 			store.getScheduledShiftForEmployeeDate({
 				organizationId: data.organizationId,
@@ -318,10 +337,11 @@ export async function listLocationSchedule(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<ShiftAssignment[]>> {
-	return await runTimeQuery(input, options, {
+	return await runTimeCapabilityQuery(input, options, {
 		schema: listLocationScheduleInputSchema,
 		invalidMessage: "Invalid location schedule list input",
 		query: HUMAN_RESOURCES_QUERY_SHIFT_ASSIGNMENT_LOCATION_SCHEDULE_LIST,
+		storeMethods: ["listLocationSchedule"],
 		execute: async (data, { store }) => store.listLocationSchedule(data),
 	});
 }

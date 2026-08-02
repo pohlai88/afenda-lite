@@ -1,10 +1,12 @@
 import { errorResult, type Result } from "@afenda/errors";
 import type { z } from "zod";
-import {
-	CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS,
-	requireCorporateAdministrationPermission,
-} from "../../authorization";
 import type { CorporateAdministrationCommandOptions } from "../../command-options";
+import { corporateAdministrationEffectiveRangeOverlapResult } from "../../error-codes";
+import {
+	authorizeCorporateAdministrationCommand,
+	type CorporateAdministrationCommandKernelDependencies,
+	executeCorporateAdministrationCommand,
+} from "../../internal/durable-command";
 import { parseCorporateAdministrationInput } from "../../parse-input";
 import {
 	assertEffectivePeriodChronology,
@@ -15,11 +17,8 @@ import {
 	companyJurisdictionProfileSchema,
 	supersedeCompanyJurisdictionProfileInputSchema,
 } from "../schemas";
+import type { LegalCompanyCommandDependencies } from "../store";
 import type { CompanyJurisdictionProfile } from "../types";
-import {
-	type DurableLegalCompanyCommandDependencies,
-	runDurableCompanyCommand,
-} from "./durable-command";
 
 export type SupersedeCompanyJurisdictionProfileInput = z.input<
 	typeof supersedeCompanyJurisdictionProfileInputSchema
@@ -28,7 +27,8 @@ export type SupersedeCompanyJurisdictionProfileInput = z.input<
 export async function supersedeCompanyJurisdictionProfile(
 	input: SupersedeCompanyJurisdictionProfileInput,
 	options: CorporateAdministrationCommandOptions,
-	dependencies: DurableLegalCompanyCommandDependencies,
+	dependencies: CorporateAdministrationCommandKernelDependencies &
+		LegalCompanyCommandDependencies,
 ): Promise<Result<CompanyJurisdictionProfile>> {
 	const parsed = parseCorporateAdministrationInput(
 		supersedeCompanyJurisdictionProfileInputSchema,
@@ -38,14 +38,9 @@ export async function supersedeCompanyJurisdictionProfile(
 		return parsed;
 	}
 
-	const authorized = await requireCorporateAdministrationPermission(
-		options.authorization,
-		{
-			organizationId: options.organizationId,
-			actorUserId: options.actorUserId,
-			permission:
-				CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS.supersedeCompanyJurisdictionProfile,
-		},
+	const authorized = await authorizeCorporateAdministrationCommand(
+		"supersedeCompanyJurisdictionProfile",
+		options,
 	);
 	if (!authorized.ok) {
 		return authorized;
@@ -117,22 +112,16 @@ export async function supersedeCompanyJurisdictionProfile(
 		return overlap;
 	}
 	if (overlap.data) {
-		return errorResult.fail("CONFLICT", {
-			publicMessage:
-				"Corporate Administration jurisdiction profile overlaps an existing profile.",
-		});
+		return corporateAdministrationEffectiveRangeOverlapResult();
 	}
 
-	return runDurableCompanyCommand({
-		commandId:
-			"corporate-administration.legal-company.supersede-jurisdiction-profile",
+	return executeCorporateAdministrationCommand({
+		authorization: authorized.data,
 		fingerprintSchema: supersedeCompanyJurisdictionProfileInputSchema,
 		fingerprintInput: parsed.data,
 		outputSchema: companyJurisdictionProfileSchema,
-		options,
 		dependencies,
 		event: {
-			type: "corporate_administration.legal_company.jurisdiction_profile_set.v1",
 			operationType: "UPDATE",
 			targetType: "ca_company_jurisdiction_profile",
 			aggregateId: (result) => result.legalCompanyId,

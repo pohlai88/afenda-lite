@@ -21,12 +21,12 @@ import {
 	sessionStatusTransitionInputSchema,
 } from "../schemas/learning";
 import { fingerprintSessionCreate } from "../shared/fingerprint";
-import {
-	runLearningCommand,
-	runLearningQuery,
-} from "../shared/learning-command";
 import { buildMutationMeta } from "../shared/mutation-meta";
 import type { LearningSession, SessionListPage } from "../types";
+import {
+	runLearningCapabilityCommand,
+	runLearningCapabilityQuery,
+} from "./run-operation";
 
 export const HUMAN_RESOURCES_AGGREGATE_SESSION = "session" as const;
 export type HumanResourcesSessionAggregate =
@@ -36,10 +36,11 @@ export function createSession(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LearningSession>> {
-	return runLearningCommand(input, options, {
+	return runLearningCapabilityCommand(input, options, {
 		schema: createSessionInputSchema,
 		invalidMessage: "Invalid session create input",
 		command: HUMAN_RESOURCES_COMMAND_SESSION_CREATE,
+		storeMethods: ["findSessionByIdempotencyKey", "createSession"],
 		execute: async (data, { store, ports }) => {
 			const scheduledStartsAt = new Date(data.scheduledStartsAt);
 			const scheduledEndsAt = new Date(data.scheduledEndsAt);
@@ -104,10 +105,11 @@ export function startSession(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LearningSession>> {
-	return runLearningCommand(input, options, {
+	return runLearningCapabilityCommand(input, options, {
 		schema: sessionStatusTransitionInputSchema,
 		invalidMessage: "Invalid session start input",
 		command: HUMAN_RESOURCES_COMMAND_SESSION_START,
+		storeMethods: ["startSession"],
 		execute: async (data, { store, ports }) =>
 			await store.startSession(
 				{
@@ -132,10 +134,11 @@ export function completeSession(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LearningSession>> {
-	return runLearningCommand(input, options, {
+	return runLearningCapabilityCommand(input, options, {
 		schema: sessionStatusTransitionInputSchema,
 		invalidMessage: "Invalid session complete input",
 		command: HUMAN_RESOURCES_COMMAND_SESSION_COMPLETE,
+		storeMethods: ["completeSession"],
 		execute: async (data, { store, ports }) =>
 			await store.completeSession(
 				{
@@ -160,10 +163,11 @@ export function assignSessionInstructor(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LearningSession>> {
-	return runLearningCommand(input, options, {
+	return runLearningCapabilityCommand(input, options, {
 		schema: assignSessionInstructorInputSchema,
 		invalidMessage: "Invalid session instructor assignment input",
 		command: HUMAN_RESOURCES_COMMAND_SESSION_ASSIGN_INSTRUCTOR,
+		storeMethods: ["assignSessionInstructor"],
 		execute: async (data, { store, ports }) =>
 			await store.assignSessionInstructor(
 				{
@@ -186,10 +190,11 @@ export function cancelSession(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LearningSession>> {
-	return runLearningCommand(input, options, {
+	return runLearningCapabilityCommand(input, options, {
 		schema: sessionStatusTransitionInputSchema,
 		invalidMessage: "Invalid session cancel input",
 		command: HUMAN_RESOURCES_COMMAND_SESSION_CANCEL,
+		storeMethods: ["cancelSession"],
 		execute: async (data, { store, ports }) =>
 			await store.cancelSession(
 				{
@@ -211,10 +216,11 @@ export function getSession(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<LearningSession | null>> {
-	return runLearningQuery(input, options, {
+	return runLearningCapabilityQuery(input, options, {
 		schema: getSessionInputSchema,
 		invalidMessage: "Invalid session get input",
 		query: HUMAN_RESOURCES_QUERY_SESSION_GET,
+		storeMethods: ["getSessionById"],
 		execute: async (data, { store }) =>
 			await store.getSessionById({
 				organizationId: data.organizationId,
@@ -227,10 +233,11 @@ export function listSessions(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<SessionListPage>> {
-	return runLearningQuery(input, options, {
+	return runLearningCapabilityQuery(input, options, {
 		schema: listSessionsInputSchema,
 		invalidMessage: "Invalid session list input",
 		query: HUMAN_RESOURCES_QUERY_SESSION_LIST,
+		storeMethods: ["listSessions"],
 		execute: async (data, { store }) =>
 			await store.listSessions({
 				organizationId: data.organizationId,

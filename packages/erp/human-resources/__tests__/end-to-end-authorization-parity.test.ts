@@ -4,6 +4,7 @@ import type { createDrizzleHumanResourcesStore } from "../src/adapters/drizzle/s
 import { createMemoryHumanResourcesStore } from "../src/adapters/memory/store";
 import type { HumanResourcesAuthorizationPort } from "../src/authorization";
 import type { HumanResourcesEmployeeId } from "../src/brands";
+import { requireComplianceEmployeeReadScope } from "../src/compliance/run-operation";
 import { createEmployee } from "../src/core/employee";
 import { createEmployment } from "../src/core/employment";
 import type { HumanResourcesIdentityResolverPort } from "../src/identity-resolver";
@@ -20,7 +21,6 @@ import {
 	listEmployeePerformanceReviews,
 } from "../src/performance/review";
 import { HUMAN_RESOURCES_PERMISSION_TALENT_PROFILE_SENSITIVE_READ } from "../src/permissions";
-import { requireComplianceEmployeeReadScope } from "../src/shared/compliance-command";
 import {
 	createCareerPlan,
 	listEmployeeCareerPlans,

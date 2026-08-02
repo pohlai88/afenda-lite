@@ -46,7 +46,6 @@ import {
 } from "../schemas/time";
 import { invalidInput } from "../shared/domain-guards";
 import { previousIsoDate } from "../shared/effective-dates";
-import { runTimeCommand, runTimeQuery } from "../shared/time-command";
 import type {
 	EmploymentCalendarAssignment,
 	WorkCalendar,
@@ -54,15 +53,20 @@ import type {
 	WorkCalendarScopeAssignment,
 } from "../types";
 import { resolveEmployeeWorkCalendar as resolveEmployeeWorkCalendarCore } from "./employee-work-calendar-resolution";
+import {
+	runTimeCapabilityCommand,
+	runTimeCapabilityQuery,
+} from "./run-operation";
 
 export async function createWorkCalendar(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<WorkCalendar>> {
-	return await runTimeCommand(input, options, {
+	return await runTimeCapabilityCommand(input, options, {
 		schema: createWorkCalendarInputSchema,
 		invalidMessage: "Invalid work calendar create input",
 		command: HUMAN_RESOURCES_COMMAND_WORK_CALENDAR_CREATE,
+		storeMethods: ["createWorkCalendar", "findWorkCalendarByIdempotencyKey"],
 		execute: async (data, { store, ports }) => {
 			const fingerprint = JSON.stringify({
 				code: data.code,
@@ -118,10 +122,11 @@ export async function updateWorkCalendar(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<WorkCalendar>> {
-	return await runTimeCommand(input, options, {
+	return await runTimeCapabilityCommand(input, options, {
 		schema: updateWorkCalendarInputSchema,
 		invalidMessage: "Invalid work calendar update input",
 		command: HUMAN_RESOURCES_COMMAND_WORK_CALENDAR_UPDATE,
+		storeMethods: ["updateWorkCalendar"],
 		execute: async (data, { store, ports }) =>
 			store.updateWorkCalendar(data, ports),
 	});
@@ -131,10 +136,15 @@ export async function supersedeWorkCalendar(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<{ superseded: WorkCalendar; successor: WorkCalendar }>> {
-	return await runTimeCommand(input, options, {
+	return await runTimeCapabilityCommand(input, options, {
 		schema: supersedeWorkCalendarInputSchema,
 		invalidMessage: "Invalid work calendar supersede input",
 		command: HUMAN_RESOURCES_COMMAND_WORK_CALENDAR_SUPERSEDE,
+		storeMethods: [
+			"findWorkCalendarByIdempotencyKey",
+			"getWorkCalendar",
+			"supersedeWorkCalendar",
+		],
 		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The domain workflow keeps ordered invariant validation and Result mapping explicit.
 		execute: async (data, { store, ports }) => {
 			const predecessor = await store.getWorkCalendar({
@@ -234,10 +244,11 @@ export async function archiveWorkCalendar(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<WorkCalendar>> {
-	return await runTimeCommand(input, options, {
+	return await runTimeCapabilityCommand(input, options, {
 		schema: archiveWorkCalendarInputSchema,
 		invalidMessage: "Invalid work calendar archive input",
 		command: HUMAN_RESOURCES_COMMAND_WORK_CALENDAR_ARCHIVE,
+		storeMethods: ["archiveWorkCalendar"],
 		execute: async (data, { store, ports }) =>
 			store.archiveWorkCalendar(data, ports),
 	});
@@ -247,10 +258,11 @@ export async function getWorkCalendar(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<WorkCalendar | null>> {
-	return await runTimeQuery(input, options, {
+	return await runTimeCapabilityQuery(input, options, {
 		schema: getWorkCalendarInputSchema,
 		invalidMessage: "Invalid work calendar get input",
 		query: HUMAN_RESOURCES_QUERY_WORK_CALENDAR_GET,
+		storeMethods: ["getWorkCalendar"],
 		execute: async (data, { store }) =>
 			store.getWorkCalendar({
 				organizationId: data.organizationId,
@@ -263,10 +275,11 @@ export async function listWorkCalendars(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<WorkCalendar[]>> {
-	return await runTimeQuery(input, options, {
+	return await runTimeCapabilityQuery(input, options, {
 		schema: listWorkCalendarsInputSchema,
 		invalidMessage: "Invalid work calendar list input",
 		query: HUMAN_RESOURCES_QUERY_WORK_CALENDAR_LIST,
+		storeMethods: ["listWorkCalendars"],
 		execute: async (data, { store }) => store.listWorkCalendars(data),
 	});
 }
@@ -275,10 +288,11 @@ export async function addWorkCalendarHoliday(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<WorkCalendarHolidayRecord>> {
-	return await runTimeCommand(input, options, {
+	return await runTimeCapabilityCommand(input, options, {
 		schema: addWorkCalendarHolidayInputSchema,
 		invalidMessage: "Invalid work calendar holiday add input",
 		command: HUMAN_RESOURCES_COMMAND_WORK_CALENDAR_HOLIDAY_ADD,
+		storeMethods: ["addWorkCalendarHoliday"],
 		execute: async (data, { store, ports }) =>
 			store.addWorkCalendarHoliday(
 				{
@@ -303,10 +317,11 @@ export async function removeWorkCalendarHoliday(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<void>> {
-	return await runTimeCommand(input, options, {
+	return await runTimeCapabilityCommand(input, options, {
 		schema: removeWorkCalendarHolidayInputSchema,
 		invalidMessage: "Invalid work calendar holiday remove input",
 		command: HUMAN_RESOURCES_COMMAND_WORK_CALENDAR_HOLIDAY_REMOVE,
+		storeMethods: ["removeWorkCalendarHoliday"],
 		execute: async (data, { store, ports }) =>
 			store.removeWorkCalendarHoliday(
 				{
@@ -324,10 +339,11 @@ export async function addCalendarDateOverride(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<WorkCalendarHolidayRecord>> {
-	return await runTimeCommand(input, options, {
+	return await runTimeCapabilityCommand(input, options, {
 		schema: addCalendarDateOverrideInputSchema,
 		invalidMessage: "Invalid work calendar date override add input",
 		command: HUMAN_RESOURCES_COMMAND_WORK_CALENDAR_DATE_OVERRIDE_ADD,
+		storeMethods: ["addWorkCalendarHoliday"],
 		execute: async (data, { store, ports }) =>
 			store.addWorkCalendarHoliday(
 				{
@@ -352,10 +368,11 @@ export async function removeCalendarDateOverride(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<void>> {
-	return await runTimeCommand(input, options, {
+	return await runTimeCapabilityCommand(input, options, {
 		schema: removeCalendarDateOverrideInputSchema,
 		invalidMessage: "Invalid work calendar date override remove input",
 		command: HUMAN_RESOURCES_COMMAND_WORK_CALENDAR_DATE_OVERRIDE_REMOVE,
+		storeMethods: ["removeWorkCalendarHoliday"],
 		execute: async (data, { store, ports }) =>
 			store.removeWorkCalendarHoliday(
 				{
@@ -373,10 +390,11 @@ export async function listWorkCalendarHolidays(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<WorkCalendarHolidayRecord[]>> {
-	return await runTimeQuery(input, options, {
+	return await runTimeCapabilityQuery(input, options, {
 		schema: listWorkCalendarHolidaysInputSchema,
 		invalidMessage: "Invalid work calendar holiday list input",
 		query: HUMAN_RESOURCES_QUERY_WORK_CALENDAR_HOLIDAY_LIST,
+		storeMethods: ["listWorkCalendarHolidays"],
 		execute: async (data, { store }) => store.listWorkCalendarHolidays(data),
 	});
 }
@@ -385,10 +403,11 @@ export async function assignEmploymentCalendar(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmploymentCalendarAssignment>> {
-	return await runTimeCommand(input, options, {
+	return await runTimeCapabilityCommand(input, options, {
 		schema: assignEmploymentCalendarInputSchema,
 		invalidMessage: "Invalid employment calendar assign input",
 		command: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CALENDAR_ASSIGN,
+		storeMethods: ["assignEmploymentCalendar"],
 		execute: async (data, { store, ports }) =>
 			store.assignEmploymentCalendar(
 				{
@@ -412,10 +431,11 @@ export async function endWorkCalendarAssignment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmploymentCalendarAssignment>> {
-	return await runTimeCommand(input, options, {
+	return await runTimeCapabilityCommand(input, options, {
 		schema: endWorkCalendarAssignmentInputSchema,
 		invalidMessage: "Invalid employment calendar end input",
 		command: HUMAN_RESOURCES_COMMAND_EMPLOYMENT_CALENDAR_END,
+		storeMethods: ["endEmploymentCalendarAssignment"],
 		execute: async (data, { store, ports }) =>
 			store.endEmploymentCalendarAssignment(
 				{
@@ -435,10 +455,11 @@ export async function resolveEmploymentCalendar(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmploymentCalendarAssignment | null>> {
-	return await runTimeQuery(input, options, {
+	return await runTimeCapabilityQuery(input, options, {
 		schema: resolveEmploymentCalendarInputSchema,
 		invalidMessage: "Invalid employment calendar resolve input",
 		query: HUMAN_RESOURCES_QUERY_EMPLOYMENT_CALENDAR_RESOLVE,
+		storeMethods: ["resolveEmploymentCalendar"],
 		execute: async (data, { store }) => store.resolveEmploymentCalendar(data),
 	});
 }
@@ -447,10 +468,11 @@ export async function assignWorkCalendarScope(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<WorkCalendarScopeAssignment>> {
-	return await runTimeCommand(input, options, {
+	return await runTimeCapabilityCommand(input, options, {
 		schema: assignWorkCalendarScopeInputSchema,
 		invalidMessage: "Invalid work calendar scope assign input",
 		command: HUMAN_RESOURCES_COMMAND_WORK_CALENDAR_SCOPE_ASSIGN,
+		storeMethods: ["assignWorkCalendarScope"],
 		execute: async (data, { store, ports }) =>
 			store.assignWorkCalendarScope(
 				{
@@ -472,10 +494,11 @@ export async function endWorkCalendarScopeAssignment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<WorkCalendarScopeAssignment>> {
-	return await runTimeCommand(input, options, {
+	return await runTimeCapabilityCommand(input, options, {
 		schema: endWorkCalendarScopeAssignmentInputSchema,
 		invalidMessage: "Invalid work calendar scope end input",
 		command: HUMAN_RESOURCES_COMMAND_WORK_CALENDAR_SCOPE_END,
+		storeMethods: ["endWorkCalendarScopeAssignment"],
 		execute: async (data, { store, ports }) =>
 			store.endWorkCalendarScopeAssignment(
 				{
@@ -495,10 +518,16 @@ export async function resolveEmployeeWorkCalendar(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<{ calendarId: HumanResourcesWorkCalendarId }>> {
-	return await runTimeQuery(input, options, {
+	return await runTimeCapabilityQuery(input, options, {
 		schema: resolveEmployeeWorkCalendarInputSchema,
 		invalidMessage: "Invalid employee work calendar resolve input",
 		query: HUMAN_RESOURCES_QUERY_EMPLOYEE_WORK_CALENDAR_RESOLVE,
+		storeMethods: [
+			"getWorkCalendar",
+			"listWorkCalendarScopeAssignments",
+			"listWorkCalendars",
+			"resolveEmploymentCalendar",
+		],
 		execute: async (data, { store }) =>
 			resolveEmployeeWorkCalendarCore(
 				{

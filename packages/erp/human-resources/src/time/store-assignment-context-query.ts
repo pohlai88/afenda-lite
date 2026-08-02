@@ -4,7 +4,7 @@ import {
 	parseHumanResourcesEmployeeId,
 	parseHumanResourcesEmploymentId,
 } from "../brands";
-import type { HumanResourcesStore } from "../store";
+import type { HumanResourcesCoreStore } from "../store/core";
 import type {
 	AssignmentContextQueryPort,
 	EmployeeAssignmentContext,
@@ -19,7 +19,10 @@ import type {
  * assignment must enforce that in their own command path (e.g. org-context).
  */
 export function createStoreAssignmentContextQuery(input: {
-	store: HumanResourcesStore;
+	store: Pick<
+		HumanResourcesCoreStore,
+		"findAssignmentByEmploymentAsOf" | "getPositionById"
+	>;
 }): AssignmentContextQueryPort {
 	const { store } = input;
 

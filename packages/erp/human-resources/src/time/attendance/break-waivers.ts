@@ -14,17 +14,26 @@ import {
 	listAttendanceBreakWaiverDecisionsInputSchema,
 } from "../../schemas/time";
 import { invalidState, notFound } from "../../shared/domain-guards";
-import { runTimeCommand, runTimeQuery } from "../../shared/time-command";
 import type { AttendanceBreakWaiverDecision } from "../../types";
+import {
+	runTimeCapabilityCommand,
+	runTimeCapabilityQuery,
+} from "../run-operation";
 
 export async function approveAttendanceBreakWaiver(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<AttendanceBreakWaiverDecision>> {
-	return await runTimeCommand(input, options, {
+	return await runTimeCapabilityCommand(input, options, {
 		schema: approveAttendanceBreakWaiverInputSchema,
 		invalidMessage: "Invalid attendance break waiver approval input",
 		command: HUMAN_RESOURCES_COMMAND_ATTENDANCE_BREAK_WAIVER_APPROVE,
+		storeMethods: [
+			"approveAttendanceBreakWaiver",
+			"getAttendanceSession",
+			"getTimePolicy",
+			"resolveTimeApprovalAuthority",
+		],
 		execute: async (data, { store, ports }) => {
 			const session = await store.getAttendanceSession({
 				organizationId: data.organizationId,
@@ -98,10 +107,11 @@ export async function listAttendanceBreakWaiverDecisions(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<AttendanceBreakWaiverDecision[]>> {
-	return await runTimeQuery(input, options, {
+	return await runTimeCapabilityQuery(input, options, {
 		schema: listAttendanceBreakWaiverDecisionsInputSchema,
 		invalidMessage: "Invalid attendance break waiver decision list input",
 		query: HUMAN_RESOURCES_QUERY_ATTENDANCE_BREAK_WAIVER_DECISION_LIST,
+		storeMethods: ["listAttendanceBreakWaiverDecisions"],
 		execute: async (data, { store }) =>
 			store.listAttendanceBreakWaiverDecisions({
 				organizationId: data.organizationId,

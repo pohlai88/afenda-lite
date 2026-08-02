@@ -27,11 +27,6 @@ import {
 	listEmployeeCompensationsInputSchema,
 	scheduleEmployeeCompensationChangeInputSchema,
 } from "../schemas/compensation";
-import {
-	assertCurrencyExists,
-	runCompensationCommand,
-	runCompensationQuery,
-} from "../shared/compensation-command";
 import { notFound } from "../shared/domain-guards";
 import {
 	projectEmployeeCompensationByFieldAccess,
@@ -47,6 +42,11 @@ import type {
 	EmployeeCompensation,
 	EmployeeCompensationListPage,
 } from "../types";
+import {
+	assertCurrencyExists,
+	runCompensationCapabilityCommand,
+	runCompensationCapabilityQuery,
+} from "./run-operation";
 
 export const HUMAN_RESOURCES_AGGREGATE_EMPLOYEE_COMPENSATION =
 	"employee_compensation" as const;
@@ -90,7 +90,8 @@ export function createEmployeeCompensation(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCompensation>> {
-	return runCompensationCommand(input, options, {
+	return runCompensationCapabilityCommand(input, options, {
+		storeMethods: ["createEmployeeCompensation"],
 		schema: createEmployeeCompensationInputSchema,
 		invalidMessage: "Invalid employee compensation create input",
 		command: HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_CREATE,
@@ -158,7 +159,8 @@ export function amendEmployeeCompensation(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCompensation>> {
-	return runCompensationCommand(input, options, {
+	return runCompensationCapabilityCommand(input, options, {
+		storeMethods: ["amendEmployeeCompensation"],
 		schema: amendEmployeeCompensationInputSchema,
 		invalidMessage: "Invalid employee compensation amend input",
 		command: HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_AMEND,
@@ -203,7 +205,8 @@ export function approveEmployeeCompensation(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCompensation>> {
-	return runCompensationCommand(input, options, {
+	return runCompensationCapabilityCommand(input, options, {
+		storeMethods: ["approveEmployeeCompensation"],
 		schema: approveEmployeeCompensationInputSchema,
 		invalidMessage: "Invalid employee compensation approve input",
 		command: HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_APPROVE,
@@ -228,7 +231,11 @@ export function scheduleEmployeeCompensationChange(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCompensation>> {
-	return runCompensationCommand(input, options, {
+	return runCompensationCapabilityCommand(input, options, {
+		storeMethods: [
+			"getEmployeeCompensation",
+			"scheduleEmployeeCompensationChange",
+		],
 		schema: scheduleEmployeeCompensationChangeInputSchema,
 		invalidMessage: "Invalid employee compensation schedule input",
 		command: HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_SCHEDULE,
@@ -289,7 +296,8 @@ export function activateEmployeeCompensation(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCompensation>> {
-	return runCompensationCommand(input, options, {
+	return runCompensationCapabilityCommand(input, options, {
+		storeMethods: ["activateEmployeeCompensation"],
 		schema: activateEmployeeCompensationInputSchema,
 		invalidMessage: "Invalid employee compensation activate input",
 		command: HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_ACTIVATE,
@@ -314,7 +322,8 @@ export function correctEmployeeCompensation(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCompensation>> {
-	return runCompensationCommand(input, options, {
+	return runCompensationCapabilityCommand(input, options, {
+		storeMethods: ["correctEmployeeCompensation"],
 		schema: correctEmployeeCompensationInputSchema,
 		invalidMessage: "Invalid employee compensation correct input",
 		command: HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_CORRECT,
@@ -367,7 +376,8 @@ export function endEmployeeCompensation(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<EmployeeCompensation>> {
-	return runCompensationCommand(input, options, {
+	return runCompensationCapabilityCommand(input, options, {
+		storeMethods: ["endEmployeeCompensation"],
 		schema: endEmployeeCompensationInputSchema,
 		invalidMessage: "Invalid employee compensation end input",
 		command: HUMAN_RESOURCES_COMMAND_EMPLOYEE_COMPENSATION_END,
@@ -393,18 +403,15 @@ export function getEmployeeCompensation(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Partial<EmployeeCompensation>>> {
-	return runCompensationQuery<
-		typeof getEmployeeCompensationInputSchema,
-		EmployeeCompensation,
-		Partial<EmployeeCompensation>
-	>(input, options, {
+	return runCompensationCapabilityQuery(input, options, {
+		storeMethods: ["getEmployeeCompensation"],
 		schema: getEmployeeCompensationInputSchema,
 		invalidMessage: "Invalid employee compensation get input",
 		query: HUMAN_RESOURCES_QUERY_EMPLOYEE_COMPENSATION_GET,
 		resolveRequestedFields: () => [...EMPLOYEE_COMPENSATION_QUERY_FIELDS],
 		project: (value: EmployeeCompensation, projection) =>
 			projectEmployeeCompensationByFieldAccess(value, projection),
-		execute: async (data, { store }) => {
+		execute: async (data, { store }): Promise<Result<EmployeeCompensation>> => {
 			const compensation = await store.getEmployeeCompensation({
 				organizationId: data.organizationId,
 				compensationId: data.compensationId,
@@ -431,16 +438,8 @@ export function listEmployeeCompensationsByEmployee(
 		pageSize: number;
 	}>
 > {
-	return runCompensationQuery<
-		typeof listEmployeeCompensationsInputSchema,
-		EmployeeCompensationListPage,
-		{
-			compensations: Partial<EmployeeCompensation>[];
-			totalCount: number;
-			page: number;
-			pageSize: number;
-		}
-	>(input, options, {
+	return runCompensationCapabilityQuery(input, options, {
+		storeMethods: ["listEmployeeCompensationsByEmployee"],
 		schema: listEmployeeCompensationsInputSchema,
 		invalidMessage: "Invalid employee compensation list input",
 		query: HUMAN_RESOURCES_QUERY_EMPLOYEE_COMPENSATION_LIST,
@@ -454,7 +453,7 @@ export function listEmployeeCompensationsByEmployee(
 			},
 			projection,
 		) => projectEmployeeCompensationListPage(value, projection),
-		execute: (data, { store }) =>
+		execute: (data, { store }): Promise<Result<EmployeeCompensationListPage>> =>
 			store.listEmployeeCompensationsByEmployee({
 				organizationId: data.organizationId,
 				employeeId: data.employeeId,

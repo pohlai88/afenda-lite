@@ -38,12 +38,6 @@ import {
 	fingerprintCompetencyCreate,
 } from "../shared/fingerprint";
 import { buildMutationMeta } from "../shared/mutation-meta";
-import {
-	resolveCompetencyAssessmentResource,
-	runTalentCommand,
-	runTalentEmployeeScopedQuery,
-	runTalentQuery,
-} from "../shared/talent-command";
 import type {
 	Competency,
 	CompetencyAssessment,
@@ -52,6 +46,12 @@ import type {
 	JobCompetency,
 	JobCompetencyListPage,
 } from "../types";
+import {
+	resolveCompetencyAssessmentResource,
+	runTalentCapabilityCommand,
+	runTalentCapabilityQuery,
+	runTalentEmployeeScopedCapabilityQuery,
+} from "./run-operation";
 import {
 	type ProjectedEmployeeCompetencyProfile,
 	projectEmployeeCompetencyProfileFromDecision,
@@ -66,7 +66,8 @@ export function createCompetency(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Competency>> {
-	return runTalentCommand(input, options, {
+	return runTalentCapabilityCommand(input, options, {
+		storeMethods: ["createCompetency", "findCompetencyByIdempotencyKey"],
 		schema: createCompetencyInputSchema,
 		invalidMessage: "Invalid competency create input",
 		command: HUMAN_RESOURCES_COMMAND_COMPETENCY_CREATE,
@@ -124,7 +125,8 @@ export function updateCompetency(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Competency>> {
-	return runTalentCommand(input, options, {
+	return runTalentCapabilityCommand(input, options, {
+		storeMethods: ["updateCompetency"],
 		schema: updateCompetencyInputSchema,
 		invalidMessage: "Invalid competency update input",
 		command: HUMAN_RESOURCES_COMMAND_COMPETENCY_UPDATE,
@@ -152,7 +154,8 @@ export function retireCompetency(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Competency>> {
-	return runTalentCommand(input, options, {
+	return runTalentCapabilityCommand(input, options, {
+		storeMethods: ["retireCompetency"],
 		schema: retireCompetencyInputSchema,
 		invalidMessage: "Invalid competency retire input",
 		command: HUMAN_RESOURCES_COMMAND_COMPETENCY_RETIRE,
@@ -177,7 +180,8 @@ export function mapCompetencyToJob(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<JobCompetency>> {
-	return runTalentCommand(input, options, {
+	return runTalentCapabilityCommand(input, options, {
+		storeMethods: ["mapCompetencyToJob"],
 		schema: mapCompetencyToJobInputSchema,
 		invalidMessage: "Invalid competency to job mapping input",
 		command: HUMAN_RESOURCES_COMMAND_JOB_COMPETENCY_MAP,
@@ -203,7 +207,8 @@ export function removeCompetencyFromJob(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<JobCompetency>> {
-	return runTalentCommand(input, options, {
+	return runTalentCapabilityCommand(input, options, {
+		storeMethods: ["removeCompetencyFromJob"],
 		schema: removeCompetencyFromJobInputSchema,
 		invalidMessage: "Invalid competency from job removal input",
 		command: HUMAN_RESOURCES_COMMAND_JOB_COMPETENCY_REMOVE,
@@ -228,7 +233,11 @@ export function assessEmployeeCompetency(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompetencyAssessment>> {
-	return runTalentCommand(input, options, {
+	return runTalentCapabilityCommand(input, options, {
+		storeMethods: [
+			"createCompetencyAssessment",
+			"findCompetencyAssessmentByIdempotencyKey",
+		],
 		schema: assessEmployeeCompetencyInputSchema,
 		invalidMessage: "Invalid employee competency assessment input",
 		command: HUMAN_RESOURCES_COMMAND_COMPETENCY_ASSESSMENT_RECORD,
@@ -299,7 +308,8 @@ export function supersedeCompetencyAssessment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompetencyAssessment>> {
-	return runTalentCommand(input, options, {
+	return runTalentCapabilityCommand(input, options, {
+		storeMethods: ["supersedeCompetencyAssessment"],
 		schema: supersedeCompetencyAssessmentInputSchema,
 		invalidMessage: "Invalid competency assessment supersede input",
 		command: HUMAN_RESOURCES_COMMAND_COMPETENCY_ASSESSMENT_SUPERSEDE,
@@ -342,7 +352,8 @@ export function expireCompetencyAssessment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompetencyAssessment>> {
-	return runTalentCommand(input, options, {
+	return runTalentCapabilityCommand(input, options, {
+		storeMethods: ["expireCompetencyAssessment"],
 		schema: expireCompetencyAssessmentInputSchema,
 		invalidMessage: "Invalid competency assessment expire input",
 		command: HUMAN_RESOURCES_COMMAND_COMPETENCY_ASSESSMENT_EXPIRE,
@@ -369,7 +380,8 @@ export function getCompetencyById(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<Competency | null>> {
-	return runTalentQuery(input, options, {
+	return runTalentCapabilityQuery(input, options, {
+		storeMethods: ["getCompetencyById"],
 		schema: getCompetencyByIdInputSchema,
 		invalidMessage: "Invalid competency get input",
 		query: HUMAN_RESOURCES_QUERY_COMPETENCY_GET,
@@ -385,7 +397,8 @@ export function listCompetencies(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<CompetencyListPage>> {
-	return runTalentQuery(input, options, {
+	return runTalentCapabilityQuery(input, options, {
+		storeMethods: ["listCompetencies"],
 		schema: listCompetenciesInputSchema,
 		invalidMessage: "Invalid competency list input",
 		query: HUMAN_RESOURCES_QUERY_COMPETENCY_LIST,
@@ -403,7 +416,8 @@ export function listJobCompetencies(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<JobCompetencyListPage>> {
-	return runTalentQuery(input, options, {
+	return runTalentCapabilityQuery(input, options, {
+		storeMethods: ["listJobCompetencies"],
 		schema: listJobCompetenciesInputSchema,
 		invalidMessage: "Invalid job competency list input",
 		query: HUMAN_RESOURCES_QUERY_JOB_COMPETENCY_LIST,
@@ -421,7 +435,8 @@ export function getEmployeeCompetencyProfile(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<ProjectedEmployeeCompetencyProfile>> {
-	return runTalentEmployeeScopedQuery(input, options, {
+	return runTalentEmployeeScopedCapabilityQuery(input, options, {
+		storeMethods: ["getEmployeeCompetencyProfile"],
 		schema: getEmployeeCompetencyProfileInputSchema,
 		invalidMessage: "Invalid employee competency profile get input",
 		query: HUMAN_RESOURCES_QUERY_EMPLOYEE_COMPETENCY_PROFILE_GET,

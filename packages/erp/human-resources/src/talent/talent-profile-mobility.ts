@@ -15,15 +15,15 @@ import {
 } from "../schemas/talent";
 import { fingerprintTalentProfileMobilityCreate } from "../shared/fingerprint";
 import { buildMutationMeta } from "../shared/mutation-meta";
-import {
-	resolveTalentProfileResourceFromTalentProfile,
-	runTalentCommand,
-	runTalentQuery,
-} from "../shared/talent-command";
 import type {
 	TalentProfileMobility,
 	TalentProfileMobilityListPage,
 } from "../types";
+import {
+	resolveTalentProfileResourceFromTalentProfile,
+	runTalentCapabilityCommand,
+	runTalentCapabilityQuery,
+} from "./run-operation";
 import {
 	type ProjectedTalentProfileMobilityListPage,
 	projectTalentProfileMobilityListFromDecision,
@@ -39,7 +39,11 @@ export function recordTalentProfileMobility(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<TalentProfileMobility>> {
-	return runTalentCommand(input, options, {
+	return runTalentCapabilityCommand(input, options, {
+		storeMethods: [
+			"findTalentProfileMobilityByIdempotencyKey",
+			"recordTalentProfileMobility",
+		],
 		schema: recordTalentProfileMobilityInputSchema,
 		invalidMessage: "Invalid talent profile mobility record input",
 		command: HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_MOBILITY_RECORD,
@@ -113,7 +117,8 @@ export function listTalentProfileMobility(
 	}
 	const { includeSensitive } = parsed.data;
 
-	return runTalentQuery(parsed.data, options, {
+	return runTalentCapabilityQuery(parsed.data, options, {
+		storeMethods: ["listTalentProfileMobility"],
 		schema: listTalentProfileMobilityInputSchema,
 		invalidMessage: "Invalid talent profile mobility list input",
 		query: HUMAN_RESOURCES_QUERY_TALENT_PROFILE_MOBILITY_LIST,

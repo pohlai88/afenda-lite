@@ -25,19 +25,19 @@ import {
 } from "../schemas/talent";
 import { fingerprintTalentProfileCreate } from "../shared/fingerprint";
 import { buildMutationMeta } from "../shared/mutation-meta";
-import {
-	resolveActorTalentProfileResource,
-	resolveTalentProfileResourceForEmployee,
-	resolveTalentProfileResourceFromTalentProfile,
-	runTalentCommand,
-	runTalentEmployeeScopedQuery,
-	runTalentQuery,
-} from "../shared/talent-command";
 import type {
 	TalentProfile,
 	TalentProfileAssessment,
 	TalentProfileAssessmentListPage,
 } from "../types";
+import {
+	resolveActorTalentProfileResource,
+	resolveTalentProfileResourceForEmployee,
+	resolveTalentProfileResourceFromTalentProfile,
+	runTalentCapabilityCommand,
+	runTalentCapabilityQuery,
+	runTalentEmployeeScopedCapabilityQuery,
+} from "./run-operation";
 import {
 	type ProjectedTalentProfileAssessmentListPage,
 	projectTalentProfileAssessmentListFromDecision,
@@ -55,7 +55,8 @@ export function createTalentProfile(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<TalentProfile>> {
-	return runTalentCommand(input, options, {
+	return runTalentCapabilityCommand(input, options, {
+		storeMethods: ["createTalentProfile", "findTalentProfileByIdempotencyKey"],
 		schema: createTalentProfileInputSchema,
 		invalidMessage: "Invalid talent profile create input",
 		command: HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_CREATE,
@@ -117,7 +118,8 @@ export function updateTalentProfile(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<TalentProfile>> {
-	return runTalentCommand(input, options, {
+	return runTalentCapabilityCommand(input, options, {
+		storeMethods: ["updateTalentProfile"],
 		schema: updateTalentProfileInputSchema,
 		invalidMessage: "Invalid talent profile update input",
 		command: HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_UPDATE,
@@ -145,7 +147,8 @@ export function recordTalentProfileAssessment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<TalentProfileAssessment>> {
-	return runTalentCommand(input, options, {
+	return runTalentCapabilityCommand(input, options, {
+		storeMethods: ["recordTalentProfileAssessment"],
 		schema: recordTalentProfileAssessmentInputSchema,
 		invalidMessage: "Invalid talent profile assessment record input",
 		command: HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_ASSESSMENT_RECORD,
@@ -175,7 +178,8 @@ export function confirmTalentProfileAssessment(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<TalentProfileAssessment>> {
-	return runTalentCommand(input, options, {
+	return runTalentCapabilityCommand(input, options, {
+		storeMethods: ["confirmTalentProfileAssessment"],
 		schema: confirmTalentProfileAssessmentInputSchema,
 		invalidMessage: "Invalid talent profile assessment confirm input",
 		command: HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_ASSESSMENT_CONFIRM,
@@ -203,7 +207,8 @@ export function archiveTalentProfile(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<TalentProfile>> {
-	return runTalentCommand(input, options, {
+	return runTalentCapabilityCommand(input, options, {
+		storeMethods: ["archiveTalentProfile"],
 		schema: archiveTalentProfileInputSchema,
 		invalidMessage: "Invalid talent profile archive input",
 		command: HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_ARCHIVE,
@@ -240,7 +245,8 @@ export function getTalentProfileByEmployee(
 	}
 	const { includeSensitive } = parsed.data;
 
-	return runTalentEmployeeScopedQuery(parsed.data, options, {
+	return runTalentEmployeeScopedCapabilityQuery(parsed.data, options, {
+		storeMethods: ["getTalentProfileByEmployee"],
 		schema: getTalentProfileByEmployeeInputSchema,
 		invalidMessage: "Invalid talent profile get by employee input",
 		query: HUMAN_RESOURCES_QUERY_TALENT_PROFILE_GET_BY_EMPLOYEE,
@@ -272,7 +278,8 @@ export function listTalentProfileAssessments(
 	}
 	const { includeSensitive } = parsed.data;
 
-	return runTalentQuery(parsed.data, options, {
+	return runTalentCapabilityQuery(parsed.data, options, {
+		storeMethods: ["listTalentProfileAssessments"],
 		schema: listTalentProfileAssessmentsInputSchema,
 		invalidMessage: "Invalid talent profile assessment list input",
 		query: HUMAN_RESOURCES_QUERY_TALENT_PROFILE_ASSESSMENT_LIST,

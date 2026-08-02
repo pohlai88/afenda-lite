@@ -3,8 +3,8 @@ import type { Result } from "@afenda/errors";
 import type { HumanResourcesCommandOptions } from "../command-options";
 import { HUMAN_RESOURCES_QUERY_COMPLIANCE_EXPIRY_OPERATIONS_DETECT } from "../module-ids";
 import { detectComplianceExpiryOperationsInputSchema } from "../schemas/compliance";
-import { runComplianceQuery } from "../shared/compliance-command";
 import type { ComplianceExpiryOperations } from "../types";
+import { runComplianceCapabilityQuery } from "./run-operation";
 
 const DEFAULT_WITHIN_DAYS = 30;
 const DEFAULT_PAGE = 1;
@@ -14,10 +14,16 @@ export function detectComplianceExpiryOperations(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<ComplianceExpiryOperations>> {
-	return runComplianceQuery(input, options, {
+	return runComplianceCapabilityQuery(input, options, {
 		schema: detectComplianceExpiryOperationsInputSchema,
 		invalidMessage: "Invalid compliance expiry operations input",
 		query: HUMAN_RESOURCES_QUERY_COMPLIANCE_EXPIRY_OPERATIONS_DETECT,
+		storeMethods: [
+			"listExpiringEmployeeDocuments",
+			"listEmployeesWithWorkEligibilityRisk",
+			"listOverduePolicyAcknowledgements",
+			"listExpiringCertifications",
+		],
 		execute: async (data, { store }) => {
 			const withinDays = data.withinDays ?? DEFAULT_WITHIN_DAYS;
 			const pageSize = data.pageSize ?? DEFAULT_PAGE_SIZE;

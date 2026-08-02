@@ -1,8 +1,3 @@
-import type { Result } from "@afenda/errors";
-import type { HumanResourcesCommandOptions } from "../command-options";
-import type { WorkAssignment } from "../types";
-import { getAssignmentAsOf } from "./assignment";
-
 export { transferAssignment } from "../lifecycle/transfer";
 export {
 	createAssignment,
@@ -10,11 +5,3 @@ export {
 	getAssignment,
 	getAssignmentAsOf,
 } from "./assignment";
-
-/** Primary assignment at as-of — alias for unique effective work assignment resolution. */
-export function resolvePrimaryAssignmentAsOf(
-	input: unknown,
-	options: HumanResourcesCommandOptions = {},
-): Promise<Result<WorkAssignment | null>> {
-	return getAssignmentAsOf(input, options);
-}

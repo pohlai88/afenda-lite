@@ -15,6 +15,9 @@ import {
 	HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_REJECT,
 	HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_SUBMIT,
 	HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_UPDATE,
+	HUMAN_RESOURCES_QUERY_PERFORMANCE_GOAL_GET,
+	HUMAN_RESOURCES_QUERY_PERFORMANCE_GOAL_LIST_BY_EMPLOYEE,
+	HUMAN_RESOURCES_QUERY_PERFORMANCE_GOAL_LIST_PROGRESS,
 } from "../module-ids";
 import {
 	alignPerformanceGoalInputSchema,
@@ -29,20 +32,20 @@ import {
 } from "../schemas/performance";
 import { fingerprintPerformanceGoalCreate } from "../shared/fingerprint";
 import { buildMutationMeta } from "../shared/mutation-meta";
-import {
-	requirePerformanceGoalByIdOwnScope,
-	requirePerformanceGoalManagerScope,
-	requirePerformanceGoalOwnScope,
-	runPerformanceCommand,
-	runPerformanceEmployeeScopedQuery,
-	runPerformanceResourceScopedQuery,
-} from "../shared/performance-command";
 import type {
 	PerformanceGoal,
 	PerformanceGoalListPage,
 	PerformanceGoalProgress,
 	PerformanceGoalProgressListPage,
 } from "../types";
+import {
+	requirePerformanceGoalByIdOwnScope,
+	requirePerformanceGoalManagerScope,
+	requirePerformanceGoalOwnScope,
+	runPerformanceCapabilityCommand,
+	runPerformanceEmployeeScopedCapabilityQuery,
+	runPerformanceResourceScopedCapabilityQuery,
+} from "./run-operation";
 
 export const HUMAN_RESOURCES_AGGREGATE_GOAL = "goal" as const;
 export type HumanResourcesGoalAggregate = typeof HUMAN_RESOURCES_AGGREGATE_GOAL;
@@ -60,7 +63,11 @@ export function createPerformanceGoal(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceGoal>> {
-	return runPerformanceCommand(input, options, {
+	return runPerformanceCapabilityCommand(input, options, {
+		storeMethods: [
+			"createPerformanceGoal",
+			"findPerformanceGoalByIdempotencyKey",
+		],
 		schema: createPerformanceGoalInputSchema,
 		invalidMessage: "Invalid performance goal create input",
 		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_CREATE,
@@ -145,7 +152,8 @@ export function updatePerformanceGoal(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceGoal>> {
-	return runPerformanceCommand(input, options, {
+	return runPerformanceCapabilityCommand(input, options, {
+		storeMethods: ["updatePerformanceGoal"],
 		schema: updatePerformanceGoalInputSchema,
 		invalidMessage: "Invalid performance goal update input",
 		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_UPDATE,
@@ -181,7 +189,8 @@ export function submitPerformanceGoal(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceGoal>> {
-	return runPerformanceCommand(input, options, {
+	return runPerformanceCapabilityCommand(input, options, {
+		storeMethods: ["submitPerformanceGoal"],
 		schema: performanceGoalStatusTransitionInputSchema,
 		invalidMessage: "Invalid performance goal submit input",
 		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_SUBMIT,
@@ -212,7 +221,8 @@ export function approvePerformanceGoal(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceGoal>> {
-	return runPerformanceCommand(input, options, {
+	return runPerformanceCapabilityCommand(input, options, {
+		storeMethods: ["approvePerformanceGoal"],
 		schema: performanceGoalStatusTransitionInputSchema,
 		invalidMessage: "Invalid performance goal approve input",
 		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_APPROVE,
@@ -237,7 +247,8 @@ export function rejectPerformanceGoal(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceGoal>> {
-	return runPerformanceCommand(input, options, {
+	return runPerformanceCapabilityCommand(input, options, {
+		storeMethods: ["rejectPerformanceGoal"],
 		schema: performanceGoalStatusTransitionInputSchema,
 		invalidMessage: "Invalid performance goal reject input",
 		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_REJECT,
@@ -262,7 +273,8 @@ export function recordGoalProgress(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceGoalProgress>> {
-	return runPerformanceCommand(input, options, {
+	return runPerformanceCapabilityCommand(input, options, {
+		storeMethods: ["recordGoalProgress"],
 		schema: recordGoalProgressInputSchema,
 		invalidMessage: "Invalid goal progress record input",
 		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_RECORD_PROGRESS,
@@ -298,7 +310,8 @@ export function activatePerformanceGoal(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceGoal>> {
-	return runPerformanceCommand(input, options, {
+	return runPerformanceCapabilityCommand(input, options, {
+		storeMethods: ["activatePerformanceGoal"],
 		schema: performanceGoalStatusTransitionInputSchema,
 		invalidMessage: "Invalid performance goal activate input",
 		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_ACTIVATE,
@@ -323,7 +336,8 @@ export function alignPerformanceGoal(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceGoal>> {
-	return runPerformanceCommand(input, options, {
+	return runPerformanceCapabilityCommand(input, options, {
+		storeMethods: ["alignPerformanceGoal"],
 		schema: alignPerformanceGoalInputSchema,
 		invalidMessage: "Invalid performance goal align input",
 		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_ALIGN,
@@ -349,7 +363,8 @@ export function closePerformanceGoal(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceGoal>> {
-	return runPerformanceCommand(input, options, {
+	return runPerformanceCapabilityCommand(input, options, {
+		storeMethods: ["closePerformanceGoal"],
 		schema: closePerformanceGoalInputSchema,
 		invalidMessage: "Invalid performance goal close input",
 		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_CLOSE,
@@ -376,7 +391,8 @@ export function cancelPerformanceGoal(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceGoal>> {
-	return runPerformanceCommand(input, options, {
+	return runPerformanceCapabilityCommand(input, options, {
+		storeMethods: ["cancelPerformanceGoal"],
 		schema: performanceGoalStatusTransitionInputSchema,
 		invalidMessage: "Invalid performance goal cancel input",
 		command: HUMAN_RESOURCES_COMMAND_PERFORMANCE_GOAL_CANCEL,
@@ -427,7 +443,9 @@ export function getPerformanceGoalById(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceGoal | null>> {
-	return runPerformanceResourceScopedQuery(input, options, {
+	return runPerformanceResourceScopedCapabilityQuery(input, options, {
+		storeMethods: ["getPerformanceGoalById"],
+		query: HUMAN_RESOURCES_QUERY_PERFORMANCE_GOAL_GET,
 		schema: getPerformanceGoalByIdInputSchema,
 		invalidMessage: "Invalid performance goal get input",
 		execute: (data, { store }) =>
@@ -442,7 +460,9 @@ export function listEmployeeGoals(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceGoalListPage>> {
-	return runPerformanceEmployeeScopedQuery(input, options, {
+	return runPerformanceEmployeeScopedCapabilityQuery(input, options, {
+		storeMethods: ["listEmployeeGoals"],
+		query: HUMAN_RESOURCES_QUERY_PERFORMANCE_GOAL_LIST_BY_EMPLOYEE,
 		schema: listEmployeeGoalsInputSchema,
 		invalidMessage: "Invalid employee goals list input",
 		execute: (data, { store }) =>
@@ -460,7 +480,9 @@ export function listGoalProgress(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
 ): Promise<Result<PerformanceGoalProgressListPage>> {
-	return runPerformanceResourceScopedQuery(input, options, {
+	return runPerformanceResourceScopedCapabilityQuery(input, options, {
+		storeMethods: ["listGoalProgress"],
+		query: HUMAN_RESOURCES_QUERY_PERFORMANCE_GOAL_LIST_PROGRESS,
 		schema: listGoalProgressInputSchema,
 		invalidMessage: "Invalid goal progress list input",
 		execute: (data, { store }) =>

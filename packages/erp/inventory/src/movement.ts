@@ -25,7 +25,7 @@ import {
 	INVENTORY_QUERY_LIST,
 	INVENTORY_QUERY_RESERVATION_LIST,
 	type InventoryCommandId,
-} from "./module-ids";
+} from "./operation-registry";
 import { parseInventoryInput } from "./parse-input";
 import { INVENTORY_PERMISSION_ADJUSTMENT_POST } from "./permissions";
 import { runSequentiallyUntil } from "./resolve-async";

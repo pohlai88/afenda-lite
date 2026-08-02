@@ -8,10 +8,8 @@ import type {
 	CorporateAdministrationQueryOptions,
 } from "@afenda/corporate-administration";
 import {
-	CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS,
 	CORPORATE_ADMINISTRATION_ERROR_CODES,
 	CORPORATE_ADMINISTRATION_PERMISSION_CODES,
-	CORPORATE_ADMINISTRATION_QUERY_PERMISSIONS,
 	CORPORATE_ADMINISTRATION_RESULT_CODE_BY_REASON,
 	corporateAdministrationErrorCodeSchema,
 	corporateAdministrationErrorDetails,
@@ -19,11 +17,15 @@ import {
 	corporateAdministrationFailureMetadataSchema,
 	corporateAdministrationResultCode,
 	organizationIdSchema,
-	requireCorporateAdministrationPermission,
 	userIdSchema,
 } from "@afenda/corporate-administration";
 import type { CanonicalErrorCode } from "@afenda/errors";
 import { describe, expect, expectTypeOf, it, vi } from "vitest";
+import { requireCorporateAdministrationPermission } from "../src/authorization";
+import {
+	CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS,
+	CORPORATE_ADMINISTRATION_QUERY_PERMISSIONS,
+} from "../src/operation-registry/registry";
 
 describe("Corporate Administration authorization and boundary contracts", () => {
 	const input: CorporateAdministrationAuthorizationInput = {

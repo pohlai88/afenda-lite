@@ -1,27 +1,25 @@
 import { errorResult, type Result } from "@afenda/errors";
-import {
-	CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS,
-	type CorporateAdministrationApprovalVerificationDependencies,
-	requireCorporateAdministrationApprovalIfConfigured,
-	requireCorporateAdministrationPermission,
-} from "../../authorization";
-import { createCorporateAdministrationCommandFingerprint } from "../../command-identity";
+import type { CorporateAdministrationApprovalVerificationDependencies } from "../../authorization";
 import type {
 	CorporateAdministrationApprovalCommandOptions,
 	CorporateAdministrationCommandOptions,
 } from "../../command-options";
+import {
+	authorizeCorporateAdministrationCommand,
+	type CorporateAdministrationCommandKernelDependencies,
+	executeCorporateAdministrationCommand,
+} from "../../internal/durable-command";
 import { parseCorporateAdministrationInput } from "../../parse-input";
 import { normalizeCompanyName, validateCompanyNameLanguage } from "../rules";
 import { addCompanyNameInputSchema, companyNameSchema } from "../schemas";
 import type { CompanyNameCommandDependencies } from "../store";
 import type { AddCompanyNameInput, CompanyName } from "../types";
-import {
-	type DurableLegalCompanyCommandDependencies,
-	runDurableCompanyCommand,
-} from "./durable-command";
 
 type AddCompanyNameDependencies = CompanyNameCommandDependencies &
-	Pick<DurableLegalCompanyCommandDependencies, "runtime" | "createEventId"> &
+	Pick<
+		CorporateAdministrationCommandKernelDependencies,
+		"runtime" | "createEventId"
+	> &
 	CorporateAdministrationApprovalVerificationDependencies;
 
 type AddCompanyNameOptions = CorporateAdministrationCommandOptions &
@@ -45,39 +43,12 @@ export async function addCompanyName(
 		return parsed;
 	}
 
-	const authorized = await requireCorporateAdministrationPermission(
-		options.authorization,
-		{
-			organizationId: options.organizationId,
-			actorUserId: options.actorUserId,
-			permission: CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS.addCompanyName,
-		},
+	const authorized = await authorizeCorporateAdministrationCommand(
+		"addCompanyName",
+		options,
 	);
 	if (!authorized.ok) {
 		return authorized;
-	}
-
-	const identity = createCorporateAdministrationCommandFingerprint({
-		schema: addCompanyNameInputSchema,
-		organizationId: options.organizationId,
-		commandId: "corporate-administration.legal-company.add-company-name",
-		input: parsed.data,
-	});
-	if (!identity.ok) {
-		return identity;
-	}
-	const approved = await requireCorporateAdministrationApprovalIfConfigured(
-		dependencies,
-		{
-			organizationId: options.organizationId,
-			actorUserId: options.actorUserId,
-			approvalRequestId: options.approvalRequestId,
-			approvalDecisionId: options.approvalDecisionId,
-			commandFingerprint: identity.data.fingerprint,
-		},
-	);
-	if (!approved.ok) {
-		return approved;
 	}
 
 	const language = validateCompanyNameLanguage(parsed.data.languageCode);
@@ -154,15 +125,13 @@ export async function addCompanyName(
 		});
 	}
 
-	return runDurableCompanyCommand({
-		commandId: "corporate-administration.legal-company.add-company-name",
+	return executeCorporateAdministrationCommand({
+		authorization: authorized.data,
 		fingerprintSchema: addCompanyNameInputSchema,
 		fingerprintInput: parsed.data,
 		outputSchema: companyNameSchema,
-		options,
 		dependencies,
 		event: {
-			type: "corporate_administration.legal_company.name_added.v1",
 			operationType: "UPDATE",
 			targetType: "ca_company_name",
 			aggregateId: (result) => result.legalCompanyId,
