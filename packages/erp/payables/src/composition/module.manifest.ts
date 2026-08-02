@@ -9,28 +9,22 @@ import {
 	PAYABLES_PAYMENT_APPLICATION_REVERSED_EVENT,
 } from "@afenda/events/schemas";
 
+import {
+	PAYABLES_AGGREGATES,
+	PAYABLES_MUTATION_TABLES,
+} from "../kernel/emissions/mutation-tables";
+import {
+	PAYABLES_COMMAND_AUTHORIZATION,
+	PAYABLES_COMMAND_IDS,
+	PAYABLES_QUERY_AUTHORIZATION,
+	PAYABLES_QUERY_IDS,
+} from "../kernel/operations/registry";
+
 export const payablesModuleManifest = {
 	activationMode: "organization_toggle",
 	authorization: {
-		commands: {
-			"payables.credit_note.create": "payables.manage",
-			"payables.credit_note.issue": "payables.manage",
-			"payables.credit_note.line.add": "payables.manage",
-			"payables.credit_note.post": "payables.manage",
-			"payables.credit.apply": "payables.manage",
-			"payables.invoice.cancel": "payables.manage",
-			"payables.invoice.create": "payables.manage",
-			"payables.invoice.line.add": "payables.manage",
-			"payables.invoice.match": "payables.manage",
-			"payables.invoice.post": "payables.manage",
-			"payables.payment_application.reverse": "payables.manage",
-			"payables.payment.apply": "payables.manage",
-		},
-		queries: {
-			"payables.balance.get": "payables.read",
-			"payables.invoice.get": "payables.read",
-			"payables.invoice.list": "payables.read",
-		},
+		commands: PAYABLES_COMMAND_AUTHORIZATION,
+		queries: PAYABLES_QUERY_AUTHORIZATION,
 	},
 	band: "R1-F",
 	category: "commercial",
@@ -59,32 +53,10 @@ export const payablesModuleManifest = {
 		{ moduleId: "accounting", style: "events" },
 	],
 	owns: {
-		aggregates: [
-			"supplier_invoice",
-			"supplier_allocation",
-			"supplier_balance_projection",
-			"three_way_match_result",
-		],
+		aggregates: [...PAYABLES_AGGREGATES],
 		commandNamespace: "payables",
-		commands: [
-			"payables.invoice.create",
-			"payables.invoice.line.add",
-			"payables.invoice.match",
-			"payables.invoice.post",
-			"payables.credit_note.issue",
-			"payables.credit_note.create",
-			"payables.credit_note.line.add",
-			"payables.credit_note.post",
-			"payables.payment.apply",
-			"payables.credit.apply",
-			"payables.payment_application.reverse",
-			"payables.invoice.cancel",
-		],
-		queries: [
-			"payables.invoice.get",
-			"payables.invoice.list",
-			"payables.balance.get",
-		],
+		commands: [...PAYABLES_COMMAND_IDS],
+		queries: [...PAYABLES_QUERY_IDS],
 		queryNamespace: "payables",
 	},
 	packageName: "@afenda/payables",
@@ -93,15 +65,7 @@ export const payablesModuleManifest = {
 		namespace: "payables",
 	},
 	persistence: {
-		mutationTables: [
-			"supplier_invoice",
-			"supplier_invoice_line",
-			"supplier_credit_note",
-			"supplier_credit_note_line",
-			"supplier_allocation",
-			"supplier_balance_projection",
-			"three_way_match_result",
-		],
+		mutationTables: [...PAYABLES_MUTATION_TABLES],
 		schemaOwner: "@afenda/db",
 	},
 } as const satisfies AfendaModuleManifest;

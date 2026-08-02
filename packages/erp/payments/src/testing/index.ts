@@ -1,4 +1,2 @@
-export {
-	createMemoryPaymentsStore,
-	MemoryPaymentsStore,
-} from "../memory-store";
+export type { MemoryPaymentsStore } from "./memory-store";
+export { createMemoryPaymentsStore } from "./memory-store";

@@ -10,7 +10,17 @@ import {
 	PAYMENTS_TRANSFER_POSTED_EVENT,
 } from "@afenda/events/schemas";
 
-import { PAYMENTS_PERMISSION_CODES } from "../permissions";
+import {
+	PAYMENTS_AGGREGATES,
+	PAYMENTS_MUTATION_TABLES,
+} from "../kernel/emissions/mutation-tables";
+import { PAYMENTS_PERMISSION_CODES } from "../kernel/execution/permissions";
+import {
+	PAYMENTS_COMMAND_AUTHORIZATION,
+	PAYMENTS_COMMAND_IDS,
+	PAYMENTS_QUERY_AUTHORIZATION,
+	PAYMENTS_QUERY_IDS,
+} from "../kernel/operations/registry";
 
 export const paymentsModuleManifest = {
 	id: "payments",
@@ -20,40 +30,15 @@ export const paymentsModuleManifest = {
 	lifecycle: "active",
 	activationMode: "organization_toggle",
 	owns: {
-		aggregates: [
-			"payment_account",
-			"payment",
-			"payment_allocation",
-			"payment_reversal",
-		],
+		aggregates: [...PAYMENTS_AGGREGATES],
 		commandNamespace: "payments",
-		commands: [
-			"payments.account.create",
-			"payments.payment.create",
-			"payments.application_instruction.add",
-			"payments.payment.post",
-			"payments.payment.reverse",
-			"payments.transfer.create_and_post",
-			"payments.refund.post",
-			"payments.application_instruction.mark_applied",
-			"payments.application_instruction.mark_rejected",
-		],
+		commands: [...PAYMENTS_COMMAND_IDS],
 		queryNamespace: "payments",
-		queries: [
-			"payments.account.list",
-			"payments.payment.get",
-			"payments.payment.list",
-			"payments.availability.get",
-		],
+		queries: [...PAYMENTS_QUERY_IDS],
 	},
 	persistence: {
 		schemaOwner: "@afenda/db",
-		mutationTables: [
-			"payment_account",
-			"payment",
-			"payment_allocation",
-			"payment_reversal",
-		],
+		mutationTables: [...PAYMENTS_MUTATION_TABLES],
 	},
 	events: {
 		namespace: "payments",
@@ -74,26 +59,8 @@ export const paymentsModuleManifest = {
 		codes: [...PAYMENTS_PERMISSION_CODES],
 	},
 	authorization: {
-		commands: {
-			"payments.account.create": "payments.account.manage",
-			"payments.payment.create": "payments.payment.create",
-			"payments.application_instruction.add":
-				"payments.application_instruction.manage",
-			"payments.payment.post": "payments.payment.post",
-			"payments.payment.reverse": "payments.payment.reverse",
-			"payments.transfer.create_and_post": "payments.transfer.post",
-			"payments.refund.post": "payments.refund.post",
-			"payments.application_instruction.mark_applied":
-				"payments.application_instruction.manage",
-			"payments.application_instruction.mark_rejected":
-				"payments.application_instruction.manage",
-		},
-		queries: {
-			"payments.account.list": "payments.account.read",
-			"payments.payment.get": "payments.payment.read",
-			"payments.payment.list": "payments.payment.read",
-			"payments.availability.get": "payments.availability.read",
-		},
+		commands: PAYMENTS_COMMAND_AUTHORIZATION,
+		queries: PAYMENTS_QUERY_AUTHORIZATION,
 	},
 	moduleDependencies: {
 		required: [],

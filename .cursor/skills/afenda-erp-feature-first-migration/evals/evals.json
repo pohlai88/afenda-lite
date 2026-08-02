@@ -1,0 +1,23 @@
+{
+	"skill_name": "afenda-erp-feature-first-migration",
+	"evals": [
+		{
+			"id": 1,
+			"prompt": "Plan the feature-first migration for packages/erp/payables — don't change any files yet. Give me the feature capsule inventory, the file-by-file mapping of every src/ root file to its destination, the store-split plan for drizzle-store.ts and memory-store.ts, and the completeness matrix from its module manifest.",
+			"expected_output": "A plan naming 2-4 aggregate-based capsules, mapping all 8 payables root files to kernel/features/composition/facade homes, identifying slice ports and any cross-slice capability injections, and a matrix listing each manifest operation with its schema/permission/policy/store owner or an explicit gap finding. No file edits.",
+			"files": []
+		},
+		{
+			"id": 2,
+			"prompt": "Audit packages/erp/accounting against the feature-first + registry-first standard. How far has it drifted, what would break if we migrated it, and what are the frozen public-surface constraints?",
+			"expected_output": "Runs the export snapshot method (or equivalent static analysis), reports the root layer files present, notes exports map keys that must stay stable, counts consumers importing only the root facade, and lists concrete drift findings (hand-written manifest strings, no operation registry, monolithic stores).",
+			"files": []
+		},
+		{
+			"id": 3,
+			"prompt": "do payables next",
+			"expected_output": "Recognizes this as the next wave-1 ERP migration, follows the full recipe: surface snapshot first, capsules by aggregate, verbatim store split, registry-first manifest derivation, guard tests, then runs all gates in order (lint/typecheck/test, export diff, validate:modules, web typecheck, doctor flip, generator:check) and reports findings without auto-fixing semantic drift.",
+			"files": []
+		}
+	]
+}

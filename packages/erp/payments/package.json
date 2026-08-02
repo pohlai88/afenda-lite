@@ -9,8 +9,8 @@
 			"default": "./src/index.ts"
 		},
 		"./adapters/drizzle": {
-			"types": "./src/adapters/drizzle/index.ts",
-			"default": "./src/adapters/drizzle/index.ts"
+			"types": "./src/composition/adapters/drizzle.ts",
+			"default": "./src/composition/adapters/drizzle.ts"
 		},
 		"./testing": {
 			"types": "./src/testing/index.ts",
@@ -26,7 +26,7 @@
 		"typecheck": "tsc --noEmit -p tsconfig.json",
 		"test": "vitest run --config ../../../testing/vitest.unit.config.ts --project payments",
 		"check": "pnpm typecheck && pnpm test",
-		"reconcile": "tsx src/reconcile-cli.ts"
+		"reconcile": "tsx src/composition/reconcile-cli.ts"
 	},
 	"dependencies": {
 		"@afenda/db": "workspace:*",

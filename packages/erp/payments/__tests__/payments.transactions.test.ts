@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-
+import type { PaymentsStore } from "../src/composition/store/contract";
+import { reconcilePayments } from "../src/features/reconciliation/reconcile";
 import {
 	addPaymentApplicationInstruction,
 	createAndPostPaymentTransfer,
@@ -11,8 +12,6 @@ import {
 	postRefund,
 	reversePayment,
 } from "../src/index";
-import type { PaymentsStore } from "../src/model";
-import { reconcilePayments } from "../src/reconcile";
 import { createMemoryPaymentsStore } from "../src/testing";
 
 const organizationId = "org-1";

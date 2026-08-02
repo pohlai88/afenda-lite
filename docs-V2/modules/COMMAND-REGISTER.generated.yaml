@@ -1660,9 +1660,6 @@ commands:
   - id: payments.payment.create
     moduleId: payments
     permission: payments.payment.create
-  - id: payments.application_instruction.add
-    moduleId: payments
-    permission: payments.application_instruction.manage
   - id: payments.payment.post
     moduleId: payments
     permission: payments.payment.post
@@ -1675,6 +1672,9 @@ commands:
   - id: payments.refund.post
     moduleId: payments
     permission: payments.refund.post
+  - id: payments.application_instruction.add
+    moduleId: payments
+    permission: payments.application_instruction.manage
   - id: payments.application_instruction.mark_applied
     moduleId: payments
     permission: payments.application_instruction.manage

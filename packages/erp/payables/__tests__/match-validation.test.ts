@@ -1,11 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import { evaluateThreeWayMatch } from "../src/match-validation";
-import type { SupplierInvoice, SupplierInvoiceLine } from "../src/model";
+import { evaluateThreeWayMatch } from "../src/features/invoice-lifecycle/three-way-match";
+import type {
+	SupplierInvoice,
+	SupplierInvoiceLine,
+} from "../src/kernel/contracts/domain";
 import type {
 	GoodsReceiptMatchBasis,
 	PurchaseOrderMatchBasis,
-} from "../src/ports";
+} from "../src/kernel/contracts/ports";
 
 const FIXED_DATE = new Date("2026-01-01T00:00:00.000Z");
 
