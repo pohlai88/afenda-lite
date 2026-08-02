@@ -229,8 +229,8 @@ async function seedCompletePhaseOneCompany(
 		dependencies,
 	);
 	expectOk(registered);
-	const legalCompanyId = registered.data.legalCompanyId;
-	let version = registered.data.version;
+	const { legalCompanyId } = registered.data;
+	let { version } = registered.data;
 
 	const jurisdiction = await setCompanyJurisdictionProfile(
 		caJurisdictionProfileInput({

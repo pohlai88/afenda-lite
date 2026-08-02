@@ -4207,7 +4207,6 @@ export const drizzleTimeMethods: HumanResourcesTimeStore = {
 		}
 	},
 
-	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The adapter keeps idempotency, CAS, persistence, and event staging in one atomic transaction boundary.
 	async importAttendanceEvents(input, ports) {
 		try {
 			const existingBatch =
