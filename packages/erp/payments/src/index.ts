@@ -6,28 +6,45 @@ export {
 	createAndPostPaymentTransfer,
 	createDraftPayment,
 	createPaymentAccount,
+	createPaymentMethod,
+	deactivatePaymentMethod,
 	getPaymentApplicationAvailability,
 	getPaymentById,
 	listPaymentAccounts,
+	listPaymentMethods,
 	listPayments,
 	markApplicationInstructionApplied,
 	markApplicationInstructionRejected,
 	postPayment,
 	postRefund,
 	reversePayment,
+	seedDefaultPaymentMethods,
+	updatePaymentMethod,
 } from "./facade/capabilities";
 export type { PaymentsCommandOptions } from "./facade/contracts";
 export * from "./features/application-instructions/instructions.schema";
 export * from "./features/payment-accounts/accounts.schema";
 export * from "./features/payment-lifecycle/lifecycle.schema";
+export * from "./features/payment-methods/methods.schema";
 export { reconcilePayments } from "./features/reconciliation/reconcile";
 export type {
+	InstrumentClearanceStatus,
+	InstrumentRequirement,
 	Payment,
 	PaymentAccount,
 	PaymentAccountKind,
 	PaymentApplicationAvailability,
 	PaymentApplicationInstruction,
+	PaymentDeduction,
+	PaymentDeductionEffect,
+	PaymentDeductionKind,
 	PaymentDirection,
+	PaymentFxContext,
+	PaymentInstrument,
+	PaymentInstrumentKind,
+	PaymentMethod,
+	PaymentMethodKind,
+	PaymentMethodSnapshot,
 	PaymentPurpose,
 	PaymentStatus,
 	RefundSource,

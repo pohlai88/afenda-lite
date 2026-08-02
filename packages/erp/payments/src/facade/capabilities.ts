@@ -12,6 +12,13 @@ import {
 	listPaymentAccountsOperation,
 } from "../features/payment-accounts/accounts.operations";
 import {
+	createPaymentMethodOperation,
+	deactivatePaymentMethodOperation,
+	listPaymentMethodsOperation,
+	seedDefaultPaymentMethods as seedDefaultPaymentMethodsOperation,
+	updatePaymentMethodOperation,
+} from "../features/payment-methods/methods.operations";
+import {
 	createAndPostPaymentTransferOperation,
 	createDraftPaymentOperation,
 	getPaymentByIdOperation,
@@ -25,8 +32,59 @@ import type {
 	PaymentAccount,
 	PaymentApplicationAvailability,
 	PaymentApplicationInstruction,
+	PaymentMethod,
 } from "../kernel/contracts/domain";
 import type { PaymentsCommandOptions } from "./contracts";
+
+export function createPaymentMethod(
+	input: unknown,
+	options: PaymentsCommandOptions = {},
+): Promise<Result<PaymentMethod>> {
+	return createPaymentMethodOperation(input, {
+		authorization: options.authorization,
+		store: resolvePaymentsStore(options.store),
+	});
+}
+
+export function updatePaymentMethod(
+	input: unknown,
+	options: PaymentsCommandOptions = {},
+): Promise<Result<PaymentMethod>> {
+	return updatePaymentMethodOperation(input, {
+		authorization: options.authorization,
+		store: resolvePaymentsStore(options.store),
+	});
+}
+
+export function deactivatePaymentMethod(
+	input: unknown,
+	options: PaymentsCommandOptions = {},
+): Promise<Result<PaymentMethod>> {
+	return deactivatePaymentMethodOperation(input, {
+		authorization: options.authorization,
+		store: resolvePaymentsStore(options.store),
+	});
+}
+
+export function listPaymentMethods(
+	input: unknown,
+	options: PaymentsCommandOptions = {},
+): Promise<Result<PaymentMethod[]>> {
+	return listPaymentMethodsOperation(input, {
+		authorization: options.authorization,
+		store: resolvePaymentsStore(options.store),
+	});
+}
+
+export function seedDefaultPaymentMethods(
+	input: unknown,
+	options: PaymentsCommandOptions = {},
+): Promise<Result<PaymentMethod[]>> {
+	return seedDefaultPaymentMethodsOperation(input, {
+		authorization: options.authorization,
+		store: resolvePaymentsStore(options.store),
+	});
+}
 
 export function createPaymentAccount(
 	input: unknown,

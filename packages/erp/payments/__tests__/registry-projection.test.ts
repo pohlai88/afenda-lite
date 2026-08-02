@@ -13,6 +13,10 @@ import {
  */
 const EXPECTED_COMMANDS = {
 	"payments.account.create": "payments.account.manage",
+	"payments.method.create": "payments.method.manage",
+	"payments.method.update": "payments.method.manage",
+	"payments.method.deactivate": "payments.method.manage",
+	"payments.method.seed_defaults": "payments.method.manage",
 	"payments.payment.create": "payments.payment.create",
 	"payments.payment.post": "payments.payment.post",
 	"payments.payment.reverse": "payments.payment.reverse",
@@ -28,6 +32,7 @@ const EXPECTED_COMMANDS = {
 
 const EXPECTED_QUERIES = {
 	"payments.account.list": "payments.account.read",
+	"payments.method.list": "payments.method.read",
 	"payments.payment.get": "payments.payment.read",
 	"payments.payment.list": "payments.payment.read",
 	"payments.availability.get": "payments.availability.read",
