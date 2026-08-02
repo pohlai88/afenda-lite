@@ -2384,12 +2384,12 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 			const [rows] = await afendaDatabase.transaction((sqlTag) => [
 				sqlTag`
 					WITH source AS (
-						SELECT *
-						FROM hr_competency_assessment
-						WHERE id = ${record.sourceAssessmentId}
-							AND organization_id = ${record.organizationId}
-							AND version = ${record.expectedVersion}
-							AND status = 'current'
+						SELECT source_assessment.*
+						FROM hr_competency_assessment AS source_assessment
+						WHERE source_assessment.id = ${record.sourceAssessmentId}
+							AND source_assessment.organization_id = ${record.organizationId}
+							AND source_assessment.version = ${record.expectedVersion}
+							AND source_assessment.status = 'current'
 					),
 					superseded AS (
 						UPDATE hr_competency_assessment ca
@@ -2400,6 +2400,7 @@ export const drizzleTalentMethods: DrizzleTalentMethods &
 							updated_at = now()
 						FROM source s
 						WHERE ca.id = s.id
+							AND ca.organization_id = s.organization_id
 						RETURNING s.*
 					),
 					superseded_audited AS (

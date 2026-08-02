@@ -1,7 +1,6 @@
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join, resolve } from "node:path";
 
 import { describe, expect, it } from "vitest";
 import {
@@ -257,13 +256,43 @@ describe("ERP manifest authority discovery", () => {
 		}
 	});
 
-	it(
-		"keeps live repository ERP manifest discovery read-only",
-		{ timeout: 30_000 },
-		async () => {
-			const repositoryRoot = resolve(
-				dirname(fileURLToPath(import.meta.url)),
-				"../../..",
+	it("keeps ERP manifest discovery read-only", async () => {
+		const repositoryRoot = await mkdtemp(
+			join(tmpdir(), "afenda-erp-manifest-read-only-"),
+		);
+		try {
+			await writeFixtureFile(
+				repositoryRoot,
+				"docs-V2/modules/WORKSPACE-EDGE-REGISTER.yaml",
+				"edges: []\n",
+			);
+			await Promise.all(
+				[
+					"accounting",
+					"fulfillment",
+					"inventory",
+					"master-data",
+					"payables",
+					"payments",
+					"purchasing",
+					"receivables",
+					"receiving",
+					"sales",
+				].map((moduleName) =>
+					writeFixtureFile(
+						repositoryRoot,
+						`packages/erp/${moduleName}/src/module.manifest.ts`,
+					),
+				),
+			);
+			await Promise.all(
+				["corporate-administration", "human-resources", "payroll"].map(
+					(moduleName) =>
+						writeFixtureFile(
+							repositoryRoot,
+							`packages/erp/${moduleName}/src/composition/module.manifest.ts`,
+						),
+				),
 			);
 			const before = await captureRepositoryState(repositoryRoot);
 			const report = await createErpManifestAuthorityReport({
@@ -300,6 +329,8 @@ describe("ERP manifest authority discovery", () => {
 					report.summary.historical +
 					report.summary.duplicateIdentical,
 			).toBe(13);
-		},
-	);
+		} finally {
+			await rm(repositoryRoot, { force: true, recursive: true });
+		}
+	});
 });
