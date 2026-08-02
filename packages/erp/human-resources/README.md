@@ -157,7 +157,7 @@ src/
 ```
 
 The package has no root `shared/`, `schemas/`, `store/`, or `adapters/` layer, and
-`scripts/feature-first-layout.mjs` rejects restoration of those superseded roots.
+The `feature-first layout` unit test and the ERP generator doctor reject restoration of those superseded roots.
 That guard proves only the top-level layout. The architecture-debt report separately
 tracks deep paths, upward imports, composite-store dependencies, cross-feature
 edges, cycles, testing leakage, deep consumer imports, and retired filesystem paths.
@@ -208,7 +208,7 @@ Production HR source does not import `@afenda/payroll` and never calculates gros
 ## Maintain
 
 ```bash
-node packages/erp/human-resources/scripts/feature-first-layout.mjs
+pnpm --filter @afenda/human-resources test -- __tests__/feature-first-layout.test.ts
 pnpm --filter @afenda/human-resources lint
 pnpm --filter @afenda/human-resources typecheck
 pnpm --filter @afenda/human-resources test

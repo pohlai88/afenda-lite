@@ -22,12 +22,11 @@
 		}
 	},
 	"scripts": {
-		"check:feature-layout": "node ./scripts/feature-first-layout.mjs",
 		"lint": "biome check .",
 		"typecheck": "tsc --noEmit -p tsconfig.json",
 		"test": "vitest run --config ../../../testing/vitest.unit.config.ts --project corporate-administration",
 		"test:parity": "vitest run --config ../../../testing/vitest.corporate-administration-parity.config.ts --project corporate-administration-parity",
-		"check": "pnpm check:feature-layout && pnpm lint && pnpm typecheck && pnpm test"
+		"check": "pnpm lint && pnpm typecheck && pnpm test"
 	},
 	"dependencies": {
 		"@afenda/audit": "workspace:*",
