@@ -33,6 +33,7 @@ import {
 	userIdSchema,
 } from "@afenda/corporate-administration";
 import {
+	createDrizzleCorporateAdministrationAuthorityStore,
 	createDrizzleCorporateAdministrationEstablishmentStore,
 	createDrizzleCorporateAdministrationGovernanceStore,
 	createDrizzleCorporateAdministrationLegalCompanyStore,
@@ -463,6 +464,38 @@ export function createCorporateAdministrationOfficerDependencies(): ReturnType<
 	return {
 		...companyDependencies,
 		officerStore,
+	};
+}
+
+/**
+ * Authority mandate command/query dependencies. The drizzle authority store
+ * also implements the officer-appointment reference port, so it is wired as
+ * both `authorityStore` and `officerAppointments`. `approvalDecisions` is
+ * deliberately absent: the platform approval verifier does not exist yet, so
+ * protected authority mandates fail closed inside the package (CA-CL-01).
+ */
+export function createCorporateAdministrationAuthorityDependencies(): ReturnType<
+	typeof createCorporateAdministrationCompanyDependencies
+> &
+	Readonly<{
+		authorityStore: ReturnType<
+			typeof createDrizzleCorporateAdministrationAuthorityStore
+		>;
+		officerAppointments: ReturnType<
+			typeof createDrizzleCorporateAdministrationAuthorityStore
+		>;
+	}> {
+	const companyDependencies =
+		createCorporateAdministrationCompanyDependencies();
+	const authorityStore = createDrizzleCorporateAdministrationAuthorityStore({
+		database: afendaDatabase.client,
+		createId: randomUUID,
+	});
+
+	return {
+		...companyDependencies,
+		authorityStore,
+		officerAppointments: authorityStore,
 	};
 }
 

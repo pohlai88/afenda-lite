@@ -10,6 +10,7 @@ import {
 	getCompanyCompletenessForActivation,
 	getLegalCompany,
 	getMeetingQuorumStatus,
+	listAuthorityMandatesAsOf,
 	listCompanyActivitiesAsOf,
 	listCompanyIdentifiers,
 	listCompanyNames,
@@ -34,6 +35,10 @@ import {
 } from "@afenda/ui-system";
 
 import { requirePermission } from "@/features/auth/require-permission";
+import {
+	AuthorityWorkspace,
+	type AuthorityWorkspaceMandate,
+} from "@/features/corporate-administration/authority-workspace";
 import {
 	EntityRegister,
 	type EntityRegisterCompany,
@@ -70,6 +75,7 @@ import {
 	type OfficerWorkspaceOffice,
 } from "@/features/corporate-administration/officer-workspace";
 import {
+	createCorporateAdministrationAuthorityDependencies,
 	createCorporateAdministrationCompanyDependencies,
 	createCorporateAdministrationGovernanceDependencies,
 	createCorporateAdministrationOfficerDependencies,
@@ -114,6 +120,8 @@ export async function CorporateAdministrationShell({
 		canReadOfficers,
 		canManageOfficers,
 		canManageMeetings,
+		canReadAuthority,
+		canManageAuthority,
 	] = await Promise.all([
 		sessionHasPermission(
 			session,
@@ -142,6 +150,14 @@ export async function CorporateAdministrationShell({
 		sessionHasPermission(
 			session,
 			corporateAdministrationPermissionFor("scheduleGovernanceMeeting"),
+		),
+		sessionHasPermission(
+			session,
+			corporateAdministrationPermissionFor("listAuthorityMandatesAsOf"),
+		),
+		sessionHasPermission(
+			session,
+			corporateAdministrationPermissionFor("grantAuthorityMandate"),
 		),
 	]);
 	const canReadGovernanceDecisions = canReadMeetings && canReadResolutions;
@@ -265,6 +281,13 @@ export async function CorporateAdministrationShell({
 		selectedCompany === undefined || !canReadOfficers
 			? null
 			: await loadOfficers({
+					legalCompanyId: selectedCompany.legalCompanyId,
+					queryOptions,
+				});
+	const authorityState =
+		selectedCompany === undefined || !canReadAuthority
+			? null
+			: await loadAuthorityMandates({
 					legalCompanyId: selectedCompany.legalCompanyId,
 					queryOptions,
 				});
@@ -446,6 +469,33 @@ export async function CorporateAdministrationShell({
 								appointments={officerState.appointments}
 								canManage={canManageOfficers}
 								offices={officerState.offices}
+								organizationSlug="client"
+								parties={partyRows}
+							/>
+						) : null}
+						{authorityState?.ok === false ? (
+							<Alert role="alert" variant="destructive">
+								<AlertTitle>Corporate authority unavailable</AlertTitle>
+								<AlertDescription>{authorityState.message}</AlertDescription>
+							</Alert>
+						) : null}
+						{authorityState?.ok === true ? (
+							<AuthorityWorkspace
+								appointments={
+									officerState?.ok === true
+										? officerState.appointments.map((appointment) => ({
+												id: appointment.id,
+												officerPartyId: appointment.officerPartyId,
+												status: appointment.status,
+											}))
+										: []
+								}
+								canManage={canManageAuthority}
+								company={{
+									legalCompanyId: selectedCompany.legalCompanyId,
+									version: selectedCompany.version,
+								}}
+								mandates={authorityState.mandates}
 								organizationSlug="client"
 								parties={partyRows}
 							/>
@@ -730,6 +780,48 @@ async function loadOfficers(input: {
 			status: appointment.status,
 			endReason: appointment.endReason,
 			version: appointment.version,
+		})),
+	};
+}
+
+async function loadAuthorityMandates(input: {
+	legalCompanyId: GovernanceLegalCompanyId;
+	queryOptions: ReturnType<typeof createCorporateAdministrationQueryOptions>;
+}): Promise<
+	| Readonly<{
+			ok: true;
+			mandates: readonly AuthorityWorkspaceMandate[];
+	  }>
+	| Readonly<{ ok: false; message: string }>
+> {
+	const dependencies = createCorporateAdministrationAuthorityDependencies();
+	const asOf = canonicalDateSchema.parse(new Date().toISOString().slice(0, 10));
+	const mandates = await listAuthorityMandatesAsOf(
+		{ legalCompanyId: input.legalCompanyId, asOf, pageSize: 50 },
+		input.queryOptions,
+		dependencies,
+	);
+	if (!mandates.ok) {
+		return { ok: false, message: mandates.message };
+	}
+	return {
+		ok: true,
+		mandates: mandates.data.items.map((mandate) => ({
+			id: mandate.id,
+			mandateType: mandate.mandateType,
+			holderPartyId: mandate.holderPartyId,
+			holderOfficerAppointmentId: mandate.holderOfficerAppointmentId,
+			grantedByType: mandate.grantedByType,
+			scopeDescription: mandate.scopeDescription,
+			monetaryLimitAmount: mandate.monetaryLimitAmount,
+			monetaryLimitCurrencyCode: mandate.monetaryLimitCurrencyCode,
+			jurisdictionCode: mandate.jurisdictionCode,
+			protectedAuthority: mandate.protectedAuthority,
+			effectiveFrom: mandate.effectiveFrom,
+			effectiveTo: mandate.effectiveTo,
+			status: mandate.status,
+			revocationReason: mandate.revocationReason,
+			version: mandate.version,
 		})),
 	};
 }

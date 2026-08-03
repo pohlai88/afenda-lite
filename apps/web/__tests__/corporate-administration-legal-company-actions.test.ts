@@ -38,6 +38,7 @@ const corporateAdministrationMocks = vi.hoisted(() => ({
 	listOverdueResolutionActions: vi.fn(),
 	listRequiredStatutoryOffices: vi.fn(),
 	listOfficersAsOf: vi.fn(),
+	listAuthorityMandatesAsOf: vi.fn(),
 	listGovernanceBodiesAsOf: vi.fn(),
 	listGovernanceMembershipsAsOf: vi.fn(),
 	getMeetingQuorumStatus: vi.fn(),
@@ -50,6 +51,7 @@ const compositionMocks = vi.hoisted(() => ({
 	createCorporateAdministrationCompanyDependencies: vi.fn(),
 	createCorporateAdministrationGovernanceDependencies: vi.fn(),
 	createCorporateAdministrationOfficerDependencies: vi.fn(),
+	createCorporateAdministrationAuthorityDependencies: vi.fn(),
 	listCorporateAdministrationActiveOrganizationParties: vi.fn(),
 	listCorporateAdministrationPartyAddresses: vi.fn(),
 }));
@@ -114,6 +116,8 @@ vi.mock("@afenda/corporate-administration", async (importOriginal) => ({
 	listRequiredStatutoryOffices:
 		corporateAdministrationMocks.listRequiredStatutoryOffices,
 	listOfficersAsOf: corporateAdministrationMocks.listOfficersAsOf,
+	listAuthorityMandatesAsOf:
+		corporateAdministrationMocks.listAuthorityMandatesAsOf,
 	listGovernanceBodiesAsOf:
 		corporateAdministrationMocks.listGovernanceBodiesAsOf,
 	listGovernanceMembershipsAsOf:
@@ -134,6 +138,8 @@ vi.mock("@/lib/erp/corporate-administration-command-options", () => ({
 		compositionMocks.createCorporateAdministrationGovernanceDependencies,
 	createCorporateAdministrationOfficerDependencies:
 		compositionMocks.createCorporateAdministrationOfficerDependencies,
+	createCorporateAdministrationAuthorityDependencies:
+		compositionMocks.createCorporateAdministrationAuthorityDependencies,
 	listCorporateAdministrationActiveOrganizationParties:
 		compositionMocks.listCorporateAdministrationActiveOrganizationParties,
 	listCorporateAdministrationPartyAddresses:
@@ -316,6 +322,10 @@ describe("Corporate Administration legal-company Server Actions", () => {
 			},
 		);
 		corporateAdministrationMocks.listOfficersAsOf.mockResolvedValue({
+			ok: true,
+			data: { items: [], nextCursor: null },
+		});
+		corporateAdministrationMocks.listAuthorityMandatesAsOf.mockResolvedValue({
 			ok: true,
 			data: { items: [], nextCursor: null },
 		});

@@ -91,6 +91,10 @@ export const PERMISSION_DENIED_MESSAGE: Record<PlatformPermissionCode, string> =
 			"You do not have permission to read corporate resolution records.",
 		"corporate_administration.resolution.manage":
 			"You do not have permission to manage corporate resolution records.",
+		"corporate_administration.authority.read":
+			"You do not have permission to read corporate authority mandates.",
+		"corporate_administration.authority.manage":
+			"You do not have permission to manage corporate authority mandates.",
 		"sales.order.create": "You do not have permission to create sales orders.",
 		"sales.order.update": "You do not have permission to update sales orders.",
 		"sales.order.post": "You do not have permission to post sales orders.",
@@ -210,6 +214,18 @@ export const PERMISSION_DENIED_MESSAGE: Record<PlatformPermissionCode, string> =
 			"You do not have permission to manage payment methods.",
 		"payments.method.read":
 			"You do not have permission to read payment methods.",
+		"payments.provider.read":
+			"You do not have permission to read payment provider configurations.",
+		"payments.provider.manage":
+			"You do not have permission to manage payment provider configurations.",
+		"payments.transaction.read":
+			"You do not have permission to read gateway payment transactions.",
+		"payments.transaction.manage":
+			"You do not have permission to manage gateway payment transactions.",
+		"payments.token.read":
+			"You do not have permission to read stored payment instrument tokens.",
+		"payments.token.manage":
+			"You do not have permission to manage stored payment instrument tokens.",
 		"accounting.journal.read":
 			"You do not have permission to read accounting journals.",
 		"accounting.journal.create":
