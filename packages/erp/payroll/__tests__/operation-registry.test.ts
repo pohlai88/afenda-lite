@@ -41,12 +41,13 @@ describe("Payroll operation registry", () => {
 		const featureOwners = new Set([
 			"payroll-setup",
 			"employee-assignments",
+			"workforce-ingress",
 			"variable-inputs",
 			"payroll-runs",
 			"payslips",
 			"reconciliation",
 		]);
-		expect(definitions).toHaveLength(46);
+		expect(definitions).toHaveLength(47);
 		expect(new Set(operationIds).size).toBe(operationIds.length);
 		for (const definition of definitions) {
 			expect(featureOwners).toContain(definition.owner);
@@ -59,12 +60,14 @@ describe("Payroll operation registry", () => {
 			definitions.map(({ id, kind, permission }) => ({ id, kind, permission })),
 		);
 		expect(createHash("sha256").update(serializedContract).digest("hex")).toBe(
-			"300899cccb2f163d774db970fe3940a595aacb359190b48de27b4e7945dffafb",
+			// Reviewed 2026-08-03: adds payroll.workforce.ingest (PRD R1 canonical
+			// workforce ingress) under payroll.input.manage; all prior ids unchanged.
+			"f8c9b183623f556138d09b0616b06eba1920808817e6213fdbdfad18f7d9c658",
 		);
 	});
 
 	it("derives exhaustive command, query, and manifest projections", () => {
-		expect(PAYROLL_COMMAND_IDS).toHaveLength(31);
+		expect(PAYROLL_COMMAND_IDS).toHaveLength(32);
 		expect(PAYROLL_QUERY_IDS).toHaveLength(15);
 		expect(Object.keys(PAYROLL_COMMAND_AUTHORIZATION)).toEqual(
 			PAYROLL_COMMAND_IDS,

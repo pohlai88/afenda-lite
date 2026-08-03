@@ -5,6 +5,7 @@ import type { SetupMemoryState } from "../features/payroll-setup/setup.memory";
 import type { ReconciliationMemoryState } from "../features/reconciliation/reconciliation.memory";
 import type { StatutoryMemoryState } from "../features/statutory-rules/statutory.memory";
 import type { InputsMemoryState } from "../features/variable-inputs/inputs.memory";
+import type { WorkforceIngressMemoryState } from "../features/workforce-ingress/accepted-handoff.memory";
 
 export interface MemoryPayrollStoreState {
 	assignments: AssignmentsMemoryState;
@@ -14,6 +15,7 @@ export interface MemoryPayrollStoreState {
 	runs: RunsMemoryState;
 	setup: SetupMemoryState;
 	statutory: StatutoryMemoryState;
+	workforceIngress: WorkforceIngressMemoryState;
 }
 
 export function createSetupMemoryState(): SetupMemoryState {
@@ -144,6 +146,7 @@ export function createMemoryPayrollStoreState(): MemoryPayrollStoreState {
 		outputs: createOutputsMemoryState(),
 		statutory: createStatutoryMemoryState(),
 		reconciliation: createReconciliationMemoryState(),
+		workforceIngress: { acceptedHandoffs: new Map() },
 	};
 }
 
@@ -157,4 +160,5 @@ export function resetMemoryPayrollStoreState(
 	resetOutputsMemoryState(state.outputs);
 	resetStatutoryMemoryState(state.statutory);
 	resetReconciliationMemoryState(state.reconciliation);
+	state.workforceIngress.acceptedHandoffs.clear();
 }

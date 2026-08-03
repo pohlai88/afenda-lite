@@ -11,21 +11,29 @@ function readCompositionFile(relativePath: string): string {
 }
 
 describe("Payroll application composition", () => {
-	it("constructs only the opaque Payroll capability context", () => {
+	it("constructs only the opaque Payroll capability context without an HR pull", () => {
 		const source = readCompositionFile("payroll-command-options.ts");
 
 		expect(source).toContain("createPayrollCapabilityOptions");
-		expect(source).toContain("workforce: createPayrollWorkforcePort()");
+		expect(source).not.toContain("createPayrollWorkforcePort");
+		expect(source).not.toContain("assembleApprovedPayrollHandoff");
 		expect(source).not.toContain("import type { PayrollCommandOptions");
 	});
 
-	it("projects the sealed HR payroll handoff without a null stub", () => {
-		const source = readCompositionFile("payroll-workforce-port.ts");
+	it("routes durable payroll deliveries into the Payroll ingest capability", () => {
+		const source = readFileSync(
+			fileURLToPath(
+				new URL(
+					"../modules/platform/domain/human-resources-payroll-delivery.ts",
+					import.meta.url,
+				),
+			),
+			"utf8",
+		);
 
-		expect(source).toContain("assembleApprovedPayrollHandoff");
-		expect(source).toContain('from "@afenda/human-resources"');
-		expect(source).not.toContain("return await null");
-		expect(source).not.toContain("component.kind");
+		expect(source).toContain("ingestApprovedPayrollHandoff");
+		expect(source).toContain('from "@afenda/payroll"');
+		expect(source).toContain("idempotencyKey: `payroll-delivery:");
 	});
 
 	it("assembles delivery payloads server-side instead of trusting caller-authored approved facts", () => {

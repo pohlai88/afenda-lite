@@ -1,6 +1,7 @@
 import { createDrizzlePayrollStore } from "../composition/adapters/drizzle";
 import { createProductionMutationPorts } from "../composition/production/ports";
 import { createProductionPayrollRunCalculator } from "../features/calculation/production-run-calculator";
+import { createAcceptedWorkforceInputPort } from "../features/workforce-ingress/accepted-workforce-input-port";
 import type { PayrollCommandOptions } from "../kernel/execution/command-options";
 import type { PayrollCapabilityComposition } from "./contracts";
 
@@ -24,13 +25,15 @@ export function createPayrollCapabilityOptions(
 	composition: PayrollCapabilityComposition,
 ): PayrollCapabilityOptions {
 	const store = createDrizzlePayrollStore();
+	const workforce =
+		composition.workforce ?? createAcceptedWorkforceInputPort(store);
 	const context = Object.freeze({
 		[PAYROLL_CONTEXT]: true,
 	} satisfies PayrollCapabilityOptions);
 
 	internalOptions.set(context, {
 		authorization: composition.authorization,
-		employees: composition.workforce,
+		employees: workforce,
 		...(composition.observability === undefined
 			? {}
 			: { observability: composition.observability }),
@@ -38,7 +41,7 @@ export function createPayrollCapabilityOptions(
 		ports: createProductionMutationPorts(),
 		calculator: createProductionPayrollRunCalculator({
 			store,
-			employees: composition.workforce,
+			employees: workforce,
 		}),
 	});
 

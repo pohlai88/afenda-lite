@@ -74,9 +74,12 @@ function eventResult(
 describe("HR payroll delivery production composition", () => {
 	it("publishes the versioned platform integration event with replay-safe identity", async () => {
 		const publish = vi.fn(async (command) => eventResult(command.payload));
+		const ingest = vi.fn(async () => errorResult.ok({ id: "handoff-1" }));
 		const producer = createPayrollDeliveryEventProducer(
 			{ publish },
 			"operator-1",
+			undefined,
+			ingest,
 		);
 		const payload = handoff();
 		const result = await producer.publish({
@@ -100,6 +103,38 @@ describe("HR payroll delivery production composition", () => {
 				organizationId: "org-1",
 			}),
 		);
+		expect(ingest).toHaveBeenCalledWith(
+			expect.objectContaining({
+				organizationId: "org-1",
+				idempotencyKey: "payroll-delivery:7c8277b1-e3e8-49a3-84c4-eb74ae35ee84",
+				payload,
+			}),
+		);
+	});
+
+	it("fails the delivery when the Payroll ingest capability rejects it", async () => {
+		const publish = vi.fn(async (command) => eventResult(command.payload));
+		const producer = createPayrollDeliveryEventProducer(
+			{ publish },
+			"operator-1",
+			createProductionHrObservabilityPorts(
+				createProductionHrObservabilityRecorder({ write: () => undefined }),
+			),
+			async () =>
+				errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+				}),
+		);
+		const result = await producer.publish({
+			deliveryId: "7c8277b1-e3e8-49a3-84c4-eb74ae35ee84",
+			organizationId: "org-1",
+			correlationId: "correlation-1",
+			payloadHash: "a".repeat(64),
+			payload: handoff(),
+			attempt: 1,
+		});
+		expect(result).toMatchObject({ ok: false, code: "CONFLICT" });
+		expect(publish).not.toHaveBeenCalled();
 	});
 
 	it("records a bounded payroll failure when the event boundary is unavailable", async () => {
@@ -114,6 +149,7 @@ describe("HR payroll delivery production composition", () => {
 					write: (entry) => telemetry.push(entry),
 				}),
 			),
+			async () => errorResult.ok({ id: "handoff-1" }),
 		);
 		const result = await producer.publish({
 			deliveryId: "7c8277b1-e3e8-49a3-84c4-eb74ae35ee84",
@@ -136,7 +172,12 @@ describe("HR payroll delivery production composition", () => {
 		const publish = vi.fn(async (command) => eventResult(command.payload));
 		const ports: PayrollDeliveryCapabilities = {
 			store,
-			producer: createPayrollDeliveryEventProducer({ publish }, "operator-1"),
+			producer: createPayrollDeliveryEventProducer(
+				{ publish },
+				"operator-1",
+				undefined,
+				async () => errorResult.ok({ id: "handoff-1" }),
+			),
 			clock: { now: () => new Date("2026-07-03T00:00:00.000Z") },
 		};
 		const queued = await queuePayrollDelivery(

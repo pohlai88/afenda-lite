@@ -7,6 +7,7 @@ import { createMemorySetupMethods } from "../features/payroll-setup/setup.memory
 import { createMemoryReconciliationMethods } from "../features/reconciliation/reconciliation.memory";
 import { createMemoryStatutoryMethods } from "../features/statutory-rules/statutory.memory";
 import { createMemoryInputsMethods } from "../features/variable-inputs/inputs.memory";
+import { createMemoryWorkforceIngressMethods } from "../features/workforce-ingress/accepted-handoff.memory";
 import {
 	createMemoryPayrollStoreState,
 	type MemoryPayrollStoreState,
@@ -36,6 +37,7 @@ export function createMemoryPayrollStore(): MemoryPayrollStore {
 			runs: state.runs,
 		}),
 		createMemoryReconciliationMethods(state),
+		createMemoryWorkforceIngressMethods(state.workforceIngress),
 	) as MemoryPayrollStore;
 
 	Object.defineProperty(store, "state", {

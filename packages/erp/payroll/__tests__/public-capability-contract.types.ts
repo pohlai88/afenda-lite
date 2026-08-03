@@ -25,7 +25,8 @@ createPayrollCapabilityOptions({
 	store: {},
 });
 
-// @ts-expect-error Workforce facts are required by production Payroll composition.
+// PRD R1: workforce facts default to the accepted-handoff ledger, so the
+// composition root may omit the capability entirely.
 createPayrollCapabilityOptions({ authorization });
 
 export type PayrollPublicContractCompileFixture = [

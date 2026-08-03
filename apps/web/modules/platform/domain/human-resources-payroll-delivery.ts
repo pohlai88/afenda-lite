@@ -11,19 +11,48 @@ import {
 	recordHrPayrollDeliveryFailure,
 	recordPayrollDeliveryFeedback as recordPayrollDeliveryFeedbackWorkflow,
 } from "@afenda/human-resources";
+import { ingestApprovedPayrollHandoff } from "@afenda/payroll";
 
+import { createPayrollCommandOptions } from "@/lib/erp/payroll-command-options";
 import {
 	classifyHrFailure,
 	createProductionHrObservabilityPorts,
 } from "@/modules/platform/observability/human-resources-observability";
 
+type PayrollIngestCapability = (
+	input: unknown,
+) => Promise<Result<{ id: string }>>;
+
+function productionPayrollIngest(): PayrollIngestCapability {
+	return (input) =>
+		ingestApprovedPayrollHandoff(input, createPayrollCommandOptions());
+}
+
 export function createPayrollDeliveryEventProducer(
 	publisher: Pick<EventPublisher, "publish"> = events.publisher.create(),
 	actorUserId = "system",
 	observability: HrObservabilityCapabilities = createProductionHrObservabilityPorts(),
+	ingest: PayrollIngestCapability = productionPayrollIngest(),
 ): PayrollDeliveryProducerCapability {
 	return {
 		async publish(input) {
+			// PRD R1: the delivery lands in Payroll's accepted-handoff ledger first;
+			// the platform event remains for observability and integration fan-out.
+			// Retries replay idempotently (same delivery id, same sealed payload).
+			const accepted = await ingest({
+				organizationId: input.organizationId,
+				actorUserId,
+				correlationId: input.correlationId,
+				idempotencyKey: `payroll-delivery:${input.deliveryId}`,
+				payload: input.payload,
+			});
+			if (!accepted.ok) {
+				await recordHrPayrollDeliveryFailure(
+					{ stage: "publish", reason: classifyHrFailure(accepted.code) },
+					observability,
+				);
+				return accepted;
+			}
 			const published = await publisher.publish({
 				type: PLATFORM_HUMAN_RESOURCES_PAYROLL_DELIVERY_REQUESTED_EVENT,
 				sourceModule: "platform",

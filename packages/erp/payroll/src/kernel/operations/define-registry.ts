@@ -4,6 +4,7 @@ import type { PayrollPermission } from "../execution/permissions";
 export const PAYROLL_OPERATION_OWNERS = [
 	"payroll-setup",
 	"employee-assignments",
+	"workforce-ingress",
 	"variable-inputs",
 	"payroll-runs",
 	"payslips",

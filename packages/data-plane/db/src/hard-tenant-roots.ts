@@ -249,6 +249,7 @@ import {
 	paymentReversal,
 } from "./schema/payments";
 import {
+	payrollAcceptedHandoff,
 	payrollAdjustment,
 	payrollCalendar,
 	payrollDeductionRule,
@@ -422,6 +423,7 @@ export const HARD_TENANT_ROOT_ENTRIES = [
 	["payroll_payslip", payrollPayslip],
 	["payroll_adjustment", payrollAdjustment],
 	["payroll_reconciliation", payrollReconciliation],
+	["payroll_accepted_handoff", payrollAcceptedHandoff],
 	["payroll_rule_finalized_usage", payrollRuleFinalizedUsage],
 	["stock_movement", stockMovement],
 	["stock_movement_line", stockMovementLine],

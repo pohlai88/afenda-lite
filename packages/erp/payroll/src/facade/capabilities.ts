@@ -71,6 +71,7 @@ import {
 	createPayrollVariableInput as createPayrollVariableInputInternal,
 	getPayrollVariableInput as getPayrollVariableInputInternal,
 } from "../features/variable-inputs/variable-input";
+import { ingestApprovedPayrollHandoff as ingestApprovedPayrollHandoffInternal } from "../features/workforce-ingress/ingest-approved-handoff";
 import type { PayrollCommandOptions } from "../kernel/execution/command-options";
 import type { PayrollCapabilityOptions } from "./context";
 import { resolvePayrollCapabilityOptions } from "./context";
@@ -104,6 +105,9 @@ export const createPayrollVariableInput = bindPayrollOperation(
 );
 export const getPayrollVariableInput = bindPayrollOperation(
 	getPayrollVariableInputInternal,
+);
+export const ingestApprovedPayrollHandoff = bindPayrollOperation(
+	ingestApprovedPayrollHandoffInternal,
 );
 export const getOwnPayrollPayslip = bindPayrollOperation(
 	getOwnPayrollPayslipInternal,

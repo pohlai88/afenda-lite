@@ -5,6 +5,7 @@ import { drizzleSetupMethods } from "../../features/payroll-setup/setup.drizzle"
 import { drizzleReconciliationMethods } from "../../features/reconciliation/reconciliation.drizzle";
 import { drizzleStatutoryMethods } from "../../features/statutory-rules/statutory.drizzle";
 import { drizzleInputsMethods } from "../../features/variable-inputs/inputs.drizzle";
+import { drizzleWorkforceIngressMethods } from "../../features/workforce-ingress/accepted-handoff.drizzle";
 import { composeStoreSlices } from "../store/compose-slices";
 import type { PayrollStore } from "../store/contract";
 
@@ -14,6 +15,7 @@ export function createDrizzlePayrollStore(): PayrollStore {
 		drizzleSetupMethods,
 		drizzleAssignmentsMethods,
 		drizzleInputsMethods,
+		drizzleWorkforceIngressMethods,
 		drizzleRunsMethods,
 		drizzleStatutoryMethods,
 		drizzleOutputsMethods,

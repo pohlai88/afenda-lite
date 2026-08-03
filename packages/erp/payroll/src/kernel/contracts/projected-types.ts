@@ -366,3 +366,23 @@ export interface PayrollAdjustment {
 	reason: string;
 	reversalRunId: PayrollRunId | null;
 }
+
+/** Immutable accepted workforce handoff — the canonical Payroll ingress record. */
+export interface AcceptedPayrollHandoff {
+	acceptedAt: Date;
+	acceptedBy: string;
+	contractVersion: string;
+	effectiveDate: string;
+	employeeId: string;
+	employmentId: string;
+	id: string;
+	organizationId: string;
+	/** Raw HR payload sealed at acceptance; Payroll re-parses on read. */
+	payload: unknown;
+	payloadHash: string;
+	periodEnd: string | null;
+	periodStart: string | null;
+	status: "accepted" | "superseded";
+	supersededByHandoffId: string | null;
+	version: number;
+}

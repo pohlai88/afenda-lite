@@ -1045,3 +1045,58 @@ export const payrollReconciliation = pgTable(
 		),
 	],
 );
+
+/**
+ * Immutable accepted workforce handoff — the canonical Payroll ingress ledger.
+ * The raw HR payload is sealed with its hash; corrections supersede, never
+ * mutate. Runs read accepted records instead of pulling HR at calculation time.
+ */
+export const payrollAcceptedHandoff = pgTable(
+	"payroll_accepted_handoff",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		employeeId: text("employee_id").notNull(),
+		employmentId: text("employment_id").notNull(),
+		contractVersion: text("contract_version").notNull(),
+		effectiveDate: date("effective_date").notNull(),
+		periodStart: date("period_start"),
+		periodEnd: date("period_end"),
+		payload: jsonb("payload").notNull(),
+		payloadHash: text("payload_hash").notNull(),
+		status: text("status").notNull().default("accepted"),
+		supersededByHandoffId: uuid("superseded_by_handoff_id"),
+		...payrollIdempotencyColumns,
+		...payrollAuditColumns,
+	},
+	(t) => [
+		index("payroll_accepted_handoff_org_id_idx").on(t.organizationId, t.id),
+		index("payroll_accepted_handoff_org_employee_idx").on(
+			t.organizationId,
+			t.employeeId,
+			t.effectiveDate,
+		),
+		unique("payroll_accepted_handoff_org_id_uidx").on(t.organizationId, t.id),
+		uniqueIndex("payroll_accepted_handoff_org_create_idempotency_uidx").on(
+			t.organizationId,
+			t.createIdempotencyKey,
+		),
+		uniqueIndex("payroll_accepted_handoff_org_active_identity_uidx")
+			.on(
+				t.organizationId,
+				t.employeeId,
+				t.effectiveDate,
+				t.periodStart,
+				t.periodEnd,
+			)
+			.where(sql`${t.status} = 'accepted'`),
+		check(
+			"payroll_accepted_handoff_status_check",
+			sql`${t.status} IN ('accepted', 'superseded')`,
+		),
+		check(
+			"payroll_accepted_handoff_supersession_check",
+			sql`(${t.status} = 'superseded' AND ${t.supersededByHandoffId} IS NOT NULL) OR (${t.status} = 'accepted' AND ${t.supersededByHandoffId} IS NULL)`,
+		),
+	],
+);

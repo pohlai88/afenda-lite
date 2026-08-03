@@ -14,5 +14,9 @@ export type PayrollWorkforceCapability = PayrollWorkforceInputPort;
 export interface PayrollCapabilityComposition {
 	readonly authorization: PayrollAuthorizationCapability;
 	readonly observability?: PayrollObservabilityPort;
-	readonly workforce: PayrollWorkforceCapability;
+	/**
+	 * Optional override for workforce fact reads. When omitted, operations read
+	 * the accepted-handoff ledger sealed by ingestApprovedPayrollHandoff (PRD R1).
+	 */
+	readonly workforce?: PayrollWorkforceCapability;
 }

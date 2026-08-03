@@ -34,6 +34,7 @@ export const PAYROLL_MUTATION_TABLES = [
 	"payroll_adjustment",
 	"payroll_reconciliation",
 	"payroll_rule_finalized_usage",
+	"payroll_accepted_handoff",
 ] as const;
 
 export const PAYROLL_AGGREGATES = [
@@ -66,4 +67,5 @@ export const PAYROLL_AGGREGATES = [
 	"payroll_reconciliation",
 	"payment_reconciliation",
 	"accounting_reconciliation",
+	"accepted_workforce_handoff",
 ] as const;

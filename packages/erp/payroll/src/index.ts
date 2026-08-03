@@ -31,6 +31,7 @@ export {
 	getPayrollRun,
 	getPayrollStatutoryRule,
 	getPayrollVariableInput,
+	ingestApprovedPayrollHandoff,
 	listPayrollCalendars,
 	listPayrollExceptionsForRun,
 	listPayrollPayGroups,
