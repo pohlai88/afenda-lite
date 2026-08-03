@@ -6,8 +6,8 @@
 | Delivery order | [DEVELOPMENT-ROADMAP.md](DEVELOPMENT-ROADMAP.md) |
 | Authorized product slice | `CA-APP-01` |
 | Authorized closure work | `CA-CL-01` through `CA-CL-05` |
-| Not authorized | New CA-FR-006 through CA-FR-013 semantics |
-| Updated | 2026-08-02 |
+| Not authorized | New CA-FR-007 through CA-FR-013 semantics; workspace exposure of CA-FR-006 |
+| Updated | 2026-08-03 |
 
 ## CA-APP-01 — Corporate Entity Workspace
 
@@ -59,8 +59,10 @@ unless new defect evidence requires a bounded correction.
 - Production composition uses the Drizzle adapter. No mock production data, direct
   Drizzle use in UI/Actions, browser-controlled tenant identity, approval bypass,
   peer-table write, or duplicate business rule is allowed.
-- CA-FR-006 through CA-FR-013 are out of scope. Pending migrations 0034–0046 are
-  not applied by this slice.
+- CA-FR-006 through CA-FR-013 are out of scope for workspace exposure: the
+  implemented `authority` capsule is not surfaced, and no new CA-FR-007 through
+  CA-FR-013 semantics are added. Pending migrations 0034–0046 and 0050 are not
+  applied by this slice.
 
 ### Controlled-beta acceptance
 
@@ -87,7 +89,7 @@ enterprise closure matrix or create an enterprise seal.
 | CA-CL-02 Adapter parity | IN PROGRESS | Run memory/Drizzle/Neon parity for CA-APP-01 commands and queries first; compare public outcomes and durable facts, recording target identity and pass/fail/skip counts. |
 | CA-CL-03 Atomicity | PARTIAL | Inject database failure around state, history, audit, outbox, and idempotency completion; prove rollback, retry, replay conflict, and concurrency behavior for exposed commands. |
 | CA-CL-04 Tenant isolation | PARTIAL | Prove database-backed hostile cross-organization rejection for exposed reads, writes, references, cursors, histories, and approvals. |
-| CA-CL-05 Migration and recovery | BLOCKED | Separate 0034–0046 deployment-review lane: inventory/checksums, impact, backup/restore, staging rehearsal, compatibility, locks, approvals, verification, rollback/roll-forward, and maintenance window. No production application here. |
+| CA-CL-05 Migration and recovery | BLOCKED | Separate 0034–0046 and 0050 deployment-review lane: inventory/checksums, impact, backup/restore, staging rehearsal, compatibility, locks, approvals, verification, rollback/roll-forward, and maintenance window. No production application here. |
 
 Closure work is evidence around the real workflow. It cannot replace delivery of
 the workspace, and the workspace cannot claim an enterprise seal.

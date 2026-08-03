@@ -5,7 +5,7 @@
 | Status | Accepted product authority |
 | Owner | Corporate Administration |
 | Delivery plan | [DEVELOPMENT-ROADMAP.md](DEVELOPMENT-ROADMAP.md) · [IMPLEMENTATION-SLICES.md](IMPLEMENTATION-SLICES.md) |
-| Updated | 2026-08-02 |
+| Updated | 2026-08-03 |
 
 ## Product outcome
 
@@ -39,7 +39,7 @@ or exposes a second business facade, registry, adapter, or error contract.
 | CA-FR-003 | Governance bodies and membership: bodies, roles, tenure, voting rights, complete-set decisions | Implemented |
 | CA-FR-004 | Statutory offices and officers: appointments, qualifications, declarations, conflicts, eligibility, departure | Implemented; protected actions fail closed pending platform approvals |
 | CA-FR-005 | Meetings and resolutions: notices, attendance, quorum, votes, decisions, minutes references, actions, history | Implemented |
-| CA-FR-006 | Corporate authority and mandates | Planned; not authorized for new semantics |
+| CA-FR-006 | Corporate authority and mandates | Implemented; protected mandates fail closed pending platform approvals; not exposed by CA-APP-01 |
 | CA-FR-007 | Statutory obligations, filings, and regulatory cases | Planned; not authorized for new semantics |
 | CA-FR-008 | Legal instruments and asset-administration interests | Planned; not authorized for new semantics |
 | CA-FR-009 | Legal-group structure and related parties | Planned; not authorized for new semantics |
@@ -75,8 +75,9 @@ Two decisions are deliberately separate:
 | Enterprise seal | Every applicable row in the closure matrix is `DONE` or has an approved, evidenced `NOT_APPLICABLE` disposition |
 
 `CA-APP-01` is authorized now to expose CA-FR-001 through CA-FR-005 only. It must
-not add CA-FR-006 through CA-FR-013, bypass unavailable approval, or apply pending
-migrations. Exact paths and beta acceptance are in `IMPLEMENTATION-SLICES.md`.
+not expose CA-FR-006, add CA-FR-007 through CA-FR-013 semantics, bypass
+unavailable approval, or apply pending migrations. Exact paths and beta
+acceptance are in `IMPLEMENTATION-SLICES.md`.
 
 ## Enterprise closure matrix
 
@@ -89,7 +90,7 @@ five `DONE` and nine non-`DONE` rows until direct evidence changes a row.
 | 2 | Catalog and dependency governance | BLOCKED | Resolve or formally isolate unrelated repository blockers |
 | 3 | Public package contracts | DONE | — |
 | 4 | Reference and peer boundaries | DONE | — |
-| 5 | Schema and migrations | BLOCKED | Separate 0034–0046 deployment-review lane; do not apply here |
+| 5 | Schema and migrations | BLOCKED | Separate 0034–0046 and 0050 deployment-review lane; do not apply here |
 | 6 | Tenancy and data isolation | PARTIAL | Database evidence for every exposed cohort and hostile path |
 | 7 | Authorization, approvals and segregation of duties | BLOCKED | Real platform approval verifier and integrated SoD evidence |
 | 8 | Domain behavior and historical truth | DONE | — |

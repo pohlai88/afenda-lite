@@ -15,8 +15,8 @@ evidence supporting those facts over time.
 
 The current enterprise closure matrix is exactly five `DONE` and nine non-`DONE`
 rows. `CA-APP-01` may now ship the implemented cohort as a controlled beta; it
-does not grant an enterprise seal or authorize new CA-FR-006 through CA-FR-013
-semantics.
+does not grant an enterprise seal, expose the `authority` capability, or
+authorize new CA-FR-007 through CA-FR-013 semantics.
 
 ## Living capabilities
 
@@ -42,10 +42,10 @@ turns this cohort into a usable workspace while parallel evidence covers product
 approval integration, adapter parity, atomicity, hostile tenant coverage,
 migrations/recovery, and operations. Exact status lives only in the PRD matrix.
 
-Planned statutory filings, authority, legal instruments, group structure,
-agreements, controlled records, work management, and assurance capabilities are
-defined in the PRD but are not eligible for implementation yet. No placeholder
-feature capsules exist for them.
+Planned statutory filings, legal instruments, group structure, agreements,
+controlled records, work management, and assurance capabilities are defined in
+the PRD but are not eligible for implementation yet. No placeholder feature
+capsules exist for them.
 
 Investor Relations owns securities, capital, investors, shareholders, holdings,
 beneficial ownership, certificates, distributions, and investor communications.
@@ -117,4 +117,4 @@ pnpm test:corporate-administration:parity
 ```
 
 Database evidence must record the branch/schema identity with secrets redacted.
-This package mission does not authorize applying migrations 0034–0046.
+This package mission does not authorize applying migrations 0034–0046 and 0050.
