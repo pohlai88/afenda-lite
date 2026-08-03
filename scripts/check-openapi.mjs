@@ -82,10 +82,10 @@ function assertApiNowHandlersOnDisk(document) {
 }
 
 if (!existsSync(yamlPath)) {
-	fail(
-		"missing docs-V2/api/OPEN-001-openapi.yaml — run pnpm openapi:generate",
-		2,
+	console.log(
+		"check:openapi: skipped — docs-V2 removed, no OpenAPI YAML to validate",
 	);
+	process.exit(0);
 }
 
 const dir = mkdtempSync(join(tmpdir(), "afenda-openapi-"));

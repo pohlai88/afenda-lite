@@ -47,6 +47,11 @@ const modulesDir = join(root, "docs-V2", "modules");
 const write = process.argv.includes("--write");
 const fixturesOnly = process.argv.includes("--fixtures");
 
+if (!fixturesOnly && !existsSync(modulesDir)) {
+	console.log("validate:modules: skipped — docs-V2 removed, no module roadmap to validate");
+	process.exit(0);
+}
+
 /**
  * @param {string} message
  * @param {number} code

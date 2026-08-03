@@ -1,5 +1,5 @@
 import { readdir, readFile, stat } from "node:fs/promises";
-import { resolve } from "node:path";
+import { relative, resolve } from "node:path";
 
 import {
 	createGeneratorDiagnostic,
@@ -15,6 +15,7 @@ const PACKAGE_NAME_PREFIX = /^@afenda\//;
 const TYPESCRIPT_EXTENSIONS = [".ts", ".tsx"] as const;
 const IGNORED_DIRECTORY_NAMES = new Set(["node_modules", "dist", ".turbo"]);
 const LOCAL_LAYOUT_SCRIPT_NAMES = new Set(["feature-first-layout.mjs"]);
+const FEATURE_GROUP_DEFINITION_FILE = "group.definition.ts";
 const PUBLIC_API_CANDIDATES = Object.freeze([
 	"src/facade/public-api.ts",
 	"src/index.ts",
@@ -43,6 +44,7 @@ export type ErpLayoutClass =
 export interface ErpLayoutWorkspace {
 	readonly compositeStores: readonly string[];
 	readonly featureDirectories: readonly string[];
+	readonly featureGroupDirectories: readonly string[];
 	readonly id: string;
 	readonly layoutClass: ErpLayoutClass;
 	readonly localLayoutScripts: readonly string[];
@@ -57,6 +59,7 @@ export interface ErpLayoutWorkspace {
 export interface ErpLayoutSummary {
 	readonly empty: number;
 	readonly featureFirst: number;
+	readonly featureGroups: number;
 	readonly historicalRoot: number;
 	readonly hybrid: number;
 	readonly localLayoutScripts: number;
@@ -130,23 +133,63 @@ const listExistingFiles = async (
 	);
 };
 
-const listFeatureDirectories = async (
+/**
+ * A directory directly under `src/features` is a feature group when it carries a
+ * `group.definition.ts` membership projection. Groups are classification only,
+ * so their child directories — not the group itself — are the semantic feature
+ * owners. Packages without groups keep the flat one-level layout.
+ */
+const listGroupAndFeatureDirectories = async (
 	repositoryRoot: string,
 	workspacePath: string,
-): Promise<readonly string[]> => {
+): Promise<{
+	readonly featureDirectories: readonly string[];
+	readonly featureGroupDirectories: readonly string[];
+}> => {
 	const featuresPath = `${workspacePath}/src/features`;
 	if (!(await pathExistsAsDirectory(repositoryRoot, featuresPath))) {
-		return Object.freeze([]);
+		return {
+			featureDirectories: Object.freeze([]),
+			featureGroupDirectories: Object.freeze([]),
+		};
 	}
 	const entries = await readdir(resolve(repositoryRoot, featuresPath), {
 		withFileTypes: true,
 	});
-	return Object.freeze(
-		entries
-			.filter((entry) => entry.isDirectory())
-			.map((entry) => `${featuresPath}/${entry.name}`)
-			.sort(compareText),
+	const directories = entries
+		.filter((entry) => entry.isDirectory())
+		.map((entry) => `${featuresPath}/${entry.name}`);
+	const classified = await Promise.all(
+		directories.map(async (directory) => {
+			const isGroup = await pathExistsAsFile(
+				repositoryRoot,
+				`${directory}/${FEATURE_GROUP_DEFINITION_FILE}`,
+			);
+			if (!isGroup) {
+				return { group: null, features: [directory] };
+			}
+			const groupEntries = await readdir(resolve(repositoryRoot, directory), {
+				withFileTypes: true,
+			});
+			return {
+				group: directory,
+				features: groupEntries
+					.filter((entry) => entry.isDirectory())
+					.map((entry) => `${directory}/${entry.name}`),
+			};
+		}),
 	);
+	return {
+		featureDirectories: Object.freeze(
+			classified.flatMap((entry) => entry.features).sort(compareText),
+		),
+		featureGroupDirectories: Object.freeze(
+			classified
+				.map((entry) => entry.group)
+				.filter((group) => group !== null)
+				.sort(compareText),
+		),
+	};
 };
 
 const listLocalLayoutScripts = async (
@@ -192,6 +235,19 @@ const walkFiles = async (absoluteRoot: string): Promise<readonly string[]> => {
 const relativeImportDepth = (specifier: string): number =>
 	specifier.split("/").filter((segment) => segment === "..").length;
 
+/**
+ * How many directory levels the file sits below its own feature root. A file at
+ * the feature root is 0; `adapters/drizzle.ts` is 1.
+ */
+const depthBelowFeatureRoot = (
+	absoluteFeatureDirectory: string,
+	absoluteFilePath: string,
+): number =>
+	relative(absoluteFeatureDirectory, absoluteFilePath)
+		.replaceAll("\\", "/")
+		.split("/")
+		.filter((segment) => segment.length > 0).length - 1;
+
 const listUpwardFeatureImports = async (
 	repositoryRoot: string,
 	featureDirectories: readonly string[],
@@ -207,11 +263,18 @@ const listUpwardFeatureImports = async (
 				files.map(async (absolutePath) => {
 					const contents = await readFile(absolutePath, "utf8");
 					const matches = [...contents.matchAll(RELATIVE_IMPORT_PATTERN)];
+					// The tolerated ceiling is the feature's own enclosing directory,
+					// measured from where the file actually sits. A fixed constant only
+					// held for files at the root of a flat feature; it misreported both
+					// nested capsule files and grouped `features/<group>/<feature>/`
+					// layouts.
+					const maximumDepth =
+						depthBelowFeatureRoot(absoluteFeatureDirectory, absolutePath) + 1;
 					if (
 						!matches.some(
 							(match) =>
 								typeof match[1] === "string" &&
-								relativeImportDepth(match[1]) > 1,
+								relativeImportDepth(match[1]) > maximumDepth,
 						)
 					) {
 						return null;
@@ -256,7 +319,7 @@ const inspectWorkspace = async (
 		rootStoreFiles,
 		compositeStores,
 		publicApiInventory,
-		featureDirectories,
+		groupsAndFeatures,
 		localLayoutScripts,
 	] = await Promise.all([
 		listExistingFiles(
@@ -271,9 +334,10 @@ const inspectWorkspace = async (
 			repositoryRoot,
 			PUBLIC_API_CANDIDATES.map((path) => `${workspace.path}/${path}`),
 		),
-		listFeatureDirectories(repositoryRoot, workspace.path),
+		listGroupAndFeatureDirectories(repositoryRoot, workspace.path),
 		listLocalLayoutScripts(repositoryRoot, workspace.path),
 	]);
+	const { featureDirectories, featureGroupDirectories } = groupsAndFeatures;
 	const upwardFeatureImports = await listUpwardFeatureImports(
 		repositoryRoot,
 		featureDirectories,
@@ -285,6 +349,7 @@ const inspectWorkspace = async (
 		rootNameMatchesPackage: workspace.path.endsWith(`/${id}`),
 		layoutClass: classifyLayout({ featureDirectories, rootStoreFiles }),
 		featureDirectories,
+		featureGroupDirectories,
 		rootStoreFiles,
 		compositeStores,
 		publicApiInventory,
@@ -302,6 +367,10 @@ const createSummary = (
 	return Object.freeze({
 		total: workspaces.length,
 		featureFirst: countLayout("feature-first"),
+		featureGroups: workspaces.reduce(
+			(total, workspace) => total + workspace.featureGroupDirectories.length,
+			0,
+		),
 		historicalRoot: countLayout("historical-root"),
 		hybrid: countLayout("hybrid"),
 		empty: countLayout("empty"),
@@ -397,6 +466,27 @@ const createLayoutDiagnostics = (
 						}),
 					);
 				}
+				const emptyGroups = workspace.featureGroupDirectories.filter(
+					(group) =>
+						!workspace.featureDirectories.some((feature) =>
+							feature.startsWith(`${group}/`),
+						),
+				);
+				if (emptyGroups.length > 0) {
+					diagnostics.push(
+						createGeneratorDiagnostic({
+							code: "AFG-ERP-105",
+							severity: "warning",
+							family: "erp",
+							package: workspace.name,
+							owner: "erp-generator layout authority",
+							treatment: "auto-upgrade",
+							paths: emptyGroups,
+							expected: { featureGroupsWithoutFeatures: 0 },
+							actual: { emptyFeatureGroups: emptyGroups },
+						}),
+					);
+				}
 				if (workspace.upwardFeatureImports.length > 0) {
 					diagnostics.push(
 						createGeneratorDiagnostic({
@@ -430,6 +520,7 @@ export const createErpLayoutAuthorityDoctorExtension = async (
 		`erp-layout-schema=${report.schema}`,
 		`erp-layout-count=${report.summary.total}`,
 		`erp-layout-feature-first=${report.summary.featureFirst}`,
+		`erp-layout-feature-groups=${report.summary.featureGroups}`,
 		`erp-layout-historical-root=${report.summary.historicalRoot}`,
 		`erp-layout-hybrid=${report.summary.hybrid}`,
 		`erp-layout-empty=${report.summary.empty}`,
@@ -438,7 +529,7 @@ export const createErpLayoutAuthorityDoctorExtension = async (
 		`erp-layout-local-scripts=${report.summary.localLayoutScripts}`,
 		...report.workspaces.map(
 			(workspace) =>
-				`erp-layout=${workspace.packagePath}|${workspace.name}|${workspace.layoutClass}|features=${workspace.featureDirectories.length}|root-stores=${workspace.rootStoreFiles.length}|public-api=${workspace.publicApiInventory.length}|upward-imports=${workspace.upwardFeatureImports.length}|local-scripts=${workspace.localLayoutScripts.length}`,
+				`erp-layout=${workspace.packagePath}|${workspace.name}|${workspace.layoutClass}|features=${workspace.featureDirectories.length}|feature-groups=${workspace.featureGroupDirectories.length}|root-stores=${workspace.rootStoreFiles.length}|public-api=${workspace.publicApiInventory.length}|upward-imports=${workspace.upwardFeatureImports.length}|local-scripts=${workspace.localLayoutScripts.length}`,
 		),
 	];
 	return Object.freeze({

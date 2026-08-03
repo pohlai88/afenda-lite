@@ -102,36 +102,16 @@ const createCommandCatalog = (): readonly GeneratorLocalCommandCatalogEntry[] =>
 						writes: false,
 					},
 				];
+				// Derived from what each family registered, never a parallel list of
+				// command-name literals: an unlisted mutation command would otherwise
+				// be invocable but absent from the catalog.
 				const explicitCommands: readonly GeneratorLocalCommandCatalogEntry[] =
-					registration.contract.family === "erp"
-						? [
-								{
-									family: "erp",
-									name: "erp-generator-create-package",
-									source: "explicit-local-generator",
-									writes: true,
-								},
-								{
-									family: "erp",
-									name: "erp-generator-add-feature",
-									source: "explicit-local-generator",
-									writes: true,
-								},
-								{
-									family: "erp",
-									name: "erp-generator-reconcile-projection-locks",
-									source: "explicit-local-generator",
-									writes: true,
-								},
-							]
-						: [
-								{
-									family: "kernel",
-									name: "kernel-generator-apply-adoption",
-									source: "explicit-local-generator",
-									writes: true,
-								},
-							];
+					registration.explicitLocalCommands.map((command) => ({
+						family: registration.contract.family,
+						name: command.name,
+						source: "explicit-local-generator",
+						writes: command.writes,
+					}));
 				return [...baseCommands, ...explicitCommands];
 			})
 			.sort((left, right) => compareText(left.name, right.name)),

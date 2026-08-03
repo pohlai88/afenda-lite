@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
@@ -41,7 +41,7 @@ describe("ERP package scaffold", () => {
 				}),
 			]),
 		});
-		expect(first.files).toHaveLength(8);
+		expect(first.files).toHaveLength(13);
 		expect(
 			first.files.every((file) =>
 				file.path.startsWith("packages/erp/asset-maintenance/"),
@@ -78,6 +78,60 @@ describe("ERP package scaffold", () => {
 			expect(manifest).toContain('id: "asset-maintenance"');
 			expect(manifest).toContain('packageName: "@afenda/asset-maintenance"');
 			expect(manifest).toContain('category: "operations"');
+			expect(manifest).toContain('} from "../kernel"');
+		} finally {
+			await rm(repositoryRoot, { force: true, recursive: true });
+		}
+	});
+
+	it("materializes the mandatory feature-first topology", async () => {
+		const repositoryRoot = await mkdtemp(
+			join(tmpdir(), "afenda-erp-scaffold-topology-"),
+		);
+		try {
+			await applyErpPackageScaffold({
+				repositoryRoot,
+				spec: { moduleId: "asset-maintenance", category: "operations" },
+			});
+
+			const packagePath = "packages/erp/asset-maintenance";
+			const directories = [
+				`${packagePath}/src/facade`,
+				`${packagePath}/src/kernel`,
+				`${packagePath}/src/composition`,
+				`${packagePath}/src/features`,
+				`${packagePath}/src/testing`,
+				`${packagePath}/scripts`,
+				`${packagePath}/__tests__`,
+			];
+			const materialized = await Promise.all(
+				directories.map(async (directory) => ({
+					directory,
+					isDirectory: (
+						await stat(resolve(repositoryRoot, directory))
+					).isDirectory(),
+				})),
+			);
+			expect(materialized).toEqual(
+				directories.map((directory) => ({ directory, isDirectory: true })),
+			);
+
+			// The root is the sole production entrypoint and delegates to the facade;
+			// package-wide registries live under kernel, never as root layer files.
+			const index = await readFile(
+				resolve(repositoryRoot, `${packagePath}/src/index.ts`),
+				"utf8",
+			);
+			expect(index).toContain('import "server-only"');
+			expect(index).toContain('from "./facade/public-api"');
+			await expect(
+				stat(
+					resolve(repositoryRoot, `${packagePath}/src/operation-registry.ts`),
+				),
+			).rejects.toThrow();
+			await expect(
+				stat(resolve(repositoryRoot, `${packagePath}/src/permissions.ts`)),
+			).rejects.toThrow();
 		} finally {
 			await rm(repositoryRoot, { force: true, recursive: true });
 		}

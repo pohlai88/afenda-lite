@@ -134,6 +134,17 @@ const ERP_TREATMENT_POLICIES = Object.freeze([
 		version: ERP_TREATMENT_AUTHORITY_VERSION,
 	},
 	{
+		code: "AFG-ERP-105",
+		treatment: "auto-upgrade",
+		capability: "feature-first-layout",
+		actionKind: "upgrade-feature-first-layout",
+		automation: "automatic",
+		status: "ready",
+		recovery:
+			"Add the owning features to the group or remove the empty group.definition.ts classification surface.",
+		version: ERP_TREATMENT_AUTHORITY_VERSION,
+	},
+	{
 		code: "AFG-ERP-201",
 		treatment: "auto-reconcile",
 		capability: "projection-lock",

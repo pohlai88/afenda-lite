@@ -39,12 +39,24 @@ export interface GeneratorPlanOptions {
 	readonly format?: unknown;
 }
 
+/**
+ * A write-capable generator a family registers on top of its contract modes.
+ * An internal contract cannot declare a mutating mode, so these commands are
+ * declared here and the local command catalog is derived from them — the
+ * registration is the inventory, and there is no second one.
+ */
+export interface GeneratorExplicitLocalCommand {
+	readonly name: string;
+	readonly writes: boolean;
+}
+
 export interface GeneratorFamilyRegistration {
 	readonly contract: GeneratorFamilyContractDefinition;
 	readonly doctor: (
 		repositoryRoot: string,
 		options?: GeneratorDoctorOptions,
 	) => Promise<string>;
+	readonly explicitLocalCommands: readonly GeneratorExplicitLocalCommand[];
 	readonly name: GeneratorName;
 	readonly planJsonName: `${GeneratorName}-plan-upgrade-json`;
 	readonly planName: `${GeneratorName}-plan-upgrade`;
@@ -372,6 +384,9 @@ export const createFamilyRegistration = (
 		planJsonName,
 		contract,
 		doctor,
+		// A family contributes no write-capable command of its own; each family
+		// registration overrides this with the commands it explicitly registers.
+		explicitLocalCommands: Object.freeze([]),
 		planUpgrade,
 		register: (plop: GeneratorRegistrar): void => {
 			plop.setGenerator(name, {

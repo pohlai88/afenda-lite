@@ -1,5 +1,8 @@
 import { generatorContracts } from "../contracts.ts";
-import type { GeneratorRegistrar } from "../engine/family-registration.ts";
+import type {
+	GeneratorExplicitLocalCommand,
+	GeneratorRegistrar,
+} from "../engine/family-registration.ts";
 import { createFamilyRegistration } from "../engine/family-registration.ts";
 import { parseGeneratorReconciliationPlan } from "../engine/reconciliation-planner.ts";
 import { applyKernelAdoptionTreatments } from "./adoption-apply.ts";
@@ -20,6 +23,9 @@ export const kernelGeneratorApplyAdoptionName = APPLY_ADOPTION_GENERATOR_NAME;
 
 export const kernelGeneratorRegistration = Object.freeze({
 	...kernelBaseGeneratorRegistration,
+	explicitLocalCommands: Object.freeze([
+		{ name: APPLY_ADOPTION_GENERATOR_NAME, writes: true },
+	] satisfies readonly GeneratorExplicitLocalCommand[]),
 	register: (plop: GeneratorRegistrar): void => {
 		kernelBaseGeneratorRegistration.register(plop);
 		plop.setGenerator(APPLY_ADOPTION_GENERATOR_NAME, {

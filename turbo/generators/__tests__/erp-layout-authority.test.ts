@@ -99,6 +99,7 @@ describe("ERP layout authority discovery", () => {
 				summary: {
 					total: 5,
 					featureFirst: 1,
+					featureGroups: 0,
 					historicalRoot: 1,
 					hybrid: 1,
 					empty: 2,
@@ -155,6 +156,64 @@ describe("ERP layout authority discovery", () => {
 		}
 	});
 
+	it("resolves grouped features to their leaf owners and measures imports from the feature root", async () => {
+		const repositoryRoot = await mkdtemp(
+			join(tmpdir(), "afenda-erp-layout-groups-"),
+		);
+		try {
+			const group =
+				"packages/erp/corporate-administration/src/features/agreement-administration";
+			await writeFixtureFile(
+				repositoryRoot,
+				`${group}/group.definition.ts`,
+				'export const AgreementAdministrationFeatureGroup = {\n\tid: "agreement-administration",\n} as const;\n',
+			);
+			// Reaches its own group directory only — inside src/features, so allowed.
+			await writeFixtureFile(
+				repositoryRoot,
+				`${group}/service-subscriptions/index.ts`,
+				'import { AgreementAdministrationFeatureGroup } from "../group.definition";\nexport const value = AgreementAdministrationFeatureGroup;\n',
+			);
+			// Nested capsule file reaching its own feature root — also allowed.
+			await writeFixtureFile(
+				repositoryRoot,
+				`${group}/service-subscriptions/adapters/memory.ts`,
+				'import { value } from "../index";\nexport const adapter = value;\n',
+			);
+			// Escapes src/features entirely — the real violation.
+			await writeFixtureFile(
+				repositoryRoot,
+				`${group}/insurance/index.ts`,
+				'import { compose } from "../../../composition/module.manifest";\nexport const value = compose;\n',
+			);
+			// An ungrouped feature keeps the flat one-level classification.
+			await writeFixtureFile(
+				repositoryRoot,
+				"packages/erp/corporate-administration/src/features/company/index.ts",
+			);
+
+			const report = await createErpLayoutAuthorityReport({
+				repositoryRoot,
+				workspaces: [createWorkspace("packages/erp/corporate-administration")],
+			});
+			const [workspace] = report.workspaces;
+
+			expect(workspace?.featureGroupDirectories).toEqual([group]);
+			expect(workspace?.featureDirectories).toEqual([
+				`${group}/insurance`,
+				`${group}/service-subscriptions`,
+				"packages/erp/corporate-administration/src/features/company",
+			]);
+			expect(workspace?.layoutClass).toBe("feature-first");
+			expect(workspace?.upwardFeatureImports).toEqual([
+				`${group}/insurance/index.ts`,
+			]);
+			expect(report.summary.featureGroups).toBe(1);
+		} finally {
+			await rm(repositoryRoot, { force: true, recursive: true });
+		}
+	});
+
 	it("keeps ERP layout discovery read-only", async () => {
 		const repositoryRoot = await mkdtemp(
 			join(tmpdir(), "afenda-erp-layout-read-only-"),
@@ -195,6 +254,7 @@ describe("ERP layout authority discovery", () => {
 			expect(report.summary).toEqual({
 				total: 2,
 				featureFirst: 1,
+				featureGroups: 0,
 				historicalRoot: 1,
 				hybrid: 0,
 				empty: 0,
@@ -299,6 +359,7 @@ describe("ERP layout authority discovery", () => {
 		expect(report.summary).toEqual({
 			total: 13,
 			featureFirst: 3,
+			featureGroups: 0,
 			historicalRoot: 10,
 			hybrid: 0,
 			empty: 0,

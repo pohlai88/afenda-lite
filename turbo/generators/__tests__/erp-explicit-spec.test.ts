@@ -116,6 +116,74 @@ describe("ERP explicit create/add-feature specs", () => {
 		}
 	});
 
+	it("plans grouped features under their classification directory", async () => {
+		const repositoryRoot = await mkdtemp(
+			join(tmpdir(), "afenda-erp-create-grouped-"),
+		);
+		try {
+			const plan = await planErpExplicitSpec({
+				repositoryRoot,
+				spec: {
+					...createPackageSpec,
+					features: [
+						{
+							...createPackageSpec.features[0],
+							groupId: "resource-administration",
+						},
+					],
+				},
+			});
+
+			expect(plan.actions).toEqual(
+				expect.arrayContaining([
+					{
+						kind: "create-file",
+						path: "packages/erp/asset-management/src/features/resource-administration/group.definition.ts",
+					},
+					{
+						kind: "create-directory",
+						path: "packages/erp/asset-management/src/features/resource-administration/asset-register",
+					},
+					{
+						kind: "create-file",
+						path: "packages/erp/asset-management/src/features/resource-administration/asset-register/index.ts",
+					},
+				]),
+			);
+			expect(plan.actions).not.toContainEqual({
+				kind: "create-directory",
+				path: "packages/erp/asset-management/src/features/asset-register",
+			});
+		} finally {
+			await rm(repositoryRoot, { force: true, recursive: true });
+		}
+	});
+
+	it("rejects a feature group that collides with an ungrouped feature name", () => {
+		expect(() =>
+			parseErpExplicitSpec({
+				...createPackageSpec,
+				features: [
+					{
+						...createPackageSpec.features[0],
+						groupId: "premises-administration",
+					},
+					{
+						id: "premises-administration",
+						operations: [
+							{
+								id: "asset-management.premises-administration.create",
+								kind: "command",
+								permission: "asset_management.premises_administration.create",
+							},
+						],
+						publicExports: ["createPremises"],
+					},
+				],
+			}),
+		).toThrow(ErpExplicitSpecError);
+	});
+
 	it("parses add-feature specs and rejects missing or existing package state before mutation", async () => {
 		const repositoryRoot = await mkdtemp(join(tmpdir(), "afenda-erp-add-"));
 		try {

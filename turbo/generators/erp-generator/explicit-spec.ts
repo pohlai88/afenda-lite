@@ -21,6 +21,11 @@ export interface ErpExplicitOperationSpec {
 }
 
 export interface ErpExplicitFeatureSpec {
+	/**
+	 * Optional feature-group classification. The group only classifies; the
+	 * feature remains the sole semantic owner of its operations and contracts.
+	 */
+	readonly groupId?: string;
 	readonly id: string;
 	readonly operations: readonly ErpExplicitOperationSpec[];
 	readonly publicExports: readonly string[];
@@ -218,10 +223,24 @@ const parseFeature = (
 		issues.push(`${path}: expected a feature object`);
 		return;
 	}
-	rejectUnknownKeys(value, ["id", "operations", "publicExports"], path, issues);
+	rejectUnknownKeys(
+		value,
+		["groupId", "id", "operations", "publicExports"],
+		path,
+		issues,
+	);
 	const id = readString(value.id, `${path}.id`, issues);
 	assertPattern(id, MODULE_ID_PATTERN, `${path}.id`, issues);
 	assertSafeRelativePathSegment(id, `${path}.id`, issues);
+	let groupId: string | undefined;
+	if (value.groupId !== undefined) {
+		groupId = readString(value.groupId, `${path}.groupId`, issues);
+		assertPattern(groupId, MODULE_ID_PATTERN, `${path}.groupId`, issues);
+		assertSafeRelativePathSegment(groupId, `${path}.groupId`, issues);
+		if (groupId !== undefined && groupId === id) {
+			issues.push(`${path}.groupId: must differ from the feature id`);
+		}
+	}
 	const operations = Array.isArray(value.operations)
 		? value.operations
 				.map((operation, index) =>
@@ -256,10 +275,16 @@ const parseFeature = (
 	}
 	return Object.freeze({
 		id,
+		...(groupId === undefined ? {} : { groupId }),
 		operations: Object.freeze(operations),
 		publicExports,
 	});
 };
+
+const featureRelativePath = (feature: ErpExplicitFeatureSpec): string =>
+	feature.groupId === undefined
+		? `src/features/${feature.id}`
+		: `src/features/${feature.groupId}/${feature.id}`;
 
 const parseCreatePackageSpec = (
 	input: Record<string, unknown>,
@@ -319,6 +344,20 @@ const parseCreatePackageSpec = (
 		"spec.features",
 		issues,
 	);
+	// A group and a feature both occupy a directory directly under src/features,
+	// so a shared name would make the layout ambiguous.
+	const groupIds = new Set(
+		features
+			.map((feature) => feature.groupId)
+			.filter((groupId) => groupId !== undefined),
+	);
+	for (const feature of features) {
+		if (feature.groupId === undefined && groupIds.has(feature.id)) {
+			issues.push(
+				`spec.features: ungrouped feature '${feature.id}' collides with a feature group of the same name`,
+			);
+		}
+	}
 	if (issues.length > 0) {
 		throw new ErpExplicitSpecError(issues);
 	}
@@ -393,14 +432,27 @@ const action = (
 
 const createPackageActions = (spec: ErpCreatePackageSpec) => {
 	const packagePath = packagePathFor(spec.moduleId);
-	const featureActions = spec.features.flatMap((feature) => [
-		action("create-directory", `${packagePath}/src/features/${feature.id}`),
-		action("create-file", `${packagePath}/src/features/${feature.id}/index.ts`),
+	const groupActions = [
+		...new Set(
+			spec.features
+				.map((feature) => feature.groupId)
+				.filter((groupId) => groupId !== undefined),
+		),
+	].flatMap((groupId) => [
+		action("create-directory", `${packagePath}/src/features/${groupId}`),
 		action(
 			"create-file",
-			`${packagePath}/src/features/${feature.id}/operation-registry.ts`,
+			`${packagePath}/src/features/${groupId}/group.definition.ts`,
 		),
 	]);
+	const featureActions = spec.features.flatMap((feature) => {
+		const featurePath = `${packagePath}/${featureRelativePath(feature)}`;
+		return [
+			action("create-directory", featurePath),
+			action("create-file", `${featurePath}/index.ts`),
+			action("create-file", `${featurePath}/operation-registry.ts`),
+		];
+	});
 	return Object.freeze(
 		[
 			action("create-directory", packagePath),
@@ -410,6 +462,7 @@ const createPackageActions = (spec: ErpCreatePackageSpec) => {
 				"create-file",
 				`${packagePath}/src/composition/module.manifest.ts`,
 			),
+			...groupActions,
 			...featureActions,
 			action(
 				"create-file",
@@ -421,20 +474,22 @@ const createPackageActions = (spec: ErpCreatePackageSpec) => {
 
 const addFeatureActions = (spec: ErpAddFeatureSpec) => {
 	const packagePath = packagePathFor(spec.moduleId);
+	const featurePath = `${packagePath}/${featureRelativePath(spec.feature)}`;
+	const groupActions =
+		spec.feature.groupId === undefined
+			? []
+			: [
+					action(
+						"update-file",
+						`${packagePath}/src/features/${spec.feature.groupId}/group.definition.ts`,
+					),
+				];
 	return Object.freeze(
 		[
-			action(
-				"create-directory",
-				`${packagePath}/src/features/${spec.feature.id}`,
-			),
-			action(
-				"create-file",
-				`${packagePath}/src/features/${spec.feature.id}/index.ts`,
-			),
-			action(
-				"create-file",
-				`${packagePath}/src/features/${spec.feature.id}/operation-registry.ts`,
-			),
+			action("create-directory", featurePath),
+			action("create-file", `${featurePath}/index.ts`),
+			action("create-file", `${featurePath}/operation-registry.ts`),
+			...groupActions,
 			action("update-file", `${packagePath}/src/index.ts`),
 			action(
 				"update-file",
@@ -473,9 +528,20 @@ export const planErpExplicitSpec = async ({
 	if (!(await exists(repositoryRoot, packagePath))) {
 		issues.push(`spec.moduleId: package does not exist at ${packagePath}`);
 	}
-	const featurePath = `${packagePath}/src/features/${spec.feature.id}`;
+	const featurePath = `${packagePath}/${featureRelativePath(spec.feature)}`;
 	if (await exists(repositoryRoot, featurePath)) {
 		issues.push(`spec.feature.id: feature already exists at ${featurePath}`);
+	}
+	// A feature owns its semantics exactly once, so the same id must not exist
+	// both grouped and ungrouped.
+	const ungroupedPath = `${packagePath}/src/features/${spec.feature.id}`;
+	if (
+		spec.feature.groupId !== undefined &&
+		(await exists(repositoryRoot, ungroupedPath))
+	) {
+		issues.push(
+			`spec.feature.id: feature already exists ungrouped at ${ungroupedPath}`,
+		);
 	}
 	if (issues.length > 0) {
 		throw new ErpExplicitSpecError(issues);

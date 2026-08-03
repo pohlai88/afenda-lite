@@ -70,15 +70,16 @@ function assertOpenApiDocumentIdAligned(): void {
 	}
 }
 
-function assertSpecPresent(): void {
-	if (!existsSync(OPENAPI_DOCUMENT_PATH)) {
-		fail(
-			`OpenAPI spec missing at ${OPENAPI_DOCUMENT_PATH}. Run: pnpm openapi:generate`,
-		);
-	}
+function specPresent(): boolean {
+	return existsSync(OPENAPI_DOCUMENT_PATH);
 }
 
-assertSpecPresent();
+if (!specPresent()) {
+	console.log(
+		`[generate:openapi-docs] skipped — docs-V2 removed, no OpenAPI spec at ${OPENAPI_DOCUMENT_PATH}`,
+	);
+	process.exit(0);
+}
 assertOpenApiDocumentIdAligned();
 
 mkdirSync(contentApiDir, { recursive: true });

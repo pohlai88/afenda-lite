@@ -1,0 +1,173 @@
+{
+  "architecture": "corporate-administration-architecture.md",
+  "features": [
+    {
+      "group": "entity-administration",
+      "feature": "company",
+      "name": "Company",
+      "prd": "feature-specs/entity-administration/company/PRD.md"
+    },
+    {
+      "group": "entity-administration",
+      "feature": "establishments",
+      "name": "Establishments",
+      "prd": "feature-specs/entity-administration/establishments/PRD.md"
+    },
+    {
+      "group": "entity-administration",
+      "feature": "group-structure",
+      "name": "Group Structure",
+      "prd": "feature-specs/entity-administration/group-structure/PRD.md"
+    },
+    {
+      "group": "governance-administration",
+      "feature": "governance-bodies",
+      "name": "Governance Bodies",
+      "prd": "feature-specs/governance-administration/governance-bodies/PRD.md"
+    },
+    {
+      "group": "governance-administration",
+      "feature": "officers",
+      "name": "Officers",
+      "prd": "feature-specs/governance-administration/officers/PRD.md"
+    },
+    {
+      "group": "governance-administration",
+      "feature": "meetings",
+      "name": "Meetings",
+      "prd": "feature-specs/governance-administration/meetings/PRD.md"
+    },
+    {
+      "group": "governance-administration",
+      "feature": "resolutions",
+      "name": "Resolutions",
+      "prd": "feature-specs/governance-administration/resolutions/PRD.md"
+    },
+    {
+      "group": "governance-administration",
+      "feature": "authority",
+      "name": "Authority",
+      "prd": "feature-specs/governance-administration/authority/PRD.md"
+    },
+    {
+      "group": "compliance-administration",
+      "feature": "obligations-calendar",
+      "name": "Obligations Calendar",
+      "prd": "feature-specs/compliance-administration/obligations-calendar/PRD.md"
+    },
+    {
+      "group": "compliance-administration",
+      "feature": "statutory-filings",
+      "name": "Statutory Filings",
+      "prd": "feature-specs/compliance-administration/statutory-filings/PRD.md"
+    },
+    {
+      "group": "compliance-administration",
+      "feature": "licences-permits",
+      "name": "Licences and Permits",
+      "prd": "feature-specs/compliance-administration/licences-permits/PRD.md"
+    },
+    {
+      "group": "compliance-administration",
+      "feature": "compliance-assurance",
+      "name": "Compliance Assurance",
+      "prd": "feature-specs/compliance-administration/compliance-assurance/PRD.md"
+    },
+    {
+      "group": "agreement-administration",
+      "feature": "administrative-agreements",
+      "name": "Administrative Agreements",
+      "prd": "feature-specs/agreement-administration/administrative-agreements/PRD.md"
+    },
+    {
+      "group": "agreement-administration",
+      "feature": "service-subscriptions",
+      "name": "Service Subscriptions",
+      "prd": "feature-specs/agreement-administration/service-subscriptions/PRD.md"
+    },
+    {
+      "group": "agreement-administration",
+      "feature": "insurance",
+      "name": "Insurance",
+      "prd": "feature-specs/agreement-administration/insurance/PRD.md"
+    },
+    {
+      "group": "agreement-administration",
+      "feature": "legal-instruments",
+      "name": "Legal Instruments",
+      "prd": "feature-specs/agreement-administration/legal-instruments/PRD.md"
+    },
+    {
+      "group": "resource-administration",
+      "feature": "administrative-assets",
+      "name": "Administrative Assets",
+      "prd": "feature-specs/resource-administration/administrative-assets/PRD.md"
+    },
+    {
+      "group": "resource-administration",
+      "feature": "resource-assignments",
+      "name": "Resource Assignments",
+      "prd": "feature-specs/resource-administration/resource-assignments/PRD.md"
+    },
+    {
+      "group": "resource-administration",
+      "feature": "access-resources",
+      "name": "Access Resources",
+      "prd": "feature-specs/resource-administration/access-resources/PRD.md"
+    },
+    {
+      "group": "resource-administration",
+      "feature": "physical-verification",
+      "name": "Physical Verification",
+      "prd": "feature-specs/resource-administration/physical-verification/PRD.md"
+    },
+    {
+      "group": "premises-administration",
+      "feature": "premises",
+      "name": "Premises",
+      "prd": "feature-specs/premises-administration/premises/PRD.md"
+    },
+    {
+      "group": "premises-administration",
+      "feature": "occupancy",
+      "name": "Occupancy",
+      "prd": "feature-specs/premises-administration/occupancy/PRD.md"
+    },
+    {
+      "group": "premises-administration",
+      "feature": "facility-services",
+      "name": "Facility Services",
+      "prd": "feature-specs/premises-administration/facility-services/PRD.md"
+    },
+    {
+      "group": "premises-administration",
+      "feature": "premises-access",
+      "name": "Premises Access",
+      "prd": "feature-specs/premises-administration/premises-access/PRD.md"
+    },
+    {
+      "group": "records-administration",
+      "feature": "controlled-records",
+      "name": "Controlled Records",
+      "prd": "feature-specs/records-administration/controlled-records/PRD.md"
+    },
+    {
+      "group": "records-administration",
+      "feature": "document-register",
+      "name": "Document Register",
+      "prd": "feature-specs/records-administration/document-register/PRD.md"
+    },
+    {
+      "group": "records-administration",
+      "feature": "retention-disposal",
+      "name": "Retention and Disposal",
+      "prd": "feature-specs/records-administration/retention-disposal/PRD.md"
+    },
+    {
+      "group": "records-administration",
+      "feature": "evidence-packs",
+      "name": "Evidence Packs",
+      "prd": "feature-specs/records-administration/evidence-packs/PRD.md"
+    }
+  ]
+}

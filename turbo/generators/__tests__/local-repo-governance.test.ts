@@ -4,6 +4,12 @@ import {
 	createGeneratorLocalRepoGovernanceReport,
 	GENERATOR_LOCAL_REPO_GOVERNANCE_SCHEMA,
 } from "../engine/local-repo-governance.ts";
+import {
+	erpGeneratorAddFeatureName,
+	erpGeneratorCreatePackageName,
+	erpGeneratorReconcileProjectionLocksName,
+} from "../erp-generator/registration.ts";
+import { kernelGeneratorApplyAdoptionName } from "../kernel-generator/registration.ts";
 
 const commandNames = (
 	report: ReturnType<typeof createGeneratorLocalRepoGovernanceReport>,
@@ -65,6 +71,39 @@ describe("generator local repo governance", () => {
 			"erp-generator-reconcile-projection-locks",
 			"kernel-generator-apply-adoption",
 		]);
+	});
+
+	it("names every explicit mutation command from its registration constant", () => {
+		const report = createGeneratorLocalRepoGovernanceReport();
+
+		expect(
+			report.commandCatalog
+				.filter((command) => command.source === "explicit-local-generator")
+				.map((command) => command.name),
+		).toEqual(
+			[
+				erpGeneratorAddFeatureName,
+				erpGeneratorCreatePackageName,
+				erpGeneratorReconcileProjectionLocksName,
+				kernelGeneratorApplyAdoptionName,
+			].sort(),
+		);
+	});
+
+	it("never mixes read-only family commands and mutation commands under one label", () => {
+		const report = createGeneratorLocalRepoGovernanceReport();
+
+		expect(
+			report.commandCatalog.map((command) => ({
+				source: command.source,
+				writes: command.writes,
+			})),
+		).toEqual(
+			report.commandCatalog.map((command) => ({
+				source: command.source,
+				writes: command.source === "explicit-local-generator",
+			})),
+		);
 	});
 
 	it("declares the generator roadmap stop boundary", () => {

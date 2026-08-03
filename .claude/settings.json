@@ -1,5 +1,36 @@
 {
   "permissions": {
+    "allow": [
+      "Bash(node -e \"const p=require\\('./package.json'\\);console.log\\(JSON.stringify\\(p.devDependencies,null,1\\)\\)\")",
+      "Bash(pnpm dlx *)",
+      "Bash(node -e ' *)",
+      "Bash(awk -F: '$2>0')",
+      "Bash(pnpm gen *)",
+      "Bash(pnpm install *)",
+      "Bash(pnpm --filter @afenda/corporate-administration typecheck)",
+      "Bash(node -e \"const p=require\\('./packages/data-plane/db/package.json'\\);console.log\\(JSON.stringify\\(p.exports,null,1\\)\\)\")",
+      "Bash(pnpm --filter @afenda/corporate-administration test)",
+      "Bash(pnpm --filter @afenda/corporate-administration lint)",
+      "Bash(pnpm exec *)",
+      "Bash(pnpm validate:modules)",
+      "Bash(pnpm gen:doctor:erp)",
+      "Bash(pnpm governance:packages)",
+      "Bash(git check-ignore *)",
+      "Bash(pnpm --filter @afenda/corporate-administration check)"
+    ],
+    "deny": [
+      "Bash(pnpm db:push*)",
+      "Bash(pnpm db:pull*)",
+      "Bash(*drizzle-kit*push*)",
+      "Bash(*drizzle-kit*migrate*)",
+      "Bash(pnpm db:migrate)",
+      "Bash(pnpm db:migrate *)",
+      "Bash(pnpm --filter @afenda/db db:migrate)",
+      "Bash(pnpm --filter @afenda/db db:migrate *)",
+      "Bash(*db-migrate-guard.mjs*)",
+      "Bash(*data-plane/db/scripts/apply-*.mjs*)",
+      "Bash(psql*packages/data-plane/db/drizzle/*)"
+    ],
     "ask": [
       "Bash(git restore*)",
       "Bash(git reset*)",
@@ -18,19 +49,6 @@
       "Bash(git rebase --quit*)",
       "Bash(git cherry-pick --abort*)",
       "Bash(git am --abort*)"
-    ],
-    "deny": [
-      "Bash(pnpm db:push*)",
-      "Bash(pnpm db:pull*)",
-      "Bash(*drizzle-kit*push*)",
-      "Bash(*drizzle-kit*migrate*)",
-      "Bash(pnpm db:migrate)",
-      "Bash(pnpm db:migrate *)",
-      "Bash(pnpm --filter @afenda/db db:migrate)",
-      "Bash(pnpm --filter @afenda/db db:migrate *)",
-      "Bash(*db-migrate-guard.mjs*)",
-      "Bash(*data-plane/db/scripts/apply-*.mjs*)",
-      "Bash(psql*packages/data-plane/db/drizzle/*)"
     ]
   }
 }
