@@ -1,7 +1,7 @@
 import { errorResult, type Result } from "@afenda/errors";
 import type { Item, RefUom, Warehouse } from "@afenda/master-data";
-import type { MasterLookupPort } from "../../src/ports";
-import { resolveAsync } from "../../src/resolve-async";
+import type { MasterLookupPort } from "../../src/kernel/contracts/ports";
+import { resolveAsync } from "../../src/kernel/execution/async";
 
 export function createMemoryMasterLookup(
 	seed: { items?: Item[]; uoms?: RefUom[]; warehouses?: Warehouse[] } = {},

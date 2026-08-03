@@ -1,8 +1,7 @@
 export {
 	createMemoryInventoryStore,
 	MemoryInventoryStore,
-} from "../memory-store";
-export type { MasterLookupPort, MutationPorts } from "../ports";
+} from "../features/movements/movements.memory";
 export type {
 	AvailabilityFilter,
 	InventoryStore,
@@ -13,4 +12,8 @@ export type {
 	MovementPostRecord,
 	ReservationCreateRecord,
 	ReservationReleaseRecord,
-} from "../store";
+} from "../features/movements/movements.store";
+export type {
+	MasterLookupPort,
+	MutationPorts,
+} from "../kernel/contracts/ports";

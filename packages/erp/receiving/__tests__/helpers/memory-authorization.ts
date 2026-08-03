@@ -1,8 +1,8 @@
+import { resolveAsync } from "../../src/kernel/execution/async";
 import type {
 	ReceivingAuthorizationPort,
 	ReceivingPermission,
-} from "../../src/authorization";
-import { resolveAsync } from "../../src/resolve-async";
+} from "../../src/kernel/execution/authorization";
 
 export function createGrantingReceivingAuthorization(
 	permissions: readonly ReceivingPermission[],

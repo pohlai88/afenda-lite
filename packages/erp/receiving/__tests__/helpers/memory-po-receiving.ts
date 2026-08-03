@@ -3,8 +3,8 @@ import { errorResult, type Result } from "@afenda/errors";
 import type {
 	PurchaseOrderReceivingQueryPort,
 	PurchaseOrderReceivingSnapshot,
-} from "../../src/ports";
-import { resolveAsync } from "../../src/resolve-async";
+} from "../../src/kernel/contracts/ports";
+import { resolveAsync } from "../../src/kernel/execution/async";
 
 export function postedPoSnapshot(
 	overrides?: Partial<PurchaseOrderReceivingSnapshot> & {

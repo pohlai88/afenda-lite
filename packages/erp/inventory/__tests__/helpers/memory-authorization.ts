@@ -1,8 +1,8 @@
 import type {
 	InventoryAuthorizationPort,
 	InventoryPermission,
-} from "../../src/authorization";
-import { INVENTORY_PERMISSION_CODES } from "../../src/permissions";
+} from "../../src/kernel/execution/authorization";
+import { INVENTORY_PERMISSION_CODES } from "../../src/kernel/execution/permissions";
 
 /** Test double — grants an explicit permission set (not a product stub). */
 export function createGrantingInventoryAuthorization(

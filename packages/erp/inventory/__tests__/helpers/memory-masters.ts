@@ -1,7 +1,7 @@
 import { errorResult, type Result } from "@afenda/errors";
 import type { Item, RefUom, Warehouse } from "@afenda/master-data";
 
-import type { MasterLookupPort } from "../../src/ports";
+import type { MasterLookupPort } from "../../src/kernel/contracts/ports";
 
 export interface MemoryMastersSeed {
 	items?: Item[];

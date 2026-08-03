@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { createMemoryPurchasingStore } from "../src/memory-store";
 import {
 	createDraftPurchaseOrder,
 	getPurchaseOrderById,
 	listPurchaseOrders,
-} from "../src/order";
+} from "../src/facade/capabilities";
+import { createMemoryPurchasingStore } from "../src/features/orders/orders.memory";
 import {
 	PURCHASING_PERMISSION_ORDER_LIST,
 	PURCHASING_PERMISSION_ORDER_READ,
-} from "../src/permissions";
+} from "../src/kernel/execution/permissions";
 import { createGrantingPurchasingAuthorization } from "./helpers/memory-authorization";
 import {
 	createMemoryMasterLookup,

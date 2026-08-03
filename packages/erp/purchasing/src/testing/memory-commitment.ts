@@ -3,8 +3,8 @@ import { errorResult, type Result } from "@afenda/errors";
 import type {
 	PurchaseOrderCommitmentQueryPort,
 	PurchaseOrderCommitmentStatus,
-} from "../ports";
-import { resolveAsync } from "../resolve-async";
+} from "../kernel/contracts/ports";
+import { resolveAsync } from "../kernel/execution/async";
 
 const ZERO_COMMITMENT: PurchaseOrderCommitmentStatus = {
 	orderedQuantity: "0",

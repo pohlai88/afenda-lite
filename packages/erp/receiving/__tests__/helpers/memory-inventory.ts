@@ -11,7 +11,7 @@ import {
 	type MasterLookupPort,
 	type MutationPorts,
 } from "@afenda/inventory/testing";
-import { resolveAsync } from "../../src/resolve-async";
+import { resolveAsync } from "../../src/kernel/execution/async";
 
 function createGrantingInventoryAuthorization(
 	grants: readonly InventoryPermission[],

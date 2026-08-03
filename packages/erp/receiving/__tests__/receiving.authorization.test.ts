@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { createMemoryReceivingStore } from "../src/memory-store";
-import { RECEIVING_PERMISSION_RECEIPT_READ } from "../src/permissions";
 import {
 	createDraftGoodsReceipt,
 	getGoodsReceiptById,
 	listGoodsReceipts,
-} from "../src/receipt";
+} from "../src/facade/capabilities";
+import { createMemoryReceivingStore } from "../src/features/receipts/receipts.memory";
+import { RECEIVING_PERMISSION_RECEIPT_READ } from "../src/kernel/execution/permissions";
 import { createGrantingReceivingAuthorization } from "./helpers/memory-authorization";
 import {
 	createMemoryMasterLookup,

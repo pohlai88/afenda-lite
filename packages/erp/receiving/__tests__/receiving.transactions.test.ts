@@ -1,13 +1,19 @@
 import { errorResult, type Result } from "@afenda/errors";
 import { describe, expect, it } from "vitest";
-import { createMemoryReceivingStore } from "../src/memory-store";
+import {
+	createDraftGoodsReceipt,
+	listGoodsReceipts,
+} from "../src/facade/capabilities";
+import { createMemoryReceivingStore } from "../src/features/receipts/receipts.memory";
+import type {
+	MutationPorts,
+	OutboxFactInput,
+} from "../src/kernel/contracts/ports";
+import { resolveAsync } from "../src/kernel/execution/async";
 import {
 	RECEIVING_PERMISSION_RECEIPT_CREATE,
 	RECEIVING_PERMISSION_RECEIPT_READ,
-} from "../src/permissions";
-import type { MutationPorts, OutboxFactInput } from "../src/ports";
-import { createDraftGoodsReceipt, listGoodsReceipts } from "../src/receipt";
-import { resolveAsync } from "../src/resolve-async";
+} from "../src/kernel/execution/permissions";
 import { createGrantingReceivingAuthorization } from "./helpers/memory-authorization";
 import {
 	createMemoryMasterLookup,

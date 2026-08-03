@@ -1,5 +1,5 @@
 export {
 	createMemoryPurchasingStore,
 	MemoryPurchasingStore,
-} from "../memory-store";
+} from "../features/orders/orders.memory";
 export { createMemoryCommitmentQueryPort } from "./memory-commitment";

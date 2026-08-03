@@ -8,26 +8,16 @@ import {
 } from "@afenda/events/schemas";
 
 import {
-	PURCHASING_COMMAND_CANCEL,
-	PURCHASING_COMMAND_CLOSE,
-	PURCHASING_COMMAND_CREATE,
-	PURCHASING_COMMAND_IDS,
-	PURCHASING_COMMAND_LINE_ADD,
-	PURCHASING_COMMAND_POST,
-	PURCHASING_QUERY_GET,
-	PURCHASING_QUERY_IDS,
-	PURCHASING_QUERY_LIST,
-} from "../module-ids";
+	PURCHASING_AGGREGATES,
+	PURCHASING_MUTATION_TABLES,
+} from "../kernel/emissions/mutation-tables";
+import { PURCHASING_PERMISSION_CODES } from "../kernel/execution/permissions";
 import {
-	PURCHASING_PERMISSION_CODES,
-	PURCHASING_PERMISSION_ORDER_CANCEL,
-	PURCHASING_PERMISSION_ORDER_CLOSE,
-	PURCHASING_PERMISSION_ORDER_CREATE,
-	PURCHASING_PERMISSION_ORDER_LIST,
-	PURCHASING_PERMISSION_ORDER_POST,
-	PURCHASING_PERMISSION_ORDER_READ,
-	PURCHASING_PERMISSION_ORDER_UPDATE,
-} from "../permissions";
+	PURCHASING_COMMAND_AUTHORIZATION,
+	PURCHASING_QUERY_AUTHORIZATION,
+	PURCHASING_REGISTRY_COMMAND_IDS,
+	PURCHASING_REGISTRY_QUERY_IDS,
+} from "../kernel/operations/registry";
 
 export const purchasingModuleManifest = {
 	id: "purchasing",
@@ -37,15 +27,15 @@ export const purchasingModuleManifest = {
 	lifecycle: "active",
 	activationMode: "organization_toggle",
 	owns: {
-		aggregates: ["purchase_order"],
+		aggregates: [...PURCHASING_AGGREGATES],
 		commandNamespace: "purchasing.order",
-		commands: [...PURCHASING_COMMAND_IDS],
+		commands: [...PURCHASING_REGISTRY_COMMAND_IDS],
 		queryNamespace: "purchasing.order",
-		queries: [...PURCHASING_QUERY_IDS],
+		queries: [...PURCHASING_REGISTRY_QUERY_IDS],
 	},
 	persistence: {
 		schemaOwner: "@afenda/db",
-		mutationTables: ["purchase_order", "purchase_order_line"],
+		mutationTables: [...PURCHASING_MUTATION_TABLES],
 	},
 	events: {
 		namespace: "purchasing.order",
@@ -63,17 +53,8 @@ export const purchasingModuleManifest = {
 		codes: [...PURCHASING_PERMISSION_CODES],
 	},
 	authorization: {
-		commands: {
-			[PURCHASING_COMMAND_CREATE]: PURCHASING_PERMISSION_ORDER_CREATE,
-			[PURCHASING_COMMAND_LINE_ADD]: PURCHASING_PERMISSION_ORDER_UPDATE,
-			[PURCHASING_COMMAND_POST]: PURCHASING_PERMISSION_ORDER_POST,
-			[PURCHASING_COMMAND_CANCEL]: PURCHASING_PERMISSION_ORDER_CANCEL,
-			[PURCHASING_COMMAND_CLOSE]: PURCHASING_PERMISSION_ORDER_CLOSE,
-		},
-		queries: {
-			[PURCHASING_QUERY_GET]: PURCHASING_PERMISSION_ORDER_READ,
-			[PURCHASING_QUERY_LIST]: PURCHASING_PERMISSION_ORDER_LIST,
-		},
+		commands: PURCHASING_COMMAND_AUTHORIZATION,
+		queries: PURCHASING_QUERY_AUTHORIZATION,
 	},
 	moduleDependencies: {
 		required: ["master-data"],

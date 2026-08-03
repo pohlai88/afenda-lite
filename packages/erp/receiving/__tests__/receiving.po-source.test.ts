@@ -1,17 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { createMemoryReceivingStore } from "../src/memory-store";
-import {
-	RECEIVING_PERMISSION_RECEIPT_CREATE,
-	RECEIVING_PERMISSION_RECEIPT_POST,
-	RECEIVING_PERMISSION_RECEIPT_READ,
-	RECEIVING_PERMISSION_RECEIPT_UPDATE,
-} from "../src/permissions";
 import {
 	addGoodsReceiptLine,
 	createDraftGoodsReceipt,
 	getGoodsReceiptById,
 	postGoodsReceipt,
-} from "../src/receipt";
+} from "../src/facade/capabilities";
+import { createMemoryReceivingStore } from "../src/features/receipts/receipts.memory";
+import {
+	RECEIVING_PERMISSION_RECEIPT_CREATE,
+	RECEIVING_PERMISSION_RECEIPT_POST,
+	RECEIVING_PERMISSION_RECEIPT_READ,
+	RECEIVING_PERMISSION_RECEIPT_UPDATE,
+} from "../src/kernel/execution/permissions";
 import { createGrantingReceivingAuthorization } from "./helpers/memory-authorization";
 import { createInventoryCommandTestOptions } from "./helpers/memory-inventory";
 import {

@@ -55,7 +55,7 @@ const APPROVED_RUNTIME_PROCESS_ENV_EXCEPTIONS = new Map([
 		"Test helper owns CI/database fixture environment.",
 	],
 	[
-		"packages/erp/inventory/src/reconcile-cli.ts",
+		"packages/erp/inventory/src/composition/reconcile-cli.ts",
 		"Operator CLI loads DATABASE_URL from env or local .env.local.",
 	],
 ]);

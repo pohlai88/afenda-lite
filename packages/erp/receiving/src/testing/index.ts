@@ -1,4 +1,4 @@
 export {
 	createMemoryReceivingStore,
 	MemoryReceivingStore,
-} from "../memory-store";
+} from "../features/receipts/receipts.memory";

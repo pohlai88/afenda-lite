@@ -4,7 +4,7 @@ import {
 	INVENTORY_MOVEMENT_SOURCES,
 	STOCK_MOVEMENT_TYPES,
 	type StockAvailability,
-} from "../src/types";
+} from "../src/kernel/contracts/domain";
 
 /**
  * V1 scope lock — absent-by-design surfaces must stay out of the type contract.

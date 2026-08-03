@@ -1,7 +1,5 @@
 import { errorResult, type Result } from "@afenda/errors";
 import { describe, expect, it } from "vitest";
-
-import { createMemoryInventoryStore } from "../src/memory-store";
 import {
 	addStockMovementLine,
 	createStockMovement,
@@ -9,8 +7,12 @@ import {
 	getStockMovementById,
 	postStockMovement,
 	reserveStock,
-} from "../src/movement";
-import type { MutationPorts, OutboxFactInput } from "../src/ports";
+} from "../src/facade/capabilities";
+import { createMemoryInventoryStore } from "../src/features/movements/movements.memory";
+import type {
+	MutationPorts,
+	OutboxFactInput,
+} from "../src/kernel/contracts/ports";
 import { createAllowAllInventoryAuthorization } from "./helpers/memory-authorization";
 import {
 	createMemoryMasterLookup,

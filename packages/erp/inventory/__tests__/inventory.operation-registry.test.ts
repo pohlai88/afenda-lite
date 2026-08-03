@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 
 import { inventoryModuleManifest } from "../src/composition/module.manifest";
+import { INVENTORY_PERMISSION_CODES } from "../src/kernel/execution/permissions";
 import {
 	INVENTORY_COMMAND_AUTHORIZATION,
 	INVENTORY_COMMAND_IDS,
@@ -10,8 +11,7 @@ import {
 	INVENTORY_OPERATION_DEFINITIONS,
 	INVENTORY_QUERY_AUTHORIZATION,
 	INVENTORY_QUERY_IDS,
-} from "../src/operation-registry";
-import { INVENTORY_PERMISSION_CODES } from "../src/permissions";
+} from "../src/kernel/operations/registry";
 
 const definitions = Object.values(INVENTORY_OPERATION_DEFINITIONS);
 
@@ -105,7 +105,11 @@ describe("Inventory operation registry", () => {
 
 	it("prevents runtime stores from reintroducing raw event wire values", async () => {
 		const runtimeSources = await Promise.all(
-			["memory-store.ts", "drizzle-store.ts", "store.ts"].map((file) =>
+			[
+				"features/movements/movements.memory.ts",
+				"features/movements/movements.drizzle.ts",
+				"features/movements/movements.store.ts",
+			].map((file) =>
 				readFile(new URL(`../src/${file}`, import.meta.url), "utf8"),
 			),
 		);

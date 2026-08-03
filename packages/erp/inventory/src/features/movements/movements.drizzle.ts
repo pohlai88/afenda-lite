@@ -1,0 +1,2351 @@
+import { randomUUID } from "node:crypto";
+
+import {
+	audit as afendaAudit,
+	type PreparedTransactionalAuditInsertValues,
+} from "@afenda/audit";
+import {
+	database as afendaDatabase,
+	and,
+	asc,
+	desc,
+	eq,
+	inArray,
+	stockBalance,
+	stockLedgerEntry,
+	stockMovement,
+	stockMovementLine,
+	stockReservation,
+} from "@afenda/db";
+import {
+	errorIngress,
+	errorProject,
+	errorResult,
+	type Result,
+} from "@afenda/errors";
+import {
+	INVENTORY_MOVEMENT_SOURCES,
+	type InventoryMovementSource,
+	STOCK_MOVEMENT_STATUSES,
+	STOCK_MOVEMENT_TYPES,
+	STOCK_RESERVATION_STATUSES,
+	type StockAvailability,
+	type StockBalance,
+	type StockMovement,
+	type StockMovementLine,
+	type StockMovementStatus,
+	type StockMovementType,
+	type StockReservation,
+	type StockReservationStatus,
+} from "../../kernel/contracts/domain";
+import type { MutationPorts } from "../../kernel/contracts/ports";
+import { runSequentiallyUntil } from "../../kernel/execution/async";
+import {
+	INVENTORY_CANCEL_MOVEMENT_EMISSION,
+	INVENTORY_CREATE_MOVEMENT_EMISSION,
+	INVENTORY_POST_MOVEMENT_EMISSION,
+	INVENTORY_RESERVE_STOCK_EMISSION,
+} from "../../kernel/operations/registry";
+import {
+	type AvailabilityFilter,
+	type BalanceEffect,
+	computeBalanceEffects,
+	formatQuantity,
+	type InventoryStore,
+	type MovementCancelRecord,
+	type MovementCreateRecord,
+	type MovementLineCreateRecord,
+	type MovementListFilter,
+	type MovementPostRecord,
+	parseQuantity,
+	type ReservationCreateRecord,
+	type ReservationListFilter,
+	type ReservationReleaseRecord,
+	reservationTerminalEventType,
+} from "./movements.store";
+
+const INVENTORY_AUDIT_SOURCE = "inventory.drizzle-store";
+
+function failFromPersistence(error: unknown, _fallbackMessage: string) {
+	return errorProject.result(
+		errorIngress.postgres(error, { operation: "persistence.postgres" }),
+	);
+}
+
+interface MovementSqlRow {
+	adjustment_note: string | null;
+	adjustment_reason_code: string | null;
+	cancel_idempotency_key: string | null;
+	cancelled_at: Date | null;
+	cancelled_by: string | null;
+	code: string;
+	create_idempotency_key: string;
+	created_at: Date;
+	created_by: string;
+	from_warehouse_code: string | null;
+	from_warehouse_id: string | null;
+	from_warehouse_name: string | null;
+	id: string;
+	movement_type: string;
+	normalized_code: string;
+	organization_id: string;
+	post_idempotency_key: string | null;
+	posted_at: Date | null;
+	posted_by: string | null;
+	reservation_id: string | null;
+	reverses_movement_id: string | null;
+	source: string;
+	source_aggregate_id: string | null;
+	source_event_id: string | null;
+	source_event_version: number | null;
+	source_line_id: string | null;
+	source_module: string | null;
+	status: string;
+	to_warehouse_code: string | null;
+	to_warehouse_id: string | null;
+	to_warehouse_name: string | null;
+	updated_at: Date;
+	updated_by: string;
+	version: number;
+	warehouse_code: string | null;
+	warehouse_id: string | null;
+	warehouse_name: string | null;
+}
+
+interface LineSqlRow {
+	base_uom_code: string;
+	base_uom_id: string;
+	created_at: Date;
+	created_by: string;
+	id: string;
+	item_code: string;
+	item_id: string;
+	item_name: string;
+	line_idempotency_key: string;
+	line_no: number;
+	movement_id: string;
+	organization_id: string;
+	quantity: string;
+	updated_at: Date;
+	updated_by: string;
+	version: number;
+}
+
+function parseEnum<T extends string>(
+	value: string,
+	values: readonly T[],
+	field: string,
+): T {
+	const found = values.find((candidate) => candidate === value);
+	if (found === undefined) {
+		throw new Error(`Invalid ${field}: ${value}`);
+	}
+	return found;
+}
+
+function parseMovementType(value: string): StockMovementType {
+	return parseEnum(value, STOCK_MOVEMENT_TYPES, "stock_movement.movement_type");
+}
+
+function parseMovementStatus(value: string): StockMovementStatus {
+	return parseEnum(value, STOCK_MOVEMENT_STATUSES, "stock_movement.status");
+}
+
+function parseMovementSource(value: string): InventoryMovementSource {
+	return parseEnum(value, INVENTORY_MOVEMENT_SOURCES, "stock_movement.source");
+}
+
+function parseReservationStatus(value: string): StockReservationStatus {
+	return parseEnum(
+		value,
+		STOCK_RESERVATION_STATUSES,
+		"stock_reservation.status",
+	);
+}
+
+function mapLine(row: LineSqlRow): StockMovementLine {
+	return {
+		id: row.id,
+		organizationId: row.organization_id,
+		movementId: row.movement_id,
+		lineNo: row.line_no,
+		itemId: row.item_id,
+		itemCode: row.item_code,
+		itemName: row.item_name,
+		baseUomId: row.base_uom_id,
+		baseUomCode: row.base_uom_code,
+		quantity: row.quantity,
+		lineIdempotencyKey: row.line_idempotency_key,
+		version: row.version,
+		createdBy: row.created_by,
+		updatedBy: row.updated_by,
+		createdAt: row.created_at,
+		updatedAt: row.updated_at,
+	};
+}
+
+function mapMovement(
+	row: MovementSqlRow,
+	lines: StockMovementLine[],
+): StockMovement {
+	return {
+		id: row.id,
+		organizationId: row.organization_id,
+		code: row.code,
+		normalizedCode: row.normalized_code,
+		movementType: parseMovementType(row.movement_type),
+		status: parseMovementStatus(row.status),
+		source: parseMovementSource(row.source),
+		warehouseId: row.warehouse_id,
+		warehouseCode: row.warehouse_code,
+		warehouseName: row.warehouse_name,
+		fromWarehouseId: row.from_warehouse_id,
+		fromWarehouseCode: row.from_warehouse_code,
+		fromWarehouseName: row.from_warehouse_name,
+		toWarehouseId: row.to_warehouse_id,
+		toWarehouseCode: row.to_warehouse_code,
+		toWarehouseName: row.to_warehouse_name,
+		reservationId: row.reservation_id,
+		reversesMovementId: row.reverses_movement_id,
+		adjustmentReasonCode: row.adjustment_reason_code,
+		adjustmentNote: row.adjustment_note,
+		sourceModule: row.source_module,
+		sourceAggregateId: row.source_aggregate_id,
+		sourceEventId: row.source_event_id,
+		sourceEventVersion: row.source_event_version,
+		sourceLineId: row.source_line_id,
+		createIdempotencyKey: row.create_idempotency_key,
+		postIdempotencyKey: row.post_idempotency_key,
+		cancelIdempotencyKey: row.cancel_idempotency_key,
+		version: row.version,
+		createdBy: row.created_by,
+		updatedBy: row.updated_by,
+		postedAt: row.posted_at,
+		postedBy: row.posted_by,
+		cancelledAt: row.cancelled_at,
+		cancelledBy: row.cancelled_by,
+		createdAt: row.created_at,
+		updatedAt: row.updated_at,
+		lines,
+	};
+}
+
+function mapHeaderRow(
+	header: typeof stockMovement.$inferSelect,
+): MovementSqlRow {
+	return {
+		id: header.id,
+		organization_id: header.organizationId,
+		code: header.code,
+		normalized_code: header.normalizedCode,
+		movement_type: header.movementType,
+		status: header.status,
+		source: header.source,
+		warehouse_id: header.warehouseId,
+		warehouse_code: header.warehouseCode,
+		warehouse_name: header.warehouseName,
+		from_warehouse_id: header.fromWarehouseId,
+		from_warehouse_code: header.fromWarehouseCode,
+		from_warehouse_name: header.fromWarehouseName,
+		to_warehouse_id: header.toWarehouseId,
+		to_warehouse_code: header.toWarehouseCode,
+		to_warehouse_name: header.toWarehouseName,
+		reservation_id: header.reservationId,
+		reverses_movement_id: header.reversesMovementId,
+		adjustment_reason_code: header.adjustmentReasonCode,
+		adjustment_note: header.adjustmentNote,
+		source_module: header.sourceModule,
+		source_aggregate_id: header.sourceAggregateId,
+		source_event_id: header.sourceEventId,
+		source_event_version: header.sourceEventVersion,
+		source_line_id: header.sourceLineId,
+		create_idempotency_key: header.createIdempotencyKey,
+		post_idempotency_key: header.postIdempotencyKey,
+		cancel_idempotency_key: header.cancelIdempotencyKey,
+		version: header.version,
+		created_by: header.createdBy,
+		updated_by: header.updatedBy,
+		posted_at: header.postedAt,
+		posted_by: header.postedBy,
+		cancelled_at: header.cancelledAt,
+		cancelled_by: header.cancelledBy,
+		created_at: header.createdAt,
+		updated_at: header.updatedAt,
+	};
+}
+
+function mapLineFromSelect(
+	line: typeof stockMovementLine.$inferSelect,
+): StockMovementLine {
+	return mapLine({
+		id: line.id,
+		organization_id: line.organizationId,
+		movement_id: line.movementId,
+		line_no: line.lineNo,
+		item_id: line.itemId,
+		item_code: line.itemCode,
+		item_name: line.itemName,
+		base_uom_id: line.baseUomId,
+		base_uom_code: line.baseUomCode,
+		quantity: line.quantity,
+		line_idempotency_key: line.lineIdempotencyKey,
+		version: line.version,
+		created_by: line.createdBy,
+		updated_by: line.updatedBy,
+		created_at: line.createdAt,
+		updated_at: line.updatedAt,
+	});
+}
+
+function mapBalance(row: typeof stockBalance.$inferSelect): StockBalance {
+	return {
+		id: row.id,
+		organizationId: row.organizationId,
+		warehouseId: row.warehouseId,
+		warehouseCode: row.warehouseCode,
+		itemId: row.itemId,
+		itemCode: row.itemCode,
+		baseUomId: row.baseUomId,
+		baseUomCode: row.baseUomCode,
+		onHand: row.onHand,
+		reserved: row.reserved,
+		available: row.available,
+		version: row.version,
+		updatedBy: row.updatedBy,
+		createdAt: row.createdAt,
+		updatedAt: row.updatedAt,
+	};
+}
+
+function mapReservation(
+	row: typeof stockReservation.$inferSelect,
+): StockReservation {
+	return {
+		id: row.id,
+		organizationId: row.organizationId,
+		code: row.code,
+		normalizedCode: row.normalizedCode,
+		status: parseReservationStatus(row.status),
+		warehouseId: row.warehouseId,
+		warehouseCode: row.warehouseCode,
+		warehouseName: row.warehouseName,
+		itemId: row.itemId,
+		itemCode: row.itemCode,
+		itemName: row.itemName,
+		baseUomId: row.baseUomId,
+		baseUomCode: row.baseUomCode,
+		quantity: row.quantity,
+		consumedQuantity: row.consumedQuantity,
+		createIdempotencyKey: row.createIdempotencyKey,
+		releaseIdempotencyKey: row.releaseIdempotencyKey,
+		version: row.version,
+		createdBy: row.createdBy,
+		updatedBy: row.updatedBy,
+		releasedAt: row.releasedAt,
+		releasedBy: row.releasedBy,
+		createdAt: row.createdAt,
+		updatedAt: row.updatedAt,
+	};
+}
+
+function json(value: unknown): string {
+	return JSON.stringify(value);
+}
+
+const CREATE_MOVEMENT_CONFLICT_PATTERN =
+	/stock_movement_org_create_idempotency_uidx|create_idempotency_key/i;
+const LINE_CONFLICT_PATTERN =
+	/stock_movement_line_org_movement_idempotency_uidx|line_idempotency_key/i;
+const SOURCE_EVENT_CONFLICT_PATTERN =
+	/stock_movement_org_source_event_uidx|source_event_id/i;
+const RESERVATION_CREATE_CONFLICT_PATTERN =
+	/stock_reservation_org_create_idempotency_uidx|create_idempotency_key/i;
+
+function readErrorStringProperty(
+	error: unknown,
+	key: PropertyKey,
+): string | undefined {
+	if (typeof error !== "object" || error === null) {
+		return;
+	}
+	try {
+		const value = Reflect.get(error, key);
+		return typeof value === "string" ? value : undefined;
+	} catch {
+		// Hostile error objects may expose throwing getters; absence is intentional.
+	}
+}
+
+function readConstraintName(error: unknown): string {
+	return (
+		readErrorStringProperty(error, "constraint") ??
+		readErrorStringProperty(error, "constraint_name") ??
+		""
+	);
+}
+
+function isCreateMovementIdempotencyConflict(error: unknown): boolean {
+	return CREATE_MOVEMENT_CONFLICT_PATTERN.test(readConstraintName(error));
+}
+
+function isLineIdempotencyConflict(error: unknown): boolean {
+	return LINE_CONFLICT_PATTERN.test(readConstraintName(error));
+}
+
+function isSourceEventConflict(error: unknown): boolean {
+	return SOURCE_EVENT_CONFLICT_PATTERN.test(readConstraintName(error));
+}
+
+function isReservationCreateIdempotencyConflict(error: unknown): boolean {
+	return RESERVATION_CREATE_CONFLICT_PATTERN.test(readConstraintName(error));
+}
+
+function movementNotFound(): Result<never> {
+	return errorResult.fail("NOT_FOUND", {
+		publicMessage: "Stock movement not found",
+	});
+}
+
+function reservationNotFound(): Result<never> {
+	return errorResult.fail("NOT_FOUND", {
+		publicMessage: "Stock reservation not found",
+	});
+}
+
+function validateMovementLineQuantity(
+	movementType: StockMovementType,
+	quantity: number,
+): Result<void> {
+	if (movementType === "adjustment" && quantity === 0) {
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Adjustment quantity must be non-zero",
+		});
+	}
+	if (movementType !== "adjustment" && quantity <= 0) {
+		return errorResult.fail("BAD_REQUEST", {
+			publicMessage: "Quantity must be a positive number",
+		});
+	}
+	return errorResult.ok(undefined);
+}
+
+interface ReservationReleaseProceed {
+	kind: "proceed";
+	remainingQuantity: number;
+}
+
+interface ReservationReleaseReplay {
+	kind: "replay";
+}
+
+type ReservationReleaseDecision =
+	| ReservationReleaseProceed
+	| ReservationReleaseReplay;
+
+interface DrizzlePostProceed {
+	effects: BalanceEffect[];
+	kind: "proceed";
+}
+
+interface DrizzlePostReplay {
+	kind: "replay";
+}
+
+type DrizzlePostDecision = DrizzlePostProceed | DrizzlePostReplay;
+
+interface DrizzlePostReservation {
+	consumedQuantity: number;
+	effects: BalanceEffect[];
+	reservation: StockReservation | null;
+}
+
+interface ReservationPostMutation {
+	auditId: string;
+	consumedQuantity: number;
+	status: "consumed" | "partially_consumed";
+}
+
+function reservationPostMutation(
+	reservation: StockReservation | null,
+	consumedQuantity: number,
+): ReservationPostMutation | null {
+	if (reservation === null || consumedQuantity <= 0) {
+		return null;
+	}
+	const nextConsumedQuantity =
+		parseQuantity(reservation.consumedQuantity) + consumedQuantity;
+	return {
+		auditId: randomUUID(),
+		consumedQuantity: nextConsumedQuantity,
+		status:
+			nextConsumedQuantity >= parseQuantity(reservation.quantity)
+				? "consumed"
+				: "partially_consumed",
+	};
+}
+
+function prepareReservationPostAudit(
+	record: MovementPostRecord,
+	correlationId: string,
+	reservation: StockReservation | null,
+	mutation: ReservationPostMutation | null,
+): Result<{
+	audit: PreparedTransactionalAuditInsertValues;
+	mutation: ReservationPostMutation;
+	reservation: StockReservation;
+} | null> {
+	if (reservation === null || mutation === null) {
+		return errorResult.ok(null);
+	}
+	const prepared = afendaAudit.transaction.prepare({
+		organizationId: record.organizationId,
+		actorUserId: record.actorUserId,
+		correlationId,
+		module: "inventory",
+		entity: "stock_reservation",
+		entityId: reservation.id,
+		action: "UPDATE",
+		changes: [
+			{
+				field: "consumed_quantity",
+				oldValue: reservation.consumedQuantity,
+				newValue: formatQuantity(mutation.consumedQuantity),
+			},
+			{
+				field: "status",
+				oldValue: reservation.status,
+				newValue: mutation.status,
+			},
+		],
+		oldValue: {
+			status: reservation.status,
+			version: reservation.version,
+			consumedQuantity: reservation.consumedQuantity,
+		},
+		newValue: {
+			status: mutation.status,
+			version: reservation.version + 1,
+			consumedQuantity: formatQuantity(mutation.consumedQuantity),
+		},
+		eventContext: {
+			version: 1,
+			outcome: "SUCCEEDED",
+			source: INVENTORY_AUDIT_SOURCE,
+			causationId: record.postIdempotencyKey,
+		},
+	});
+	if (!prepared.ok) {
+		return prepared;
+	}
+	return errorResult.ok({ audit: prepared.data, mutation, reservation });
+}
+
+function decideDrizzleMovementPost(
+	movement: StockMovement,
+	record: MovementPostRecord,
+): Result<DrizzlePostDecision> {
+	if (movement.status === "posted") {
+		return movement.postIdempotencyKey === record.postIdempotencyKey
+			? errorResult.ok({ kind: "replay" })
+			: errorResult.fail("CONFLICT", {
+					publicMessage: "Stock movement is already posted",
+				});
+	}
+	if (movement.status === "cancelled") {
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Cancelled stock movements cannot be posted",
+		});
+	}
+	if (movement.status !== "draft") {
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Stock movement is not in draft status",
+		});
+	}
+	if (movement.version !== record.expectedVersion) {
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Stock movement version conflict",
+		});
+	}
+	if (movement.lines.length === 0) {
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Cannot post stock movement without lines",
+		});
+	}
+	if (movement.reservationId !== null && movement.movementType !== "issue") {
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Only issue movements may consume reservations",
+		});
+	}
+	try {
+		return errorResult.ok({
+			effects: computeBalanceEffects(movement),
+			kind: "proceed",
+		});
+	} catch {
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Stock movement warehouses are invalid",
+		});
+	}
+}
+
+function decideReservationRelease(
+	reservation: StockReservation,
+	record: ReservationReleaseRecord,
+): Result<ReservationReleaseDecision> {
+	if (reservation.status === record.terminalStatus) {
+		return reservation.releaseIdempotencyKey === record.releaseIdempotencyKey
+			? errorResult.ok({ kind: "replay" })
+			: errorResult.fail("CONFLICT", {
+					publicMessage: "Stock reservation is already terminated",
+				});
+	}
+	if (!isReleasableReservationStatus(reservation.status)) {
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Stock reservation cannot be terminated",
+		});
+	}
+	if (reservation.version !== record.expectedVersion) {
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Stock reservation version conflict",
+		});
+	}
+	const remainingQuantity = getReservationRemainingQuantity(reservation);
+	if (remainingQuantity < 0) {
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Stock reservation remaining quantity is invalid",
+		});
+	}
+	return errorResult.ok({ kind: "proceed", remainingQuantity });
+}
+
+function reservationReleaseEffects(
+	reservation: StockReservation,
+	remainingQuantity: number,
+): BalanceEffect[] {
+	return remainingQuantity === 0
+		? []
+		: [
+				{
+					warehouseId: reservation.warehouseId,
+					warehouseCode: reservation.warehouseCode,
+					itemId: reservation.itemId,
+					itemCode: reservation.itemCode,
+					baseUomId: reservation.baseUomId,
+					baseUomCode: reservation.baseUomCode,
+					onHandDelta: 0,
+					reservedDelta: -remainingQuantity,
+					availableDelta: remainingQuantity,
+					quantityDelta: 0,
+					movementLineId: null,
+				},
+			];
+}
+
+function getReservationRemainingQuantity(
+	reservation: StockReservation,
+): number {
+	return (
+		parseQuantity(reservation.quantity) -
+		parseQuantity(reservation.consumedQuantity)
+	);
+}
+
+function isReleasableReservationStatus(
+	status: StockReservationStatus,
+): status is "active" | "partially_consumed" {
+	return status === "active" || status === "partially_consumed";
+}
+
+interface ConsumptionResult {
+	consumedQuantity: number;
+	effects: BalanceEffect[];
+}
+
+function applyReservationConsumption(
+	effects: BalanceEffect[],
+	movement: StockMovement,
+	reservation: StockReservation,
+): Result<ConsumptionResult> {
+	if (movement.warehouseId === null || movement.warehouseCode === null) {
+		return errorResult.fail("INTERNAL_ERROR");
+	}
+	if (movement.warehouseId !== reservation.warehouseId) {
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Linked reservation belongs to a different warehouse",
+		});
+	}
+
+	const quantitiesByLineId = new Map<string, number>();
+	let consumedQuantity = 0;
+	for (const line of movement.lines) {
+		if (line.itemId !== reservation.itemId) {
+			continue;
+		}
+		const quantity = parseQuantity(line.quantity);
+		quantitiesByLineId.set(line.id, quantity);
+		consumedQuantity += quantity;
+	}
+
+	if (consumedQuantity <= 0) {
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Linked reservation does not match any issue line",
+		});
+	}
+
+	const remainingQuantity = getReservationRemainingQuantity(reservation);
+	if (remainingQuantity < consumedQuantity) {
+		return errorResult.fail("CONFLICT", {
+			publicMessage:
+				"Reservation remaining quantity is insufficient for issue post",
+		});
+	}
+
+	return errorResult.ok({
+		consumedQuantity,
+		effects: effects.map((effect) => {
+			const lineQuantity =
+				effect.movementLineId === null
+					? undefined
+					: quantitiesByLineId.get(effect.movementLineId);
+			if (lineQuantity === undefined) {
+				return effect;
+			}
+			return {
+				...effect,
+				reservedDelta: effect.reservedDelta - lineQuantity,
+				availableDelta: effect.availableDelta + lineQuantity,
+			};
+		}),
+	});
+}
+
+export class DrizzleInventoryStore implements InventoryStore {
+	private async loadMovementByHeader(
+		header: typeof stockMovement.$inferSelect,
+	): Promise<Result<StockMovement>> {
+		try {
+			const lines = await afendaDatabase.client
+				.select()
+				.from(stockMovementLine)
+				.where(
+					and(
+						eq(stockMovementLine.organizationId, header.organizationId),
+						eq(stockMovementLine.movementId, header.id),
+					),
+				)
+				.orderBy(asc(stockMovementLine.lineNo), asc(stockMovementLine.id));
+			return errorResult.ok(
+				mapMovement(
+					mapHeaderRow(header),
+					lines.map((line) => mapLineFromSelect(line)),
+				),
+			);
+		} catch (error) {
+			return failFromPersistence(error, "Failed to load stock movement lines");
+		}
+	}
+
+	private async reloadMovement(
+		organizationId: string,
+		id: string,
+		_missingMessage: string,
+	): Promise<Result<StockMovement>> {
+		const reloaded = await this.getMovementById(organizationId, id);
+		if (!reloaded.ok) {
+			return reloaded;
+		}
+		if (reloaded.data === null) {
+			return errorResult.fail("INTERNAL_ERROR");
+		}
+		return errorResult.ok(reloaded.data);
+	}
+
+	private async reloadReservation(
+		organizationId: string,
+		id: string,
+		_missingMessage: string,
+	): Promise<Result<StockReservation>> {
+		const reloaded = await this.getReservationById(organizationId, id);
+		if (!reloaded.ok) {
+			return reloaded;
+		}
+		if (reloaded.data === null) {
+			return errorResult.fail("INTERNAL_ERROR");
+		}
+		return errorResult.ok(reloaded.data);
+	}
+
+	private async getLatestLedgerSequence(
+		organizationId: string,
+	): Promise<Result<number>> {
+		try {
+			const [row] = await afendaDatabase.client
+				.select({ ledgerSequence: stockLedgerEntry.ledgerSequence })
+				.from(stockLedgerEntry)
+				.where(eq(stockLedgerEntry.organizationId, organizationId))
+				.orderBy(desc(stockLedgerEntry.ledgerSequence))
+				.limit(1);
+			return errorResult.ok(row?.ledgerSequence ?? 0);
+		} catch (error) {
+			return failFromPersistence(
+				error,
+				"Failed to load inventory ledger sequence",
+			);
+		}
+	}
+
+	private async validateBalanceEffects(
+		organizationId: string,
+		effects: BalanceEffect[],
+	): Promise<Result<void>> {
+		const terminal = await runSequentiallyUntil<BalanceEffect, Result<void>>(
+			effects,
+			async (effect) => {
+				const result = await this.validateBalanceEffect(organizationId, effect);
+				return result.ok ? undefined : result;
+			},
+		);
+		return terminal ?? errorResult.ok(undefined);
+	}
+
+	private async validateBalanceEffect(
+		organizationId: string,
+		effect: BalanceEffect,
+	): Promise<Result<void>> {
+		const [row] = await afendaDatabase.client
+			.select()
+			.from(stockBalance)
+			.where(
+				and(
+					eq(stockBalance.organizationId, organizationId),
+					eq(stockBalance.warehouseId, effect.warehouseId),
+					eq(stockBalance.itemId, effect.itemId),
+				),
+			)
+			.limit(1);
+		const onHand =
+			(row === undefined ? 0 : parseQuantity(row.onHand)) + effect.onHandDelta;
+		const reserved =
+			(row === undefined ? 0 : parseQuantity(row.reserved)) +
+			effect.reservedDelta;
+		const available =
+			(row === undefined ? 0 : parseQuantity(row.available)) +
+			effect.availableDelta;
+		if (available < 0) {
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Insufficient available stock",
+			});
+		}
+		if (reserved < 0) {
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Insufficient reserved stock",
+			});
+		}
+		if (onHand < 0) {
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Stock on-hand would become negative",
+			});
+		}
+		return errorResult.ok(undefined);
+	}
+
+	private async resolveDrizzlePostReservation(
+		organizationId: string,
+		movement: StockMovement,
+		effects: BalanceEffect[],
+	): Promise<Result<DrizzlePostReservation>> {
+		if (movement.reservationId === null) {
+			return errorResult.ok({
+				consumedQuantity: 0,
+				effects,
+				reservation: null,
+			});
+		}
+		const reservationResult = await this.getReservationById(
+			organizationId,
+			movement.reservationId,
+		);
+		if (!reservationResult.ok) {
+			return reservationResult;
+		}
+		if (reservationResult.data === null) {
+			return reservationNotFound();
+		}
+		const reservation = reservationResult.data;
+		if (
+			reservation.status === "released" ||
+			reservation.status === "expired" ||
+			reservation.status === "cancelled"
+		) {
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Stock reservation cannot be consumed",
+			});
+		}
+		const adjustedEffects = applyReservationConsumption(
+			effects,
+			movement,
+			reservation,
+		);
+		return adjustedEffects.ok
+			? errorResult.ok({ ...adjustedEffects.data, reservation })
+			: adjustedEffects;
+	}
+
+	async createMovement(
+		record: MovementCreateRecord,
+		_ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<StockMovement>> {
+		const entityId = randomUUID();
+		const auditId = randomUUID();
+		const eventId = randomUUID();
+		const preparedAudit = afendaAudit.transaction.prepare({
+			organizationId: record.organizationId,
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			module: "inventory",
+			entity: "stock_movement",
+			entityId,
+			action: "CREATE",
+			changes: [{ field: "code", oldValue: null, newValue: record.code }],
+			newValue: {
+				code: record.code,
+				status: "draft",
+				movementType: record.movementType,
+				source: record.source,
+			},
+			eventContext: {
+				version: 1,
+				outcome: "SUCCEEDED",
+				source: INVENTORY_AUDIT_SOURCE,
+				causationId: record.createIdempotencyKey,
+			},
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
+		const payloadJson = json({
+			organizationId: record.organizationId,
+			entityType: "stock_movement",
+			entityId,
+			code: record.code,
+			version: 1,
+			actorId: record.createdBy,
+			correlationId: meta.correlationId,
+			movementType: record.movementType,
+			source: record.source,
+		});
+
+		try {
+			const [rows] = await afendaDatabase.transaction((sql) => [
+				sql`
+					WITH mutated AS (
+						INSERT INTO stock_movement (
+							id, organization_id, code, normalized_code, movement_type, status, source,
+							warehouse_id, warehouse_code, warehouse_name,
+							from_warehouse_id, from_warehouse_code, from_warehouse_name,
+							to_warehouse_id, to_warehouse_code, to_warehouse_name,
+							reservation_id, reverses_movement_id,
+							adjustment_reason_code, adjustment_note,
+							source_module, source_aggregate_id, source_event_id, source_event_version, source_line_id,
+							create_idempotency_key, version, created_by, updated_by
+						) VALUES (
+							${entityId}, ${record.organizationId}, ${record.code}, ${record.normalizedCode},
+							${record.movementType}, 'draft', ${record.source},
+							${record.warehouseId}, ${record.warehouseCode}, ${record.warehouseName},
+							${record.fromWarehouseId}, ${record.fromWarehouseCode}, ${record.fromWarehouseName},
+							${record.toWarehouseId}, ${record.toWarehouseCode}, ${record.toWarehouseName},
+							${record.reservationId}, ${record.reversesMovementId},
+							${record.adjustmentReasonCode}, ${record.adjustmentNote},
+							${record.sourceModule}, ${record.sourceAggregateId}, ${record.sourceEventId},
+							${record.sourceEventVersion}, ${record.sourceLineId},
+							${record.createIdempotencyKey}, 1, ${record.createdBy}, ${record.createdBy}
+						)
+						RETURNING *
+					),
+					audited AS (
+						INSERT INTO platform_audit_log (
+							id, organization_id, actor_user_id, correlation_id, module, entity,
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
+						)
+						SELECT
+							${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
+						FROM mutated
+						RETURNING id
+					),
+					outboxed AS (
+						INSERT INTO platform_domain_event (
+							id, organization_id, type, source_module, correlation_id, actor_user_id,
+							payload, status, attempts
+						)
+						SELECT
+							${eventId}, organization_id, ${INVENTORY_CREATE_MOVEMENT_EMISSION}, 'inventory',
+							${meta.correlationId}, created_by, ${payloadJson}::jsonb, 'pending', 0
+						FROM mutated
+						RETURNING id
+					)
+					SELECT mutated.* FROM mutated, audited, outboxed
+				`,
+			]);
+			const [row] = rows;
+			if (row === undefined) {
+				return errorResult.fail("INTERNAL_ERROR");
+			}
+			return errorResult.ok(mapMovement(row, []));
+		} catch (error) {
+			if (isCreateMovementIdempotencyConflict(error)) {
+				const existing = await this.getMovementByCreateIdempotencyKey(
+					record.organizationId,
+					record.createIdempotencyKey,
+				);
+				if (!existing.ok) {
+					return existing;
+				}
+				if (existing.data !== null) {
+					return errorResult.ok(existing.data);
+				}
+			}
+			if (isSourceEventConflict(error)) {
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Stock movement source event already exists",
+				});
+			}
+			return failFromPersistence(error, "Failed to create stock movement");
+		}
+	}
+
+	async addLine(
+		record: MovementLineCreateRecord,
+		_ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<StockMovementLine>> {
+		const movementResult = await this.getMovementById(
+			record.organizationId,
+			record.movementId,
+		);
+		if (!movementResult.ok) {
+			return movementResult;
+		}
+		if (movementResult.data === null) {
+			return movementNotFound();
+		}
+
+		const movement = movementResult.data;
+		const replay = movement.lines.find(
+			(line) => line.lineIdempotencyKey === record.lineIdempotencyKey,
+		);
+		if (replay !== undefined) {
+			return errorResult.ok(replay);
+		}
+		if (movement.status !== "draft") {
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Cannot add lines to a non-draft stock movement",
+			});
+		}
+		if (movement.version !== record.expectedVersion) {
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Stock movement version conflict",
+			});
+		}
+
+		const quantity = parseQuantity(record.quantity);
+		const validQuantity = validateMovementLineQuantity(
+			movement.movementType,
+			quantity,
+		);
+		if (!validQuantity.ok) {
+			return validQuantity;
+		}
+
+		const lineNo =
+			movement.lines.reduce((max, line) => Math.max(max, line.lineNo), 0) + 1;
+		const lineId = randomUUID();
+		const auditId = randomUUID();
+		const preparedAudit = afendaAudit.transaction.prepare({
+			organizationId: record.organizationId,
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			module: "inventory",
+			entity: "stock_movement_line",
+			entityId: lineId,
+			action: "CREATE",
+			changes: [
+				{ field: "item_code", oldValue: null, newValue: record.itemCode },
+			],
+			newValue: {
+				movementId: record.movementId,
+				lineNo,
+				itemCode: record.itemCode,
+				quantity: record.quantity,
+			},
+			eventContext: {
+				version: 1,
+				outcome: "SUCCEEDED",
+				source: INVENTORY_AUDIT_SOURCE,
+				causationId: record.lineIdempotencyKey,
+			},
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
+
+		try {
+			const [rows] = await afendaDatabase.transaction((sql) => [
+				sql`
+					WITH parent AS (
+						UPDATE stock_movement
+						SET version = version + 1,
+							updated_by = ${record.createdBy},
+							updated_at = now()
+						WHERE id = ${record.movementId}
+							AND organization_id = ${record.organizationId}
+							AND status = 'draft'
+							AND version = ${record.expectedVersion}
+						RETURNING id
+					),
+					mutated AS (
+						INSERT INTO stock_movement_line (
+							id, organization_id, movement_id, line_no,
+							item_id, item_code, item_name, base_uom_id, base_uom_code,
+							quantity, line_idempotency_key, version, created_by, updated_by
+						)
+						SELECT
+							${lineId}, ${record.organizationId}, ${record.movementId}, ${lineNo},
+							${record.itemId}, ${record.itemCode}, ${record.itemName},
+							${record.baseUomId}, ${record.baseUomCode},
+							${record.quantity}, ${record.lineIdempotencyKey}, 1,
+							${record.createdBy}, ${record.createdBy}
+						WHERE EXISTS (SELECT 1 FROM parent)
+						RETURNING *
+					),
+					audited AS (
+						INSERT INTO platform_audit_log (
+							id, organization_id, actor_user_id, correlation_id, module, entity,
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
+						)
+						SELECT
+							${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
+						FROM mutated
+						RETURNING id
+					)
+					SELECT mutated.* FROM mutated, audited
+				`,
+			]);
+			const [row] = rows;
+			if (row === undefined) {
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Stock movement version conflict",
+				});
+			}
+			return errorResult.ok(mapLine(row));
+		} catch (error) {
+			if (isLineIdempotencyConflict(error)) {
+				const reloaded = await this.getMovementById(
+					record.organizationId,
+					record.movementId,
+				);
+				if (!reloaded.ok) {
+					return reloaded;
+				}
+				const line = reloaded.data?.lines.find(
+					(row) => row.lineIdempotencyKey === record.lineIdempotencyKey,
+				);
+				if (line !== undefined) {
+					return errorResult.ok(line);
+				}
+			}
+			return failFromPersistence(error, "Failed to add stock movement line");
+		}
+	}
+
+	async postMovement(
+		record: MovementPostRecord,
+		_ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<StockMovement>> {
+		const movementResult = await this.getMovementById(
+			record.organizationId,
+			record.movementId,
+		);
+		if (!movementResult.ok) {
+			return movementResult;
+		}
+		if (movementResult.data === null) {
+			return movementNotFound();
+		}
+
+		const movement = movementResult.data;
+		const decision = decideDrizzleMovementPost(movement, record);
+		if (!decision.ok) {
+			return decision;
+		}
+		if (decision.data.kind === "replay") {
+			return errorResult.ok(movement);
+		}
+		const reservationResult = await this.resolveDrizzlePostReservation(
+			record.organizationId,
+			movement,
+			decision.data.effects,
+		);
+		if (!reservationResult.ok) {
+			return reservationResult;
+		}
+		const { consumedQuantity, effects, reservation } = reservationResult.data;
+
+		const balanceCheck = await this.validateBalanceEffects(
+			record.organizationId,
+			effects,
+		);
+		if (!balanceCheck.ok) {
+			return balanceCheck;
+		}
+
+		const nextVersion = movement.version + 1;
+		const auditId = randomUUID();
+		const eventId = randomUUID();
+		const preparedAudit = afendaAudit.transaction.prepare({
+			organizationId: record.organizationId,
+			actorUserId: record.actorUserId,
+			correlationId: meta.correlationId,
+			module: "inventory",
+			entity: "stock_movement",
+			entityId: record.movementId,
+			action: "UPDATE",
+			changes: [{ field: "status", oldValue: "draft", newValue: "posted" }],
+			oldValue: { status: "draft", version: movement.version },
+			newValue: { status: "posted", version: nextVersion },
+			eventContext: {
+				version: 1,
+				outcome: "SUCCEEDED",
+				source: INVENTORY_AUDIT_SOURCE,
+				causationId: record.postIdempotencyKey,
+			},
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
+		const payloadJson = json({
+			organizationId: record.organizationId,
+			entityType: "stock_movement",
+			entityId: movement.id,
+			code: movement.code,
+			version: nextVersion,
+			actorId: record.actorUserId,
+			correlationId: meta.correlationId,
+			movementType: movement.movementType,
+		});
+
+		const reservationMutation = reservationPostMutation(
+			reservation,
+			consumedQuantity,
+		);
+		const preparedReservationAudit = prepareReservationPostAudit(
+			record,
+			meta.correlationId,
+			reservation,
+			reservationMutation,
+		);
+		if (!preparedReservationAudit.ok) {
+			return preparedReservationAudit;
+		}
+		const reservationAuditContext = preparedReservationAudit.data;
+
+		try {
+			const resultSets = await afendaDatabase.transaction((sql) => {
+				const statements = [
+					sql`
+						WITH mutated AS (
+							UPDATE stock_movement
+							SET status = 'posted',
+								post_idempotency_key = ${record.postIdempotencyKey},
+								posted_at = now(),
+								posted_by = ${record.actorUserId},
+								updated_by = ${record.actorUserId},
+								updated_at = now(),
+								version = ${nextVersion}
+							WHERE id = ${record.movementId}
+								AND organization_id = ${record.organizationId}
+								AND status = 'draft'
+								AND version = ${record.expectedVersion}
+							RETURNING *
+						),
+							audited AS (
+								INSERT INTO platform_audit_log (
+									id, organization_id, actor_user_id, correlation_id, module, entity,
+									entity_id, action, changes, old_value, new_value, metadata,
+									ip_address, user_agent
+								)
+								SELECT
+									${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+									${audit.correlationId}, ${audit.module}, ${audit.entity},
+									${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+									${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+									${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
+							FROM mutated
+							RETURNING id
+						),
+						outboxed AS (
+							INSERT INTO platform_domain_event (
+								id, organization_id, type, source_module, correlation_id, actor_user_id,
+								payload, status, attempts
+							)
+							SELECT
+								${eventId}, organization_id, ${INVENTORY_POST_MOVEMENT_EMISSION}, 'inventory',
+								${meta.correlationId}, ${record.actorUserId}, ${payloadJson}::jsonb, 'pending', 0
+							FROM mutated
+							RETURNING id
+						)
+						SELECT mutated.id FROM mutated, audited, outboxed
+					`,
+				];
+
+				for (const effect of effects) {
+					const balanceId = randomUUID();
+					const ledgerId = randomUUID();
+					const onHandDelta = formatQuantity(effect.onHandDelta);
+					const reservedDelta = formatQuantity(effect.reservedDelta);
+					const availableDelta = formatQuantity(effect.availableDelta);
+					const quantityDelta = formatQuantity(effect.quantityDelta);
+					statements.push(sql`
+						WITH upserted AS (
+							INSERT INTO stock_balance (
+								id, organization_id, warehouse_id, warehouse_code, item_id, item_code,
+								base_uom_id, base_uom_code,
+								on_hand, reserved, available, version, updated_by
+							)
+							SELECT
+								${balanceId}, ${record.organizationId}, ${effect.warehouseId}, ${effect.warehouseCode},
+								${effect.itemId}, ${effect.itemCode},
+								${effect.baseUomId}, ${effect.baseUomCode},
+								CAST(${onHandDelta} AS numeric(24, 12)),
+								CAST(${reservedDelta} AS numeric(24, 12)),
+								CAST(${availableDelta} AS numeric(24, 12)),
+								1, ${record.actorUserId}
+							WHERE CAST(${onHandDelta} AS numeric(24, 12)) >= 0
+								AND CAST(${reservedDelta} AS numeric(24, 12)) >= 0
+								AND CAST(${availableDelta} AS numeric(24, 12)) >= 0
+							ON CONFLICT (organization_id, warehouse_id, item_id)
+							DO UPDATE SET
+								on_hand = stock_balance.on_hand + CAST(${onHandDelta} AS numeric(24, 12)),
+								reserved = stock_balance.reserved + CAST(${reservedDelta} AS numeric(24, 12)),
+								available = stock_balance.available + CAST(${availableDelta} AS numeric(24, 12)),
+								warehouse_code = EXCLUDED.warehouse_code,
+								item_code = EXCLUDED.item_code,
+								base_uom_id = COALESCE(EXCLUDED.base_uom_id, stock_balance.base_uom_id),
+								base_uom_code = COALESCE(EXCLUDED.base_uom_code, stock_balance.base_uom_code),
+								version = stock_balance.version + 1,
+								updated_by = EXCLUDED.updated_by,
+								updated_at = now()
+							WHERE stock_balance.on_hand + CAST(${onHandDelta} AS numeric(24, 12)) >= 0
+								AND stock_balance.reserved + CAST(${reservedDelta} AS numeric(24, 12)) >= 0
+								AND stock_balance.available + CAST(${availableDelta} AS numeric(24, 12)) >= 0
+							RETURNING *
+						),
+						ledgered AS (
+							INSERT INTO stock_ledger_entry (
+								id, organization_id, movement_id, movement_line_id, movement_code, movement_type,
+								warehouse_id, warehouse_code, item_id, item_code,
+								quantity_delta, on_hand_after, reserved_after, available_after,
+								ledger_sequence, actor_user_id, correlation_id
+							)
+							SELECT
+								${ledgerId}, organization_id, ${record.movementId}, ${effect.movementLineId},
+								${movement.code}, ${movement.movementType},
+								warehouse_id, warehouse_code, item_id, item_code,
+								CAST(${quantityDelta} AS numeric(24, 12)),
+								on_hand, reserved, available,
+								(
+									SELECT COALESCE(MAX(ledger_sequence), 0) + 1
+									FROM stock_ledger_entry
+									WHERE organization_id = ${record.organizationId}
+								),
+								${record.actorUserId}, ${meta.correlationId}
+							FROM upserted
+							RETURNING id
+						)
+						SELECT CASE
+							WHEN EXISTS (SELECT 1 FROM upserted)
+								THEN (SELECT id FROM upserted LIMIT 1)
+							ELSE (SELECT (1 / 0)::uuid)
+						END AS id
+					`);
+				}
+
+				if (reservationAuditContext !== null) {
+					const {
+						audit: reservationAudit,
+						mutation: preparedMutation,
+						reservation: preparedReservation,
+					} = reservationAuditContext;
+					statements.push(sql`
+						WITH mutated AS (
+							UPDATE stock_reservation
+							SET consumed_quantity = CAST(${formatQuantity(preparedMutation.consumedQuantity)} AS numeric(24, 12)),
+								status = ${preparedMutation.status},
+								updated_by = ${record.actorUserId},
+								updated_at = now(),
+								version = version + 1
+							WHERE id = ${preparedReservation.id}
+								AND organization_id = ${record.organizationId}
+								AND version = ${preparedReservation.version}
+							RETURNING *
+						),
+							audited AS (
+								INSERT INTO platform_audit_log (
+									id, organization_id, actor_user_id, correlation_id, module, entity,
+									entity_id, action, changes, old_value, new_value, metadata,
+									ip_address, user_agent
+								)
+								SELECT
+									${preparedMutation.auditId}, ${reservationAudit.organizationId},
+									${reservationAudit.actorUserId}, ${reservationAudit.correlationId},
+									${reservationAudit.module}, ${reservationAudit.entity},
+									${reservationAudit.entityId}, ${reservationAudit.action},
+									${reservationAudit.changesJson}::jsonb,
+									${reservationAudit.oldValueJson}::jsonb,
+									${reservationAudit.newValueJson}::jsonb,
+									${reservationAudit.metadataJson}::jsonb,
+									${reservationAudit.ipAddress}, ${reservationAudit.userAgent}
+							FROM mutated
+							RETURNING id
+						)
+						SELECT CASE
+							WHEN EXISTS (SELECT 1 FROM mutated)
+								THEN (SELECT id FROM mutated LIMIT 1)
+							ELSE (SELECT (1 / 0)::uuid)
+						END AS id
+					`);
+				}
+
+				return statements;
+			});
+
+			const [headerRows] = resultSets;
+			if (!Array.isArray(headerRows) || headerRows[0] === undefined) {
+				const reloaded = await this.getMovementById(
+					record.organizationId,
+					record.movementId,
+				);
+				if (!reloaded.ok) {
+					return reloaded;
+				}
+				if (
+					reloaded.data !== null &&
+					reloaded.data.status === "posted" &&
+					reloaded.data.postIdempotencyKey === record.postIdempotencyKey
+				) {
+					return errorResult.ok(reloaded.data);
+				}
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Stock movement version conflict",
+				});
+			}
+
+			return this.reloadMovement(
+				record.organizationId,
+				record.movementId,
+				"Posted stock movement missing after write",
+			);
+		} catch (error) {
+			return failFromPersistence(error, "Failed to post stock movement");
+		}
+	}
+
+	async cancelMovement(
+		record: MovementCancelRecord,
+		_ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<StockMovement>> {
+		const movementResult = await this.getMovementById(
+			record.organizationId,
+			record.movementId,
+		);
+		if (!movementResult.ok) {
+			return movementResult;
+		}
+		if (movementResult.data === null) {
+			return movementNotFound();
+		}
+
+		const movement = movementResult.data;
+		if (movement.status === "cancelled") {
+			if (movement.cancelIdempotencyKey === record.cancelIdempotencyKey) {
+				return errorResult.ok(movement);
+			}
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Stock movement is already cancelled",
+			});
+		}
+		if (movement.status === "posted") {
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Posted stock movements cannot be cancelled",
+			});
+		}
+		if (movement.status !== "draft") {
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Only draft stock movements can be cancelled",
+			});
+		}
+		if (movement.version !== record.expectedVersion) {
+			return errorResult.fail("CONFLICT", {
+				publicMessage: "Stock movement version conflict",
+			});
+		}
+
+		const nextVersion = movement.version + 1;
+		const auditId = randomUUID();
+		const eventId = randomUUID();
+		const preparedAudit = afendaAudit.transaction.prepare({
+			organizationId: record.organizationId,
+			actorUserId: record.actorUserId,
+			correlationId: meta.correlationId,
+			module: "inventory",
+			entity: "stock_movement",
+			entityId: record.movementId,
+			action: "UPDATE",
+			changes: [
+				{ field: "status", oldValue: movement.status, newValue: "cancelled" },
+			],
+			oldValue: { status: movement.status, version: movement.version },
+			newValue: { status: "cancelled", version: nextVersion },
+			eventContext: {
+				version: 1,
+				outcome: "SUCCEEDED",
+				source: INVENTORY_AUDIT_SOURCE,
+				causationId: record.cancelIdempotencyKey,
+			},
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
+		const payloadJson = json({
+			organizationId: record.organizationId,
+			entityType: "stock_movement",
+			entityId: movement.id,
+			code: movement.code,
+			version: nextVersion,
+			actorId: record.actorUserId,
+			correlationId: meta.correlationId,
+			movementType: movement.movementType,
+		});
+
+		try {
+			const [rows] = await afendaDatabase.transaction((sql) => [
+				sql`
+					WITH mutated AS (
+						UPDATE stock_movement
+						SET status = 'cancelled',
+							cancel_idempotency_key = ${record.cancelIdempotencyKey},
+							cancelled_at = now(),
+							cancelled_by = ${record.actorUserId},
+							updated_by = ${record.actorUserId},
+							updated_at = now(),
+							version = ${nextVersion}
+						WHERE id = ${record.movementId}
+							AND organization_id = ${record.organizationId}
+							AND status = 'draft'
+							AND version = ${record.expectedVersion}
+						RETURNING id
+					),
+					audited AS (
+						INSERT INTO platform_audit_log (
+							id, organization_id, actor_user_id, correlation_id, module, entity,
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
+						)
+						SELECT
+							${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
+						WHERE EXISTS (SELECT 1 FROM mutated)
+						RETURNING id
+					),
+					outboxed AS (
+						INSERT INTO platform_domain_event (
+							id, organization_id, type, source_module, correlation_id, actor_user_id,
+							payload, status, attempts
+						)
+						SELECT
+							${eventId}, ${record.organizationId}, ${INVENTORY_CANCEL_MOVEMENT_EMISSION}, 'inventory',
+							${meta.correlationId}, ${record.actorUserId}, ${payloadJson}::jsonb, 'pending', 0
+						WHERE EXISTS (SELECT 1 FROM mutated)
+						RETURNING id
+					)
+					SELECT id FROM mutated
+				`,
+			]);
+			if (rows[0] === undefined) {
+				const reloaded = await this.getMovementById(
+					record.organizationId,
+					record.movementId,
+				);
+				if (!reloaded.ok) {
+					return reloaded;
+				}
+				if (
+					reloaded.data !== null &&
+					reloaded.data.status === "cancelled" &&
+					reloaded.data.cancelIdempotencyKey === record.cancelIdempotencyKey
+				) {
+					return errorResult.ok(reloaded.data);
+				}
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Stock movement version conflict",
+				});
+			}
+			return this.reloadMovement(
+				record.organizationId,
+				record.movementId,
+				"Cancelled stock movement missing after write",
+			);
+		} catch (error) {
+			return failFromPersistence(error, "Failed to cancel stock movement");
+		}
+	}
+
+	async reserveStock(
+		record: ReservationCreateRecord,
+		_ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<StockReservation>> {
+		const existing = await this.getReservationByCreateIdempotencyKey(
+			record.organizationId,
+			record.createIdempotencyKey,
+		);
+		if (!existing.ok) {
+			return existing;
+		}
+		if (existing.data !== null) {
+			return errorResult.ok(existing.data);
+		}
+
+		const quantity = parseQuantity(record.quantity);
+		if (quantity <= 0) {
+			return errorResult.fail("BAD_REQUEST", {
+				publicMessage: "Reservation quantity must be positive",
+			});
+		}
+
+		const effects: BalanceEffect[] = [
+			{
+				warehouseId: record.warehouseId,
+				warehouseCode: record.warehouseCode,
+				itemId: record.itemId,
+				itemCode: record.itemCode,
+				baseUomId: record.baseUomId,
+				baseUomCode: record.baseUomCode,
+				onHandDelta: 0,
+				reservedDelta: quantity,
+				availableDelta: -quantity,
+				quantityDelta: 0,
+				movementLineId: null,
+			},
+		];
+		const balanceCheck = await this.validateBalanceEffects(
+			record.organizationId,
+			effects,
+		);
+		if (!balanceCheck.ok) {
+			return balanceCheck;
+		}
+
+		const reservationId = randomUUID();
+		const balanceId = randomUUID();
+		const auditId = randomUUID();
+		const eventId = randomUUID();
+		const reservedDelta = formatQuantity(quantity);
+		const availableDelta = formatQuantity(-quantity);
+		const preparedAudit = afendaAudit.transaction.prepare({
+			organizationId: record.organizationId,
+			actorUserId: record.createdBy,
+			correlationId: meta.correlationId,
+			module: "inventory",
+			entity: "stock_reservation",
+			entityId: reservationId,
+			action: "CREATE",
+			changes: [{ field: "code", oldValue: null, newValue: record.code }],
+			newValue: {
+				code: record.code,
+				status: "active",
+				warehouseId: record.warehouseId,
+				itemId: record.itemId,
+				quantity: record.quantity,
+			},
+			eventContext: {
+				version: 1,
+				outcome: "SUCCEEDED",
+				source: INVENTORY_AUDIT_SOURCE,
+				causationId: record.createIdempotencyKey,
+			},
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
+		const payloadJson = json({
+			organizationId: record.organizationId,
+			entityType: "stock_reservation",
+			entityId: reservationId,
+			code: record.code,
+			version: 1,
+			actorId: record.createdBy,
+			correlationId: meta.correlationId,
+			warehouseId: record.warehouseId,
+			itemId: record.itemId,
+			quantity: record.quantity,
+		});
+
+		try {
+			const resultSets = await afendaDatabase.transaction((sql) => [
+				sql`
+					WITH upserted AS (
+						INSERT INTO stock_balance (
+							id, organization_id, warehouse_id, warehouse_code, item_id, item_code,
+							base_uom_id, base_uom_code,
+							on_hand, reserved, available, version, updated_by
+						)
+						SELECT
+							${balanceId}, ${record.organizationId}, ${record.warehouseId}, ${record.warehouseCode},
+							${record.itemId}, ${record.itemCode},
+							${record.baseUomId}, ${record.baseUomCode},
+							0, CAST(${reservedDelta} AS numeric(24, 12)), CAST(${availableDelta} AS numeric(24, 12)),
+							1, ${record.createdBy}
+						WHERE 0 >= 0
+							AND CAST(${reservedDelta} AS numeric(24, 12)) >= 0
+							AND CAST(${availableDelta} AS numeric(24, 12)) >= 0
+						ON CONFLICT (organization_id, warehouse_id, item_id)
+						DO UPDATE SET
+							reserved = stock_balance.reserved + CAST(${reservedDelta} AS numeric(24, 12)),
+							available = stock_balance.available + CAST(${availableDelta} AS numeric(24, 12)),
+							warehouse_code = EXCLUDED.warehouse_code,
+							item_code = EXCLUDED.item_code,
+							base_uom_id = COALESCE(EXCLUDED.base_uom_id, stock_balance.base_uom_id),
+							base_uom_code = COALESCE(EXCLUDED.base_uom_code, stock_balance.base_uom_code),
+							version = stock_balance.version + 1,
+							updated_by = EXCLUDED.updated_by,
+							updated_at = now()
+						WHERE stock_balance.reserved + CAST(${reservedDelta} AS numeric(24, 12)) >= 0
+							AND stock_balance.available + CAST(${availableDelta} AS numeric(24, 12)) >= 0
+						RETURNING id
+					)
+					SELECT CASE
+						WHEN EXISTS (SELECT 1 FROM upserted)
+							THEN (SELECT id FROM upserted LIMIT 1)
+						ELSE (SELECT (1 / 0)::uuid)
+					END AS id
+				`,
+				sql`
+					WITH created AS (
+						INSERT INTO stock_reservation (
+							id, organization_id, code, normalized_code, status,
+							warehouse_id, warehouse_code, warehouse_name,
+							item_id, item_code, item_name, base_uom_id, base_uom_code,
+							quantity, consumed_quantity,
+							create_idempotency_key, release_idempotency_key,
+							version, created_by, updated_by
+						) VALUES (
+							${reservationId}, ${record.organizationId}, ${record.code}, ${record.normalizedCode}, 'active',
+							${record.warehouseId}, ${record.warehouseCode}, ${record.warehouseName},
+							${record.itemId}, ${record.itemCode}, ${record.itemName}, ${record.baseUomId}, ${record.baseUomCode},
+							${record.quantity}, 0,
+							${record.createIdempotencyKey}, null,
+							1, ${record.createdBy}, ${record.createdBy}
+						)
+						RETURNING id
+					),
+					audited AS (
+						INSERT INTO platform_audit_log (
+							id, organization_id, actor_user_id, correlation_id, module, entity,
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
+						)
+						SELECT
+							${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
+						WHERE EXISTS (SELECT 1 FROM created)
+						RETURNING id
+					),
+					outboxed AS (
+						INSERT INTO platform_domain_event (
+							id, organization_id, type, source_module, correlation_id, actor_user_id,
+							payload, status, attempts
+						)
+						SELECT
+							${eventId}, ${record.organizationId}, ${INVENTORY_RESERVE_STOCK_EMISSION}, 'inventory',
+							${meta.correlationId}, ${record.createdBy}, ${payloadJson}::jsonb, 'pending', 0
+						WHERE EXISTS (SELECT 1 FROM created)
+						RETURNING id
+					)
+					SELECT id FROM created
+				`,
+			]);
+			const [, createdRows] = resultSets;
+			if (!Array.isArray(createdRows) || createdRows[0] === undefined) {
+				return errorResult.fail("INTERNAL_ERROR");
+			}
+			return this.reloadReservation(
+				record.organizationId,
+				reservationId,
+				"Created stock reservation missing after write",
+			);
+		} catch (error) {
+			if (isReservationCreateIdempotencyConflict(error)) {
+				const replay = await this.getReservationByCreateIdempotencyKey(
+					record.organizationId,
+					record.createIdempotencyKey,
+				);
+				if (!replay.ok) {
+					return replay;
+				}
+				if (replay.data !== null) {
+					return errorResult.ok(replay.data);
+				}
+			}
+			return failFromPersistence(error, "Failed to reserve stock");
+		}
+	}
+
+	async releaseReservation(
+		record: ReservationReleaseRecord,
+		_ports: MutationPorts,
+		meta: { correlationId: string },
+	): Promise<Result<StockReservation>> {
+		const reservationResult = await this.getReservationById(
+			record.organizationId,
+			record.reservationId,
+		);
+		if (!reservationResult.ok) {
+			return reservationResult;
+		}
+		if (reservationResult.data === null) {
+			return reservationNotFound();
+		}
+
+		const reservation = reservationResult.data;
+		const decision = decideReservationRelease(reservation, record);
+		if (!decision.ok) {
+			return decision;
+		}
+		if (decision.data.kind === "replay") {
+			return errorResult.ok(reservation);
+		}
+		const { remainingQuantity } = decision.data;
+		const effects = reservationReleaseEffects(reservation, remainingQuantity);
+		const balanceCheck = await this.validateBalanceEffects(
+			record.organizationId,
+			effects,
+		);
+		if (!balanceCheck.ok) {
+			return balanceCheck;
+		}
+
+		const nextVersion = reservation.version + 1;
+		const balanceId = randomUUID();
+		const auditId = randomUUID();
+		const eventId = randomUUID();
+		const releasedDelta = formatQuantity(-remainingQuantity);
+		const availableDelta = formatQuantity(remainingQuantity);
+		const eventType = reservationTerminalEventType(record.terminalStatus);
+		const preparedAudit = afendaAudit.transaction.prepare({
+			organizationId: record.organizationId,
+			actorUserId: record.actorUserId,
+			correlationId: meta.correlationId,
+			module: "inventory",
+			entity: "stock_reservation",
+			entityId: record.reservationId,
+			action: "UPDATE",
+			changes: [
+				{
+					field: "status",
+					oldValue: reservation.status,
+					newValue: record.terminalStatus,
+				},
+			],
+			oldValue: { status: reservation.status, version: reservation.version },
+			newValue: { status: record.terminalStatus, version: nextVersion },
+			eventContext: {
+				version: 1,
+				outcome: "SUCCEEDED",
+				source: INVENTORY_AUDIT_SOURCE,
+				causationId: record.releaseIdempotencyKey,
+			},
+		});
+		if (!preparedAudit.ok) {
+			return preparedAudit;
+		}
+		const audit = preparedAudit.data;
+		const payloadJson = json({
+			organizationId: record.organizationId,
+			entityType: "stock_reservation",
+			entityId: reservation.id,
+			code: reservation.code,
+			version: nextVersion,
+			actorId: record.actorUserId,
+			correlationId: meta.correlationId,
+			warehouseId: reservation.warehouseId,
+			itemId: reservation.itemId,
+			quantity: formatQuantity(remainingQuantity),
+		});
+
+		try {
+			const resultSets = await afendaDatabase.transaction((sql) => {
+				const statements =
+					remainingQuantity > 0
+						? [
+								sql`
+						WITH upserted AS (
+							INSERT INTO stock_balance (
+								id, organization_id, warehouse_id, warehouse_code, item_id, item_code,
+								base_uom_id, base_uom_code,
+								on_hand, reserved, available, version, updated_by
+							)
+							SELECT
+								${balanceId}, ${record.organizationId}, ${reservation.warehouseId}, ${reservation.warehouseCode},
+								${reservation.itemId}, ${reservation.itemCode},
+								${reservation.baseUomId}, ${reservation.baseUomCode},
+								0, CAST(${releasedDelta} AS numeric(24, 12)), CAST(${availableDelta} AS numeric(24, 12)),
+								1, ${record.actorUserId}
+							WHERE 0 >= 0
+								AND CAST(${releasedDelta} AS numeric(24, 12)) >= 0
+								AND CAST(${availableDelta} AS numeric(24, 12)) >= 0
+							ON CONFLICT (organization_id, warehouse_id, item_id)
+							DO UPDATE SET
+								reserved = stock_balance.reserved + CAST(${releasedDelta} AS numeric(24, 12)),
+								available = stock_balance.available + CAST(${availableDelta} AS numeric(24, 12)),
+								warehouse_code = EXCLUDED.warehouse_code,
+								item_code = EXCLUDED.item_code,
+								base_uom_id = COALESCE(EXCLUDED.base_uom_id, stock_balance.base_uom_id),
+								base_uom_code = COALESCE(EXCLUDED.base_uom_code, stock_balance.base_uom_code),
+								version = stock_balance.version + 1,
+								updated_by = EXCLUDED.updated_by,
+								updated_at = now()
+							WHERE stock_balance.reserved + CAST(${releasedDelta} AS numeric(24, 12)) >= 0
+								AND stock_balance.available + CAST(${availableDelta} AS numeric(24, 12)) >= 0
+							RETURNING id
+						)
+						SELECT CASE
+							WHEN EXISTS (SELECT 1 FROM upserted)
+								THEN (SELECT id FROM upserted LIMIT 1)
+							ELSE (SELECT (1 / 0)::uuid)
+						END AS id
+					`,
+							]
+						: [];
+				statements.push(sql`
+					WITH mutated AS (
+						UPDATE stock_reservation
+						SET status = ${record.terminalStatus},
+							release_idempotency_key = ${record.releaseIdempotencyKey},
+							released_at = now(),
+							released_by = ${record.actorUserId},
+							updated_by = ${record.actorUserId},
+							updated_at = now(),
+							version = ${nextVersion}
+						WHERE id = ${record.reservationId}
+							AND organization_id = ${record.organizationId}
+							AND status IN ('active', 'partially_consumed')
+							AND version = ${record.expectedVersion}
+						RETURNING id
+					),
+					audited AS (
+						INSERT INTO platform_audit_log (
+							id, organization_id, actor_user_id, correlation_id, module, entity,
+							entity_id, action, changes, old_value, new_value, metadata,
+							ip_address, user_agent
+						)
+						SELECT
+							${auditId}, ${audit.organizationId}, ${audit.actorUserId},
+							${audit.correlationId}, ${audit.module}, ${audit.entity},
+							${audit.entityId}, ${audit.action}, ${audit.changesJson}::jsonb,
+							${audit.oldValueJson}::jsonb, ${audit.newValueJson}::jsonb,
+							${audit.metadataJson}::jsonb, ${audit.ipAddress}, ${audit.userAgent}
+						WHERE EXISTS (SELECT 1 FROM mutated)
+						RETURNING id
+					),
+					outboxed AS (
+						INSERT INTO platform_domain_event (
+							id, organization_id, type, source_module, correlation_id, actor_user_id,
+							payload, status, attempts
+						)
+						SELECT
+							${eventId}, ${record.organizationId}, ${eventType}, 'inventory',
+							${meta.correlationId}, ${record.actorUserId}, ${payloadJson}::jsonb, 'pending', 0
+						WHERE EXISTS (SELECT 1 FROM mutated)
+						RETURNING id
+					)
+					SELECT id FROM mutated
+				`);
+				return statements;
+			});
+			const last = resultSets.at(-1);
+			if (!Array.isArray(last) || last[0] === undefined) {
+				const reloaded = await this.getReservationById(
+					record.organizationId,
+					record.reservationId,
+				);
+				if (!reloaded.ok) {
+					return reloaded;
+				}
+				if (
+					reloaded.data !== null &&
+					reloaded.data.status === record.terminalStatus &&
+					reloaded.data.releaseIdempotencyKey === record.releaseIdempotencyKey
+				) {
+					return errorResult.ok(reloaded.data);
+				}
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Stock reservation version conflict",
+				});
+			}
+
+			return this.reloadReservation(
+				record.organizationId,
+				record.reservationId,
+				"Terminated stock reservation missing after write",
+			);
+		} catch (error) {
+			return failFromPersistence(error, "Failed to release stock reservation");
+		}
+	}
+
+	async getMovementById(
+		organizationId: string,
+		id: string,
+	): Promise<Result<StockMovement | null>> {
+		try {
+			const [header] = await afendaDatabase.client
+				.select()
+				.from(stockMovement)
+				.where(
+					and(
+						eq(stockMovement.organizationId, organizationId),
+						eq(stockMovement.id, id),
+					),
+				)
+				.limit(1);
+			if (header === undefined) {
+				return errorResult.ok(null);
+			}
+			return this.loadMovementByHeader(header);
+		} catch (error) {
+			return failFromPersistence(error, "Failed to load stock movement");
+		}
+	}
+
+	async getMovementByCreateIdempotencyKey(
+		organizationId: string,
+		createIdempotencyKey: string,
+	): Promise<Result<StockMovement | null>> {
+		try {
+			const [header] = await afendaDatabase.client
+				.select()
+				.from(stockMovement)
+				.where(
+					and(
+						eq(stockMovement.organizationId, organizationId),
+						eq(stockMovement.createIdempotencyKey, createIdempotencyKey),
+					),
+				)
+				.limit(1);
+			if (header === undefined) {
+				return errorResult.ok(null);
+			}
+			return this.loadMovementByHeader(header);
+		} catch (error) {
+			return failFromPersistence(
+				error,
+				"Failed to load stock movement by create idempotency key",
+			);
+		}
+	}
+
+	async listMovements(
+		filter: MovementListFilter,
+	): Promise<Result<StockMovement[]>> {
+		try {
+			const conditions = [
+				eq(stockMovement.organizationId, filter.organizationId),
+			];
+			if (filter.status !== undefined) {
+				conditions.push(eq(stockMovement.status, filter.status));
+			}
+			if (filter.movementType !== undefined) {
+				conditions.push(eq(stockMovement.movementType, filter.movementType));
+			}
+			const headers = await afendaDatabase.client
+				.select()
+				.from(stockMovement)
+				.where(and(...conditions))
+				.orderBy(desc(stockMovement.updatedAt), desc(stockMovement.id))
+				.limit(filter.pageSize)
+				.offset((filter.page - 1) * filter.pageSize);
+			if (headers.length === 0) {
+				return errorResult.ok([]);
+			}
+
+			const movementIds = headers.map((header) => header.id);
+			const lines = await afendaDatabase.client
+				.select()
+				.from(stockMovementLine)
+				.where(
+					and(
+						eq(stockMovementLine.organizationId, filter.organizationId),
+						inArray(stockMovementLine.movementId, movementIds),
+					),
+				)
+				.orderBy(asc(stockMovementLine.lineNo), asc(stockMovementLine.id));
+
+			const linesByMovementId = new Map<string, StockMovementLine[]>();
+			for (const line of lines) {
+				const mapped = mapLineFromSelect(line);
+				const bucket = linesByMovementId.get(line.movementId);
+				if (bucket === undefined) {
+					linesByMovementId.set(line.movementId, [mapped]);
+				} else {
+					bucket.push(mapped);
+				}
+			}
+
+			return errorResult.ok(
+				headers.map((header) =>
+					mapMovement(
+						mapHeaderRow(header),
+						linesByMovementId.get(header.id) ?? [],
+					),
+				),
+			);
+		} catch (error) {
+			return failFromPersistence(error, "Failed to list stock movements");
+		}
+	}
+
+	async listReservations(
+		filter: ReservationListFilter,
+	): Promise<Result<StockReservation[]>> {
+		try {
+			const conditions = [
+				eq(stockReservation.organizationId, filter.organizationId),
+			];
+			if (filter.status !== undefined) {
+				conditions.push(eq(stockReservation.status, filter.status));
+			}
+			if (filter.warehouseId !== undefined) {
+				conditions.push(eq(stockReservation.warehouseId, filter.warehouseId));
+			}
+			if (filter.itemId !== undefined) {
+				conditions.push(eq(stockReservation.itemId, filter.itemId));
+			}
+			const rows = await afendaDatabase.client
+				.select()
+				.from(stockReservation)
+				.where(and(...conditions))
+				.orderBy(desc(stockReservation.updatedAt), desc(stockReservation.id))
+				.limit(filter.pageSize)
+				.offset((filter.page - 1) * filter.pageSize);
+			return errorResult.ok(rows.map((row) => mapReservation(row)));
+		} catch (error) {
+			return failFromPersistence(error, "Failed to list stock reservations");
+		}
+	}
+
+	async getAvailability(
+		filter: AvailabilityFilter,
+	): Promise<Result<StockAvailability[]>> {
+		try {
+			const sequenceResult = await this.getLatestLedgerSequence(
+				filter.organizationId,
+			);
+			if (!sequenceResult.ok) {
+				return sequenceResult;
+			}
+			const conditions = [
+				eq(stockBalance.organizationId, filter.organizationId),
+			];
+			if (filter.warehouseId !== undefined) {
+				conditions.push(eq(stockBalance.warehouseId, filter.warehouseId));
+			}
+			if (filter.itemId !== undefined) {
+				conditions.push(eq(stockBalance.itemId, filter.itemId));
+			}
+			const rows = await afendaDatabase.client
+				.select()
+				.from(stockBalance)
+				.where(and(...conditions))
+				.orderBy(asc(stockBalance.warehouseCode), asc(stockBalance.itemCode));
+			return errorResult.ok(
+				rows.map((row) => ({
+					organizationId: row.organizationId,
+					warehouseId: row.warehouseId,
+					warehouseCode: row.warehouseCode,
+					itemId: row.itemId,
+					itemCode: row.itemCode,
+					baseUomId: row.baseUomId,
+					baseUomCode: row.baseUomCode,
+					onHandQuantity: row.onHand,
+					reservedQuantity: row.reserved,
+					availableQuantity: row.available,
+					asOfLedgerSequence: sequenceResult.data,
+					balanceVersion: row.version,
+				})),
+			);
+		} catch (error) {
+			return failFromPersistence(error, "Failed to load stock availability");
+		}
+	}
+
+	async getReservationById(
+		organizationId: string,
+		id: string,
+	): Promise<Result<StockReservation | null>> {
+		try {
+			const [row] = await afendaDatabase.client
+				.select()
+				.from(stockReservation)
+				.where(
+					and(
+						eq(stockReservation.organizationId, organizationId),
+						eq(stockReservation.id, id),
+					),
+				)
+				.limit(1);
+			return errorResult.ok(row === undefined ? null : mapReservation(row));
+		} catch (error) {
+			return failFromPersistence(error, "Failed to load stock reservation");
+		}
+	}
+
+	async getReservationByCreateIdempotencyKey(
+		organizationId: string,
+		createIdempotencyKey: string,
+	): Promise<Result<StockReservation | null>> {
+		try {
+			const [row] = await afendaDatabase.client
+				.select()
+				.from(stockReservation)
+				.where(
+					and(
+						eq(stockReservation.organizationId, organizationId),
+						eq(stockReservation.createIdempotencyKey, createIdempotencyKey),
+					),
+				)
+				.limit(1);
+			return errorResult.ok(row === undefined ? null : mapReservation(row));
+		} catch (error) {
+			return failFromPersistence(
+				error,
+				"Failed to load stock reservation by create idempotency key",
+			);
+		}
+	}
+
+	getLedgerSequence(organizationId: string): Promise<Result<number>> {
+		return this.getLatestLedgerSequence(organizationId);
+	}
+
+	async listLedgerEntries(organizationId: string): Promise<
+		Result<
+			Array<{
+				warehouseId: string;
+				itemId: string;
+				quantityDelta: string;
+			}>
+		>
+	> {
+		try {
+			const rows = await afendaDatabase.client
+				.select()
+				.from(stockLedgerEntry)
+				.where(eq(stockLedgerEntry.organizationId, organizationId))
+				.orderBy(
+					asc(stockLedgerEntry.ledgerSequence),
+					asc(stockLedgerEntry.id),
+				);
+			return errorResult.ok(
+				rows.map((row) => ({
+					warehouseId: row.warehouseId,
+					itemId: row.itemId,
+					quantityDelta: row.quantityDelta,
+				})),
+			);
+		} catch (error) {
+			return failFromPersistence(error, "Failed to list stock ledger entries");
+		}
+	}
+
+	async listBalances(organizationId: string): Promise<Result<StockBalance[]>> {
+		try {
+			const rows = await afendaDatabase.client
+				.select()
+				.from(stockBalance)
+				.where(eq(stockBalance.organizationId, organizationId))
+				.orderBy(asc(stockBalance.warehouseCode), asc(stockBalance.itemCode));
+			return errorResult.ok(rows.map((row) => mapBalance(row)));
+		} catch (error) {
+			return failFromPersistence(error, "Failed to list stock balances");
+		}
+	}
+
+	async listActiveReservations(organizationId: string): Promise<
+		Result<
+			Array<{
+				warehouseId: string;
+				itemId: string;
+				quantity: string;
+				consumedQuantity: string;
+			}>
+		>
+	> {
+		try {
+			const rows = await afendaDatabase.client
+				.select()
+				.from(stockReservation)
+				.where(eq(stockReservation.organizationId, organizationId))
+				.orderBy(
+					asc(stockReservation.warehouseCode),
+					asc(stockReservation.itemCode),
+					asc(stockReservation.id),
+				);
+			return errorResult.ok(
+				rows
+					.map((row) => mapReservation(row))
+					.filter((reservation) =>
+						isReleasableReservationStatus(reservation.status),
+					)
+					.map((reservation) => ({
+						warehouseId: reservation.warehouseId,
+						itemId: reservation.itemId,
+						quantity: reservation.quantity,
+						consumedQuantity: reservation.consumedQuantity,
+					})),
+			);
+		} catch (error) {
+			return failFromPersistence(
+				error,
+				"Failed to list active stock reservations",
+			);
+		}
+	}
+}
+
+export function createDrizzleInventoryStore(): DrizzleInventoryStore {
+	return new DrizzleInventoryStore();
+}

@@ -1,8 +1,8 @@
+import { resolveAsync } from "../../src/kernel/execution/async";
 import type {
 	PurchasingAuthorizationPort,
 	PurchasingPermission,
-} from "../../src/authorization";
-import { resolveAsync } from "../../src/resolve-async";
+} from "../../src/kernel/execution/authorization";
 
 /** Test double — grants an explicit permission set (not a product stub). */
 export function createGrantingPurchasingAuthorization(

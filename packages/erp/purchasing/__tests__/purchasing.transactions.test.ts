@@ -1,15 +1,18 @@
 import { errorResult, type Result } from "@afenda/errors";
 import { describe, expect, it } from "vitest";
-import { createMemoryPurchasingStore } from "../src/memory-store";
 import {
 	addPurchaseOrderLine,
 	createDraftPurchaseOrder,
 	listPurchaseOrders,
 	postPurchaseOrder,
-} from "../src/order";
-import { PURCHASING_PERMISSION_CODES } from "../src/permissions";
-import type { MutationPorts, OutboxFactInput } from "../src/ports";
-import { resolveAsync } from "../src/resolve-async";
+} from "../src/facade/capabilities";
+import { createMemoryPurchasingStore } from "../src/features/orders/orders.memory";
+import type {
+	MutationPorts,
+	OutboxFactInput,
+} from "../src/kernel/contracts/ports";
+import { resolveAsync } from "../src/kernel/execution/async";
+import { PURCHASING_PERMISSION_CODES } from "../src/kernel/execution/permissions";
 import { createGrantingPurchasingAuthorization } from "./helpers/memory-authorization";
 import {
 	createMemoryMasterLookup,

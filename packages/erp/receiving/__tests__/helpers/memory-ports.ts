@@ -6,8 +6,8 @@ import type {
 	MutationPorts,
 	OutboxFactInput,
 	OutboxPort,
-} from "../../src/ports";
-import { resolveAsync } from "../../src/resolve-async";
+} from "../../src/kernel/contracts/ports";
+import { resolveAsync } from "../../src/kernel/execution/async";
 
 export function createMemoryMutationPorts(): MutationPorts & {
 	audit: AuditFactPort & { calls: AuditFactInput[] };

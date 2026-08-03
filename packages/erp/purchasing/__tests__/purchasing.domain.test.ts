@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { createMemoryPurchasingStore } from "../src/memory-store";
 import {
 	addPurchaseOrderLine,
 	cancelPurchaseOrder,
@@ -8,8 +7,9 @@ import {
 	getPurchaseOrderById,
 	listPurchaseOrders,
 	postPurchaseOrder,
-} from "../src/order";
-import { PURCHASING_PERMISSION_CODES } from "../src/permissions";
+} from "../src/facade/capabilities";
+import { createMemoryPurchasingStore } from "../src/features/orders/orders.memory";
+import { PURCHASING_PERMISSION_CODES } from "../src/kernel/execution/permissions";
 import { createMemoryCommitmentQueryPort } from "../src/testing";
 import { createGrantingPurchasingAuthorization } from "./helpers/memory-authorization";
 import {

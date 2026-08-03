@@ -9,12 +9,12 @@
 			"default": "./src/index.ts"
 		},
 		"./adapters/drizzle": {
-			"types": "./src/adapters/drizzle/index.ts",
-			"default": "./src/adapters/drizzle/index.ts"
+			"types": "./src/features/receipts/receipts.drizzle.ts",
+			"default": "./src/features/receipts/receipts.drizzle.ts"
 		},
 		"./contracts": {
-			"types": "./src/contracts/index.ts",
-			"default": "./src/contracts/index.ts"
+			"types": "./src/facade/contracts-subpath.ts",
+			"default": "./src/facade/contracts-subpath.ts"
 		},
 		"./testing": {
 			"types": "./src/testing/index.ts",

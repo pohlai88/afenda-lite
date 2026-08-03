@@ -9,8 +9,8 @@
 			"default": "./src/index.ts"
 		},
 		"./adapters/drizzle": {
-			"types": "./src/adapters/drizzle/index.ts",
-			"default": "./src/adapters/drizzle/index.ts"
+			"types": "./src/features/orders/orders.drizzle.ts",
+			"default": "./src/features/orders/orders.drizzle.ts"
 		},
 		"./testing": {
 			"types": "./src/testing/index.ts",

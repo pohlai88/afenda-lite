@@ -1,21 +1,6 @@
 import "server-only";
 
-export type {
-	InventoryAuthorizationPort,
-	InventoryPermission,
-} from "./authorization";
-export {
-	type StockBalanceId,
-	type StockMovementId,
-	type StockMovementLineId,
-	type StockReservationId,
-	stockBalanceIdSchema,
-	stockMovementIdSchema,
-	stockMovementLineIdSchema,
-	stockReservationIdSchema,
-} from "./brands";
-export type { InventoryCommandOptions } from "./command-options";
-export { createMasterDataLookupPort } from "./master-lookup";
+export { createMasterDataLookupPort } from "./composition/master-lookup";
 export {
 	addStockMovementLine,
 	cancelReservation,
@@ -30,19 +15,9 @@ export {
 	postStockMovement,
 	releaseReservation,
 	reserveStock,
-} from "./movement";
-export {
-	INVENTORY_PERMISSION_ADJUSTMENT_POST,
-	INVENTORY_PERMISSION_AVAILABILITY_READ,
-	INVENTORY_PERMISSION_CODES,
-	INVENTORY_PERMISSION_MOVEMENT_CANCEL,
-	INVENTORY_PERMISSION_MOVEMENT_CREATE,
-	INVENTORY_PERMISSION_MOVEMENT_POST,
-	INVENTORY_PERMISSION_MOVEMENT_READ,
-	INVENTORY_PERMISSION_RESERVATION_CREATE,
-	INVENTORY_PERMISSION_RESERVATION_RELEASE,
-} from "./permissions";
-export { reconcileInventory } from "./reconcile";
+} from "./facade/capabilities";
+export type { InventoryCommandOptions } from "./facade/contracts";
+export { reconcileInventory } from "./facade/reconcile";
 export {
 	addStockMovementLineInputSchema,
 	cancelReservationInputSchema,
@@ -57,7 +32,7 @@ export {
 	postStockMovementInputSchema,
 	releaseReservationInputSchema,
 	reserveStockInputSchema,
-} from "./schemas";
+} from "./features/movements/movements.schema";
 export type {
 	AvailabilityFilter,
 	InventoryStore,
@@ -71,8 +46,8 @@ export type {
 	ReservationReleaseRecord,
 	ReservationTerminalEventType,
 	ReservationTerminalStatus,
-} from "./store";
-export { reservationTerminalEventType } from "./store";
+} from "./features/movements/movements.store";
+export { reservationTerminalEventType } from "./features/movements/movements.store";
 export {
 	INVENTORY_MOVEMENT_SOURCES,
 	type InventoryMovementSource,
@@ -88,4 +63,29 @@ export {
 	type StockMovementType,
 	type StockReservation,
 	type StockReservationStatus,
-} from "./types";
+} from "./kernel/contracts/domain";
+export type {
+	InventoryAuthorizationPort,
+	InventoryPermission,
+} from "./kernel/execution/authorization";
+export {
+	INVENTORY_PERMISSION_ADJUSTMENT_POST,
+	INVENTORY_PERMISSION_AVAILABILITY_READ,
+	INVENTORY_PERMISSION_CODES,
+	INVENTORY_PERMISSION_MOVEMENT_CANCEL,
+	INVENTORY_PERMISSION_MOVEMENT_CREATE,
+	INVENTORY_PERMISSION_MOVEMENT_POST,
+	INVENTORY_PERMISSION_MOVEMENT_READ,
+	INVENTORY_PERMISSION_RESERVATION_CREATE,
+	INVENTORY_PERMISSION_RESERVATION_RELEASE,
+} from "./kernel/execution/permissions";
+export {
+	type StockBalanceId,
+	type StockMovementId,
+	type StockMovementLineId,
+	type StockReservationId,
+	stockBalanceIdSchema,
+	stockMovementIdSchema,
+	stockMovementLineIdSchema,
+	stockReservationIdSchema,
+} from "./kernel/identity/brands";

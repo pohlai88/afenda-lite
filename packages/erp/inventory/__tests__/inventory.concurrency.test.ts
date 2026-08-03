@@ -1,13 +1,12 @@
 import { describe, expect, it } from "vitest";
-
-import { createMemoryInventoryStore } from "../src/memory-store";
 import {
 	addStockMovementLine,
 	createStockMovement,
 	getStockAvailability,
 	postStockMovement,
 	reserveStock,
-} from "../src/movement";
+} from "../src/facade/capabilities";
+import { createMemoryInventoryStore } from "../src/features/movements/movements.memory";
 import { createAllowAllInventoryAuthorization } from "./helpers/memory-authorization";
 import {
 	createMemoryMasterLookup,

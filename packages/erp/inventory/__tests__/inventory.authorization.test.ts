@@ -1,16 +1,15 @@
 import { describe, expect, it } from "vitest";
-
-import { createMemoryInventoryStore } from "../src/memory-store";
 import {
 	createStockMovement,
 	getStockAvailability,
 	getStockMovementById,
-} from "../src/movement";
+} from "../src/facade/capabilities";
+import { createMemoryInventoryStore } from "../src/features/movements/movements.memory";
 import {
 	INVENTORY_PERMISSION_AVAILABILITY_READ,
 	INVENTORY_PERMISSION_MOVEMENT_CREATE,
 	INVENTORY_PERMISSION_MOVEMENT_READ,
-} from "../src/permissions";
+} from "../src/kernel/execution/permissions";
 import { createGrantingInventoryAuthorization } from "./helpers/memory-authorization";
 import {
 	createMemoryMasterLookup,

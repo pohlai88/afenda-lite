@@ -1,51 +1,7 @@
 import "server-only";
 
-export type {
-	ReceivingAuthorizationPort,
-	ReceivingPermission,
-} from "./authorization";
-export {
-	type GoodsReceiptId,
-	type GoodsReceiptLineId,
-	goodsReceiptIdSchema,
-	goodsReceiptLineIdSchema,
-	type ReceivingDiscrepancyId,
-	receivingDiscrepancyIdSchema,
-} from "./brands";
-export type { ReceivingCommandOptions } from "./command-options";
-export {
-	createDrizzleReceivingStore,
-	DrizzleReceivingStore,
-} from "./drizzle-store";
-export { createMasterDataLookupPort } from "./master-lookup";
-export {
-	createMemoryReceivingStore,
-	MemoryReceivingStore,
-} from "./memory-store";
-export {
-	RECEIVING_PERMISSION_CODES,
-	RECEIVING_PERMISSION_DISCREPANCY_RECORD,
-	RECEIVING_PERMISSION_DISCREPANCY_RESOLVE,
-	RECEIVING_PERMISSION_RECEIPT_CANCEL,
-	RECEIVING_PERMISSION_RECEIPT_CREATE,
-	RECEIVING_PERMISSION_RECEIPT_POST,
-	RECEIVING_PERMISSION_RECEIPT_READ,
-	RECEIVING_PERMISSION_RECEIPT_REVERSE,
-	RECEIVING_PERMISSION_RECEIPT_UPDATE,
-} from "./permissions";
-export type {
-	AuditFactInput,
-	AuditFactPort,
-	MasterLookupPort,
-	MutationPorts,
-	OutboxFactInput,
-	OutboxPort,
-	PurchaseOrderReceivingLineSnapshot,
-	PurchaseOrderReceivingQueryPort,
-	PurchaseOrderReceivingSnapshot,
-	PurchaseOrderReceivingStatus,
-} from "./ports";
-export { createProductionMutationPorts } from "./production-ports";
+export { createMasterDataLookupPort } from "./composition/master-lookup";
+export { createProductionMutationPorts } from "./composition/production-ports";
 export {
 	addGoodsReceiptLine,
 	cancelGoodsReceipt,
@@ -57,7 +13,16 @@ export {
 	recordReceivingDiscrepancy,
 	resolveReceivingDiscrepancy,
 	reverseGoodsReceipt,
-} from "./receipt";
+} from "./facade/capabilities";
+export type { ReceivingCommandOptions } from "./facade/contracts";
+export {
+	createDrizzleReceivingStore,
+	DrizzleReceivingStore,
+} from "./features/receipts/receipts.drizzle";
+export {
+	createMemoryReceivingStore,
+	MemoryReceivingStore,
+} from "./features/receipts/receipts.memory";
 export {
 	addGoodsReceiptLineInputSchema,
 	cancelGoodsReceiptInputSchema,
@@ -69,7 +34,7 @@ export {
 	recordReceivingDiscrepancyInputSchema,
 	resolveReceivingDiscrepancyInputSchema,
 	reverseGoodsReceiptInputSchema,
-} from "./schemas";
+} from "./features/receipts/receipts.schema";
 export type {
 	DiscrepancyCreateRecord,
 	DiscrepancyResolveRecord,
@@ -84,7 +49,7 @@ export type {
 	ReceiptPostRecord,
 	ReceiptReverseRecord,
 	ReceivingStore,
-} from "./store";
+} from "./features/receipts/receipts.store";
 export {
 	GOODS_RECEIPT_SOURCE_TYPES,
 	GOODS_RECEIPT_STATUSES,
@@ -100,4 +65,39 @@ export {
 	type ReceivingDiscrepancy,
 	type ReceivingDiscrepancyStatus,
 	type ReceivingDiscrepancyType,
-} from "./types";
+} from "./kernel/contracts/domain";
+export type {
+	AuditFactInput,
+	AuditFactPort,
+	MasterLookupPort,
+	MutationPorts,
+	OutboxFactInput,
+	OutboxPort,
+	PurchaseOrderReceivingLineSnapshot,
+	PurchaseOrderReceivingQueryPort,
+	PurchaseOrderReceivingSnapshot,
+	PurchaseOrderReceivingStatus,
+} from "./kernel/contracts/ports";
+export type {
+	ReceivingAuthorizationPort,
+	ReceivingPermission,
+} from "./kernel/execution/authorization";
+export {
+	RECEIVING_PERMISSION_CODES,
+	RECEIVING_PERMISSION_DISCREPANCY_RECORD,
+	RECEIVING_PERMISSION_DISCREPANCY_RESOLVE,
+	RECEIVING_PERMISSION_RECEIPT_CANCEL,
+	RECEIVING_PERMISSION_RECEIPT_CREATE,
+	RECEIVING_PERMISSION_RECEIPT_POST,
+	RECEIVING_PERMISSION_RECEIPT_READ,
+	RECEIVING_PERMISSION_RECEIPT_REVERSE,
+	RECEIVING_PERMISSION_RECEIPT_UPDATE,
+} from "./kernel/execution/permissions";
+export {
+	type GoodsReceiptId,
+	type GoodsReceiptLineId,
+	goodsReceiptIdSchema,
+	goodsReceiptLineIdSchema,
+	type ReceivingDiscrepancyId,
+	receivingDiscrepancyIdSchema,
+} from "./kernel/identity/brands";
