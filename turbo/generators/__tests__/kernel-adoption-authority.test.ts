@@ -140,8 +140,10 @@ describe("kernel package adoption authority", () => {
 				missing: 16,
 				unregistered: 1,
 				contractMissing: 17,
-				rootEntrypointMissing: 17,
-				rootExportMissing: 17,
+				// @afenda/config is tooling-only, so it is excluded from both root
+				// surface counts even though neither file exists.
+				rootEntrypointMissing: 16,
+				rootExportMissing: 16,
 			});
 			expect(first.workspaces).toContainEqual(
 				expect.objectContaining({
@@ -248,25 +250,26 @@ describe("kernel package adoption authority", () => {
 						package: "@afenda/extra",
 					}),
 					expect.objectContaining({
-						code: "AFG-KERNEL-003",
-						severity: "warning",
-						treatment: "auto-upgrade",
-						package: "@afenda/config",
-					}),
-					expect.objectContaining({
 						code: "AFG-KERNEL-004",
 						severity: "warning",
 						treatment: "auto-regenerate",
 						package: "@afenda/config",
 					}),
-					expect.objectContaining({
-						code: "AFG-KERNEL-005",
-						severity: "warning",
-						treatment: "auto-upgrade",
-						package: "@afenda/config",
-					}),
 				]),
 			);
+
+			// @afenda/config is tooling-only: its CONTRACT.md INV-1 forbids both a
+			// `"."` export and a src/ tree, so the root-surface treatments must not
+			// fire against it. Auto-upgrading them would make one automated
+			// authority manufacture violations of another.
+			expect(
+				extension.diagnostics.filter(
+					(diagnostic) =>
+						diagnostic.package === "@afenda/config" &&
+						(diagnostic.code === "AFG-KERNEL-003" ||
+							diagnostic.code === "AFG-KERNEL-005"),
+				),
+			).toEqual([]);
 		} finally {
 			await rm(repositoryRoot, { force: true, recursive: true });
 		}
@@ -307,8 +310,11 @@ describe("kernel package adoption authority", () => {
 			missing: 0,
 			unregistered: 0,
 			contractMissing: 2,
-			rootEntrypointMissing: 1,
-			rootExportMissing: 2,
+			// @afenda/config is the only kernel without either, and it is exempt as
+			// tooling-only — so both counts are zero while the raw flags below stay
+			// false. Exempt is not the same as compliant.
+			rootEntrypointMissing: 0,
+			rootExportMissing: 0,
 		});
 		expect(
 			report.workspaces
@@ -324,6 +330,6 @@ describe("kernel package adoption authority", () => {
 			report.workspaces
 				.filter((workspace) => !workspace.rootExportExists)
 				.map((workspace) => workspace.name),
-		).toEqual(["@afenda/config", "@afenda/metrics"]);
+		).toEqual(["@afenda/config"]);
 	});
 });

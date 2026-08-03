@@ -18,11 +18,20 @@ export type KernelProfile =
 	| "runtime-configured"
 	| "runtime-leaf";
 
+/**
+ * `root-capability` packages expose a JavaScript surface at `src/index.ts` and a
+ * `"."` export. `tooling-only` packages are consumed by build tools through
+ * `extends` and have neither — asserting the root-entrypoint shape against one
+ * would manufacture a violation of that package's own contract.
+ */
+export type KernelSurface = "root-capability" | "tooling-only";
+
 export interface RegisteredKernelPackage {
 	readonly contractReference: string;
 	readonly name: string;
 	readonly path: string;
 	readonly profile: KernelProfile;
+	readonly surface?: KernelSurface;
 }
 
 export interface KernelAdoptionWorkspace {
@@ -35,6 +44,7 @@ export interface KernelAdoptionWorkspace {
 	readonly rootEntrypointExists: boolean;
 	readonly rootExportExists: boolean;
 	readonly state: "adopted" | "missing" | "unregistered";
+	readonly surface: KernelSurface;
 }
 
 export interface KernelAdoptionSummary {
@@ -65,6 +75,10 @@ const REGISTERED_KERNEL_PACKAGES = Object.freeze([
 		name: "@afenda/config",
 		path: "packages/foundation/config",
 		profile: "foundation-leaf",
+		// Ships Biome and TypeScript JSON profiles only. Its CONTRACT.md INV-1
+		// forbids both a `"."` export and a src/ tree, so AFG-KERNEL-003/005 must
+		// not fire here.
+		surface: "tooling-only",
 		contractReference:
 			".cursor/skills/afenda-elite-kernel/references/config-kernel.md",
 	},
@@ -190,6 +204,11 @@ const REGISTERED_KERNEL_PACKAGES = Object.freeze([
 ] as const satisfies readonly RegisteredKernelPackage[]);
 
 const EXPECTED_ROOT_ENTRYPOINT = "src/index.ts" as const;
+const DEFAULT_KERNEL_SURFACE: KernelSurface = "root-capability";
+
+/** Only root-capability packages owe a root entrypoint and a `"."` export. */
+const owesRootSurface = (workspace: KernelAdoptionWorkspace): boolean =>
+	workspace.surface === "root-capability";
 
 const compareText = (left: string, right: string): number => {
 	if (left < right) {
@@ -280,6 +299,7 @@ const inspectAdoptedWorkspace = async ({
 		name: workspace.name,
 		packagePath: workspace.path,
 		profile: expected.profile,
+		surface: expected.surface ?? DEFAULT_KERNEL_SURFACE,
 		expected,
 		readmeExists: await fileExists(
 			repositoryRoot,
@@ -305,6 +325,7 @@ const inspectMissingWorkspace = (
 		name: expected.name,
 		packagePath: expected.path,
 		profile: expected.profile,
+		surface: expected.surface ?? DEFAULT_KERNEL_SURFACE,
 		expected,
 		readmeExists: false,
 		contractExists: false,
@@ -325,6 +346,7 @@ const inspectUnregisteredWorkspace = async ({
 		name: workspace.name,
 		packagePath: workspace.path,
 		profile: "unregistered",
+		surface: DEFAULT_KERNEL_SURFACE,
 		expected: null,
 		readmeExists: await fileExists(
 			repositoryRoot,
@@ -359,10 +381,10 @@ const createSummary = (
 		contractMissing: workspaces.filter((workspace) => !workspace.contractExists)
 			.length,
 		rootEntrypointMissing: workspaces.filter(
-			(workspace) => !workspace.rootEntrypointExists,
+			(workspace) => owesRootSurface(workspace) && !workspace.rootEntrypointExists,
 		).length,
 		rootExportMissing: workspaces.filter(
-			(workspace) => !workspace.rootExportExists,
+			(workspace) => owesRootSurface(workspace) && !workspace.rootExportExists,
 		).length,
 	});
 
@@ -439,7 +461,7 @@ const createAdoptionDiagnostics = (
 						}),
 					);
 				}
-				if (!workspace.rootEntrypointExists) {
+				if (owesRootSurface(workspace) && !workspace.rootEntrypointExists) {
 					diagnostics.push(
 						createGeneratorDiagnostic({
 							code: "AFG-KERNEL-003",
@@ -469,7 +491,7 @@ const createAdoptionDiagnostics = (
 						}),
 					);
 				}
-				if (!workspace.rootExportExists) {
+				if (owesRootSurface(workspace) && !workspace.rootExportExists) {
 					diagnostics.push(
 						createGeneratorDiagnostic({
 							code: "AFG-KERNEL-005",
@@ -507,7 +529,7 @@ export const createKernelAdoptionAuthorityDoctorExtension = async (
 		`kernel-adoption-root-export-missing=${report.summary.rootExportMissing}`,
 		...report.workspaces.map(
 			(workspace) =>
-				`kernel-adoption=${workspace.packagePath}|${workspace.name}|${workspace.profile}|${workspace.state}|contract=${workspace.contractExists}|entrypoint=${workspace.rootEntrypointExists}|root-export=${workspace.rootExportExists}`,
+				`kernel-adoption=${workspace.packagePath}|${workspace.name}|${workspace.profile}|${workspace.surface}|${workspace.state}|contract=${workspace.contractExists}|entrypoint=${workspace.rootEntrypointExists}|root-export=${workspace.rootExportExists}`,
 		),
 	];
 	return Object.freeze({

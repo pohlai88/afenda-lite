@@ -3,7 +3,9 @@
 	"compilerOptions": {
 		"allowImportingTsExtensions": true,
 		"rootDir": ".",
-		"types": ["node", "vite/client", "vitest/globals"]
+		// `types` replaces rather than merges across `extends` — the profile's
+		// react/react-dom entries must be restated in full (INV-6).
+		"types": ["react", "react-dom", "node", "vite/client", "vitest/globals"]
 	},
 	"include": [
 		".storybook/**/*.ts",

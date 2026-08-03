@@ -47,6 +47,26 @@
 	},
 	"overrides": [
 		{
+			// @afenda/config is dev-time only and is consumed through `extends`.
+			// A runtime import violates its CONTRACT.md INV-4; catching it in the
+			// linter fails on save rather than in CI.
+			"includes": ["apps/**", "packages/**/src/**", "testing/**", "e2e/**"],
+			"linter": {
+				"rules": {
+					"style": {
+						"noRestrictedImports": {
+							"level": "error",
+							"options": {
+								"paths": {
+									"@afenda/config": "@afenda/config is dev-time only. Consume it through `extends`, never `import`. See packages/foundation/config/CONTRACT.md INV-4."
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		{
 			// The root intentionally retains an explicit positive baseline so static
 			// governance remains valid even if the vendor include policy changes.
 			"includes": ["biome.jsonc"],

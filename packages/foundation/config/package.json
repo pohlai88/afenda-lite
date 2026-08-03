@@ -2,8 +2,7 @@
 	"name": "@afenda/config",
 	"version": "0.0.0",
 	"private": true,
-	"type": "module",
-	"description": "Shared Biome + TypeScript bases (dev-time only — not a runtime import; not the Vitest/Playwright factory — see testing/).",
+	"description": "Shared Biome + TypeScript bases. Dev-time only: consumed through `extends`, never imported. Not the Vitest/Playwright factory — see testing/.",
 	"exports": {
 		"./biome.json": "./biome.json",
 		"./tsconfig/base.json": "./tsconfig/base.json",
@@ -11,13 +10,9 @@
 		"./tsconfig/nextjs.json": "./tsconfig/nextjs.json",
 		"./tsconfig/react-library.json": "./tsconfig/react-library.json"
 	},
-	"files": [
-		"biome.json",
-		"tsconfig"
-	],
 	"scripts": {
 		"lint": "biome check .",
-		"test": "node ../../../scripts/check-config-boundary.mjs",
+		"test": "node scripts/check-config-boundary.mjs && node --test scripts/check-config-boundary.test.mjs",
 		"protect:check": "node ../../../.cursor/skills/afenda-package-protection/scripts/protect-package-check.mjs .",
 		"protect:update": "node ../../../.cursor/skills/afenda-package-protection/scripts/protect-package-update.mjs ."
 	}

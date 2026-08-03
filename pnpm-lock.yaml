@@ -939,6 +939,9 @@ importers:
       '@afenda/errors':
         specifier: workspace:*
         version: link:../../foundation/errors
+      '@afenda/events':
+        specifier: workspace:*
+        version: link:../../data-plane/events
       server-only:
         specifier: 'catalog:'
         version: 0.0.1
@@ -949,9 +952,6 @@ importers:
       '@afenda/config':
         specifier: workspace:*
         version: link:../../foundation/config
-      '@afenda/testing':
-        specifier: workspace:*
-        version: link:../../foundation/testing
       '@types/node':
         specifier: 'catalog:'
         version: 20.19.30

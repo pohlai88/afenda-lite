@@ -2,6 +2,7 @@
 	"$schema": "https://json.schemastore.org/tsconfig",
 	"extends": "./react-library.json",
 	"compilerOptions": {
+		"jsx": "preserve",
 		"allowJs": true,
 		"plugins": [{ "name": "next" }],
 		"types": ["node", "react", "react-dom"]

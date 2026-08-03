@@ -3,7 +3,8 @@
 	"compilerOptions": {
 		"allowImportingTsExtensions": true,
 		"rootDir": "../../..",
-		"types": ["node"]
+		// `types` replaces rather than merges across `extends` (INV-6).
+		"types": ["react", "react-dom", "node"]
 	},
 	"include": ["storybook-evidence-loader.ts"]
 }

@@ -1,1 +1,0 @@
-export { normalizeCompanyName } from "./rules";

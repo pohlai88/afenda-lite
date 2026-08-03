@@ -21,27 +21,16 @@
 			"indentStyle": "tab"
 		}
 	},
+	"css": {
+		"parser": {
+			"tailwindDirectives": true
+		}
+	},
 	"linter": {
 		"rules": {
 			"performance": {
 				"noBarrelFile": "off"
 			}
 		}
-	},
-	"css": {
-		"parser": {
-			"tailwindDirectives": true
-		}
-	},
-	"overrides": [
-		{
-			"includes": ["**/db/migrations/**/*.sql", "**/*.sql"],
-			"formatter": {
-				"enabled": false
-			},
-			"linter": {
-				"enabled": false
-			}
-		}
-	]
+	}
 }
