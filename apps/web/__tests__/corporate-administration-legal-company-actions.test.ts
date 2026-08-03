@@ -38,6 +38,9 @@ const corporateAdministrationMocks = vi.hoisted(() => ({
 	listOverdueResolutionActions: vi.fn(),
 	listRequiredStatutoryOffices: vi.fn(),
 	listOfficersAsOf: vi.fn(),
+	listGovernanceBodiesAsOf: vi.fn(),
+	listGovernanceMembershipsAsOf: vi.fn(),
+	getMeetingQuorumStatus: vi.fn(),
 }));
 
 const compositionMocks = vi.hoisted(() => ({
@@ -111,6 +114,11 @@ vi.mock("@afenda/corporate-administration", async (importOriginal) => ({
 	listRequiredStatutoryOffices:
 		corporateAdministrationMocks.listRequiredStatutoryOffices,
 	listOfficersAsOf: corporateAdministrationMocks.listOfficersAsOf,
+	listGovernanceBodiesAsOf:
+		corporateAdministrationMocks.listGovernanceBodiesAsOf,
+	listGovernanceMembershipsAsOf:
+		corporateAdministrationMocks.listGovernanceMembershipsAsOf,
+	getMeetingQuorumStatus: corporateAdministrationMocks.getMeetingQuorumStatus,
 }));
 
 vi.mock("@/lib/erp/corporate-administration-command-options", () => ({
@@ -310,6 +318,20 @@ describe("Corporate Administration legal-company Server Actions", () => {
 		corporateAdministrationMocks.listOfficersAsOf.mockResolvedValue({
 			ok: true,
 			data: { items: [], nextCursor: null },
+		});
+		corporateAdministrationMocks.listGovernanceBodiesAsOf.mockResolvedValue({
+			ok: true,
+			data: { items: [], nextCursor: null },
+		});
+		corporateAdministrationMocks.listGovernanceMembershipsAsOf.mockResolvedValue(
+			{
+				ok: true,
+				data: { items: [], nextCursor: null },
+			},
+		);
+		corporateAdministrationMocks.getMeetingQuorumStatus.mockResolvedValue({
+			ok: true,
+			data: null,
 		});
 	});
 

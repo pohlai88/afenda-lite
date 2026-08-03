@@ -9,10 +9,13 @@ import {
 	findRegisteredAddressAsOf,
 	getCompanyCompletenessForActivation,
 	getLegalCompany,
+	getMeetingQuorumStatus,
 	listCompanyActivitiesAsOf,
 	listCompanyIdentifiers,
 	listCompanyNames,
+	listGovernanceBodiesAsOf,
 	listGovernanceMeetings,
+	listGovernanceMembershipsAsOf,
 	listLegalCompanies,
 	listLegalEstablishmentsAsOf,
 	listOfficersAsOf,
@@ -55,6 +58,12 @@ import {
 } from "@/features/corporate-administration/legal-company-lifecycle-workspace";
 import { LegalCompanyWorkspace } from "@/features/corporate-administration/legal-company-workspace";
 import { LegalEstablishmentWorkspace } from "@/features/corporate-administration/legal-establishment-workspace";
+import {
+	type MeetingLifecycleBody,
+	type MeetingLifecycleMeeting,
+	type MeetingLifecycleMembership,
+	MeetingLifecycleWorkspace,
+} from "@/features/corporate-administration/meeting-lifecycle-workspace";
 import {
 	OfficerWorkspace,
 	type OfficerWorkspaceAppointment,
@@ -104,6 +113,7 @@ export async function CorporateAdministrationShell({
 		canManageResolutions,
 		canReadOfficers,
 		canManageOfficers,
+		canManageMeetings,
 	] = await Promise.all([
 		sessionHasPermission(
 			session,
@@ -128,6 +138,10 @@ export async function CorporateAdministrationShell({
 		sessionHasPermission(
 			session,
 			corporateAdministrationPermissionFor("appointOfficer"),
+		),
+		sessionHasPermission(
+			session,
+			corporateAdministrationPermissionFor("scheduleGovernanceMeeting"),
 		),
 	]);
 	const canReadGovernanceDecisions = canReadMeetings && canReadResolutions;
@@ -251,6 +265,13 @@ export async function CorporateAdministrationShell({
 		selectedCompany === undefined || !canReadOfficers
 			? null
 			: await loadOfficers({
+					legalCompanyId: selectedCompany.legalCompanyId,
+					queryOptions,
+				});
+	const meetingLifecycleState =
+		selectedCompany === undefined || !canReadMeetings
+			? null
+			: await loadMeetingLifecycle({
 					legalCompanyId: selectedCompany.legalCompanyId,
 					queryOptions,
 				});
@@ -396,6 +417,24 @@ export async function CorporateAdministrationShell({
 								resolutions={governanceDecisionState.resolutions}
 							/>
 						) : null}
+						{meetingLifecycleState?.ok === false ? (
+							<Alert role="alert" variant="destructive">
+								<AlertTitle>Meeting lifecycle unavailable</AlertTitle>
+								<AlertDescription>
+									{meetingLifecycleState.message}
+								</AlertDescription>
+							</Alert>
+						) : null}
+						{meetingLifecycleState?.ok === true ? (
+							<MeetingLifecycleWorkspace
+								bodies={meetingLifecycleState.bodies}
+								canManage={canManageMeetings}
+								legalCompanyId={selectedCompany.legalCompanyId}
+								meetings={meetingLifecycleState.meetings}
+								memberships={meetingLifecycleState.memberships}
+								organizationSlug="client"
+							/>
+						) : null}
 						{officerState?.ok === false ? (
 							<Alert role="alert" variant="destructive">
 								<AlertTitle>Statutory officers unavailable</AlertTitle>
@@ -532,6 +571,105 @@ async function loadGovernanceDecisions(input: {
 			dueOn: action.dueOn,
 			version: action.version,
 		})),
+	};
+}
+
+async function loadMeetingLifecycle(input: {
+	legalCompanyId: GovernanceLegalCompanyId;
+	queryOptions: ReturnType<typeof createCorporateAdministrationQueryOptions>;
+}): Promise<
+	| Readonly<{
+			ok: true;
+			bodies: readonly MeetingLifecycleBody[];
+			memberships: readonly MeetingLifecycleMembership[];
+			meetings: readonly MeetingLifecycleMeeting[];
+	  }>
+	| Readonly<{ ok: false; message: string }>
+> {
+	const dependencies = createCorporateAdministrationGovernanceDependencies();
+	const asOf = canonicalDateSchema.parse(new Date().toISOString().slice(0, 10));
+	const [bodies, meetings] = await Promise.all([
+		listGovernanceBodiesAsOf(
+			{ legalCompanyId: input.legalCompanyId, asOf, pageSize: 50 },
+			input.queryOptions,
+			dependencies,
+		),
+		listGovernanceMeetings(
+			{ legalCompanyId: input.legalCompanyId, pageSize: 50 },
+			input.queryOptions,
+			dependencies,
+		),
+	]);
+	if (!bodies.ok) {
+		return { ok: false, message: bodies.message };
+	}
+	if (!meetings.ok) {
+		return { ok: false, message: meetings.message };
+	}
+	const [membershipPages, quorumResults] = await Promise.all([
+		Promise.all(
+			bodies.data.items.map((body) =>
+				listGovernanceMembershipsAsOf(
+					{ governanceBodyId: body.id, asOf, pageSize: 100 },
+					input.queryOptions,
+					dependencies,
+				),
+			),
+		),
+		Promise.all(
+			meetings.data.items.map((meeting) =>
+				getMeetingQuorumStatus(
+					{ governanceMeetingId: meeting.id },
+					input.queryOptions,
+					dependencies,
+				),
+			),
+		),
+	]);
+	const failedMembership = membershipPages.find((result) => !result.ok);
+	if (failedMembership !== undefined && !failedMembership.ok) {
+		return { ok: false, message: failedMembership.message };
+	}
+	const failedQuorum = quorumResults.find((result) => !result.ok);
+	if (failedQuorum !== undefined && !failedQuorum.ok) {
+		return { ok: false, message: failedQuorum.message };
+	}
+	return {
+		ok: true,
+		bodies: bodies.data.items.map((body) => ({
+			id: body.id,
+			displayName: body.displayName,
+			bodyType: body.bodyType,
+			status: body.status,
+			version: body.version,
+		})),
+		memberships: membershipPages.flatMap((page) =>
+			page.ok
+				? page.data.items.map((membership) => ({
+						id: membership.id,
+						governanceBodyId: membership.governanceBodyId,
+						seatLabel: membership.seatLabel,
+						membershipRole: membership.membershipRole,
+					}))
+				: [],
+		),
+		meetings: meetings.data.items.map((meeting, index) => {
+			const quorum = quorumResults[index];
+			return {
+				id: meeting.id,
+				title: meeting.title,
+				status: meeting.status,
+				scheduledStartAt: meeting.scheduledStartAt.toISOString(),
+				quorum:
+					quorum?.ok === true && quorum.data !== null
+						? {
+								hasQuorum: quorum.data.hasQuorum,
+								presentMemberCount: quorum.data.presentMemberCount,
+							}
+						: null,
+				version: meeting.version,
+			};
+		}),
 	};
 }
 

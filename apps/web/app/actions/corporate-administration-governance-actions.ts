@@ -12,10 +12,16 @@ import {
 	completeResolutionAction,
 	completeResolutionActionInputSchema,
 	corporateAdministrationPermissionFor,
+	recordMeetingParticipant,
+	recordMeetingParticipantInputSchema,
 	recordMeetingVote,
 	recordMeetingVoteInputSchema,
 	recordMinutesDocument,
 	recordMinutesDocumentInputSchema,
+	recordQuorum,
+	recordQuorumInputSchema,
+	scheduleGovernanceMeeting,
+	scheduleGovernanceMeetingInputSchema,
 } from "@afenda/corporate-administration";
 import {
 	type Result as ActionResult,
@@ -72,6 +78,126 @@ export type ResolutionImplementationActionResult = Readonly<{
 	status: string;
 	version: number;
 }>;
+
+export type MeetingScheduleActionResult = Readonly<{
+	governanceMeetingId: string;
+	status: string;
+	version: number;
+}>;
+
+export type MeetingParticipantActionResult = Readonly<{
+	meetingParticipantId: string;
+	attendanceStatus: string;
+	version: number;
+}>;
+
+export type MeetingQuorumActionResult = Readonly<{
+	meetingQuorumResultId: string;
+	hasQuorum: boolean;
+	version: number;
+}>;
+
+export async function scheduleGovernanceMeetingAction(
+	formData: FormData,
+): Promise<ActionResult<MeetingScheduleActionResult>> {
+	return await runGovernanceAction({
+		operationId: "scheduleGovernanceMeeting",
+		path: "scheduleGovernanceMeetingAction",
+		safeMessage: "Could not schedule the governance meeting.",
+		formData,
+		schema: scheduleGovernanceMeetingInputSchema,
+		normalize: (values) =>
+			coerceNumbers(
+				omitEmpty(values, [
+					"scheduledEndAt",
+					"locationSummary",
+					"remoteAccessSummary",
+				]),
+				["noticePeriodDays", "expectedBodyVersion"],
+			),
+		execute: scheduleGovernanceMeeting,
+		project: (meeting) => ({
+			governanceMeetingId: meeting.id,
+			status: meeting.status,
+			version: meeting.version,
+		}),
+	});
+}
+
+export async function recordMeetingParticipantAction(
+	formData: FormData,
+): Promise<ActionResult<MeetingParticipantActionResult>> {
+	return await runGovernanceAction({
+		operationId: "recordMeetingParticipant",
+		path: "recordMeetingParticipantAction",
+		safeMessage: "Could not record the meeting participant.",
+		formData,
+		schema: recordMeetingParticipantInputSchema,
+		normalize: (values) =>
+			coerceNumbers(
+				omitEmpty(values, [
+					"participantPartyId",
+					"representedByPartyId",
+					"proxyDocumentId",
+					"recusalReason",
+				]),
+				["expectedMeetingVersion"],
+			),
+		execute: recordMeetingParticipant,
+		project: (participant) => ({
+			meetingParticipantId: participant.id,
+			attendanceStatus: participant.attendanceStatus,
+			version: participant.version,
+		}),
+	});
+}
+
+export async function recordQuorumAction(
+	formData: FormData,
+): Promise<ActionResult<MeetingQuorumActionResult>> {
+	return await runGovernanceAction({
+		operationId: "recordQuorum",
+		path: "recordQuorumAction",
+		safeMessage: "Could not record the meeting quorum.",
+		formData,
+		schema: recordQuorumInputSchema,
+		normalize: (values) =>
+			coerceBooleans(
+				coerceNumbers(omitEmpty(values, ["noQuorumReason"]), [
+					"requiredPresentCount",
+					"expectedMeetingVersion",
+				]),
+				["eligibleVotingOnly"],
+			),
+		execute: recordQuorum,
+		project: (quorum) => ({
+			meetingQuorumResultId: quorum.id,
+			hasQuorum: quorum.hasQuorum,
+			version: quorum.version,
+		}),
+	});
+}
+
+export async function scheduleGovernanceMeetingFormAction(
+	_previousState: ActionResult<MeetingScheduleActionResult> | null,
+	formData: FormData,
+) {
+	return await scheduleGovernanceMeetingAction(formData);
+}
+
+export async function recordMeetingParticipantFormAction(
+	_previousState: ActionResult<MeetingParticipantActionResult> | null,
+	formData: FormData,
+) {
+	return await recordMeetingParticipantAction(formData);
+}
+
+export async function recordQuorumFormAction(
+	_previousState: ActionResult<MeetingQuorumActionResult> | null,
+	formData: FormData,
+) {
+	return await recordQuorumAction(formData);
+}
 
 export async function recordMeetingVoteAction(
 	formData: FormData,
@@ -219,6 +345,9 @@ async function runGovernanceAction<TPayload, TResult, TProjection>(input: {
 		| "assignResolutionAction"
 		| "completeResolutionAction"
 		| "recordMinutesDocument"
+		| "scheduleGovernanceMeeting"
+		| "recordMeetingParticipant"
+		| "recordQuorum"
 	>;
 	path: string;
 	safeMessage: string;
@@ -294,6 +423,32 @@ function withoutActionMetadata(
 
 function optionalString(value: FormDataEntryValue | undefined) {
 	return typeof value === "string" && value.length > 0 ? value : undefined;
+}
+
+/** Optional strict-schema fields must be absent, not empty strings. */
+function omitEmpty(
+	values: Record<string, FormDataEntryValue>,
+	keys: readonly string[],
+): Record<string, FormDataEntryValue> {
+	const normalized: Record<string, FormDataEntryValue> = { ...values };
+	for (const key of keys) {
+		if (normalized[key] === "") {
+			delete normalized[key];
+		}
+	}
+	return normalized;
+}
+
+/** Checkbox and select booleans arrive as strings; strict schemas need booleans. */
+function coerceBooleans(
+	values: Record<string, unknown>,
+	keys: readonly string[],
+): Record<string, unknown> {
+	const normalized: Record<string, unknown> = { ...values };
+	for (const key of keys) {
+		normalized[key] = normalized[key] === "true" || normalized[key] === "on";
+	}
+	return normalized;
 }
 
 function coerceNumbers(
