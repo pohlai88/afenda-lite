@@ -58,4 +58,4 @@ pnpm check:notifications-boundary
 pnpm test:notifications-boundary
 ```
 
-See [CONTRACT.md](./CONTRACT.md), [docs-V2/notifications](../../../docs-V2/notifications/README.md), and the [monorepo boundary](../../../docs-V2/monorepo/README.md).
+See [CONTRACT.md](./CONTRACT.md).

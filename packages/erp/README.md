@@ -4,7 +4,7 @@
 
 **What it does** — Groups sole-mutator domain libraries (`@afenda/sales`, `@afenda/human-resources`, …) that own their mutation tables, expose commands and queries through declared `exports`, and integrate with peers only through registered edges, ports, or domain events.
 
-**What you need** — Node.js `24.x` and pnpm `>=10.33.4` (root `package.json`); familiarity with [SCAFFOLDING.md](./SCAFFOLDING.md) before adding or widening a package.
+**What you need** — Node.js `24.x` and pnpm `>=10.33.4` (root `package.json`); familiarity with [SCAFFOLDING.md](./ERP-SCAFFOLDING.md) before adding or widening a package.
 
 **Who it's for** — Engineers extending ERP modules, wiring `apps/web` composition roots, or auditing package governance and schema ownership.
 
@@ -25,13 +25,13 @@ Import every package through its declared public name or approved `exports` subp
 import { createSalesOrder } from "@afenda/sales";
 ```
 
-Catalog band: **Rank 1F**. Module categories below match [MODULE-CATALOG.generated.yaml](../../docs-V2/modules/MODULE-CATALOG.generated.yaml) (`category` and `lifecycle` fields).
+Catalog band: **Rank 1F**. Module categories below match (`category` and `lifecycle` fields).
 
 ## Packages by module category
 
 ### Master data (`master-data`) — core
 
-Organization masters and reference data. `activationMode: core`. Transactional document tables stay in their owning packages ([ARCH-006 consumer contract](../../docs-V2/master-data/arch-006-consumer-contract.md)).
+Organization masters and reference data. `activationMode: core`. Transactional document tables stay in their owning packages.
 
 | Folder | Published name | Lifecycle | Role |
 | ------ | -------------- | --------- | ---- |
@@ -88,16 +88,15 @@ Peer collaboration is allowed only through:
 - approved projections or query contracts;
 - explicitly registered dual-control edges.
 
-Every workspace dependency must be declared in both the consuming package manifest and the [workspace edge register](../../docs-V2/modules/WORKSPACE-EDGE-REGISTER.yaml).
+Every workspace dependency must be declared in the consuming package manifest.
 
-An ERP package may read foreign-owned data only through an approved contract or registered read edge. It must never insert, update, or delete tables owned by another package. Write ownership is defined by the [schema ownership manifest](../../docs-V2/modules/SCHEMA-OWNERSHIP-MANIFEST.yaml).
+An ERP package may read foreign-owned data only through an approved contract or registered read edge. It must never insert, update, or delete tables owned by another package. Write ownership belongs to the package that owns the table.
 
-**Allowance and deduction four-way ownership (HR Slice 8.6):** `@afenda/human-resources` entitlement/agreement · `@afenda/payroll` calculation · `@afenda/accounting` posting · `@afenda/payments` disbursement. SSOT: [allowance-deduction-ownership.md](../../docs-V2/_scratch/erp/allowance-deduction-ownership.md).
+**Allowance and deduction four-way ownership (HR Slice 8.6):** `@afenda/human-resources` entitlement/agreement · `@afenda/payroll` calculation · `@afenda/accounting` posting · `@afenda/payments` disbursement.
 
 **Typical registered upstream deps (not peer ERP):** `@afenda/db` · `@afenda/errors` · `@afenda/audit` · `@afenda/events` · `@afenda/search` (as approved per package). Master-data backbone edges for transactional consumers are registered — not lateral transactional imports by default.
 
-**Tenancy:** All ERP mutations and queries are organization-scoped (`organization_id`) on the shared Neon schema — not multi-DB or project-per-tenant isolation. See [docs-V2/tenancy](../../docs-V2/tenancy/README.md).
-
+**Tenancy:** All ERP mutations and queries are organization-scoped (`organization_id`) on the shared Neon schema — not multi-DB or project-per-tenant isolation.
 ## Maintain
 
 Run package-local checks from the repo root:
@@ -128,13 +127,13 @@ Per-package consume and maintain detail lives in each child [README](./master-da
 
 Theory, folder layout, manifest-first workflow, ports, and new-package checklist:
 
-**[SCAFFOLDING.md](./SCAFFOLDING.md)**
+**[SCAFFOLDING.md](./ERP-SCAFFOLDING.md)**
 
 ## Adding an ERP package
 
 Do not create a new ERP package without:
 
-1. an approved [module-roadmap](../../docs-V2/modules/MODULE-ROADMAP.yaml) entry;
+1. an approved entry;
 2. a defined bounded context and write ownership;
 3. a package catalog entry (via `module.manifest.ts` → `pnpm validate:modules:write`);
 4. registered workspace edges;
@@ -146,10 +145,4 @@ New packages nest under `packages/erp/<name>/` with published name `@afenda/<nam
 ## Authority
 
 - Parent catalog: [packages/README.md](../README.md)
-- Package governance: [PACKAGE-GOVERNANCE.md](../../docs-V2/modules/PACKAGE-GOVERNANCE.md)
-- Module categories (generated): [MODULE-CATALOG.generated.yaml](../../docs-V2/modules/MODULE-CATALOG.generated.yaml)
-- Workspace edges: [WORKSPACE-EDGE-REGISTER.yaml](../../docs-V2/modules/WORKSPACE-EDGE-REGISTER.yaml)
-- Schema ownership: [SCHEMA-OWNERSHIP-MANIFEST.yaml](../../docs-V2/modules/SCHEMA-OWNERSHIP-MANIFEST.yaml)
-- Module roadmap: [MODULE-ROADMAP.yaml](../../docs-V2/modules/MODULE-ROADMAP.yaml)
-- Monorepo governance: [docs-V2/monorepo](../../docs-V2/monorepo/README.md)
 - Agent checkout posture: [AGENTS.md](../../AGENTS.md)

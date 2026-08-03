@@ -44,5 +44,3 @@ Add tests with the block behavior they protect; do not add empty scripts to matc
 | Surfaces category | [packages/surfaces](../README.md) |
 | Package catalog and layer DAG | [packages](../../README.md) |
 | UI primitive source | [@afenda/ui-system](../ui-system/README.md) |
-| Workspace edge governance | [WORKSPACE-EDGE-REGISTER.yaml](../../../docs-V2/modules/WORKSPACE-EDGE-REGISTER.yaml) |
-| Package governance | [PACKAGE-GOVERNANCE.md](../../../docs-V2/modules/PACKAGE-GOVERNANCE.md) |

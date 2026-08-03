@@ -9,14 +9,12 @@
  *
  * This module evaluates evidence only. It does not change compute size,
  * autoscaling, suspend behavior, connection limits, retention, or schema.
- *
- * The production branch ID mirrors `APPROVED_NEON_BRANCH_ID` from
- * `neon-contract.ts`. It remains local so `validate:neon-env` can load this
- * module without nested ESM resolution.
  */
 
-/** Must equal `APPROVED_NEON_BRANCH_ID`; enforced by package tests. */
-export const PERFORMANCE_PROD_BRANCH_ID = "br-tiny-hill-ao82jp6f" as const;
+import { APPROVED_NEON_BRANCH_ID } from "./neon-identity";
+
+/** Derived from the canonical identity owner — never restate the literal. */
+export const PERFORMANCE_PROD_BRANCH_ID = APPROVED_NEON_BRANCH_ID;
 const TRAILING_DOT_PATTERN = /\.$/;
 
 /** Autoscaling minimum CU. Raise only with measured evidence. */

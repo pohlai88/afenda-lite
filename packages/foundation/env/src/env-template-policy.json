@@ -1,0 +1,129 @@
+{
+	"$comment": [
+		"@afenda/env — .env.example template policy. Build-time governance only.",
+		"Protected: changes require local pre-edit token and compatibility checks.",
+		"",
+		"Read by `pnpm check:env-example`. Declares, per key, what the committed",
+		"template must say about it. Orthogonal fields rather than one enum,",
+		"because 'secret' and 'required developer input' are independently true.",
+		"",
+		"source:      developer | platform | ci | derived",
+		"requirement: required  | optional | prohibited",
+		"sensitivity: public    | secret",
+		"",
+		"Deny-by-default: a template key with no entry here fails. Adding a key to",
+		"the template is therefore a deliberate, reviewed policy decision rather",
+		"than an edit nobody notices."
+	],
+	"placeholderPattern": "\\[[a-z0-9-]+\\]",
+	"keys": {
+		"DATABASE_URL": {
+			"source": "developer",
+			"requirement": "required",
+			"sensitivity": "secret",
+			"reason": "Neon pooled connection string; embeds a password."
+		},
+		"NEON_AUTH_BASE_URL": {
+			"source": "developer",
+			"requirement": "required",
+			"sensitivity": "public",
+			"reason": "Neon Auth endpoint for the project."
+		},
+		"NEON_AUTH_COOKIE_SECRET": {
+			"source": "developer",
+			"requirement": "required",
+			"sensitivity": "secret",
+			"reason": "Session cookie signing secret."
+		},
+		"APP_URL": {
+			"source": "developer",
+			"requirement": "required",
+			"sensitivity": "public",
+			"reason": "Product origin; drives Neon Auth trusted domains."
+		},
+		"NEON_ORG_ID": {
+			"source": "developer",
+			"requirement": "required",
+			"sensitivity": "public",
+			"reason": "Approved Neon Cloud organization identity."
+		},
+		"NEON_PROJECT_ID": {
+			"source": "developer",
+			"requirement": "required",
+			"sensitivity": "public",
+			"reason": "Approved Neon Cloud project identity."
+		},
+		"NEON_BRANCH_ID": {
+			"source": "developer",
+			"requirement": "required",
+			"sensitivity": "public",
+			"reason": "Single production branch policy."
+		},
+		"NEON_API_KEY": {
+			"source": "developer",
+			"requirement": "optional",
+			"sensitivity": "secret",
+			"reason": "Local/MCP ops only; never synced to production."
+		},
+		"PORTAL_ORG_SWITCHER_ENABLED": {
+			"source": "developer",
+			"requirement": "optional",
+			"sensitivity": "public",
+			"reason": "Operator-facing toggle."
+		},
+		"GUARDIAN_AUTH_SHELL": {
+			"source": "developer",
+			"requirement": "optional",
+			"sensitivity": "public",
+			"reason": "Operator-facing toggle."
+		},
+		"PLAYGROUND_ENABLED": {
+			"source": "developer",
+			"requirement": "optional",
+			"sensitivity": "public",
+			"reason": "Local-only reserved toggle; never synced to production."
+		},
+		"SHARED_ADMIN_EMAIL": {
+			"source": "developer",
+			"requirement": "optional",
+			"sensitivity": "public",
+			"reason": "Local seed identity."
+		},
+		"SHARED_ADMIN_NAME": {
+			"source": "developer",
+			"requirement": "optional",
+			"sensitivity": "public",
+			"reason": "Local seed identity."
+		},
+		"SHARED_ADMIN_PASSWORD": {
+			"source": "developer",
+			"requirement": "optional",
+			"sensitivity": "secret",
+			"reason": "Local seed credential."
+		},
+		"PREVIEW_CLIENT_EMAIL": {
+			"source": "developer",
+			"requirement": "optional",
+			"sensitivity": "public",
+			"reason": "Local seed identity."
+		},
+		"PREVIEW_CLIENT_NAME": {
+			"source": "developer",
+			"requirement": "optional",
+			"sensitivity": "public",
+			"reason": "Local seed identity."
+		},
+		"PREVIEW_CLIENT_PASSWORD": {
+			"source": "developer",
+			"requirement": "optional",
+			"sensitivity": "secret",
+			"reason": "Local seed credential."
+		},
+		"CLIENT_DEFAULT_PASSWORD": {
+			"source": "developer",
+			"requirement": "optional",
+			"sensitivity": "secret",
+			"reason": "Local seed credential."
+		}
+	}
+}

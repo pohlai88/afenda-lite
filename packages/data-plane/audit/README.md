@@ -125,6 +125,6 @@ Out of scope: ORM auto-interception, process-global audit context, file or JSONL
 | Topic | Link |
 |-------|------|
 | Data plane package index | [packages/data-plane](../README.md) |
-| Package DAG and layer rules | [docs-V2/monorepo](../../../docs-V2/monorepo/README.md) · [LAYERS.md](../../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
-| Data layer and hard tenant roots | [docs-V2/data](../../../docs-V2/data/README.md) · [`@afenda/db`](../db/README.md) |
+| Package DAG and layer rules | [LAYERS.md](../../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
+| Data layer and hard tenant roots | [`@afenda/db`](../db/README.md) |
 | Agent checkout posture | [AGENTS.md](../../../AGENTS.md) |

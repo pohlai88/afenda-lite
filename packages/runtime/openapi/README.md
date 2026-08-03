@@ -77,4 +77,4 @@ pnpm openapi:generate
 pnpm check:openapi
 ```
 
-See [CONTRACT.md](./CONTRACT.md), [API Scratch](../../../docs-V2/api/README.md), and [monorepo layering](../../../docs-V2/monorepo/README.md).
+See [CONTRACT.md](./CONTRACT.md).

@@ -31,7 +31,7 @@ Enterprise HR bounded context for Afenda-Lite — workforce records, organizatio
 
 The reviewed [public-contract](https://github.com/pohlai88/afenda-lite/blob/main/packages/erp/human-resources/__tests__/fixtures/public-contract.fixture.json), [registry-projection](https://github.com/pohlai88/afenda-lite/blob/main/packages/erp/human-resources/__tests__/fixtures/registry-projection.fixture.json), and [consumer-inventory](https://github.com/pohlai88/afenda-lite/blob/main/packages/erp/human-resources/__tests__/fixtures/consumer-inventory.fixture.json) fixtures enumerate the accepted root contract, canonical operation governance, and consumer graph. The package exposes one production root and one isolated `./testing` entrypoint. The module manifest remains `lifecycle: "scaffolded"`.
 
-The package implements broad local behavior for workforce records, organization, planning, recruitment, hire conversion, employment lifecycle, leave, time, compensation, performance, learning, talent, compliance, employee relations, privacy, reporting, bulk processing, reliability, and approved Payroll handoff. The [Human Resources PRD](https://github.com/pohlai88/afenda-lite/blob/main/docs-V2/_scratch/human-resources/human-resources-prd.md) is the Scratch classification of implemented behavior versus open requirements; names or locally green tests do not establish product completeness.
+The package implements broad local behavior for workforce records, organization, planning, recruitment, hire conversion, employment lifecycle, leave, time, compensation, performance, learning, talent, compliance, employee relations, privacy, reporting, bulk processing, reliability, and approved Payroll handoff. The [Human Resources PRD](https://github.com/pohlai88/afenda-lite/blob/main/docs/_scratch/human-resources/human-resources-prd.md) is the Scratch classification of implemented behavior versus open requirements; names or locally green tests do not establish product completeness.
 
 ### Open product and architecture work
 
@@ -115,8 +115,7 @@ Person → Worker → Employee specialization
 
 **Security:** Commands require an injected `HumanResourcesAuthorizationPort`. Input schemas reject tenant-field injection — the composition root stamps `organizationId`, `actorUserId`, and `correlationId` after validation.
 
-**Tenancy:** Shared Neon schema with organization-scoped rows. HR hard-tenant-root names, table objects, and audit SQL derive from `packages/data-plane/db/src/hard-tenant-roots.ts`; the README does not duplicate that volatile inventory. This is not multi-DB isolation — see [docs-V2/tenancy](https://github.com/pohlai88/afenda-lite/blob/main/docs-V2/tenancy/README.md).
-
+**Tenancy:** Shared Neon schema with organization-scoped rows. HR hard-tenant-root names, table objects, and audit SQL derive from `packages/data-plane/db/src/hard-tenant-roots.ts`; the README does not duplicate that volatile inventory. This is not multi-DB isolation.
 ## Public surface
 
 | Entrypoint | Role |
@@ -176,7 +175,7 @@ src/
 ```
 
 The package has no root `shared/`, `schemas/`, `store/`, or `adapters/` layer, and
-`scripts/feature-first-layout.mjs` rejects restoration of those superseded roots.
+The `feature-first layout` unit test and the ERP generator doctor reject restoration of those superseded roots.
 That guard proves only the top-level layout. The architecture-debt report separately
 tracks deep paths, upward imports, composite-store dependencies, cross-feature
 edges, cycles, testing leakage, deep consumer imports, and retired filesystem paths.
@@ -192,7 +191,7 @@ port capabilities, and composition alone constructs the aggregate. The final Pha
 `src/<approved-surface-or-feature>/<file>` and rejects any third directory level.
 Memory and Drizzle implementations remain paired through descriptive filenames;
 no empty capsule placeholders or generic layer farms are introduced. See the
-[development roadmap](https://github.com/pohlai88/afenda-lite/blob/main/docs-V2/_scratch/human-resources/development-roadmap.md)
+[development roadmap](https://github.com/pohlai88/afenda-lite/blob/main/docs/_scratch/human-resources/development-roadmap.md)
 and reusable [feature-first ERP semantic method](https://github.com/pohlai88/afenda-lite/blob/main/.cursor/skills/afenda-semantic-registry-cutover/references/feature-first-erp.md).
 
 ## Integration contracts
@@ -227,7 +226,7 @@ Production HR source does not import `@afenda/payroll` and never calculates gros
 ## Maintain
 
 ```bash
-node packages/erp/human-resources/scripts/feature-first-layout.mjs
+pnpm --filter @afenda/human-resources test -- __tests__/feature-first-layout.test.ts
 pnpm --filter @afenda/human-resources lint
 pnpm --filter @afenda/human-resources typecheck
 pnpm --filter @afenda/human-resources test
@@ -261,7 +260,7 @@ pnpm governance:packages
 | **Compensation agreement** — `hr_employee_compensation`, `hr_allowance_entitlement`, `hr_bonus_eligibility`, benefit enrollment **contribution terms** on `hr_benefit_enrollment` | Pay-period calculated earnings/deductions/net; `payroll_*`, `journal*`, `payment*` writes |
 | Approved, immutable payroll handoff inputs and acknowledged delivery state | Gross-to-net, statutory pay math, payslip generation |
 
-**Allowance/deduction four-way ownership:** HR entitlement/agreement → Payroll calculation → Accounting posting → Payments disbursement. The product boundary and non-duplication rules are defined in the [Human Resources PRD](https://github.com/pohlai88/afenda-lite/blob/main/docs-V2/_scratch/human-resources/human-resources-prd.md).
+**Allowance/deduction four-way ownership:** HR entitlement/agreement → Payroll calculation → Accounting posting → Payments disbursement. The product boundary and non-duplication rules are defined in the [Human Resources PRD](https://github.com/pohlai88/afenda-lite/blob/main/docs/_scratch/human-resources/human-resources-prd.md).
 
 **Dependencies:** `@afenda/db`, `@afenda/errors`, `@afenda/events`, `@afenda/audit`. Cross-domain reference capabilities such as currency and organization dimensions are injected by the application composition root; Human Resources does not import master-data persistence or adapters.
 
@@ -270,15 +269,11 @@ pnpm governance:packages
 | Topic | Link |
 |-------|------|
 | Feature-first ERP semantic method | [feature-first-erp.md](https://github.com/pohlai88/afenda-lite/blob/main/.cursor/skills/afenda-semantic-registry-cutover/references/feature-first-erp.md) |
-| Feature-first layout guard | [feature-first-layout.mjs](https://github.com/pohlai88/afenda-lite/blob/main/packages/erp/human-resources/scripts/feature-first-layout.mjs) |
-| Product requirements and bounded-context map (Scratch) | [human-resources-prd.md](https://github.com/pohlai88/afenda-lite/blob/main/docs-V2/_scratch/human-resources/human-resources-prd.md) |
-| Development roadmap and delivery gates (Scratch) | [development-roadmap.md](https://github.com/pohlai88/afenda-lite/blob/main/docs-V2/_scratch/human-resources/development-roadmap.md) |
-| Payroll product requirements (Scratch) | [PAYROLL-PRD-MY-VN.md](https://github.com/pohlai88/afenda-lite/blob/main/docs-V2/_scratch/payroll/PAYROLL-PRD-MY-VN.md) |
+| Product requirements and bounded-context map (Scratch) | [human-resources-prd.md](https://github.com/pohlai88/afenda-lite/blob/main/docs/_scratch/human-resources/human-resources-prd.md) |
+| Development roadmap and delivery gates (Scratch) | [development-roadmap.md](https://github.com/pohlai88/afenda-lite/blob/main/docs/_scratch/human-resources/development-roadmap.md) |
+| Payroll product requirements (Scratch) | [PAYROLL-PRD-MY-VN.md](https://github.com/pohlai88/afenda-lite/blob/main/docs/_scratch/payroll/PAYROLL-PRD-MY-VN.md) |
 | Public contract evidence | [`public-contract.fixture.json`](https://github.com/pohlai88/afenda-lite/blob/main/packages/erp/human-resources/__tests__/fixtures/public-contract.fixture.json) · [`consumer-inventory.fixture.json`](https://github.com/pohlai88/afenda-lite/blob/main/packages/erp/human-resources/__tests__/fixtures/consumer-inventory.fixture.json) |
 | Registry and architecture evidence | [`registry-projection.fixture.json`](https://github.com/pohlai88/afenda-lite/blob/main/packages/erp/human-resources/__tests__/fixtures/registry-projection.fixture.json) · [`architecture-debt.fixture.json`](https://github.com/pohlai88/afenda-lite/blob/main/packages/erp/human-resources/__tests__/fixtures/architecture-debt.fixture.json) |
 | Module lifecycle | [`module.manifest.ts`](https://github.com/pohlai88/afenda-lite/blob/main/packages/erp/human-resources/src/composition/module.manifest.ts) |
 | ERP scaffold rules | [ERP-SCAFFOLDING.md](https://github.com/pohlai88/afenda-lite/blob/main/packages/erp/ERP-SCAFFOLDING.md) |
-| Tenancy | [docs-V2/tenancy](https://github.com/pohlai88/afenda-lite/blob/main/docs-V2/tenancy/README.md) |
-| Package DAG | [docs-V2/monorepo](https://github.com/pohlai88/afenda-lite/blob/main/docs-V2/monorepo/README.md) |
-| Schema ownership | [SCHEMA-OWNERSHIP-MANIFEST.yaml](https://github.com/pohlai88/afenda-lite/blob/main/docs-V2/modules/SCHEMA-OWNERSHIP-MANIFEST.yaml) |
 | Agent checkout posture | [AGENTS.md](https://github.com/pohlai88/afenda-lite/blob/main/AGENTS.md) |

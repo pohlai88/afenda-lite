@@ -65,4 +65,4 @@ pnpm test:search-boundary
 
 No Next.js, docs Orama, external search SaaS, application imports, or direct consumer access to `platform_search_document` belongs here. Runtime workspace dependencies remain `@afenda/db` and `@afenda/errors`.
 
-Authority: [search Scratch](../../../docs-V2/search/README.md) · [monorepo DAG](../../../docs-V2/monorepo/README.md) · [AGENTS.md](../../../AGENTS.md).
+Authority: [AGENTS.md](../../../AGENTS.md).

@@ -24,17 +24,13 @@ if (!databaseUrl.includes("-pooler")) {
 	process.exit(1);
 }
 
-const performancePostureUrl = pathToFileURL(
-	resolve(
-		process.cwd(),
-		"packages/foundation/env/src/neon-performance-posture.ts",
-	),
-).href;
+// Pure evaluator entrypoint — no product environment initialization. Do not
+// reintroduce file-URL imports into `packages/foundation/env/src/**`.
 const {
 	evaluateConnectionPressure,
 	evaluateSelect1Latency,
 	formatNeonPerformanceIssues,
-} = await import(performancePostureUrl);
+} = await import("@afenda/env/performance");
 
 const serverlessUrl = pathToFileURL(
 	resolve(

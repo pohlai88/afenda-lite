@@ -47,8 +47,10 @@ const modulesDir = join(root, "docs-V2", "modules");
 const write = process.argv.includes("--write");
 const fixturesOnly = process.argv.includes("--fixtures");
 
-if (!fixturesOnly && !existsSync(modulesDir)) {
-	console.log("validate:modules: skipped — docs-V2 removed, no module roadmap to validate");
+if (!(fixturesOnly || existsSync(modulesDir))) {
+	console.log(
+		"validate:modules: skipped — docs-V2 removed, no module roadmap to validate",
+	);
 	process.exit(0);
 }
 
@@ -106,10 +108,10 @@ async function main() {
 	const platformCodes = loadPlatformPermissionCodes();
 	const roadmap = loadRoadmapModules(join(modulesDir, "MODULE-ROADMAP.yaml"));
 	const knownTables = new Set(Object.values(SCHEMA_SYMBOL_TO_TABLE));
-	const eventsMod = await import(
-		pathToFileURL(join(root, "packages/data-plane/events/src/schemas/index.ts"))
-			.href
-	);
+	// Declared entrypoint, not internal source. `@afenda/events` exports
+	// `./schemas` for exactly this file — resolving it by path bypassed the
+	// exports map and was invisible to static import checks.
+	const eventsMod = await import("@afenda/events/schemas");
 	const knownEvents = new Set(Object.keys(eventsMod.AllEventSchemas));
 
 	/** @type {string[]} */

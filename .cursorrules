@@ -9,8 +9,7 @@
 - **Commands:** `pnpm --filter @afenda/web dev` · `pnpm lint` · `pnpm typecheck` · `pnpm test` · `pnpm governance:packages` · `pnpm checks`
 - **Product entry:** [AGENTS.md](AGENTS.md) skill router · `.cursor/skills/using-afenda-elite-skills/SKILL.md`
 - **Always-apply rules:** `.cursor/rules/*.mdc` (PREFLIGHT · coding-discipline · enterprise bar · no-shim · no-park · no Living ARCH ghost SSOT)
-- **Scratch ops:** `docs-V2/` (Living `docs/` absent by design until Docs-lane reopen)
-- **Map:** [docs-V2/project-map.md](docs-V2/project-map.md)
+- **Docs:** `docs/` is the live trunk. `docs-V2/` is retired and removed — never recreate it or cite it as on-disk authority (gate: `pnpm check:docs-trunk-ban`)
 
 ## Hard stops
 

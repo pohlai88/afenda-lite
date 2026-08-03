@@ -32,4 +32,4 @@ pnpm --filter @afenda/sales test
 pnpm validate:modules
 ```
 
-The implementation specification and traceable requirements live in [`docs-V2/_scratch/erp/sales`](../../../docs-V2/_scratch/erp/sales/README.md).
+The implementation specification and traceable requirements are tracked with the Sales module work items.

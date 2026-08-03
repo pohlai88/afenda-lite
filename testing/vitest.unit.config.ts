@@ -5,6 +5,7 @@ import {
 	humanResourcesRoot,
 	laneExcludeOptions,
 	laneIncludeForProject,
+	laneTimeout,
 	masterDataRoot,
 	nextServerAlias,
 	nodeProject,
@@ -63,10 +64,8 @@ export default mergeConfig(
 					...repoToolingProject,
 					test: {
 						...repoToolingProject.test,
-						include: [
-							"scripts/check-tsconfig-governance.test.mjs",
-							"turbo/generators/__tests__/**/*.test.ts",
-						],
+						include: laneIncludeForProject("repo-tooling", ""),
+						testTimeout: laneTimeout("repo-tooling"),
 					},
 				},
 				{
@@ -94,6 +93,10 @@ export default mergeConfig(
 				nodeProject(
 					"errors",
 					path.join(repoRoot, "packages/foundation/errors"),
+				),
+				nodeProject(
+					"config",
+					path.join(repoRoot, "packages/foundation/config"),
 				),
 				nodeProject(
 					"testing",

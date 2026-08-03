@@ -81,9 +81,42 @@ function importFreshWebEnv() {
 	return import("../src/web");
 }
 
+/**
+ * Every environment key this package governs.
+ *
+ * Derived from the classification ledger and the product registry rather than
+ * hand-listed, so a newly governed key is cleared automatically. Hand-listing
+ * would leave each new local-only key able to break the suite from a
+ * developer's shell.
+ */
+const GOVERNED_ENV_KEYS: readonly string[] = Array.from(
+	new Set([
+		...Object.keys(NEON_ENV_CLASSIFICATION),
+		...Object.keys(
+			createProductEnvRegistry({
+				nodeEnv: "production",
+				vercelEnv: "production",
+			}),
+		),
+	]),
+);
+
+/**
+ * Clear all governed keys so the fixture — not the developer's ambient shell —
+ * is the sole input. Without this, an exported local-only key such as
+ * `NEON_API_KEY` fails the production local-only assertion and the suite passes
+ * or fails depending on who runs it.
+ */
+function clearGovernedProcessEnv() {
+	for (const key of GOVERNED_ENV_KEYS) {
+		delete process.env[key];
+	}
+}
+
 function setValidProductionWebEnv(
 	overrides: Record<string, string | undefined> = {},
 ) {
+	clearGovernedProcessEnv();
 	const values: Record<string, string | undefined> = {
 		NODE_ENV: "production",
 		VERCEL_ENV: "production",
@@ -571,15 +604,32 @@ describe("@afenda/env createEnv export", () => {
 		expect(typeof env).toBe("object");
 	});
 
-	it("exports sealed recovery helpers through the package barrel", async () => {
+	it("exports sealed recovery helpers through the dedicated recovery entrypoint", async () => {
+		const recovery = await import("../src/recovery");
+
+		expect(recovery.MAX_SNAPSHOT_NAME_CREATED_AT_DRIFT_SECONDS).toBe(60);
+		expect(
+			recovery.scheduledSnapshotNameTimestamp("snapshot_2026-07-16T17:00:05Z"),
+		).toBe(Date.parse("2026-07-16T17:00:05Z"));
+	});
+
+	it("keeps pure evaluators off the runtime barrel", async () => {
 		process.env.SKIP_ENV_VALIDATION = "true";
 
 		const barrel = await import("../src/index");
 
-		expect(barrel.MAX_SNAPSHOT_NAME_CREATED_AT_DRIFT_SECONDS).toBe(60);
-		expect(
-			barrel.scheduledSnapshotNameTimestamp("snapshot_2026-07-16T17:00:05Z"),
-		).toBe(Date.parse("2026-07-16T17:00:05Z"));
+		// The root entrypoint owns product runtime configuration only. Re-exporting
+		// evaluators here would make every consumer of a pure helper pay for full
+		// product environment validation — the coupling the split removed.
+		for (const leaked of [
+			"MAX_SNAPSHOT_NAME_CREATED_AT_DRIFT_SECONDS",
+			"scheduledSnapshotNameTimestamp",
+			"evaluateNeonProductEnv",
+			"MAX_SELECT1_LATENCY_MS",
+			"APPROVED_NEON_BRANCH_ID",
+		]) {
+			expect(leaked in barrel).toBe(false);
+		}
 	});
 
 	it("exports the current production deployment helper through the package barrel", async () => {
@@ -693,6 +743,33 @@ describe("web environment", () => {
 		await expect(importFreshWebEnv()).rejects.toThrow(
 			"Invalid environment variables",
 		);
+	});
+
+	it("is unaffected by ambient local-only variables in the developer shell", async () => {
+		// Simulate a shell that exports local/MCP ops keys. These are classified
+		// local-only and rejected in production, so a fixture that does not clear
+		// governed keys would fail here for some developers and pass for others.
+		process.env.NEON_API_KEY = "ambient-local-key";
+		process.env.SHADCN_STUDIO_API_KEY = "ambient-studio-key";
+		process.env.E2E_OPERATOR_PASSWORD = "ambient-e2e-password";
+
+		setValidProductionWebEnv();
+
+		const { env } = await importFreshWebEnv();
+
+		expect(env.APP_URL).toBe("https://www.nexuscanon.com");
+	});
+
+	it("clears every governed key, not just a hand-picked few", () => {
+		// Anti-recurrence: the cleared set must derive from the registries, so a
+		// newly governed local-only key cannot reintroduce ambient sensitivity.
+		for (const key of Object.keys(NEON_ENV_CLASSIFICATION)) {
+			expect(GOVERNED_ENV_KEYS).toContain(key);
+		}
+
+		process.env.NEON_API_KEY = "ambient-local-key";
+		clearGovernedProcessEnv();
+		expect(process.env.NEON_API_KEY).toBeUndefined();
 	});
 
 	it("allows missing CRON_SECRET when HR worker is disabled", async () => {

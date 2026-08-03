@@ -26,7 +26,6 @@ const machine = createTheMachine({
 return machine.stream({ messages, context });
 ```
 
-DNA absorb/reject: [docs-V2/ai/ai-the-machine-dna.md](../../../docs-V2/ai/ai-the-machine-dna.md).
 
 ## Maintain
 
@@ -52,8 +51,7 @@ Requires root engines: **Node `24.x`**, **pnpm `≥10.33.4`**.
 | Gateway key / model env | `@afenda/env` + web RH |
 | Session mint + rate limit + UI | `apps/web` |
 
-**Layer:** Rank-1 Platform (`ai` SDK; no `@afenda/db` · no Surfaces · no `apps/*` imports). See [docs-V2/monorepo](../../../docs-V2/monorepo/README.md).
-
+**Layer:** Rank-1 Platform (`ai` SDK; no `@afenda/db` · no Surfaces · no `apps/*` imports).
 ## Out of scope
 
 Do not add to this package: DB tool executors, product UI shells, a second model gateway outside Vercel AI Gateway, or Next.js Route Handler ownership (stays in `apps/web`).
@@ -62,7 +60,6 @@ Do not add to this package: DB tool executors, product UI shells, a second model
 
 | Topic | Link |
 |-------|------|
-| AI Scratch · DNA absorb/reject | [docs-V2/ai](../../../docs-V2/ai/README.md) · [ai-the-machine-dna.md](../../../docs-V2/ai/ai-the-machine-dna.md) |
-| Package DAG | [docs-V2/monorepo](../../../docs-V2/monorepo/README.md) · [LAYERS.md](../../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
+| Package DAG | [LAYERS.md](../../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
 | Typed product env | [`@afenda/env`](../../foundation/env/README.md) |
 | Agent checkout posture | [AGENTS.md](../../../AGENTS.md) |

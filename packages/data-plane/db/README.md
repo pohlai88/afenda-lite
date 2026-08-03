@@ -4,7 +4,7 @@ Rank-1 Platform database infrastructure for Afenda-Lite. It hosts the shared Dri
 
 Use this package from server-side Platform and ERP adapters that need typed schema access. Afenda uses one shared PostgreSQL schema with organization-scoped rows: `organization_id` predicates are mandatory, and this package does not provide project-per-tenant or multi-database isolation.
 
-`@afenda/db` is the schema and migration host, not a repository mega-package. Mutation ownership remains with the package named in the [schema ownership manifest](../../../docs-V2/modules/SCHEMA-OWNERSHIP-MANIFEST.yaml).
+`@afenda/db` is the schema and migration host, not a repository mega-package. Mutation ownership remains with the package that owns the table.
 
 ## Consume
 
@@ -63,7 +63,6 @@ The product client is initialized lazily on first database access. For atomic mu
 | Drizzle configuration | [`drizzle.config.ts`](./drizzle.config.ts) |
 | Generated SQL and migration journal | `drizzle/` |
 | Hard-tenant root registry | [`src/hard-tenant-roots.ts`](./src/hard-tenant-roots.ts) |
-| Sole table mutators | [Schema ownership manifest](../../../docs-V2/modules/SCHEMA-OWNERSHIP-MANIFEST.yaml) |
 
 Schema DDL and migrations live here. Business writes belong to their owning Platform or ERP packages; hosting a table does not grant `@afenda/db` mutation ownership.
 
@@ -130,9 +129,6 @@ Do not add a second tenancy model, ambient organization stamping, ORM auto-inter
 | Topic | Link |
 |-------|------|
 | Data plane package index | [packages/data-plane](../README.md) |
-| Data layer and schema craft | [docs-V2/data](../../../docs-V2/data/README.md) |
-| Tenancy, shared schema, and Neon pooler | [docs-V2/tenancy](../../../docs-V2/tenancy/README.md) · [Neon optimization](../../../docs-V2/tenancy/neon-optimize.md) |
-| Package DAG and layer rules | [docs-V2/monorepo](../../../docs-V2/monorepo/README.md) · [LAYERS.md](../../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
-| Schema write ownership | [SCHEMA-OWNERSHIP-MANIFEST](../../../docs-V2/modules/SCHEMA-OWNERSHIP-MANIFEST.yaml) |
+| Package DAG and layer rules | [LAYERS.md](../../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
 | Test strategy | [testing](../../../testing/README.md) |
 | Agent checkout posture | [AGENTS.md](../../../AGENTS.md) |

@@ -49,13 +49,13 @@ async function main() {
 		"governance:packages — validate:modules (catalog · edges · DAG · sole-mutator)",
 	);
 	await runPnpm(["validate:modules"]);
-	console.log(
-		"governance:packages — check:env-consumers (runtime env authority)",
-	);
-	await runPnpm(["check:env-consumers"]);
 	console.log("governance:packages OK");
+	// A gate must not claim evidence it does not own. `check:env-consumers` is a
+	// peer ci-required gate with its own contract, fixtures, owner, and
+	// diagnostics — the dispatcher runs it, not this script. Re-running it here
+	// would double execution and make failure ownership ambiguous.
 	console.log(
-		"Evidence: validate:modules (catalog-to-disk, workspace-edge register, dependency DAG, schema write-owner, deep-import, ERP manifests) + check:env-consumers (runtime env authority).",
+		"Evidence: validate:modules (catalog-to-disk, workspace-edge register, dependency DAG, schema write-owner, deep-import, ERP manifests).",
 	);
 	console.log(
 		"Also required for production eligibility: pnpm exec turbo run typecheck test",

@@ -6,9 +6,9 @@
 
 **When you need it** — adding an ERP package/feature, checking whether a workspace conforms to its family contract, or reconciling projection-lock / kernel-adoption surfaces.
 
-**Who it's for** — engineers extending `packages/*`. Contract authority (the `g1`…`g17` slice roadmap) lives in Scratch [docs-V2/monorepo](../../docs-V2/monorepo/generator-architecture-prd.md); this README orients and links — it is not the contract SSOT.
+**Who it's for** — engineers extending `packages/*`. Contract authority (the `g1`…`g17` slice roadmap) is enforced by `pnpm generator:check`; this README orients and links — it is not the contract SSOT.
 
-> **Local-only by contract.** Generator governance declares `ciRequired: false` and lists `.github/workflows/*` as *excluded* paths (slice **G15**). Run it on developer machines — never wire `generator:check` or `turbo gen` into CI. See [g15](../../docs-V2/monorepo/g15-local-generator-closure-governance-contract.md) · [g17 stop boundary](../../docs-V2/monorepo/g17-generator-stop-boundary-contract.md).
+> **Local-only by contract.** Generator governance declares `ciRequired: false` and lists `.github/workflows/*` as *excluded* paths (slice **G15**). Run it on developer machines — never wire `generator:check` or `turbo gen` into CI.
 
 ## Families
 
@@ -67,6 +67,5 @@ Every write goes through [`engine/file-transaction.ts`](engine/file-transaction.
 
 ## Authority
 
-- Contract SSOT + slice roadmap — [docs-V2/monorepo](../../docs-V2/monorepo/generator-architecture-prd.md) (`g1`…`g17`)
-- Package governance — [docs-V2/modules/PACKAGE-GOVERNANCE.md](../../docs-V2/modules/PACKAGE-GOVERNANCE.md)
+- Package governance —
 - Turbo task wiring — [`//#generator:check`](../../turbo.json)

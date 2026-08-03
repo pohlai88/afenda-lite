@@ -213,8 +213,7 @@ The active greenfield component catalog lives in [`apps/storybook`](../../../app
 
 | Topic | Source |
 |-------|--------|
-| Product UI imports and primitive workflow | [UI consume guide](../../../docs-V2/nextjs/ui.md) |
-| Package dependency direction and Surfaces rules | [Monorepo guide](../../../docs-V2/monorepo/README.md) and [layer map](../../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
+| Package dependency direction and Surfaces rules | and [layer map](../../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
 | shadcn CLI, Studio staging, and owned-source workflow | [shadcn-ui skill](../../../.cursor/skills/shadcn-ui/SKILL.md) |
 | Repository-wide agent constraints | [AGENTS.md](../../../AGENTS.md) |
 

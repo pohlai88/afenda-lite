@@ -1,0 +1,25 @@
+{
+	"$comment": [
+		"@afenda/env — declarative package policy. Build-time governance only.",
+		"Protected: changes require local pre-edit token and compatibility checks.",
+		"",
+		"Read by `pnpm check:package-policy`, which verifies package.json and the",
+		"source tree satisfy it. This is not a copy of the export map: the map lists",
+		"paths, this declares what each path MEANS — whether importing it may",
+		"initialize environment state. The purity checks derive from that semantic.",
+		"",
+		"JSON rather than TypeScript so the checker reads it without resolving into",
+		"package internals, which check:package-internals forbids."
+	],
+	"layer": "foundation",
+	"role": "leaf",
+	"permittedWorkspaceRuntimeDependencies": [],
+	"publicEntrypointKinds": {
+		".": "runtime-product",
+		"./docs": "runtime-docs",
+		"./contract": "pure-governance",
+		"./performance": "pure-governance",
+		"./recovery": "pure-governance"
+	},
+	"forbiddenImportPrefixes": ["@afenda/", "apps/", "packages/erp/"]
+}

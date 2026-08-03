@@ -117,7 +117,7 @@ describe("testing control plane registry", () => {
 		const config = testingVitest.define({ lane: "unit" });
 
 		expect(config.test?.include).toEqual([
-			"__tests__/**/!(*.interaction|*.inventory|*.journey|*journeys|*.neon).test.ts",
+			"__tests__/**/!(*.interaction|*.inventory|*.journey|*journeys|*.neon).test.{ts,tsx,mjs}",
 		]);
 		expect(config.test?.passWithNoTests).toBe(false);
 	});

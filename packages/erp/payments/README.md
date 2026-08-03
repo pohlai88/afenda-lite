@@ -91,7 +91,7 @@ Reports unbalanced transfer pairs, pending/rejected instructions on posted payme
 | `payment`, `payment_allocation`, `payment_account`, `payment_reversal` — money movement including net-pay disbursement (`direction = disbursement`) | Payroll-period allowance/deduction **calculation** (`payroll_*`) |
 | Consumes `payroll.payment-requested.v1` (app-saga) to create/post disbursements | `journal*` GL posting; `hr_*` compensation agreements |
 
-**Four-way ownership:** HR agreement → payroll calculation → accounting posting → **payments disbursement**. SSOT: [allowance-deduction-ownership.md](../../../docs-V2/_scratch/erp/allowance-deduction-ownership.md).
+**Four-way ownership:** HR agreement → payroll calculation → accounting posting → **payments disbursement**.
 
 ### Ops
 
@@ -103,4 +103,3 @@ pnpm --filter @afenda/payments check
 pnpm --filter @afenda/payments reconcile -- --organizationId=<org>
 ```
 
-Contract: [`docs-V2/_scratch/erp/payments.md`](../../../docs-V2/_scratch/erp/payments.md).

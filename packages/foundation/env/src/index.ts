@@ -2,85 +2,20 @@
  * @afenda/env
  * Contract: ENV-EXPORTS
  * Protected: changes require local pre-edit token and compatibility checks.
+ *
+ * Public entrypoint: `@afenda/env` — the product runtime configuration only.
+ *
+ * Importing this module initializes and validates the product environment
+ * schema. That side effect is intentional and confined here: pure evaluators
+ * live behind `@afenda/env/contract`, `/performance`, and `/recovery` so that
+ * scripts, tests, and tooling can use them without requiring product
+ * environment variables to be present.
+ *
+ * Do not re-export the posture or contract evaluators from this entrypoint.
+ * Doing so would make every consumer of a pure evaluator pay for full product
+ * environment validation — the coupling this split exists to remove.
  */
 
-export {
-	APPROVED_APP_HOSTS,
-	APPROVED_NEON_BRANCH_ID,
-	APPROVED_NEON_ORG_ID,
-	APPROVED_NEON_PROJECT_ID,
-	assertAppUrl,
-	assertCookieSecret,
-	assertLocalOnlyConfigAbsentInProduction,
-	assertNeonAuthBaseUrl,
-	assertNeonCloudIds,
-	assertPairedSecretConfig,
-	assertPlaygroundLocalOnly,
-	assertProductDatabaseUrl,
-	evaluateNeonProductEnv,
-	evaluateProdBranchBaselineMigratePosture,
-	formatNeonContractIssues,
-	isApprovedAppHost,
-	isNeonPoolerDatabaseUrl,
-	isProductionDeployment,
-	isVercelRuntime,
-	LEGACY_VERCEL_APP_HOST,
-	LOCAL_ONLY_PRODUCT_ENV_KEYS,
-	type LocalOnlyProductEnvKey,
-	type NeonContractIssue,
-	type NeonContractResult,
-	type NeonEnvClass,
-	type NeonProductEnvInput,
-	type NeonRuntimeContext,
-	PRODUCTION_APP_HOST,
-	PRODUCTION_APP_ORIGIN,
-	PRODUCTION_BASELINE_MIGRATE_PROHIBITED,
-	type ProdBranchMigratePostureResult,
-	redactEnvValue,
-} from "./neon-contract";
-export {
-	evaluateComputeAutoscaling,
-	evaluateConnectionPressure,
-	evaluateEndpointPoolerHost,
-	evaluateSelect1Latency,
-	formatNeonPerformanceIssues,
-	MAX_CONNECTION_USAGE_PERCENT,
-	MAX_SELECT1_LATENCY_MS,
-	type NeonEndpointComputeInput,
-	type NeonPerformanceCheckResult,
-	type NeonPerformanceIssue,
-	PERFORMANCE_PROD_BRANCH_ID,
-	resolvePooledHostEvidence,
-	selectBranchReadWriteEndpoint,
-	TARGET_AUTOSCALING_MAX_CU,
-	TARGET_AUTOSCALING_MIN_CU,
-	TARGET_SUSPEND_TIMEOUT_SECONDS,
-} from "./neon-performance-posture";
-export {
-	evaluateHistoryRetention,
-	evaluateProtectedProductionBranch,
-	evaluateScheduledSnapshotInventory,
-	formatNeonRecoveryIssues,
-	isScheduledSnapshotName,
-	MAX_FUTURE_TIMESTAMP_SKEW_MINUTES,
-	MAX_SCHEDULED_SNAPSHOT_AGE_HOURS,
-	MAX_SNAPSHOT_NAME_CREATED_AT_DRIFT_SECONDS,
-	MAX_SNAPSHOT_SCHEDULE_DRIFT_MINUTES,
-	type NeonBranchRecoveryInput,
-	type NeonProjectRecoveryInput,
-	type NeonRecoveryCheckResult,
-	type NeonRecoveryIssue,
-	type NeonSnapshotRecoveryInput,
-	RECOVERY_PROD_BRANCH_ID,
-	scheduledSnapshotHourUtc,
-	scheduledSnapshotMinuteOfDayUtc,
-	scheduledSnapshotNameTimestamp,
-	scheduledSnapshotRetainDays,
-	snapshotSourceBranchId,
-	TARGET_HISTORY_RETENTION_SECONDS,
-	TARGET_SNAPSHOT_HOUR_UTC,
-	TARGET_SNAPSHOT_RETAIN_DAYS,
-} from "./neon-recovery-posture";
 export {
 	env,
 	isDevelopmentRuntimeNow,

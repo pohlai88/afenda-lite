@@ -140,6 +140,5 @@ The executable checks live in [`../../package.json`](../../package.json). [`../.
 
 - [`@afenda/ui-system` README](../../README.md) — package consumption, ownership, primitive workflow, and full verification gate
 - [`AGENTS.md`](../../../../../AGENTS.md) — repository operating constraints and UI-system authority boundaries
-- [`docs-V2/nextjs/ui.md`](../../../../../docs-V2/nextjs/ui.md) — product UI consumption guidance
 
 These sources own repository and package policy. This README is the maintainer guide and navigation index for the metadata implementation only.

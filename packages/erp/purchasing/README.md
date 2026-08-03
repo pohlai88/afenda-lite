@@ -150,10 +150,9 @@ The root surface never exports raw Drizzle tables, query builders, database hand
 | Grants and authorization evaluation | authorization subsystem via injected adapter |
 | Commitment SQL adapter · ActionResult · purchasing UI | `apps/web` |
 
-**Approved edge:** `@afenda/purchasing` → `@afenda/master-data` must exist in `package.json` and [WORKSPACE-EDGE-REGISTER.yaml](../../../docs-V2/modules/WORKSPACE-EDGE-REGISTER.yaml).
+**Approved edge:** `@afenda/purchasing` → `@afenda/master-data` must exist in `package.json`.
 
-Must not import Surfaces, `apps/*`, or Next.js. See [docs-V2/monorepo](../../../docs-V2/monorepo/README.md).
-
+Must not import Surfaces, `apps/*`, or Next.js.
 ## Operations
 
 | Concern | Guidance |
@@ -178,11 +177,6 @@ Do not add to this package: shadow supplier/product tables, `md_*` mutations, Re
 
 | Topic | Link |
 |-------|------|
-| Scratch package notes | [done-purchasing.md](../../../docs-V2/_scratch/erp/purchasing.md) |
-| ARCH-006 consumer contract (Scratch) | [arch-006-consumer-contract.md](../../../docs-V2/master-data/arch-006-consumer-contract.md) |
-| Master-data spine | [docs-V2/master-data](../../../docs-V2/master-data/README.md) |
-| Package DAG | [docs-V2/monorepo](../../../docs-V2/monorepo/README.md) · [LAYERS.md](../../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
-| Events catalog | [docs-V2/events](../../../docs-V2/events/README.md) · [`@afenda/events`](../../data-plane/events/README.md) |
-| Tenancy · shared schema | [docs-V2/tenancy](../../../docs-V2/tenancy/README.md) |
-| Package governance (Scratch accepted) | [packages_governance.md](../../../docs-V2/_scratch/packages_governance.md) |
+| Package DAG | [LAYERS.md](../../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
+| Events catalog | [`@afenda/events`](../../data-plane/events/README.md) |
 | Agent checkout posture | [AGENTS.md](../../../AGENTS.md) |

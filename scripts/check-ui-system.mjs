@@ -16,8 +16,17 @@ export const UI_SYSTEM_GATE_PHASES = Object.freeze([
 	{
 		id: "gate-contract",
 		label: "Gate ownership contract",
-		command: process.execPath,
-		args: ["--test", "scripts/check-ui-system.test.mjs"],
+		command: "pnpm",
+		args: [
+			"exec",
+			"vitest",
+			"run",
+			"--config",
+			"testing/vitest.unit.config.ts",
+			"--project",
+			"repo-tooling",
+			"scripts/__tests__/check-ui-system.test.mjs",
+		],
 	},
 	{
 		id: "ui-system-lint",

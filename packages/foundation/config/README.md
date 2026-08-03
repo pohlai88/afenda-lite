@@ -114,8 +114,7 @@ On disk: `packages/foundation/config/biome.json`, `packages/foundation/config/ts
 | Per-package `rootDir`, `paths`, `include` | Owning package / app `tsconfig.json` |
 | Vitest / Playwright factory | [`testing/`](../../../testing/) |
 
-**Layer:** Rank-1 Platform — **not a runtime importer**. Must not grow product APIs or import Surfaces / `apps/*`. See [docs-V2/monorepo](../../../docs-V2/monorepo/README.md).
-
+**Layer:** Rank-1 Platform — **not a runtime importer**. Must not grow product APIs or import Surfaces / `apps/*`.
 ## Out of scope
 
 Runtime modules, ESLint/Prettier dual stacks, Vitest/Playwright config as a second factory, nested per-package Biome trees that fork Ultracite, and product-shaped overrides — those belong in the root `biome.jsonc`.
@@ -124,6 +123,5 @@ Runtime modules, ESLint/Prettier dual stacks, Vitest/Playwright config as a seco
 
 | Topic | Link |
 |-------|------|
-| Ultracite + Biome posture | [docs-V2/lint](../../../docs-V2/lint/README.md) |
-| Package DAG / leaf rules | [docs-V2/monorepo](../../../docs-V2/monorepo/README.md) · [LAYERS.md](../../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
+| Package DAG / leaf rules | [LAYERS.md](../../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
 | Agent checkout posture | [AGENTS.md](../../../AGENTS.md) |

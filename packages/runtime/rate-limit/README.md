@@ -71,4 +71,4 @@ pnpm --filter @afenda/auth typecheck
 pnpm --filter @afenda/auth test
 ```
 
-See [CONTRACT.md](./CONTRACT.md), [auth Scratch](../../../docs-V2/auth/README.md), and [monorepo layering](../../../docs-V2/monorepo/README.md).
+See [CONTRACT.md](./CONTRACT.md).

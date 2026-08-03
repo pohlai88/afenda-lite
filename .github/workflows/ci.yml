@@ -61,44 +61,23 @@ jobs:
       - name: Tenancy soft-residue scan (N9 / ARCH-023 R1)
         run: pnpm check:tenancy-residue
 
-      - name: Tenant SQL safety scan
-        run: pnpm check:tenant-sql-safety
-
-      - name: Database capability boundary
-        run: pnpm check:db-boundary && pnpm test:db-boundary
-
-      - name: Audit capability boundary
-        run: pnpm check:audit-boundary && pnpm test:audit-boundary
-
-      - name: Events capability boundary
-        run: pnpm check:events-boundary && pnpm test:events-boundary
-
-      - name: Search capability boundary
-        run: pnpm check:search-boundary && pnpm test:search-boundary
-
-      - name: Notifications capability boundary
-        run: pnpm check:notifications-boundary && pnpm test:notifications-boundary
-
-      - name: Logger capability boundary
-        run: pnpm check:logger-boundary && pnpm test:logger-boundary
-
-      - name: HTTP capability boundary
-        run: pnpm check:http-boundary && pnpm test:http-boundary
-
-      - name: Auth capability boundary
-        run: pnpm check:auth-boundary && pnpm test:auth-boundary
-
-      - name: Admin capability boundary
-        run: pnpm check:admin-boundary && pnpm test:admin-boundary
-
-      - name: Security capability boundary
-        run: pnpm check:security-boundary && pnpm test:security-boundary
-
-      - name: Metrics capability boundary
-        run: pnpm check:metrics-boundary && pnpm test:metrics-boundary
+      # Single dispatch point for registered governance gates. The gate list is
+      # owned by scripts/lib/governance-gates.mjs — do NOT add gate commands as
+      # inline steps here. The dispatcher's --verify-registry rejects both an
+      # unrun required gate and a workflow that invokes a registered gate
+      # directly, so this step cannot silently drift from the registry.
+      #
+      # All registered gates are read-only; the registry forbids a mutating
+      # ci-required command, which is what keeps the protection digest honest
+      # (CI verifies it and can never refresh it).
+      - name: Repository governance
+        run: pnpm check:governance --tier ci-required
 
       - name: Configuration capability boundary
-        run: pnpm check:config-boundary && pnpm test:config-boundary && pnpm check:tsconfig-governance && pnpm test:tsconfig-governance && pnpm check:biome-governance
+        run: pnpm check:config-boundary && pnpm check:biome-governance
+
+      - name: Repo tooling and config suites (Vitest repo-tooling lane)
+        run: pnpm test:repo-tooling
 
       - name: Biome adopted packages (wave 1)
         run: pnpm --filter @afenda/config --filter @afenda/env --filter @afenda/errors --filter @afenda/testing --filter @afenda/auth --filter @afenda/admin --filter @afenda/logger --filter @afenda/http --filter @afenda/cache --filter @afenda/rate-limit --filter @afenda/security --filter @afenda/metrics --filter @afenda/openapi --filter @afenda/audit --filter @afenda/db --filter @afenda/search --filter @afenda/notifications --filter @afenda/events --filter @afenda/ai-the-machine --filter @afenda/master-data --filter @afenda/sales --filter @afenda/purchasing --filter @afenda/inventory --filter @afenda/receiving --filter @afenda/fulfillment --filter @afenda/receivables --filter @afenda/payables --filter @afenda/payments --filter @afenda/accounting lint
@@ -115,9 +94,6 @@ jobs:
 
       - name: Typecheck · unit test
         run: pnpm typecheck:root && pnpm exec turbo run typecheck test --concurrency=50%
-
-      - name: UI-system governance
-        run: pnpm check:ui-system
 
       - name: Install Storybook Chromium
         run: pnpm exec playwright install --with-deps chromium

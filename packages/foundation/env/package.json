@@ -11,6 +11,18 @@
 		"./docs": {
 			"types": "./src/docs.ts",
 			"default": "./src/docs.ts"
+		},
+		"./contract": {
+			"types": "./src/contract.ts",
+			"default": "./src/contract.ts"
+		},
+		"./performance": {
+			"types": "./src/performance.ts",
+			"default": "./src/performance.ts"
+		},
+		"./recovery": {
+			"types": "./src/recovery.ts",
+			"default": "./src/recovery.ts"
 		}
 	},
 	"scripts": {

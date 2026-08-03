@@ -62,6 +62,49 @@ describe.runIf(database.hasDatabase)("database contract", () => {
 - A skipped database suite is not passing release evidence.
 - Blank values are missing; unexpected file I/O failures surface.
 
+## Test file placement
+
+Every test file — any `*.{test,spec}.{ts,tsx,mts,cts,js,jsx,mjs,cjs}` — under
+`apps/**`, `packages/**`, `scripts/**`, `turbo/**`, and `testing/**` must live
+inside a `__tests__` directory. Tests do not sit next to the source they cover,
+and they do not spread into ad-hoc `tests/`, `__test__/`, or `src/**` locations.
+
+`pnpm check:testing-governance` enforces this:
+
+- `assertAllTestFilesLiveUnderTestsDirectory` rejects any test file outside a
+  `__tests__` directory, unless that exact path is already claimed by a declared
+  lane `include` (the only current exception is the Playwright
+  `apps/storybook/visual-tests/**` lane).
+- `assertTestPlacement` additionally rejects package tests under `src/`.
+- `assertLaneFileCoverage` rejects a test file that no lane claims, and a file
+  that two exclusive lanes both claim.
+
+So a new test is only legal when it is inside `__tests__` **and** a declared lane
+selects it. Adding a test directory outside `__tests__` requires a new lane in
+`TESTING_LANES`, not a local runner config.
+
+Repo-root `e2e/` is Playwright-owned and governed by the `e2e-*` lanes; it is
+outside the placement scope above by design. `.cursor/**` is Cursor's own
+extension surface and is not governed here.
+
+## One runner stack
+
+Vitest and Playwright are the only runners. Node's built-in `node:test` is
+banned alongside Jest and Cypress: it is a third stack that escapes lane
+selection, timeouts, reporting, and Turbo caching.
+
+Because `node:test` is a built-in rather than a dependency, the
+forbidden-dependency check cannot see it. It is banned by source import instead,
+via `testingPolicy.forbiddenRunnerModules` and
+`assertNoForbiddenRunnerModules`. `node:assert/strict` remains fine — Vitest
+runs assert-style tests unchanged, so migrating a `node:test` file is normally
+just swapping the import.
+
+Repo-governance suites that test the `.mjs` check scripts in `scripts/` belong
+to the `repo-tooling` lane (`pnpm test:repo-tooling`). They live outside `apps/`
+and `packages/`, so they get their own lane rather than leaking repo-root globs
+into every workspace project's include.
+
 ## Boundaries
 
 Do not:
@@ -112,6 +155,4 @@ side-effect entrypoints for runner configuration, not general-purpose APIs.
 ## Authority
 
 - [Repository testing control plane](../../../testing/README.md)
-- [Testing architecture pack](../../../docs-V2/testing/README.md)
-- [Monorepo dependency boundaries](../../../docs-V2/monorepo/README.md)
 - [Repository operating rules](../../../AGENTS.md)

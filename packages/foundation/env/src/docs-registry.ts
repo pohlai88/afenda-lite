@@ -6,27 +6,15 @@
 
 import { z } from "zod";
 
-import type { NeonRuntimeContext } from "./neon-contract";
+import {
+	isProductionDeployment,
+	type NeonRuntimeContext,
+} from "./deployment-context";
 
 const TRAILING_DOT_PATTERN = /\.$/;
 const PRIVATE_KEY_PATTERN =
 	/^-----BEGIN (?:RSA )?PRIVATE KEY-----[\s\S]+-----END (?:RSA )?PRIVATE KEY-----$/;
 const GITHUB_APP_ID_PATTERN = /^\d+$/;
-
-function isDocsProductionDeployment({
-	nodeEnv,
-	vercelEnv,
-}: NeonRuntimeContext): boolean {
-	if (vercelEnv === "production") {
-		return true;
-	}
-	if (vercelEnv === "preview" || vercelEnv === "development") {
-		return false;
-	}
-	return (
-		nodeEnv === "production" && vercelEnv !== undefined && vercelEnv !== ""
-	);
-}
 
 function isOriginUrl(value: string): boolean {
 	const url = new URL(value);
@@ -58,7 +46,7 @@ export function createDocsEnvRegistry(runtimeCtx: NeonRuntimeContext) {
 		message:
 			"DOCS_URL must be an origin without credentials, path, query, or fragment.",
 	});
-	const productionDeployment = isDocsProductionDeployment(runtimeCtx);
+	const productionDeployment = isProductionDeployment(runtimeCtx);
 	const docsUrlSchema = productionDeployment
 		? baseDocsUrlSchema
 				.refine((value) => new URL(value).protocol === "https:", {

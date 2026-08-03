@@ -1,5 +1,6 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
+import { isGovernanceFixture } from "./lib/repository-walk.mjs";
 
 const root = process.cwd();
 const dbPackage = "packages/data-plane/db";
@@ -74,7 +75,9 @@ function importedNames(clause) {
 
 function checkFile(pathname) {
 	const rel = normalized(pathname);
-	if (rel === "scripts/check-db-boundary.test.mjs") {
+	// Registry-derived: a negative fixture is exempt because a gate declares it,
+	// never because of a folder name. Ordinary test source stays governed.
+	if (isGovernanceFixture(rel)) {
 		return;
 	}
 	const content = readFileSync(pathname, "utf8");

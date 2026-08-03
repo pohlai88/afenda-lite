@@ -28,9 +28,10 @@ const orgId = env.NEON_ORG_ID || getEnvValue("NEON_ORG_ID", env);
 const projectId = env.NEON_PROJECT_ID || getEnvValue("NEON_PROJECT_ID", env);
 const branchId = env.NEON_BRANCH_ID || getEnvValue("NEON_BRANCH_ID", env);
 
-const neonContractUrl = pathToFileURL(
-	resolve(process.cwd(), "packages/foundation/env/src/neon-contract.ts"),
-).href;
+// Pure evaluator entrypoints. These never initialize the product environment
+// schema, so this script runs without product variables present. Do not
+// reintroduce file-URL imports into `packages/foundation/env/src/**`: they
+// bypass the package exports map and are invisible to static import checks.
 const {
 	APPROVED_NEON_BRANCH_ID,
 	APPROVED_NEON_ORG_ID,
@@ -38,34 +39,22 @@ const {
 	evaluateNeonProductEnv,
 	evaluateProdBranchBaselineMigratePosture,
 	formatNeonContractIssues,
-} = await import(neonContractUrl);
+} = await import("@afenda/env/contract");
 
-const neonRecoveryUrl = pathToFileURL(
-	resolve(
-		process.cwd(),
-		"packages/foundation/env/src/neon-recovery-posture.ts",
-	),
-).href;
 const {
 	evaluateHistoryRetention,
 	evaluateProtectedProductionBranch,
 	evaluateScheduledSnapshotInventory,
 	formatNeonRecoveryIssues,
-} = await import(neonRecoveryUrl);
+} = await import("@afenda/env/recovery");
 
-const neonPerformanceUrl = pathToFileURL(
-	resolve(
-		process.cwd(),
-		"packages/foundation/env/src/neon-performance-posture.ts",
-	),
-).href;
 const {
 	evaluateComputeAutoscaling,
 	evaluateEndpointPoolerHost,
 	evaluateSelect1Latency,
 	formatNeonPerformanceIssues,
 	selectBranchReadWriteEndpoint,
-} = await import(neonPerformanceUrl);
+} = await import("@afenda/env/performance");
 
 function errorDetail(error) {
 	if (error && typeof error === "object") {

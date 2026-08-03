@@ -259,9 +259,4 @@ pnpm --filter @afenda/errors protect:check
 
 ## Detailed authority
 
-- [Architecture](../../../docs-V2/api/errors/architecture.md)
-- [Consumer contract](../../../docs-V2/api/errors/consumer-contract.md)
-- [Security model](../../../docs-V2/api/errors/security-model.md)
-- [Governance](../../../docs-V2/api/errors/governance.md)
-- [Maintainer guide](../../../docs-V2/api/errors/maintainer-guide.md)
 - [Semantic control-plane contract](./CONTRACT.md)

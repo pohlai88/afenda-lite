@@ -65,4 +65,4 @@ pnpm --filter @afenda/db db:check
 
 No NATS/Redis bus, Next.js, ActionResult, notifications dependency, raw environment access, or application import belongs here. Runtime workspace dependencies remain `@afenda/db` and `@afenda/errors`. The shared-schema tenancy model requires `organizationId` on every operation.
 
-Authority: [events Scratch](../../../docs-V2/events/README.md) · [monorepo DAG](../../../docs-V2/monorepo/README.md) · [AGENTS.md](../../../AGENTS.md).
+Authority: [AGENTS.md](../../../AGENTS.md).

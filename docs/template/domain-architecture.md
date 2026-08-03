@@ -108,8 +108,8 @@ This template is generic in shape but bound to this repository's canonical vocab
 | Schema and migration owner     | `@afenda/db`                                                           | `AfendaModuleManifest.persistence.schemaOwner` (typed literal) |
 | Tenant column                  | `organization_id` (SQL) · `organizationId` (Drizzle)                   | `packages/data-plane/db/src/schema/**`                         |
 | Hard tenant root registry      | `packages/data-plane/db/src/hard-tenant-roots.ts`                      | ARCH-023                                                       |
-| Dependency authorization       | `docs-V2/modules/WORKSPACE-EDGE-REGISTER.yaml`                         | ARCH-024                                                       |
-| Schema write-ownership         | `docs-V2/modules/SCHEMA-OWNERSHIP-MANIFEST.yaml`                       | —                                                              |
+| Dependency authorization | `docs-V2/modules/WORKSPACE-EDGE-REGISTER.yaml` | ARCH-024 |
+| Schema write-ownership | `docs-V2/modules/SCHEMA-OWNERSHIP-MANIFEST.yaml` | — |
 | Design system                  | `@afenda/ui-system` (sole UI import surface)                           | `CLAUDE.md` / `AGENTS.md` hard stops                           |
 | Configuration                  | `@afenda/env` — never raw `process.env` for product config             | same                                                           |
 

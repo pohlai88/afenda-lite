@@ -30,7 +30,8 @@ function scriptExists(scriptName) {
 	if (!cmd) {
 		return false;
 	}
-	// Living docs/ removed (cutover 71176a0) — Scratch docs-V2; skip Living gates.
+	// No docs/ trunk at all — skip every docs gate. (docs-V2 is retired and banned;
+	// never reference it here. Finer-grained skips are handled below.)
 	if (
 		(scriptName === "check:docs-naming" ||
 			scriptName === "check:doc-integrity" ||

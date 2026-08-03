@@ -384,7 +384,9 @@ export const runGen04ReadOnlyProof = async (
 		await createTurboDoctorEvidence(
 			repositoryRoot,
 			"erp",
-			resolve(repositoryRoot, "docs-V2"),
+			// docs-V2 is retired; any stable nested directory proves the same
+			// read-only property.
+			resolve(repositoryRoot, "turbo/generators"),
 			"safe-nested-directory",
 		),
 	);

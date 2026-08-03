@@ -114,7 +114,6 @@ types, or HTTP envelopes.
 
 ```bash
 pnpm --filter @afenda/payroll lint
-pnpm --filter @afenda/payroll layout
 pnpm --filter @afenda/payroll typecheck
 pnpm --filter @afenda/payroll test
 pnpm --filter @afenda/payroll check
@@ -144,6 +143,6 @@ Implementation method: project skill `afenda-elite-payroll`.
 
 **Anti-goals:** owning `hr_employee` / `hr_employee_compensation` / `hr_allowance_entitlement`; nesting under `@afenda/human-resources`; peer package import of HR; inserting into `payment` or `journal`.
 
-**Four-way ownership:** HR entitlement/agreement → Payroll calculation → Accounting posting → Payments disbursement. The product boundary and non-duplication rules are defined in the [Human Resources PRD](../../../docs-V2/_scratch/human-resources/human-resources-prd.md).
+**Four-way ownership:** HR entitlement/agreement → Payroll calculation → Accounting posting → Payments disbursement. The product boundary and non-duplication rules are defined in the [Human Resources PRD](../../../docs/_scratch/human-resources/human-resources-prd.md).
 
-**Authority:** [Human Resources PRD](../../../docs-V2/_scratch/human-resources/human-resources-prd.md) · [Malaysia/Vietnam Payroll PRD](../../../docs-V2/_scratch/payroll/PAYROLL-PRD-MY-VN.md) · [SCAFFOLDING.md](../SCAFFOLDING.md) · skill `afenda-elite-payroll`
+**Authority:** [Human Resources PRD](../../../docs/_scratch/human-resources/human-resources-prd.md) · [Malaysia/Vietnam Payroll PRD](../../../docs/_scratch/payroll/PAYROLL-PRD-MY-VN.md) · [SCAFFOLDING.md](../ERP-SCAFFOLDING.md) · skill `afenda-elite-payroll`

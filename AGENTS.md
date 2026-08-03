@@ -1,6 +1,6 @@
 # AGENTS.md — Afenda-Lite
 
-Cursor Agent instructions for this repository. Prefer **actions and links** over essays. Day-to-day architecture packs live under `docs-V2/` (Scratch). Living controlled `docs/` is **absent by design** on this checkout (cutover `71176a0`) until an explicit Docs-lane reopen — do not invent a second SSOT or recreate `doc/`.
+Cursor Agent instructions for this repository. Prefer **actions and links** over essays. `docs-V2/` (Scratch) is **retired and removed from disk** — it is not an on-disk authority and must not be recreated. `docs/` is the live documentation trunk. Do not invent a second SSOT or recreate `doc/`. Retired nested trunks stay banned via `pnpm check:docs-trunk-ban`.
 
 ## Multi-agent vibe coding header
 
@@ -51,7 +51,7 @@ Priority rule: when instructions conflict, follow the active agent's primary con
 Do not start skill loads or MCP calls before the PREFLIGHT block is in the visible reply for that turn.
 
 1. **Route product work** through [`/using-afenda-elite-skills`](.cursor/skills/using-afenda-elite-skills/SKILL.md) — sole product entry. Vendor phase skills under `agent-skills/` are a **method library after** the farm is fixed, not competing entry points.
-2. **One mission per chat** when shipping product work — ARCH-028 coding slices are **closed**; use GUIDE-018 phases (farm map + [docs-V2](docs-V2/README.md) Scratch packs) from the router. Residual scaffold / Neon Auth `N*` missions: [implementation-slices](.cursor/skills/afenda-elite-implementation-slices/SKILL.md) (+ command-sheet or neon-command-sheet).
+2. **One mission per chat** when shipping product work — ARCH-028 coding slices are **closed**; use GUIDE-018 phases (farm map + Scratch packs) from the router. Residual scaffold / Neon Auth `N*` missions: [implementation-slices](.cursor/skills/afenda-elite-implementation-slices/SKILL.md) (+ command-sheet or neon-command-sheet).
    - **Start a fresh session** when switching major features or domains (e.g. auth → accounting) so stale context does not drive the next mission.
    - **Compact deliberately** before a critical cutover: summarize completed work, open blockers, and the next acceptance checks in a short block; then continue or open a new chat with that summary as the brain dump.
    - Long threads that mix unrelated packages or farms are a red flag — split rather than pile on.
@@ -115,7 +115,7 @@ Full inventory: [catalog.md](.cursor/skills/using-afenda-elite-skills/catalog.md
 | Need | Skill |
 |------|-------|
 | Pick farm / docs type | `using-afenda-elite-skills` |
-| Official `@afenda/docs` / `apps/docs` site | `afenda-docs-app` (Scratch `docs-V2/docs` — not Living DOC-001) |
+| Official `@afenda/docs` / `apps/docs` site | `afenda-docs-app` (not DOC-001 controlled SSOT) |
 | Controlled docs write | `afenda-elite-doc-control` |
 | Doc↔doc conflict / register drift | `afenda-elite-doc-integrity`
 | GUIDE-018 Phase I (`I*`) / residual ARCH-028 (`S*`) | `afenda-elite-implementation-slices` + command-sheet |
@@ -152,11 +152,11 @@ Full inventory: [catalog.md](.cursor/skills/using-afenda-elite-skills/catalog.md
 | **No shims / stubs / throw-TODO** product paths | [`.cursor/rules/no-shim-stub-tech-debt.mdc`](.cursor/rules/no-shim-stub-tech-debt.mdc) |
 | **No parking / defer / false YAGNI** — no consumer ≠ unused; drop only when user names it this turn | [`.cursor/rules/no-park-defer-false-yagni.mdc`](.cursor/rules/no-park-defer-false-yagni.mdc) |
 | **No Collapse/legacy recover** (`app/`, `modules/`, `features/`, `components-V2/`, Collapse `lib/`, wiped `scripts/*`) unless user names that recovery **this turn** | [`.cursor/rules/no-collapse-legacy-recovery.mdc`](.cursor/rules/no-collapse-legacy-recovery.mdc) · farm ARCH-028 notes |
-| **No Living ARCH ghost SSOT** — do not recreate Living `docs/` or cite missing `docs/architecture/ARCH-*` as on-disk authority; Scratch `docs-V2` is operative | [`.cursor/rules/no-living-arch-ghost-ssot.mdc`](.cursor/rules/no-living-arch-ghost-ssot.mdc) |
+| **No ghost SSOT** — do not cite missing `docs/architecture/ARCH-*` or the retired `docs-V2/**` as on-disk authority | [`.cursor/rules/no-living-arch-ghost-ssot.mdc`](.cursor/rules/no-living-arch-ghost-ssot.mdc) |
 | **No `decision`/`decisions` directories** — ADRs under `docs/architecture/adr/` when Living docs reopen | [`.cursor/rules/no-decision-directory.mdc`](.cursor/rules/no-decision-directory.mdc) |
 | **No git restore/reset/clean** without explicit user approval this turn | [`.cursor/rules/git-no-auto-recover.mdc`](.cursor/rules/git-no-auto-recover.mdc) |
 | **No repository-wide `git clean` for routine cleanup** — use `pnpm run clean:artifacts` dry-run, then `pnpm run clean:artifacts:apply` only for allowlisted ignored noise | [`.cursor/rules/git-no-auto-recover.mdc`](.cursor/rules/git-no-auto-recover.mdc) |
-| **Scratch docs** under **`docs-V2/`** — never recreate `doc/`; do **not** recreate Living `docs/` without Docs-lane reopen | [docs-V2/README.md](docs-V2/README.md) · cutover `71176a0` |
+| **Docs** under **`docs/`** — never recreate `doc/` or the retired `docs-V2/` | `pnpm check:docs-trunk-ban` |
 | Shrink **scope** via Approved slices / MOD readiness — never shrink **quality** | Farm maps · module-readiness |
 
 ## Patterns (canonical examples)
@@ -312,49 +312,54 @@ Skip the plan only for single-file trivial edits the user already named.
 | Raw `process.env` for product config | `import { env } from "@afenda/env"` |
 | New `@afenda/repositories` · `@afenda/data-access` · `@afenda/orm` · `@afenda/shared` | Domain ports in owning packages; `@afenda/db` stays infrastructure |
 | Business writes inside `@afenda/db` | Schema host only — `writeOwner` in SCHEMA-OWNERSHIP-MANIFEST |
-| Citing missing Living `docs/architecture/ARCH-*` as on-disk SSOT | Use `docs-V2/**` · farm companions · AGENTS.md |
+| Citing missing `docs/architecture/ARCH-*` or retired `docs-V2/**` as on-disk SSOT | Use `docs/**` · farm companions · AGENTS.md |
 | Collapse path restore (`app/`, root `modules/`, `features/`, …) | Greenfield under `apps/web/**` · `packages/*` only |
 | Output ignores project conventions as the chat gets long | Fresh session + compact summary (one mission per chat) |
 | Silent pick when Spec vs disk disagree | Use **Confusion management** above |
 
-Cross-tool pointers (do not duplicate this file): [`.cursorrules`](.cursorrules) · [`CLAUDE.md`](CLAUDE.md) · [`.windsurfrules`](.windsurfrules) · [`.github/copilot-instructions.md`](.github/copilot-instructions.md). Condensed map: [docs-V2/project-map.md](docs-V2/project-map.md).
+Cross-tool pointers (do not duplicate this file): [`.cursorrules`](.cursorrules) · [`CLAUDE.md`](CLAUDE.md) · [`.github/copilot-instructions.md`](.github/copilot-instructions.md).
 
 ## Documentation & architecture authority
 
 | Surface | Use for |
 |---------|---------|
-| [docs-V2/README.md](docs-V2/README.md) · [docs-V2/project-map.md](docs-V2/project-map.md) | Scratch E2E architecture packs · condensed navigation index |
-| [docs-V2/system/README.md](docs-V2/system/README.md) · [monorepo](docs-V2/monorepo/README.md) · [pnpm](docs-V2/pnpm/README.md) · [api](docs-V2/api/README.md) · [tenancy](docs-V2/tenancy/README.md) | System · DAG · install · contracts · tenancy |
 | [`@afenda/docs`](apps/docs) | **Official** human-facing documentation site (Fumadocs) — active config; enterprise production bar |
-| [docs-V2/api/OPEN-001-openapi.yaml](docs-V2/api/OPEN-001-openapi.yaml) | OpenAPI machine SSOT consumed by `@afenda/docs` |
-| [docs-V2/docs/README.md](docs-V2/docs/README.md) | Scratch ops pack for the official docs app (UI · pipeline · content rules) |
-| Living `docs/` (DOC-001 · ARCH-* · GUIDE-018 · MOD-*) | **Dormant** — absent on disk until Docs-lane reopen; DOC-001 control shape still applies when Living returns |
+| `docs/` (DOC-001 · ARCH-* · GUIDE-018 · MOD-*) | **Live trunk** — present on disk; DOC-001 control shape applies. `docs-V2/` is retired and absent |
 | Farm skills under `.cursor/skills/` | Method + evidence companions (not a second product SSOT) |
 
-`@afenda/docs` is the official docs site. Do **not** treat its MDX as Living DOC-001 controlled-document SSOT (register / Accept·Living lifecycle). Scratch packs are engineering authority, not a second published docs app.
+`@afenda/docs` is the official docs site. Do **not** treat its MDX as DOC-001 controlled-document SSOT (register / Accept·Living lifecycle).
 
 ## Checkout posture (Living Turborepo on disk)
 
-**Present:** `@afenda/{config,db,auth,env,errors,logger,rate-limit,cache,audit,search,notifications,events,master-data,sales,purchasing,inventory,receiving,fulfillment,receivables,payables,payments,accounting,admin,http,security,metrics,openapi,ai-the-machine,ui-system,emails}` · `apps/web` · `apps/docs` (**official** Fumadocs docs) · `apps/web/proxy.ts` edge session gate · `apps/web/modules/{platform,identity}` · `apps/web/features/{auth,org-admin,ai-the-machine,sales,purchasing,inventory,receiving,fulfillment,receivables,payables,payments,master-data,accounting}` · `docs-V2/**` Scratch packs · CI/Deploy (`.github/workflows/{ci,deploy}.yml`).
+**Present — derive it, never restate it here.** A hand-copied inventory goes stale and violates *Derive projections* above. The workspace is the owner:
 
-**Absent by design / removed domains:** Living controlled `docs/` (cutover `71176a0`) · product **Declarations** + **Feed Farm Trade (FFT)** modules/features/routes (nuclear wipe) · `feed-farm-trade` skill · repo-root `app/`, `modules/`, `features/`, `components-V2/`, Collapse `lib/`, wiped ops script bodies · `apps/web/app/playground/` · `apps/web/features/playground/` (removed 2026-07-15; do not handroll). Do **not** recreate `modules/declarations`, `modules/fft`, `features/declarations`, `features/fft`, or `/client/declarations` / `/fft` product trees.
+```bash
+for f in $(git ls-files 'packages/*/*/package.json'); do node -e "console.log(require('./$f').name)"; done | sort
+ls apps                      # web (sole deployable) · docs (official Fumadocs) · storybook
+ls apps/web/features         # living feature surfaces
+```
+
+Not derivable from a listing, so stated here: edge session gate is `apps/web/proxy.ts` (**never** `middleware.ts`) · living app modules are `apps/web/modules/{platform,identity}` only · CI/Deploy = `.github/workflows/{ci,deploy}.yml`.
+
+**Absent by design / removed domains:** Living controlled `docs/architecture/**` (DOC-001 register · `ARCH-*` bodies; cutover `71176a0`) — the `docs/` **tree itself is present** and is the live trunk · product **Declarations** + **Feed Farm Trade (FFT)** modules/features/routes (nuclear wipe) · `feed-farm-trade` skill · repo-root `app/`, `modules/`, `features/`, `components-V2/`, Collapse `lib/`, wiped ops script bodies · `apps/web/app/playground/` · `apps/web/features/playground/` (removed 2026-07-15; do not handroll). Do **not** recreate `modules/declarations`, `modules/fft`, `features/declarations`, `features/fft`, or `/client/declarations` / `/fft` product trees.
 
 | Rule | Detail |
 |------|--------|
 | Forward code | Greenfield under `apps/web/**` and `packages/*` only |
-| Docs | Official site = `apps/docs`. Scratch ops = `docs-V2/docs/**`. Living `docs/` restore requires explicit Docs-lane + named recovery — not agent default |
+| Docs | Official site = `apps/docs`. Documentation trunk = `docs/**`. `docs-V2/` is retired — do not recreate it |
 | Next open (GUIDE-018) | Phase **I1–I6 DONE**. GUIDE-017 claim **NOT READY** @ `fc16109`. Next Ops = **I7.1**. ARCH-028 Checkpoint G **closed**. Do **not** invent **N19**. Do **not** claim GUIDE-017 READY from I6.3 alone. Map: implementation-slices farm |
 | Next open (Neon Auth `N*`) | **N1–N18 serial complete** — all APPROVED at 100% (incl. **N15** Path-to-100% closed). Do **not** invent **N19**. Map: [neon-auth-slice-map](.cursor/skills/afenda-elite-implementation-slices/neon-auth-slice-map.md). |
 | Env | `@afenda/env` + `.env.local` only (compose retired) |
 | Docs trunks | Gate `pnpm check:docs-trunk-ban` (banned architecture trunks stay absent) |
 | Index ghosts | Grep/Glob may list deleted Living `docs/**` paths — trust `Test-Path` · `git ls-files` · trunk-ban check |
-| Scripts | Removed Collapse-era command aliases are absent from root `package.json`; only executable forward controls are listed. Live when `docs/` is absent: `pnpm checks` skips Living naming/integrity/module-quality · `check:docs-trunk-ban` · `check:openapi` · `validate:neon-env` · `audit:tenancy-nulls` · `audit:github-actions-secrets` · `protect:main` · `pnpm gh` |
+| Scripts | Removed Collapse-era command aliases are absent from root `package.json`; only executable forward controls are listed. Always live: `check:docs-trunk-ban` · `check:openapi` · `validate:neon-env` · `audit:tenancy-nulls` · `audit:github-actions-secrets` · `protect:main` · `pnpm gh` |
+| `pnpm checks` gating | Each gate self-skips on a missing path — owner is [`scripts/run-checks.mjs`](scripts/run-checks.mjs), not this table. Today `docs/` exists, so `check:docs-naming` + `check:docs-trunk-ban` **run**; `check:doc-integrity` skips (no `docs/api`), `check:module-quality` skips (no `docs/modules`), `check:docs-app` runs (`apps/docs` present) |
 
 **App layout:** sole deployable `apps/web` · edge gate `apps/web/proxy.ts` on disk (do not invent `middleware.ts`) · imports `@afenda/*` only across packages.
 
 ## Platform tenancy
 
-**SSOT (Scratch):** [docs-V2/tenancy](docs-V2/tenancy/README.md) · farm `neon-tenancy-efficiency` (Living ARCH-023 dormant until Docs-lane reopen).
+**SSOT:** farm `neon-tenancy-efficiency` (Living ARCH-023 dormant until Docs-lane reopen).
 
 | Fact | Detail |
 |------|--------|
@@ -365,7 +370,7 @@ Cross-tool pointers (do not duplicate this file): [`.cursorrules`](.cursorrules)
 | Anti-claim | Do **not** claim multi-DB isolation |
 | Permission catalog seed | `pnpm --filter @afenda/db db:ensure-permission-catalog` (not baseline migrate); catalog has **no** `declarations.*` / `fft.access` |
 | Client home | `CLIENT_HOME` = `/client` (workspace shell — not declarations product) |
-| Ops | Farm companions + [docs-V2/tenancy](docs-V2/tenancy/README.md) (Living RB-005 dormant) |
+| Ops | Farm companions + (Living RB-005 dormant) |
 
 ## Environment
 
@@ -400,7 +405,7 @@ product code, inspect that suite and select a demonstrated ERP pattern. When no
 story matches, add and review the pattern in Storybook before or with product
 adoption; do not invent an unsupported pattern in feature code.
 
-**Editor (VS Code / Cursor):** product JS/TS/JSON/CSS → Biome only. SSOT: [`scripts/lib/editor-posture.mjs`](scripts/lib/editor-posture.mjs) · gate: `pnpm check:editor-biome`. Native `biome.lsp.bin` platform map + `biome.lsp.watcher.kind: none` + tsserver caps (`disableAutomaticTypeAcquisition`, `watchOptions.excludeDirectories` incl. `docs-V2`). Per-package *Initializing …/tsconfig.json* is normal once per package per session (37 package tsconfigs). Explorer: `excludeGitIgnore: false`; watcher excludes per SSOT (`docs-V2` watcher-only — still visible in explorer). User settings must not override workspace (global Biome paths, `excludeGitIgnore: true`). Hook: [`.cursor/hooks/no-editor-biome-drift.mjs`](.cursor/hooks/no-editor-biome-drift.mjs) · rule: [`.cursor/rules/editor-workspace-posture.mdc`](.cursor/rules/editor-workspace-posture.mdc) · Scratch: [docs-V2/lint](docs-V2/lint/README.md).
+**Editor (VS Code / Cursor):** product JS/TS/JSON/CSS → Biome only. SSOT: [`scripts/lib/editor-posture.mjs`](scripts/lib/editor-posture.mjs) · gate: `pnpm check:editor-biome`. Native `biome.lsp.bin` platform map + `biome.lsp.watcher.kind: none` + tsserver caps (`disableAutomaticTypeAcquisition`, `watchOptions.excludeDirectories` incl. `docs-V2`). Per-package *Initializing …/tsconfig.json* is normal once per package per session (37 package tsconfigs). Explorer: `excludeGitIgnore: false`; watcher excludes per SSOT (`docs-V2` watcher-only — still visible in explorer). User settings must not override workspace (global Biome paths, `excludeGitIgnore: true`). Hook: [`.cursor/hooks/no-editor-biome-drift.mjs`](.cursor/hooks/no-editor-biome-drift.mjs) · rule: [`.cursor/rules/editor-workspace-posture.mdc`](.cursor/rules/editor-workspace-posture.mdc).
 
 **Vercel:** dashboard/CLI is production secret store. `VERCEL_TOKEN` for Actions must be a **classic PAT** ([account tokens](https://vercel.com/account/tokens)) — OAuth CLI sessions fail in CI. Deploy: `.github/workflows/deploy.yml` (Environment `production`).
 
@@ -412,10 +417,10 @@ Authority: [`.agents/skills/neon/SKILL.md`](.agents/skills/neon/SKILL.md) · pas
 
 | Topic | Rule |
 |-------|------|
-| Mail | **Zoho SMTP** via Neon Auth console (`email_provider` · `smtp.zoho.com` · sender `no-reply@nexuscanon.com`) — not Neon shared `auth@mail.myneon.app`; no app-side SMTP for Neon Auth flows ([docs-V2/auth](docs-V2/auth/README.md)) |
+| Mail | **Zoho SMTP** via Neon Auth console (`email_provider` · `smtp.zoho.com` · sender `no-reply@nexuscanon.com`) — not Neon shared `auth@mail.myneon.app`; no app-side SMTP for Neon Auth flows |
 | Invites | Neon Auth org invitations via `@afenda/auth` (`inviteOrgMember`); Origin = production `APP_URL` |
 | Join URL | `/join?invitationId=…` |
-| Password reset | Neon Auth delivery via Zoho SMTP (`/auth/forgot-password` · `/auth/reset-password`). Living UI = Neon Auth UI components; Neon SDK reset method incomplete per Neon docs. Custom sign-in/sign-up UI via `@afenda/auth` is Neon Path A — not forbidden ([docs-V2/auth](docs-V2/auth/README.md)) |
+| Password reset | Neon Auth delivery via Zoho SMTP (`/auth/forgot-password` · `/auth/reset-password`). Living UI = Neon Auth UI components; Neon SDK reset method incomplete per Neon docs. Custom sign-in/sign-up UI via `@afenda/auth` is Neon Path A — not forbidden |
 | Branch policy | Local = **production** Neon branch `br-tiny-hill-ao82jp6f` — no branch switching |
 | MCP | User env `NEON_API_KEY`; restart Cursor after change. Avoid day-to-day `neonctl link` (rewrites `.neon`) |
 | `N*` close | Neon Slice Score + independent auditor `APPROVED` only — implementer never self-APPROVES; GUIDE-018 “closed” ≠ Neon APPROVED |
@@ -427,7 +432,7 @@ pnpm --filter @afenda/web dev
 neon neon-auth domain add https://www.nexuscanon.com
 ```
 
-Ops: [docs-V2/auth](docs-V2/auth/README.md) · neon-auth-slice-map (Living RB-001 §3.12 dormant until Docs-lane reopen).
+Ops: neon-auth-slice-map (Living RB-001 §3.12 dormant until Docs-lane reopen).
 
 ## Portal Atmosphere
 

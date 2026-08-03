@@ -12,7 +12,7 @@
 	},
 	"scripts": {
 		"lint": "biome check .",
-		"test": "node scripts/check-config-boundary.mjs && node --test scripts/check-config-boundary.test.mjs",
+		"test": "node scripts/check-config-boundary.mjs && vitest run --config ../../../testing/vitest.unit.config.ts --project config",
 		"protect:check": "node ../../../.cursor/skills/afenda-package-protection/scripts/protect-package-check.mjs .",
 		"protect:update": "node ../../../.cursor/skills/afenda-package-protection/scripts/protect-package-update.mjs ."
 	}

@@ -358,19 +358,32 @@ describe("ERP layout authority discovery", () => {
 
 		expect(report.summary).toEqual({
 			total: 13,
-			featureFirst: 3,
-			featureGroups: 0,
-			historicalRoot: 10,
+			featureFirst: 12,
+			featureGroups: 1,
+			historicalRoot: 1,
 			hybrid: 0,
 			empty: 0,
 			rootNameMismatches: 0,
-			upwardFeatureImports: 464,
-			localLayoutScripts: 3,
+			upwardFeatureImports: 494,
+			localLayoutScripts: 0,
 		});
 		expect(
 			report.workspaces
 				.filter((workspace) => workspace.layoutClass === "feature-first")
 				.map((workspace) => workspace.id),
-		).toEqual(["corporate-administration", "human-resources", "payroll"]);
+		).toEqual([
+			"accounting",
+			"corporate-administration",
+			"fulfillment",
+			"human-resources",
+			"inventory",
+			"payables",
+			"payments",
+			"payroll",
+			"purchasing",
+			"receivables",
+			"receiving",
+			"sales",
+		]);
 	});
 });

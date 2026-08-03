@@ -160,9 +160,15 @@ importers:
       '@afenda/db':
         specifier: workspace:*
         version: link:packages/data-plane/db
+      '@afenda/env':
+        specifier: workspace:*
+        version: link:packages/foundation/env
       '@afenda/errors':
         specifier: workspace:*
         version: link:packages/foundation/errors
+      '@afenda/events':
+        specifier: workspace:*
+        version: link:packages/data-plane/events
       '@afenda/openapi':
         specifier: workspace:*
         version: link:packages/runtime/openapi

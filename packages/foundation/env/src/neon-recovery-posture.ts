@@ -9,14 +9,12 @@
  *
  * This module evaluates recovery evidence only. It does not restore branches,
  * reset data, delete snapshots, mutate retention, or change Neon configuration.
- *
- * The production branch ID mirrors `APPROVED_NEON_BRANCH_ID` from
- * `neon-contract.ts`. It remains local so `validate:neon-env` can load this
- * module without nested ESM resolution.
  */
 
-/** Must equal `APPROVED_NEON_BRANCH_ID`; enforced by package tests. */
-export const RECOVERY_PROD_BRANCH_ID = "br-tiny-hill-ao82jp6f" as const;
+import { APPROVED_NEON_BRANCH_ID } from "./neon-identity";
+
+/** Derived from the canonical identity owner — never restate the literal. */
+export const RECOVERY_PROD_BRANCH_ID = APPROVED_NEON_BRANCH_ID;
 
 /** Launch-plan PITR history window: 7 days. */
 export const TARGET_HISTORY_RETENTION_SECONDS = 604_800 as const;

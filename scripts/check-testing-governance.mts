@@ -38,6 +38,9 @@ const PLAYWRIGHT_TEST_PATTERN = /\bplaywright\s+test\b/;
 const CONFIG_REFERENCE_PATTERN = /--config(?:=|\s+)([^\s]+)/g;
 const PACKAGE_SOURCE_TEST_PATTERN = /\/src\/.+\.(test|spec)\.(ts|tsx)$/;
 const TEST_FILENAME_PATTERN = /\.(test|spec)\.(ts|tsx)$/;
+// Placement governs every runner-agnostic test extension, not just TypeScript.
+const ANY_TEST_FILENAME_PATTERN =
+	/\.(test|spec)\.(ts|tsx|mts|cts|js|jsx|mjs|cjs)$/;
 const DATABASE_GATE_CALL_PATTERN = /\btestingDatabase\.resolve\s*\(/;
 const RAW_WORKSPACE_TEST_CONCURRENCY_PATTERN =
 	/\bturbo\b.*--concurrency(?:=|\s)/;
@@ -329,8 +332,10 @@ function listGovernedTestFiles(): string[] {
 	return fg
 		.sync(
 			[
-				"apps/**/__tests__/**/*.{test,spec}.{ts,tsx}",
-				"packages/**/__tests__/**/*.{test,spec}.{ts,tsx}",
+				"apps/**/__tests__/**/*.{test,spec}.{ts,tsx,mjs}",
+				"packages/**/__tests__/**/*.{test,spec}.{ts,tsx,mjs}",
+				"scripts/__tests__/**/*.{test,spec}.{ts,tsx,mjs}",
+				"turbo/**/__tests__/**/*.{test,spec}.{ts,tsx,mjs}",
 				"e2e/**/*.spec.ts",
 			],
 			{
@@ -530,6 +535,74 @@ function assertTestPlacement(errors: string[]): void {
 	}
 }
 
+function nonTestsDirLaneFiles(): Set<string> {
+	const allowed = new Set<string>();
+
+	for (const lane of TESTING_LANES) {
+		for (const laneFile of listLaneFiles(lane)) {
+			if (!laneFile.includes("/__tests__/")) {
+				allowed.add(laneFile);
+			}
+		}
+	}
+
+	return allowed;
+}
+
+function assertAllTestFilesLiveUnderTestsDirectory(errors: string[]): void {
+	const allowedOutsideTestsDir = nonTestsDirLaneFiles();
+
+	for (const root of ["apps", "packages", "scripts", "turbo", "testing"]) {
+		const candidateTestFiles = walkFiles(
+			path.join(repoRoot, root),
+			(filePath) => ANY_TEST_FILENAME_PATTERN.test(repoPath(filePath)),
+		);
+
+		for (const testFile of candidateTestFiles) {
+			if (testFile.includes("/__tests__/")) {
+				continue;
+			}
+
+			if (allowedOutsideTestsDir.has(testFile)) {
+				continue;
+			}
+
+			errors.push(
+				`Test file must live under a __tests__ directory (or a registered non-__tests__ lane): ${testFile}`,
+			);
+		}
+	}
+}
+
+function assertNoForbiddenRunnerModules(errors: string[]): void {
+	const forbiddenModulePattern = new RegExp(
+		`["'](${testingPolicy.forbiddenRunnerModules.join("|")})["']`,
+	);
+
+	for (const root of [
+		"apps",
+		"packages",
+		"scripts",
+		"turbo",
+		"testing",
+		"e2e",
+	]) {
+		const testFiles = walkFiles(path.join(repoRoot, root), (filePath) =>
+			ANY_TEST_FILENAME_PATTERN.test(repoPath(filePath)),
+		);
+
+		for (const testFile of testFiles) {
+			const source = fs.readFileSync(path.join(repoRoot, testFile), "utf8");
+
+			if (forbiddenModulePattern.test(source)) {
+				errors.push(
+					`Test uses a banned runner module (use Vitest instead): ${testFile}`,
+				);
+			}
+		}
+	}
+}
+
 function assertDatabaseGate(errors: string[]): void {
 	const approvedDirectReads = new Set(APPROVED_DIRECT_DATABASE_URL_TEST_FILES);
 	const dbTestFiles = walkFiles(repoRoot, (filePath) => {
@@ -571,6 +644,8 @@ assertPackageScriptsUseApprovedRunnerPolicy(governanceErrors);
 assertWorkspaceExecutionPolicyBoundary(governanceErrors);
 assertForbiddenRunnerDependencies(governanceErrors);
 assertTestPlacement(governanceErrors);
+assertAllTestFilesLiveUnderTestsDirectory(governanceErrors);
+assertNoForbiddenRunnerModules(governanceErrors);
 assertDatabaseGate(governanceErrors);
 
 if (governanceErrors.length > 0) {

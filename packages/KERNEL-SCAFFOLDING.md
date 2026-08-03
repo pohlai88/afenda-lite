@@ -185,6 +185,5 @@ owner-approved evidence surface. It is not release or module-readiness approval.
 
 - [`afenda-elite-kernel`](../.cursor/skills/afenda-elite-kernel/SKILL.md)
 - [`afenda-semantic-registry-cutover`](../.cursor/skills/afenda-semantic-registry-cutover/SKILL.md)
-- [Monorepo boundaries](../docs-V2/monorepo/README.md)
 - [Package catalog](./README.md)
 - [`@afenda/errors` exemplar](./foundation/errors/README.md)

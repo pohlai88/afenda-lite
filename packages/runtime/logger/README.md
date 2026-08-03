@@ -71,4 +71,4 @@ pnpm test:logger-boundary
 - No AsyncLocalStorage, HTTP middleware, correlation minting, or open metadata bags.
 - Consumers import declared package exports only and do not import Pino directly.
 
-Authority: [observability](../../../docs-V2/observability/README.md) · [monorepo](../../../docs-V2/monorepo/README.md) · [AGENTS.md](../../../AGENTS.md).
+Authority: [AGENTS.md](../../../AGENTS.md).

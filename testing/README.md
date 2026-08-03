@@ -169,5 +169,3 @@ Do not claim the testing plane is fully stabilized until:
 - [`@afenda/testing`](../packages/foundation/testing/README.md)
 - [`packages/foundation/testing/src/index.ts`](../packages/foundation/testing/src/index.ts)
 - [`scripts/check-testing-governance.mts`](../scripts/check-testing-governance.mts)
-- [`docs-V2/monorepo`](../docs-V2/monorepo/README.md)
-- [`docs-V2/pnpm`](../docs-V2/pnpm/README.md)

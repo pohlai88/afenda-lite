@@ -307,6 +307,4 @@ on database semantics. A grep/source-pattern test is a guard, not behavior proof
 - [Reusable kernel package requirements](../KERNEL-SCAFFOLDING.md)
 - [`afenda-semantic-registry-cutover`](../../.cursor/skills/afenda-semantic-registry-cutover/SKILL.md)
 - [Feature-first ERP architecture](../../.cursor/skills/afenda-semantic-registry-cutover/references/feature-first-erp.md)
-- [Monorepo boundaries](../../docs-V2/monorepo/README.md)
-- [Module governance](../../docs-V2/modules/PACKAGE-GOVERNANCE.md)
 - [Human Resources exemplar](./human-resources/README.md)

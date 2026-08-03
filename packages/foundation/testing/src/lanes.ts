@@ -29,6 +29,13 @@ export const FORBIDDEN_TEST_RUNNERS = Object.freeze([
 	"@cypress",
 ] as const);
 
+// Node's built-in runner is not a dependency, so it cannot be caught by the
+// forbidden-dependency check. It is banned by source import instead: it is a
+// third runner stack that escapes lane selection, timeouts, and reporting.
+export const FORBIDDEN_TEST_RUNNER_MODULES = Object.freeze([
+	"node:test",
+] as const);
+
 export const APPROVED_DIRECT_DATABASE_URL_TEST_FILES = Object.freeze([
 	"packages/data-plane/db/__tests__/env.test.ts",
 ] as const);
@@ -41,7 +48,7 @@ const TESTING_LANE_DEFINITIONS = [
 		controlFile: "testing/vitest.unit.config.ts",
 		rootCommand: "pnpm test:unit",
 		include: [
-			"<workspace>/__tests__/**/!(*.interaction|*.inventory|*.journey|*journeys|*.neon).test.ts",
+			"<workspace>/__tests__/**/!(*.interaction|*.inventory|*.journey|*journeys|*.neon).test.{ts,tsx,mjs}",
 		],
 		exclude: [
 			"**/*.interaction.test.tsx",
@@ -63,6 +70,24 @@ const TESTING_LANE_DEFINITIONS = [
 		requiresDatabase: false,
 		requiresBrowser: false,
 		timeoutMs: 15_000,
+	},
+	{
+		// Repo-governance suites that test the .mjs check scripts they sit beside.
+		// They live outside apps/ and packages/, so they get their own lane rather
+		// than leaking repo-root globs into every workspace project's include.
+		id: "repo-tooling",
+		runner: "vitest",
+		owner: "testing",
+		controlFile: "testing/vitest.unit.config.ts",
+		rootCommand: "pnpm test:unit",
+		include: [
+			"scripts/__tests__/**/*.test.mjs",
+			"turbo/generators/__tests__/**/*.test.ts",
+		],
+		cache: "turbo-cacheable",
+		requiresDatabase: false,
+		requiresBrowser: false,
+		timeoutMs: 30_000,
 	},
 	{
 		id: "interaction",

@@ -66,7 +66,20 @@ const PACKAGE_GOVERNANCE_PATH =
 const PACKAGE_JSON_PATH = "package.json" as const;
 const TURBO_JSON_PATH = "turbo.json" as const;
 const TEST_ROOT = "turbo/generators/__tests__" as const;
-const BANNED_TRUNKS = Object.freeze(["docs", "doc"] as const);
+// `docs/` is the live documentation trunk. Only the misspelled `doc/` trunk
+// stays banned — repo-canonical banning of specific retired nested trunks
+// belongs to scripts/check-docs-trunk-ban.mjs, not here.
+const BANNED_TRUNKS = Object.freeze(["doc"] as const);
+
+// docs-V2 is retired (see the commit that removed the scratch tree). The
+// documentation-convergence checks below stay in place for their fixture
+// contract, but skip gracefully against a repository where the tree is absent —
+// the same treatment validate:modules, check:openapi, and the docs app's
+// generate:openapi-docs already received.
+const DOCS_V2_ROOT = "docs-V2" as const;
+
+const docsV2Present = (repositoryRoot: string): Promise<boolean> =>
+	directoryExists(repositoryRoot, DOCS_V2_ROOT);
 const LEADING_PATH_SEPARATOR_PATTERN = /^[/\\]/;
 const LINE_BREAK_PATTERN = /\r?\n/u;
 const WHITESPACE_PATTERN = /\s+/gu;
@@ -301,17 +314,6 @@ const checkBannedTrunks = async (
 	repositoryRoot: string,
 ): Promise<readonly GeneratorGovernanceIssue[]> => {
 	const issues: GeneratorGovernanceIssue[] = [];
-	if (await exists(repositoryRoot, "docs")) {
-		issues.push(
-			issue({
-				code: "AFG-GOV-001",
-				severity: "blocked",
-				path: "docs",
-				expected: "Living docs trunk absent until Docs-lane reopen",
-				actual: "docs exists",
-			}),
-		);
-	}
 	if (await exists(repositoryRoot, "doc")) {
 		issues.push(
 			issue({
@@ -330,9 +332,14 @@ const checkRequiredFiles = async (
 	repositoryRoot: string,
 	requiredSurfaces: readonly GeneratorGovernanceRequiredSurface[],
 ): Promise<readonly GeneratorGovernanceIssue[]> => {
+	const docsV2 = await docsV2Present(repositoryRoot);
 	const issues = await Promise.all(
 		requiredSurfaces.map(async (surface) => {
 			if (await fileExists(repositoryRoot, surface.path)) {
+				return null;
+			}
+			// Retired docs-V2 surfaces are not reported as gaps.
+			if (!docsV2 && surface.path.startsWith(`${DOCS_V2_ROOT}/`)) {
 				return null;
 			}
 			let code: GeneratorGovernanceIssue["code"];
@@ -396,6 +403,9 @@ const parsePhaseMatrixRows = (
 const checkPhaseMatrix = async (
 	repositoryRoot: string,
 ): Promise<readonly GeneratorGovernanceIssue[]> => {
+	if (!(await docsV2Present(repositoryRoot))) {
+		return Object.freeze([]);
+	}
 	if (!(await fileExists(repositoryRoot, PHASE_EXIT_MATRIX_PATH))) {
 		return Object.freeze([
 			issue({
@@ -457,6 +467,9 @@ const checkPhaseMatrix = async (
 const checkRetiredManifestAuthorityReferences = async (
 	repositoryRoot: string,
 ): Promise<readonly GeneratorGovernanceIssue[]> => {
+	if (!(await docsV2Present(repositoryRoot))) {
+		return Object.freeze([]);
+	}
 	const packageGovernanceExists = await fileExists(
 		repositoryRoot,
 		PACKAGE_GOVERNANCE_PATH,
@@ -577,6 +590,9 @@ const checkConfiguredGeneratorGate = async (
 const checkMonorepoIndex = async (
 	repositoryRoot: string,
 ): Promise<readonly GeneratorGovernanceIssue[]> => {
+	if (!(await docsV2Present(repositoryRoot))) {
+		return Object.freeze([]);
+	}
 	if (!(await fileExists(repositoryRoot, MONOREPO_INDEX_PATH))) {
 		return Object.freeze([
 			issue({

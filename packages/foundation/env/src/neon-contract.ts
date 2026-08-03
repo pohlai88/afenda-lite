@@ -6,6 +6,16 @@
 
 import { z } from "zod";
 
+import {
+	isProductionDeployment,
+	type NeonRuntimeContext,
+} from "./deployment-context";
+import {
+	APPROVED_NEON_BRANCH_ID,
+	APPROVED_NEON_ORG_ID,
+	APPROVED_NEON_PROJECT_ID,
+} from "./neon-identity";
+
 const TRAILING_DOT_PATTERN = /\.$/;
 
 /**
@@ -15,9 +25,11 @@ const TRAILING_DOT_PATTERN = /\.$/;
  */
 
 /** Afenda-Lite Neon Cloud — single production branch policy. */
-export const APPROVED_NEON_ORG_ID = "org-fragrant-lake-90358173" as const;
-export const APPROVED_NEON_PROJECT_ID = "young-hat-54755363" as const;
-export const APPROVED_NEON_BRANCH_ID = "br-tiny-hill-ao82jp6f" as const;
+export {
+	APPROVED_NEON_BRANCH_ID,
+	APPROVED_NEON_ORG_ID,
+	APPROVED_NEON_PROJECT_ID,
+} from "./neon-identity";
 export const PRODUCTION_APP_ORIGIN = "https://www.nexuscanon.com" as const;
 export const PRODUCTION_APP_HOST = new URL(PRODUCTION_APP_ORIGIN).hostname;
 
@@ -113,46 +125,18 @@ export type NeonContractResult = Readonly<{
 	issues: readonly NeonContractIssue[];
 }>;
 
-export type NeonRuntimeContext = Readonly<{
-	nodeEnv?: string | undefined;
-	vercelEnv?: string | undefined;
-}>;
-
 /**
- * Production runtime.
- *
- * Recognized Vercel environments are authoritative. Local `next build` also
- * runs with NODE_ENV=production, so a missing VERCEL_ENV is treated as a local
- * production-mode build instead of a production deployment. Unexpected Vercel
- * values still fail closed when NODE_ENV is production.
+ * Deployment classification is owned by `deployment-context.ts` and shared with
+ * the docs registry. Re-exported here so existing product consumers keep their
+ * import site.
  */
-export function isProductionDeployment(ctx: NeonRuntimeContext = {}): boolean {
-	switch (ctx.vercelEnv) {
-		case "production":
-			return true;
-		case "preview":
-		case "development":
-			return false;
-		case undefined:
-			return false;
-		case "":
-			return false;
-		default:
-			return ctx.nodeEnv === "production";
-	}
-}
-
-/**
- * Any Vercel runtime where platform-issued identity such as AI Gateway OIDC
- * may be available.
- */
-export function isVercelRuntime(ctx: NeonRuntimeContext = {}): boolean {
-	return (
-		ctx.vercelEnv === "production" ||
-		ctx.vercelEnv === "preview" ||
-		ctx.vercelEnv === "development"
-	);
-}
+export {
+	classifyDeployment,
+	type DeploymentClass,
+	isProductionDeployment,
+	isVercelRuntime,
+	type NeonRuntimeContext,
+} from "./deployment-context";
 
 export function redactEnvValue(_value: string | undefined): string {
 	return "[redacted]";

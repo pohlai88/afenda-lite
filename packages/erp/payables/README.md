@@ -8,7 +8,6 @@ The package owns mutations for `supplier_invoice`, `supplier_invoice_line`,
 `supplier_credit_note`, `supplier_allocation`, `three_way_match_result`, and
 `supplier_balance_projection`; schemas remain in `@afenda/db`.
 
-Scratch ops pack: [`docs-V2/payables/`](../../../docs-V2/payables/README.md).
 
 ## Consume
 

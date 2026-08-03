@@ -279,7 +279,6 @@ a guard, not behavior proof.
 - [Reusable kernel package requirements](../packages/KERNEL-SCAFFOLDING.md)
 - [ERP package scaffolding requirements](../packages/erp/ERP-SCAFFOLDING.md)
 - [AGENTS.md](../AGENTS.md) — skill router, Server Action exemplars, ActionResult contract
-- [Monorepo boundaries](../docs-V2/monorepo/README.md) — currently absent on disk
   pending Docs-lane reopen; treat as historical authority until restored
 - [`afenda-elite-nextjs-best-practice`](../.cursor/skills/afenda-elite-nextjs-best-practice/SKILL.md)
   — App Router mechanics this document's §4/§6/§9/§10 additions are drawn

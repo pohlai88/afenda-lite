@@ -6,7 +6,7 @@ This folder provides the reusable platform, data-plane, ERP, intelligence, and s
 
 Use this README when you need to find a package, confirm the allowed import shape, or run package-level maintenance gates. Engineers extending a specific library should then move to that package README or its `src/index.ts`.
 
-Import by package name only: `@afenda/<name>` or a declared `exports` subpath. Packages never import `apps/*`; dependency direction is governed by [docs-V2/monorepo](../docs-V2/monorepo/README.md), [LAYERS.md](../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md), [WORKSPACE-EDGE-REGISTER.yaml](../docs-V2/modules/WORKSPACE-EDGE-REGISTER.yaml), and [SCHEMA-OWNERSHIP-MANIFEST.yaml](../docs-V2/modules/SCHEMA-OWNERSHIP-MANIFEST.yaml).
+Import by package name only: `@afenda/<name>` or a declared `exports` subpath. Packages never import `apps/*`; dependency direction is governed by [LAYERS.md](../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md).
 
 **Layout state:** one-level category nesting is active: `packages/<category>/<name>/`.
 **Package identity:** physical category folders do not change package names or consumer imports.
@@ -28,7 +28,7 @@ Application (`apps/web` · `apps/docs`) is Rank 3 — outside this folder. Physi
 
 ## Dependency matrix
 
-Category placement does not create dependency rights. The following is the effective package dependency direction. Every actual edge must exist in both the consumer `package.json` and [WORKSPACE-EDGE-REGISTER.yaml](../docs-V2/modules/WORKSPACE-EDGE-REGISTER.yaml). The register is authoritative where this summary is insufficient. Living edges: [LAYERS.md](../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md).
+Category placement does not create dependency rights. The following is the effective package dependency direction. Every actual edge must be declared in the consumer `package.json`. Living edges: [LAYERS.md](../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md).
 
 | Consumer | May depend on |
 |----------|---------------|
@@ -90,7 +90,7 @@ Memory adapters for rate-limit and cache are test and local-development only unl
 | [`@afenda/search`](./data-plane/search/README.md) | Node | Active | Canonical search-document registry, normalization, ranking and `platform_search_document` lifecycle |
 | [`@afenda/notifications`](./data-plane/notifications/README.md) | Node | Active | Canonical in-app vocabulary, persistence, expiry and recipient read-state capability |
 
-`@afenda/db` owns schema representation, database connectivity, and migrations. It does **not** gain business mutation ownership by hosting a table definition. Business write ownership remains with the package declared in [SCHEMA-OWNERSHIP-MANIFEST.yaml](../docs-V2/modules/SCHEMA-OWNERSHIP-MANIFEST.yaml).
+`@afenda/db` owns schema representation, database connectivity, and migrations. It does **not** gain business mutation ownership by hosting a table definition. Business write ownership remains with the package that owns the table, not with `@afenda/db`.
 
 ### Identity and Control Plane — Rank 1D — [`control-plane/`](./control-plane/README.md)
 
@@ -125,7 +125,7 @@ Peer R1-F packages do not import each other by default. ERP peer collaboration o
 
 An ERP package must not import another ERP package’s source, schemas, or command handlers unless a dual-control edge is approved (for example registered Inventory stock-mutation calls from Receiving/Fulfillment). Integration points are identity + events only unless the edge register says otherwise.
 
-A package may read a foreign-owned table only through an approved query port, projection, or registered read edge. It may never insert, update, or delete a foreign-owned table. Direct table writes are allowed only inside the package named as `writeOwner` in [SCHEMA-OWNERSHIP-MANIFEST.yaml](../docs-V2/modules/SCHEMA-OWNERSHIP-MANIFEST.yaml). Machine check: `pnpm governance:packages`.
+A package may read a foreign-owned table only through an approved query port, projection, or registered read edge. It may never insert, update, or delete a foreign-owned table. Direct table writes are allowed only inside the package that owns the table. Machine check: `pnpm governance:packages`.
 
 ### Intelligence — Rank 1X — [`intelligence/`](./intelligence/README.md)
 
@@ -144,7 +144,7 @@ import { Button } from "@afenda/ui-system";
 
 - Prefer package name / declared `exports` — never `../../packages/...` or `@afenda/*/src/...`
 - Internal deps: `"workspace:*"` · shared externals: `"catalog:"` when listed
-- New or changed workspace edges: update `package.json` **and** [WORKSPACE-EDGE-REGISTER.yaml](../docs-V2/modules/WORKSPACE-EDGE-REGISTER.yaml) in the same mission
+- New or changed workspace edges: update `package.json` **and** in the same mission
 - Env: `@afenda/env` + `.env.local` — never raw `process.env` for product config
 - UI: `@afenda/ui-system` barrel only — do not revive `@afenda/ui`
 - Tenancy: organization-scoped rows (`organization_id`) on shared schema — never multi-DB / project-per-tenant isolation
@@ -164,7 +164,7 @@ pnpm --filter @afenda/<name> build   # when the package defines a build script
 
 Most `@afenda/*` packages are TypeScript source consumed via workspace. `typecheck` is the compile gate when no `build` script exists. Persistence packages may define contract or integration suites; do not add empty scripts just to match a template.
 
-Add or rename packages only with the matching DAG update in [docs-V2/monorepo](../docs-V2/monorepo/README.md), a `WORKSPACE-EDGE-REGISTER.yaml` row, a catalog entry here, and `CATALOG_EXPECTED_PACKAGES` in `scripts/validate-modules/checks.mjs`. Place new packages under the matching category folder; keep package identity `@afenda/<name>`.
+Add or rename packages only with the matching DAG update in a `WORKSPACE-EDGE-REGISTER.yaml` row, a catalog entry here, and `CATALOG_EXPECTED_PACKAGES` in `scripts/validate-modules/checks.mjs`. Place new packages under the matching category folder; keep package identity `@afenda/<name>`.
 
 ## Production gate
 
@@ -192,12 +192,7 @@ The README describes intended architecture; passing evidence is the production a
 
 | Topic | Link |
 |-------|------|
-| Layer DAG · ERP governance | [docs-V2/monorepo](../docs-V2/monorepo/README.md) · [LAYERS.md](../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
-| Workspace edges | [WORKSPACE-EDGE-REGISTER.yaml](../docs-V2/modules/WORKSPACE-EDGE-REGISTER.yaml) · [PACKAGE-GOVERNANCE.md](../docs-V2/modules/PACKAGE-GOVERNANCE.md) |
-| Schema write ownership | [SCHEMA-OWNERSHIP-MANIFEST.yaml](../docs-V2/modules/SCHEMA-OWNERSHIP-MANIFEST.yaml) |
-| Module roadmap | [MODULE-ROADMAP.yaml](../docs-V2/modules/MODULE-ROADMAP.yaml) |
-| pnpm · catalog | [docs-V2/pnpm](../docs-V2/pnpm/README.md) |
-| Tenancy · shared schema | [docs-V2/tenancy](../docs-V2/tenancy/README.md) |
+| Layer DAG · ERP governance | [LAYERS.md](../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
 | Repo quickstart | [README.md](../README.md) |
 | Agent checkout | [AGENTS.md](../AGENTS.md) |
 
@@ -205,6 +200,5 @@ The README describes intended architecture; passing evidence is the production a
 
 The following material records how the package-governance program was executed. It is informative and non-normative:
 
-- [packages_governance.md](../docs-V2/_scratch/packages_governance.md)
 
 Where Scratch content conflicts with an Active governance document, the Active document prevails.

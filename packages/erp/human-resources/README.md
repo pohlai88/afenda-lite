@@ -12,7 +12,7 @@ Enterprise HR bounded context for Afenda-Lite — workforce records, organizatio
 
 The reviewed [public-contract](__tests__/fixtures/public-contract.fixture.json), [registry-projection](__tests__/fixtures/registry-projection.fixture.json), and [consumer-inventory](__tests__/fixtures/consumer-inventory.fixture.json) fixtures enumerate the accepted root contract, canonical operation governance, and consumer graph. The package exposes one production root and one isolated `./testing` entrypoint. The module manifest remains `lifecycle: "scaffolded"`.
 
-The package implements broad local behavior for workforce records, organization, planning, recruitment, hire conversion, employment lifecycle, leave, time, compensation, performance, learning, talent, compliance, employee relations, privacy, reporting, bulk processing, reliability, and approved Payroll handoff. The [Human Resources PRD](../../../docs-V2/_scratch/human-resources/human-resources-prd.md) is the Scratch classification of implemented behavior versus open requirements; names or locally green tests do not establish product completeness.
+The package implements broad local behavior for workforce records, organization, planning, recruitment, hire conversion, employment lifecycle, leave, time, compensation, performance, learning, talent, compliance, employee relations, privacy, reporting, bulk processing, reliability, and approved Payroll handoff. The [Human Resources PRD](../../../docs/_scratch/human-resources/human-resources-prd.md) is the Scratch classification of implemented behavior versus open requirements; names or locally green tests do not establish product completeness.
 
 ### Open product and architecture work
 
@@ -96,8 +96,7 @@ Person → Worker → Employee specialization
 
 **Security:** Commands require an injected `HumanResourcesAuthorizationPort`. Input schemas reject tenant-field injection — the composition root stamps `organizationId`, `actorUserId`, and `correlationId` after validation.
 
-**Tenancy:** Shared Neon schema with organization-scoped rows. HR hard-tenant-root names, table objects, and audit SQL derive from `packages/data-plane/db/src/hard-tenant-roots.ts`; the README does not duplicate that volatile inventory. This is not multi-DB isolation — see [docs-V2/tenancy](../../../docs-V2/tenancy/README.md).
-
+**Tenancy:** Shared Neon schema with organization-scoped rows. HR hard-tenant-root names, table objects, and audit SQL derive from `packages/data-plane/db/src/hard-tenant-roots.ts`; the README does not duplicate that volatile inventory. This is not multi-DB isolation.
 ## Public surface
 
 | Entrypoint | Role |
@@ -173,7 +172,7 @@ port capabilities, and composition alone constructs the aggregate. The final Pha
 `src/<approved-surface-or-feature>/<file>` and rejects any third directory level.
 Memory and Drizzle implementations remain paired through descriptive filenames;
 no empty capsule placeholders or generic layer farms are introduced. See the
-[development roadmap](../../../docs-V2/_scratch/human-resources/development-roadmap.md)
+[development roadmap](../../../docs/_scratch/human-resources/development-roadmap.md)
 and reusable [feature-first ERP semantic method](../../../.cursor/skills/afenda-semantic-registry-cutover/references/feature-first-erp.md).
 
 ## Integration contracts
@@ -242,7 +241,7 @@ pnpm governance:packages
 | **Compensation agreement** — `hr_employee_compensation`, `hr_allowance_entitlement`, `hr_bonus_eligibility`, benefit enrollment **contribution terms** on `hr_benefit_enrollment` | Pay-period calculated earnings/deductions/net; `payroll_*`, `journal*`, `payment*` writes |
 | Approved, immutable payroll handoff inputs and acknowledged delivery state | Gross-to-net, statutory pay math, payslip generation |
 
-**Allowance/deduction four-way ownership:** HR entitlement/agreement → Payroll calculation → Accounting posting → Payments disbursement. The product boundary and non-duplication rules are defined in the [Human Resources PRD](../../../docs-V2/_scratch/human-resources/human-resources-prd.md).
+**Allowance/deduction four-way ownership:** HR entitlement/agreement → Payroll calculation → Accounting posting → Payments disbursement. The product boundary and non-duplication rules are defined in the [Human Resources PRD](../../../docs/_scratch/human-resources/human-resources-prd.md).
 
 **Dependencies:** `@afenda/db`, `@afenda/errors`, `@afenda/events`, `@afenda/audit`. Cross-domain reference capabilities such as currency and organization dimensions are injected by the application composition root; Human Resources does not import master-data persistence or adapters.
 
@@ -251,15 +250,11 @@ pnpm governance:packages
 | Topic | Link |
 |-------|------|
 | Feature-first ERP semantic method | [feature-first-erp.md](../../../.cursor/skills/afenda-semantic-registry-cutover/references/feature-first-erp.md) |
-| Feature-first layout guard | [feature-first-layout.mjs](scripts/feature-first-layout.mjs) |
-| Product requirements and bounded-context map (Scratch) | [human-resources-prd.md](../../../docs-V2/_scratch/human-resources/human-resources-prd.md) |
-| Development roadmap and delivery gates (Scratch) | [development-roadmap.md](../../../docs-V2/_scratch/human-resources/development-roadmap.md) |
-| Payroll product requirements (Scratch) | [PAYROLL-PRD-MY-VN.md](../../../docs-V2/_scratch/payroll/PAYROLL-PRD-MY-VN.md) |
+| Product requirements and bounded-context map (Scratch) | [human-resources-prd.md](../../../docs/_scratch/human-resources/human-resources-prd.md) |
+| Development roadmap and delivery gates (Scratch) | [development-roadmap.md](../../../docs/_scratch/human-resources/development-roadmap.md) |
+| Payroll product requirements (Scratch) | [PAYROLL-PRD-MY-VN.md](../../../docs/_scratch/payroll/PAYROLL-PRD-MY-VN.md) |
 | Public contract evidence | [`public-contract.fixture.json`](__tests__/fixtures/public-contract.fixture.json) · [`consumer-inventory.fixture.json`](__tests__/fixtures/consumer-inventory.fixture.json) |
 | Registry and architecture evidence | [`registry-projection.fixture.json`](__tests__/fixtures/registry-projection.fixture.json) · [`architecture-debt.fixture.json`](__tests__/fixtures/architecture-debt.fixture.json) |
 | Module lifecycle | [`module.manifest.ts`](src/composition/module.manifest.ts) |
 | ERP scaffold rules | [ERP-SCAFFOLDING.md](../ERP-SCAFFOLDING.md) |
-| Tenancy | [docs-V2/tenancy](../../../docs-V2/tenancy/README.md) |
-| Package DAG | [docs-V2/monorepo](../../../docs-V2/monorepo/README.md) |
-| Schema ownership | [SCHEMA-OWNERSHIP-MANIFEST.yaml](../../../docs-V2/modules/SCHEMA-OWNERSHIP-MANIFEST.yaml) |
 | Agent checkout posture | [AGENTS.md](../../../AGENTS.md) |

@@ -400,8 +400,7 @@ The tables below enumerate the governed callable groups exported by the root bar
 
 **Also shipped:** search projectors (`md_*` → `@afenda/search`) · bounded import upsert-by-code · `mergeParties` + duplicate warnings.
 
-**Layer:** Rank-1 Platform (`@afenda/db` · `@afenda/errors` · `@afenda/audit` · `@afenda/events` · `@afenda/search` · zod · server-only). Must not import Surfaces, `apps/*`, or Next.js. See [docs-V2/monorepo](../../../docs-V2/monorepo/README.md).
-
+**Layer:** Rank-1 Platform (`@afenda/db` · `@afenda/errors` · `@afenda/audit` · `@afenda/events` · `@afenda/search` · zod · server-only). Must not import Surfaces, `apps/*`, or Next.js.
 ## Platform `ref_*` mutation policy
 
 | Surface | Mutate | Read |
@@ -543,7 +542,6 @@ Every production mutation must prove the state change, audit fact, and domain ev
 | Change requests | MDG v1 gates `activate_party` and `merge_parties`; future coverage must stay limited to controlled master-data changes, not a generic workflow engine |
 | Import modes | `create_only` · `update_existing` · `create_or_update` (default) + mutable-field allowlist; validate requires `master_data.import_validate`; apply requires `approved` + `master_data.import_apply`; approval remains `master_data.import_approve`; `requireSegregatedApproval` can require `actorUserId != approvedByActorUserId` |
 
-Operational contract (Scratch): [operational-master-contract.md](../../../docs-V2/master-data/operational-master-contract.md).
 
 ## Code policy
 
@@ -578,7 +576,6 @@ Use `masterDataErrorCodeForFailureDetails(details)` when adapting package failur
 
 | Topic | Link |
 |-------|------|
-| Scratch DNA | [docs-V2/master-data](../../../docs-V2/master-data/README.md) · [master-data-dna.md](../../../docs-V2/master-data/master-data-dna.md) · [operational-master-contract.md](../../../docs-V2/master-data/operational-master-contract.md) |
-| Package DAG | [docs-V2/monorepo](../../../docs-V2/monorepo/README.md) · [LAYERS.md](../../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
-| Events catalog | [docs-V2/events](../../../docs-V2/events/README.md) · [`@afenda/events`](../../data-plane/events/README.md) |
+| Package DAG | [LAYERS.md](../../../.cursor/skills/afenda-elite-monorepo-discipline/LAYERS.md) |
+| Events catalog | [`@afenda/events`](../../data-plane/events/README.md) |
 | Agent checkout posture | [AGENTS.md](../../../AGENTS.md) |

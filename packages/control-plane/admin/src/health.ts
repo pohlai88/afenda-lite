@@ -1,5 +1,6 @@
 import { database as afendaDatabase, sql } from "@afenda/db";
-import { env, MAX_SELECT1_LATENCY_MS } from "@afenda/env";
+import { env } from "@afenda/env";
+import { MAX_SELECT1_LATENCY_MS } from "@afenda/env/performance";
 import { errorIngress } from "@afenda/errors";
 
 import {

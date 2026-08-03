@@ -1,6 +1,8 @@
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+
+import { readJsonc } from "./lib/read-jsonc.mjs";
 
 const CENTRAL_OPTIONS = new Set([
 	"target",
@@ -41,19 +43,18 @@ function toPosixPath(value) {
 	return value.replaceAll("\\", "/");
 }
 
-function readJson(file, errors) {
-	try {
-		return JSON.parse(readFileSync(file, "utf8"));
-	} catch (error) {
-		errors.push(
-			`${toPosixPath(file)}: invalid JSON (${error instanceof Error ? error.message : String(error)})`,
-		);
+function readConfig(file, errors) {
+	const { config, error } = readJsonc(file);
+	if (error) {
+		errors.push(`${toPosixPath(file)}: invalid JSONC (${error})`);
+		return;
 	}
+	return config;
 }
 
 function loadApprovedPresets(root, errors) {
 	const packageFile = join(root, "packages/foundation/config/package.json");
-	const packageJson = readJson(packageFile, errors);
+	const packageJson = readConfig(packageFile, errors);
 	const approved = new Set();
 	for (const [exportPath, target] of Object.entries(
 		packageJson?.exports ?? {},
@@ -135,7 +136,7 @@ function findApprovedPreset(
 		return;
 	}
 	seen.add(parentFile);
-	const parent = readJson(parentFile, errors);
+	const parent = readConfig(parentFile, errors);
 	if (!parent || typeof parent.extends !== "string") {
 		return;
 	}
@@ -154,7 +155,7 @@ function sameJsonValue(actual, expected) {
 
 function checkPreset(root, relativeFile, expected, errors) {
 	const file = join(root, relativeFile);
-	const config = readJson(file, errors);
+	const config = readConfig(file, errors);
 	if (!config) {
 		return;
 	}
@@ -234,7 +235,7 @@ export function checkTsconfigGovernance(root) {
 		if (relativeFile.startsWith(`${PRESET_DIRECTORY}/`)) {
 			continue;
 		}
-		const config = readJson(file, errors);
+		const config = readConfig(file, errors);
 		if (!config) {
 			continue;
 		}

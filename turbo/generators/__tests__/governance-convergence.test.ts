@@ -150,7 +150,7 @@ describe("generator governance convergence", () => {
 				schema: GENERATOR_GOVERNANCE_CONVERGENCE_SCHEMA,
 				monorepoIndexPath: "docs-V2/monorepo/README.md",
 				testRoot: "turbo/generators/__tests__",
-				bannedTrunks: ["docs", "doc"],
+				bannedTrunks: ["doc"],
 				requiredSurfaces: first.requiredSurfaces,
 				summary: {
 					issues: 0,
@@ -189,13 +189,13 @@ describe("generator governance convergence", () => {
 		}
 	});
 
-	it("flags banned trunks, missing docs, missing README links, and misplaced tests", async () => {
+	it("flags the banned doc trunk, missing docs, missing README links, and misplaced tests", async () => {
 		const repositoryRoot = await mkdtemp(
 			join(tmpdir(), "afenda-generator-governance-failures-"),
 		);
 		try {
 			await writeCompleteGovernanceFixture(repositoryRoot);
-			await mkdir(resolve(repositoryRoot, "docs"), { recursive: true });
+			await mkdir(resolve(repositoryRoot, "doc"), { recursive: true });
 			await writeFixtureFile(
 				repositoryRoot,
 				"turbo/generators/erp-generator/bad.test.ts",
@@ -222,9 +222,9 @@ describe("generator governance convergence", () => {
 			expect(report.issues).toEqual(
 				expect.arrayContaining([
 					expect.objectContaining({
-						code: "AFG-GOV-001",
+						code: "AFG-GOV-002",
 						severity: "blocked",
-						path: "docs",
+						path: "doc",
 					}),
 					expect.objectContaining({
 						code: "AFG-GOV-003",

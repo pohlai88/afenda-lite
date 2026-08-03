@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import path from "node:path";
 
-import ts from "typescript";
+import { readJsonc } from "./lib/read-jsonc.mjs";
 
 const root = process.cwd();
 const requireFromRoot = createRequire(path.join(root, "package.json"));
@@ -54,14 +54,13 @@ if (!biomeExport) {
 	);
 }
 
-function readJsonc(file) {
-	const raw = readFileSync(file, "utf8");
-	const parsed = ts.parseConfigFileTextToJson(file, raw);
-	if (parsed.error) {
-		errors.push(`${path.relative(root, file)} is not valid JSONC`);
+function readConfig(file) {
+	const { config, error } = readJsonc(file);
+	if (error) {
+		errors.push(`${path.relative(root, file)} is not valid JSONC (${error})`);
 		return;
 	}
-	return parsed.config;
+	return config;
 }
 
 function sameArray(actual, expected) {
@@ -95,8 +94,8 @@ function runBiome(args) {
 	};
 }
 
-const rootConfig = readJsonc(rootConfigPath);
-const sharedConfig = readJsonc(sharedConfigPath);
+const rootConfig = readConfig(rootConfigPath);
+const sharedConfig = readConfig(sharedConfigPath);
 
 if (rootConfig) {
 	if (!sameArray(rootConfig.extends, requiredExtends)) {

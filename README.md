@@ -4,7 +4,7 @@
 
 Operators manage org roles and invitations under `/admin`; clients land on `/client` (`CLIENT_HOME`). Product **Declarations** and **Feed Farm Trade** modules have been removed (nuclear wipe) — do not document them as living product surfaces.
 
-One deployable web app with organization-scoped data (`organization_id`), Neon-backed auth and Postgres, and living module surfaces that share platform RBAC — see Scratch [docs-V2/tenancy](docs-V2/tenancy/README.md).
+One deployable web app with organization-scoped data (`organization_id`), Neon-backed auth and Postgres, and living module surfaces that share platform RBAC.
 
 For operators and org admins on platform + identity; for engineers extending `apps/web` and `packages/*`. Agent checkout doctrine lives in [AGENTS.md](./AGENTS.md).
 
@@ -31,11 +31,11 @@ pnpm --filter @afenda/web dev
 
 Open http://localhost:3000 → operator sign-in → `/admin`.
 
-Env SSOT: `import { env } from '@afenda/env'` · local file `.env.local` (template: `.env.example`). Scratch packs: [docs-V2](docs-V2/README.md).
+Env SSOT: `import { env } from '@afenda/env'` · local file `.env.local` (template: `.env.example`).
 
 ## Code generation
 
-Scaffolding and package/feature governance run through Turborepo generators ([`turbo/generators`](turbo/generators/config.ts)) — built on `turbo gen`. Two families: `kernel` (`packages/foundation|runtime|data-plane|control-plane`) and `erp` (`packages/erp/*`). Contract SSOT and slice roadmap: [docs-V2/monorepo](docs-V2/monorepo/generator-architecture-prd.md) (`g1`…`g17`).
+Scaffolding and package/feature governance run through Turborepo generators ([`turbo/generators`](turbo/generators/config.ts)) — built on `turbo gen`. Two families: `kernel` (`packages/foundation|runtime|data-plane|control-plane`) and `erp` (`packages/erp/*`). Generator contracts are enforced by `pnpm generator:check`.
 
 > **Local-only by contract.** Generator governance declares `ciRequired: false` and excludes `.github/workflows/*` — it is enforced on developer machines, never in CI. Run it locally; do not add it to CI workflows.
 
@@ -65,11 +65,6 @@ pnpm turbo gen kernel-generator-apply-adoption          # reconcile kernel adopt
 
 | Need | Start here |
 |------|------------|
-| Scratch packs | [docs-V2/README.md](docs-V2/README.md) |
-| Project map (quick index) | [docs-V2/project-map.md](docs-V2/project-map.md) |
-| System layout | [docs-V2/system/README.md](docs-V2/system/README.md) |
-| Tenancy | [docs-V2/tenancy/README.md](docs-V2/tenancy/README.md) |
-| Modules | [docs-V2/modules/README.md](docs-V2/modules/README.md) |
 | Official docs site | [`apps/docs`](apps/docs) (`@afenda/docs`) |
 | Agent routing | [AGENTS.md](./AGENTS.md) · `/using-afenda-elite-skills` |
 

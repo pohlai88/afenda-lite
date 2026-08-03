@@ -31,5 +31,4 @@ and exposes its own durable surface.
 ## Authority
 
 - [Workspace package catalog](../README.md)
-- [Monorepo boundaries](../../docs-V2/monorepo/README.md)
 - [Repository operating rules](../../AGENTS.md)

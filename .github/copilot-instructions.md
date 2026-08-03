@@ -58,7 +58,6 @@ Node `24.x` · pnpm `>=10.33.4` · Next.js App Router · React 19 · TypeScript 
 
 1. Read [AGENTS.md](../AGENTS.md) (PREFLIGHT · skill router · non-negotiable rules).
 2. Product work in VS Code: follow this file first, then apply repo conventions from [AGENTS.md](../AGENTS.md) as needed.
-3. Scratch architecture → [docs-V2/README.md](../docs-V2/README.md) · [docs-V2/project-map.md](../docs-V2/project-map.md).
 
 ## Must follow
 
