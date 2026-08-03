@@ -91,6 +91,12 @@ permissions:
   - code: corporate_administration.resolution.manage
     moduleId: corporate-administration
     namespace: corporate_administration
+  - code: corporate_administration.authority.read
+    moduleId: corporate-administration
+    namespace: corporate_administration
+  - code: corporate_administration.authority.manage
+    moduleId: corporate-administration
+    namespace: corporate_administration
   - code: fulfillment.delivery.read
     moduleId: fulfillment
     namespace: fulfillment
@@ -815,6 +821,24 @@ permissions:
     moduleId: payments
     namespace: payments
   - code: payments.method.read
+    moduleId: payments
+    namespace: payments
+  - code: payments.provider.manage
+    moduleId: payments
+    namespace: payments
+  - code: payments.provider.read
+    moduleId: payments
+    namespace: payments
+  - code: payments.transaction.manage
+    moduleId: payments
+    namespace: payments
+  - code: payments.transaction.read
+    moduleId: payments
+    namespace: payments
+  - code: payments.token.manage
+    moduleId: payments
+    namespace: payments
+  - code: payments.token.read
     moduleId: payments
     namespace: payments
   - code: payroll.setup.manage

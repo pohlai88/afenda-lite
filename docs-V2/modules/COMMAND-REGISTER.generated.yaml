@@ -244,6 +244,15 @@ commands:
   - id: recordMinutesDocument
     moduleId: corporate-administration
     permission: corporate_administration.resolution.manage
+  - id: grantAuthorityMandate
+    moduleId: corporate-administration
+    permission: corporate_administration.authority.manage
+  - id: amendAuthorityMandate
+    moduleId: corporate-administration
+    permission: corporate_administration.authority.manage
+  - id: revokeAuthorityMandate
+    moduleId: corporate-administration
+    permission: corporate_administration.authority.manage
   - id: fulfillment.delivery.create
     moduleId: fulfillment
     permission: fulfillment.delivery.create
@@ -1789,6 +1798,9 @@ commands:
   - id: payroll.reconciliation.resolve
     moduleId: payroll
     permission: payroll.reconciliation.manage
+  - id: payroll.workforce.ingest
+    moduleId: payroll
+    permission: payroll.input.manage
   - id: purchasing.order.create
     moduleId: purchasing
     permission: purchasing.order.create

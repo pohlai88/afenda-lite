@@ -117,6 +117,9 @@ export const CORPORATE_ADMINISTRATION_EVENT_TYPES = [
 	"corporate_administration.resolution.minutes_recorded.v1",
 	"corporate_administration.resolution.action_assigned.v1",
 	"corporate_administration.resolution.action_completed.v1",
+	"corporate_administration.authority_mandate.granted.v1",
+	"corporate_administration.authority_mandate.amended.v1",
+	"corporate_administration.authority_mandate.revoked.v1",
 ] as const;
 
 export type CorporateAdministrationRegisteredEventType =

@@ -29,16 +29,6 @@ const RETIRED_CORPORATE_ADMINISTRATION_PERMISSION_V1 = [
 		true,
 	],
 	[
-		"corporate_administration.authority.read",
-		"Read corporate authority policies",
-		false,
-	],
-	[
-		"corporate_administration.authority.manage",
-		"Manage corporate authority policies",
-		true,
-	],
-	[
 		"corporate_administration.authority.publish",
 		"Publish corporate authority policies",
 		true,

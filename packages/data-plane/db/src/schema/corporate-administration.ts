@@ -2054,3 +2054,101 @@ export const caResolutionAction = pgTable(
 		check("ca_resolution_action_version_check", sql`${t.version} > 0`),
 	],
 );
+
+export const caAuthorityMandate = pgTable(
+	"ca_authority_mandate",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		legalCompanyId: uuid("legal_company_id").notNull(),
+		mandateType: text("mandate_type").notNull(),
+		holderPartyId: text("holder_party_id"),
+		holderOfficerAppointmentId: uuid("holder_officer_appointment_id"),
+		grantedByType: text("granted_by_type").notNull(),
+		grantingResolutionId: uuid("granting_resolution_id"),
+		scopeDescription: text("scope_description").notNull(),
+		monetaryLimitAmount: text("monetary_limit_amount"),
+		monetaryLimitCurrencyCode: text("monetary_limit_currency_code"),
+		jurisdictionCode: text("jurisdiction_code"),
+		protectedAuthority: boolean("protected_authority").notNull().default(false),
+		effectiveFrom: date("effective_from").notNull(),
+		effectiveTo: date("effective_to"),
+		status: text("status").notNull().default("active"),
+		revocationReason: text("revocation_reason"),
+		sourceDocumentId: text("source_document_id").notNull(),
+		recordedAt: timestamp("recorded_at", { withTimezone: true }).notNull(),
+		recordedBy: text("recorded_by").notNull(),
+		version: integer("version").notNull().default(1),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		uniqueIndex("ca_authority_mandate_org_id_uidx").on(t.organizationId, t.id),
+		index("ca_authority_mandate_org_company_idx").on(
+			t.organizationId,
+			t.legalCompanyId,
+		),
+		index("ca_authority_mandate_org_company_status_idx").on(
+			t.organizationId,
+			t.legalCompanyId,
+			t.status,
+		),
+		check(
+			"ca_authority_mandate_type_check",
+			sql`${t.mandateType} IN ('signing_authority', 'bank_mandate', 'power_of_attorney', 'delegated_authority', 'other')`,
+		),
+		check(
+			"ca_authority_mandate_granted_by_check",
+			sql`${t.grantedByType} IN ('board_resolution', 'shareholder_resolution', 'statutory_office', 'power_of_attorney')`,
+		),
+		check(
+			"ca_authority_mandate_holder_check",
+			sql`(${t.holderPartyId} IS NULL) <> (${t.holderOfficerAppointmentId} IS NULL)`,
+		),
+		check(
+			"ca_authority_mandate_holder_party_check",
+			sql`${t.holderPartyId} IS NULL OR char_length(btrim(${t.holderPartyId})) > 0`,
+		),
+		check(
+			"ca_authority_mandate_scope_check",
+			sql`char_length(btrim(${t.scopeDescription})) > 0`,
+		),
+		check(
+			"ca_authority_mandate_monetary_pair_check",
+			sql`(${t.monetaryLimitAmount} IS NULL) = (${t.monetaryLimitCurrencyCode} IS NULL)`,
+		),
+		check(
+			"ca_authority_mandate_monetary_amount_check",
+			sql`${t.monetaryLimitAmount} IS NULL OR ${t.monetaryLimitAmount} ~ '^-?(0|[1-9][0-9]*)(\.[0-9]+)?$'`,
+		),
+		check(
+			"ca_authority_mandate_currency_check",
+			sql`${t.monetaryLimitCurrencyCode} IS NULL OR ${t.monetaryLimitCurrencyCode} ~ '^[A-Z]{3}$'`,
+		),
+		check(
+			"ca_authority_mandate_jurisdiction_check",
+			sql`${t.jurisdictionCode} IS NULL OR ${t.jurisdictionCode} ~ '^[A-Z]{2}$'`,
+		),
+		check(
+			"ca_authority_mandate_effective_range_check",
+			sql`${t.effectiveTo} IS NULL OR ${t.effectiveFrom} < ${t.effectiveTo}`,
+		),
+		check(
+			"ca_authority_mandate_status_check",
+			sql`${t.status} IN ('active', 'revoked', 'expired')`,
+		),
+		check(
+			"ca_authority_mandate_revocation_check",
+			sql`(${t.status} = 'revoked' AND ${t.effectiveTo} IS NOT NULL AND ${t.revocationReason} IS NOT NULL) OR (${t.status} <> 'revoked' AND ${t.revocationReason} IS NULL)`,
+		),
+		check(
+			"ca_authority_mandate_source_check",
+			sql`char_length(btrim(${t.sourceDocumentId})) > 0`,
+		),
+		check("ca_authority_mandate_version_check", sql`${t.version} > 0`),
+	],
+);

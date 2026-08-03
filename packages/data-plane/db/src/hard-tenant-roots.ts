@@ -17,6 +17,7 @@ import {
 	sourcePostingLink,
 } from "./schema/accounting";
 import {
+	caAuthorityMandate,
 	caCompanyActivity,
 	caCompanyFinancialYear,
 	caCompanyIdentifier,
@@ -246,7 +247,13 @@ import {
 	paymentAllocation,
 	paymentDeduction,
 	paymentMethod,
+	paymentProvider,
+	paymentProviderEvent,
 	paymentReversal,
+	paymentToken,
+	paymentTransaction,
+	paymentTransactionCapture,
+	paymentTransactionRefund,
 } from "./schema/payments";
 import {
 	payrollAcceptedHandoff,
@@ -349,6 +356,7 @@ export const HARD_TENANT_ROOT_ENTRIES = [
 	["ca_meeting_vote", caMeetingVote],
 	["ca_resolution", caResolution],
 	["ca_resolution_action", caResolutionAction],
+	["ca_authority_mandate", caAuthorityMandate],
 	["md_party", mdParty],
 	["md_organization_dimension", mdOrganizationDimension],
 	["md_item_group", mdItemGroup],
@@ -405,6 +413,12 @@ export const HARD_TENANT_ROOT_ENTRIES = [
 	["payment_allocation", paymentAllocation],
 	["payment_deduction", paymentDeduction],
 	["payment_reversal", paymentReversal],
+	["payment_provider", paymentProvider],
+	["payment_token", paymentToken],
+	["payment_transaction", paymentTransaction],
+	["payment_transaction_capture", paymentTransactionCapture],
+	["payment_transaction_refund", paymentTransactionRefund],
+	["payment_provider_event", paymentProviderEvent],
 	["payroll_calendar", payrollCalendar],
 	["payroll_pay_group", payrollPayGroup],
 	["payroll_period", payrollPeriod],

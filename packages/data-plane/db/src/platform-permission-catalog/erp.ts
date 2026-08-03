@@ -456,6 +456,42 @@ export const ERP_PLATFORM_PERMISSIONS = [
 		sensitive: true,
 	},
 	{
+		code: "payments.provider.read",
+		module: "payments",
+		description: "Read payment provider configurations",
+		sensitive: false,
+	},
+	{
+		code: "payments.provider.manage",
+		module: "payments",
+		description: "Manage payment provider configurations",
+		sensitive: true,
+	},
+	{
+		code: "payments.transaction.read",
+		module: "payments",
+		description: "Read gateway payment transactions",
+		sensitive: false,
+	},
+	{
+		code: "payments.transaction.manage",
+		module: "payments",
+		description: "Manage gateway payment transactions",
+		sensitive: true,
+	},
+	{
+		code: "payments.token.read",
+		module: "payments",
+		description: "Read stored payment instrument tokens",
+		sensitive: true,
+	},
+	{
+		code: "payments.token.manage",
+		module: "payments",
+		description: "Manage stored payment instrument tokens",
+		sensitive: true,
+	},
+	{
 		code: "payments.account.manage",
 		module: "payments",
 		description: "Manage payment accounts",

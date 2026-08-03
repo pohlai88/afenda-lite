@@ -48,6 +48,7 @@ export const corporateAdministrationModuleManifest = {
 			"meeting_vote",
 			"resolution",
 			"resolution_action",
+			"authority_mandate",
 		],
 		commandNamespace: "corporate-administration",
 		commands: [...CORPORATE_ADMINISTRATION_COMMAND_IDS],

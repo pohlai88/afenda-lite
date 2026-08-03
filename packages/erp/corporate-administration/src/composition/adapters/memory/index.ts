@@ -1,3 +1,4 @@
+export { createMemoryCorporateAdministrationAuthorityStore } from "../../../features/authority/adapters/authority.memory";
 export { createMemoryCorporateAdministrationLegalCompanyStore } from "../../../features/company/adapters/company.memory";
 export { createMemoryCorporateAdministrationEstablishmentStore } from "../../../features/establishments/adapters/establishments.memory";
 export { createMemoryCorporateAdministrationGovernanceStore } from "../../../features/governance/adapters/governance.memory";

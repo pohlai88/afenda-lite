@@ -185,6 +185,15 @@ events:
     id: corporate_administration.resolution.action_completed.v1
     moduleId: corporate-administration
   - direction: emits
+    id: corporate_administration.authority_mandate.granted.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.authority_mandate.amended.v1
+    moduleId: corporate-administration
+  - direction: emits
+    id: corporate_administration.authority_mandate.revoked.v1
+    moduleId: corporate-administration
+  - direction: emits
     id: fulfillment.delivery.created.v1
     moduleId: fulfillment
   - direction: emits

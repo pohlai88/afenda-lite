@@ -1,4 +1,5 @@
 export {
+	createMemoryCorporateAdministrationAuthorityStore,
 	createMemoryCorporateAdministrationEstablishmentStore,
 	createMemoryCorporateAdministrationGovernanceStore,
 	createMemoryCorporateAdministrationLegalCompanyStore,

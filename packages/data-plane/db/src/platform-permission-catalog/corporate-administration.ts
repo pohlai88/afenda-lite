@@ -79,4 +79,16 @@ export const CORPORATE_ADMINISTRATION_PLATFORM_PERMISSIONS = [
 		description: "Manage Corporate Administration resolution records",
 		sensitive: true,
 	},
+	{
+		code: "corporate_administration.authority.read",
+		module: "corporate_administration",
+		description: "Read Corporate Administration authority mandate records",
+		sensitive: false,
+	},
+	{
+		code: "corporate_administration.authority.manage",
+		module: "corporate_administration",
+		description: "Manage Corporate Administration authority mandate records",
+		sensitive: true,
+	},
 ] as const satisfies readonly PlatformPermissionCatalogRow[];

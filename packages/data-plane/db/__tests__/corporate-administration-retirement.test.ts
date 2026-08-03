@@ -106,6 +106,7 @@ describe("Corporate Administration scaffold boundary", () => {
 		).toEqual([
 			"0034_ca_governance_bodies_memberships.sql",
 			"0037_ca_governance_meetings.sql",
+			"0050_ca_authority_mandate.sql",
 		]);
 	});
 
@@ -129,6 +130,8 @@ describe("Corporate Administration scaffold boundary", () => {
 			"corporate_administration.meeting.manage",
 			"corporate_administration.resolution.read",
 			"corporate_administration.resolution.manage",
+			"corporate_administration.authority.read",
+			"corporate_administration.authority.manage",
 		]);
 
 		const livingRows = PLATFORM_PERMISSION_V1.filter(
@@ -149,6 +152,8 @@ describe("Corporate Administration scaffold boundary", () => {
 		);
 		expect([...granted].toSorted()).toEqual(
 			[
+				"corporate_administration.authority.manage",
+				"corporate_administration.authority.read",
 				"corporate_administration.company.manage",
 				"corporate_administration.company.read",
 				"corporate_administration.establishment.manage",

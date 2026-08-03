@@ -133,6 +133,12 @@ queries:
   - id: listOverdueResolutionActions
     moduleId: corporate-administration
     permission: corporate_administration.resolution.read
+  - id: listAuthorityMandatesAsOf
+    moduleId: corporate-administration
+    permission: corporate_administration.authority.read
+  - id: getAuthorityMandate
+    moduleId: corporate-administration
+    permission: corporate_administration.authority.read
   - id: fulfillment.delivery.get
     moduleId: fulfillment
     permission: fulfillment.delivery.read

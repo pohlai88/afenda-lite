@@ -163,6 +163,8 @@ describe("Corporate Administration authorization and boundary contracts", () => 
 			"corporate_administration.meeting.manage",
 			"corporate_administration.resolution.read",
 			"corporate_administration.resolution.manage",
+			"corporate_administration.authority.read",
+			"corporate_administration.authority.manage",
 		]);
 		expect(CORPORATE_ADMINISTRATION_COMMAND_PERMISSIONS).toEqual({
 			registerLegalCompanyDraft: "corporate_administration.company.manage",
@@ -238,6 +240,9 @@ describe("Corporate Administration authorization and boundary contracts", () => 
 			assignResolutionAction: "corporate_administration.resolution.manage",
 			completeResolutionAction: "corporate_administration.resolution.manage",
 			recordMinutesDocument: "corporate_administration.resolution.manage",
+			grantAuthorityMandate: "corporate_administration.authority.manage",
+			amendAuthorityMandate: "corporate_administration.authority.manage",
+			revokeAuthorityMandate: "corporate_administration.authority.manage",
 		});
 		expect(CORPORATE_ADMINISTRATION_QUERY_PERMISSIONS).toEqual({
 			getLegalCompany: "corporate_administration.company.read",
@@ -283,6 +288,8 @@ describe("Corporate Administration authorization and boundary contracts", () => 
 			listResolutionsAsOf: "corporate_administration.resolution.read",
 			getResolutionExecutionStatus: "corporate_administration.resolution.read",
 			listOverdueResolutionActions: "corporate_administration.resolution.read",
+			listAuthorityMandatesAsOf: "corporate_administration.authority.read",
+			getAuthorityMandate: "corporate_administration.authority.read",
 		});
 	});
 	it("rejects unsafe semantic error metadata", () => {

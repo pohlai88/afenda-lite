@@ -165,6 +165,10 @@ tables:
     packageName: "@afenda/corporate-administration"
     schemaOwner: "@afenda/db"
     table: ca_resolution_action
+  - moduleId: corporate-administration
+    packageName: "@afenda/corporate-administration"
+    schemaOwner: "@afenda/db"
+    table: ca_authority_mandate
   - moduleId: fulfillment
     packageName: "@afenda/fulfillment"
     schemaOwner: "@afenda/db"
@@ -925,6 +929,30 @@ tables:
     packageName: "@afenda/payments"
     schemaOwner: "@afenda/db"
     table: payment_reversal
+  - moduleId: payments
+    packageName: "@afenda/payments"
+    schemaOwner: "@afenda/db"
+    table: payment_provider
+  - moduleId: payments
+    packageName: "@afenda/payments"
+    schemaOwner: "@afenda/db"
+    table: payment_transaction
+  - moduleId: payments
+    packageName: "@afenda/payments"
+    schemaOwner: "@afenda/db"
+    table: payment_transaction_capture
+  - moduleId: payments
+    packageName: "@afenda/payments"
+    schemaOwner: "@afenda/db"
+    table: payment_transaction_refund
+  - moduleId: payments
+    packageName: "@afenda/payments"
+    schemaOwner: "@afenda/db"
+    table: payment_token
+  - moduleId: payments
+    packageName: "@afenda/payments"
+    schemaOwner: "@afenda/db"
+    table: payment_provider_event
   - moduleId: payroll
     packageName: "@afenda/payroll"
     schemaOwner: "@afenda/db"
@@ -1001,6 +1029,10 @@ tables:
     packageName: "@afenda/payroll"
     schemaOwner: "@afenda/db"
     table: payroll_rule_finalized_usage
+  - moduleId: payroll
+    packageName: "@afenda/payroll"
+    schemaOwner: "@afenda/db"
+    table: payroll_accepted_handoff
   - moduleId: purchasing
     packageName: "@afenda/purchasing"
     schemaOwner: "@afenda/db"

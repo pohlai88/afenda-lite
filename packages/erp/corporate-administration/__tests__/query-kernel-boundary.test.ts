@@ -42,8 +42,8 @@ describe("Corporate Administration query kernel boundary", () => {
 			),
 		);
 
-		expect(routedOperations).toHaveLength(37);
-		expect(new Set(routedOperations).size).toBe(37);
+		expect(routedOperations).toHaveLength(39);
+		expect(new Set(routedOperations).size).toBe(39);
 		expect([...routedOperations].sort()).toEqual(
 			[...CORPORATE_ADMINISTRATION_QUERY_IDS].sort(),
 		);

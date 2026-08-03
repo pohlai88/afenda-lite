@@ -40,6 +40,8 @@ describe("Corporate Administration company permission coverage", () => {
 			"corporate_administration.meeting.manage",
 			"corporate_administration.resolution.read",
 			"corporate_administration.resolution.manage",
+			"corporate_administration.authority.read",
+			"corporate_administration.authority.manage",
 		]);
 	});
 });

@@ -1,3 +1,4 @@
+import { authorityOperationDefinitions } from "../../features/authority/operations";
 import { companyOperationDefinitions } from "../../features/company/operations";
 import { establishmentOperationDefinitions } from "../../features/establishments/operations";
 import { governanceOperationDefinitions } from "../../features/governance/operations";
@@ -22,6 +23,7 @@ export const CORPORATE_ADMINISTRATION_OPERATION_REGISTRY = [
 	...officerOperationDefinitions,
 	...meetingOperationDefinitions,
 	...resolutionOperationDefinitions,
+	...authorityOperationDefinitions,
 ] as const satisfies readonly CorporateAdministrationOperationDefinition[];
 
 export type CorporateAdministrationOperationId =

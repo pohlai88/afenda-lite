@@ -1,6 +1,25 @@
 import "server-only";
 
 export { corporateAdministrationModuleManifest } from "./composition/module.manifest";
+export type * from "./features/authority/index";
+export {
+	amendAuthorityMandate,
+	amendAuthorityMandateInputSchema,
+	authorityGrantedByTypeSchema,
+	authorityMandateListPageSchema,
+	authorityMandateMatchesAsOf,
+	authorityMandateSchema,
+	authorityMandateStatusSchema,
+	authorityMandateTypeSchema,
+	getAuthorityMandate,
+	getAuthorityMandateInputSchema,
+	grantAuthorityMandate,
+	grantAuthorityMandateInputSchema,
+	listAuthorityMandatesAsOf,
+	listAuthorityMandatesAsOfInputSchema,
+	revokeAuthorityMandate,
+	revokeAuthorityMandateInputSchema,
+} from "./features/authority/index";
 export * from "./features/company/index";
 export type * from "./features/establishments/index";
 export {
@@ -252,6 +271,7 @@ export type {
 	UserId,
 } from "./kernel/brands";
 export {
+	authorityMandateIdSchema,
 	causationIdSchema,
 	commandFingerprintSchema,
 	companyLegalFormHistoryIdSchema,

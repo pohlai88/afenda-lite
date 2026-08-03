@@ -36,6 +36,7 @@ modules:
       - meeting_vote
       - resolution
       - resolution_action
+      - authority_mandate
     band: R1-F
     category: erp
     id: corporate-administration
@@ -166,6 +167,12 @@ modules:
       - payment_allocation
       - payment_deduction
       - payment_reversal
+      - payment_provider
+      - payment_transaction
+      - payment_transaction_capture
+      - payment_transaction_refund
+      - payment_token
+      - payment_provider_event
     band: R1-F
     category: commercial
     id: payments
@@ -202,6 +209,7 @@ modules:
       - payroll_reconciliation
       - payment_reconciliation
       - accounting_reconciliation
+      - accepted_workforce_handoff
     band: R1-F
     category: erp
     id: payroll

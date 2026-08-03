@@ -124,6 +124,9 @@ describe("Corporate Administration CA-0.1 core contracts", () => {
 			"assignResolutionAction",
 			"completeResolutionAction",
 			"recordMinutesDocument",
+			"grantAuthorityMandate",
+			"amendAuthorityMandate",
+			"revokeAuthorityMandate",
 		]);
 		expect(CORPORATE_ADMINISTRATION_QUERY_IDS).toEqual([
 			"getLegalCompany",
@@ -163,6 +166,8 @@ describe("Corporate Administration CA-0.1 core contracts", () => {
 			"listResolutionsAsOf",
 			"getResolutionExecutionStatus",
 			"listOverdueResolutionActions",
+			"listAuthorityMandatesAsOf",
+			"getAuthorityMandate",
 		]);
 		expectTypeOf<CorporateAdministrationCommandId>().toEqualTypeOf<
 			| "registerLegalCompanyDraft"
@@ -230,6 +235,9 @@ describe("Corporate Administration CA-0.1 core contracts", () => {
 			| "assignResolutionAction"
 			| "completeResolutionAction"
 			| "recordMinutesDocument"
+			| "grantAuthorityMandate"
+			| "amendAuthorityMandate"
+			| "revokeAuthorityMandate"
 		>();
 		expectTypeOf<CorporateAdministrationQueryId>().toEqualTypeOf<
 			| "getLegalCompany"
@@ -269,6 +277,8 @@ describe("Corporate Administration CA-0.1 core contracts", () => {
 			| "listResolutionsAsOf"
 			| "getResolutionExecutionStatus"
 			| "listOverdueResolutionActions"
+			| "listAuthorityMandatesAsOf"
+			| "getAuthorityMandate"
 		>();
 	});
 
@@ -832,6 +842,8 @@ describe("Corporate Administration CA-0.1 core contracts", () => {
 			"corporate_administration.meeting.manage",
 			"corporate_administration.resolution.read",
 			"corporate_administration.resolution.manage",
+			"corporate_administration.authority.read",
+			"corporate_administration.authority.manage",
 		]);
 		expect(CORPORATE_ADMINISTRATION_ERROR_CODES).toHaveLength(21);
 		expect(new Set(CORPORATE_ADMINISTRATION_ERROR_CODES).size).toBe(21);

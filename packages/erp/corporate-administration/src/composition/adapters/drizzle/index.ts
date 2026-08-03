@@ -1,4 +1,8 @@
 import {
+	type CorporateAdministrationDrizzleAuthorityDependencies as AuthorityDependencies,
+	createDrizzleCorporateAdministrationAuthorityStore as createAuthorityStore,
+} from "../../../features/authority/adapters/authority.drizzle";
+import {
 	createDrizzleCorporateAdministrationLegalCompanyStore as createLegalCompanyStore,
 	type CorporateAdministrationDrizzleLegalCompanyDependencies as LegalCompanyDependencies,
 } from "../../../features/company/adapters/company.drizzle";
@@ -27,6 +31,8 @@ import {
 	type CorporateAdministrationDrizzleResolutionDependencies as ResolutionDependencies,
 } from "../../../features/resolutions/adapters/resolutions.drizzle";
 
+export type CorporateAdministrationDrizzleAuthorityDependencies =
+	AuthorityDependencies;
 export type CorporateAdministrationDrizzleLegalCompanyDependencies =
 	LegalCompanyDependencies;
 export type CorporateAdministrationDrizzleEstablishmentDependencies =
@@ -41,6 +47,12 @@ export type CorporateAdministrationDrizzleOfficerDependencies =
 	OfficerDependencies;
 export type CorporateAdministrationDrizzleResolutionDependencies =
 	ResolutionDependencies;
+
+export function createDrizzleCorporateAdministrationAuthorityStore(
+	dependencies: CorporateAdministrationDrizzleAuthorityDependencies,
+) {
+	return createAuthorityStore(dependencies);
+}
 
 export function createDrizzleCorporateAdministrationLegalCompanyStore(
 	dependencies: CorporateAdministrationDrizzleLegalCompanyDependencies,

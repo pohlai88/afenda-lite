@@ -30,6 +30,7 @@ The implemented feature owners are:
 | `officers` | Statutory offices, appointments, qualifications, declarations, disqualifications, conflicts, recusals, vacancy, and eligibility |
 | `meetings` | Scheduling, notices, attendance, quorum, opening, adjournment, closure, and meeting queries |
 | `resolutions` | Voting, written decisions, adoption/rejection/supersession, minutes references, and implementation actions |
+| `authority` | Corporate authority mandates: signing authority, bank mandates, powers of attorney, delegated authority, monetary limits, and revocation |
 
 The package also implements the canonical operation registry, authorization,
 durable-command execution, idempotency, transaction, audit, outbox,

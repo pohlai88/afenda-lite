@@ -71,7 +71,7 @@ describe("Corporate Administration outbox append contract", () => {
 			emits: [...CORPORATE_ADMINISTRATION_EVENT_TYPES],
 			consumes: [],
 		});
-		expect(CORPORATE_ADMINISTRATION_EVENT_TYPES).toHaveLength(59);
+		expect(CORPORATE_ADMINISTRATION_EVENT_TYPES).toHaveLength(62);
 		for (const infrastructureEventType of [
 			"corporate_administration.runtime_initialized.v1",
 			"corporate_administration.idempotency_reserved.v1",

@@ -26,7 +26,7 @@ apps/web/
 └── __tests__/corporate-administration/**
 
 packages/erp/corporate-administration/
-├── src/features/{company,establishments,governance,officers,meetings,resolutions}/
+├── src/features/{company,establishments,governance,officers,meetings,resolutions,authority}/
 └── __tests__/
 ```
 

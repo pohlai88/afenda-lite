@@ -12,6 +12,7 @@ const semanticOwnerSuffixes = [
 	"/officers/operations.ts",
 	"/meetings/operations.ts",
 	"/resolutions/operations.ts",
+	"/authority/operations.ts",
 ] as const;
 
 const applicationConsumers = [

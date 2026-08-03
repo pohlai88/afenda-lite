@@ -33,6 +33,7 @@ export const CORPORATE_ADMINISTRATION_MUTATION_TABLES = [
 	"ca_meeting_vote",
 	"ca_resolution",
 	"ca_resolution_action",
+	"ca_authority_mandate",
 ] as const;
 
 export type CorporateAdministrationMutationTable =

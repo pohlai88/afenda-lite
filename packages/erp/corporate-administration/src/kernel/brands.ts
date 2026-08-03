@@ -136,6 +136,10 @@ export type OfficerConflictDisclosureId = z.infer<
 	typeof officerConflictDisclosureIdSchema
 >;
 
+export const authorityMandateIdSchema =
+	uuidIdentifierSchema("AuthorityMandateId");
+export type AuthorityMandateId = z.infer<typeof authorityMandateIdSchema>;
+
 export const governanceMeetingIdSchema = uuidIdentifierSchema(
 	"GovernanceMeetingId",
 );

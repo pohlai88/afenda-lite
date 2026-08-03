@@ -8,6 +8,7 @@ export const CORPORATE_ADMINISTRATION_OPERATION_OWNERS = [
 	"officers",
 	"meetings",
 	"resolutions",
+	"authority",
 ] as const;
 
 export type CorporateAdministrationOperationOwner =

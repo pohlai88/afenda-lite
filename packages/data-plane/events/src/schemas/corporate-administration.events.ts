@@ -31,6 +31,8 @@ const corporateAdministrationGovernancePayloadSchema =
 			meetingQuorumResultId: z.string().trim().min(1).optional(),
 			resolutionId: z.string().trim().min(1).optional(),
 			resolutionActionId: z.string().trim().min(1).optional(),
+			authorityMandateId: z.string().trim().min(1).optional(),
+			mandateType: z.string().trim().min(1).optional(),
 			bodyType: z.string().trim().min(1).optional(),
 			officeTypeCode: z.string().trim().min(1).optional(),
 			qualificationTypeCode: z.string().trim().min(1).optional(),
@@ -534,6 +536,12 @@ export const CorporateAdministrationEventSchemas = {
 	"corporate_administration.resolution.action_assigned.v1":
 		corporateAdministrationGovernancePayloadSchema,
 	"corporate_administration.resolution.action_completed.v1":
+		corporateAdministrationGovernancePayloadSchema,
+	"corporate_administration.authority_mandate.granted.v1":
+		corporateAdministrationGovernancePayloadSchema,
+	"corporate_administration.authority_mandate.amended.v1":
+		corporateAdministrationGovernancePayloadSchema,
+	"corporate_administration.authority_mandate.revoked.v1":
 		corporateAdministrationGovernancePayloadSchema,
 } as const;
 

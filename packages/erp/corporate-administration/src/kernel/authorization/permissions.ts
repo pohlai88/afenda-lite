@@ -12,6 +12,8 @@ export const CORPORATE_ADMINISTRATION_PERMISSION_CODES = [
 	"corporate_administration.meeting.manage",
 	"corporate_administration.resolution.read",
 	"corporate_administration.resolution.manage",
+	"corporate_administration.authority.read",
+	"corporate_administration.authority.manage",
 ] as const;
 
 export type CorporateAdministrationPermission =

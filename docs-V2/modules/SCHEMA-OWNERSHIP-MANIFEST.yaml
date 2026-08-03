@@ -156,6 +156,10 @@ tables:
     writeOwner: "@afenda/corporate-administration"
     kind: erp
     aggregate: resolution
+  - table: ca_authority_mandate
+    writeOwner: "@afenda/corporate-administration"
+    kind: erp
+    aggregate: authority_mandate
 
   - table: md_party
     writeOwner: "@afenda/master-data"
@@ -370,6 +374,24 @@ tables:
     writeOwner: "@afenda/payments"
     kind: erp
   - table: payment_reversal
+    writeOwner: "@afenda/payments"
+    kind: erp
+  - table: payment_provider
+    writeOwner: "@afenda/payments"
+    kind: erp
+  - table: payment_token
+    writeOwner: "@afenda/payments"
+    kind: erp
+  - table: payment_transaction
+    writeOwner: "@afenda/payments"
+    kind: erp
+  - table: payment_transaction_capture
+    writeOwner: "@afenda/payments"
+    kind: erp
+  - table: payment_transaction_refund
+    writeOwner: "@afenda/payments"
+    kind: erp
+  - table: payment_provider_event
     writeOwner: "@afenda/payments"
     kind: erp
 
@@ -887,5 +909,8 @@ tables:
     writeOwner: "@afenda/payroll"
     kind: erp
   - table: payroll_rule_finalized_usage
+    writeOwner: "@afenda/payroll"
+    kind: erp
+  - table: payroll_accepted_handoff
     writeOwner: "@afenda/payroll"
     kind: erp

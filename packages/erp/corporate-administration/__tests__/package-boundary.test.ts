@@ -18,6 +18,7 @@ const approvedDatabaseImportFiles = new Set([
 	"src/composition/adapters/drizzle/audit.ts",
 	"src/kernel/infrastructure/drizzle-dependencies.ts",
 	"src/kernel/infrastructure/translate-infrastructure-error.ts",
+	"src/features/authority/adapters/authority.drizzle.ts",
 	"src/features/company/adapters/company.drizzle.ts",
 	"src/features/establishments/adapters/establishments.drizzle.ts",
 	"src/features/governance/adapters/governance.drizzle.ts",
@@ -172,6 +173,7 @@ describe("Corporate Administration package boundary", () => {
 			.sort();
 
 		expect(featureNames).toEqual([
+			"authority",
 			"company",
 			"establishments",
 			"governance",
@@ -371,6 +373,7 @@ describe("Corporate Administration package boundary", () => {
 				"meeting_vote",
 				"resolution",
 				"resolution_action",
+				"authority_mandate",
 			],
 			commandNamespace: "corporate-administration",
 			commands: [
@@ -439,6 +442,9 @@ describe("Corporate Administration package boundary", () => {
 				"assignResolutionAction",
 				"completeResolutionAction",
 				"recordMinutesDocument",
+				"grantAuthorityMandate",
+				"amendAuthorityMandate",
+				"revokeAuthorityMandate",
 			],
 			queryNamespace: "corporate-administration",
 			queries: [
@@ -479,6 +485,8 @@ describe("Corporate Administration package boundary", () => {
 				"listResolutionsAsOf",
 				"getResolutionExecutionStatus",
 				"listOverdueResolutionActions",
+				"listAuthorityMandatesAsOf",
+				"getAuthorityMandate",
 			],
 		});
 		for (const runtimeOperation of [
@@ -528,6 +536,7 @@ describe("Corporate Administration package boundary", () => {
 			"ca_meeting_vote",
 			"ca_resolution",
 			"ca_resolution_action",
+			"ca_authority_mandate",
 		]);
 		expect(packageRoot.CORPORATE_ADMINISTRATION_MUTATION_TABLES).toEqual([
 			"ca_mutation_receipt",
@@ -558,6 +567,7 @@ describe("Corporate Administration package boundary", () => {
 			"ca_meeting_vote",
 			"ca_resolution",
 			"ca_resolution_action",
+			"ca_authority_mandate",
 		]);
 		for (const tableName of [
 			"platform_audit_log",
@@ -593,6 +603,8 @@ describe("Corporate Administration package boundary", () => {
 				"corporate_administration.meeting.manage",
 				"corporate_administration.resolution.read",
 				"corporate_administration.resolution.manage",
+				"corporate_administration.authority.read",
+				"corporate_administration.authority.manage",
 			],
 		});
 		expect(corporateAdministrationModuleManifest.authorization).toEqual({
@@ -674,6 +686,9 @@ describe("Corporate Administration package boundary", () => {
 				assignResolutionAction: "corporate_administration.resolution.manage",
 				completeResolutionAction: "corporate_administration.resolution.manage",
 				recordMinutesDocument: "corporate_administration.resolution.manage",
+				grantAuthorityMandate: "corporate_administration.authority.manage",
+				amendAuthorityMandate: "corporate_administration.authority.manage",
+				revokeAuthorityMandate: "corporate_administration.authority.manage",
 			},
 			queries: {
 				getLegalCompany: "corporate_administration.company.read",
@@ -722,6 +737,8 @@ describe("Corporate Administration package boundary", () => {
 					"corporate_administration.resolution.read",
 				listOverdueResolutionActions:
 					"corporate_administration.resolution.read",
+				listAuthorityMandatesAsOf: "corporate_administration.authority.read",
+				getAuthorityMandate: "corporate_administration.authority.read",
 			},
 		});
 		expect(corporateAdministrationModuleManifest.moduleDependencies).toEqual({

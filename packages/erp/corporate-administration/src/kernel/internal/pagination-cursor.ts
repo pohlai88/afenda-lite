@@ -23,6 +23,7 @@ export const CORPORATE_ADMINISTRATION_CURSOR_OPERATIONS = [
 	"governance_meetings",
 	"legal_establishments_as_of",
 	"premises_as_of",
+	"authority_mandates_as_of",
 ] as const;
 
 const cursorOperationSchema = z.enum(

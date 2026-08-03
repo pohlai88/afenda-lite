@@ -16,16 +16,16 @@ import {
 
 describe("Corporate Administration operation registry", () => {
 	it("is the singular source for every command and query projection", () => {
-		expect(CORPORATE_ADMINISTRATION_OPERATION_REGISTRY).toHaveLength(102);
-		expect(CORPORATE_ADMINISTRATION_COMMAND_IDS).toHaveLength(65);
-		expect(CORPORATE_ADMINISTRATION_QUERY_IDS).toHaveLength(37);
+		expect(CORPORATE_ADMINISTRATION_OPERATION_REGISTRY).toHaveLength(107);
+		expect(CORPORATE_ADMINISTRATION_COMMAND_IDS).toHaveLength(68);
+		expect(CORPORATE_ADMINISTRATION_QUERY_IDS).toHaveLength(39);
 		expect(
 			new Set(
 				CORPORATE_ADMINISTRATION_OPERATION_REGISTRY.map(
 					(definition) => definition.id,
 				),
 			),
-		).toHaveLength(102);
+		).toHaveLength(107);
 
 		expect(corporateAdministrationModuleManifest.owns.commands).toEqual(
 			CORPORATE_ADMINISTRATION_COMMAND_IDS,
@@ -96,7 +96,7 @@ describe("Corporate Administration operation registry", () => {
 				(definition) =>
 					definition.approvalPolicy === "maker_checker_for_protected_role",
 			),
-		).toHaveLength(1);
+		).toHaveLength(2);
 		expect(
 			getCorporateAdministrationOperationDefinition("activateLegalCompany")
 				.approvalPolicy,
