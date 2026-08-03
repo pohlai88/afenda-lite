@@ -15,8 +15,10 @@ import {
 	listGovernanceMeetings,
 	listLegalCompanies,
 	listLegalEstablishmentsAsOf,
+	listOfficersAsOf,
 	listOverdueResolutionActions,
 	listPremisesAsOf,
+	listRequiredStatutoryOffices,
 	listResolutionsAsOf,
 } from "@afenda/corporate-administration";
 import {
@@ -54,8 +56,14 @@ import {
 import { LegalCompanyWorkspace } from "@/features/corporate-administration/legal-company-workspace";
 import { LegalEstablishmentWorkspace } from "@/features/corporate-administration/legal-establishment-workspace";
 import {
+	OfficerWorkspace,
+	type OfficerWorkspaceAppointment,
+	type OfficerWorkspaceOffice,
+} from "@/features/corporate-administration/officer-workspace";
+import {
 	createCorporateAdministrationCompanyDependencies,
 	createCorporateAdministrationGovernanceDependencies,
+	createCorporateAdministrationOfficerDependencies,
 	createCorporateAdministrationQueryOptions,
 	listCorporateAdministrationActiveOrganizationParties,
 	listCorporateAdministrationPartyAddresses,
@@ -89,25 +97,39 @@ export async function CorporateAdministrationShell({
 		session,
 		corporateAdministrationPermissionFor("listLegalCompanies"),
 	);
-	const [canWrite, canReadMeetings, canReadResolutions, canManageResolutions] =
-		await Promise.all([
-			sessionHasPermission(
-				session,
-				corporateAdministrationPermissionFor("updateLegalCompanyProfile"),
-			),
-			sessionHasPermission(
-				session,
-				corporateAdministrationPermissionFor("listGovernanceMeetings"),
-			),
-			sessionHasPermission(
-				session,
-				corporateAdministrationPermissionFor("listResolutionsAsOf"),
-			),
-			sessionHasPermission(
-				session,
-				corporateAdministrationPermissionFor("adoptResolution"),
-			),
-		]);
+	const [
+		canWrite,
+		canReadMeetings,
+		canReadResolutions,
+		canManageResolutions,
+		canReadOfficers,
+		canManageOfficers,
+	] = await Promise.all([
+		sessionHasPermission(
+			session,
+			corporateAdministrationPermissionFor("updateLegalCompanyProfile"),
+		),
+		sessionHasPermission(
+			session,
+			corporateAdministrationPermissionFor("listGovernanceMeetings"),
+		),
+		sessionHasPermission(
+			session,
+			corporateAdministrationPermissionFor("listResolutionsAsOf"),
+		),
+		sessionHasPermission(
+			session,
+			corporateAdministrationPermissionFor("adoptResolution"),
+		),
+		sessionHasPermission(
+			session,
+			corporateAdministrationPermissionFor("listOfficersAsOf"),
+		),
+		sessionHasPermission(
+			session,
+			corporateAdministrationPermissionFor("appointOfficer"),
+		),
+	]);
 	const canReadGovernanceDecisions = canReadMeetings && canReadResolutions;
 	const correlationId = `ca-page-${randomUUID()}`;
 	const dependencies = createCorporateAdministrationCompanyDependencies();
@@ -222,6 +244,13 @@ export async function CorporateAdministrationShell({
 		selectedCompany === undefined || !canReadGovernanceDecisions
 			? null
 			: await loadGovernanceDecisions({
+					legalCompanyId: selectedCompany.legalCompanyId,
+					queryOptions,
+				});
+	const officerState =
+		selectedCompany === undefined || !canReadOfficers
+			? null
+			: await loadOfficers({
 					legalCompanyId: selectedCompany.legalCompanyId,
 					queryOptions,
 				});
@@ -367,6 +396,21 @@ export async function CorporateAdministrationShell({
 								resolutions={governanceDecisionState.resolutions}
 							/>
 						) : null}
+						{officerState?.ok === false ? (
+							<Alert role="alert" variant="destructive">
+								<AlertTitle>Statutory officers unavailable</AlertTitle>
+								<AlertDescription>{officerState.message}</AlertDescription>
+							</Alert>
+						) : null}
+						{officerState?.ok === true ? (
+							<OfficerWorkspace
+								appointments={officerState.appointments}
+								canManage={canManageOfficers}
+								offices={officerState.offices}
+								organizationSlug="client"
+								parties={partyRows}
+							/>
+						) : null}
 					</>
 				)}
 			</WorkspacePageContent>
@@ -487,6 +531,67 @@ async function loadGovernanceDecisions(input: {
 			actionTypeCode: action.actionTypeCode,
 			dueOn: action.dueOn,
 			version: action.version,
+		})),
+	};
+}
+
+async function loadOfficers(input: {
+	legalCompanyId: GovernanceLegalCompanyId;
+	queryOptions: ReturnType<typeof createCorporateAdministrationQueryOptions>;
+}): Promise<
+	| Readonly<{
+			ok: true;
+			offices: readonly OfficerWorkspaceOffice[];
+			appointments: readonly OfficerWorkspaceAppointment[];
+	  }>
+	| Readonly<{ ok: false; message: string }>
+> {
+	const dependencies = createCorporateAdministrationOfficerDependencies();
+	const asOf = canonicalDateSchema.parse(new Date().toISOString().slice(0, 10));
+	const [offices, appointments] = await Promise.all([
+		listRequiredStatutoryOffices(
+			{
+				legalCompanyId: input.legalCompanyId,
+				asOf,
+				includeOptional: true,
+				pageSize: 50,
+			},
+			input.queryOptions,
+			dependencies,
+		),
+		listOfficersAsOf(
+			{ legalCompanyId: input.legalCompanyId, asOf, pageSize: 50 },
+			input.queryOptions,
+			dependencies,
+		),
+	]);
+	if (!offices.ok) {
+		return { ok: false, message: offices.message };
+	}
+	if (!appointments.ok) {
+		return { ok: false, message: appointments.message };
+	}
+	return {
+		ok: true,
+		offices: offices.data.items.map((office) => ({
+			id: office.id,
+			displayName: office.displayName,
+			officeTypeCode: office.officeTypeCode,
+			protectedRole: office.protectedRole,
+			required: office.required,
+			status: office.status,
+			version: office.version,
+		})),
+		appointments: appointments.data.items.map((appointment) => ({
+			id: appointment.id,
+			statutoryOfficeId: appointment.statutoryOfficeId,
+			officerPartyId: appointment.officerPartyId,
+			appointmentMethod: appointment.appointmentMethod,
+			effectiveFrom: appointment.effectiveFrom,
+			effectiveTo: appointment.effectiveTo,
+			status: appointment.status,
+			endReason: appointment.endReason,
+			version: appointment.version,
 		})),
 	};
 }

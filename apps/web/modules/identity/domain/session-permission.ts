@@ -206,6 +206,10 @@ export const PERMISSION_DENIED_MESSAGE: Record<PlatformPermissionCode, string> =
 			"You do not have permission to read payment accounts.",
 		"payments.availability.read":
 			"You do not have permission to read payment application availability.",
+		"payments.method.manage":
+			"You do not have permission to manage payment methods.",
+		"payments.method.read":
+			"You do not have permission to read payment methods.",
 		"accounting.journal.read":
 			"You do not have permission to read accounting journals.",
 		"accounting.journal.create":

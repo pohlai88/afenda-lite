@@ -37,6 +37,7 @@ import {
 	createDrizzleCorporateAdministrationGovernanceStore,
 	createDrizzleCorporateAdministrationLegalCompanyStore,
 	createDrizzleCorporateAdministrationMeetingStore,
+	createDrizzleCorporateAdministrationOfficerStore,
 	createDrizzleCorporateAdministrationResolutionStore,
 } from "@afenda/corporate-administration/adapters/drizzle";
 import {
@@ -436,6 +437,32 @@ export function createCorporateAdministrationCompanyDependencies(): RegisterLega
 			createAuditId: randomUUID,
 		}),
 		createEventId: randomUUID,
+	};
+}
+
+/**
+ * Officer command/query dependencies. `approvalDecisions` is deliberately
+ * absent: the platform approval verifier does not exist yet, so
+ * protected-role appointments fail closed inside the package (CA-CL-01).
+ */
+export function createCorporateAdministrationOfficerDependencies(): ReturnType<
+	typeof createCorporateAdministrationCompanyDependencies
+> &
+	Readonly<{
+		officerStore: ReturnType<
+			typeof createDrizzleCorporateAdministrationOfficerStore
+		>;
+	}> {
+	const companyDependencies =
+		createCorporateAdministrationCompanyDependencies();
+	const officerStore = createDrizzleCorporateAdministrationOfficerStore({
+		database: afendaDatabase.client,
+		createId: randomUUID,
+	});
+
+	return {
+		...companyDependencies,
+		officerStore,
 	};
 }
 

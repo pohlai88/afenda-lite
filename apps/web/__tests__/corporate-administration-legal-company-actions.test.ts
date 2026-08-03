@@ -36,6 +36,8 @@ const corporateAdministrationMocks = vi.hoisted(() => ({
 	listGovernanceMeetings: vi.fn(),
 	listResolutionsAsOf: vi.fn(),
 	listOverdueResolutionActions: vi.fn(),
+	listRequiredStatutoryOffices: vi.fn(),
+	listOfficersAsOf: vi.fn(),
 }));
 
 const compositionMocks = vi.hoisted(() => ({
@@ -44,6 +46,7 @@ const compositionMocks = vi.hoisted(() => ({
 	createCorporateAdministrationLegalCompanyDependencies: vi.fn(),
 	createCorporateAdministrationCompanyDependencies: vi.fn(),
 	createCorporateAdministrationGovernanceDependencies: vi.fn(),
+	createCorporateAdministrationOfficerDependencies: vi.fn(),
 	listCorporateAdministrationActiveOrganizationParties: vi.fn(),
 	listCorporateAdministrationPartyAddresses: vi.fn(),
 }));
@@ -105,6 +108,9 @@ vi.mock("@afenda/corporate-administration", async (importOriginal) => ({
 	listResolutionsAsOf: corporateAdministrationMocks.listResolutionsAsOf,
 	listOverdueResolutionActions:
 		corporateAdministrationMocks.listOverdueResolutionActions,
+	listRequiredStatutoryOffices:
+		corporateAdministrationMocks.listRequiredStatutoryOffices,
+	listOfficersAsOf: corporateAdministrationMocks.listOfficersAsOf,
 }));
 
 vi.mock("@/lib/erp/corporate-administration-command-options", () => ({
@@ -118,6 +124,8 @@ vi.mock("@/lib/erp/corporate-administration-command-options", () => ({
 		compositionMocks.createCorporateAdministrationCompanyDependencies,
 	createCorporateAdministrationGovernanceDependencies:
 		compositionMocks.createCorporateAdministrationGovernanceDependencies,
+	createCorporateAdministrationOfficerDependencies:
+		compositionMocks.createCorporateAdministrationOfficerDependencies,
 	listCorporateAdministrationActiveOrganizationParties:
 		compositionMocks.listCorporateAdministrationActiveOrganizationParties,
 	listCorporateAdministrationPartyAddresses:
@@ -293,6 +301,16 @@ describe("Corporate Administration legal-company Server Actions", () => {
 				data: [],
 			},
 		);
+		corporateAdministrationMocks.listRequiredStatutoryOffices.mockResolvedValue(
+			{
+				ok: true,
+				data: { items: [], nextCursor: null },
+			},
+		);
+		corporateAdministrationMocks.listOfficersAsOf.mockResolvedValue({
+			ok: true,
+			data: { items: [], nextCursor: null },
+		});
 	});
 
 	it("renders the tenant-scoped entity register with completeness, registered-office, and cursor evidence", () => {
