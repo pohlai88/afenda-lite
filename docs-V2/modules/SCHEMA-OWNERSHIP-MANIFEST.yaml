@@ -376,24 +376,6 @@ tables:
   - table: payment_reversal
     writeOwner: "@afenda/payments"
     kind: erp
-  - table: payment_provider
-    writeOwner: "@afenda/payments"
-    kind: erp
-  - table: payment_token
-    writeOwner: "@afenda/payments"
-    kind: erp
-  - table: payment_transaction
-    writeOwner: "@afenda/payments"
-    kind: erp
-  - table: payment_transaction_capture
-    writeOwner: "@afenda/payments"
-    kind: erp
-  - table: payment_transaction_refund
-    writeOwner: "@afenda/payments"
-    kind: erp
-  - table: payment_provider_event
-    writeOwner: "@afenda/payments"
-    kind: erp
 
   - table: journal
     writeOwner: "@afenda/accounting"

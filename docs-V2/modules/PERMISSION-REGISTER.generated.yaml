@@ -823,24 +823,6 @@ permissions:
   - code: payments.method.read
     moduleId: payments
     namespace: payments
-  - code: payments.provider.manage
-    moduleId: payments
-    namespace: payments
-  - code: payments.provider.read
-    moduleId: payments
-    namespace: payments
-  - code: payments.transaction.manage
-    moduleId: payments
-    namespace: payments
-  - code: payments.transaction.read
-    moduleId: payments
-    namespace: payments
-  - code: payments.token.manage
-    moduleId: payments
-    namespace: payments
-  - code: payments.token.read
-    moduleId: payments
-    namespace: payments
   - code: payroll.setup.manage
     moduleId: payroll
     namespace: payroll

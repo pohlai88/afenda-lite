@@ -167,12 +167,6 @@ modules:
       - payment_allocation
       - payment_deduction
       - payment_reversal
-      - payment_provider
-      - payment_transaction
-      - payment_transaction_capture
-      - payment_transaction_refund
-      - payment_token
-      - payment_provider_event
     band: R1-F
     category: commercial
     id: payments

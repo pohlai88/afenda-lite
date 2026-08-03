@@ -929,30 +929,6 @@ tables:
     packageName: "@afenda/payments"
     schemaOwner: "@afenda/db"
     table: payment_reversal
-  - moduleId: payments
-    packageName: "@afenda/payments"
-    schemaOwner: "@afenda/db"
-    table: payment_provider
-  - moduleId: payments
-    packageName: "@afenda/payments"
-    schemaOwner: "@afenda/db"
-    table: payment_transaction
-  - moduleId: payments
-    packageName: "@afenda/payments"
-    schemaOwner: "@afenda/db"
-    table: payment_transaction_capture
-  - moduleId: payments
-    packageName: "@afenda/payments"
-    schemaOwner: "@afenda/db"
-    table: payment_transaction_refund
-  - moduleId: payments
-    packageName: "@afenda/payments"
-    schemaOwner: "@afenda/db"
-    table: payment_token
-  - moduleId: payments
-    packageName: "@afenda/payments"
-    schemaOwner: "@afenda/db"
-    table: payment_provider_event
   - moduleId: payroll
     packageName: "@afenda/payroll"
     schemaOwner: "@afenda/db"
