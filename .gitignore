@@ -54,6 +54,9 @@ yarn-error.log*
 .cursor/hooks/.*-hook-debug.log
 .cursor/debug*.log
 
+# Claude Code — local-only permission/session overrides (never checked in)
+.claude/settings.local.json
+
 # env — ARCH-027 / S4.1: `.env.local` is the only Next runtime file
 .env*
 !.env.example

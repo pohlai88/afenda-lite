@@ -1,0 +1,36 @@
+{
+  "permissions": {
+    "ask": [
+      "Bash(git restore*)",
+      "Bash(git reset*)",
+      "Bash(git clean*)",
+      "Bash(git revert*)",
+      "Bash(git stash pop*)",
+      "Bash(git stash apply*)",
+      "Bash(git stash drop*)",
+      "Bash(git stash clear*)",
+      "Bash(git checkout -f*)",
+      "Bash(git checkout --force*)",
+      "Bash(git switch*--force*)",
+      "Bash(git switch*--discard-changes*)",
+      "Bash(git merge --abort*)",
+      "Bash(git rebase --abort*)",
+      "Bash(git rebase --quit*)",
+      "Bash(git cherry-pick --abort*)",
+      "Bash(git am --abort*)"
+    ],
+    "deny": [
+      "Bash(pnpm db:push*)",
+      "Bash(pnpm db:pull*)",
+      "Bash(*drizzle-kit*push*)",
+      "Bash(*drizzle-kit*migrate*)",
+      "Bash(pnpm db:migrate)",
+      "Bash(pnpm db:migrate *)",
+      "Bash(pnpm --filter @afenda/db db:migrate)",
+      "Bash(pnpm --filter @afenda/db db:migrate *)",
+      "Bash(*db-migrate-guard.mjs*)",
+      "Bash(*data-plane/db/scripts/apply-*.mjs*)",
+      "Bash(psql*packages/data-plane/db/drizzle/*)"
+    ]
+  }
+}
