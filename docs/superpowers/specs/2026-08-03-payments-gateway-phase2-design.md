@@ -2,7 +2,7 @@
 
 - **Date**: 2026-08-03 (rev 2 — review amendments applied)
 - **Module**: `@afenda/payments` ([packages/erp/payments](../../../packages/erp/payments))
-- **Status**: Design rev 2 — review amendments applied; implementation-ready pending reviewer confirmation
+- **Status**: Approved design — implementation-ready
 - **Parent spec**: [Canonical Payment Model](./2026-08-03-canonical-payments-design.md) — this document is the detailed design its §9 deferred. Parent-spec constraints (server-only, events-only accounting boundary, Result pattern, event grammar §7.4, treasury non-preclusion §8) remain binding here.
 
 ## 1. Summary
@@ -290,6 +290,10 @@ applyRefundFact({ transactionId, providerRefundReference, amount, currencyCode, 
 
 If the provider reference already exists on the transaction, the operation returns the existing fact (and its Payment, for captures) **without creating anything** — this is what prevents API-capture-then-capture-webhook from double-materializing.
 
+**Replay acceptance criterion (binding):** replaying an existing provider capture or refund fact produces no new state mutation, no Payment, no version increment, and no outbox event — `captured.v1`/`refunded.v1` are emitted exactly once per fact identity. A webhook event row for the replay may still be marked `processed`, referencing the existing fact.
+
+**Actor attribution (binding):** webhook-driven facts use the canonical system actor `system:payment-provider-webhook` for Payment `createdBy`, fact-row `createdBy`, and event payload actor fields — never the HTTP route caller or an arbitrary user actor. API-driven facts use the command's actor.
+
 ### 5.3 Capture → Payment materialization (internal transactional capability)
 
 Materialization does NOT re-enter the public facade (which would resolve a second store/transaction) and does NOT write Payment tables directly (which would bypass canonical Payment authority). Instead the store composition layer exposes an **internal materialization capability** that runs canonical create-and-post logic inside the caller's already-open unit of work:
@@ -336,6 +340,8 @@ Flow:
    - same event id + same fingerprint, status `failed` → controlled replay: increment `attemptCount`, retry processing;
    - same event id + **different** fingerprint → CONFLICT (potential forgery/corruption), recorded, not processed.
 3. Match `transactionReference`; apply the transition per the matrix below. Outcome recorded on the event row: `processed`, `ignored`, or `failed` (with `lastErrorCode`/`lastErrorMessage`). No automatic retry machinery in Phase 2; re-delivery drives replay. A future `retryProviderEvent` operation can be added without schema change.
+
+**Event-row transactionality (binding):** the event row joins the fact's commit boundary only when a fact is applied — a `processed` outcome commits atomically with the fact and Payment (an event row must never claim `processed` while the economic fact rolled back). `ignored` and `failed` (attempt/error) updates commit alone; signature failure writes no row at all.
 
 ```ts
 interface PaymentProviderEvent {
