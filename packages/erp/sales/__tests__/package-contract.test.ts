@@ -4,8 +4,11 @@ import { fileURLToPath } from "node:url";
 import { SALES_EVENT_IDS } from "@afenda/events/schemas";
 import { describe, expect, it } from "vitest";
 import { salesModuleManifest } from "../src/composition/module.manifest";
-import { SALES_COMMAND_IDS, SALES_QUERY_IDS } from "../src/module-ids";
-import { SALES_PERMISSION_CODES } from "../src/permissions";
+import { SALES_PERMISSION_CODES } from "../src/kernel/execution/permissions";
+import {
+	SALES_COMMAND_IDS,
+	SALES_QUERY_IDS,
+} from "../src/kernel/operations/module-ids";
 
 const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 

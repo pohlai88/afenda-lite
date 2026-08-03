@@ -1,19 +1,5 @@
 import { randomUUID } from "node:crypto";
 import { errorResult, type Result } from "@afenda/errors";
-import {
-	priceBookEntryIdSchema,
-	priceBookIdSchema,
-	returnAuthorizationIdSchema,
-	returnAuthorizationLineIdSchema,
-	salesHoldIdSchema,
-	salesOrderIdSchema,
-	salesOrderLineIdSchema,
-	salesOrderScheduleIdSchema,
-	salesQuotationIdSchema,
-	salesQuotationLineIdSchema,
-} from "../brands";
-import { addDecimals } from "../contracts/money";
-import type { MutationEvidence, SalesStore } from "../ports";
 import type {
 	AuditStamp,
 	PriceBook,
@@ -26,7 +12,21 @@ import type {
 	SalesOrderSchedule,
 	SalesQuotation,
 	SalesQuotationLine,
-} from "../types";
+} from "../kernel/contracts/domain";
+import { addDecimals } from "../kernel/contracts/money";
+import type { MutationEvidence, SalesStore } from "../kernel/contracts/ports";
+import {
+	priceBookEntryIdSchema,
+	priceBookIdSchema,
+	returnAuthorizationIdSchema,
+	returnAuthorizationLineIdSchema,
+	salesHoldIdSchema,
+	salesOrderIdSchema,
+	salesOrderLineIdSchema,
+	salesOrderScheduleIdSchema,
+	salesQuotationIdSchema,
+	salesQuotationLineIdSchema,
+} from "../kernel/identity/brands";
 
 type EvidenceSeed = Omit<MutationEvidence, "entityId" | "version">;
 const QUOTE_TRANSITIONS: Record<

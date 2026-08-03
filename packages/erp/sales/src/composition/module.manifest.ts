@@ -1,11 +1,12 @@
 import type { AfendaModuleManifest } from "@afenda/db/module-manifest";
 import { SALES_EVENT_IDS } from "@afenda/events/schemas";
+import { SALES_PERMISSION_CODES } from "../kernel/execution/permissions";
 import {
-	SALES_COMMAND_PERMISSION,
-	SALES_QUERY_PERMISSION,
-} from "../authorization";
-import { SALES_COMMAND_IDS, SALES_QUERY_IDS } from "../module-ids";
-import { SALES_PERMISSION_CODES } from "../permissions";
+	SALES_COMMAND_AUTHORIZATION,
+	SALES_QUERY_AUTHORIZATION,
+	SALES_REGISTRY_COMMAND_IDS,
+	SALES_REGISTRY_QUERY_IDS,
+} from "../kernel/operations/registry";
 
 export const salesModuleManifest = {
 	id: "sales",
@@ -22,9 +23,9 @@ export const salesModuleManifest = {
 			"sales_return_authorization",
 		],
 		commandNamespace: "sales",
-		commands: [...SALES_COMMAND_IDS],
+		commands: [...SALES_REGISTRY_COMMAND_IDS],
 		queryNamespace: "sales",
-		queries: [...SALES_QUERY_IDS],
+		queries: [...SALES_REGISTRY_QUERY_IDS],
 	},
 	persistence: {
 		schemaOwner: "@afenda/db",
@@ -44,8 +45,8 @@ export const salesModuleManifest = {
 	events: { namespace: "sales", emits: [...SALES_EVENT_IDS], consumes: [] },
 	permissions: { namespace: "sales", codes: [...SALES_PERMISSION_CODES] },
 	authorization: {
-		commands: SALES_COMMAND_PERMISSION,
-		queries: SALES_QUERY_PERMISSION,
+		commands: SALES_COMMAND_AUTHORIZATION,
+		queries: SALES_QUERY_AUTHORIZATION,
 	},
 	moduleDependencies: { required: ["master-data"] },
 	optionalIntegratesWith: [

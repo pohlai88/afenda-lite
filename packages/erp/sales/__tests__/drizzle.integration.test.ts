@@ -8,7 +8,7 @@ import {
 	postSalesOrder,
 	submitSalesOrder,
 } from "../src";
-import { createDrizzleSalesStore } from "../src/adapters/drizzle";
+import { createDrizzleSalesStore } from "../src/facade/adapters-drizzle";
 import { allowAllSalesAuthorization } from "../src/testing";
 import {
 	ACTOR_USER_ID,

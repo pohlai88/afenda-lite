@@ -1,6 +1,6 @@
 import { errorResult } from "@afenda/errors";
-import type { SalesCommandOptions } from "../../src/command-options";
-import type { MasterDataSnapshotPort } from "../../src/ports";
+import type { SalesCommandOptions } from "../../src/facade/contracts";
+import type { MasterDataSnapshotPort } from "../../src/kernel/contracts/ports";
 import {
 	allowAllSalesAuthorization,
 	createMemorySalesStore,
