@@ -15,13 +15,15 @@ facade and never interpret those policies themselves.
 | Repository consumer cutover | Implemented; boundary and strict semantic gates green |
 | Compatibility subpaths and `AppError` | Deleted |
 | Errors cutover contract | Sealed; evidence in `PR.md`, `CONTRACT.md`, and `.protected.sha256` |
+| Kernel package PRD | [PRD.md](./PRD.md) — capability implemented; KERNEL-GOVERNANCE formalization open |
 
-The durable authority is [CONTRACT.md](./CONTRACT.md). It records the frozen
-semantic decisions, implementation evidence, migration lanes, and seal
-conditions. This README is the permanent consumer and maintainer entry.
+The durable semantic authority is [CONTRACT.md](./CONTRACT.md). Product and
+governance closure requirements live in [PRD.md](./PRD.md). Cutover evidence is
+in [PR.md](./PR.md). This README is the permanent consumer and maintainer entry.
 
 This package-specific cutover seal is not a generic module-readiness claim or a
-substitute for a digest-scoped kernel readiness record.
+substitute for a digest-scoped kernel readiness record under
+[`packages/KERNEL-GOVERNANCE.md`](../../KERNEL-GOVERNANCE.md).
 
 ## Permanent consumer surface
 
@@ -249,8 +251,7 @@ static-copy analysis, and result/retry/wire/OpenAPI bundle containment.
 
 Repository gates enforce the root-only facade and reject distributed semantic
 interpretation. Update protected-package metadata only after all repository
-checks, generated documentation, Scratch synchronization, and the full
-repository suite pass.
+checks, generated documentation, and the required verification suite pass.
 
 ```bash
 pnpm --filter @afenda/errors protect:update

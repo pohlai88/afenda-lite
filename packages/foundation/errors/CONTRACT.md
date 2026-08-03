@@ -6,6 +6,9 @@
 - **Change class:** one final repository cutover; no parallel consumer APIs
 - **Consumer migration:** complete; root-only imports and the permanent
   capability surface are enforced
+- **Kernel PRD:** [`PRD.md`](./PRD.md) (governance formalization open)
+- **Admission draft:** [`ADMISSION.md`](./ADMISSION.md)
+- **Kernel governance:** [`packages/KERNEL-GOVERNANCE.md`](../../KERNEL-GOVERNANCE.md)
 
 ## Decision summary
 
