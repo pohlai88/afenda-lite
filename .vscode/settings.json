@@ -82,6 +82,20 @@
 		]
 	},
 	"tailwindCSS.experimental.configFile": "apps/web/postcss.config.mjs",
+	"chat.useAgentsMdFile": true,
+	"chat.useNestedAgentsMdFiles": false,
+	"chat.useCustomizationsInParentRepositories": false,
+	"chat.useClaudeMdFile": false,
+	"chat.includeApplyingInstructions": true,
+	"chat.includeReferencedInstructions": false,
+	"chat.instructionsFilesLocations": {
+		".github/instructions": true,
+		".claude/rules": false,
+		"~/.copilot/instructions": false,
+		"~/.claude/rules": false
+	},
+	"github.copilot.chat.organizationInstructions.enabled": false,
+	"github.copilot.chat.claudeAgent.enabled": false,
 	"tailwindCSS.files.exclude": [
 		"**/.git/**",
 		"**/node_modules/**",

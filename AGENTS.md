@@ -2,6 +2,19 @@
 
 Cursor Agent instructions for this repository. Prefer **actions and links** over essays. Day-to-day architecture packs live under `docs-V2/` (Scratch). Living controlled `docs/` is **absent by design** on this checkout (cutover `71176a0`) until an explicit Docs-lane reopen — do not invent a second SSOT or recreate `doc/`.
 
+## Multi-agent vibe coding header
+
+This repository supports vibe coding across Claude, Cursor, GitHub Copilot (VS Code), and Codex.
+
+Use the correct configuration source for each agent:
+
+- Cursor: `AGENTS.md` plus `.cursor/rules/**` and `.cursor/hooks/**`
+- GitHub Copilot in VS Code: `.github/copilot-instructions.md` (VS Code scoped)
+- Claude: `CLAUDE.md`
+- Codex: `AGENTS.md` plus `.github/copilot-instructions.md` for repo-level coding conventions
+
+Priority rule: when instructions conflict, follow the active agent's primary config first, then apply shared repository safety and coding constraints.
+
 ## Product
 
 | Edition | Role |
@@ -441,7 +454,7 @@ Factory SSOT: **`testing/`** only — specs import `@/testing/e2e/*` when presen
 
 **Neon Auth `N*` missions:** floor verify from [neon-auth-slice-map](.cursor/skills/afenda-elite-implementation-slices/neon-auth-slice-map.md) + acceptance matrix + [Neon Slice Score](.cursor/skills/afenda-elite-implementation-slices/neon-slice-score.md). Product close requires independent auditor `APPROVED` in a fresh chat — not implementer self-APPROVE.
 
-**CI:** `.github/workflows/ci.yml` — `pnpm/action-setup` reads root `packageManager` (no duplicate `version:`).  
+**CI:** `.github/workflows/ci.yml` — `pnpm/action-setup` reads root `packageManager` (no duplicate `version:`).
 **Deploy:** `.github/workflows/deploy.yml` — turbo build `@afenda/web` → Vercel prod; production Git auto-deploy skipped via `apps/web/vercel.json` `ignoreCommand`.
 
 ## Agent behavior checklist
