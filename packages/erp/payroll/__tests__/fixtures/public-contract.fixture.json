@@ -1,0 +1,12 @@
+{
+	"contractDigest": "8f15eb2c617c0fe8762e01a31bdd50ddbec10c7e7e9af70a0fd8e2f4269809d4",
+	"entrypoints": {
+		".": {
+			"owner": "production",
+			"symbolCount": 65
+		}
+	},
+	"errorCodeSets": {},
+	"packageName": "@afenda/payroll",
+	"schemaVersion": 1
+}

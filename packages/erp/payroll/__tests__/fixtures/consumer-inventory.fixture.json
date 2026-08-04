@@ -1,0 +1,188 @@
+{
+	"entrypointIsolation": {
+		".": "sole production business facade"
+	},
+	"packageName": "@afenda/payroll",
+	"references": [
+		{
+			"consumerClass": "testing",
+			"disposition": "manual-review",
+			"entrypoint": "generated",
+			"file": ".cursor/hooks/__tests__/hooks-policy.test.mjs",
+			"package": "afenda-lite",
+			"referenceKind": "generated",
+			"resolution": "not-applicable",
+			"symbol": "*",
+			"useMode": "generated"
+		},
+		{
+			"consumerClass": "testing",
+			"disposition": "manual-review",
+			"entrypoint": "generated",
+			"file": "apps/web/__tests__/payroll-composition-contract.test.ts",
+			"package": "@afenda/web",
+			"referenceKind": "generated",
+			"resolution": "not-applicable",
+			"symbol": "*",
+			"useMode": "generated"
+		},
+		{
+			"consumerClass": "production",
+			"disposition": "allowed",
+			"entrypoint": ".",
+			"file": "apps/web/lib/erp/payroll-authorization-port.ts",
+			"package": "@afenda/web",
+			"referenceKind": "module",
+			"resolution": "resolved",
+			"resolvedTarget": "packages/erp/payroll/src/index.ts",
+			"symbol": "PayrollAuthorizationCapability",
+			"useMode": "type-only"
+		},
+		{
+			"consumerClass": "production",
+			"disposition": "allowed",
+			"entrypoint": ".",
+			"file": "apps/web/lib/erp/payroll-command-options.ts",
+			"package": "@afenda/web",
+			"referenceKind": "module",
+			"resolution": "resolved",
+			"resolvedTarget": "packages/erp/payroll/src/index.ts",
+			"symbol": "createPayrollCapabilityOptions",
+			"useMode": "runtime"
+		},
+		{
+			"consumerClass": "production",
+			"disposition": "allowed",
+			"entrypoint": ".",
+			"file": "apps/web/modules/platform/domain/human-resources-payroll-delivery.ts",
+			"package": "@afenda/web",
+			"referenceKind": "module",
+			"resolution": "resolved",
+			"resolvedTarget": "packages/erp/payroll/src/index.ts",
+			"symbol": "ingestApprovedPayrollHandoff",
+			"useMode": "runtime"
+		},
+		{
+			"consumerClass": "testing",
+			"disposition": "manual-review",
+			"entrypoint": "filesystem",
+			"file": "packages/data-plane/audit/__tests__/direct-writer-boundary.test.ts",
+			"package": "@afenda/audit",
+			"referenceKind": "filesystem",
+			"resolution": "not-applicable",
+			"symbol": "packages/erp/payroll/src/features/payroll-runs/runs.drizzle.ts",
+			"useMode": "filesystem"
+		},
+		{
+			"consumerClass": "testing",
+			"disposition": "manual-review",
+			"entrypoint": "filesystem",
+			"file": "packages/data-plane/audit/__tests__/direct-writer-boundary.test.ts",
+			"package": "@afenda/audit",
+			"referenceKind": "filesystem",
+			"resolution": "not-applicable",
+			"symbol": "packages/erp/payroll/src/features/payroll-setup/setup-extended.drizzle.ts",
+			"useMode": "filesystem"
+		},
+		{
+			"consumerClass": "testing",
+			"disposition": "manual-review",
+			"entrypoint": "filesystem",
+			"file": "packages/data-plane/audit/__tests__/direct-writer-boundary.test.ts",
+			"package": "@afenda/audit",
+			"referenceKind": "filesystem",
+			"resolution": "not-applicable",
+			"symbol": "packages/erp/payroll/src/features/reconciliation/reconciliation.drizzle.ts",
+			"useMode": "filesystem"
+		},
+		{
+			"consumerClass": "testing",
+			"disposition": "manual-review",
+			"entrypoint": "generated",
+			"file": "packages/erp/human-resources/__tests__/compensation-benefits.test.ts",
+			"package": "@afenda/human-resources",
+			"referenceKind": "generated",
+			"resolution": "not-applicable",
+			"symbol": "*",
+			"useMode": "generated"
+		},
+		{
+			"consumerClass": "testing",
+			"disposition": "manual-review",
+			"entrypoint": "generated",
+			"file": "packages/erp/human-resources/__tests__/hr-payroll-handoff-mapper.test.ts",
+			"package": "@afenda/human-resources",
+			"referenceKind": "generated",
+			"resolution": "not-applicable",
+			"symbol": "*",
+			"useMode": "generated"
+		},
+		{
+			"consumerClass": "testing",
+			"disposition": "manual-review",
+			"entrypoint": "generated",
+			"file": "packages/erp/human-resources/__tests__/manifest.test.ts",
+			"package": "@afenda/human-resources",
+			"referenceKind": "generated",
+			"resolution": "not-applicable",
+			"symbol": "*",
+			"useMode": "generated"
+		},
+		{
+			"consumerClass": "production",
+			"disposition": "manual-review",
+			"entrypoint": "generated",
+			"file": "packages/erp/human-resources/src/kernel/emissions/mutation-tables.ts",
+			"package": "@afenda/human-resources",
+			"referenceKind": "generated",
+			"resolution": "not-applicable",
+			"symbol": "*",
+			"useMode": "generated"
+		},
+		{
+			"consumerClass": "testing",
+			"disposition": "manual-review",
+			"entrypoint": "filesystem",
+			"file": "packages/foundation/testing/src/lanes.ts",
+			"package": "@afenda/testing",
+			"referenceKind": "filesystem",
+			"resolution": "not-applicable",
+			"symbol": "packages/erp/payroll/__tests__/failure-injection/**/*.test.ts",
+			"useMode": "filesystem"
+		},
+		{
+			"consumerClass": "testing",
+			"disposition": "manual-review",
+			"entrypoint": "filesystem",
+			"file": "packages/foundation/testing/src/lanes.ts",
+			"package": "@afenda/testing",
+			"referenceKind": "filesystem",
+			"resolution": "not-applicable",
+			"symbol": "packages/erp/payroll/__tests__/payroll-schema-constraints.test.ts",
+			"useMode": "filesystem"
+		},
+		{
+			"consumerClass": "testing",
+			"disposition": "manual-review",
+			"entrypoint": "filesystem",
+			"file": "packages/foundation/testing/src/lanes.ts",
+			"package": "@afenda/testing",
+			"referenceKind": "filesystem",
+			"resolution": "not-applicable",
+			"symbol": "packages/erp/payroll/__tests__/payroll-store-contract.test.ts",
+			"useMode": "filesystem"
+		},
+		{
+			"consumerClass": "tooling",
+			"disposition": "manual-review",
+			"entrypoint": "generated",
+			"file": "scripts/validate-modules/checks.mjs",
+			"package": "afenda-lite",
+			"referenceKind": "generated",
+			"resolution": "not-applicable",
+			"symbol": "*",
+			"useMode": "generated"
+		}
+	],
+	"schemaVersion": 1
+}

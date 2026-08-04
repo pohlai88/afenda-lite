@@ -1,0 +1,683 @@
+{
+	"categories": [
+		{
+			"items": [
+				{
+					"evidence": "src/composition/adapters/drizzle.ts exceeds src/<owner>/<file>",
+					"file": "src/composition/adapters/drizzle.ts"
+				},
+				{
+					"evidence": "src/composition/production/ports.ts exceeds src/<owner>/<file>",
+					"file": "src/composition/production/ports.ts"
+				},
+				{
+					"evidence": "src/composition/store/compose-slices.ts exceeds src/<owner>/<file>",
+					"file": "src/composition/store/compose-slices.ts"
+				},
+				{
+					"evidence": "src/composition/store/contract.ts exceeds src/<owner>/<file>",
+					"file": "src/composition/store/contract.ts"
+				},
+				{
+					"evidence": "src/composition/store/resolve-store.ts exceeds src/<owner>/<file>",
+					"file": "src/composition/store/resolve-store.ts"
+				},
+				{
+					"evidence": "src/features/calculation/calculation-identities.ts exceeds src/<owner>/<file>",
+					"file": "src/features/calculation/calculation-identities.ts"
+				},
+				{
+					"evidence": "src/features/calculation/calculation-normalize.ts exceeds src/<owner>/<file>",
+					"file": "src/features/calculation/calculation-normalize.ts"
+				},
+				{
+					"evidence": "src/features/calculation/calculation-pipeline.ts exceeds src/<owner>/<file>",
+					"file": "src/features/calculation/calculation-pipeline.ts"
+				},
+				{
+					"evidence": "src/features/calculation/calculation-snapshot.ts exceeds src/<owner>/<file>",
+					"file": "src/features/calculation/calculation-snapshot.ts"
+				},
+				{
+					"evidence": "src/features/calculation/calculation.ts exceeds src/<owner>/<file>",
+					"file": "src/features/calculation/calculation.ts"
+				},
+				{
+					"evidence": "src/features/calculation/calculation.types.ts exceeds src/<owner>/<file>",
+					"file": "src/features/calculation/calculation.types.ts"
+				},
+				{
+					"evidence": "src/features/calculation/finalization-evidence.ts exceeds src/<owner>/<file>",
+					"file": "src/features/calculation/finalization-evidence.ts"
+				},
+				{
+					"evidence": "src/features/calculation/outputs.drizzle.ts exceeds src/<owner>/<file>",
+					"file": "src/features/calculation/outputs.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/calculation/outputs.memory.ts exceeds src/<owner>/<file>",
+					"file": "src/features/calculation/outputs.memory.ts"
+				},
+				{
+					"evidence": "src/features/calculation/outputs.schema.ts exceeds src/<owner>/<file>",
+					"file": "src/features/calculation/outputs.schema.ts"
+				},
+				{
+					"evidence": "src/features/calculation/outputs.store.ts exceeds src/<owner>/<file>",
+					"file": "src/features/calculation/outputs.store.ts"
+				},
+				{
+					"evidence": "src/features/calculation/production-run-calculator.ts exceeds src/<owner>/<file>",
+					"file": "src/features/calculation/production-run-calculator.ts"
+				},
+				{
+					"evidence": "src/features/employee-assignments/assignments.drizzle.ts exceeds src/<owner>/<file>",
+					"file": "src/features/employee-assignments/assignments.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/employee-assignments/assignments.memory.ts exceeds src/<owner>/<file>",
+					"file": "src/features/employee-assignments/assignments.memory.ts"
+				},
+				{
+					"evidence": "src/features/employee-assignments/assignments.schema.ts exceeds src/<owner>/<file>",
+					"file": "src/features/employee-assignments/assignments.schema.ts"
+				},
+				{
+					"evidence": "src/features/employee-assignments/assignments.store.ts exceeds src/<owner>/<file>",
+					"file": "src/features/employee-assignments/assignments.store.ts"
+				},
+				{
+					"evidence": "src/features/employee-assignments/employee-payroll-assignment.ts exceeds src/<owner>/<file>",
+					"file": "src/features/employee-assignments/employee-payroll-assignment.ts"
+				},
+				{
+					"evidence": "src/features/employee-assignments/operation-registry.ts exceeds src/<owner>/<file>",
+					"file": "src/features/employee-assignments/operation-registry.ts"
+				},
+				{
+					"evidence": "src/features/employee-assignments/operation-store.ts exceeds src/<owner>/<file>",
+					"file": "src/features/employee-assignments/operation-store.ts"
+				},
+				{
+					"evidence": "src/features/employee-assignments/recurring-deduction.ts exceeds src/<owner>/<file>",
+					"file": "src/features/employee-assignments/recurring-deduction.ts"
+				},
+				{
+					"evidence": "src/features/employee-assignments/recurring-earning.ts exceeds src/<owner>/<file>",
+					"file": "src/features/employee-assignments/recurring-earning.ts"
+				},
+				{
+					"evidence": "src/features/payroll-runs/exception.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payroll-runs/exception.ts"
+				},
+				{
+					"evidence": "src/features/payroll-runs/finalization.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payroll-runs/finalization.ts"
+				},
+				{
+					"evidence": "src/features/payroll-runs/lifecycle-events.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payroll-runs/lifecycle-events.ts"
+				},
+				{
+					"evidence": "src/features/payroll-runs/operation-registry.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payroll-runs/operation-registry.ts"
+				},
+				{
+					"evidence": "src/features/payroll-runs/operation-store.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payroll-runs/operation-store.ts"
+				},
+				{
+					"evidence": "src/features/payroll-runs/payroll-period.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payroll-runs/payroll-period.ts"
+				},
+				{
+					"evidence": "src/features/payroll-runs/payroll-run.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payroll-runs/payroll-run.ts"
+				},
+				{
+					"evidence": "src/features/payroll-runs/reversal-policy.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payroll-runs/reversal-policy.ts"
+				},
+				{
+					"evidence": "src/features/payroll-runs/reversal.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payroll-runs/reversal.ts"
+				},
+				{
+					"evidence": "src/features/payroll-runs/run-calculate-command.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payroll-runs/run-calculate-command.ts"
+				},
+				{
+					"evidence": "src/features/payroll-runs/run-helpers.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payroll-runs/run-helpers.ts"
+				},
+				{
+					"evidence": "src/features/payroll-runs/runs.drizzle.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payroll-runs/runs.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/payroll-runs/runs.memory.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payroll-runs/runs.memory.ts"
+				},
+				{
+					"evidence": "src/features/payroll-runs/runs.schema.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payroll-runs/runs.schema.ts"
+				},
+				{
+					"evidence": "src/features/payroll-runs/runs.store.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payroll-runs/runs.store.ts"
+				},
+				{
+					"evidence": "src/features/payroll-runs/transitions.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payroll-runs/transitions.ts"
+				},
+				{
+					"evidence": "src/features/payroll-setup/calendar.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payroll-setup/calendar.ts"
+				},
+				{
+					"evidence": "src/features/payroll-setup/deduction-rule.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payroll-setup/deduction-rule.ts"
+				},
+				{
+					"evidence": "src/features/payroll-setup/earning-rule.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payroll-setup/earning-rule.ts"
+				},
+				{
+					"evidence": "src/features/payroll-setup/finalized-rule-usage.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payroll-setup/finalized-rule-usage.ts"
+				},
+				{
+					"evidence": "src/features/payroll-setup/operation-registry.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payroll-setup/operation-registry.ts"
+				},
+				{
+					"evidence": "src/features/payroll-setup/pay-group.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payroll-setup/pay-group.ts"
+				},
+				{
+					"evidence": "src/features/payroll-setup/rule-finalized-lock.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payroll-setup/rule-finalized-lock.ts"
+				},
+				{
+					"evidence": "src/features/payroll-setup/setup-extended.drizzle.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payroll-setup/setup-extended.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/payroll-setup/setup-extended.memory.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payroll-setup/setup-extended.memory.ts"
+				},
+				{
+					"evidence": "src/features/payroll-setup/setup-operation.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payroll-setup/setup-operation.ts"
+				},
+				{
+					"evidence": "src/features/payroll-setup/setup-rule-guards.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payroll-setup/setup-rule-guards.ts"
+				},
+				{
+					"evidence": "src/features/payroll-setup/setup-rule-policy.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payroll-setup/setup-rule-policy.ts"
+				},
+				{
+					"evidence": "src/features/payroll-setup/setup.drizzle.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payroll-setup/setup.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/payroll-setup/setup.memory.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payroll-setup/setup.memory.ts"
+				},
+				{
+					"evidence": "src/features/payroll-setup/setup.schema.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payroll-setup/setup.schema.ts"
+				},
+				{
+					"evidence": "src/features/payroll-setup/setup.store.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payroll-setup/setup.store.ts"
+				},
+				{
+					"evidence": "src/features/payroll-setup/statutory-rule.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payroll-setup/statutory-rule.ts"
+				},
+				{
+					"evidence": "src/features/payslips/operation-registry.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payslips/operation-registry.ts"
+				},
+				{
+					"evidence": "src/features/payslips/payslip.schema.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payslips/payslip.schema.ts"
+				},
+				{
+					"evidence": "src/features/payslips/payslip.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payslips/payslip.ts"
+				},
+				{
+					"evidence": "src/features/reconciliation/operation-registry.ts exceeds src/<owner>/<file>",
+					"file": "src/features/reconciliation/operation-registry.ts"
+				},
+				{
+					"evidence": "src/features/reconciliation/operation-store.ts exceeds src/<owner>/<file>",
+					"file": "src/features/reconciliation/operation-store.ts"
+				},
+				{
+					"evidence": "src/features/reconciliation/reconciliation.command.ts exceeds src/<owner>/<file>",
+					"file": "src/features/reconciliation/reconciliation.command.ts"
+				},
+				{
+					"evidence": "src/features/reconciliation/reconciliation.drizzle.ts exceeds src/<owner>/<file>",
+					"file": "src/features/reconciliation/reconciliation.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/reconciliation/reconciliation.memory.ts exceeds src/<owner>/<file>",
+					"file": "src/features/reconciliation/reconciliation.memory.ts"
+				},
+				{
+					"evidence": "src/features/reconciliation/reconciliation.schema.ts exceeds src/<owner>/<file>",
+					"file": "src/features/reconciliation/reconciliation.schema.ts"
+				},
+				{
+					"evidence": "src/features/reconciliation/reconciliation.store.ts exceeds src/<owner>/<file>",
+					"file": "src/features/reconciliation/reconciliation.store.ts"
+				},
+				{
+					"evidence": "src/features/statutory-rules/calculator-registry.ts exceeds src/<owner>/<file>",
+					"file": "src/features/statutory-rules/calculator-registry.ts"
+				},
+				{
+					"evidence": "src/features/statutory-rules/calculator-synth-v1.ts exceeds src/<owner>/<file>",
+					"file": "src/features/statutory-rules/calculator-synth-v1.ts"
+				},
+				{
+					"evidence": "src/features/statutory-rules/calculator.types.ts exceeds src/<owner>/<file>",
+					"file": "src/features/statutory-rules/calculator.types.ts"
+				},
+				{
+					"evidence": "src/features/statutory-rules/statutory.drizzle.ts exceeds src/<owner>/<file>",
+					"file": "src/features/statutory-rules/statutory.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/statutory-rules/statutory.memory.ts exceeds src/<owner>/<file>",
+					"file": "src/features/statutory-rules/statutory.memory.ts"
+				},
+				{
+					"evidence": "src/features/statutory-rules/statutory.schema.ts exceeds src/<owner>/<file>",
+					"file": "src/features/statutory-rules/statutory.schema.ts"
+				},
+				{
+					"evidence": "src/features/statutory-rules/statutory.store.ts exceeds src/<owner>/<file>",
+					"file": "src/features/statutory-rules/statutory.store.ts"
+				},
+				{
+					"evidence": "src/features/variable-inputs/inputs.drizzle.ts exceeds src/<owner>/<file>",
+					"file": "src/features/variable-inputs/inputs.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/variable-inputs/inputs.memory.ts exceeds src/<owner>/<file>",
+					"file": "src/features/variable-inputs/inputs.memory.ts"
+				},
+				{
+					"evidence": "src/features/variable-inputs/inputs.schema.ts exceeds src/<owner>/<file>",
+					"file": "src/features/variable-inputs/inputs.schema.ts"
+				},
+				{
+					"evidence": "src/features/variable-inputs/inputs.store.ts exceeds src/<owner>/<file>",
+					"file": "src/features/variable-inputs/inputs.store.ts"
+				},
+				{
+					"evidence": "src/features/variable-inputs/operation-registry.ts exceeds src/<owner>/<file>",
+					"file": "src/features/variable-inputs/operation-registry.ts"
+				},
+				{
+					"evidence": "src/features/variable-inputs/operation-store.ts exceeds src/<owner>/<file>",
+					"file": "src/features/variable-inputs/operation-store.ts"
+				},
+				{
+					"evidence": "src/features/variable-inputs/variable-input.ts exceeds src/<owner>/<file>",
+					"file": "src/features/variable-inputs/variable-input.ts"
+				},
+				{
+					"evidence": "src/features/workforce-ingress/accepted-handoff.drizzle.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-ingress/accepted-handoff.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/workforce-ingress/accepted-handoff.memory.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-ingress/accepted-handoff.memory.ts"
+				},
+				{
+					"evidence": "src/features/workforce-ingress/accepted-handoff.store.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-ingress/accepted-handoff.store.ts"
+				},
+				{
+					"evidence": "src/features/workforce-ingress/accepted-workforce-input-port.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-ingress/accepted-workforce-input-port.ts"
+				},
+				{
+					"evidence": "src/features/workforce-ingress/employee-eligibility.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-ingress/employee-eligibility.ts"
+				},
+				{
+					"evidence": "src/features/workforce-ingress/handoff-revision.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-ingress/handoff-revision.ts"
+				},
+				{
+					"evidence": "src/features/workforce-ingress/ingest-approved-handoff.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-ingress/ingest-approved-handoff.ts"
+				},
+				{
+					"evidence": "src/features/workforce-ingress/ingest.schema.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-ingress/ingest.schema.ts"
+				},
+				{
+					"evidence": "src/features/workforce-ingress/normalize-workforce-handoff.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-ingress/normalize-workforce-handoff.ts"
+				},
+				{
+					"evidence": "src/features/workforce-ingress/operation-registry.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-ingress/operation-registry.ts"
+				},
+				{
+					"evidence": "src/features/workforce-ingress/parse-approved-payroll-handoff.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-ingress/parse-approved-payroll-handoff.ts"
+				},
+				{
+					"evidence": "src/kernel/contracts/projected-types.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/contracts/projected-types.ts"
+				},
+				{
+					"evidence": "src/kernel/emissions/emission-registry.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/emissions/emission-registry.ts"
+				},
+				{
+					"evidence": "src/kernel/emissions/mutation-tables.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/emissions/mutation-tables.ts"
+				},
+				{
+					"evidence": "src/kernel/execution/authorization.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/execution/authorization.ts"
+				},
+				{
+					"evidence": "src/kernel/execution/authorized-operation.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/execution/authorized-operation.ts"
+				},
+				{
+					"evidence": "src/kernel/execution/command-options.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/execution/command-options.ts"
+				},
+				{
+					"evidence": "src/kernel/execution/concurrency.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/execution/concurrency.ts"
+				},
+				{
+					"evidence": "src/kernel/execution/execute-operation.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/execution/execute-operation.ts"
+				},
+				{
+					"evidence": "src/kernel/execution/permissions.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/execution/permissions.ts"
+				},
+				{
+					"evidence": "src/kernel/execution/persistence-errors.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/execution/persistence-errors.ts"
+				},
+				{
+					"evidence": "src/kernel/execution/ports.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/execution/ports.ts"
+				},
+				{
+					"evidence": "src/kernel/execution/record-audit.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/execution/record-audit.ts"
+				},
+				{
+					"evidence": "src/kernel/identity/brands.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/identity/brands.ts"
+				},
+				{
+					"evidence": "src/kernel/identity/create-fingerprint.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/identity/create-fingerprint.ts"
+				},
+				{
+					"evidence": "src/kernel/identity/source-idempotency.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/identity/source-idempotency.ts"
+				},
+				{
+					"evidence": "src/kernel/money/money-policy.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/money/money-policy.ts"
+				},
+				{
+					"evidence": "src/kernel/money/money.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/money/money.ts"
+				},
+				{
+					"evidence": "src/kernel/money/rounding-policy.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/money/rounding-policy.ts"
+				},
+				{
+					"evidence": "src/kernel/operations/define-registry.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/operations/define-registry.ts"
+				},
+				{
+					"evidence": "src/kernel/operations/module-ids.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/operations/module-ids.ts"
+				},
+				{
+					"evidence": "src/kernel/operations/registry.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/operations/registry.ts"
+				},
+				{
+					"evidence": "src/kernel/temporal/effective-date.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/temporal/effective-date.ts"
+				},
+				{
+					"evidence": "src/kernel/validation/common.schema.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/validation/common.schema.ts"
+				},
+				{
+					"evidence": "src/kernel/validation/parse-input.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/validation/parse-input.ts"
+				}
+			],
+			"key": "directory-depth",
+			"target": 0
+		},
+		{
+			"items": [],
+			"key": "feature-to-composition",
+			"target": 0
+		},
+		{
+			"items": [],
+			"key": "feature-to-facade",
+			"target": 0
+		},
+		{
+			"items": [],
+			"key": "production-to-testing",
+			"target": 0
+		},
+		{
+			"items": [
+				{
+					"evidence": "src/features/calculation/calculation-pipeline.ts:11 -> src/features/statutory-rules/calculator-registry.ts (calculation -> statutory-rules)",
+					"file": "src/features/calculation/calculation-pipeline.ts"
+				},
+				{
+					"evidence": "src/features/calculation/calculation.ts:23 -> src/features/statutory-rules/calculator.types.ts (calculation -> statutory-rules)",
+					"file": "src/features/calculation/calculation.ts"
+				},
+				{
+					"evidence": "src/features/calculation/calculation.ts:28 -> src/features/statutory-rules/calculator-registry.ts (calculation -> statutory-rules)",
+					"file": "src/features/calculation/calculation.ts"
+				},
+				{
+					"evidence": "src/features/calculation/calculation.ts:35 -> src/features/statutory-rules/calculator-synth-v1.ts (calculation -> statutory-rules)",
+					"file": "src/features/calculation/calculation.ts"
+				},
+				{
+					"evidence": "src/features/calculation/calculation.types.ts:14 -> src/features/workforce-ingress/parse-approved-payroll-handoff.ts (calculation -> workforce-ingress)",
+					"file": "src/features/calculation/calculation.types.ts"
+				},
+				{
+					"evidence": "src/features/calculation/outputs.schema.ts:18 -> src/features/payroll-runs/runs.schema.ts (calculation -> payroll-runs)",
+					"file": "src/features/calculation/outputs.schema.ts"
+				},
+				{
+					"evidence": "src/features/calculation/production-run-calculator.ts:27 -> src/features/employee-assignments/assignments.store.ts (calculation -> employee-assignments)",
+					"file": "src/features/calculation/production-run-calculator.ts"
+				},
+				{
+					"evidence": "src/features/calculation/production-run-calculator.ts:28 -> src/features/payroll-setup/setup.store.ts (calculation -> payroll-setup)",
+					"file": "src/features/calculation/production-run-calculator.ts"
+				},
+				{
+					"evidence": "src/features/calculation/production-run-calculator.ts:29 -> src/features/statutory-rules/calculator-registry.ts (calculation -> statutory-rules)",
+					"file": "src/features/calculation/production-run-calculator.ts"
+				},
+				{
+					"evidence": "src/features/calculation/production-run-calculator.ts:30 -> src/features/statutory-rules/statutory.store.ts (calculation -> statutory-rules)",
+					"file": "src/features/calculation/production-run-calculator.ts"
+				},
+				{
+					"evidence": "src/features/calculation/production-run-calculator.ts:31 -> src/features/variable-inputs/inputs.store.ts (calculation -> variable-inputs)",
+					"file": "src/features/calculation/production-run-calculator.ts"
+				},
+				{
+					"evidence": "src/features/calculation/production-run-calculator.ts:32 -> src/features/workforce-ingress/normalize-workforce-handoff.ts (calculation -> workforce-ingress)",
+					"file": "src/features/calculation/production-run-calculator.ts"
+				},
+				{
+					"evidence": "src/features/employee-assignments/employee-payroll-assignment.ts:13 -> src/features/workforce-ingress/employee-eligibility.ts (employee-assignments -> workforce-ingress)",
+					"file": "src/features/employee-assignments/employee-payroll-assignment.ts"
+				},
+				{
+					"evidence": "src/features/employee-assignments/operation-store.ts:1 -> src/features/payroll-setup/setup.store.ts (employee-assignments -> payroll-setup)",
+					"file": "src/features/employee-assignments/operation-store.ts"
+				},
+				{
+					"evidence": "src/features/employee-assignments/recurring-deduction.ts:11 -> src/features/workforce-ingress/employee-eligibility.ts (employee-assignments -> workforce-ingress)",
+					"file": "src/features/employee-assignments/recurring-deduction.ts"
+				},
+				{
+					"evidence": "src/features/employee-assignments/recurring-earning.ts:11 -> src/features/workforce-ingress/employee-eligibility.ts (employee-assignments -> workforce-ingress)",
+					"file": "src/features/employee-assignments/recurring-earning.ts"
+				},
+				{
+					"evidence": "src/features/payroll-runs/finalization.ts:5 -> src/features/calculation/finalization-evidence.ts (payroll-runs -> calculation)",
+					"file": "src/features/payroll-runs/finalization.ts"
+				},
+				{
+					"evidence": "src/features/payroll-runs/operation-store.ts:2 -> src/features/calculation/outputs.store.ts (payroll-runs -> calculation)",
+					"file": "src/features/payroll-runs/operation-store.ts"
+				},
+				{
+					"evidence": "src/features/payroll-runs/operation-store.ts:3 -> src/features/payroll-setup/setup.store.ts (payroll-runs -> payroll-setup)",
+					"file": "src/features/payroll-runs/operation-store.ts"
+				},
+				{
+					"evidence": "src/features/payroll-runs/payroll-period.ts:15 -> src/features/payroll-setup/setup.schema.ts (payroll-runs -> payroll-setup)",
+					"file": "src/features/payroll-runs/payroll-period.ts"
+				},
+				{
+					"evidence": "src/features/payroll-runs/reversal.ts:7 -> src/features/calculation/finalization-evidence.ts (payroll-runs -> calculation)",
+					"file": "src/features/payroll-runs/reversal.ts"
+				},
+				{
+					"evidence": "src/features/payroll-runs/runs.memory.ts:44 -> src/features/payroll-setup/finalized-rule-usage.ts (payroll-runs -> payroll-setup)",
+					"file": "src/features/payroll-runs/runs.memory.ts"
+				},
+				{
+					"evidence": "src/features/payroll-runs/runs.memory.ts:48 -> src/features/payroll-setup/rule-finalized-lock.ts (payroll-runs -> payroll-setup)",
+					"file": "src/features/payroll-runs/runs.memory.ts"
+				},
+				{
+					"evidence": "src/features/payslips/payslip.ts:12 -> src/features/calculation/calculation-snapshot.ts (payslips -> calculation)",
+					"file": "src/features/payslips/payslip.ts"
+				},
+				{
+					"evidence": "src/features/payslips/payslip.ts:13 -> src/features/calculation/outputs.store.ts (payslips -> calculation)",
+					"file": "src/features/payslips/payslip.ts"
+				},
+				{
+					"evidence": "src/features/payslips/payslip.ts:14 -> src/features/payroll-runs/runs.store.ts (payslips -> payroll-runs)",
+					"file": "src/features/payslips/payslip.ts"
+				},
+				{
+					"evidence": "src/features/reconciliation/operation-store.ts:1 -> src/features/calculation/outputs.store.ts (reconciliation -> calculation)",
+					"file": "src/features/reconciliation/operation-store.ts"
+				},
+				{
+					"evidence": "src/features/reconciliation/operation-store.ts:2 -> src/features/payroll-runs/runs.store.ts (reconciliation -> payroll-runs)",
+					"file": "src/features/reconciliation/operation-store.ts"
+				},
+				{
+					"evidence": "src/features/variable-inputs/operation-store.ts:1 -> src/features/employee-assignments/assignments.store.ts (variable-inputs -> employee-assignments)",
+					"file": "src/features/variable-inputs/operation-store.ts"
+				},
+				{
+					"evidence": "src/features/variable-inputs/operation-store.ts:2 -> src/features/payroll-setup/setup.store.ts (variable-inputs -> payroll-setup)",
+					"file": "src/features/variable-inputs/operation-store.ts"
+				},
+				{
+					"evidence": "src/features/variable-inputs/variable-input.ts:17 -> src/features/workforce-ingress/employee-eligibility.ts (variable-inputs -> workforce-ingress)",
+					"file": "src/features/variable-inputs/variable-input.ts"
+				}
+			],
+			"key": "cross-feature-import",
+			"target": 0
+		},
+		{
+			"items": [
+				{
+					"evidence": "reciprocal feature cycle: calculation <-> payroll-runs",
+					"file": "src/features/calculation"
+				}
+			],
+			"key": "feature-cycle",
+			"target": 0
+		},
+		{
+			"items": [],
+			"key": "consumer-deep-import",
+			"target": 0
+		},
+		{
+			"items": [
+				{
+					"evidence": "src/kernel/emissions/emission-registry.ts:39 registers payroll lifecycle outbox emissions with dispatcher: null — no platform dispatcher drains the outbox (bridging doc B6)",
+					"file": "src/kernel/emissions/emission-registry.ts"
+				}
+			],
+			"key": "undrained-outbox-emission",
+			"target": 0
+		},
+		{
+			"items": [
+				{
+					"evidence": "src/facade/contracts.ts:21 declares an optional PayrollWorkforceCapability pull port that production wires nowhere (bridging doc B1: single push transport is live)",
+					"file": "src/facade/contracts.ts"
+				}
+			],
+			"key": "dormant-workforce-port",
+			"target": 0
+		},
+		{
+			"items": [
+				{
+					"evidence": "src/features/statutory-rules/calculator-synth-v1.ts:51 registers the only statutory calculator as synthetic_only, fail-closed for production approval (bridging doc A2)",
+					"file": "src/features/statutory-rules/calculator-synth-v1.ts"
+				}
+			],
+			"key": "synthetic-statutory-calculator",
+			"target": 0
+		}
+	],
+	"packageName": "@afenda/payroll",
+	"policy": {
+		"baselineDisposition": "measured debt, never an allowlist",
+		"maximumSourceSegments": 2,
+		"targetInvariant": "zero architecture debt in every category"
+	},
+	"schemaVersion": 1,
+	"summary": {
+		"featureCount": 9,
+		"sourceTypeScriptFiles": 127
+	}
+}

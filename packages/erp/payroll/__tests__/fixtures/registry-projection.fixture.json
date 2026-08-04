@@ -1,0 +1,384 @@
+{
+	"authorizationProjection": {
+		"payroll.setup.calendar.create": "payroll.setup.manage",
+		"payroll.setup.calendar.update": "payroll.setup.manage",
+		"payroll.setup.calendar.archive": "payroll.setup.manage",
+		"payroll.setup.pay-group.create": "payroll.setup.manage",
+		"payroll.setup.pay-group.update": "payroll.setup.manage",
+		"payroll.setup.pay-group.archive": "payroll.setup.manage",
+		"payroll.setup.period.create": "payroll.setup.manage",
+		"payroll.setup.period.update": "payroll.setup.manage",
+		"payroll.setup.period.close": "payroll.setup.manage",
+		"payroll.setup.earning-rule.create": "payroll.setup.manage",
+		"payroll.setup.earning-rule.update": "payroll.setup.manage",
+		"payroll.setup.earning-rule.archive": "payroll.setup.manage",
+		"payroll.setup.earning-rule.supersede": "payroll.setup.manage",
+		"payroll.setup.deduction-rule.create": "payroll.setup.manage",
+		"payroll.setup.deduction-rule.update": "payroll.setup.manage",
+		"payroll.setup.deduction-rule.archive": "payroll.setup.manage",
+		"payroll.setup.deduction-rule.supersede": "payroll.setup.manage",
+		"payroll.setup.statutory-rule.create": "payroll.setup.manage",
+		"payroll.setup.statutory-rule.update": "payroll.setup.manage",
+		"payroll.setup.statutory-rule.archive": "payroll.setup.manage",
+		"payroll.setup.statutory-rule.supersede": "payroll.setup.manage",
+		"payroll.assignment.create": "payroll.setup.manage",
+		"payroll.assignment.recurring-earning.create": "payroll.setup.manage",
+		"payroll.assignment.recurring-deduction.create": "payroll.setup.manage",
+		"payroll.input.variable.create": "payroll.input.manage",
+		"payroll.run.create": "payroll.run.create",
+		"payroll.run.calculate": "payroll.run.calculate",
+		"payroll.run.finalize": "payroll.run.finalize",
+		"payroll.run.reverse": "payroll.run.reverse",
+		"payroll.reconciliation.record": "payroll.reconciliation.manage",
+		"payroll.reconciliation.resolve": "payroll.reconciliation.manage",
+		"payroll.workforce.ingest": "payroll.input.manage",
+		"payroll.setup.calendar.get": "payroll.setup.manage",
+		"payroll.setup.calendar.list": "payroll.setup.manage",
+		"payroll.setup.pay-group.get": "payroll.setup.manage",
+		"payroll.setup.pay-group.list": "payroll.setup.manage",
+		"payroll.setup.period.get": "payroll.setup.manage",
+		"payroll.setup.period.list": "payroll.setup.manage",
+		"payroll.setup.earning-rule.get": "payroll.setup.manage",
+		"payroll.setup.deduction-rule.get": "payroll.setup.manage",
+		"payroll.setup.statutory-rule.get": "payroll.setup.manage",
+		"payroll.assignment.get": "payroll.setup.manage",
+		"payroll.input.variable.get": "payroll.input.manage",
+		"payroll.run.get": "payroll.run.review",
+		"payroll.payslip.read-own": "payroll.payslip.read-own",
+		"payroll.payslip.read-all": "payroll.payslip.read-all",
+		"payroll.reconciliation.list": "payroll.reconciliation.manage"
+	},
+	"operations": [
+		{
+			"id": "payroll.assignment.create",
+			"kind": "command",
+			"owner": "employee-assignments",
+			"permission": "payroll.setup.manage",
+			"publicName": "createAssignment"
+		},
+		{
+			"id": "payroll.assignment.get",
+			"kind": "query",
+			"owner": "employee-assignments",
+			"permission": "payroll.setup.manage",
+			"publicName": "getAssignment"
+		},
+		{
+			"id": "payroll.assignment.recurring-deduction.create",
+			"kind": "command",
+			"owner": "employee-assignments",
+			"permission": "payroll.setup.manage",
+			"publicName": "createRecurringDeduction"
+		},
+		{
+			"id": "payroll.assignment.recurring-earning.create",
+			"kind": "command",
+			"owner": "employee-assignments",
+			"permission": "payroll.setup.manage",
+			"publicName": "createRecurringEarning"
+		},
+		{
+			"id": "payroll.input.variable.create",
+			"kind": "command",
+			"owner": "variable-inputs",
+			"permission": "payroll.input.manage",
+			"publicName": "createVariableInput"
+		},
+		{
+			"id": "payroll.input.variable.get",
+			"kind": "query",
+			"owner": "variable-inputs",
+			"permission": "payroll.input.manage",
+			"publicName": "getVariableInput"
+		},
+		{
+			"id": "payroll.payslip.read-all",
+			"kind": "query",
+			"owner": "payslips",
+			"permission": "payroll.payslip.read-all",
+			"publicName": "readAllPayslips"
+		},
+		{
+			"id": "payroll.payslip.read-own",
+			"kind": "query",
+			"owner": "payslips",
+			"permission": "payroll.payslip.read-own",
+			"publicName": "readOwnPayslip"
+		},
+		{
+			"id": "payroll.reconciliation.list",
+			"kind": "query",
+			"owner": "reconciliation",
+			"permission": "payroll.reconciliation.manage",
+			"publicName": "listReconciliations"
+		},
+		{
+			"id": "payroll.reconciliation.record",
+			"kind": "command",
+			"owner": "reconciliation",
+			"permission": "payroll.reconciliation.manage",
+			"publicName": "recordReconciliation"
+		},
+		{
+			"id": "payroll.reconciliation.resolve",
+			"kind": "command",
+			"owner": "reconciliation",
+			"permission": "payroll.reconciliation.manage",
+			"publicName": "resolveReconciliation"
+		},
+		{
+			"id": "payroll.run.calculate",
+			"kind": "command",
+			"owner": "payroll-runs",
+			"permission": "payroll.run.calculate",
+			"publicName": "calculateRun"
+		},
+		{
+			"id": "payroll.run.create",
+			"kind": "command",
+			"owner": "payroll-runs",
+			"permission": "payroll.run.create",
+			"publicName": "createRun"
+		},
+		{
+			"id": "payroll.run.finalize",
+			"kind": "command",
+			"owner": "payroll-runs",
+			"permission": "payroll.run.finalize",
+			"publicName": "finalizeRun"
+		},
+		{
+			"id": "payroll.run.get",
+			"kind": "query",
+			"owner": "payroll-runs",
+			"permission": "payroll.run.review",
+			"publicName": "getRun"
+		},
+		{
+			"id": "payroll.run.reverse",
+			"kind": "command",
+			"owner": "payroll-runs",
+			"permission": "payroll.run.reverse",
+			"publicName": "reverseRun"
+		},
+		{
+			"id": "payroll.setup.calendar.archive",
+			"kind": "command",
+			"owner": "payroll-setup",
+			"permission": "payroll.setup.manage",
+			"publicName": "archiveCalendar"
+		},
+		{
+			"id": "payroll.setup.calendar.create",
+			"kind": "command",
+			"owner": "payroll-setup",
+			"permission": "payroll.setup.manage",
+			"publicName": "createCalendar"
+		},
+		{
+			"id": "payroll.setup.calendar.get",
+			"kind": "query",
+			"owner": "payroll-setup",
+			"permission": "payroll.setup.manage",
+			"publicName": "getCalendar"
+		},
+		{
+			"id": "payroll.setup.calendar.list",
+			"kind": "query",
+			"owner": "payroll-setup",
+			"permission": "payroll.setup.manage",
+			"publicName": "listCalendars"
+		},
+		{
+			"id": "payroll.setup.calendar.update",
+			"kind": "command",
+			"owner": "payroll-setup",
+			"permission": "payroll.setup.manage",
+			"publicName": "updateCalendar"
+		},
+		{
+			"id": "payroll.setup.deduction-rule.archive",
+			"kind": "command",
+			"owner": "payroll-setup",
+			"permission": "payroll.setup.manage",
+			"publicName": "archiveDeductionRule"
+		},
+		{
+			"id": "payroll.setup.deduction-rule.create",
+			"kind": "command",
+			"owner": "payroll-setup",
+			"permission": "payroll.setup.manage",
+			"publicName": "createDeductionRule"
+		},
+		{
+			"id": "payroll.setup.deduction-rule.get",
+			"kind": "query",
+			"owner": "payroll-setup",
+			"permission": "payroll.setup.manage",
+			"publicName": "getDeductionRule"
+		},
+		{
+			"id": "payroll.setup.deduction-rule.supersede",
+			"kind": "command",
+			"owner": "payroll-setup",
+			"permission": "payroll.setup.manage",
+			"publicName": "supersedeDeductionRule"
+		},
+		{
+			"id": "payroll.setup.deduction-rule.update",
+			"kind": "command",
+			"owner": "payroll-setup",
+			"permission": "payroll.setup.manage",
+			"publicName": "updateDeductionRule"
+		},
+		{
+			"id": "payroll.setup.earning-rule.archive",
+			"kind": "command",
+			"owner": "payroll-setup",
+			"permission": "payroll.setup.manage",
+			"publicName": "archiveEarningRule"
+		},
+		{
+			"id": "payroll.setup.earning-rule.create",
+			"kind": "command",
+			"owner": "payroll-setup",
+			"permission": "payroll.setup.manage",
+			"publicName": "createEarningRule"
+		},
+		{
+			"id": "payroll.setup.earning-rule.get",
+			"kind": "query",
+			"owner": "payroll-setup",
+			"permission": "payroll.setup.manage",
+			"publicName": "getEarningRule"
+		},
+		{
+			"id": "payroll.setup.earning-rule.supersede",
+			"kind": "command",
+			"owner": "payroll-setup",
+			"permission": "payroll.setup.manage",
+			"publicName": "supersedeEarningRule"
+		},
+		{
+			"id": "payroll.setup.earning-rule.update",
+			"kind": "command",
+			"owner": "payroll-setup",
+			"permission": "payroll.setup.manage",
+			"publicName": "updateEarningRule"
+		},
+		{
+			"id": "payroll.setup.pay-group.archive",
+			"kind": "command",
+			"owner": "payroll-setup",
+			"permission": "payroll.setup.manage",
+			"publicName": "archivePayGroup"
+		},
+		{
+			"id": "payroll.setup.pay-group.create",
+			"kind": "command",
+			"owner": "payroll-setup",
+			"permission": "payroll.setup.manage",
+			"publicName": "createPayGroup"
+		},
+		{
+			"id": "payroll.setup.pay-group.get",
+			"kind": "query",
+			"owner": "payroll-setup",
+			"permission": "payroll.setup.manage",
+			"publicName": "getPayGroup"
+		},
+		{
+			"id": "payroll.setup.pay-group.list",
+			"kind": "query",
+			"owner": "payroll-setup",
+			"permission": "payroll.setup.manage",
+			"publicName": "listPayGroups"
+		},
+		{
+			"id": "payroll.setup.pay-group.update",
+			"kind": "command",
+			"owner": "payroll-setup",
+			"permission": "payroll.setup.manage",
+			"publicName": "updatePayGroup"
+		},
+		{
+			"id": "payroll.setup.period.close",
+			"kind": "command",
+			"owner": "payroll-setup",
+			"permission": "payroll.setup.manage",
+			"publicName": "closePeriod"
+		},
+		{
+			"id": "payroll.setup.period.create",
+			"kind": "command",
+			"owner": "payroll-setup",
+			"permission": "payroll.setup.manage",
+			"publicName": "createPeriod"
+		},
+		{
+			"id": "payroll.setup.period.get",
+			"kind": "query",
+			"owner": "payroll-setup",
+			"permission": "payroll.setup.manage",
+			"publicName": "getPeriod"
+		},
+		{
+			"id": "payroll.setup.period.list",
+			"kind": "query",
+			"owner": "payroll-setup",
+			"permission": "payroll.setup.manage",
+			"publicName": "listPeriods"
+		},
+		{
+			"id": "payroll.setup.period.update",
+			"kind": "command",
+			"owner": "payroll-setup",
+			"permission": "payroll.setup.manage",
+			"publicName": "updatePeriod"
+		},
+		{
+			"id": "payroll.setup.statutory-rule.archive",
+			"kind": "command",
+			"owner": "payroll-setup",
+			"permission": "payroll.setup.manage",
+			"publicName": "archiveStatutoryRule"
+		},
+		{
+			"id": "payroll.setup.statutory-rule.create",
+			"kind": "command",
+			"owner": "payroll-setup",
+			"permission": "payroll.setup.manage",
+			"publicName": "createStatutoryRule"
+		},
+		{
+			"id": "payroll.setup.statutory-rule.get",
+			"kind": "query",
+			"owner": "payroll-setup",
+			"permission": "payroll.setup.manage",
+			"publicName": "getStatutoryRule"
+		},
+		{
+			"id": "payroll.setup.statutory-rule.supersede",
+			"kind": "command",
+			"owner": "payroll-setup",
+			"permission": "payroll.setup.manage",
+			"publicName": "supersedeStatutoryRule"
+		},
+		{
+			"id": "payroll.setup.statutory-rule.update",
+			"kind": "command",
+			"owner": "payroll-setup",
+			"permission": "payroll.setup.manage",
+			"publicName": "updateStatutoryRule"
+		},
+		{
+			"id": "payroll.workforce.ingest",
+			"kind": "command",
+			"owner": "workforce-ingress",
+			"permission": "payroll.input.manage",
+			"publicName": "ingestApprovedPayrollHandoff"
+		}
+	],
+	"packageName": "@afenda/payroll",
+	"schemaVersion": 1
+}
