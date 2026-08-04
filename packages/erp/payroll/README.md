@@ -17,6 +17,17 @@ not UI shells, HTTP handlers, or HR command engines.
 Honest interim posture until HR promotion evidence and calculator sourcing
 decisions close ([hr-payroll-decisions.md](./docs/hr-payroll-decisions.md) A1).
 
+## Verify
+
+| Loop | Command |
+| --- | --- |
+| Inner | `pnpm check:payroll` |
+| Package | `pnpm --filter @afenda/payroll test` |
+| Outer (Neon) | `REQUIRE_DATABASE_TESTS=1 pnpm test:payroll:parity` |
+
+PowerShell outer loop: `$env:REQUIRE_DATABASE_TESTS = "1"; pnpm test:payroll:parity`
+(also requires `AFENDA_DATABASE_TEST_TARGET=test` or `preview`).
+
 ## Requires
 
 - Node `24.x` | pnpm `>=10.33.4` (root `package.json` engines)

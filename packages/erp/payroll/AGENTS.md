@@ -30,13 +30,14 @@ checkout-wide doctrine. This file wins only for **conflicts inside this package*
 
 ## Verify
 
-```bash
-pnpm --filter @afenda/payroll check
-```
+| Loop | Command |
+| --- | --- |
+| Inner | `pnpm check:payroll` (lint + typecheck + unit) |
+| Package | `pnpm --filter @afenda/payroll test` |
+| Outer (Neon) | `REQUIRE_DATABASE_TESTS=1 pnpm test:payroll:parity` |
 
-Prefer `pnpm --filter @afenda/payroll lint|typecheck|test` over broad root suites.
-After manifest or register changes: `pnpm validate:modules` and
-`pnpm governance:packages`.
+Prefer package-local gates over broad root suites. After manifest or register
+changes: `pnpm validate:modules` and `pnpm governance:packages`.
 
 ## Authority
 
