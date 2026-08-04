@@ -1,0 +1,49 @@
+# Human Resources production-readiness control
+
+Human Resources is production-shaped for handoff transport, privacy legal-hold
+surfaces, and package evidence loops, but the module lifecycle remains
+`scaffolded` with `activationMode: "organization_toggle"`. Green package tests
+and a living feature tree do **not** promote the module to `active` or authorize
+enterprise launch.
+
+## Controls present today
+
+- Canonical operation and emission registries decide authorization, audit,
+  transaction, idempotency, and event behavior.
+- Approved payroll handoff delivery uses bounded retry
+  (`recoverPendingPayrollDeliveries` + reliability worker) and atomic
+  corrections (`supersedesDeliveryId` / optimistic source-version locking).
+- Producer path: HR queue → synchronous Payroll ingest → optional platform event
+  fan-out (see both package READMEs — bridging B1).
+- Privacy feature owns field projection, retention, and deletion workflows for
+  `hr_*` only; Payroll evidence is not cascade-erased from HR privacy deletes
+  (bridging A3 / C7 — counsel clocks still open).
+- Contract fixtures (public-contract, registry-projection, consumer-inventory,
+  architecture-debt) and the HR parity loop exist under package tests.
+- Package lifecycle coupling: an `active` module may not require a `scaffolded`
+  module (`pnpm governance:lifecycle-coupling`).
+
+## Promotion criteria (`scaffolded` → `active`)
+
+Each criterion cites [hr-payroll-bridging.md](../../../docs/erp/hr-payroll-bridging.md).
+This list is a gate statement, **not** a claim that the gates are closed.
+
+| Criterion | Bridging | Required evidence |
+| --- | --- | --- |
+| Restriction operation for privacy/retention interplay with Payroll | D7 / A3 / C7 | Named HR restriction path + counsel retention clocks recorded |
+| Cut-off semantics documented and tested for payroll delivery windows | D7 / C3 | Period freeze / cut-off contract + tests |
+| Mid-period termination contract documented for handoff facts | D7 / C6 | Termination-as-fact semantics in handoff + tests |
+| Breaking-change policy for `public-contract.fixture.json` | D7 / Phase E | Written consumer-impact policy + fixture governance |
+| Lifecycle coupling honesty with Payroll | A1 | Payroll remains non-active until HR promotion evidence; coupling gate green |
+| Phase E production evidence pack | Phase E | Same-revision baseline, parity, and independent readiness review |
+
+Do not set Human Resources `lifecycle` to `active`, `preview`, `beta`, or
+`production` until the owning promotion mission closes these criteria.
+
+## External acceptance still required
+
+Open product decisions in
+[hr-payroll-decisions.md](../payroll/docs/hr-payroll-decisions.md) (A2–A4) block
+enterprise seal for the HR ↔ Payroll boundary even after package-local
+engineering gates are green. Statutory calculator sourcing, retention legal
+basis, and settlement authority require named owners outside this package.

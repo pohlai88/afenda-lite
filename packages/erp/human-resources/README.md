@@ -127,7 +127,34 @@ multi-DB isolation.
 | Events and audit | Audit before outbox; commands fail closed when either required fact cannot be recorded. |
 | Privacy | Contextual authorization and field projection; bulk export is definition-bound and evidence-recorded. |
 | Documents | Canonical `vault://` references only; document bytes stay outside this package. |
-| Payroll | HR publishes approved immutable handoff facts and owns delivery acknowledgement/correction. Producer dedupes by `deliveryId + payloadHash`. |
+| Payroll | Single push/sync-ingest transport (below). HR owns queue, acknowledgement, and correction; Payroll owns `payroll_accepted_handoff` ingest. |
+
+### HR ↔ Payroll transport (single path)
+
+Identical wording on both package READMEs ([bridging B1](../../../docs/erp/hr-payroll-bridging.md)):
+
+```text
+HR command (queuePayrollDelivery)
+  └─ hr_payroll_handoff_delivery row (status: pending) — one HR transaction
+        │
+apps/web producer (modules/platform/domain/human-resources-payroll-delivery.ts)
+  ├─ 1. ingestApprovedPayrollHandoff(...)  → payroll_accepted_handoff row (idempotent)
+  └─ 2. publish platform.human-resources.payroll-delivery.requested.v1
+        (fan-out telemetry only — NOT the ingest path)
+        │
+HR feedback (recordPayrollDeliveryFeedback: acknowledged | rejected | correction_required)
+```
+
+| Operation | Role |
+| --- | --- |
+| `assembleApprovedPayrollHandoff` | Pre-queue dry-run assembly of the sealed handoff payload |
+| `queuePayrollDelivery` | Persist pending delivery; corrections pass `supersedesDeliveryId` |
+| `recordPayrollDeliveryFeedback` | Acknowledge, reject, or mark correction required |
+| `recoverPendingPayrollDeliveries` | Bounded retry for pending deliveries (reliability worker) |
+
+Payroll production composition does not pull from HR at calculation time.
+Ingest and event publish share no transaction; safety depends on ingest
+idempotency (`deliveryId` + payload hash — bridging C1).
 
 Production HR source does not import `@afenda/payroll` and never calculates
 gross-to-net, statutory deductions, net pay, or payslips.
@@ -185,6 +212,9 @@ pnpm validate:modules
 pnpm governance:packages
 ```
 
+CI uses check-only `pnpm validate:modules`. Local regeneration, when a write path
+exists again, is an explicit maintainer action — not the README default.
+
 ## Boundaries
 
 | Owns | Does not own |
@@ -210,6 +240,7 @@ Human Resources does not import master-data persistence or adapters.
 | Product requirements | [docs/PRD.md](./docs/PRD.md) |
 | Development roadmap | [docs/development-roadmap.md](./docs/development-roadmap.md) |
 | Baseline verification | [docs/baseline-verification.md](./docs/baseline-verification.md) |
+| Production readiness | [PRODUCTION_READINESS.md](./PRODUCTION_READINESS.md) |
 | HR ↔ Payroll closure guideline | [hr-payroll-bridging.md](../../../docs/erp/hr-payroll-bridging.md) |
 | HR ↔ Payroll decisions register | [hr-payroll-decisions.md](../payroll/docs/hr-payroll-decisions.md) |
 | Feature-first ERP method | [feature-first-erp.md](../../../.cursor/skills/afenda-semantic-registry-cutover/references/feature-first-erp.md) |
