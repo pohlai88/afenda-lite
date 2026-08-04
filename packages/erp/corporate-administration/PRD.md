@@ -94,7 +94,7 @@ five `DONE` and nine non-`DONE` rows until direct evidence changes a row.
 | 6 | Tenancy and data isolation | PARTIAL | Database evidence for every exposed cohort and hostile path |
 | 7 | Authorization, approvals and segregation of duties | BLOCKED | Real platform approval verifier and integrated SoD evidence |
 | 8 | Domain behavior and historical truth | DONE | — |
-| 9 | Idempotency, concurrency and atomicity | PARTIAL | Database-backed failure, replay, and concurrency evidence |
+| 9 | Idempotency, concurrency and atomicity | PARTIAL | Outbox-failure atomicity DONE for CA-APP-01 exposed commands (CA-CL-03, 2026-08-05). Still need replay/conflict and concurrency evidence |
 | 10 | Events, audit and privacy | PARTIAL | Persisted evidence and redaction coverage for exposed workflows |
 | 11 | Adapter parity and database semantics | DONE | CA-APP-01 cohort memory/Drizzle/Neon parity recorded 2026-08-05 (`ca-0-4-demo`, 52 passed / 0 failed) |
 | 12 | App composition and Server Actions | DONE | — |
