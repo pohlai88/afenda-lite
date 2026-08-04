@@ -82,7 +82,7 @@ acceptance are in `IMPLEMENTATION-SLICES.md`.
 ## Enterprise closure matrix
 
 This row-level matrix is the authority for enterprise readiness. It remains exactly
-five `DONE` and nine non-`DONE` rows until direct evidence changes a row.
+seven `DONE` and seven non-`DONE` rows until direct evidence changes a row.
 
 | # | Boundary | Status | Remaining condition |
 | ---: | --- | --- | --- |
