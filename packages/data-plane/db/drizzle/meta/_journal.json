@@ -351,6 +351,13 @@
       "when": 1785978600001,
       "tag": "0049_payroll_accepted_handoff",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1785978600002,
+      "tag": "0050_ca_authority_mandate",
+      "breakpoints": true
     }
   ]
 }
