@@ -189,28 +189,6 @@
 			"useMode": "filesystem"
 		},
 		{
-			"consumerClass": "testing",
-			"disposition": "manual-review",
-			"entrypoint": "filesystem",
-			"file": "packages/foundation/testing/src/lanes.ts",
-			"package": "@afenda/testing",
-			"referenceKind": "filesystem",
-			"resolution": "not-applicable",
-			"symbol": "packages/erp/payroll/__tests__/payroll-schema-constraints.test.ts",
-			"useMode": "filesystem"
-		},
-		{
-			"consumerClass": "testing",
-			"disposition": "manual-review",
-			"entrypoint": "filesystem",
-			"file": "packages/foundation/testing/src/lanes.ts",
-			"package": "@afenda/testing",
-			"referenceKind": "filesystem",
-			"resolution": "not-applicable",
-			"symbol": "packages/erp/payroll/__tests__/payroll-store-contract.test.ts",
-			"useMode": "filesystem"
-		},
-		{
 			"consumerClass": "tooling",
 			"disposition": "manual-review",
 			"entrypoint": "filesystem",

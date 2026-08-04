@@ -173,8 +173,6 @@ const TESTING_LANE_DEFINITIONS = [
 		packageCommands: ["pnpm --filter @afenda/payroll test:parity"],
 		include: [
 			"packages/erp/payroll/__tests__/failure-injection/**/*.test.ts",
-			"packages/erp/payroll/__tests__/payroll-store-contract.test.ts",
-			"packages/erp/payroll/__tests__/payroll-schema-constraints.test.ts",
 		],
 		cache: "uncached",
 		requiresDatabase: true,
