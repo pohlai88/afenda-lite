@@ -25,7 +25,7 @@ const pkgPath = path.resolve(
 
 describe("payrollModuleManifest", () => {
 	it("declares scratch mutation tables and permissions", () => {
-		expect(payrollModuleManifest.lifecycle).toBe("active");
+		expect(payrollModuleManifest.lifecycle).toBe("scaffolded");
 		expect(payrollModuleManifest.persistence.mutationTables).toEqual([
 			...PAYROLL_MUTATION_TABLES,
 		]);

@@ -28,7 +28,7 @@ export const payrollModuleManifest = {
 	category: "erp",
 	packageName: "@afenda/payroll",
 	band: "R1-F",
-	lifecycle: "active",
+	lifecycle: "scaffolded",
 	activationMode: "organization_toggle",
 	owns: {
 		aggregates: [...PAYROLL_AGGREGATES],
