@@ -2,7 +2,7 @@
 
 **Scope:** `@afenda/human-resources` and `@afenda/payroll`
 **Goal:** align the two bounded contexts, then close the missing surface, then ship enterprise-production-ready.
-**Derived from:** both `README.md` files and both `AGENTS.md` files only. Anything already implemented but undocumented still counts as a gap — sign-off is read from the doc, the manifest, and the fixtures, not from the source tree.
+**Derived from:** both `README.md` files and both `AGENTS.md` files, then **validated against the source tree on 2026-08-05** (three read-only audits: payroll package, HR package + `apps/web` composition, root scripts/governance). Rows below are marked with their verified status; sign-off is still read from the doc, the manifest, and the fixtures — but this revision no longer claims gaps that the source tree already closes.
 
 ---
 
@@ -23,11 +23,13 @@ A feature is "done" when the fixture, the registry entry, the parity test, and t
 
 ## Phase A — Decisions (blocks everything, produces no code)
 
-Four decisions cannot be designed around. Write them down, date them, name an owner. Suggested artifact: `packages/erp/DECISIONS.md`, linked from both READMEs under **Authority**.
+Four decisions cannot be designed around. Write them down, date them, name an owner. Suggested artifact: `docs/erp/hr-payroll-decisions.md`, linked from both READMEs under **Authority**. (Not a `decisions/` directory — those are banned by repo rule; a single decisions register file under the live `docs/` trunk is the compliant shape.)
 
 ### A1 — Lifecycle coupling
 
-Payroll is `lifecycle: "active"`. HR is `lifecycle: "scaffolded"`. Payroll's entire workforce input originates in HR. An active consumer on a scaffolded producer is either rejected by governance or — worse — passes silently and ships.
+Payroll is `lifecycle: "active"` (`packages/erp/payroll/src/composition/module.manifest.ts:31`, with `moduleDependencies.required: ["human-resources"]`). HR is `lifecycle: "scaffolded"` (`packages/erp/human-resources/src/composition/module.manifest.ts:213`). Payroll's entire workforce input originates in HR. An active consumer on a scaffolded producer is either rejected by governance or — worse — passes silently and ships.
+
+**Verified 2026-08-05 — it passes silently.** `pnpm validate:modules` self-skips (its `modulesDir` points at the removed `docs-V2/modules` and exits 0), so `pnpm governance:packages` passes trivially. No live check compares lifecycles at all. The false signal is unguarded today.
 
 | Option | Consequence |
 | --- | --- |
@@ -76,43 +78,37 @@ Payroll requests disbursement via `payroll.payment-requested.v1` and never learn
 
 ## Phase B — Refactor and align (no new domain features)
 
-### B1 — Collapse the transport
+### B1 — Transport: already collapsed (correction, verified 2026-08-05)
 
-Today the two READMEs describe two different mechanisms for the same fact. HR *publishes handoff facts* (push/event). Payroll says facts *arrive through `PayrollWorkforceCapability`* (pull/port). If both paths exist you get double ingress and divergent state. Collapse to:
+The original revision of this guideline claimed two divergent mechanisms (HR push-event vs. Payroll pull-port) and proposed three new `apps/web` workers. **The source tree disproves this — there is one transport, push-based with synchronous ingest, and it is live:**
 
 ```
-HR command
-  └─ hr_payroll_handoff row  ─┐  (one HR transaction)
-  └─ audit fact               │
-  └─ outbox: hr.payroll-handoff.approved.v1
-                              │
-        apps/web worker  ─────┘   (no shared transaction)
-                              │
-  Payroll capability call ────┘
-  └─ payroll_accepted_handoff row  ─┐ (one Payroll transaction)
-  └─ audit fact                     │
-  └─ outbox: acknowledgement        │
-                                    │
-        apps/web worker  ───────────┘
-                                    │
-  HR acknowledgement command ───────┘
+HR command (queuePayrollDelivery)
+  └─ hr_payroll_handoff_delivery row (status: pending) — one HR transaction
+        │
+apps/web producer (modules/platform/domain/human-resources-payroll-delivery.ts)
+  ├─ 1. ingestApprovedPayrollHandoff(...)  → payroll_accepted_handoff row (idempotent)
+  └─ 2. publish platform.human-resources.payroll-delivery.requested.v1
+        (fan-out telemetry only — NOT the ingest path)
+        │
+HR feedback (recordPayrollDeliveryFeedback: acknowledged | rejected | correction_required)
 ```
 
-**Event is the only trigger. Capability is the only API.** Neither package imports the other; `apps/web` remains the only place both names appear.
+- `PayrollWorkforceCapability` (`packages/erp/payroll/src/facade/contracts.ts`) is a declared **optional override**; production wires no workforce port (`apps/web/lib/erp/payroll-command-options.ts` — "no calculation-time pull from HR"). There is no pull and no double ingress.
+- Retry/recovery exists: `recoverPendingPayrollDeliveries` + the HR reliability worker (`apps/web/modules/platform/domain/human-resources-reliability-worker.ts`), bounded attempts (default 3, max 10, terminal `failed`).
+- Corrections are atomic supersessions (`store.createCorrection` with `expectedSourceVersion` optimistic locking, two-way `supersedesDeliveryId` / `supersededByDeliveryId` links).
 
-New files:
+**Remaining B1 work (the real residue):**
 
-| File | Purpose |
+| Item | Detail |
 | --- | --- |
-| `apps/web/lib/erp/payroll-handoff-ingress-worker.ts` | Drains `hr.payroll-handoff.approved.v1` → calls Payroll capability |
-| `apps/web/lib/erp/payroll-handoff-ack-worker.ts` | Drains Payroll acknowledgement → calls HR ack command |
-| `apps/web/lib/erp/payroll-outbox-worker.ts` | Drains `payroll.payment-requested.v1` / `payroll.posting-requested.v1` (B6) |
+| Non-atomic ingest + publish | Producer step 1 (payroll ingest) and step 2 (event publish) share no transaction. Safe today only because ingest is idempotent — which makes C1's hash-conflict rule load-bearing, not cosmetic. Document the invariant; do not "fix" it by coupling the transactions. |
+| Dormant pull port | Decide: delete `workforce` from the capability options, or document it as a test-only seam. An undocumented optional ingress is how a second transport grows back. |
+| README wording | Payroll's README still describes arrival "through `PayrollWorkforceCapability`". Rewrite both READMEs to describe the single push/sync-ingest transport above, identically. |
 
-Existing HR composition entries (`hr-payroll-delivery.ts`, `human-resources-payroll-delivery.ts`) stay as the producer side.
+### B2 — Symmetry matrix (verified against source 2026-08-05)
 
-### B2 — Symmetry matrix
-
-Payroll has one production-readiness doc and nothing else. HR has fixtures, roadmap, baseline verification, and three test loops. Bring both to the same row set. Missing cells are the work.
+Bring both packages to the same row set. Missing cells are the work — but several rows the first revision called missing already exist; those are now ✅ with paths.
 
 | Artifact | HR | Payroll |
 | --- | --- | --- |
@@ -126,19 +122,19 @@ Payroll has one production-readiness doc and nothing else. HR has fixtures, road
 | `__tests__/fixtures/registry-projection.fixture.json` | ✅ | ❌ **add** |
 | `__tests__/fixtures/consumer-inventory.fixture.json` | ✅ | ❌ **add** |
 | `__tests__/fixtures/architecture-debt.fixture.json` | ✅ | ❌ **add** |
-| Canonical operation registry | ✅ | ❌ **add** |
-| Canonical emission registry | partial | `mutation-tables.ts` only — **extend** |
-| Unit loop (`test:*:unit`) | ✅ | ❌ **add** |
-| Parity loop (`test:*:parity`, Neon) | ✅ | ❌ **add** — highest engineering priority |
-| Feature-first layout guard test | ✅ | ❌ **add** |
-| `./testing` subpath | ✅ declared | `testing/` exists, subpath undeclared — **decide and document** |
-| Composition entries table in README | ✅ | ❌ **add** |
+| Canonical operation registry | ✅ | ✅ **exists** — `src/kernel/operations/registry.ts` + per-feature `operation-registry.ts` (8 features) + registry test |
+| Canonical emission registry | ✅ | partial — `src/kernel/emissions/mutation-tables.ts` + `features/payroll-runs/lifecycle-events.ts` + manifest `events.emits`; no single `emission-registry.ts` (B4) |
+| Unit loop (`test:*:unit`) | ✅ `test:hr:unit` | partial — vitest `payroll` project exists (33 test files); no `test:payroll:unit` / `check:payroll` root scripts |
+| Parity loop (`test:*:parity`, Neon) | ✅ dedicated config | partial — live-DB harnesses exist inside the unit project (`payroll-constraint-live.ts`, `payroll-store-parity-harness.ts`); no dedicated parity config, no failure-injection dir — **highest engineering priority (B5)** |
+| Feature-first layout guard test | ✅ | ✅ **exists** — `__tests__/feature-first-layout.test.ts` |
+| `./testing` subpath | ✅ declared | `src/testing/` exists, subpath undeclared in `exports` — **declare it** |
+| Composition entries table in README | ✅ | ❌ **add** (composition dir itself exists: manifest, drizzle adapters, production ports, store slices) |
 | Reliability worker | ✅ | ❌ **add** |
-| Observability module | ✅ | ❌ **add** |
+| Observability | ✅ module | partial — `PayrollObservabilityPort` in `src/kernel/execution/ports.ts`, threaded through command options; no feature module |
 | Tenant-injection doctrine in README | ✅ | ❌ **add** |
 | Privacy feature | ✅ | ❌ **add** (Phase D1) |
 | Durable job feature | ✅ `bulk-jobs` | ❌ **add** (Phase D6) |
-| Currency injected into capability | ✅ | ❌ **add** (B3) |
+| Currency/clock/statutory injected into capability | n/a | ❌ **add** (B3 — confirmed: options accept only `authorization` required, `observability?`/`workforce?` optional) |
 
 Also align governance posture: Payroll's README says `pnpm validate:modules --write`, HR's says `pnpm validate:modules`. Pick check-only for CI and `--write` for local; state it identically in both.
 
@@ -165,18 +161,15 @@ export interface PayrollCapabilityOptions {
 
 **Why `clock` is mandatory:** every effective-dated resolution and every "current period" decision must be injectable, or parity tests are non-deterministic.
 
-### B4 — Payroll operation and emission registries
+### B4 — Payroll emission registry (correction: operation registry already exists)
 
-HR's README states canonical registries decide authorization, audit, transaction, idempotency, and event behaviour. Payroll documents only `mutation-tables.ts`. **Payroll's idempotency and authorization policy is currently undeclared** — which is exactly where a double-pay bug lives.
+The first revision claimed Payroll had no operation registry. **Wrong** — `src/kernel/operations/registry.ts` (+ `define-registry.ts`, `module-ids.ts`) plus per-feature `operation-registry.ts` files in 8 features already declare operations, with `__tests__/operation-registry.test.ts` guarding them. The README undersells this; fix the README, not the code.
 
-Add:
+Remaining B4 work:
 
-```
-src/kernel/registry/operation-registry.ts
-src/kernel/emissions/emission-registry.ts
-```
-
-Every Payroll command declares, in one place: permission, audit requirement, transaction requirement, idempotency key strategy, emitted events. The `registry-projection.fixture.json` is the frozen projection of that registry.
+1. **Emission registry** — emissions are split across `src/kernel/emissions/mutation-tables.ts`, `src/features/payroll-runs/lifecycle-events.ts`, and the manifest's `events.emits`. Consolidate into one canonical `src/kernel/emissions/emission-registry.ts` that the fixture projects from.
+2. **`registry-projection.fixture.json`** — the frozen projection of the operation + emission registries (B2 row).
+3. **Stale authority citation** — `src/kernel/emissions/mutation-tables.ts:15` cites the retired `docs-V2` trunk. Remove it (banned trunk).
 
 ### B5 — Payroll parity loop (highest engineering priority in Phase B)
 
@@ -188,6 +181,8 @@ Payroll makes the strongest transactional claim in the repository — run row + 
 | Package | `pnpm --filter @afenda/payroll test` | Unit project only |
 | Outer | `REQUIRE_DATABASE_TESTS=1 pnpm test:payroll:parity` | Serial: parity, concurrency, failure injection |
 
+**Proven template in-repo:** mirror `packages/erp/corporate-administration/__tests__/failure-injection/` — real Neon drizzle stores, an injected failing outbox port, rollback assertions on entity rows + mutation receipts + outbox events, with helper pair `neon-cleanup.ts` / `neon-parity.ts` (env-gated skip). Payroll needs its own helper pair under `__tests__/helpers/`; existing live-DB harnesses (`payroll-constraint-live.ts`, `payroll-store-parity-harness.ts`) are the starting point.
+
 Failure-injection cases that must exist before ship:
 
 1. Outbox insert fails after run row insert → whole transaction rolls back, no orphan run.
@@ -198,21 +193,25 @@ Failure-injection cases that must exist before ship:
 
 ### B6 — Drain the outbox
 
-Payroll emits `payroll.payment-requested.v1` and `payroll.posting-requested.v1`. Nothing documented consumes them. Register both with the platform dispatcher (or build `payroll-outbox-worker.ts`) and add a governance check: **every emission in the registry must have a registered dispatcher**. An undrained outbox is a silent "payroll ran but nobody got paid."
+Payroll emits `payroll.payment-requested.v1` and `payroll.posting-requested.v1` (built in `src/features/payroll-runs/lifecycle-events.ts`, appended via `createSqlOutboxPort` at finalize). **Verified 2026-08-05: nothing consumes them — and no module's outbox is drained anywhere in the monorepo.** There is no platform dispatcher, worker, or cron reading any outbox; this is a platform-wide gap, not a payroll defect. (HR's handoff works despite this because its ingest is synchronous; the published platform event is fan-out telemetry.)
+
+Consequence: draining requires a **platform outbox-dispatcher decision plus a Payments/Accounting-side consumer** — a cross-module slice, not a payroll-local worker. Track it as its own mission. Until then, add the governance check as a declared-debt gate: **every emission in the registry must have a registered dispatcher**. An undrained outbox is a silent "payroll ran but nobody got paid."
 
 ### B7 — Governance checks to add
 
+**Context (verified 2026-08-05):** `validate:modules` self-skips (dead `docs-V2/modules` path) and `governance:packages` is a thin wrapper over it — so today there is **no live module governance at all**. Its dormant machinery included dependency-DAG and workspace-edge checks that would cover cross-imports; lifecycle coupling was never checked even when live. New checks should read module manifests directly rather than resurrecting the `docs-V2` roadmap dependency.
+
 | Check | Rule |
 | --- | --- |
-| `governance:lifecycle-coupling` | `active` module may not depend on a `scaffolded` module (A1) |
+| `governance:lifecycle-coupling` | `active` module may not depend on a `scaffolded` module (A1) — read `module.manifest.ts` lifecycles + `moduleDependencies` directly |
 | `governance:erp-symmetry` | Both ERP packages carry the same doc, fixture, and script set (B2) |
 | `governance:emission-drain` | Every registered emission has a registered dispatcher (B6) |
-| `governance:cross-import` | No `@afenda/payroll` ↔ `@afenda/human-resources` import in production source |
-| `governance:architecture-debt` | Fixture targets are enforced, not merely reported |
+| `governance:cross-import` | No `@afenda/payroll` ↔ `@afenda/human-resources` import in production source (today only implicit: neither declares the other in `package.json`) |
+| `governance:architecture-debt` | Fixture targets are enforced, not merely reported (HR already CI-binds its fixture; extend to payroll) |
 
 **Phase B exit gate — all must be true:**
 
-- [ ] One transport documented identically in both READMEs; the pull-only wording is gone.
+- [ ] One transport documented identically in both READMEs; the pull-only wording is gone. (Transport itself is already collapsed — B1; this is a docs + dormant-port decision.)
 - [ ] Payroll parity loop runs green against Neon, including all five failure-injection cases.
 - [ ] Payroll's four fixtures exist and are asserted in CI.
 - [ ] Payroll emissions are drained by a registered dispatcher.
@@ -225,21 +224,25 @@ Payroll emits `payroll.payment-requested.v1` and `payroll.posting-requested.v1`.
 
 These are the eight rules that stop the race. They are cheap: mostly documentation, one unique index, one status enum. Write them into both READMEs and both PRDs.
 
-### C1 — Idempotency
+### C1 — Idempotency (corrected to actual schema, verified 2026-08-05)
 
-Unique constraint on `payroll_accepted_handoff (organizationId, deliveryId)`.
+`payroll_accepted_handoff` exists (`packages/data-plane/db/src/schema/payroll.ts:1054`) with unique `(org, createIdempotencyKey)`, a partial-unique active-identity constraint, and supersession checks — but **no `deliveryId` column**. Delivery identity rides on the producer-chosen idempotency key: the `apps/web` producer passes `payroll-delivery:${deliveryId}` — **`payloadHash` is not part of the consumer key**, while HR's event-side dedupe key *does* include the hash (`human-resources-payroll-delivery.ts:59`).
+
+Deeper source check (`accepted-handoff.drizzle.ts:97-105`, `accepted-handoff.memory.ts:47-55`): **the hash-conflict hard reject already exists** — replay of the same idempotency key with a changed `payloadHash` returns `CONFLICT` ("Idempotency key replay with a changed payload is rejected") in both adapters, and `payloadHash` is stored on every row. C1's core rule is closed.
 
 | Case | Behaviour |
 | --- | --- |
-| Same `deliveryId`, same `payloadHash` | Acknowledge, no-op |
-| Same `deliveryId`, different `payloadHash` | **Hard reject** + raise run exception. Never silently overwrite. |
-| New `deliveryId`, superseding content | Accept per C2 ordering |
+| Same `deliveryId`, same `payloadHash` | ✅ Idempotent replay returns the sealed row |
+| Same `deliveryId`, different `payloadHash` | ✅ `CONFLICT` hard reject (both adapters) |
+| New `deliveryId`, superseding content | ⚠️ Accepted — but see C2: revision is not checked |
 
-HR's producer already dedupes by `deliveryId + payloadHash`; Payroll must enforce the same key on the consumer side. Producer-side dedupe alone is not idempotency.
+Residual C1 work: the rejection is a generic `CONFLICT` `Result`, not the typed `payload_hash_conflict` acceptance union of C4, and no payroll run exception is raised — wire those when C4 lands. The real open defect in this area is **C2**, below.
 
-### C2 — Ordering
+### C2 — Ordering (confirmed open defect, verified 2026-08-05)
 
-Every fact carries `(employeeId, effectiveFrom, revision)`. Payroll rejects any `revision` ≤ the revision already stored for that `(employeeId, effectiveFrom)`. **This is the rule that actually kills the race** — retries, redelivery, and out-of-order arrival all become harmless.
+Every fact carries `(employeeId, effectiveDate, contractVersion)`. Payroll must reject any `contractVersion` ≤ the version already stored active for that identity. **This is the rule that actually kills the race** — retries, redelivery, and out-of-order arrival all become harmless.
+
+**Current code does not check it.** The supersession CTE in `accepted-handoff.drizzle.ts` (and the memory adapter) supersedes whatever row is active on identity match alone — a stale delivery arriving under a fresh idempotency key, carrying an older `contractVersion`, will silently supersede newer accepted data. This is the highest-value small fix in the whole guideline: compare `contractVersion` against the active row and return a `stale_revision`-class `CONFLICT` instead of superseding.
 
 ### C3 — Period freeze
 
@@ -288,12 +291,12 @@ HR privacy deletion is scoped to `hr_*` only. Payroll evidence is held under a s
 
 Compensating correction only while un-settled; otherwise clawback receivable in Accounting (A4). Requires D2.
 
-### C9 — Segregation of duties on finalize
+### C9 — Segregation of duties on finalize (confirmed gap, verified 2026-08-05)
 
-Finalization is the highest-risk action in the module and has no maker-checker documented.
+Finalization is the highest-risk action in the module and has **no maker-checker in code**. Actual permission codes (`src/kernel/execution/permissions.ts`) are `payroll.run.create/calculate/review/finalize/reverse` — **there is no `payroll.run.approve` anywhere in the repo**, and `finalizePayrollRun` (`src/features/payroll-runs/finalization.ts`) stamps `finalizedBy: actorUserId` with no identity comparison against who calculated or reviewed.
 
-- Keep `payroll.run.approve` and `payroll.run.finalize` as distinct permissions.
-- Reject when `actorUserId` of finalize equals `actorUserId` of approve on the same run.
+- Add `payroll.run.approve` as a distinct permission (or bind maker-checker to the existing `review` step — decide and record which).
+- Reject when the finalize `actorUserId` equals the approve/review `actorUserId` on the same run.
 - Break-glass override requires a distinct permission and writes a dedicated audit reason.
 
 ### C10 — Tenant-injection doctrine for Payroll
@@ -393,20 +396,20 @@ Requires the A2 rate tables to be effective-dated and version-pinned.
 
 Payroll runs are long batches over thousands of employees with no durable job infrastructure, while HR has `bulk-jobs` with leases, dead letters, and recovery. Mirror it: durable claims, leases, acknowledgements, retries, dead letters, recovery. A calculation batch that dies at employee 4,000 of 5,000 must resume, not restart or half-commit.
 
-### D7 — HR-side gaps
+### D7 — HR-side gaps (verified 2026-08-05; several rows already closed)
 
-| Gap | Deliverable |
-| --- | --- |
-| Unnamed, unversioned handoff event | `hr.payroll-handoff.approved.v1` + registry entry + schema + fixture |
-| No dry run | `previewPayrollHandoff` — validate and diff before approval |
-| Ack/correction unnamed | `acknowledgePayrollDelivery`, `recordPayrollDeliveryRejection`, `issuePayrollHandoffCorrection` |
-| No restriction concept | `restrictEmployeeData` alongside deletion, matching C7 |
-| Cut-off semantics absent | Document which period a handoff binds to and what a late approval does |
-| Mid-period termination contract absent | Document the fact shape and the C6 exception path |
-| No promotion criteria | Explicit `scaffolded → active` gate list (Phase E) |
-| No `PRODUCTION_READINESS.md` | Mirror Payroll's |
-| Debt targets not enforced | Bind `architecture-debt.fixture.json` to a CI command |
-| No breaking-change policy for `public-contract.fixture.json` | Write the rule: what a diff requires |
+| Gap | Status | Deliverable |
+| --- | --- | --- |
+| Handoff event naming | ✅ **exists** | `hr.payroll-handoff.v1` schema in `@afenda/events` + platform event `platform.human-resources.payroll-delivery.requested.v1` (registered, fixture-tested). Document them in the README; no new event needed |
+| Dry run | partial | `assembleApprovedPayrollHandoff` is a read-only de facto preview called before queueing; decide whether a dedicated `previewPayrollHandoff` diff operation is still wanted, or document the existing query as the dry run |
+| Ack/correction ops | ✅ **exists** | `recordPayrollDeliveryFeedback` (`acknowledged \| rejected \| correction_required`) + correction via `queuePayrollDelivery` with `supersedesDeliveryId` and atomic `createCorrection`. Document; no new ops needed |
+| No restriction concept | ❌ real gap | `restrictEmployeeData` alongside deletion, matching C7 — privacy feature has legal-hold place/release but no Art.18-style processing restriction |
+| Cut-off semantics absent | ❌ (docs) | Document which period a handoff binds to and what a late approval does |
+| Mid-period termination contract absent | ❌ (docs) | Document the fact shape and the C6 exception path |
+| No promotion criteria | ❌ real gap | Explicit `scaffolded → active` gate list (Phase E) |
+| No `PRODUCTION_READINESS.md` | ❌ real gap | Mirror Payroll's |
+| Debt targets not enforced | ✅ **exists** | `__tests__/architecture-debt-report.test.ts` asserts the fixture in the package test run (CI-bound); optionally add a named root script |
+| No breaking-change policy for `public-contract.fixture.json` | ❌ (docs) | Write the rule: what a diff requires |
 
 ---
 
@@ -425,24 +428,24 @@ Payroll runs are long batches over thousands of employees with no durable job in
 
 | # | Item | Phase | Why here |
 | --- | --- | --- | --- |
-| 1 | Lifecycle decision | A1 | Costs nothing, unblocks honesty |
+| 1 | Lifecycle decision + revive governance gate (lifecycle-coupling check reading manifests) | A1/B7 | Costs little, unblocks honesty; today nothing enforces anything |
 | 2 | Calculator sourcing decision | A2 | Longest lead time — start it in parallel with everything |
 | 3 | Retention legal basis | A3 | Needs counsel; long clock |
-| 4 | Transport collapse | B1 | Every later feature inherits it |
-| 5 | C1–C3 + C7 (idempotency, ordering, freeze, retention) | C | Cheapest, kills the race class outright |
-| 6 | Payroll parity loop + failure injection | B5 | Biggest engineering gap |
-| 7 | Outbox drain | B6 | Silent-failure risk |
-| 8 | Operation/emission registry + four fixtures | B4/B2 | Governance floor |
+| 4 | C1 hash-conflict reject + C9 maker-checker | C | Cheapest correctness fixes; kills the silent-overwrite and single-actor-finalize classes |
+| 5 | Payroll parity loop + failure injection (mirror corporate-administration pattern) | B5 | Biggest engineering gap; proven template in-repo |
+| 6 | Emission registry + four fixtures + `check:payroll` / `test:payroll:*` scripts | B4/B2 | Governance floor |
+| 7 | Transport residue: dormant pull-port decision + README rewrite both sides | B1 | Docs + one deletion; transport itself already collapsed |
+| 8 | Outbox drain (platform dispatcher + Payments/Accounting consumer — own mission) | B6 | Silent-failure risk; platform-wide, not payroll-local |
 | 9 | Capability signature: currency, clock, statutory | B3 | Blocks all calculator work |
 | 10 | D0 fact widening | D0 | Blocks calculators; rewrite risk if skipped |
 | 11 | `settlement-ingress` | D2 | Unblocks C8 |
 | 12 | `privacy` | D1 | Legal exposure |
 | 13 | `payroll-jobs` | D6 | Needed before large-tenant runs |
 | 14 | `retro-pay`, `final-settlement`, `statutory-filings` | D3–D5 | Domain completion |
-| 15 | HR D7 items | D7 | Parallelizable throughout |
+| 15 | HR D7 residue (restriction op, PRODUCTION_READINESS, promotion gate, cut-off/termination docs) | D7 | Parallelizable throughout |
 | 16 | Phase E evidence + promotion | E | Ship |
 
-Items 1, 5, and 10 are the ones to write first. They are almost entirely documentation plus one unique index, and they eliminate the whole class of failure you are worried about.
+Items 1, 4, and 5 are the ones to do first: 1 and 4 are small and eliminate the failure classes outright; 5 is the engineering floor everything later stands on.
 
 ---
 
@@ -484,7 +487,7 @@ pnpm governance:packages
 
 ## Appendix C — Assumptions and limits
 
-- Derived from four documents only. Items marked missing may exist in code; if so, the fix is to document, fixture, and register them — that is still Phase B work, not a free pass.
+- Originally derived from four documents only; **corrected against the source tree on 2026-08-05**. Rows marked ✅ **exists** were verified on disk with paths. Remaining ❌ rows were confirmed absent by grep/listing, not assumed.
 - Retention periods in A3 are starting points for counsel, not legal advice. Record the confirmed citation in `DECISIONS.md`.
 - Statutory rates and schedules change. Nothing in this guideline hardcodes a rate; it requires effective-dated, version-pinned, sourced rate tables instead.
 - Whether the platform already provides a shared outbox dispatcher, durable job runner, or clock capability is unknown from the docs. If it does, register with it rather than building a Payroll-local copy.
