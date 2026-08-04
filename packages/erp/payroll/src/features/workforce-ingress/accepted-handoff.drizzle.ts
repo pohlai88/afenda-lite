@@ -19,6 +19,10 @@ import type {
 	AcceptHandoffRecord,
 	PayrollWorkforceIngressStore,
 } from "./accepted-handoff.store";
+import {
+	extractHandoffSourceRevision,
+	isStrictlyNewerHandoffRevision,
+} from "./handoff-revision";
 
 function failFromPersistence(error: unknown, _fallbackMessage: string) {
 	return errorProject.result(
@@ -109,8 +113,17 @@ export const drizzleWorkforceIngressMethods: PayrollWorkforceIngressStore = {
 				.from(payrollAcceptedHandoff)
 				.where(activeIdentityWhere(record))
 				.limit(1);
-			if (active !== undefined && active.payloadHash === record.payloadHash) {
-				return errorResult.ok(mapAcceptedHandoff(active));
+			if (active !== undefined) {
+				if (active.payloadHash === record.payloadHash) {
+					return errorResult.ok(mapAcceptedHandoff(active));
+				}
+				const incomingRevision = extractHandoffSourceRevision(record.payload);
+				const activeRevision = extractHandoffSourceRevision(active.payload);
+				if (!isStrictlyNewerHandoffRevision(incomingRevision, activeRevision)) {
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "Stale workforce handoff revision is rejected",
+					});
+				}
 			}
 
 			const payloadJson = JSON.stringify(record.payload);

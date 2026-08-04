@@ -7,6 +7,10 @@ import type {
 	AcceptHandoffRecord,
 	PayrollWorkforceIngressStore,
 } from "./accepted-handoff.store";
+import {
+	extractHandoffSourceRevision,
+	isStrictlyNewerHandoffRevision,
+} from "./handoff-revision";
 
 interface StoredAcceptedHandoff extends AcceptedPayrollHandoff {
 	acceptedIdempotencyKey: string;
@@ -87,6 +91,15 @@ export function createMemoryWorkforceIngressMethods(
 				if (active.payloadHash === record.payloadHash) {
 					const { acceptedIdempotencyKey: _key, ...surface } = active;
 					return Promise.resolve(errorResult.ok({ ...surface }));
+				}
+				const incomingRevision = extractHandoffSourceRevision(record.payload);
+				const activeRevision = extractHandoffSourceRevision(active.payload);
+				if (!isStrictlyNewerHandoffRevision(incomingRevision, activeRevision)) {
+					return Promise.resolve(
+						errorResult.fail("CONFLICT", {
+							publicMessage: "Stale workforce handoff revision is rejected",
+						}),
+					);
 				}
 				active.status = "superseded";
 				active.supersededByHandoffId = accepted.id;

@@ -210,6 +210,8 @@ Human Resources does not import master-data persistence or adapters.
 | Product requirements | [docs/PRD.md](./docs/PRD.md) |
 | Development roadmap | [docs/development-roadmap.md](./docs/development-roadmap.md) |
 | Baseline verification | [docs/baseline-verification.md](./docs/baseline-verification.md) |
+| HR ↔ Payroll closure guideline | [hr-payroll-bridging.md](../../../docs/erp/hr-payroll-bridging.md) |
+| HR ↔ Payroll decisions register | [hr-payroll-decisions.md](../payroll/docs/hr-payroll-decisions.md) |
 | Feature-first ERP method | [feature-first-erp.md](../../../.cursor/skills/afenda-semantic-registry-cutover/references/feature-first-erp.md) |
 | Payroll PRD (boundary) | [PAYROLL-PRD-MY-VN.md](../payroll/docs/PAYROLL-PRD-MY-VN.md) |
 | Package agent deltas | [AGENTS.md](./AGENTS.md) |

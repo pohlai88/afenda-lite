@@ -136,7 +136,22 @@ describe("payroll workforce ingress (PRD R1)", () => {
 		const second = await ingestApprovedPayrollHandoff(
 			ingestInput({
 				idempotencyKey: "idem-ingress-2",
-				payload: buildSyntheticHandoff({ baseAmount: "90000" }),
+				payload: buildSyntheticHandoff({
+					baseAmount: "90000",
+					sourceVersion: { compensationVersion: 2 },
+					components: [
+						{
+							code: "base",
+							kind: "base",
+							amount: "90000",
+							currencyCode: "USD",
+							decimalScale: 0,
+							sourceType: "hr_employee_compensation",
+							sourceId: "comp-synth-1",
+							sourceVersion: 2,
+						},
+					],
+				}),
 			}),
 			options,
 		);
@@ -161,6 +176,86 @@ describe("payroll workforce ingress (PRD R1)", () => {
 			return;
 		}
 		expect(active.data?.id).toBe(second.data.id);
+	});
+
+	it("rejects a stale or equal sourceVersion under a fresh idempotency key", async () => {
+		const options = createOptions();
+		const first = await ingestApprovedPayrollHandoff(
+			ingestInput({
+				payload: buildSyntheticHandoff({
+					baseAmount: "90000",
+					sourceVersion: { compensationVersion: 2 },
+					components: [
+						{
+							code: "base",
+							kind: "base",
+							amount: "90000",
+							currencyCode: "USD",
+							decimalScale: 0,
+							sourceType: "hr_employee_compensation",
+							sourceId: "comp-synth-1",
+							sourceVersion: 2,
+						},
+					],
+				}),
+			}),
+			options,
+		);
+		const stale = await ingestApprovedPayrollHandoff(
+			ingestInput({
+				idempotencyKey: "idem-ingress-stale",
+				payload: buildSyntheticHandoff({
+					baseAmount: "85000",
+					sourceVersion: { compensationVersion: 1 },
+				}),
+			}),
+			options,
+		);
+		const equalRevision = await ingestApprovedPayrollHandoff(
+			ingestInput({
+				idempotencyKey: "idem-ingress-equal-revision",
+				payload: buildSyntheticHandoff({
+					baseAmount: "91000",
+					sourceVersion: { compensationVersion: 2 },
+					components: [
+						{
+							code: "base",
+							kind: "base",
+							amount: "91000",
+							currencyCode: "USD",
+							decimalScale: 0,
+							sourceType: "hr_employee_compensation",
+							sourceId: "comp-synth-1",
+							sourceVersion: 2,
+						},
+					],
+				}),
+			}),
+			options,
+		);
+
+		expect(first.ok).toBe(true);
+		expect(stale.ok).toBe(false);
+		expect(equalRevision.ok).toBe(false);
+		if (stale.ok || equalRevision.ok) {
+			return;
+		}
+		expect(stale.code).toBe("CONFLICT");
+		expect(stale.message).toContain("Stale workforce handoff revision");
+		expect(equalRevision.code).toBe("CONFLICT");
+
+		const active = await options.store.getAcceptedWorkforceHandoff({
+			organizationId: ORGANIZATION_ID,
+			employeeId: "emp-synth-handoff",
+			effectiveDate: "2025-01-01",
+			periodStart: "2025-01-01",
+			periodEnd: "2025-01-31",
+		});
+		expect(active.ok).toBe(true);
+		if (!(active.ok && first.ok)) {
+			return;
+		}
+		expect(active.data?.id).toBe(first.data.id);
 	});
 
 	it("returns the same record when a new key repeats the active payload", async () => {

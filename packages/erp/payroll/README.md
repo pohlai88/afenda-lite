@@ -13,7 +13,9 @@ not UI shells, HTTP handlers, or HR command engines.
 ## Stability
 
 `Internal` — workspace-only package. Module manifest:
-`lifecycle: "active"`, `activationMode: "organization_toggle"`.
+`lifecycle: "scaffolded"`, `activationMode: "organization_toggle"`.
+Honest interim posture until HR promotion evidence and calculator sourcing
+decisions close ([hr-payroll-decisions.md](./docs/hr-payroll-decisions.md) A1).
 
 ## Requires
 
@@ -124,6 +126,8 @@ posting → Payments disbursement. Product boundary:
 | --- | --- |
 | Malaysia/Vietnam Payroll PRD | [docs/PAYROLL-PRD-MY-VN.md](./docs/PAYROLL-PRD-MY-VN.md) |
 | Production readiness | [PRODUCTION_READINESS.md](./PRODUCTION_READINESS.md) |
+| HR ↔ Payroll closure guideline | [hr-payroll-bridging.md](../../../docs/erp/hr-payroll-bridging.md) |
+| HR ↔ Payroll decisions register | [hr-payroll-decisions.md](./docs/hr-payroll-decisions.md) |
 | Human Resources PRD (ownership boundary) | [../human-resources/docs/PRD.md](../human-resources/docs/PRD.md) |
 | ERP scaffold rules | [ERP-SCAFFOLDING.md](../ERP-SCAFFOLDING.md) |
 | Package agent deltas | [AGENTS.md](./AGENTS.md) |
