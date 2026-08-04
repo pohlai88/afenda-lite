@@ -10,8 +10,12 @@ const requireFromRoot = createRequire(path.join(root, "package.json"));
 const rootConfigPath = path.join(root, "biome.jsonc");
 const sharedConfigPath = path.join(
 	root,
-	"packages/foundation/config/biome.json",
+	"packages/foundation/config/biome.policy.json",
 );
+const nestedTrapPaths = [
+	path.join(root, "packages/foundation/config/biome.json"),
+	path.join(root, "packages/foundation/config/biome.jsonc"),
+];
 const configPackagePath = path.join(
 	root,
 	"packages/foundation/config/package.json",
@@ -21,7 +25,7 @@ const broadDocsExclusionPattern = /^!{1,2}\*\*\/docs(?:\/\*\*)?$/;
 const configPackage = JSON.parse(readFileSync(configPackagePath, "utf8"));
 const biomeExport = Object.entries(configPackage.exports ?? {}).find(
 	([exportPath, target]) =>
-		target === "./biome.json" && exportPath.endsWith(".json"),
+		target === "./biome.policy.json" && exportPath.endsWith(".json"),
 )?.[0];
 const biomeSpecifier = biomeExport
 	? `@afenda/config/${biomeExport.slice(2)}`
@@ -35,7 +39,9 @@ const requiredExtends = [
 	biomeSpecifier,
 ];
 
-// One sentinel per required rule family. Ultracite remains the rule SSOT.
+// Ultracite remains the rule SSOT for non-project analysis. Types/project domain
+// rules are deliberately off (see biome.jsonc) so Biome does not TypeAware-scan
+// the monorepo on every check — official investigate-slowness guidance.
 const requiredRuleSentinels = [
 	"a11y/useAltText",
 	"correctness/noNextAsyncClientComponent",
@@ -43,6 +49,14 @@ const requiredRuleSentinels = [
 	"nursery/useSortedClasses",
 	"performance/noAccumulatingSpread",
 	"suspicious/noExplicitAny",
+];
+
+/** Types-domain rules that force TypeAware InitialScan when enabled. */
+const bannedTypeAwareRules = [
+	"complexity/useArrayFind",
+	"style/useConsistentEnumValueType",
+	"suspicious/noUnnecessaryConditions",
+	"suspicious/useArraySortCompare",
 ];
 
 /** @type {string[]} */
@@ -100,7 +114,7 @@ const sharedConfig = readConfig(sharedConfigPath);
 if (rootConfig) {
 	if (!sameArray(rootConfig.extends, requiredExtends)) {
 		errors.push(
-			"biome.jsonc must directly extend Ultracite core/react/next/vitest, followed by @afenda/config/biome.json",
+			"biome.jsonc must directly extend Ultracite core/react/next/vitest, followed by @afenda/config/biome.policy.json",
 		);
 	}
 	if (rootConfig.files?.includes?.[0] !== "**") {
@@ -109,17 +123,36 @@ if (rootConfig) {
 	if (hasBroadDocsExclusion(rootConfig.files?.includes)) {
 		errors.push("biome.jsonc must not exclude every directory named docs");
 	}
+	const domains = rootConfig.linter?.domains ?? {};
+	if (domains.project !== "none" || domains.types !== "none") {
+		errors.push(
+			'biome.jsonc must set linter.domains.project and linter.domains.types to "none" (official TypeAware scan control for monorepos)',
+		);
+	}
+}
+
+for (const trapPath of nestedTrapPaths) {
+	if (existsSync(trapPath)) {
+		errors.push(
+			`${path.relative(root, trapPath)} must not exist — Biome discovers biome.json/biome.jsonc as nested project configs; keep Afenda policy in biome.policy.json`,
+		);
+	}
 }
 
 if (sharedConfig) {
 	if (Object.hasOwn(sharedConfig, "extends")) {
 		errors.push(
-			"packages/foundation/config/biome.json must contain Afenda policy only and must not extend vendor presets",
+			"packages/foundation/config/biome.policy.json must contain Afenda policy only and must not extend vendor presets",
+		);
+	}
+	if (Object.hasOwn(sharedConfig, "root")) {
+		errors.push(
+			'packages/foundation/config/biome.policy.json must not set "root" — it is an extends-only fragment, not a nested Biome project',
 		);
 	}
 	if (hasBroadDocsExclusion(sharedConfig.files?.includes)) {
 		errors.push(
-			"packages/foundation/config/biome.json must not exclude every directory named docs",
+			"packages/foundation/config/biome.policy.json must not exclude every directory named docs",
 		);
 	}
 }
@@ -143,6 +176,15 @@ if (rage.status === 0) {
 	for (const rule of requiredRuleSentinels) {
 		if (!rage.output.includes(rule)) {
 			errors.push(`effective root Biome config is missing ${rule}`);
+		}
+	}
+	for (const rule of bannedTypeAwareRules) {
+		// rage lists enabled rules only; a banned rule must not appear as enabled.
+		const enabledLine = new RegExp(`^\\s{4}${rule.replace("/", "\\/")}\\s*$`, "m");
+		if (enabledLine.test(rage.output)) {
+			errors.push(
+				`effective root Biome config must keep ${rule} off (types-domain rule forces TypeAware monorepo scan)`,
+			);
 		}
 	}
 } else {

@@ -35,7 +35,7 @@ Env SSOT: `import { env } from '@afenda/env'` · local file `.env.local` (templa
 
 ## Package governance
 
-Kernel register and adoption surfaces are enforced by [`governance/kernel/`](governance/kernel/) via `pnpm check:kernel-governance` (also part of local `pnpm checks`). New ERP packages follow [`packages/erp/ERP-SCAFFOLDING.md`](packages/erp/ERP-SCAFFOLDING.md) by hand — Turborepo generators for ERP/kernel scaffolding are retired.
+Kernel register and adoption surfaces are enforced by [`governance/kernel/`](governance/kernel/) via [`governance/scripts/check-kernel-governance.mts`](governance/scripts/check-kernel-governance.mts) (`pnpm check:kernel-governance`, also part of local `pnpm checks`). New ERP packages follow [`packages/erp/ERP-SCAFFOLDING.md`](packages/erp/ERP-SCAFFOLDING.md) by hand — Turborepo generators for ERP/kernel scaffolding are retired.
 
 ```bash
 pnpm check:kernel-governance   # register parity + root-capability adoption surfaces

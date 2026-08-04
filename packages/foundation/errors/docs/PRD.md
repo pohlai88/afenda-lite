@@ -22,7 +22,7 @@
 
 > This PRD defines one package capability. It does not override KERNEL-GOVERNANCE, the workspace package register, the frozen admission contract, the workspace-edge register, or the machine-readable requirement register. Living package semantics remain owned by `CONTRACT.md`; this PRD maps product behavior, topology, and governance closure to that sealed contract.
 
-**Placement.** This file is the operative individual kernel package PRD under `packages/foundation/errors/docs/`. The integrated kit (`docs/kernel/AFENDA-KERNEL-PACKAGE-PRD-KIT.md`) still embeds a **stale draft** errors PRD (HTTP-as-non-goal, `normalizeUnknown`/`isFailure`, non-living tree) and indexes a missing `package-specs/foundation/errors/PRD.md`. That kit body is **not** authority until Docs-lane reopen rewrites it to point here. Do not restore a dual package-root `PRD.md`.
+**Placement.** This file is the operative individual kernel package PRD under `packages/foundation/errors/docs/`. Kernel doctrine projections are `packages/KERNEL-GOVERNANCE.md` and `packages/KERNEL-PRD-INDEX.md`; the machine register is `governance/kernel/`. Do not restore a dual package-root `PRD.md` or recreate retired `docs/kernel/**` kit paths.
 
 **Authority stack**
 
@@ -425,5 +425,5 @@ Deleted surfaces: packages/foundation/errors/PRD.md (superseded by docs/PRD.md)
 Consumer blast radius: 0 (documentation/governance only)
 Consumers checked: n/a for docs-only
 Evidence: docs/PRD.md parity vs CONTRACT + src/index.ts; pointer retarget
-Remaining conditions: G1–G10 KERNEL VERIFIED gaps; Docs-lane reopen to sync docs/kernel kit index
+Remaining conditions: G1–G10 KERNEL VERIFIED gaps
 ```

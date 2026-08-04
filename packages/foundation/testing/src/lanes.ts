@@ -80,7 +80,10 @@ const TESTING_LANE_DEFINITIONS = [
 		owner: "testing",
 		controlFile: "testing/vitest.unit.config.ts",
 		rootCommand: "pnpm test:unit",
-		include: ["scripts/__tests__/**/*.test.mjs"],
+		include: [
+			"scripts/__tests__/**/*.test.mjs",
+			"governance/scripts/__tests__/**/*.test.mjs",
+		],
 		cache: "turbo-cacheable",
 		requiresDatabase: false,
 		requiresBrowser: false,

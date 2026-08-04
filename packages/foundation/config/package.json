@@ -4,7 +4,7 @@
 	"private": true,
 	"description": "Shared Biome + TypeScript bases. Dev-time only: consumed through `extends`, never imported. Not the Vitest/Playwright factory — see testing/.",
 	"exports": {
-		"./biome.json": "./biome.json",
+		"./biome.policy.json": "./biome.policy.json",
 		"./tsconfig/base.json": "./tsconfig/base.json",
 		"./tsconfig/node-library.json": "./tsconfig/node-library.json",
 		"./tsconfig/nextjs.json": "./tsconfig/nextjs.json",

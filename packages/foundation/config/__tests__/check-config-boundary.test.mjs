@@ -19,7 +19,7 @@ import { test } from "vitest";
 import { checkConfigBoundary } from "../scripts/check-config-boundary.mjs";
 
 const EXPORTS = {
-	"./biome.json": "./biome.json",
+	"./biome.policy.json": "./biome.policy.json",
 	"./tsconfig/base.json": "./tsconfig/base.json",
 	"./tsconfig/nextjs.json": "./tsconfig/nextjs.json",
 	"./tsconfig/node-library.json": "./tsconfig/node-library.json",
@@ -75,7 +75,9 @@ function fixture() {
 		exports: EXPORTS,
 	});
 	write(root, `${CONFIG_DIR}/CONTRACT.md`, CONTRACT);
-	write(root, `${CONFIG_DIR}/biome.json`, { root: false });
+	write(root, `${CONFIG_DIR}/biome.policy.json`, {
+		formatter: { indentStyle: "tab" },
+	});
 	write(root, `${CONFIG_DIR}/tsconfig/base.json`, BASE_PROFILE);
 	write(root, `${CONFIG_DIR}/tsconfig/node-library.json`, {
 		extends: "./base.json",
@@ -153,7 +155,7 @@ test("INV-2 rejects the extensionless Biome alias", () => {
 	const root = fixture();
 	write(root, `${CONFIG_DIR}/package.json`, {
 		name: "@afenda/config",
-		exports: { ...EXPORTS, "./biome": "./biome.json" },
+		exports: { ...EXPORTS, "./biome": "./biome.policy.json" },
 	});
 	assertOnly(run(root), "INV-2");
 });

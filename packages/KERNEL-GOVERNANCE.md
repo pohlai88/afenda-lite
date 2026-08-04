@@ -719,7 +719,7 @@ Dependency direction:
 
 1. `governance/kernel/` defines package identity, admission topology, enforcement vocabulary, and declared trust mechanisms.
 2. Pure validators (`validateKernelGovernance`) evaluate those declarations plus root-capability adoption surfaces (`src/index.ts`, `exports["."]` via KRN-GOV-011 / KRN-GOV-012).
-3. `pnpm check:kernel-governance` consumes the authority and emits deterministic evidence (also wired into local `pnpm checks`).
+3. `governance/scripts/check-kernel-governance.mts` (`pnpm check:kernel-governance`) consumes the authority and emits deterministic evidence (also wired into local `pnpm checks`).
 4. `packages/KERNEL-GOVERNANCE.md` §3 and `packages/KERNEL-PRD-INDEX.md` are derived projections checked by the gate.
 
 No separate generator owns the register or scaffolds kernel packages toward it.

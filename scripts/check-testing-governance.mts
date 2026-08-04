@@ -335,7 +335,7 @@ function listGovernedTestFiles(): string[] {
 				"apps/**/__tests__/**/*.{test,spec}.{ts,tsx,mjs}",
 				"packages/**/__tests__/**/*.{test,spec}.{ts,tsx,mjs}",
 				"scripts/__tests__/**/*.{test,spec}.{ts,tsx,mjs}",
-				"turbo/**/__tests__/**/*.{test,spec}.{ts,tsx,mjs}",
+				"governance/scripts/__tests__/**/*.{test,spec}.{ts,tsx,mjs}",
 				"e2e/**/*.spec.ts",
 			],
 			{

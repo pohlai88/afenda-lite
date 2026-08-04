@@ -10,8 +10,8 @@ export function normalizeEstablishmentRegistrationIdentifier(
 
 /**
  * BR-04: only explicit allowed lifecycle transitions succeed.
- * Approved per CA-FD-EST-01 (docs/erp/corporate-administration/DECISIONS.md),
- * matching the `ca_legal_establishment_status_check` constraint already in
+ * Approved per CA-FD-EST-01, matching the
+ * `ca_legal_establishment_status_check` constraint already in
  * @afenda/db (registered/active/suspended/closed).
  */
 const ALLOWED_TRANSITIONS: Readonly<

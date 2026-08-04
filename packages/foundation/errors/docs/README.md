@@ -15,15 +15,12 @@ admission governance docs live here. Consumer entry remains at package root.
 ## Authority rules
 
 1. **Disk + this folder win.** Sealed consumer surface is `src/index.ts` +
-   `CONTRACT.md`. Do not invent APIs from the integrated kit draft.
+   `CONTRACT.md`.
 2. **Do not restore** package-root `PRD.md`, `CONTRACT.md`, `ADMISSION.md`,
    `PR.md`, or `.protected.sha256`.
-3. **`docs/kernel/AFENDA-KERNEL-PACKAGE-PRD-KIT.md` is a stale review copy** for
-   `@afenda/errors`. Its embedded draft still claims HTTP-as-non-goal,
-   `normalizeUnknown` / `isFailure` root ops, and a non-living tree. Ignore that
-   body until Docs-lane reopen rewrites the kit pointer to this folder.
-4. **`docs/kernel/package-specs/foundation/errors/PRD.md` is absent** — do not
-   recreate it without Docs-lane reopen.
+3. **Do not recreate** retired `docs/kernel/**` kit bodies or
+   `docs/kernel/package-specs/**` — kernel doctrine lives in
+   `packages/KERNEL-*` and `governance/kernel/`.
 
 ## Enterprise launch blockers (KERNEL formalization)
 

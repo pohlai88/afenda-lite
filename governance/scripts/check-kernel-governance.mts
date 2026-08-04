@@ -9,22 +9,22 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { KERNEL_BAND_PATH_PREFIX } from "../governance/kernel/bands.ts";
-import { compareAsciiOrdinal } from "../governance/kernel/compare.ts";
+import { GOVERNANCE_GATES } from "../../scripts/lib/governance-gates.mjs";
+import { KERNEL_BAND_PATH_PREFIX } from "../kernel/bands.ts";
+import { compareAsciiOrdinal } from "../kernel/compare.ts";
 import {
 	parseKernelGovernanceDocRows,
 	parseKernelPrdIndexRows,
-} from "../governance/kernel/doc-projection.ts";
+} from "../kernel/doc-projection.ts";
 import {
 	type KernelGovernanceReport,
 	type KernelGovernanceValidationContext,
 	validateKernelGovernance,
-} from "../governance/kernel/validator.ts";
-import { GOVERNANCE_GATES } from "./lib/governance-gates.mjs";
+} from "../kernel/validator.ts";
 
 const repoRoot = path.resolve(
 	path.dirname(fileURLToPath(import.meta.url)),
-	"..",
+	"../..",
 );
 
 const isDirectory = (absolutePath: string): boolean => {

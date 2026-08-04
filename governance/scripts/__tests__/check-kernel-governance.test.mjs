@@ -11,11 +11,11 @@ import {
 	KernelDocProjectionError,
 	parseKernelGovernanceDocRows,
 	parseKernelPrdIndexRows,
-} from "../../governance/kernel/doc-projection.ts";
+} from "../../kernel/doc-projection.ts";
 import {
 	buildExpectedGovernanceDocRows,
 	validateKernelGovernance,
-} from "../../governance/kernel/validator.ts";
+} from "../../kernel/validator.ts";
 import {
 	createKernelGovernanceValidationContext,
 	runKernelGovernanceCheck,
@@ -23,7 +23,7 @@ import {
 
 const repoRoot = path.resolve(
 	path.dirname(fileURLToPath(import.meta.url)),
-	"../..",
+	"../../..",
 );
 
 const healthyContext = () => createKernelGovernanceValidationContext();
@@ -274,7 +274,7 @@ describe("kernel governance validation", () => {
 			[
 				"--import",
 				"tsx",
-				path.join(repoRoot, "scripts/check-kernel-governance.mts"),
+				path.join(repoRoot, "governance/scripts/check-kernel-governance.mts"),
 			],
 			{
 				cwd: repoRoot,

@@ -7,7 +7,7 @@
 		"ultracite/biome/react",
 		"ultracite/biome/next",
 		"ultracite/biome/vitest",
-		"@afenda/config/biome.json"
+		"@afenda/config/biome.policy.json"
 	],
 	"files": {
 		"includes": [
@@ -42,8 +42,37 @@
 			// Next.js generated; line endings regenerate per OS.
 			"!!**/next-env.d.ts",
 			// Shadcn Studio DNA staging (Method A) — not product CI surface.
-			"!!**/apps/web/shadcn-studio"
+			"!!**/apps/web/shadcn-studio",
+			// Media / fonts / lockfiles — walk noise; never lint targets.
+			"!!**/pnpm-lock.yaml",
+			"!!**/*.{png,jpg,jpeg,gif,webp,ico,woff,woff2,ttf,eot}",
+			"!!**/*.tsbuildinfo"
 		]
+	},
+	// Official Biome guidance (investigate-slowness + linter domains):
+	// types/project domain rules trigger a TypeAware full-repo InitialScan
+	// (module graph + node_modules .d.ts). In this monorepo that hangs the CLI/LSP
+	// for multiple seconds on every check. Keep Ultracite for non-project analysis;
+	// disable the scan-triggering domains and the four Ultracite-enabled types rules.
+	// Refs: https://biomejs.dev/guides/investigate-slowness/
+	//       https://biomejs.dev/linter/domains/#types
+	"linter": {
+		"domains": {
+			"project": "none",
+			"types": "none"
+		},
+		"rules": {
+			"complexity": {
+				"useArrayFind": "off"
+			},
+			"style": {
+				"useConsistentEnumValueType": "off"
+			},
+			"suspicious": {
+				"noUnnecessaryConditions": "off",
+				"useArraySortCompare": "off"
+			}
+		}
 	},
 	"overrides": [
 		{

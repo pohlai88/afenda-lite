@@ -9,7 +9,7 @@ export const PROTECTION_FILE_NAME = ".protected.sha256";
 export const EDIT_TOKEN_ENV = "AFENDA_PROTECTED_EDIT_TOKEN";
 
 const INCLUDED_ROOT_FILES = new Set(["package.json", "README.md", "tsconfig.json"]);
-const CONFIG_PACKAGE_ROOT_FILES = new Set(["biome.json"]);
+const CONFIG_PACKAGE_ROOT_FILES = new Set(["biome.policy.json"]);
 const INCLUDED_EXTENSIONS = new Set([
 	".ts",
 	".tsx",

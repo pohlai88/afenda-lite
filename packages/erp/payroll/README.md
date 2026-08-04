@@ -143,6 +143,6 @@ Implementation method: project skill `afenda-elite-payroll`.
 
 **Anti-goals:** owning `hr_employee` / `hr_employee_compensation` / `hr_allowance_entitlement`; nesting under `@afenda/human-resources`; peer package import of HR; inserting into `payment` or `journal`.
 
-**Four-way ownership:** HR entitlement/agreement → Payroll calculation → Accounting posting → Payments disbursement. The product boundary and non-duplication rules are defined in the [Human Resources PRD](../../../docs/_scratch/human-resources/human-resources-prd.md).
+**Four-way ownership:** HR entitlement/agreement → Payroll calculation → Accounting posting → Payments disbursement. The product boundary and non-duplication rules are defined in the [Human Resources PRD](../human-resources/docs/PRD.md).
 
-**Authority:** [Human Resources PRD](../../../docs/_scratch/human-resources/human-resources-prd.md) · [Malaysia/Vietnam Payroll PRD](../../../docs/_scratch/payroll/PAYROLL-PRD-MY-VN.md) · [SCAFFOLDING.md](../ERP-SCAFFOLDING.md) · skill `afenda-elite-payroll`
+**Authority:** [Human Resources PRD](../human-resources/docs/PRD.md) · [Malaysia/Vietnam Payroll PRD](./docs/PAYROLL-PRD-MY-VN.md) · [SCAFFOLDING.md](../ERP-SCAFFOLDING.md) · skill `afenda-elite-payroll`

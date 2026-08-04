@@ -24,7 +24,7 @@ without being written down.
 
 ## Consumer surface
 
-- `@afenda/config/biome.json`
+- `@afenda/config/biome.policy.json`
 - `@afenda/config/tsconfig/base.json`
 - `@afenda/config/tsconfig/node-library.json`
 - `@afenda/config/tsconfig/react-library.json`

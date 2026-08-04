@@ -1,8 +1,9 @@
 import { spawn } from "node:child_process";
 import fs from "node:fs";
-import path from "node:path";
 
-const SCRIPT_PATH_PATTERN = /scripts\/([A-Za-z0-9._/-]+\.(?:mjs|mts))/;
+/** Root-relative gate entry paths under `scripts/` or `governance/scripts/`. */
+const SCRIPT_PATH_PATTERN =
+	/((?:governance\/)?scripts\/[A-Za-z0-9._/-]+\.(?:mjs|mts))/;
 
 /**
  * Run only forward gates whose executable scripts and required surfaces exist on disk.
@@ -51,7 +52,7 @@ function scriptExists(scriptName) {
 	}
 	if (
 		scriptName === "check:kernel-governance" &&
-		!fs.existsSync("scripts/check-kernel-governance.mts")
+		!fs.existsSync("governance/scripts/check-kernel-governance.mts")
 	) {
 		return false;
 	}
@@ -62,7 +63,7 @@ function scriptExists(scriptName) {
 	if (!m) {
 		return true;
 	}
-	return fs.existsSync(path.join("scripts", m[1]));
+	return fs.existsSync(m[1]);
 }
 
 const checks = preferred.filter(scriptExists);

@@ -281,8 +281,9 @@ export const GOVERNANCE_GATES = [
 		owner: "platform-foundation",
 		domain: "kernel-family-governance",
 		description:
-			"Proves the canonical kernel package register matches disk, doctrine, and generator projections.",
-		negativeFixture: "scripts/__tests__/check-kernel-governance.test.mjs",
+			"Proves the canonical kernel package register matches disk, doctrine, and enforcement declarations.",
+		negativeFixture:
+			"governance/scripts/__tests__/check-kernel-governance.test.mjs",
 	},
 ];
 
