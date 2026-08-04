@@ -3,7 +3,7 @@
 import type { Result as ActionResult } from "@afenda/errors";
 import { notifications } from "@afenda/notifications";
 import { mapPackageResult } from "@/app/actions/map-package-result";
-import { runMemberSessionAction } from "@/app/actions/run-member-session-action";
+import { runMemberSessionAction } from "@/app/actions/_runtime/run-member-session-action";
 
 export interface GetUnreadNotificationCountActionData {
 	unreadCount: number;

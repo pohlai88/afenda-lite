@@ -3,7 +3,7 @@
 import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { type Notification, notifications } from "@afenda/notifications";
 import { mapPackageResult } from "@/app/actions/map-package-result";
-import { runMemberSessionAction } from "@/app/actions/run-member-session-action";
+import { runMemberSessionAction } from "@/app/actions/_runtime/run-member-session-action";
 import { markMyNotificationReadCommandSchema } from "@/modules/identity/schemas/my-notifications";
 import { parseSchema } from "@/modules/platform/schemas/common";
 

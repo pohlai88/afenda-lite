@@ -179,7 +179,7 @@ and reusable [feature-first ERP semantic method](../../../.cursor/skills/afenda-
 
 | Boundary | Consumer contract | Enforcement evidence |
 |---|---|---|
-| Permission | The composition root injects authorization into `HumanResourcesCapabilityOptions`; app Actions stamp organization, actor, and correlation context and return the standard `ActionResult` envelope. Callers cannot supply tenant identity. | `src/facade/context.ts` · `src/facade/capabilities.ts` · `apps/web/app/actions/hr-action-runner.ts` |
+| Permission | The composition root injects authorization into `HumanResourcesCapabilityOptions`; app Actions stamp organization, actor, and correlation context and return the standard `ActionResult` envelope. Callers cannot supply tenant identity. | `src/facade/context.ts` · `src/facade/capabilities.ts` · `apps/web/app/actions/_runtime/hr-action-runner.ts` |
 | Events and audit | Mutation definitions classify audit-only versus domain-event behavior. Audit recording is required before outbox append; commands fail closed when either required fact cannot be recorded. | `src/kernel/emissions/mutation-outcome.ts` · `src/kernel/emissions/registry.ts` |
 | Privacy | Sensitive queries use contextual authorization and field projection. Bulk exports use an allowlisted definition-bound permission and record privacy evidence before rows are released. | `src/kernel/authorization/contextual-authorization.ts` · `src/features/bulk-export/` · `src/features/privacy/` |
 | Document references | HR stores canonical `vault://` references only; object acceptance and immutable-version requirements are delegated through `DocumentReferencePort`. Document bytes remain outside this package. | `src/features/compliance/vault-document-reference-adapter.ts` · `src/kernel/execution/ports.ts` |
@@ -191,14 +191,14 @@ Production HR source does not import `@afenda/payroll` and never calculates gros
 
 | Journey or worker | Composition entry |
 |---|---|
-| HR administration | [`hr-admin-journeys.ts`](../../../apps/web/app/actions/hr-admin-journeys.ts) |
+| HR administration | [`hr-admin-journeys.ts`](../../../apps/web/app/actions/_runtime/hr-admin-journeys.ts) |
 | Employee self-service | [`hr-self-service-journeys.ts`](../../../apps/web/app/actions/hr-self-service-journeys.ts) |
 | Manager self-service | [`hr-manager-journeys.ts`](../../../apps/web/app/actions/hr-manager-journeys.ts) |
 | Recruitment | [`hr-recruitment.ts`](../../../apps/web/app/actions/hr-recruitment.ts) |
 | HR operations | [`hr-operations.ts`](../../../apps/web/app/actions/hr-operations.ts) |
 | Compensation | [`hr-compensation.ts`](../../../apps/web/app/actions/hr-compensation.ts) |
-| Reporting and bulk import | [`hr-reporting-bulk.ts`](../../../apps/web/app/actions/hr-reporting-bulk.ts) · [`human-resources-reporting-bulk-worker.ts`](../../../apps/web/lib/erp/human-resources-reporting-bulk-worker.ts) |
-| Bulk export | [`hr-bulk-export.ts`](../../../apps/web/app/actions/hr-bulk-export.ts) · [`human-resources-bulk-export-worker.ts`](../../../apps/web/lib/erp/human-resources-bulk-export-worker.ts) · [`human-resources-bulk-export-registry.ts`](../../../apps/web/lib/erp/human-resources-bulk-export-registry.ts) |
+| Reporting and bulk import | [`hr-reporting-bulk.ts`](../../../apps/web/app/actions/_runtime/hr-reporting-bulk.ts) · [`human-resources-reporting-bulk-worker.ts`](../../../apps/web/lib/erp/human-resources-reporting-bulk-worker.ts) |
+| Bulk export | [`hr-bulk-export.ts`](../../../apps/web/app/actions/_runtime/hr-bulk-export.ts) · [`human-resources-bulk-export-worker.ts`](../../../apps/web/lib/erp/human-resources-bulk-export-worker.ts) · [`human-resources-bulk-export-registry.ts`](../../../apps/web/lib/erp/human-resources-bulk-export-registry.ts) |
 | Payroll delivery | [`hr-payroll-delivery.ts`](../../../apps/web/app/actions/hr-payroll-delivery.ts) · [`human-resources-payroll-delivery.ts`](../../../apps/web/modules/platform/domain/human-resources-payroll-delivery.ts) |
 | Privacy deletion | [`hr-privacy-deletion.ts`](../../../apps/web/app/actions/hr-privacy-deletion.ts) · [`human-resources-privacy-deletion.ts`](../../../apps/web/lib/erp/human-resources-privacy-deletion.ts) |
 | Reliability worker | [`human-resources-reliability-worker.ts`](../../../apps/web/modules/platform/domain/human-resources-reliability-worker.ts) |

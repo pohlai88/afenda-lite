@@ -44,7 +44,7 @@ vi.mock("@/app/actions/permission-gate", () => ({
 	forbidUnlessPermission: permissionMocks.forbidUnlessPermission,
 }));
 
-import { runHumanResourcesBulkExportAction } from "../app/actions/hr-bulk-export";
+import { runHumanResourcesBulkExportAction } from "../app/actions/_runtime/hr-bulk-export";
 
 describe("HR bulk export composition", () => {
 	beforeEach(() => {

@@ -31,7 +31,7 @@ import {
 	withHrSessionContext as withSessionContext,
 } from "@/app/actions/hr-mutation-context";
 import { mapPackageResult } from "@/app/actions/map-package-result";
-import { runHrWorkforceOperatorPermissionAction as runOperatorPermissionAction } from "@/app/actions/run-hr-operator-permission-action";
+import { runHrWorkforceOperatorPermissionAction as runOperatorPermissionAction } from "@/app/actions/_runtime/run-hr-operator-permission-action";
 import { createHumanResourcesCommandOptions } from "@/lib/erp/human-resources-command-options";
 import { parseSchema } from "@/modules/platform/schemas/common";
 

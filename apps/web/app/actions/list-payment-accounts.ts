@@ -3,7 +3,7 @@
 import type { Result as ActionResult } from "@afenda/errors";
 import { listPaymentAccounts, type PaymentAccount } from "@afenda/payments";
 import { mapPackageResult } from "@/app/actions/map-package-result";
-import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
+import { runOperatorPermissionAction } from "@/app/actions/_runtime/run-operator-permission-action";
 import { createPaymentsCommandOptions } from "@/lib/erp/payments-command-options";
 
 export async function listPaymentAccountsAction(): Promise<

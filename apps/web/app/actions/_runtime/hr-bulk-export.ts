@@ -9,7 +9,7 @@ import {
 } from "@afenda/human-resources";
 import { z } from "zod";
 import { mapPackageResult } from "@/app/actions/map-package-result";
-import { runHrBulkOperatorPermissionAction as runOperatorPermissionAction } from "@/app/actions/run-hr-operator-permission-action";
+import { runHrBulkOperatorPermissionAction as runOperatorPermissionAction } from "@/app/actions/_runtime/run-hr-operator-permission-action";
 import {
 	getHumanResourcesBulkExportDefinition,
 	HUMAN_RESOURCES_BULK_EXPORT_TYPES,

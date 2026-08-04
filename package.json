@@ -56,6 +56,7 @@
 		"check:env-consumers": "node scripts/check-env-consumers.mjs",
 		"check:action-identity-stamp-order": "node scripts/check-action-identity-stamp-order.mjs",
 		"check:app-loader-server-suffix": "node scripts/check-app-loader-server-suffix.mjs",
+		"check:app-action-runners": "node scripts/check-app-action-runners.mjs",
 		"check:testing-governance": "pnpm exec tsx scripts/check-testing-governance.mts",
 		"check:biome-governance": "node scripts/check-biome-governance.mjs",
 		"check:config-boundary": "node packages/foundation/config/scripts/check-config-boundary.mjs",

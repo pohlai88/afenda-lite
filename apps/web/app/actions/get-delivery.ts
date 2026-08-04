@@ -4,7 +4,7 @@ import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { type Delivery, getDeliveryById } from "@afenda/fulfillment";
 import { z } from "zod";
 import { mapPackageResult } from "@/app/actions/map-package-result";
-import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
+import { runOperatorPermissionAction } from "@/app/actions/_runtime/run-operator-permission-action";
 import { createFulfillmentCommandOptions } from "@/lib/erp/fulfillment-command-options";
 import { parseSchema } from "@/modules/platform/schemas/common";
 

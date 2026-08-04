@@ -5,7 +5,7 @@ import { createDraftSalesOrder, type SalesOrder } from "@afenda/sales";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { mapPackageResult } from "@/app/actions/map-package-result";
-import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
+import { runOperatorPermissionAction } from "@/app/actions/_runtime/run-operator-permission-action";
 import { createSalesCommandOptions } from "@/lib/erp/sales-command-options";
 import { parseSchema } from "@/modules/platform/schemas/common";
 

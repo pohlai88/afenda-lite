@@ -6,7 +6,7 @@ import { audit as afendaAudit } from "@afenda/audit";
 import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { z } from "zod";
 import { mapPackageResult } from "@/app/actions/map-package-result";
-import { runHrIntegrationOperatorPermissionAction as runOperatorPermissionAction } from "@/app/actions/run-hr-operator-permission-action";
+import { runHrIntegrationOperatorPermissionAction as runOperatorPermissionAction } from "@/app/actions/_runtime/run-hr-operator-permission-action";
 import {
 	acknowledgeProductionReliabilityWork,
 	checkpointProductionConnectorCursor,

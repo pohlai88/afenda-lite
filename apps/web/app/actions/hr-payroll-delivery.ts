@@ -8,7 +8,7 @@ import {
 } from "@afenda/human-resources";
 import { z } from "zod";
 import { mapPackageResult } from "@/app/actions/map-package-result";
-import { runHrPayrollDeliveryOperatorPermissionAction as runOperatorPermissionAction } from "@/app/actions/run-hr-operator-permission-action";
+import { runHrPayrollDeliveryOperatorPermissionAction as runOperatorPermissionAction } from "@/app/actions/_runtime/run-hr-operator-permission-action";
 import { createHumanResourcesCommandOptions } from "@/lib/erp/human-resources-command-options";
 import {
 	createProductionPayrollDeliveryPorts,

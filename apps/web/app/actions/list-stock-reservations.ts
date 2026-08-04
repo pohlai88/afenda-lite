@@ -6,7 +6,7 @@ import {
 	type StockReservation,
 } from "@afenda/inventory";
 import { mapPackageResult } from "@/app/actions/map-package-result";
-import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
+import { runOperatorPermissionAction } from "@/app/actions/_runtime/run-operator-permission-action";
 import { createInventoryCommandOptions } from "@/lib/erp/inventory-command-options";
 
 export interface ListStockReservationsActionData {

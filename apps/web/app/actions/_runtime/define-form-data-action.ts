@@ -13,7 +13,7 @@ import {
 import { z } from "zod";
 
 import { mapPackageResult } from "@/app/actions/map-package-result";
-import { runMemberPermissionAction } from "@/app/actions/run-member-permission-action";
+import { runMemberPermissionAction } from "@/app/actions/_runtime/run-member-permission-action";
 import { createCorporateAdministrationCommandOptions } from "@/lib/erp/corporate-administration-command-options";
 import { parseSchema } from "@/modules/platform/schemas/common";
 

@@ -24,7 +24,7 @@ import {
 	runEmploymentLifecycleJourneyAction,
 	startOffboardingJourneyAction,
 	startOnboardingJourneyAction,
-} from "@/app/actions/hr-admin-journeys";
+} from "@/app/actions/_runtime/hr-admin-journeys";
 
 interface EmploymentContext {
 	employeeId: string;

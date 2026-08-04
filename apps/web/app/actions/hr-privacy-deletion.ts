@@ -9,7 +9,7 @@ import {
 } from "@afenda/human-resources";
 import { z } from "zod";
 import { mapPackageResult } from "@/app/actions/map-package-result";
-import { runHrPrivacyOperatorPermissionAction as runOperatorPermissionAction } from "@/app/actions/run-hr-operator-permission-action";
+import { runHrPrivacyOperatorPermissionAction as runOperatorPermissionAction } from "@/app/actions/_runtime/run-hr-operator-permission-action";
 import {
 	evaluateHumanResourcesPrivacyDeletion,
 	executeApprovedHumanResourcesPrivacyDeletion,

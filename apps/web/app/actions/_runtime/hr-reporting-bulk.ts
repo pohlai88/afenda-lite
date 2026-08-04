@@ -28,7 +28,7 @@ import {
 import { z } from "zod";
 
 import { mapPackageResult } from "@/app/actions/map-package-result";
-import { runHrBulkOperatorPermissionAction as runOperatorPermissionAction } from "@/app/actions/run-hr-operator-permission-action";
+import { runHrBulkOperatorPermissionAction as runOperatorPermissionAction } from "@/app/actions/_runtime/run-hr-operator-permission-action";
 import {
 	buildHumanResourcesReportingSnapshotWorker,
 	loadHumanResourcesBulkErrorArtifactWorker,

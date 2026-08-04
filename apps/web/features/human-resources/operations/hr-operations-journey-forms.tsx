@@ -21,7 +21,7 @@ import {
 	runEmploymentLifecycleJourneyAction,
 	startOffboardingJourneyAction,
 	startOnboardingJourneyAction,
-} from "@/app/actions/hr-admin-journeys";
+} from "@/app/actions/_runtime/hr-admin-journeys";
 import { detectComplianceExpiryOperationsAction } from "@/app/actions/hr-compliance";
 import { openEmployeeCaseAction } from "@/app/actions/hr-employee-relations";
 import { createHeadcountPlanAction } from "@/app/actions/hr-workforce-planning";

@@ -383,6 +383,7 @@ months.
 Enforced rows so far:
 - Identity stamp order — `pnpm check:action-identity-stamp-order`
 - Loaders `.server.ts` suffix — `pnpm check:app-loader-server-suffix`
+- Exported runners under `_runtime/` — `pnpm check:app-action-runners`
 
 Until the remaining rows below are registered with negative fixtures proving they
 fire, those rows stay review-enforced. Do not cite `pnpm check:app-scaffolding`
@@ -393,7 +394,7 @@ over `apps/<app>/**`:
 
 | Rule | Decidable by |
 | --- | --- |
-| Runners | No `run*Action` declaration outside `app/actions/_runtime/` |
+| Runners | No `run*Action` declaration outside `app/actions/_runtime/` — enforced by `check:app-action-runners` |
 | Action layout | Every `app/actions/<group>/` matches a declared `@afenda/*` dependency; group/file limits |
 | Loaders | Every module named `load-*.ts` under `features/` uses `*.server.ts` — enforced by `check:app-loader-server-suffix` |
 | Traceability | No `correlation.create()` outside `_runtime/`; every `logger.event` call site carries the four required fields |

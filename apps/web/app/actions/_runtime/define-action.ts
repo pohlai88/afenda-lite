@@ -3,7 +3,7 @@ import type { Result as ActionResult, Result } from "@afenda/errors";
 
 import { withHrSessionContext } from "@/app/actions/hr-mutation-context";
 import { mapPackageResult } from "@/app/actions/map-package-result";
-import type { OperatorPermissionActionInput } from "@/app/actions/run-operator-permission-action";
+import type { OperatorPermissionActionInput } from "@/app/actions/_runtime/run-operator-permission-action";
 import type { ProductPermissionCode } from "@/modules/identity/domain/session-permission";
 import { parseSchema } from "@/modules/platform/schemas/common";
 

@@ -176,7 +176,7 @@ Authz + Zod inside the Action; stamp org/actor from session; return `ActionResul
 import { listDeliveries } from "@afenda/fulfillment";
 import { z } from "zod";
 import { mapPackageResult } from "@/app/actions/map-package-result";
-import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
+import { runOperatorPermissionAction } from "@/app/actions/_runtime/run-operator-permission-action";
 import { createFulfillmentCommandOptions } from "@/lib/erp/fulfillment-command-options";
 import {
 	type ActionResult,

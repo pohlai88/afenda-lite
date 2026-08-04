@@ -81,7 +81,7 @@ import {
 import {
 	invokeHrPackage,
 	runHrCompensationHumanResourcesAction as runHrHumanResourcesAction,
-} from "@/app/actions/hr-action-runner";
+} from "@/app/actions/_runtime/hr-action-runner";
 import { hrActionSchema } from "@/app/actions/hr-mutation-context";
 
 const createCompensationGradeActionSchema = hrActionSchema(

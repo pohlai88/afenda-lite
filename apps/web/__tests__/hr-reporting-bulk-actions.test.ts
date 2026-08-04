@@ -48,7 +48,7 @@ import {
 	buildHumanResourcesReportingSnapshotAction,
 	loadHumanResourcesBulkErrorArtifactAction,
 	runEmployeeBulkImportAction,
-} from "../app/actions/hr-reporting-bulk";
+} from "../app/actions/_runtime/hr-reporting-bulk";
 
 describe("HR reporting and bulk Server Actions", () => {
 	beforeEach(() => {

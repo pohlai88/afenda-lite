@@ -4,7 +4,7 @@ import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { getStockMovementById, type StockMovement } from "@afenda/inventory";
 import { z } from "zod";
 import { mapPackageResult } from "@/app/actions/map-package-result";
-import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
+import { runOperatorPermissionAction } from "@/app/actions/_runtime/run-operator-permission-action";
 import { createInventoryCommandOptions } from "@/lib/erp/inventory-command-options";
 import { parseSchema } from "@/modules/platform/schemas/common";
 

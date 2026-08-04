@@ -8,7 +8,7 @@ import type { z } from "zod";
 
 import { withHrSessionContext } from "@/app/actions/hr-mutation-context";
 import { mapPackageResult } from "@/app/actions/map-package-result";
-import { createHrOperatorPermissionActionRunner } from "@/app/actions/run-hr-operator-permission-action";
+import { createHrOperatorPermissionActionRunner } from "@/app/actions/_runtime/run-hr-operator-permission-action";
 import { createHumanResourcesCommandOptions } from "@/lib/erp/human-resources-command-options";
 import type { ProductPermissionCode } from "@/modules/identity/domain/session-permission";
 

@@ -89,7 +89,7 @@ describe("HR administration and manager workspace contracts", () => {
 	});
 
 	it("validates admin employee ownership before record mutations", () => {
-		const journeys = source("app/actions/hr-admin-journeys.ts");
+		const journeys = source("app/actions/_runtime/hr-admin-journeys.ts");
 		expect(journeys).toContain("loadOwnedEmployment");
 		expect(journeys).toContain(
 			"assignment.data.employeeId !== parsed.data.employeeId",

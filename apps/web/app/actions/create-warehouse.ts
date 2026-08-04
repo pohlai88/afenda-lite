@@ -9,7 +9,7 @@ import {
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { mapPackageResult } from "@/app/actions/map-package-result";
-import { runMemberSessionAction } from "@/app/actions/run-member-session-action";
+import { runMemberSessionAction } from "@/app/actions/_runtime/run-member-session-action";
 import { createMasterDataAuthorizationPort } from "@/lib/erp/master-data-authorization-port";
 import { parseSchema } from "@/modules/platform/schemas/common";
 

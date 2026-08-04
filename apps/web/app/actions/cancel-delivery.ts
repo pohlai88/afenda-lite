@@ -5,7 +5,7 @@ import { cancelDelivery, type Delivery } from "@afenda/fulfillment";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { mapPackageResult } from "@/app/actions/map-package-result";
-import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
+import { runOperatorPermissionAction } from "@/app/actions/_runtime/run-operator-permission-action";
 import { createFulfillmentCommandOptions } from "@/lib/erp/fulfillment-command-options";
 import { parseSchema } from "@/modules/platform/schemas/common";
 

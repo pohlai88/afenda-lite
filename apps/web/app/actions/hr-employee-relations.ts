@@ -58,9 +58,9 @@ import {
 	updateEmployeeCaseClassificationInputSchema,
 } from "@afenda/human-resources";
 import { defineAction } from "@/app/actions/_runtime/define-action";
-import { invokeHrPackage } from "@/app/actions/hr-action-runner";
+import { invokeHrPackage } from "@/app/actions/_runtime/hr-action-runner";
 import { hrActionSchema } from "@/app/actions/hr-mutation-context";
-import { runHrComplianceOperatorPermissionAction } from "@/app/actions/run-hr-operator-permission-action";
+import { runHrComplianceOperatorPermissionAction } from "@/app/actions/_runtime/run-hr-operator-permission-action";
 
 const CASE_OPEN = "human-resources.employee-case.open" as const;
 const CASE_ASSIGNED_READ =

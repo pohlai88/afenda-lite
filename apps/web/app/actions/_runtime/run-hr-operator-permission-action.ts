@@ -6,7 +6,7 @@ import {
 import {
 	type OperatorPermissionActionInput,
 	runOperatorPermissionAction,
-} from "@/app/actions/run-operator-permission-action";
+} from "@/app/actions/_runtime/run-operator-permission-action";
 import { createProductionHrObservabilityPorts } from "@/modules/platform/observability/human-resources-observability";
 
 type HrOperatorPermissionActionInput<T> = Omit<

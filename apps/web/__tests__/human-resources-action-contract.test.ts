@@ -32,7 +32,7 @@ describe("HR standard Action contract", () => {
 	});
 
 	it("keeps the shared runner on permission, validation, package, and ActionResult boundaries", () => {
-		const runner = source("app/actions/hr-action-runner.ts");
+		const runner = source("app/actions/_runtime/hr-action-runner.ts");
 		expect(runner).toContain("runOperatorPermissionAction");
 		expect(runner).toContain("parseSchema");
 		expect(runner).toContain("withHrSessionContext");
@@ -43,10 +43,10 @@ describe("HR standard Action contract", () => {
 
 	it("routes every HR action module through an approved permission runner", () => {
 		const actionFiles = [
-			"hr-admin-journeys.ts",
+			"_runtime/hr-admin-journeys.ts",
 			"hr-assignments.ts",
 			"hr-benefits.ts",
-			"hr-bulk-export.ts",
+			"_runtime/hr-bulk-export.ts",
 			"hr-compensation-review.ts",
 			"hr-compensation.ts",
 			"hr-compliance.ts",
@@ -65,7 +65,7 @@ describe("HR standard Action contract", () => {
 			"hr-people.ts",
 			"hr-performance.ts",
 			"hr-recruitment.ts",
-			"hr-reporting-bulk.ts",
+			"_runtime/hr-reporting-bulk.ts",
 			"hr-self-service-journeys.ts",
 			"hr-self-service.ts",
 			"hr-talent.ts",

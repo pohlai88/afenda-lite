@@ -7,7 +7,7 @@ import {
 } from "@afenda/receiving";
 import { z } from "zod";
 import { mapPackageResult } from "@/app/actions/map-package-result";
-import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
+import { runOperatorPermissionAction } from "@/app/actions/_runtime/run-operator-permission-action";
 import { createReceivingCommandOptions } from "@/lib/erp/receiving-command-options";
 import { revalidateReceivingPaths } from "@/lib/erp/receiving-revalidate";
 import { parseSchema } from "@/modules/platform/schemas/common";

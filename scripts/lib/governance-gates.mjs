@@ -132,6 +132,17 @@ export const GOVERNANCE_GATES = [
 			"scripts/__tests__/check-app-loader-server-suffix.test.mjs",
 	},
 	{
+		id: "app-action-runners",
+		command: "pnpm check:app-action-runners",
+		kind: "leaf",
+		tier: "ci-required",
+		owner: "application-composition",
+		domain: "app-scaffolding",
+		description:
+			"Requires exported run*Action declarations to live under app/actions/_runtime/ (APP-SCAFFOLDING §5.2 / §9.1 Runners).",
+		negativeFixture: "scripts/__tests__/check-app-action-runners.test.mjs",
+	},
+	{
 		id: "env-example-parity",
 		command: "pnpm check:env-example",
 		kind: "leaf",

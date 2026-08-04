@@ -32,8 +32,8 @@ vi.mock(
 	}),
 );
 
-import { runHrPrivacyOperatorPermissionAction } from "@/app/actions/run-hr-operator-permission-action";
-import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
+import { runHrPrivacyOperatorPermissionAction } from "@/app/actions/_runtime/run-hr-operator-permission-action";
+import { runOperatorPermissionAction } from "@/app/actions/_runtime/run-operator-permission-action";
 
 const session = {
 	userId: "user-1",

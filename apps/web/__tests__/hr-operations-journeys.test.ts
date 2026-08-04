@@ -28,7 +28,7 @@ describe("HR operations journeys", () => {
 	});
 
 	it("keeps server-side permission checks on every composed mutation", () => {
-		const admin = source("app/actions/hr-admin-journeys.ts");
+		const admin = source("app/actions/_runtime/hr-admin-journeys.ts");
 		const compliance = source("app/actions/hr-compliance.ts");
 		const cases = source("app/actions/hr-employee-relations.ts");
 		const planning = source("app/actions/hr-workforce-planning.ts");
@@ -41,7 +41,7 @@ describe("HR operations journeys", () => {
 	});
 
 	it("retains employment and assignment ownership checks before mutation", () => {
-		const admin = source("app/actions/hr-admin-journeys.ts");
+		const admin = source("app/actions/_runtime/hr-admin-journeys.ts");
 		expect(admin).toContain("loadOwnedEmployment");
 		expect(admin).toContain(
 			"assignment.data.employeeId !== parsed.data.employeeId",

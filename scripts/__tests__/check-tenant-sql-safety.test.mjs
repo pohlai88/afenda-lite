@@ -57,6 +57,59 @@ test("rejects a tenant insert without organization ownership", () => {
 	assert.equal(findings[0]?.rule, "tenant-insert-missing-organization");
 });
 
+test("rejects insert values that only mention organizationId in a string", () => {
+	const findings = analyze(`
+		await afendaDatabase.client.insert(platformRoleAssignment).values({
+			id: assignmentId,
+			note: "organizationId",
+		});
+	`);
+	assert.equal(findings[0]?.rule, "tenant-insert-missing-organization");
+});
+
+test("accepts insert values that stamp organizationId via spread", () => {
+	const findings = analyze(`
+		const base = { id: assignmentId };
+		await afendaDatabase.client.insert(platformRoleAssignment).values({
+			...base,
+			organizationId,
+		});
+	`);
+	assert.deepEqual(findings, []);
+});
+
+test("accepts insert values built by a local helper that stamps organizationId", () => {
+	const findings = analyze(`
+		function values(record) {
+			return { id: record.id, organizationId: record.organizationId };
+		}
+		await afendaDatabase.client.insert(platformRoleAssignment).values(values(record));
+	`);
+	assert.deepEqual(findings, []);
+});
+
+test("accepts insert values mapped from rows that stamp organizationId", () => {
+	const findings = analyze(`
+		await afendaDatabase.client.insert(platformRoleAssignment).values(
+			rows.map((row) => ({
+				id: row.id,
+				organizationId: organizationId,
+			})),
+		);
+	`);
+	assert.deepEqual(findings, []);
+});
+
+test("rejects insert helpers that omit organizationId on the returned object", () => {
+	const findings = analyze(`
+		function values(record) {
+			return { id: record.id };
+		}
+		await afendaDatabase.client.insert(platformRoleAssignment).values(values(record));
+	`);
+	assert.equal(findings[0]?.rule, "tenant-insert-missing-organization");
+});
+
 test("rejects ID-only mutation predicates", () => {
 	const findings = analyze(`
 		await afendaDatabase.client.delete(platformRoleAssignment).where(
@@ -84,6 +137,25 @@ test("requires every tenant table in a join to be scoped", () => {
 	assert.equal(findings.length, 1);
 	assert.equal(findings[0]?.table, "joinedTenant");
 	assert.equal(findings[0]?.rule, "tenant-read-missing-organization");
+});
+
+test("rejects read predicates that only mention organizationId in a string", () => {
+	const findings = analyze(`
+		await afendaDatabase.client.select().from(platformRoleAssignment)
+			.where(sql\`true /* platformRoleAssignment.organizationId */\`);
+	`);
+	assert.equal(findings[0]?.rule, "tenant-read-missing-organization");
+});
+
+test("accepts organization predicates bound through a local column alias", () => {
+	const findings = analyze(`
+		const orgColumn = platformRoleAssignment.organizationId;
+		await afendaDatabase.client.update(platformRoleAssignment).set(input).where(and(
+			eq(platformRoleAssignment.id, assignmentId),
+			afendaDatabase.tenancy.where(orgColumn, organizationId),
+		));
+	`);
+	assert.deepEqual(findings, []);
 });
 
 test("accepts organization predicates for every tenant table in a join", () => {

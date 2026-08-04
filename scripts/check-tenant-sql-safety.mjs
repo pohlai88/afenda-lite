@@ -3,8 +3,11 @@
  *
  * The checker reads hard-tenant table identifiers from @afenda/db and requires
  * the final predicate-bearing query chain to scope every referenced tenant
- * table. UPDATE and DELETE additionally require a record-selection predicate
- * beyond organization ownership.
+ * table via AST property binds (`table.organizationId`), not string presence.
+ * INSERT values must stamp `organizationId` on object literals (including
+ * local helpers and `.map` callbacks). UPDATE and DELETE additionally require
+ * a record-selection predicate beyond organization ownership. Raw SQL scopes
+ * organization_id per CTE / final statement.
  */
 
 import { readdirSync, readFileSync, statSync } from "node:fs";
@@ -143,27 +146,42 @@ function findCalls(node, names) {
 	return calls;
 }
 
-function resolvedArgumentText(call, sourceFile, declarations, index = 0) {
+function nearestPriorDeclaration(declarations, name, position, sourceFile) {
+	const nodes = declarations.get(name);
+	const prior = nodes
+		?.filter((node) => node.getStart(sourceFile) < position)
+		.toSorted((a, b) => b.getStart(sourceFile) - a.getStart(sourceFile))[0];
+	if (prior) {
+		return prior;
+	}
+	return nodes?.find((node) => ts.isBlock(node));
+}
+
+/**
+ * Resolve call-argument identifiers to their prior initializers so AST walks
+ * see the bound expression, not only the local name.
+ *
+ * @param {import("typescript").CallExpression} call
+ * @param {import("typescript").SourceFile} sourceFile
+ * @param {Map<string, import("typescript").Node[]>} declarations
+ * @param {number} [index]
+ * @returns {import("typescript").Node[]}
+ */
+function resolvedArgumentNodes(call, sourceFile, declarations, index = 0) {
 	const argument = call.arguments[index];
 	if (!argument) {
-		return "";
+		return [];
 	}
-	const fragments = [argument.getText(sourceFile)];
+	/** @type {import("typescript").Node[]} */
+	const roots = [argument];
 	const visited = new Set();
-	function nearestPrior(nodes, position) {
-		const prior = nodes
-			?.filter((node) => node.getStart(sourceFile) < position)
-			.toSorted((a, b) => b.getStart(sourceFile) - a.getStart(sourceFile))[0];
-		if (prior) {
-			return prior;
-		}
-		return nodes?.find((node) => ts.isBlock(node));
-	}
 	function visit(candidate) {
 		if (ts.isIdentifier(candidate)) {
-			const declaration = nearestPrior(
-				declarations.get(candidate.text),
+			const declaration = nearestPriorDeclaration(
+				declarations,
+				candidate.text,
 				candidate.getStart(sourceFile),
+				sourceFile,
 			);
 			const resolved =
 				declaration && ts.isVariableDeclaration(declaration)
@@ -174,23 +192,272 @@ function resolvedArgumentText(call, sourceFile, declarations, index = 0) {
 				: candidate.text;
 			if (resolved && !visited.has(key)) {
 				visited.add(key);
-				fragments.push(resolved.getText(sourceFile));
+				roots.push(resolved);
 				ts.forEachChild(resolved, visit);
 			}
 		}
 		ts.forEachChild(candidate, visit);
 	}
 	visit(argument);
-	return fragments.join("\n");
+	return roots;
 }
 
-function tableColumnReferences(predicateText, tableIdentifier) {
-	const escaped = tableIdentifier.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-	return [
-		...predicateText.matchAll(
-			new RegExp(`\\b${escaped}\\s*\\.\\s*([A-Za-z_$][\\w$]*)`, "g"),
-		),
-	].map((match) => match[1]);
+/**
+ * Collect `table.column` PropertyAccessExpression names from AST roots.
+ * String/comment presence of the same text is ignored (gate honesty).
+ *
+ * @param {ReadonlyArray<import("typescript").Node>} roots
+ * @param {string} tableIdentifier
+ * @param {Map<string, import("typescript").Node[]>} declarations
+ * @param {import("typescript").SourceFile} sourceFile
+ * @returns {string[]}
+ */
+function tableColumnPropertyNames(
+	roots,
+	tableIdentifier,
+	declarations,
+	sourceFile,
+) {
+	/** @type {string[]} */
+	const columns = [];
+	const visited = new Set();
+	/**
+	 * @param {import("typescript").Node} candidate
+	 */
+	function visit(candidate) {
+		if (
+			ts.isPropertyAccessExpression(candidate) &&
+			ts.isIdentifier(candidate.expression) &&
+			candidate.expression.text === tableIdentifier
+		) {
+			columns.push(candidate.name.text);
+		}
+		if (ts.isIdentifier(candidate)) {
+			const declaration = nearestPriorDeclaration(
+				declarations,
+				candidate.text,
+				candidate.getStart(sourceFile),
+				sourceFile,
+			);
+			const resolved =
+				declaration && ts.isVariableDeclaration(declaration)
+					? declaration.initializer
+					: declaration;
+			const key = resolved
+				? `${candidate.text}:${resolved.getStart(sourceFile)}`
+				: candidate.text;
+			if (resolved && !visited.has(key)) {
+				visited.add(key);
+				visit(resolved);
+			}
+		}
+		ts.forEachChild(candidate, visit);
+	}
+	for (const root of roots) {
+		visit(root);
+	}
+	return columns;
+}
+
+/**
+ * True when a function-like body always returns an object that stamps
+ * organizationId (concise arrow object, or every return expression).
+ *
+ * @param {import("typescript").Node} node
+ * @param {Map<string, import("typescript").Node[]>} declarations
+ * @param {import("typescript").SourceFile} sourceFile
+ * @param {Set<string>} visited
+ * @returns {boolean}
+ */
+function functionLikeStampsOrganizationId(
+	node,
+	declarations,
+	sourceFile,
+	visited,
+) {
+	if (ts.isArrowFunction(node) || ts.isFunctionExpression(node)) {
+		if (ts.isBlock(node.body)) {
+			return functionLikeStampsOrganizationId(
+				node.body,
+				declarations,
+				sourceFile,
+				visited,
+			);
+		}
+		return objectLiteralStampsOrganizationId(
+			node.body,
+			declarations,
+			sourceFile,
+			visited,
+		);
+	}
+	if (!ts.isBlock(node)) {
+		return false;
+	}
+	/** @type {import("typescript").Expression[]} */
+	const returns = [];
+	function collect(candidate) {
+		if (ts.isFunctionLike(candidate) && candidate !== node) {
+			return;
+		}
+		if (ts.isReturnStatement(candidate) && candidate.expression) {
+			returns.push(candidate.expression);
+		}
+		ts.forEachChild(candidate, collect);
+	}
+	collect(node);
+	return (
+		returns.length > 0 &&
+		returns.every((expression) =>
+			objectLiteralStampsOrganizationId(
+				expression,
+				declarations,
+				sourceFile,
+				visited,
+			),
+		)
+	);
+}
+
+/**
+ * True when AST roots stamp `organizationId` as an object property
+ * (shorthand, assignment, or spread of a stamped object). String values that
+ * merely mention the name do not count. Local helpers and `.map` callbacks are
+ * followed when their returned object literals stamp the property.
+ *
+ * @param {import("typescript").Node} node
+ * @param {Map<string, import("typescript").Node[]>} declarations
+ * @param {import("typescript").SourceFile} sourceFile
+ * @param {Set<string>} [visited]
+ * @returns {boolean}
+ */
+function objectLiteralStampsOrganizationId(
+	node,
+	declarations,
+	sourceFile,
+	visited = new Set(),
+) {
+	if (ts.isIdentifier(node)) {
+		const declaration = nearestPriorDeclaration(
+			declarations,
+			node.text,
+			node.getStart(sourceFile),
+			sourceFile,
+		);
+		const resolved =
+			declaration && ts.isVariableDeclaration(declaration)
+				? declaration.initializer
+				: declaration;
+		const key = resolved
+			? `${node.text}:${resolved.getStart(sourceFile)}`
+			: node.text;
+		if (!resolved || visited.has(key)) {
+			return false;
+		}
+		visited.add(key);
+		return objectLiteralStampsOrganizationId(
+			resolved,
+			declarations,
+			sourceFile,
+			visited,
+		);
+	}
+	if (ts.isAsExpression(node) || ts.isParenthesizedExpression(node)) {
+		return objectLiteralStampsOrganizationId(
+			node.expression,
+			declarations,
+			sourceFile,
+			visited,
+		);
+	}
+	if (ts.isCallExpression(node)) {
+		const callee = node.expression;
+		if (
+			ts.isPropertyAccessExpression(callee) &&
+			callee.name.text === "map" &&
+			node.arguments[0]
+		) {
+			return functionLikeStampsOrganizationId(
+				node.arguments[0],
+				declarations,
+				sourceFile,
+				visited,
+			);
+		}
+		if (ts.isIdentifier(callee)) {
+			const declaration = nearestPriorDeclaration(
+				declarations,
+				callee.text,
+				callee.getStart(sourceFile),
+				sourceFile,
+			);
+			if (!declaration) {
+				return false;
+			}
+			const key = `${callee.text}:fn:${declaration.getStart(sourceFile)}`;
+			if (visited.has(key)) {
+				return false;
+			}
+			visited.add(key);
+			if (ts.isVariableDeclaration(declaration) && declaration.initializer) {
+				return functionLikeStampsOrganizationId(
+					declaration.initializer,
+					declarations,
+					sourceFile,
+					visited,
+				);
+			}
+			return functionLikeStampsOrganizationId(
+				declaration,
+				declarations,
+				sourceFile,
+				visited,
+			);
+		}
+		return false;
+	}
+	if (ts.isObjectLiteralExpression(node)) {
+		return node.properties.some((property) => {
+			if (ts.isSpreadAssignment(property)) {
+				return objectLiteralStampsOrganizationId(
+					property.expression,
+					declarations,
+					sourceFile,
+					visited,
+				);
+			}
+			if (
+				ts.isShorthandPropertyAssignment(property) &&
+				property.name.text === "organizationId"
+			) {
+				return true;
+			}
+			if (
+				ts.isPropertyAssignment(property) &&
+				((ts.isIdentifier(property.name) &&
+					property.name.text === "organizationId") ||
+					(ts.isStringLiteral(property.name) &&
+						property.name.text === "organizationId"))
+			) {
+				return true;
+			}
+			return false;
+		});
+	}
+	if (ts.isArrayLiteralExpression(node)) {
+		return (
+			node.elements.length > 0 &&
+			node.elements.every((element) =>
+				objectLiteralStampsOrganizationId(
+					element,
+					declarations,
+					sourceFile,
+					visited,
+				),
+			)
+		);
+	}
+	return false;
 }
 
 /**
@@ -351,10 +618,15 @@ export function analyzeTenantSqlSafety({
 
 	function analyzeMutation(node, table) {
 		const chain = highestQueryChainNode(node);
-		const predicate = findCalls(chain, new Set(["where"]))
-			.map((call) => resolvedArgumentText(call, sourceFile, declarations))
-			.join("\n");
-		const columns = tableColumnReferences(predicate, table);
+		const predicateRoots = findCalls(chain, new Set(["where"])).flatMap(
+			(call) => resolvedArgumentNodes(call, sourceFile, declarations),
+		);
+		const columns = tableColumnPropertyNames(
+			predicateRoots,
+			table,
+			declarations,
+			sourceFile,
+		);
 		if (!columns.includes("organizationId")) {
 			addFinding(
 				node,
@@ -376,17 +648,21 @@ export function analyzeTenantSqlSafety({
 
 	function analyzeRead(node, table) {
 		const chain = highestQueryChainNode(node);
-		const predicate = findCalls(
+		const predicateRoots = findCalls(
 			chain,
 			new Set(["where", "innerJoin", "leftJoin", "rightJoin", "fullJoin"]),
-		)
-			.map((call) =>
-				propertyCallName(call) === "where"
-					? resolvedArgumentText(call, sourceFile, declarations)
-					: resolvedArgumentText(call, sourceFile, declarations, 1),
-			)
-			.join("\n");
-		if (!tableColumnReferences(predicate, table).includes("organizationId")) {
+		).flatMap((call) =>
+			propertyCallName(call) === "where"
+				? resolvedArgumentNodes(call, sourceFile, declarations)
+				: resolvedArgumentNodes(call, sourceFile, declarations, 1),
+		);
+		const columns = tableColumnPropertyNames(
+			predicateRoots,
+			table,
+			declarations,
+			sourceFile,
+		);
+		if (!columns.includes("organizationId")) {
 			addFinding(
 				node,
 				"tenant-read-missing-organization",
@@ -398,10 +674,16 @@ export function analyzeTenantSqlSafety({
 
 	function analyzeInsert(node, table) {
 		const chain = highestQueryChainNode(node);
-		const valuesText = findCalls(chain, new Set(["values"]))
-			.map((call) => resolvedArgumentText(call, sourceFile, declarations))
-			.join("\n");
-		if (!/\borganizationId\b/.test(valuesText)) {
+		const stamped = findCalls(chain, new Set(["values"])).some((call) =>
+			call.arguments.some((argument) =>
+				objectLiteralStampsOrganizationId(
+					argument,
+					declarations,
+					sourceFile,
+				),
+			),
+		);
+		if (!stamped) {
 			addFinding(
 				node,
 				"tenant-insert-missing-organization",

@@ -131,7 +131,7 @@ import {
 
 import { defineAction } from "@/app/actions/_runtime/define-action";
 import { hrActionSchema } from "@/app/actions/hr-mutation-context";
-import { runHrTalentOperatorPermissionAction as runOperatorPermissionAction } from "@/app/actions/run-hr-operator-permission-action";
+import { runHrTalentOperatorPermissionAction as runOperatorPermissionAction } from "@/app/actions/_runtime/run-hr-operator-permission-action";
 import { createHumanResourcesCommandOptions } from "@/lib/erp/human-resources-command-options";
 
 const talentAdminPermission = "human-resources.talent.admin";

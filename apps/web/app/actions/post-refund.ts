@@ -7,7 +7,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { forbidUnlessPermission } from "@/app/actions/permission-gate";
-import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
+import { runOperatorPermissionAction } from "@/app/actions/_runtime/run-operator-permission-action";
 import { createPaymentsCommandOptions } from "@/lib/erp/payments-command-options";
 import { parseSchema } from "@/modules/platform/schemas/common";
 

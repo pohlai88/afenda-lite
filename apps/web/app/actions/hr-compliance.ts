@@ -71,9 +71,9 @@ import {
 	workEligibilityTransitionInputSchema,
 } from "@afenda/human-resources";
 import { defineAction } from "@/app/actions/_runtime/define-action";
-import { invokeHrPackage } from "@/app/actions/hr-action-runner";
+import { invokeHrPackage } from "@/app/actions/_runtime/hr-action-runner";
 import { hrActionSchema } from "@/app/actions/hr-mutation-context";
-import { runHrComplianceOperatorPermissionAction } from "@/app/actions/run-hr-operator-permission-action";
+import { runHrComplianceOperatorPermissionAction } from "@/app/actions/_runtime/run-hr-operator-permission-action";
 
 const COMPLIANCE_ADMIN = "human-resources.compliance.administer" as const;
 const DOCUMENT_REQUIREMENT_MANAGE =

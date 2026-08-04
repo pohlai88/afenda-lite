@@ -51,9 +51,9 @@ import {
 	updateHeadcountPlanLineInputSchema,
 } from "@afenda/human-resources";
 import { defineAction } from "@/app/actions/_runtime/define-action";
-import { invokeHrPackage } from "@/app/actions/hr-action-runner";
+import { invokeHrPackage } from "@/app/actions/_runtime/hr-action-runner";
 import { hrActionSchema } from "@/app/actions/hr-mutation-context";
-import { runHrWorkforceOperatorPermissionAction } from "@/app/actions/run-hr-operator-permission-action";
+import { runHrWorkforceOperatorPermissionAction } from "@/app/actions/_runtime/run-hr-operator-permission-action";
 
 const PLAN_READ = "human-resources.workforce-plan.read" as const;
 const PLAN_PREPARE = "human-resources.workforce-plan.prepare" as const;

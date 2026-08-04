@@ -22,7 +22,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { mapPackageResult } from "@/app/actions/map-package-result";
-import { runMemberPermissionAction } from "@/app/actions/run-member-permission-action";
+import { runMemberPermissionAction } from "@/app/actions/_runtime/run-member-permission-action";
 import {
 	createCorporateAdministrationCommandOptions,
 	createCorporateAdministrationCompanyDependencies,

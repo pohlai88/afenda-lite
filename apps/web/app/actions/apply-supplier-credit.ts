@@ -4,7 +4,7 @@ import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { applySupplierCredit, type SupplierAllocation } from "@afenda/payables";
 import { z } from "zod";
 import { mapPackageResult } from "@/app/actions/map-package-result";
-import { runOperatorPermissionAction } from "@/app/actions/run-operator-permission-action";
+import { runOperatorPermissionAction } from "@/app/actions/_runtime/run-operator-permission-action";
 import { createPayablesCommandOptions } from "@/lib/erp/payables-command-options";
 import { revalidatePayablesPaths } from "@/lib/erp/revalidate-payables-paths";
 import { parseSchema } from "@/modules/platform/schemas/common";
