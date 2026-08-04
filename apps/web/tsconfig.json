@@ -5,12 +5,17 @@
 			"@/*": ["./*"]
 		}
 	},
-	"include": [
-		"next-env.d.ts",
-		"**/*.ts",
-		"**/*.tsx",
-		".next/types/**/*.ts",
-		".next/dev/types/**/*.ts"
-	],
-	"exclude": ["node_modules", "**/*.interaction.test.tsx", "shadcn-studio"]
+	"include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
+	"exclude": [
+		"node_modules",
+		// Generated build output. Including .next/types made typecheck depend on
+		// local build state: a stale validator.ts from an earlier route shape
+		// contributed errors that CI — which has no .next — could never see or
+		// reproduce. Typed-route validation was never running in CI for that
+		// same reason, so excluding it loses no coverage and makes local
+		// typecheck agree with the pipeline.
+		".next",
+		"**/*.interaction.test.tsx",
+		"shadcn-studio"
+	]
 }
