@@ -133,6 +133,7 @@ import {
 	updateTalentProfileInputSchema,
 } from "@afenda/human-resources";
 
+import { defineAction } from "@/app/actions/_runtime/define-action";
 import {
 	hrActionSchema,
 	withHrSessionContext as withSessionContext,
@@ -198,16 +199,23 @@ async function runTalentAction<Key extends string, Value>(config: {
 export async function createTalentProfileAction(
 	input: unknown,
 ): Promise<ActionResult<{ profile: TalentProfile }>> {
-	return await runTalentAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: hrActionSchema(createTalentProfileInputSchema),
 		path: "createTalentProfileAction",
 		permission: talentAdminPermission,
 		safeMessage: "Could not create talent profile.",
-		validationMessage: "Enter a valid talent profile.",
-		dataKey: "profile",
-		execute: (data) =>
-			createTalentProfile(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid talent profile.",
+			}),
+		invoke: (stamped) =>
+			createTalentProfile(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (profile: TalentProfile) => ({ profile }),
 	});
 }
 
