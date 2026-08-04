@@ -40,6 +40,18 @@ const masterDataUnitProjectWithExclude = {
 	},
 };
 
+const payrollUnitProject = nodeProjectWithServerOnly(
+	"payroll",
+	path.join(repoRoot, "packages/erp/payroll"),
+);
+const payrollUnitProjectWithExclude = {
+	...payrollUnitProject,
+	test: {
+		...payrollUnitProject.test,
+		exclude: laneIncludeForProject("payroll-parity", "packages/erp/payroll"),
+	},
+};
+
 const corporateAdministrationUnitProject = nodeProjectWithServerOnly(
 	"corporate-administration",
 	path.join(repoRoot, "packages/erp/corporate-administration"),
@@ -162,10 +174,7 @@ export default mergeConfig(
 						maxWorkers: 2,
 					},
 				},
-				nodeProjectWithServerOnly(
-					"payroll",
-					path.join(repoRoot, "packages/erp/payroll"),
-				),
+				payrollUnitProjectWithExclude,
 				corporateAdministrationUnitProjectWithExclude,
 				nodeProjectWithServerOnly(
 					"fulfillment",
