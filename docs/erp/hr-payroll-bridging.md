@@ -299,6 +299,8 @@ Finalization is the highest-risk action in the module and has **no maker-checker
 - Reject when the finalize `actorUserId` equals the approve/review `actorUserId` on the same run.
 - Break-glass override requires a distinct permission and writes a dedicated audit reason.
 
+**Decision 2026-08-05:** maker-checker shipped as calculate-actor ≠ finalize-actor on the `calculated → finalized` transition; distinct `payroll.run.approve` + break-glass permission land with the approval-workflow slice (tracked in the A-decisions register).
+
 ### C10 — Tenant-injection doctrine for Payroll
 
 HR states that schemas reject tenant-field injection and the composition root stamps `organizationId`, `actorUserId`, `correlationId` after validation, deriving hard-tenant-root names from `packages/data-plane/db/src/hard-tenant-roots.ts`. Payroll says nothing. Copy the doctrine verbatim and add the schema-level rejection tests.

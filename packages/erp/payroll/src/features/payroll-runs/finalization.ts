@@ -54,6 +54,14 @@ export function finalizePayrollRun(
 					publicMessage: "Blocking payroll exceptions prevent finalization",
 				});
 			}
+
+			if (run.status === "calculated" && run.updatedBy === data.actorUserId) {
+				return errorResult.fail("CONFLICT", {
+					publicMessage:
+						"Segregation of duties: the actor who calculated a payroll run cannot finalize it",
+				});
+			}
+
 			const [period, runEmployees, resultLines] = await Promise.all([
 				store.getPeriod({
 					organizationId: data.organizationId,
