@@ -42,6 +42,7 @@ dist/
 /*.tgz
 _reference/
 .tmp/
+.tmp-*
 
 # debug
 npm-debug.log*
