@@ -82,7 +82,7 @@ acceptance are in `IMPLEMENTATION-SLICES.md`.
 ## Enterprise closure matrix
 
 This row-level matrix is the authority for enterprise readiness. It remains exactly
-seven `DONE` and seven non-`DONE` rows until direct evidence changes a row.
+eight `DONE` and six non-`DONE` rows until direct evidence changes a row.
 
 | # | Boundary | Status | Remaining condition |
 | ---: | --- | --- | --- |
@@ -94,7 +94,7 @@ seven `DONE` and seven non-`DONE` rows until direct evidence changes a row.
 | 6 | Tenancy and data isolation | DONE | CA-APP-01 Neon hostile cross-org evidence recorded 2026-08-05 (`ca-app-01-tenant-isolation.neon.test.ts` + legal-company neon isolation). Approval binding remains CA-CL-01 |
 | 7 | Authorization, approvals and segregation of duties | BLOCKED | Real platform approval verifier and integrated SoD evidence |
 | 8 | Domain behavior and historical truth | DONE | — |
-| 9 | Idempotency, concurrency and atomicity | PARTIAL | Outbox-failure atomicity DONE for CA-APP-01 exposed commands (CA-CL-03, 2026-08-05). Still need replay/conflict and concurrency evidence |
+| 9 | Idempotency, concurrency and atomicity | DONE | CA-CL-03 outbox atomicity plus 2026-08-05 Neon replay/fingerprint-conflict (`ca-app-01-idempotency-replay.neon.test.ts`, 5 passed) and natural-key concurrency (`ca-app-01-natural-key.concurrency.test.ts`, 4 passed) on `ca-0-4-demo`. Hybrid schedule input now requires remote access summary so completed receipts remain replayable |
 | 10 | Events, audit and privacy | PARTIAL | Persisted evidence and redaction coverage for exposed workflows |
 | 11 | Adapter parity and database semantics | DONE | CA-APP-01 cohort memory/Drizzle/Neon parity recorded 2026-08-05 (`ca-0-4-demo`, 52 passed / 0 failed) |
 | 12 | App composition and Server Actions | DONE | — |

@@ -23,7 +23,7 @@ semantic feature group and does not surface the `authority` capability.
 | --- | ---: | --- |
 | Platform approval integration | Blocked externally | Integrate a real verifier when `PLATFORM-APPROVALS-01` exists; keep protected actions fail-closed |
 | Adapter parity | Done | CA-APP-01 memory/Drizzle/Neon parity recorded on `ca-0-4-demo` (2026-08-05; see IMPLEMENTATION-SLICES CA-CL-02) |
-| Atomicity and concurrency | High | Atomicity DONE (CA-CL-03 outbox-failure cohorts). Still prove replay, conflicts, and concurrency for exposed commands |
+| Atomicity and concurrency | Done | CA-CL-03 outbox atomicity plus CA-APP-01 Neon replay/fingerprint-conflict and natural-key concurrency recorded 2026-08-05 (`ca-0-4-demo`) |
 | Tenant isolation | Done | CA-APP-01 Neon hostile cross-org evidence recorded 2026-08-05 (CA-CL-04); approval tenant binding stays with CA-CL-01 |
 | Migration/recovery review | Separate lane | Validate 0034–0046 and 0050; do not apply production migrations here |
 | Operational assurance | Parallel | Use the real beta workflow for accessibility, privacy, monitoring, recovery, and support evidence |

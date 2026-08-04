@@ -7,6 +7,7 @@ import {
 	listGovernanceMeetingsInputSchema,
 	organizationIdSchema,
 	recordMeetingParticipantInputSchema,
+	scheduleGovernanceMeetingInputSchema,
 	userIdSchema,
 } from "@afenda/corporate-administration";
 import {
@@ -37,6 +38,33 @@ describe("CA-2.4 meeting contracts and rules", () => {
 			actorUserId,
 		});
 		expect(parsed.success).toBe(false);
+	});
+
+	it("requires remote access summary for hybrid schedule input", () => {
+		const base = {
+			legalCompanyId,
+			governanceBodyId: "00000000-0000-4000-8000-000000000242",
+			procedureType: "hybrid",
+			title: "April board meeting",
+			scheduledStartAt: "2026-04-10T09:00:00.000Z",
+			scheduledEndAt: "2026-04-10T10:00:00.000Z",
+			noticePeriodDays: 5,
+			locationSummary: "Board room",
+			sourceDocumentId: "doc-meeting-1",
+			expectedBodyVersion: 1,
+		};
+		expect(
+			scheduleGovernanceMeetingInputSchema.safeParse({
+				...base,
+				remoteAccessSummary: null,
+			}).success,
+		).toBe(false);
+		expect(
+			scheduleGovernanceMeetingInputSchema.safeParse({
+				...base,
+				remoteAccessSummary: "Video conference",
+			}).success,
+		).toBe(true);
 	});
 
 	it("validates procedure and participant representation contracts strictly", () => {

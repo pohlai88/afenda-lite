@@ -94,7 +94,7 @@ describe.skipIf(!RUN_CORPORATE_ADMINISTRATION_NEON_PARITY)(
 						scheduledEndAt: "2026-04-10T10:00:00.000Z",
 						noticePeriodDays: 5,
 						locationSummary: "Board room",
-						remoteAccessSummary: null,
+						remoteAccessSummary: "Video conference",
 						sourceDocumentId: "doc:meeting:atomic",
 						expectedBodyVersion: body.data.version,
 					},
