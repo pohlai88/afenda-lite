@@ -210,6 +210,39 @@ export const GOVERNANCE_GATES = [
 		negativeFixture: "scripts/__tests__/check-metrics-boundary.test.mjs",
 	},
 	{
+		id: "cache-boundary",
+		command: "pnpm check:cache-boundary",
+		kind: "leaf",
+		tier: "ci-required",
+		owner: "runtime",
+		domain: "capability-boundary",
+		description:
+			"Enforces the @afenda/cache capability boundary, authorized export surface, and private key-prefix ownership.",
+		negativeFixture: "scripts/__tests__/check-cache-boundary.test.mjs",
+	},
+	{
+		id: "rate-limit-boundary",
+		command: "pnpm check:rate-limit-boundary",
+		kind: "leaf",
+		tier: "ci-required",
+		owner: "runtime",
+		domain: "capability-boundary",
+		description:
+			"Enforces the @afenda/rate-limit capability boundary and forbids direct Upstash vendor bypass.",
+		negativeFixture: "scripts/__tests__/check-rate-limit-boundary.test.mjs",
+	},
+	{
+		id: "openapi-boundary",
+		command: "pnpm check:openapi-boundary",
+		kind: "leaf",
+		tier: "ci-required",
+		owner: "runtime",
+		domain: "capability-boundary",
+		description:
+			"Enforces the @afenda/openapi capability boundary and single canonical error-schema ownership.",
+		negativeFixture: "scripts/__tests__/check-openapi-boundary.test.mjs",
+	},
+	{
 		id: "auth-boundary",
 		command: "pnpm check:auth-boundary",
 		kind: "leaf",

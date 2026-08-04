@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, extname, join, relative, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { isGovernanceFixture } from "./lib/repository-walk.mjs";
 
 const SCRIPT_DIRECTORY = dirname(fileURLToPath(import.meta.url));
 const REPOSITORY_ROOT = resolve(SCRIPT_DIRECTORY, "..");
@@ -114,7 +115,11 @@ export function checkOpenApiBoundary(root) {
 				return;
 			}
 			const rel = posix(relative(root, file));
-			if (rel.startsWith("scripts/check-openapi-boundary")) {
+			if (
+				isGovernanceFixture(rel) ||
+				// The detector's own source carries every forbidden pattern as data.
+				rel.startsWith("scripts/check-openapi-boundary")
+			) {
 				return;
 			}
 			const source = readFileSync(file, "utf8");

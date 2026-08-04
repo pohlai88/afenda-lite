@@ -1,6 +1,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, extname, join, relative, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { isGovernanceFixture } from "./lib/repository-walk.mjs";
 
 const SCRIPT_DIRECTORY = dirname(fileURLToPath(import.meta.url));
 const REPOSITORY_ROOT = resolve(SCRIPT_DIRECTORY, "..");
@@ -118,6 +119,8 @@ export function checkRateLimitBoundary(root) {
 			const rel = posix(relative(root, file));
 			if (
 				rel.startsWith(`${RATE_LIMIT_PACKAGE}/`) ||
+				isGovernanceFixture(rel) ||
+				// The detector's own source carries every forbidden pattern as data.
 				rel.startsWith("scripts/check-rate-limit-boundary")
 			) {
 				return;
