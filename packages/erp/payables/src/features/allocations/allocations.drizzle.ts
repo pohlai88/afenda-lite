@@ -215,15 +215,15 @@ export const drizzleAllocationMethods: PayablesAllocationsStore = {
 						FROM invoice JOIN credit ON credit.organization_id = invoice.organization_id
 							AND credit.supplier_party_id = invoice.supplier_party_id AND credit.currency_code = invoice.currency_code
 						WHERE ${record.amount}::numeric > 0
-							AND (SELECT COALESCE(SUM(line_amount::numeric), 0) FROM supplier_invoice_line WHERE invoice_id = invoice.id) - invoice.applied >= ${record.amount}::numeric
+							AND (SELECT COALESCE(SUM(line_amount::numeric), 0) FROM supplier_invoice_line WHERE invoice_id = invoice.id AND organization_id = invoice.organization_id) - invoice.applied >= ${record.amount}::numeric
 							AND credit.amount::numeric - credit.applied >= ${record.amount}::numeric
 						RETURNING *
 					), invoice_bumped AS (
 						UPDATE supplier_invoice SET version = version + 1, updated_by = ${record.actorUserId}, updated_at = now()
-						WHERE id = ${record.invoiceId} AND EXISTS (SELECT 1 FROM allocated)
+						WHERE id = ${record.invoiceId} AND organization_id = ${record.organizationId} AND EXISTS (SELECT 1 FROM allocated)
 					), credit_bumped AS (
 						UPDATE supplier_credit_note SET version = version + 1, updated_by = ${record.actorUserId}, updated_at = now()
-						WHERE id = ${record.creditNoteId} AND EXISTS (SELECT 1 FROM allocated)
+						WHERE id = ${record.creditNoteId} AND organization_id = ${record.organizationId} AND EXISTS (SELECT 1 FROM allocated)
 					), projected AS (
 						UPDATE supplier_balance_projection SET open_balance = (open_balance::numeric - ${record.amount}::numeric)::text,
 							version = version + 1, updated_by = ${record.actorUserId}, updated_at = now()

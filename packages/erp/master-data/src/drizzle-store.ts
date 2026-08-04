@@ -229,8 +229,16 @@ function importRowAppliedQuery(
 				AND batch.id = import_row.batch_id
 				AND batch.status = 'applying'
 				AND batch.lease_owner = ${context.leaseOwner}
-				AND EXISTS (SELECT 1 FROM platform_audit_log WHERE id = ${input.auditId})
-				AND EXISTS (SELECT 1 FROM platform_domain_event WHERE id = ${input.eventId})
+				AND EXISTS (
+					SELECT 1 FROM platform_audit_log
+					WHERE id = ${input.auditId}
+						AND organization_id = ${context.organizationId}
+				)
+				AND EXISTS (
+					SELECT 1 FROM platform_domain_event
+					WHERE id = ${input.eventId}
+						AND organization_id = ${context.organizationId}
+				)
 			RETURNING import_row.id
 		)
 		SELECT 1 / CASE

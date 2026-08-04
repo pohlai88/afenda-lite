@@ -661,6 +661,7 @@ export const drizzlePaymentLifecycleMethods: PaymentsLifecycleStore = {
 						SET functional_amount = line->>'functionalAmount'
 						FROM mutated, jsonb_array_elements(${frozenDeductionsJson}::jsonb) AS line
 						WHERE d.payment_id = mutated.id
+							AND d.organization_id = mutated.organization_id
 							AND d.line_no = (line->>'lineNo')::int
 					),
 					outboxed AS (

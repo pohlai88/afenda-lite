@@ -82,6 +82,7 @@ export function createDrizzleApplicationInstructionMethods(
 									SELECT COALESCE(SUM(d.amount::numeric), 0)
 									FROM payment_deduction d
 									WHERE d.payment_id = p.id
+										AND d.organization_id = p.organization_id
 										AND d.effect = 'reduces_application_only'
 								)
 						),
