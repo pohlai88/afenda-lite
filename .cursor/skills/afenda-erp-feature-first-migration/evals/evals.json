@@ -16,7 +16,7 @@
 		{
 			"id": 3,
 			"prompt": "do payables next",
-			"expected_output": "Recognizes this as the next wave-1 ERP migration, follows the full recipe: surface snapshot first, capsules by aggregate, verbatim store split, registry-first manifest derivation, guard tests, then runs all gates in order (lint/typecheck/test, export diff, validate:modules, web typecheck, doctor flip, generator:check) and reports findings without auto-fixing semantic drift.",
+			"expected_output": "Recognizes this as the next wave-1 ERP migration, follows the full recipe: surface snapshot first, capsules by aggregate, verbatim store split, registry-first manifest derivation, guard tests, then runs all gates in order (lint/typecheck/test, export diff, validate:modules, web typecheck) against ERP-SCAFFOLDING.md and reports findings without auto-fixing semantic drift.",
 			"files": []
 		}
 	]

@@ -19,7 +19,7 @@ import {
 import { readHookPayload } from "./hook-stdin.mjs";
 
 /**
- * Repo-root Living `docs/**` (not docs-V2, not apps/docs).
+ * Repo-root Living docs tree only (not docs-V2, not apps/docs, not packages/.../docs).
  * @param {string} filePath
  */
 export function isLivingDocsPath(filePath) {
@@ -32,6 +32,10 @@ export function isLivingDocsPath(filePath) {
 		return false;
 	}
 	if (/(^|\/)docs-V2(\/|$)/i.test(p)) {
+		return false;
+	}
+	// Package-local docs are package product surfaces, not Living DOC-001 SSOT.
+	if (/(^|\/)packages\//i.test(p)) {
 		return false;
 	}
 	return /(^|\/)docs(\/|$)/i.test(p);

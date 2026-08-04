@@ -40,6 +40,7 @@ ARCH-* IDs may still appear as **dormant control labels** (catalogs, registers, 
 | User letter this turn | Explicit Docs-lane reopen or named Living `docs/` recovery **in this chat turn** |
 | Ban surfaces | Rules/hooks/AGENTS/deprecation register that **state** this prohibition |
 | Official docs app | `apps/docs/**` (Fumadocs) — not Living DOC-001 SSOT |
+| Package-local docs | `packages/**/docs/**` — package product/governance surfaces, not Living DOC-001 SSOT |
 | Scratch | `docs-V2/**` only |
 
 ## Hook enforcement

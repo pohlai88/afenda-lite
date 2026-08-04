@@ -1,7 +1,7 @@
 /**
  * @afenda/errors
  * Contract: afenda.errors/v1
- * Protected: changes require local pre-edit token and compatibility checks.
+ * Sealed: root capabilities only; obey docs/CONTRACT.md and package gates.
  */
 
 import { isTrustedFailure, readFailureRecord } from "../failure/identity";

@@ -812,17 +812,6 @@
 			"useMode": "runtime"
 		},
 		{
-			"consumerClass": "testing",
-			"disposition": "manual-review",
-			"entrypoint": "generated",
-			"file": "apps/web/__tests__/payroll-composition-contract.test.ts",
-			"package": "@afenda/web",
-			"referenceKind": "generated",
-			"resolution": "not-applicable",
-			"symbol": "*",
-			"useMode": "generated"
-		},
-		{
 			"consumerClass": "production",
 			"disposition": "allowed",
 			"entrypoint": ".",
@@ -16330,18 +16319,6 @@
 			"consumerClass": "production",
 			"disposition": "allowed",
 			"entrypoint": ".",
-			"file": "apps/web/lib/erp/payroll-workforce-port.ts",
-			"package": "@afenda/web",
-			"referenceKind": "module",
-			"resolution": "resolved",
-			"resolvedTarget": "packages/erp/human-resources/src/index.ts",
-			"symbol": "assembleApprovedPayrollHandoff",
-			"useMode": "runtime"
-		},
-		{
-			"consumerClass": "production",
-			"disposition": "allowed",
-			"entrypoint": ".",
 			"file": "apps/web/modules/platform/domain/human-resources-payroll-delivery.ts",
 			"package": "@afenda/web",
 			"referenceKind": "module",
@@ -17195,17 +17172,6 @@
 			"consumerClass": "testing",
 			"disposition": "manual-review",
 			"entrypoint": "generated",
-			"file": "packages/erp/corporate-administration/__tests__/package-boundary.test.ts",
-			"package": "@afenda/corporate-administration",
-			"referenceKind": "generated",
-			"resolution": "not-applicable",
-			"symbol": "*",
-			"useMode": "generated"
-		},
-		{
-			"consumerClass": "testing",
-			"disposition": "manual-review",
-			"entrypoint": "generated",
 			"file": "packages/erp/payroll/__tests__/approved-payroll-handoff-parser.test.ts",
 			"package": "@afenda/payroll",
 			"referenceKind": "generated",
@@ -17283,7 +17249,7 @@
 			"consumerClass": "testing",
 			"disposition": "manual-review",
 			"entrypoint": "filesystem",
-			"file": "scripts/check-tenant-sql-safety.test.mjs",
+			"file": "scripts/__tests__/check-tenant-sql-safety.test.mjs",
 			"package": "afenda-lite",
 			"referenceKind": "filesystem",
 			"resolution": "not-applicable",
@@ -17294,7 +17260,7 @@
 			"consumerClass": "testing",
 			"disposition": "manual-review",
 			"entrypoint": "filesystem",
-			"file": "scripts/check-tenant-sql-safety.test.mjs",
+			"file": "scripts/__tests__/check-tenant-sql-safety.test.mjs",
 			"package": "afenda-lite",
 			"referenceKind": "filesystem",
 			"resolution": "not-applicable",
@@ -17333,39 +17299,6 @@
 			"resolution": "not-applicable",
 			"symbol": "*",
 			"useMode": "generated"
-		},
-		{
-			"consumerClass": "testing",
-			"disposition": "manual-review",
-			"entrypoint": "filesystem",
-			"file": "turbo/generators/__tests__/erp-layout-authority.test.ts",
-			"package": "afenda-lite",
-			"referenceKind": "filesystem",
-			"resolution": "not-applicable",
-			"symbol": "packages/erp/human-resources/src/composition/module.manifest.ts",
-			"useMode": "filesystem"
-		},
-		{
-			"consumerClass": "testing",
-			"disposition": "manual-review",
-			"entrypoint": "filesystem",
-			"file": "turbo/generators/__tests__/erp-layout-authority.test.ts",
-			"package": "afenda-lite",
-			"referenceKind": "filesystem",
-			"resolution": "not-applicable",
-			"symbol": "packages/erp/human-resources/src/features/leave/index.ts",
-			"useMode": "filesystem"
-		},
-		{
-			"consumerClass": "testing",
-			"disposition": "manual-review",
-			"entrypoint": "filesystem",
-			"file": "turbo/generators/__tests__/erp-layout-authority.test.ts",
-			"package": "afenda-lite",
-			"referenceKind": "filesystem",
-			"resolution": "not-applicable",
-			"symbol": "packages/erp/human-resources/src/kernel/operations/registry.ts",
-			"useMode": "filesystem"
 		}
 	],
 	"schemaVersion": 1

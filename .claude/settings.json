@@ -10,7 +10,6 @@
       "Bash(pnpm dlx *)",
       "Bash(node -e ' *)",
       "Bash(awk -F: '$2>0')",
-      "Bash(pnpm gen *)",
       "Bash(pnpm install *)",
       "Bash(pnpm --filter @afenda/corporate-administration typecheck)",
       "Bash(node -e \"const p=require\\('./packages/data-plane/db/package.json'\\);console.log\\(JSON.stringify\\(p.exports,null,1\\)\\)\")",
@@ -18,7 +17,7 @@
       "Bash(pnpm --filter @afenda/corporate-administration lint)",
       "Bash(pnpm exec *)",
       "Bash(pnpm validate:modules)",
-      "Bash(pnpm gen:doctor:erp)",
+      "Bash(pnpm check:kernel-governance)",
       "Bash(pnpm governance:packages)",
       "Bash(git check-ignore *)",
       "Bash(pnpm --filter @afenda/corporate-administration check)"

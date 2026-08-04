@@ -107,6 +107,9 @@ function reachableModules(entryFile: string): Set<string> {
 			...[...source.matchAll(DYNAMIC_RELATIVE_IMPORT)].map((match) => match[1]),
 		];
 		for (const specifier of specifiers) {
+			if (specifier === undefined) {
+				continue;
+			}
 			const resolved = resolveRelative(current, specifier);
 			if (resolved) {
 				queue.push(resolved);
@@ -342,9 +345,9 @@ function main() {
 			continue;
 		}
 
-		const policy = readJson(policyPath) as unknown as PackagePolicy;
+		const policyJson = readJson(policyPath);
 		const missing = REQUIRED_POLICY_FIELDS.filter(
-			(field) => (policy as Record<string, unknown>)[field] === undefined,
+			(field) => policyJson[field] === undefined,
 		);
 		if (missing.length > 0) {
 			violations.push(
@@ -353,6 +356,7 @@ function main() {
 			continue;
 		}
 
+		const policy = policyJson as unknown as PackagePolicy;
 		checkPackage(governed.packageDir, policy, violations, governed.base);
 	}
 

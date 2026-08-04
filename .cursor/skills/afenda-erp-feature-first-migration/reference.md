@@ -190,14 +190,9 @@ manifest operation (offline diagnostic, kept out of the registry by design).
 
 - Wave order: W1 payables→accounting→fulfillment→receivables · W2
   purchasing→receiving→inventory · W3 sales · W4 master-data
-  (feature-at-a-time, parity-gated) · W5 closure (projection locks via
-  `pnpm turbo gen erp-generator-reconcile-projection-locks`; remove the three
-  superseded `scripts/feature-first-layout.mjs`; final doctor
-  `historical-root=0, feature-first=13`).
-- Generator governance is **local-only by contract** (G15/G17): never wire
-  these checks into CI. `g18` (generator authoritative over
-  registry→manifest projections) is authored only after all packages
-  converge.
+  (feature-at-a-time, parity-gated) · W5 closure (remove superseded local
+  `scripts/feature-first-layout.mjs` when present; verify against
+  `ERP-SCAFFOLDING.md` topology — no Turborepo ERP generator).
 - Doctrine SSOT: `packages/erp/ERP-SCAFFOLDING.md` · exemplars:
   `packages/erp/payroll` (layout/composition), `packages/erp/human-resources`
   (registry), `packages/erp/payments` (complete reference migration).

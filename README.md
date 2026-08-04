@@ -33,33 +33,14 @@ Open http://localhost:3000 → operator sign-in → `/admin`.
 
 Env SSOT: `import { env } from '@afenda/env'` · local file `.env.local` (template: `.env.example`).
 
-## Code generation
+## Package governance
 
-Scaffolding and package/feature governance run through Turborepo generators ([`turbo/generators`](turbo/generators/config.ts)) — built on `turbo gen`. Two families: `kernel` (`packages/foundation|runtime|data-plane|control-plane`) and `erp` (`packages/erp/*`). Generator contracts are enforced by `pnpm generator:check`.
-
-> **Local-only by contract.** Generator governance declares `ciRequired: false` and excludes `.github/workflows/*` — it is enforced on developer machines, never in CI. Run it locally; do not add it to CI workflows.
-
-**Read-only (safe — inspect and plan):**
+Kernel register and adoption surfaces are enforced by [`governance/kernel/`](governance/kernel/) via `pnpm check:kernel-governance` (also part of local `pnpm checks`). New ERP packages follow [`packages/erp/ERP-SCAFFOLDING.md`](packages/erp/ERP-SCAFFOLDING.md) by hand — Turborepo generators for ERP/kernel scaffolding are retired.
 
 ```bash
-pnpm gen                  # interactive picker (all generators)
-pnpm gen:doctor:kernel    # kernel discovery + contract diagnostics
-pnpm gen:doctor:erp       # erp diagnostics + manifest/layout/projection authority
-pnpm gen:plan:kernel      # read-only kernel upgrade plan
-pnpm gen:plan:erp         # read-only erp upgrade plan
-pnpm generator:check      # governance gate (also part of `pnpm checks`)
+pnpm check:kernel-governance   # register parity + root-capability adoption surfaces
+pnpm validate:modules          # module manifest / operation register gate
 ```
-
-**Write (scaffold — prompts for ids; transactional, refuses to clobber):**
-
-```bash
-pnpm turbo gen erp-generator-create-package             # new ERP package (moduleId, category)
-pnpm turbo gen erp-generator-add-feature                # feature into a package (moduleId, featureId)
-pnpm turbo gen erp-generator-reconcile-projection-locks # apply missing projection-lock files
-pnpm turbo gen kernel-generator-apply-adoption          # reconcile kernel adoption surfaces
-```
-
-`pnpm generator:check` is wired into `pnpm checks` / `pnpm build:check` (local gates in [`scripts/run-checks.mjs`](scripts/run-checks.mjs)); it is skipped automatically if the generator engine is absent. Engine logic is unit-tested via the `repo-tooling` Vitest project ([`turbo/generators/__tests__`](turbo/generators/__tests__)), which does run in CI.
 
 ## Documentation
 

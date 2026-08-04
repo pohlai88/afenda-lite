@@ -34,7 +34,7 @@ A lifecycle decision remains binary. A requirement is satisfied only when it is 
 When two governance surfaces disagree, the following order applies:
 
 1. `packages/KERNEL-GOVERNANCE.md` — governance semantics and requirement definitions.
-2. Workspace package register — admitted package identity, capability, classification, owner, consumers, and lifecycle.
+2. `governance/kernel/package-registry.ts` (`KERNEL_PACKAGES`) — admitted package identity, capability, classification, owner, consumers, and lifecycle.
 3. Frozen admission contract — package-specific capability boundary, non-ownership, accepted consumers, and approved runtime targets.
 4. Workspace-edge register — authorized package dependency edges.
 5. Machine-readable requirement register — applicability, gates, proof methods, and evidence kinds.
@@ -54,7 +54,8 @@ A lower-authority surface must not override a higher-authority surface. Drift be
 | --- | --- | --- |
 | `foundation` | Pure or explicitly controlled universal semantics | May depend only on authorized `foundation` packages |
 | `runtime` | Cross-cutting runtime mechanisms | May depend on authorized `foundation` and `runtime` packages |
-| `data-plane` | Persistence, transactional, projection, and delivery mechanisms | May depend on authorized packages in all three bands |
+| `data-plane` | Persistence, transactional, projection, and delivery mechanisms | May depend on authorized packages in `foundation`, `runtime`, and `data-plane` |
+| `control-plane` | Authentication, authorization integration, and platform operator control surfaces | May depend on authorized packages in all four bands |
 
 Same-band dependency edges require explicit workspace-edge registration. No package may depend downward against the matrix in §7.1.
 
@@ -108,41 +109,69 @@ The default `"."` entrypoint must be valid for its registered target. Additional
 
 No kernel package may exist outside this registry. Creation, rename, split, merge, band movement, kind change, persistence change, or capability expansion requires registry amendment and a new or amended admission contract.
 
+**Canonical machine register:** `governance/kernel/package-registry.ts` (`KERNEL_PACKAGES`). This section is a derived projection; drift from the register is a build failure (`pnpm check:kernel-governance`).
+
+**Admission state:**
+
+| State | Meaning |
+| --- | --- |
+| `ADMITTED` | Frozen admission contract exists on disk |
+| `PROVISIONAL` | Production source exists without a frozen admission contract (standing §4 violation until resolved) |
+| `PLANNED` | Registered intent; no package directory on disk |
+
 ### 3.1 `foundation`
 
-| Package | Kind | Persistence | Criticality | Admitted capability |
-| --- | --- | --- | --- | --- |
-| `@afenda/errors` | `CLOSED` | `NONE` | C1 | Canonical outcome representation, code space, retry semantics, and normalization of unknown or vendor failures |
-| `@afenda/ids` | `CLOSED` | `NONE` | C1 | Branded identifier contracts, parsing, validation, and controlled ULID/UUIDv7 generation |
-| `@afenda/money` | `CLOSED` | `NONE` | C1 | Minor-unit monetary representation, arithmetic, allocation, and explicit rounding |
-| `@afenda/quantity` | `OPEN` | `INJECTED` | C1 | Dimension taxonomy, unit definition, and dimensional conversion |
-| `@afenda/temporal` | `CLOSED` | `NONE` | C1 | Instant, business date, effective range, and period arithmetic |
-| `@afenda/codes` | `CLOSED` | `NONE` | C2 | Canonical externally governed reference codes and their validation or lookup projections |
-| `@afenda/tenancy` | `CLOSED` | `NONE` | C1 | Execution-context representation for organization, actor, and correlation identity |
-| `@afenda/authz` | `CLOSED` | `NONE` | C1 | Permission grammar, decision representation, and universal evaluation primitives |
+| Package | Band | Kind | Persistence | Criticality | Admission state | Admitted capability |
+| --- | --- | --- | --- | --- | --- | --- |
+| `@afenda/config` | `foundation` | `CLOSED` | `NONE` | C2 | `PROVISIONAL` | Shared TypeScript, Biome, and Vitest configuration profiles for the monorepo |
+| `@afenda/errors` | `foundation` | `CLOSED` | `NONE` | C1 | `ADMITTED` | Canonical outcome representation, code space, retry semantics, and normalization of unknown or vendor failures |
+| `@afenda/env` | `foundation` | `CLOSED` | `NONE` | C2 | `PROVISIONAL` | Configuration schema, parse, validation, and runtime-isolated environment loading |
+| `@afenda/testing` | `foundation` | `CLOSED` | `NONE` | C2 | `PROVISIONAL` | Shared test harness, lane definitions, and Vitest control-plane contracts |
+| `@afenda/ids` | `foundation` | `CLOSED` | `NONE` | C1 | `PLANNED` | Branded identifier contracts, parsing, validation, and controlled ULID/UUIDv7 generation |
+| `@afenda/money` | `foundation` | `CLOSED` | `NONE` | C1 | `PLANNED` | Minor-unit monetary representation, arithmetic, allocation, and explicit rounding |
+| `@afenda/quantity` | `foundation` | `OPEN` | `INJECTED` | C1 | `PLANNED` | Dimension taxonomy, unit definition, and dimensional conversion |
+| `@afenda/temporal` | `foundation` | `CLOSED` | `NONE` | C1 | `PLANNED` | Instant, business date, effective range, and period arithmetic |
+| `@afenda/codes` | `foundation` | `CLOSED` | `NONE` | C2 | `PLANNED` | Canonical externally governed reference codes and their validation or lookup projections |
+| `@afenda/tenancy` | `foundation` | `CLOSED` | `NONE` | C1 | `PLANNED` | Execution-context representation for organization, actor, and correlation identity |
+| `@afenda/authz` | `foundation` | `CLOSED` | `NONE` | C1 | `PLANNED` | Permission grammar, decision representation, and universal evaluation primitives |
 
 ### 3.2 `runtime`
 
-| Package | Kind | Persistence | Criticality | Admitted capability |
-| --- | --- | --- | --- | --- |
-| `@afenda/idempotency` | `CLOSED` | `INJECTED` | C1 | Claim, release, replay, expiry, and conflict semantics over an injected idempotency store |
-| `@afenda/events` | `CLOSED` | `NONE` | C1 | Event interoperability contract: envelope, versioning, serialization, and subscription interfaces |
-| `@afenda/observability` | `CLOSED` | `INJECTED` | C2 | Structured operational telemetry emission, context propagation, and canonical redaction |
-| `@afenda/env` | `CLOSED` | `NONE` | C2 | Configuration schema, parse, validation, and runtime-isolated environment loading |
+| Package | Band | Kind | Persistence | Criticality | Admission state | Admitted capability |
+| --- | --- | --- | --- | --- | --- | --- |
+| `@afenda/logger` | `runtime` | `CLOSED` | `INJECTED` | C2 | `PROVISIONAL` | Structured logging emission, context propagation, and canonical redaction |
+| `@afenda/http` | `runtime` | `CLOSED` | `NONE` | C2 | `PROVISIONAL` | HTTP client and server boundary utilities with transport-safe defaults |
+| `@afenda/security` | `runtime` | `CLOSED` | `NONE` | C1 | `PROVISIONAL` | Security primitives, request hardening, and cryptographic boundary utilities |
+| `@afenda/metrics` | `runtime` | `CLOSED` | `INJECTED` | C2 | `PROVISIONAL` | Metrics emission, instrumentation contracts, and RED-oriented telemetry hooks |
+| `@afenda/openapi` | `runtime` | `CLOSED` | `NONE` | C2 | `PROVISIONAL` | OpenAPI schema generation, projection utilities, and contract emission |
+| `@afenda/rate-limit` | `runtime` | `CLOSED` | `INJECTED` | C1 | `PROVISIONAL` | Rate limiting claim, window semantics, and conflict representation |
+| `@afenda/cache` | `runtime` | `CLOSED` | `INJECTED` | C2 | `PROVISIONAL` | Cache keying, TTL semantics, and invalidation contracts over injected stores |
+| `@afenda/idempotency` | `runtime` | `CLOSED` | `INJECTED` | C1 | `PLANNED` | Claim, release, replay, expiry, and conflict semantics over an injected idempotency store |
+| `@afenda/observability` | `runtime` | `CLOSED` | `INJECTED` | C2 | `PLANNED` | Structured operational telemetry emission, context propagation, and canonical redaction |
 
 ### 3.3 `data-plane`
 
-| Package | Kind | Persistence | Criticality | Admitted capability |
-| --- | --- | --- | --- | --- |
-| `@afenda/db` | `CLOSED` | `OWNED` | C1 | Database schema authority, connectivity, transaction capabilities, and RLS session binding |
-| `@afenda/outbox` | `CLOSED` | `OWNED` | C1 | Transactional outbox persistence, claim, publication coordination, and idempotent delivery state |
-| `@afenda/audit` | `CLOSED` | `OWNED` | C1 | Append-only audit fact contract and transaction-safe append mechanism |
-| `@afenda/numbering` | `OPEN` | `OWNED` | C1 | Tenant-defined series and gapless allocation per tenant, series, and period |
-| `@afenda/read-models` | `CLOSED` | `INJECTED` | C2 | Projection registration protocol, rebuild coordination, position tracking, and staleness reporting |
+| Package | Band | Kind | Persistence | Criticality | Admission state | Admitted capability |
+| --- | --- | --- | --- | --- | --- | --- |
+| `@afenda/db` | `data-plane` | `CLOSED` | `OWNED` | C1 | `PROVISIONAL` | Database schema authority, connectivity, transaction capabilities, and RLS session binding |
+| `@afenda/audit` | `data-plane` | `CLOSED` | `OWNED` | C1 | `PROVISIONAL` | Append-only audit fact contract and transaction-safe append mechanism |
+| `@afenda/events` | `data-plane` | `CLOSED` | `NONE` | C1 | `PROVISIONAL` | Event interoperability contract: envelope, versioning, serialization, and subscription interfaces |
+| `@afenda/search` | `data-plane` | `CLOSED` | `INJECTED` | C2 | `PROVISIONAL` | Search indexing contracts, query projections, and tenant-scoped discovery semantics |
+| `@afenda/notifications` | `data-plane` | `CLOSED` | `INJECTED` | C2 | `PROVISIONAL` | Notification delivery contracts, channel projections, and dispatch state semantics |
+| `@afenda/outbox` | `data-plane` | `CLOSED` | `OWNED` | C1 | `PLANNED` | Transactional outbox persistence, claim, publication coordination, and idempotent delivery state |
+| `@afenda/numbering` | `data-plane` | `OPEN` | `OWNED` | C1 | `PLANNED` | Tenant-defined series and gapless allocation per tenant, series, and period |
+| `@afenda/read-models` | `data-plane` | `CLOSED` | `INJECTED` | C2 | `PLANNED` | Projection registration protocol, rebuild coordination, position tracking, and staleness reporting |
 
 `@afenda/read-models` owns the generic protocol and mechanism only. Each bounded context owns its projection definitions, identifiers, handlers, and registration declarations. A cross-domain canonical projection registry is prohibited.
 
-### 3.4 Prohibited packages
+### 3.4 `control-plane`
+
+| Package | Band | Kind | Persistence | Criticality | Admission state | Admitted capability |
+| --- | --- | --- | --- | --- | --- | --- |
+| `@afenda/auth` | `control-plane` | `CLOSED` | `NONE` | C1 | `PROVISIONAL` | Authentication session integration, organization identity, and Neon Auth boundary |
+| `@afenda/admin` | `control-plane` | `CLOSED` | `NONE` | C1 | `PROVISIONAL` | Administrative operator capability and platform control surfaces |
+
+### 3.5 Prohibited packages
 
 The following package categories are prohibited:
 
@@ -677,3 +706,35 @@ The following invariants summarize this governance contract and are independentl
 13. A seal attests one digest and never follows later changes.
 14. No skipped or unrecorded applicable gate can be treated as success.
 15. No waiver can weaken a mandatory requirement.
+
+---
+
+## 16. Enforcement profile taxonomy and authority placement
+
+### 16.1 Canonical authority placement
+
+Kernel package admission, enforcement-profile vocabulary, per-package enforcement declarations, and adoption surface checks live in `governance/kernel/`. Turborepo generators for kernel/ERP scaffolding are retired; do not reintroduce them.
+
+Dependency direction:
+
+1. `governance/kernel/` defines package identity, admission topology, enforcement vocabulary, and declared trust mechanisms.
+2. Pure validators (`validateKernelGovernance`) evaluate those declarations plus root-capability adoption surfaces (`src/index.ts`, `exports["."]` via KRN-GOV-011 / KRN-GOV-012).
+3. `pnpm check:kernel-governance` consumes the authority and emits deterministic evidence (also wired into local `pnpm checks`).
+4. `packages/KERNEL-GOVERNANCE.md` §3 and `packages/KERNEL-PRD-INDEX.md` are derived projections checked by the gate.
+
+No separate generator owns the register or scaffolds kernel packages toward it.
+
+### 16.2 Enforcement profile vocabulary
+
+Profiles are declared in `governance/kernel/enforcement-profiles.ts`:
+
+| Profile | Meaning |
+| --- | --- |
+| `root-capability` | Default `"."` entrypoint exposes named capabilities only |
+| `nominal-mint` | Branded or sealed mint paths are required to construct authoritative values |
+| `runtime-opaque` | Runtime identity uses opaque trust (for example WeakMap-backed seals) |
+| `registry-authority` | A frozen in-package registry owns canonical codes or definitions |
+| `scoped-capability` | Named capability objects are the only approved consumer surface |
+| `projection-boundary` | Projections intentionally strip mint or trust at transport boundaries |
+
+Semantic intent is declared in `governance/kernel/enforcement-contracts.ts`. Structural evidence is validated by package-specific gates and `check:kernel-governance`. Issue codes are the frozen list `KERNEL_GOVERNANCE_ISSUE_CODES` in `governance/kernel/validator.ts` (report schema `afenda.kernel-governance/v2`). Notable codes: `KRN-GOV-009` unregistered enforcement-contract package; `KRN-GOV-010` missing contract for `ADMITTED`; `KRN-GOV-013` unknown profile; `KRN-GOV-014` duplicate profile; `KRN-GOV-015` unknown gate id.

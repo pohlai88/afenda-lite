@@ -14,12 +14,13 @@ facade and never interpret those policies themselves.
 | Canonical registry and five capability facades | Verified |
 | Repository consumer cutover | Implemented; boundary and strict semantic gates green |
 | Compatibility subpaths and `AppError` | Deleted |
-| Errors cutover contract | Sealed; evidence in `PR.md`, `CONTRACT.md`, and `.protected.sha256` |
-| Kernel package PRD | [PRD.md](./PRD.md) — capability implemented; KERNEL-GOVERNANCE formalization open |
+| Errors cutover contract | Sealed; evidence in [docs/CONTRACT.md](./docs/CONTRACT.md) |
+| Kernel package PRD | [docs/PRD.md](./docs/PRD.md) — capability implemented; KERNEL-GOVERNANCE formalization open |
 
-The durable semantic authority is [CONTRACT.md](./CONTRACT.md). Product and
-governance closure requirements live in [PRD.md](./PRD.md). Cutover evidence is
-in [PR.md](./PR.md). This README is the permanent consumer and maintainer entry.
+The durable semantic authority is [docs/CONTRACT.md](./docs/CONTRACT.md). Product
+and governance closure requirements live in [docs/PRD.md](./docs/PRD.md).
+Admission draft: [docs/ADMISSION.md](./docs/ADMISSION.md). This README is the
+permanent consumer and maintainer entry.
 
 This package-specific cutover seal is not a generic module-readiness claim or a
 substitute for a digest-scoped kernel readiness record under
@@ -250,14 +251,10 @@ The package test command includes registry contracts, hostile boundaries,
 static-copy analysis, and result/retry/wire/OpenAPI bundle containment.
 
 Repository gates enforce the root-only facade and reject distributed semantic
-interpretation. Update protected-package metadata only after all repository
-checks, generated documentation, and the required verification suite pass.
-
-```bash
-pnpm --filter @afenda/errors protect:update
-pnpm --filter @afenda/errors protect:check
-```
+interpretation.
 
 ## Detailed authority
 
-- [Semantic control-plane contract](./CONTRACT.md)
+- [Semantic control-plane contract](./docs/CONTRACT.md)
+- [Kernel package PRD](./docs/PRD.md)
+- [Admission draft](./docs/ADMISSION.md)

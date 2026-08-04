@@ -98,15 +98,17 @@ Every PR that changes a shared concept must state:
 - exact facade signatures and the allowed/prohibited code-usage boundary;
 - superseded surfaces deleted in the same cutover.
 
-**Errors mission:** the proposed final-cutover contract lives in
-[`packages/foundation/errors/CONTRACT.md`](packages/foundation/errors/CONTRACT.md). The final
-consumer surface is the package root with named capabilities: no subpaths,
+**Errors package:** sealed cutover —
+[`docs/CONTRACT.md`](packages/foundation/errors/docs/CONTRACT.md) is semantic
+SSOT; product/governance PRD is
+[`docs/PRD.md`](packages/foundation/errors/docs/PRD.md); admission draft is
+[`docs/ADMISSION.md`](packages/foundation/errors/docs/ADMISSION.md). Consumer
+surface is the package root with named capabilities only (`errorResult`,
+`errorIngress`, `errorProject`, `errorWire`, `errorOpenApi`): no subpaths,
 `AppError`, manual serialization, or consumer-owned code-to-status, retry, or
-wording maps. Existing imports remain living code during Lane 1; do not migrate
-them or claim the proposed capabilities are complete until its allowed/rejected
-contract fixtures pass and the contract status explicitly unlocks consumer migration.
-Do not refresh package protection until the complete repository cutover is
-green.
+wording maps. KERNEL-GOVERNANCE formalization (admission signatories + G1–G10)
+remains open; do not claim KERNEL `VERIFIED` / digest seal from package cutover
+alone.
 
 ### Skill router (short)
 

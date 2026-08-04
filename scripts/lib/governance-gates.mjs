@@ -273,6 +273,17 @@ export const GOVERNANCE_GATES = [
 			"Strict semantic-ownership audit for canonical error construction, serialization, and projection.",
 		negativeFixture: "scripts/__tests__/check-errors-semantics.test.mjs",
 	},
+	{
+		id: "kernel-governance",
+		command: "pnpm check:kernel-governance",
+		kind: "leaf",
+		tier: "ci-required",
+		owner: "platform-foundation",
+		domain: "kernel-family-governance",
+		description:
+			"Proves the canonical kernel package register matches disk, doctrine, and generator projections.",
+		negativeFixture: "scripts/__tests__/check-kernel-governance.test.mjs",
+	},
 ];
 
 /**

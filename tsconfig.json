@@ -10,9 +10,9 @@
 		}
 	},
 	"include": [
+		"governance/**/*.ts",
 		"scripts/**/*.mts",
 		"scripts/**/*.ts",
-		"turbo/generators/**/*.ts",
 		"*.mts",
 		"*.ts"
 	],

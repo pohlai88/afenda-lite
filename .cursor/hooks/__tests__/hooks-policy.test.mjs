@@ -361,6 +361,17 @@ describe("no-living-arch-ghost-ssot", () => {
 		});
 		assert.equal(out.permission, "allow");
 	});
+
+	it("allows package-local docs paths under packages/", () => {
+		const out = runHook("no-living-arch-ghost-ssot.mjs", {
+			tool_name: "Write",
+			tool_input: {
+				path: "packages/foundation/errors/docs/PRD.md",
+				contents: "# @afenda/errors PRD\n",
+			},
+		});
+		assert.equal(out.permission, "allow");
+	});
 });
 
 describe("agent-authority-preflight", () => {

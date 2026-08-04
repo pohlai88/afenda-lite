@@ -138,13 +138,9 @@ pnpm --filter @afenda/<m> test
 pnpm validate:modules                # register drift? → pnpm validate:modules:write
                                      # (order-only changes in *.generated.yaml are sanctioned)
 pnpm --filter @afenda/web typecheck  # proves zero consumer edits
-pnpm gen:doctor:erp                  # package line flips to |feature-first|, root-stores=0
-pnpm generator:check                 # 0 issues, 0 blocked
 ```
 
-`AFG-ERP-104` (upward-imports) fires on the exemplars too — it is **not** a
-success criterion. `AFG-ERP-201` (projection lock) is closed at program end
-via `pnpm turbo gen erp-generator-reconcile-projection-locks`, not per package.
+Topology and ownership authority is [`packages/erp/ERP-SCAFFOLDING.md`](../../../packages/erp/ERP-SCAFFOLDING.md). Turborepo ERP generators (`gen:doctor:erp`, `generator:check`, projection-lock reconcile) are retired — do not reintroduce them.
 
 ## Per-package sizing notes
 

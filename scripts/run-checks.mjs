@@ -21,7 +21,7 @@ const preferred = [
 	"check:doc-integrity",
 	"check:openapi",
 	"check:docs-app",
-	"generator:check",
+	"check:kernel-governance",
 ];
 
 function scriptExists(scriptName) {
@@ -49,11 +49,9 @@ function scriptExists(scriptName) {
 	if (scriptName === "check:docs-app" && !fs.existsSync("apps/docs")) {
 		return false;
 	}
-	// Local-only generator governance (G15–G17, ciRequired: false). Skip if the
-	// generator engine is absent so the gate never fails on a stripped checkout.
 	if (
-		scriptName === "generator:check" &&
-		!fs.existsSync("turbo/generators/engine/generator-check.ts")
+		scriptName === "check:kernel-governance" &&
+		!fs.existsSync("scripts/check-kernel-governance.mts")
 	) {
 		return false;
 	}

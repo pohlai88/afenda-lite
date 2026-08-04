@@ -10,15 +10,15 @@ public contract at an approved consumer boundary.
 | Package | `@afenda/errors` |
 | Target | `packages/foundation/errors` |
 | Layer | Rank-1 foundation leaf; no `@afenda/*` runtime dependencies |
-| Semantic authority | `packages/foundation/errors/CONTRACT.md` |
+| Semantic authority | `packages/foundation/errors/docs/CONTRACT.md` |
 | Living contract | Root barrel, registry, capability facades, tests, `package.json`, README |
-| Integrity record | `packages/foundation/errors/.protected.sha256` |
+| Integrity record | cutover evidence in `packages/foundation/errors/docs/CONTRACT.md` |
 | Contract marker | `afenda.errors/v1` in every package TypeScript source and test |
 | Owning farms | `afenda-elite-api-contract` and `afenda-elite-monorepo-discipline` |
 
-Read `CONTRACT.md` first and obey its current migration lock. Package-local capability
-completion does not authorize consumer conversion, subpath deletion, or
-protection refresh.
+Read `docs/CONTRACT.md` first and obey its current migration lock. Package-local
+capability completion does not authorize consumer conversion or subpath
+deletion.
 
 ## Permanent consumer surface
 
@@ -62,7 +62,7 @@ them; never present them as an alternative capability style.
 11. Keep all four capability bundle gates and their frozen byte ceilings. Move
     maintainer-only validation out of consumer bundles instead of raising a
     ceiling.
-12. Keep the package a runtime leaf and preserve protection headers.
+12. Keep the package a runtime leaf and preserve `afenda.errors/v1` contract headers.
 
 ## Mission routing
 
@@ -150,10 +150,8 @@ broad parallel timeout with a green isolated package is an execution finding,
 not proof of either product failure or success. Record both outcomes exactly,
 inspect only task-owned processes, and never label the timed-out command green.
 
-Refresh `.protected.sha256` only after code, consumers, fixtures, documentation,
-governance, and required verification are final. `CONTRACT.md` remains semantic
-authority; `PR.md` records execution evidence and must not become a parallel
-contract.
+`docs/CONTRACT.md` remains semantic authority and cutover evidence; do not
+create a parallel cutover record.
 
 ## Consumer boundary after unlock
 
@@ -190,18 +188,13 @@ pnpm --filter @afenda/errors typecheck
 pnpm --filter @afenda/errors test
 ```
 
-During the migration, run the living repository checks named by root
-`package.json` and `CONTRACT.md`; do not invent final command names early. At the
-authorized final cutover, require the two permanent boundary/semantic gates,
-all affected consumers, generated docs/OpenAPI, and the full repository suite.
-
-Run `protect:check` to report current integrity state. Run `protect:update` only
-as the final operation after every cutover, consumer, documentation, governance,
-and repository gate is green. Never refresh protection for package-local
-progress alone.
+Run the living repository checks named by root `package.json` and
+`docs/CONTRACT.md`; do not invent final command names. Require the two permanent
+boundary/semantic gates, affected consumers, generated docs/OpenAPI, and the
+focused verification suite for the changed surface.
 
 ## Completion
 
 Report package capability work as `VERIFIED`, not `SEALED`, while consumer
-cutover, permanent governance, protection, or a durable seal record remains
-open. A green package suite proves the named package capability only.
+cutover, permanent governance, or a KERNEL digest seal remains open. A green
+package suite proves the named package capability only.

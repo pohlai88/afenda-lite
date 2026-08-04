@@ -2,29 +2,42 @@
 
 Normative governance: [`KERNEL-GOVERNANCE.md`](./KERNEL-GOVERNANCE.md).
 
-Individual PRDs live beside admitted packages when present. The integrated kit
-under `docs/kernel/` remains a review copy and may drift until Docs-lane reopen
-allows sync of `docs/kernel/package-specs/**`.
+**Canonical machine register:** `governance/kernel/package-registry.ts` (`KERNEL_PACKAGES`). This index is a derived projection; drift from the register is a build failure (`pnpm check:kernel-governance`).
 
-| No. | Package | Band | Kind | Persistence | Criticality | Individual PRD |
-| ---: | --- | --- | --- | --- | --- | --- |
-| 1 | `@afenda/errors` | `foundation` | `CLOSED` | `NONE` | C1 | [`foundation/errors/PRD.md`](./foundation/errors/PRD.md) |
-| 2 | `@afenda/ids` | `foundation` | `CLOSED` | `NONE` | C1 | _not authored_ |
-| 3 | `@afenda/money` | `foundation` | `CLOSED` | `NONE` | C1 | _not authored_ |
-| 4 | `@afenda/quantity` | `foundation` | `OPEN` | `INJECTED` | C1 | _not authored_ |
-| 5 | `@afenda/temporal` | `foundation` | `CLOSED` | `NONE` | C1 | _not authored_ |
-| 6 | `@afenda/codes` | `foundation` | `CLOSED` | `NONE` | C2 | _not authored_ |
-| 7 | `@afenda/tenancy` | `foundation` | `CLOSED` | `NONE` | C1 | _not authored_ |
-| 8 | `@afenda/authz` | `foundation` | `CLOSED` | `NONE` | C1 | _not authored_ |
-| 9 | `@afenda/idempotency` | `runtime` | `CLOSED` | `INJECTED` | C1 | _not authored_ |
-| 10 | `@afenda/events` | `runtime` | `CLOSED` | `NONE` | C1 | _not authored_ |
-| 11 | `@afenda/observability` | `runtime` | `CLOSED` | `INJECTED` | C2 | _not authored_ |
-| 12 | `@afenda/env` | `runtime` | `CLOSED` | `NONE` | C2 | _not authored_ |
-| 13 | `@afenda/db` | `data-plane` | `CLOSED` | `OWNED` | C1 | _not authored_ |
-| 14 | `@afenda/outbox` | `data-plane` | `CLOSED` | `OWNED` | C1 | _not authored_ |
-| 15 | `@afenda/audit` | `data-plane` | `CLOSED` | `OWNED` | C1 | _not authored_ |
-| 16 | `@afenda/numbering` | `data-plane` | `OPEN` | `OWNED` | C1 | _not authored_ |
-| 17 | `@afenda/read-models` | `data-plane` | `CLOSED` | `INJECTED` | C2 | _not authored_ |
+Individual PRDs live under admitted packages when present. For `@afenda/errors`, the operative PRD is [`foundation/errors/docs/PRD.md`](./foundation/errors/docs/PRD.md) with sibling `CONTRACT.md` and `ADMISSION.md`.
+
+| No. | Package | Band | Kind | Persistence | Criticality | Admission state | Individual PRD |
+| ---: | --- | --- | --- | --- | --- | --- | --- |
+| 1 | `@afenda/config` | `foundation` | `CLOSED` | `NONE` | C2 | `PROVISIONAL` | _not authored_ |
+| 2 | `@afenda/errors` | `foundation` | `CLOSED` | `NONE` | C1 | `ADMITTED` | [`foundation/errors/docs/PRD.md`](./foundation/errors/docs/PRD.md) |
+| 3 | `@afenda/env` | `foundation` | `CLOSED` | `NONE` | C2 | `PROVISIONAL` | _not authored_ |
+| 4 | `@afenda/testing` | `foundation` | `CLOSED` | `NONE` | C2 | `PROVISIONAL` | _not authored_ |
+| 5 | `@afenda/ids` | `foundation` | `CLOSED` | `NONE` | C1 | `PLANNED` | _not authored_ |
+| 6 | `@afenda/money` | `foundation` | `CLOSED` | `NONE` | C1 | `PLANNED` | _not authored_ |
+| 7 | `@afenda/quantity` | `foundation` | `OPEN` | `INJECTED` | C1 | `PLANNED` | _not authored_ |
+| 8 | `@afenda/temporal` | `foundation` | `CLOSED` | `NONE` | C1 | `PLANNED` | _not authored_ |
+| 9 | `@afenda/codes` | `foundation` | `CLOSED` | `NONE` | C2 | `PLANNED` | _not authored_ |
+| 10 | `@afenda/tenancy` | `foundation` | `CLOSED` | `NONE` | C1 | `PLANNED` | _not authored_ |
+| 11 | `@afenda/authz` | `foundation` | `CLOSED` | `NONE` | C1 | `PLANNED` | _not authored_ |
+| 12 | `@afenda/logger` | `runtime` | `CLOSED` | `INJECTED` | C2 | `PROVISIONAL` | _not authored_ |
+| 13 | `@afenda/http` | `runtime` | `CLOSED` | `NONE` | C2 | `PROVISIONAL` | _not authored_ |
+| 14 | `@afenda/security` | `runtime` | `CLOSED` | `NONE` | C1 | `PROVISIONAL` | _not authored_ |
+| 15 | `@afenda/metrics` | `runtime` | `CLOSED` | `INJECTED` | C2 | `PROVISIONAL` | _not authored_ |
+| 16 | `@afenda/openapi` | `runtime` | `CLOSED` | `NONE` | C2 | `PROVISIONAL` | _not authored_ |
+| 17 | `@afenda/rate-limit` | `runtime` | `CLOSED` | `INJECTED` | C1 | `PROVISIONAL` | _not authored_ |
+| 18 | `@afenda/cache` | `runtime` | `CLOSED` | `INJECTED` | C2 | `PROVISIONAL` | _not authored_ |
+| 19 | `@afenda/idempotency` | `runtime` | `CLOSED` | `INJECTED` | C1 | `PLANNED` | _not authored_ |
+| 20 | `@afenda/observability` | `runtime` | `CLOSED` | `INJECTED` | C2 | `PLANNED` | _not authored_ |
+| 21 | `@afenda/db` | `data-plane` | `CLOSED` | `OWNED` | C1 | `PROVISIONAL` | _not authored_ |
+| 22 | `@afenda/audit` | `data-plane` | `CLOSED` | `OWNED` | C1 | `PROVISIONAL` | _not authored_ |
+| 23 | `@afenda/events` | `data-plane` | `CLOSED` | `NONE` | C1 | `PROVISIONAL` | _not authored_ |
+| 24 | `@afenda/search` | `data-plane` | `CLOSED` | `INJECTED` | C2 | `PROVISIONAL` | _not authored_ |
+| 25 | `@afenda/notifications` | `data-plane` | `CLOSED` | `INJECTED` | C2 | `PROVISIONAL` | _not authored_ |
+| 26 | `@afenda/outbox` | `data-plane` | `CLOSED` | `OWNED` | C1 | `PLANNED` | _not authored_ |
+| 27 | `@afenda/numbering` | `data-plane` | `OPEN` | `OWNED` | C1 | `PLANNED` | _not authored_ |
+| 28 | `@afenda/read-models` | `data-plane` | `CLOSED` | `INJECTED` | C2 | `PLANNED` | _not authored_ |
+| 29 | `@afenda/auth` | `control-plane` | `CLOSED` | `NONE` | C1 | `PROVISIONAL` | _not authored_ |
+| 30 | `@afenda/admin` | `control-plane` | `CLOSED` | `NONE` | C1 | `PROVISIONAL` | _not authored_ |
 
 ## Errors requirement families
 

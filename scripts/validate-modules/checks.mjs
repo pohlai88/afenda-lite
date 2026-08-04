@@ -6,7 +6,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative, sep } from "node:path";
 import { database } from "@afenda/db";
 import { parse as parseYaml } from "yaml";
-import { listErpManifestPackageAuthority } from "../../turbo/generators/erp-generator/manifest-authority.ts";
+import { listErpManifestPackageAuthority } from "./erp-manifest-packages.mjs";
 
 /** @typedef {import("@afenda/db/module-manifest").AfendaModuleManifest} AfendaModuleManifest */
 
