@@ -10,6 +10,8 @@ import {
 	caCompanyName,
 	caCompanyStatusHistory,
 	caEstablishmentStatusHistory,
+	caGovernanceBody,
+	caGovernanceMembership,
 	caLegalCompany,
 	caLegalEstablishment,
 	caMutationReceipt,
@@ -237,6 +239,31 @@ export async function countCorporateAdministrationLegalEstablishments(
 		.select({ value: sql<number>`count(*)::int` })
 		.from(caLegalEstablishment)
 		.where(eq(caLegalEstablishment.organizationId, organizationId));
+	return Number(rows[0]?.value ?? 0);
+}
+
+export async function cleanupCorporateAdministrationGovernanceTestData(
+	organizationId: string,
+): Promise<void> {
+	const scopedOrganizationId = normalizeTestOrganizationId(organizationId);
+	await afendaDatabase.client
+		.delete(caGovernanceMembership)
+		.where(eq(caGovernanceMembership.organizationId, scopedOrganizationId));
+	await afendaDatabase.client
+		.delete(caGovernanceBody)
+		.where(eq(caGovernanceBody.organizationId, scopedOrganizationId));
+	await cleanupCorporateAdministrationInfrastructureTestData(
+		scopedOrganizationId,
+	);
+}
+
+export async function countCorporateAdministrationGovernanceBodies(
+	organizationId: string,
+): Promise<number> {
+	const rows = await afendaDatabase.client
+		.select({ value: sql<number>`count(*)::int` })
+		.from(caGovernanceBody)
+		.where(eq(caGovernanceBody.organizationId, organizationId));
 	return Number(rows[0]?.value ?? 0);
 }
 
