@@ -1,10 +1,6 @@
 "use server";
 
-import {
-	type Result as ActionResult,
-	errorResult,
-	type Result,
-} from "@afenda/errors";
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import type {
 	EmployeePerformanceHistory,
 	PerformanceCycle,
@@ -122,6 +118,7 @@ import {
 	updatePerformanceGoalInputSchema,
 } from "@afenda/human-resources";
 
+import { defineAction } from "@/app/actions/_runtime/define-action";
 import {
 	hrActionSchema,
 	withHrSessionContext as withSessionContext,
@@ -129,7 +126,6 @@ import {
 import { mapPackageResult } from "@/app/actions/map-package-result";
 import { runHrTalentOperatorPermissionAction as runOperatorPermissionAction } from "@/app/actions/run-hr-operator-permission-action";
 import { createHumanResourcesCommandOptions } from "@/lib/erp/human-resources-command-options";
-import type { ProductPermissionCode } from "@/modules/identity/domain/session-permission";
 
 import { parseSchema } from "@/modules/platform/schemas/common";
 
@@ -271,53 +267,6 @@ const listActiveImprovementPlansActionSchema = hrActionSchema(
 const getEmployeePerformanceHistoryActionSchema = hrActionSchema(
 	getEmployeePerformanceHistoryInputSchema,
 );
-
-type PerformanceActionData<Key extends string, Value> = {
-	[Property in Key]: Value;
-};
-
-async function runPerformanceAction<Key extends string, Value>(config: {
-	input: unknown;
-	schema: Parameters<typeof parseSchema>[0];
-	path: string;
-	permission: ProductPermissionCode;
-	safeMessage: string;
-	validationMessage: string;
-	dataKey: Key;
-	execute: (input: never) => Promise<Result<Value>>;
-}): Promise<ActionResult<PerformanceActionData<Key, Value>>> {
-	return await runOperatorPermissionAction({
-		path: config.path,
-		permission: config.permission,
-		safeMessage: config.safeMessage,
-		execute: async (session, correlationId) => {
-			const parsed = parseSchema(config.schema, config.input);
-			if (!parsed.success) {
-				return errorResult.fail("VALIDATION_ERROR", {
-					publicMessage: "The submitted data is invalid",
-				});
-			}
-			const result = await config.execute(
-				withSessionContext(
-					session,
-					correlationId,
-					parsed.data as Record<string, unknown>,
-				) as never,
-			);
-			const mapped = mapPackageResult(result);
-			if (!mapped.ok) {
-				return mapped;
-			}
-			return {
-				ok: true,
-				data: { [config.dataKey]: mapped.data } as PerformanceActionData<
-					Key,
-					Value
-				>,
-			};
-		},
-	});
-}
 
 export async function createPerformanceCycleAction(
 	input: unknown,
@@ -655,663 +604,916 @@ export async function createImprovementPlanAction(
 export async function updatePerformanceCycleAction(
 	input: unknown,
 ): Promise<ActionResult<{ cycle: PerformanceCycle }>> {
-	return await runPerformanceAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: updatePerformanceCycleActionSchema,
 		path: "updatePerformanceCycleAction",
 		permission: "human-resources.performance.manage",
 		safeMessage: "Could not update performance cycle.",
-		validationMessage: "Enter a valid performance cycle update.",
-		dataKey: "cycle",
-		execute: (data) =>
-			updatePerformanceCycle(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid performance cycle update.",
+			}),
+		invoke: (stamped) =>
+			updatePerformanceCycle(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ cycle: value }),
 	});
 }
 
 export async function publishPerformanceCycleAction(
 	input: unknown,
 ): Promise<ActionResult<{ cycle: PerformanceCycle }>> {
-	return await runPerformanceAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: publishPerformanceCycleActionSchema,
 		path: "publishPerformanceCycleAction",
 		permission: "human-resources.performance.manage",
 		safeMessage: "Could not publish performance cycle.",
-		validationMessage: "Enter a valid cycle publish request.",
-		dataKey: "cycle",
-		execute: (data) =>
-			publishPerformanceCycle(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid cycle publish request.",
+			}),
+		invoke: (stamped) =>
+			publishPerformanceCycle(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ cycle: value }),
 	});
 }
 
 export async function closePerformanceCycleAction(
 	input: unknown,
 ): Promise<ActionResult<{ cycle: PerformanceCycle }>> {
-	return await runPerformanceAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: closePerformanceCycleActionSchema,
 		path: "closePerformanceCycleAction",
 		permission: "human-resources.performance.manage",
 		safeMessage: "Could not close performance cycle.",
-		validationMessage: "Enter a valid cycle close request.",
-		dataKey: "cycle",
-		execute: (data) =>
-			closePerformanceCycle(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid cycle close request.",
+			}),
+		invoke: (stamped) =>
+			closePerformanceCycle(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ cycle: value }),
 	});
 }
 
 export async function cancelPerformanceCycleAction(
 	input: unknown,
 ): Promise<ActionResult<{ cycle: PerformanceCycle }>> {
-	return await runPerformanceAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: cancelPerformanceCycleActionSchema,
 		path: "cancelPerformanceCycleAction",
 		permission: "human-resources.performance.manage",
 		safeMessage: "Could not cancel performance cycle.",
-		validationMessage: "Enter a valid cycle cancellation request.",
-		dataKey: "cycle",
-		execute: (data) =>
-			cancelPerformanceCycle(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid cycle cancellation request.",
+			}),
+		invoke: (stamped) =>
+			cancelPerformanceCycle(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ cycle: value }),
 	});
 }
 
 export async function setPerformanceCycleReviewPeriodsAction(
 	input: unknown,
 ): Promise<ActionResult<{ periods: PerformanceCycleReviewPeriod[] }>> {
-	return await runPerformanceAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: setPerformanceCycleReviewPeriodsActionSchema,
 		path: "setPerformanceCycleReviewPeriodsAction",
 		permission: "human-resources.performance.manage",
 		safeMessage: "Could not set cycle review periods.",
-		validationMessage: "Enter valid cycle review periods.",
-		dataKey: "periods",
-		execute: (data) =>
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter valid cycle review periods.",
+			}),
+		invoke: (stamped) =>
 			setPerformanceCycleReviewPeriods(
-				data,
+				stamped as never,
 				createHumanResourcesCommandOptions(),
 			),
+		project: (value) => ({ periods: value }),
 	});
 }
 
 export async function listPerformanceCycleReviewPeriodsAction(
 	input: unknown,
 ): Promise<ActionResult<{ periods: PerformanceCycleReviewPeriod[] }>> {
-	return await runPerformanceAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: listPerformanceCycleReviewPeriodsActionSchema,
 		path: "listPerformanceCycleReviewPeriodsAction",
 		permission: "human-resources.performance.manage",
 		safeMessage: "Could not list cycle review periods.",
-		validationMessage: "Enter a valid cycle review period request.",
-		dataKey: "periods",
-		execute: (data) =>
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid cycle review period request.",
+			}),
+		invoke: (stamped) =>
 			listPerformanceCycleReviewPeriods(
-				data,
+				stamped as never,
 				createHumanResourcesCommandOptions(),
 			),
+		project: (value) => ({ periods: value }),
 	});
 }
 
 export async function setPerformanceCycleEligibilityAction(
 	input: unknown,
 ): Promise<ActionResult<{ eligibility: PerformanceCycleEligibility }>> {
-	return await runPerformanceAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: setPerformanceCycleEligibilityActionSchema,
 		path: "setPerformanceCycleEligibilityAction",
 		permission: "human-resources.performance.manage",
 		safeMessage: "Could not set cycle eligibility.",
-		validationMessage: "Enter valid cycle eligibility.",
-		dataKey: "eligibility",
-		execute: (data) =>
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter valid cycle eligibility.",
+			}),
+		invoke: (stamped) =>
 			setPerformanceCycleEligibility(
-				data,
+				stamped as never,
 				createHumanResourcesCommandOptions(),
 			),
+		project: (value) => ({ eligibility: value }),
 	});
 }
 
 export async function getPerformanceCycleEligibilityAction(
 	input: unknown,
 ): Promise<ActionResult<{ eligibility: PerformanceCycleEligibility | null }>> {
-	return await runPerformanceAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: getPerformanceCycleEligibilityActionSchema,
 		path: "getPerformanceCycleEligibilityAction",
 		permission: "human-resources.performance.manage",
 		safeMessage: "Could not get cycle eligibility.",
-		validationMessage: "Enter a valid cycle eligibility request.",
-		dataKey: "eligibility",
-		execute: (data) =>
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid cycle eligibility request.",
+			}),
+		invoke: (stamped) =>
 			getPerformanceCycleEligibility(
-				data,
+				stamped as never,
 				createHumanResourcesCommandOptions(),
 			),
+		project: (value) => ({ eligibility: value }),
 	});
 }
 
 export async function enrollEligibleCycleParticipantsAction(
 	input: unknown,
 ): Promise<ActionResult<{ participants: PerformanceCycleParticipant[] }>> {
-	return await runPerformanceAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: enrollEligibleCycleParticipantsActionSchema,
 		path: "enrollEligibleCycleParticipantsAction",
 		permission: "human-resources.performance.manage",
 		safeMessage: "Could not enroll eligible cycle participants.",
-		validationMessage: "Enter a valid cycle enrolment request.",
-		dataKey: "participants",
-		execute: (data) =>
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid cycle enrolment request.",
+			}),
+		invoke: (stamped) =>
 			enrollEligibleCycleParticipants(
-				data,
+				stamped as never,
 				createHumanResourcesCommandOptions(),
 			),
+		project: (value) => ({ participants: value }),
 	});
 }
 
 export async function addCycleParticipantAction(
 	input: unknown,
 ): Promise<ActionResult<{ participant: PerformanceCycleParticipant }>> {
-	return await runPerformanceAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: addCycleParticipantActionSchema,
 		path: "addCycleParticipantAction",
 		permission: "human-resources.performance.manage",
 		safeMessage: "Could not add cycle participant.",
-		validationMessage: "Enter a valid cycle participant.",
-		dataKey: "participant",
-		execute: (data) =>
-			addCycleParticipant(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid cycle participant.",
+			}),
+		invoke: (stamped) =>
+			addCycleParticipant(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ participant: value }),
 	});
 }
 
 export async function removeCycleParticipantAction(
 	input: unknown,
 ): Promise<ActionResult<{ participant: PerformanceCycleParticipant }>> {
-	return await runPerformanceAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: removeCycleParticipantActionSchema,
 		path: "removeCycleParticipantAction",
 		permission: "human-resources.performance.manage",
 		safeMessage: "Could not remove cycle participant.",
-		validationMessage: "Enter a valid cycle participant removal.",
-		dataKey: "participant",
-		execute: (data) =>
-			removeCycleParticipant(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid cycle participant removal.",
+			}),
+		invoke: (stamped) =>
+			removeCycleParticipant(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ participant: value }),
 	});
 }
 
 export async function listCycleParticipantsAction(
 	input: unknown,
 ): Promise<ActionResult<{ participants: PerformanceCycleParticipant[] }>> {
-	return await runPerformanceAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: listCycleParticipantsActionSchema,
 		path: "listCycleParticipantsAction",
 		permission: "human-resources.performance.manage",
 		safeMessage: "Could not list cycle participants.",
-		validationMessage: "Enter valid cycle participant filters.",
-		dataKey: "participants",
-		execute: (data) =>
-			listCycleParticipants(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter valid cycle participant filters.",
+			}),
+		invoke: (stamped) =>
+			listCycleParticipants(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ participants: value }),
 	});
 }
 
 export async function updatePerformanceGoalAction(
 	input: unknown,
 ): Promise<ActionResult<{ goal: PerformanceGoal }>> {
-	return await runPerformanceAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: updatePerformanceGoalActionSchema,
 		path: "updatePerformanceGoalAction",
 		permission: "human-resources.performance.goal.own.manage",
 		safeMessage: "Could not update performance goal.",
-		validationMessage: "Enter a valid performance goal update.",
-		dataKey: "goal",
-		execute: (data) =>
-			updatePerformanceGoal(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid performance goal update.",
+			}),
+		invoke: (stamped) =>
+			updatePerformanceGoal(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ goal: value }),
 	});
 }
 
 export async function submitPerformanceGoalAction(
 	input: unknown,
 ): Promise<ActionResult<{ goal: PerformanceGoal }>> {
-	return await runPerformanceAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: performanceGoalStatusTransitionActionSchema,
 		path: "submitPerformanceGoalAction",
 		permission: "human-resources.performance.goal.own.manage",
 		safeMessage: "Could not submit performance goal.",
-		validationMessage: "Enter a valid goal submit request.",
-		dataKey: "goal",
-		execute: (data) =>
-			submitPerformanceGoal(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid goal submit request.",
+			}),
+		invoke: (stamped) =>
+			submitPerformanceGoal(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ goal: value }),
 	});
 }
 
 export async function approvePerformanceGoalAction(
 	input: unknown,
 ): Promise<ActionResult<{ goal: PerformanceGoal }>> {
-	return await runPerformanceAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: performanceGoalStatusTransitionActionSchema,
 		path: "approvePerformanceGoalAction",
 		permission: "human-resources.performance.manager.manage",
 		safeMessage: "Could not approve performance goal.",
-		validationMessage: "Enter a valid goal approval request.",
-		dataKey: "goal",
-		execute: (data) =>
-			approvePerformanceGoal(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid goal approval request.",
+			}),
+		invoke: (stamped) =>
+			approvePerformanceGoal(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ goal: value }),
 	});
 }
 
 export async function rejectPerformanceGoalAction(
 	input: unknown,
 ): Promise<ActionResult<{ goal: PerformanceGoal }>> {
-	return await runPerformanceAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: performanceGoalStatusTransitionActionSchema,
 		path: "rejectPerformanceGoalAction",
 		permission: "human-resources.performance.manager.manage",
 		safeMessage: "Could not reject performance goal.",
-		validationMessage: "Enter a valid goal rejection request.",
-		dataKey: "goal",
-		execute: (data) =>
-			rejectPerformanceGoal(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid goal rejection request.",
+			}),
+		invoke: (stamped) =>
+			rejectPerformanceGoal(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ goal: value }),
 	});
 }
 
 export async function recordGoalProgressAction(
 	input: unknown,
 ): Promise<ActionResult<{ progress: PerformanceGoalProgress }>> {
-	return await runPerformanceAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: recordGoalProgressActionSchema,
 		path: "recordGoalProgressAction",
 		permission: "human-resources.performance.goal.own.manage",
 		safeMessage: "Could not record goal progress.",
-		validationMessage: "Enter valid goal progress.",
-		dataKey: "progress",
-		execute: (data) =>
-			recordGoalProgress(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter valid goal progress.",
+			}),
+		invoke: (stamped) =>
+			recordGoalProgress(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ progress: value }),
 	});
 }
 
 export async function activatePerformanceGoalAction(
 	input: unknown,
 ): Promise<ActionResult<{ goal: PerformanceGoal }>> {
-	return await runPerformanceAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: performanceGoalStatusTransitionActionSchema,
 		path: "activatePerformanceGoalAction",
 		permission: "human-resources.performance.manage",
 		safeMessage: "Could not activate performance goal.",
-		validationMessage: "Enter a valid goal activation request.",
-		dataKey: "goal",
-		execute: (data) =>
-			activatePerformanceGoal(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid goal activation request.",
+			}),
+		invoke: (stamped) =>
+			activatePerformanceGoal(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ goal: value }),
 	});
 }
 
 export async function alignPerformanceGoalAction(
 	input: unknown,
 ): Promise<ActionResult<{ goal: PerformanceGoal }>> {
-	return await runPerformanceAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: alignPerformanceGoalActionSchema,
 		path: "alignPerformanceGoalAction",
 		permission: "human-resources.performance.manage",
 		safeMessage: "Could not align performance goal.",
-		validationMessage: "Enter a valid goal alignment request.",
-		dataKey: "goal",
-		execute: (data) =>
-			alignPerformanceGoal(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid goal alignment request.",
+			}),
+		invoke: (stamped) =>
+			alignPerformanceGoal(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ goal: value }),
 	});
 }
 
 export async function closePerformanceGoalAction(
 	input: unknown,
 ): Promise<ActionResult<{ goal: PerformanceGoal }>> {
-	return await runPerformanceAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: closePerformanceGoalActionSchema,
 		path: "closePerformanceGoalAction",
 		permission: "human-resources.performance.goal.own.manage",
 		safeMessage: "Could not close performance goal.",
-		validationMessage: "Enter a valid goal closure request.",
-		dataKey: "goal",
-		execute: (data) =>
-			closePerformanceGoal(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid goal closure request.",
+			}),
+		invoke: (stamped) =>
+			closePerformanceGoal(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ goal: value }),
 	});
 }
 
 export async function cancelPerformanceGoalAction(
 	input: unknown,
 ): Promise<ActionResult<{ goal: PerformanceGoal }>> {
-	return await runPerformanceAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: performanceGoalStatusTransitionActionSchema,
 		path: "cancelPerformanceGoalAction",
 		permission: "human-resources.performance.goal.own.manage",
 		safeMessage: "Could not cancel performance goal.",
-		validationMessage: "Enter a valid goal cancellation request.",
-		dataKey: "goal",
-		execute: (data) =>
-			cancelPerformanceGoal(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid goal cancellation request.",
+			}),
+		invoke: (stamped) =>
+			cancelPerformanceGoal(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ goal: value }),
 	});
 }
 
 export async function getPerformanceGoalByIdAction(
 	input: unknown,
 ): Promise<ActionResult<{ goal: PerformanceGoal | null }>> {
-	return await runPerformanceAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: getPerformanceGoalByIdActionSchema,
 		path: "getPerformanceGoalByIdAction",
 		permission: "human-resources.performance.own.read",
 		safeMessage: "Could not get performance goal.",
-		validationMessage: "Enter a valid goal lookup.",
-		dataKey: "goal",
-		execute: (data) =>
-			getPerformanceGoalById(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid goal lookup.",
+			}),
+		invoke: (stamped) =>
+			getPerformanceGoalById(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ goal: value }),
 	});
 }
 
 export async function listGoalProgressAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: PerformanceGoalProgressListPage }>> {
-	return await runPerformanceAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: listGoalProgressActionSchema,
 		path: "listGoalProgressAction",
 		permission: "human-resources.performance.own.read",
 		safeMessage: "Could not list goal progress.",
-		validationMessage: "Enter valid goal progress filters.",
-		dataKey: "page",
-		execute: (data) =>
-			listGoalProgress(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter valid goal progress filters.",
+			}),
+		invoke: (stamped) =>
+			listGoalProgress(stamped as never, createHumanResourcesCommandOptions()),
+		project: (value) => ({ page: value }),
 	});
 }
 
 export async function submitSelfAssessmentAction(
 	input: unknown,
 ): Promise<ActionResult<{ review: PerformanceReview }>> {
-	return await runPerformanceAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: submitSelfAssessmentActionSchema,
 		path: "submitSelfAssessmentAction",
 		permission: "human-resources.performance.own.read",
 		safeMessage: "Could not submit self assessment.",
-		validationMessage: "Enter a valid self assessment.",
-		dataKey: "review",
-		execute: (data) =>
-			submitSelfAssessment(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid self assessment.",
+			}),
+		invoke: (stamped) =>
+			submitSelfAssessment(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ review: value }),
 	});
 }
 
 export async function submitManagerAssessmentAction(
 	input: unknown,
 ): Promise<ActionResult<{ review: PerformanceReview }>> {
-	return await runPerformanceAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: submitManagerAssessmentActionSchema,
 		path: "submitManagerAssessmentAction",
 		permission: "human-resources.performance.manager.manage",
 		safeMessage: "Could not submit manager assessment.",
-		validationMessage: "Enter a valid manager assessment.",
-		dataKey: "review",
-		execute: (data) =>
-			submitManagerAssessment(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid manager assessment.",
+			}),
+		invoke: (stamped) =>
+			submitManagerAssessment(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ review: value }),
 	});
 }
 
 export async function returnPerformanceReviewForCorrectionAction(
 	input: unknown,
 ): Promise<ActionResult<{ review: PerformanceReview }>> {
-	return await runPerformanceAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: performanceReviewStatusTransitionActionSchema,
 		path: "returnPerformanceReviewForCorrectionAction",
 		permission: "human-resources.performance.manager.manage",
 		safeMessage: "Could not return performance review for correction.",
-		validationMessage: "Enter a valid review correction request.",
-		dataKey: "review",
-		execute: (data) =>
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid review correction request.",
+			}),
+		invoke: (stamped) =>
 			returnPerformanceReviewForCorrection(
-				data,
+				stamped as never,
 				createHumanResourcesCommandOptions(),
 			),
+		project: (value) => ({ review: value }),
 	});
 }
 
 export async function acknowledgePerformanceReviewAction(
 	input: unknown,
 ): Promise<ActionResult<{ review: PerformanceReview }>> {
-	return await runPerformanceAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: acknowledgePerformanceReviewActionSchema,
 		path: "acknowledgePerformanceReviewAction",
 		permission: "human-resources.performance.own.read",
 		safeMessage: "Could not acknowledge performance review.",
-		validationMessage: "Enter a valid review acknowledgement.",
-		dataKey: "review",
-		execute: (data) =>
-			acknowledgePerformanceReview(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid review acknowledgement.",
+			}),
+		invoke: (stamped) =>
+			acknowledgePerformanceReview(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ review: value }),
 	});
 }
 
 export async function finalizePerformanceReviewAction(
 	input: unknown,
 ): Promise<ActionResult<{ review: PerformanceReview }>> {
-	return await runPerformanceAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: finalizePerformanceReviewActionSchema,
 		path: "finalizePerformanceReviewAction",
 		permission: "human-resources.performance.manager.manage",
 		safeMessage: "Could not finalize performance review.",
-		validationMessage: "Enter a valid review finalization.",
-		dataKey: "review",
-		execute: (data) =>
-			finalizePerformanceReview(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid review finalization.",
+			}),
+		invoke: (stamped) =>
+			finalizePerformanceReview(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ review: value }),
 	});
 }
 
 export async function reopenPerformanceReviewAction(
 	input: unknown,
 ): Promise<ActionResult<{ review: PerformanceReview }>> {
-	return await runPerformanceAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: reopenPerformanceReviewActionSchema,
 		path: "reopenPerformanceReviewAction",
 		permission: "human-resources.performance.review.reopen",
 		safeMessage: "Could not reopen performance review.",
-		validationMessage: "Enter a valid review reopen request.",
-		dataKey: "review",
-		execute: (data) =>
-			reopenPerformanceReview(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid review reopen request.",
+			}),
+		invoke: (stamped) =>
+			reopenPerformanceReview(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ review: value }),
 	});
 }
 
 export async function calibratePerformanceReviewAction(
 	input: unknown,
 ): Promise<ActionResult<{ review: PerformanceReview }>> {
-	return await runPerformanceAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: calibratePerformanceReviewActionSchema,
 		path: "calibratePerformanceReviewAction",
 		permission: "human-resources.performance.confidential.read",
 		safeMessage: "Could not calibrate performance review.",
-		validationMessage: "Enter a valid review calibration.",
-		dataKey: "review",
-		execute: (data) =>
-			calibratePerformanceReview(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid review calibration.",
+			}),
+		invoke: (stamped) =>
+			calibratePerformanceReview(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ review: value }),
 	});
 }
 
 export async function openImprovementPlanAction(
 	input: unknown,
 ): Promise<ActionResult<{ plan: PerformanceImprovementPlan }>> {
-	return await runPerformanceAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: improvementPlanStatusTransitionActionSchema,
 		path: "openImprovementPlanAction",
 		permission: "human-resources.performance.improvement-plan.manage",
 		safeMessage: "Could not open improvement plan.",
-		validationMessage: "Enter a valid improvement plan open request.",
-		dataKey: "plan",
-		execute: (data) =>
-			openImprovementPlan(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid improvement plan open request.",
+			}),
+		invoke: (stamped) =>
+			openImprovementPlan(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ plan: value }),
 	});
 }
 
 export async function acknowledgeImprovementPlanAction(
 	input: unknown,
 ): Promise<ActionResult<{ plan: PerformanceImprovementPlan }>> {
-	return await runPerformanceAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: improvementPlanStatusTransitionActionSchema,
 		path: "acknowledgeImprovementPlanAction",
 		permission: "human-resources.performance.own.read",
 		safeMessage: "Could not acknowledge improvement plan.",
-		validationMessage: "Enter a valid improvement plan acknowledgement.",
-		dataKey: "plan",
-		execute: (data) =>
-			acknowledgeImprovementPlan(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid improvement plan acknowledgement.",
+			}),
+		invoke: (stamped) =>
+			acknowledgeImprovementPlan(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ plan: value }),
 	});
 }
 
 export async function recordImprovementCheckpointAction(
 	input: unknown,
 ): Promise<ActionResult<{ checkpoint: PerformanceImprovementCheckpoint }>> {
-	return await runPerformanceAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: recordImprovementCheckpointActionSchema,
 		path: "recordImprovementCheckpointAction",
 		permission: "human-resources.performance.improvement-plan.manage",
 		safeMessage: "Could not record improvement checkpoint.",
-		validationMessage: "Enter a valid improvement checkpoint.",
-		dataKey: "checkpoint",
-		execute: (data) =>
-			recordImprovementCheckpoint(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid improvement checkpoint.",
+			}),
+		invoke: (stamped) =>
+			recordImprovementCheckpoint(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ checkpoint: value }),
 	});
 }
 
 export async function amendImprovementPlanAction(
 	input: unknown,
 ): Promise<ActionResult<{ plan: PerformanceImprovementPlan }>> {
-	return await runPerformanceAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: amendImprovementPlanActionSchema,
 		path: "amendImprovementPlanAction",
 		permission: "human-resources.performance.improvement-plan.manage",
 		safeMessage: "Could not amend improvement plan.",
-		validationMessage: "Enter a valid improvement plan amendment.",
-		dataKey: "plan",
-		execute: (data) =>
-			amendImprovementPlan(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid improvement plan amendment.",
+			}),
+		invoke: (stamped) =>
+			amendImprovementPlan(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ plan: value }),
 	});
 }
 
 export async function completeImprovementPlanAction(
 	input: unknown,
 ): Promise<ActionResult<{ plan: PerformanceImprovementPlan }>> {
-	return await runPerformanceAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: completeImprovementPlanActionSchema,
 		path: "completeImprovementPlanAction",
 		permission: "human-resources.performance.improvement-plan.manage",
 		safeMessage: "Could not complete improvement plan.",
-		validationMessage: "Enter a valid improvement plan completion.",
-		dataKey: "plan",
-		execute: (data) =>
-			completeImprovementPlan(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid improvement plan completion.",
+			}),
+		invoke: (stamped) =>
+			completeImprovementPlan(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ plan: value }),
 	});
 }
 
 export async function closeImprovementPlanUnsuccessfulAction(
 	input: unknown,
 ): Promise<ActionResult<{ plan: PerformanceImprovementPlan }>> {
-	return await runPerformanceAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: closeImprovementPlanUnsuccessfulActionSchema,
 		path: "closeImprovementPlanUnsuccessfulAction",
 		permission: "human-resources.performance.improvement-plan.manage",
 		safeMessage: "Could not close unsuccessful improvement plan.",
-		validationMessage: "Enter a valid improvement plan closure.",
-		dataKey: "plan",
-		execute: (data) =>
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid improvement plan closure.",
+			}),
+		invoke: (stamped) =>
 			closeImprovementPlanUnsuccessful(
-				data,
+				stamped as never,
 				createHumanResourcesCommandOptions(),
 			),
+		project: (value) => ({ plan: value }),
 	});
 }
 
 export async function cancelImprovementPlanAction(
 	input: unknown,
 ): Promise<ActionResult<{ plan: PerformanceImprovementPlan }>> {
-	return await runPerformanceAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: improvementPlanStatusTransitionActionSchema,
 		path: "cancelImprovementPlanAction",
 		permission: "human-resources.performance.improvement-plan.manage",
 		safeMessage: "Could not cancel improvement plan.",
-		validationMessage: "Enter a valid improvement plan cancellation.",
-		dataKey: "plan",
-		execute: (data) =>
-			cancelImprovementPlan(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid improvement plan cancellation.",
+			}),
+		invoke: (stamped) =>
+			cancelImprovementPlan(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ plan: value }),
 	});
 }
 
 export async function getImprovementPlanByIdAction(
 	input: unknown,
 ): Promise<ActionResult<{ plan: PerformanceImprovementPlan | null }>> {
-	return await runPerformanceAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: getImprovementPlanByIdActionSchema,
 		path: "getImprovementPlanByIdAction",
 		permission: "human-resources.performance.improvement-plan.manage",
 		safeMessage: "Could not get improvement plan.",
-		validationMessage: "Enter a valid improvement plan lookup.",
-		dataKey: "plan",
-		execute: (data) =>
-			getImprovementPlanById(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid improvement plan lookup.",
+			}),
+		invoke: (stamped) =>
+			getImprovementPlanById(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ plan: value }),
 	});
 }
 
 export async function listActiveImprovementPlansAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: PerformanceImprovementPlanListPage }>> {
-	return await runPerformanceAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: listActiveImprovementPlansActionSchema,
 		path: "listActiveImprovementPlansAction",
 		permission: "human-resources.performance.improvement-plan.manage",
 		safeMessage: "Could not list active improvement plans.",
-		validationMessage: "Enter valid improvement plan filters.",
-		dataKey: "page",
-		execute: (data) =>
-			listActiveImprovementPlans(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter valid improvement plan filters.",
+			}),
+		invoke: (stamped) =>
+			listActiveImprovementPlans(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ page: value }),
 	});
 }
 
 export async function listImprovementPlanCheckpointsAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: PerformanceImprovementCheckpointListPage }>> {
-	return await runPerformanceAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: listImprovementPlanCheckpointsActionSchema,
 		path: "listImprovementPlanCheckpointsAction",
 		permission: "human-resources.performance.improvement-plan.manage",
 		safeMessage: "Could not list improvement plan checkpoints.",
-		validationMessage: "Enter valid improvement checkpoint filters.",
-		dataKey: "page",
-		execute: (data) =>
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter valid improvement checkpoint filters.",
+			}),
+		invoke: (stamped) =>
 			listImprovementPlanCheckpoints(
-				data,
+				stamped as never,
 				createHumanResourcesCommandOptions(),
 			),
+		project: (value) => ({ page: value }),
 	});
 }
