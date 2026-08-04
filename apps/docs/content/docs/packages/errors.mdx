@@ -32,14 +32,17 @@ facade and never interpret those policies themselves.
 | Canonical registry and five capability facades | Verified |
 | Repository consumer cutover | Implemented; boundary and strict semantic gates green |
 | Compatibility subpaths and `AppError` | Deleted |
-| Errors cutover contract | Sealed; evidence in `PR.md`, `CONTRACT.md`, and `.protected.sha256` |
+| Errors cutover contract | Sealed; evidence in [docs/CONTRACT.md](https://github.com/pohlai88/afenda-lite/blob/main/packages/foundation/errors/docs/CONTRACT.md) |
+| Kernel package PRD | [docs/PRD.md](https://github.com/pohlai88/afenda-lite/blob/main/packages/foundation/errors/docs/PRD.md) — capability implemented; KERNEL-GOVERNANCE formalization open |
 
-The durable authority is [CONTRACT.md](https://github.com/pohlai88/afenda-lite/blob/main/packages/foundation/errors/CONTRACT.md). It records the frozen
-semantic decisions, implementation evidence, migration lanes, and seal
-conditions. This README is the permanent consumer and maintainer entry.
+The durable semantic authority is [docs/CONTRACT.md](https://github.com/pohlai88/afenda-lite/blob/main/packages/foundation/errors/docs/CONTRACT.md). Product
+and governance closure requirements live in [docs/PRD.md](https://github.com/pohlai88/afenda-lite/blob/main/packages/foundation/errors/docs/PRD.md).
+Admission draft: [docs/ADMISSION.md](https://github.com/pohlai88/afenda-lite/blob/main/packages/foundation/errors/docs/ADMISSION.md). This README is the
+permanent consumer and maintainer entry.
 
 This package-specific cutover seal is not a generic module-readiness claim or a
-substitute for a digest-scoped kernel readiness record.
+substitute for a digest-scoped kernel readiness record under
+[`packages/KERNEL-GOVERNANCE.md`](https://github.com/pohlai88/afenda-lite/blob/main/packages/KERNEL-GOVERNANCE.md).
 
 ## Permanent consumer surface
 
@@ -266,15 +269,10 @@ The package test command includes registry contracts, hostile boundaries,
 static-copy analysis, and result/retry/wire/OpenAPI bundle containment.
 
 Repository gates enforce the root-only facade and reject distributed semantic
-interpretation. Update protected-package metadata only after all repository
-checks, generated documentation, Scratch synchronization, and the full
-repository suite pass.
-
-```bash
-pnpm --filter @afenda/errors protect:update
-pnpm --filter @afenda/errors protect:check
-```
+interpretation.
 
 ## Detailed authority
 
-- [Semantic control-plane contract](https://github.com/pohlai88/afenda-lite/blob/main/packages/foundation/errors/CONTRACT.md)
+- [Semantic control-plane contract](https://github.com/pohlai88/afenda-lite/blob/main/packages/foundation/errors/docs/CONTRACT.md)
+- [Kernel package PRD](https://github.com/pohlai88/afenda-lite/blob/main/packages/foundation/errors/docs/PRD.md)
+- [Admission draft](https://github.com/pohlai88/afenda-lite/blob/main/packages/foundation/errors/docs/ADMISSION.md)

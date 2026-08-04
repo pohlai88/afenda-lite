@@ -14,7 +14,7 @@ description: "Shared Biome + TypeScript bases. Dev-time only: consumed through `
 
 | Import path | Export key |
 | --- | --- |
-| `@afenda/config/biome.json` | `./biome.json` |
+| `@afenda/config/biome.policy.json` | `./biome.policy.json` |
 | `@afenda/config/tsconfig/base.json` | `./tsconfig/base.json` |
 | `@afenda/config/tsconfig/nextjs.json` | `./tsconfig/nextjs.json` |
 | `@afenda/config/tsconfig/node-library.json` | `./tsconfig/node-library.json` |
@@ -58,11 +58,11 @@ Root Biome delegates once:
 // biome.jsonc (repo root)
 {
   "root": true,
-  "extends": ["@afenda/config/biome.json"]
+  "extends": ["@afenda/config/biome.policy.json"]
 }
 ```
 
-Chain: root [`biome.jsonc`](https://github.com/pohlai88/afenda-lite/blob/main/biome.jsonc) → `@afenda/config/biome.json` → `ultracite/biome/{core,react,next,vitest}`. Package trees do **not** ship nested `biome.json` unless a real package-only carve-out appears.
+Chain: root [`biome.jsonc`](https://github.com/pohlai88/afenda-lite/blob/main/biome.jsonc) → `@afenda/config/biome.policy.json` → `ultracite/biome/{core,react,next,vitest}`. The shared policy file is named `biome.policy.json` on purpose — Biome auto-discovers any on-disk `biome.json` / `biome.jsonc` as a nested project config, which triggers a TypeAware monorepo scan. Package trees must not ship nested `biome.json` / `biome.jsonc` unless a real package-only carve-out appears.
 
 The Vitest / Playwright factory lives under [`testing/`](https://github.com/pohlai88/afenda-lite/blob/main/testing/README.md), not here.
 
@@ -117,13 +117,13 @@ Run `pnpm check:readme` from the repository root after changing this guide.
 
 | Path | Role |
 |------|------|
-| `@afenda/config/biome.json` | Shared Biome config (Afenda policy applied after the root Ultracite presets) |
+| `@afenda/config/biome.policy.json` | Shared Biome policy (Afenda overrides applied after the root Ultracite presets; not a discoverable nested Biome project) |
 | `@afenda/config/tsconfig/base.json` | Strict ES2022 / `preserve` + bundler resolution, no ambient type packages |
 | `@afenda/config/tsconfig/node-library.json` | base + Node ambient types; still source-consumed / no-emit |
 | `@afenda/config/tsconfig/react-library.json` | base + DOM · `jsx: react-jsx` — React libraries |
 | `@afenda/config/tsconfig/nextjs.json` | **react-library** + `jsx: preserve` · `allowJs` · Next plugin — apps |
 
-On disk: `packages/foundation/config/biome.json`, `packages/foundation/config/tsconfig/{base,node-library,nextjs,react-library}.json`.
+On disk: `packages/foundation/config/biome.policy.json`, `packages/foundation/config/tsconfig/{base,node-library,nextjs,react-library}.json`.
 
 `package.json#exports` is the machine-readable profile registry. Governance derives the approved specifiers from it; consumers must not maintain a second allowlist.
 
