@@ -1,82 +1,84 @@
-import { createHash } from "node:crypto";
-import { errorResult, type Result } from "@afenda/errors";
+import type { Result } from "@afenda/errors";
+
+import type {
+	CommandFingerprint,
+	IdempotencyKey,
+	IdempotencyReservationToken,
+	OrganizationId,
+} from "../brands";
+import type { CanonicalJsonValue } from "../canonical-json";
+import type { CorporateAdministrationTransactionContext } from "./ports";
+
+export type CorporateAdministrationIdempotencyScope = Readonly<{
+	organizationId: OrganizationId;
+	commandId: string;
+	idempotencyKey: IdempotencyKey;
+}>;
+
+export type CorporateAdministrationIdempotencyBeginInput = Readonly<{
+	scope: CorporateAdministrationIdempotencyScope;
+	fingerprint: CommandFingerprint;
+}>;
 
 /**
- * BR-07: an idempotent replay returns the original observable result without
- * duplicate effects; a fingerprint mismatch on the same key is a conflict.
- * Backed by `ca_mutation_receipt` (packages/data-plane/db, CA-specific
- * idempotency infrastructure — not a shared platform capability).
+ * Every member is a valid idempotency lifecycle decision, never an adapter
+ * failure. A database outage must surface as a `Result` failure so adapters
+ * cannot disguise unavailability as `in_progress`.
+ *
+ * `replay.result` carries the successful command value only. Failed commands
+ * release the reservation instead of storing a serialized failure envelope.
  */
-export interface MutationReceiptStore {
-	/** Marks a reserved receipt completed with its observable result. */
-	complete: (input: {
-		organizationId: string;
-		commandId: string;
-		idempotencyKey: string;
-		result: unknown;
-	}) => Promise<Result<void>>;
-	/** Reserves a receipt row, or returns the completed replay result. */
-	reserve: (input: {
-		organizationId: string;
-		commandId: string;
-		idempotencyKey: string;
-		fingerprint: string;
-	}) => Promise<
-		Result<{ status: "reserved" } | { status: "replay"; result: unknown }>
-	>;
-}
+export type CorporateAdministrationIdempotencyBeginOutcome =
+	| Readonly<{
+			status: "acquired";
+			reservationToken: IdempotencyReservationToken;
+	  }>
+	| Readonly<{
+			status: "replay";
+			result: CanonicalJsonValue;
+	  }>
+	| Readonly<{ status: "in_progress" }>
+	| Readonly<{
+			status: "conflict";
+			existingFingerprint: CommandFingerprint;
+	  }>;
 
-/** Deterministic fingerprint over the business-relevant, caller-controlled input. */
-export function fingerprintMutation(input: unknown): string {
-	return createHash("sha256").update(canonicalJson(input)).digest("hex");
-}
+export type CorporateAdministrationIdempotencyCompletionInput = Readonly<{
+	scope: CorporateAdministrationIdempotencyScope;
+	fingerprint: CommandFingerprint;
+	reservationToken: IdempotencyReservationToken;
+	result: CanonicalJsonValue;
+	transaction?: CorporateAdministrationTransactionContext;
+}>;
 
-function canonicalJson(value: unknown): string {
-	if (value === null || typeof value !== "object") {
-		return JSON.stringify(value);
-	}
-	if (Array.isArray(value)) {
-		return `[${value.map(canonicalJson).join(",")}]`;
-	}
-	const keys = Object.keys(value as Record<string, unknown>).sort();
-	return `{${keys
-		.map(
-			(key) =>
-				`${JSON.stringify(key)}:${canonicalJson((value as Record<string, unknown>)[key])}`,
-		)
-		.join(",")}}`;
-}
+export type CorporateAdministrationIdempotencyReleaseInput = Readonly<{
+	scope: CorporateAdministrationIdempotencyScope;
+	fingerprint: CommandFingerprint;
+	reservationToken: IdempotencyReservationToken;
+}>;
 
 /**
- * Reserves the mutation, runs `execute` only if it is genuinely new, and
- * completes the receipt with the observable result. A failing `execute` does
- * not complete the receipt — the operation may be legitimately retried.
+ * Adapter doctrine.
+ *
+ * `complete` and `release` succeed only when scope, fingerprint, and
+ * reservation token all match the persisted record. Token equality alone is
+ * insufficient, and a rejected call must leave the active record untouched.
+ *
+ * `release` returns the key to a retryable state while retaining the original
+ * fingerprint. The same key with the same fingerprint may acquire again; the
+ * same key with a different fingerprint stays a conflict. Discarding the
+ * fingerprint on release would let a second request reuse the key with
+ * different input and defeat the idempotency guarantee. A superseded token can
+ * no longer complete or release, and no expiry or takeover path exists.
  */
-export async function withIdempotentExecution<T>(
-	store: MutationReceiptStore,
-	input: {
-		organizationId: string;
-		commandId: string;
-		idempotencyKey: string;
-		fingerprint: string;
-	},
-	execute: () => Promise<Result<T>>,
-): Promise<Result<T>> {
-	const reservation = await store.reserve(input);
-	if (!reservation.ok) {
-		return reservation;
-	}
-	if (reservation.data.status === "replay") {
-		return errorResult.ok(reservation.data.result as T);
-	}
-	const result = await execute();
-	if (result.ok) {
-		await store.complete({
-			organizationId: input.organizationId,
-			commandId: input.commandId,
-			idempotencyKey: input.idempotencyKey,
-			result: result.data,
-		});
-	}
-	return result;
-}
+export type CorporateAdministrationIdempotencyPort = Readonly<{
+	begin: (
+		input: CorporateAdministrationIdempotencyBeginInput,
+	) => Promise<Result<CorporateAdministrationIdempotencyBeginOutcome>>;
+	complete: (
+		input: CorporateAdministrationIdempotencyCompletionInput,
+	) => Promise<Result<void>>;
+	release: (
+		input: CorporateAdministrationIdempotencyReleaseInput,
+	) => Promise<Result<void>>;
+}>;
