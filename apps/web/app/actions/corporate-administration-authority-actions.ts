@@ -1,55 +1,18 @@
 "use server";
 
-import { randomUUID } from "node:crypto";
-
 import {
 	amendAuthorityMandate,
 	amendAuthorityMandateInputSchema,
-	type CorporateAdministrationCommandId,
-	type CorporateAdministrationCommandOptions,
-	corporateAdministrationPermissionFor,
 	grantAuthorityMandate,
 	grantAuthorityMandateInputSchema,
 	revokeAuthorityMandate,
 	revokeAuthorityMandateInputSchema,
 } from "@afenda/corporate-administration";
-import {
-	type Result as ActionResult,
-	errorResult,
-	type Result,
-} from "@afenda/errors";
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { revalidatePath } from "next/cache";
-import { z } from "zod";
 
-import { mapPackageResult } from "@/app/actions/map-package-result";
-import { runMemberPermissionAction } from "@/app/actions/run-member-permission-action";
-import {
-	createCorporateAdministrationAuthorityDependencies,
-	createCorporateAdministrationCommandOptions,
-} from "@/lib/erp/corporate-administration-command-options";
-import { parseSchema } from "@/modules/platform/schemas/common";
-
-const actionMetadataSchema = z
-	.object({
-		organizationSlug: z
-			.string()
-			.trim()
-			.min(1)
-			.max(128)
-			.regex(/^[a-z0-9][a-z0-9-]*$/),
-		idempotencyKey: z.string().trim().min(1).max(128).optional(),
-	})
-	.strict();
-
-type AuthorityDependencies = ReturnType<
-	typeof createCorporateAdministrationAuthorityDependencies
->;
-
-type AuthorityCommand<TPayload, TResult> = (
-	payload: TPayload,
-	options: CorporateAdministrationCommandOptions,
-	dependencies: AuthorityDependencies,
-) => Promise<Result<TResult>>;
+import { defineFormDataAction } from "@/app/actions/_runtime/define-form-data-action";
+import { createCorporateAdministrationAuthorityDependencies } from "@/lib/erp/corporate-administration-command-options";
 
 export type AuthorityMandateActionResult = Readonly<{
 	authorityMandateId: string;
@@ -60,7 +23,7 @@ export type AuthorityMandateActionResult = Readonly<{
 export async function grantAuthorityMandateAction(
 	formData: FormData,
 ): Promise<ActionResult<AuthorityMandateActionResult>> {
-	return await runAuthorityAction({
+	return await defineFormDataAction({
 		operationId: "grantAuthorityMandate",
 		path: "grantAuthorityMandateAction",
 		safeMessage: "Could not grant the authority mandate.",
@@ -82,6 +45,12 @@ export async function grantAuthorityMandateAction(
 				),
 				["protectedAuthority"],
 			),
+		dependencies: createCorporateAdministrationAuthorityDependencies(),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "The submitted authority mandate data is invalid",
+			}),
+		revalidate: revalidateAuthorityRoutes,
 		execute: grantAuthorityMandate,
 		project: projectAuthorityMandate,
 	});
@@ -90,7 +59,7 @@ export async function grantAuthorityMandateAction(
 export async function amendAuthorityMandateAction(
 	formData: FormData,
 ): Promise<ActionResult<AuthorityMandateActionResult>> {
-	return await runAuthorityAction({
+	return await defineFormDataAction({
 		operationId: "amendAuthorityMandate",
 		path: "amendAuthorityMandateAction",
 		safeMessage: "Could not amend the authority mandate.",
@@ -106,6 +75,12 @@ export async function amendAuthorityMandateAction(
 				]),
 				["expectedVersion"],
 			),
+		dependencies: createCorporateAdministrationAuthorityDependencies(),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "The submitted authority mandate data is invalid",
+			}),
+		revalidate: revalidateAuthorityRoutes,
 		execute: amendAuthorityMandate,
 		project: projectAuthorityMandate,
 	});
@@ -114,13 +89,19 @@ export async function amendAuthorityMandateAction(
 export async function revokeAuthorityMandateAction(
 	formData: FormData,
 ): Promise<ActionResult<AuthorityMandateActionResult>> {
-	return await runAuthorityAction({
+	return await defineFormDataAction({
 		operationId: "revokeAuthorityMandate",
 		path: "revokeAuthorityMandateAction",
 		safeMessage: "Could not revoke the authority mandate.",
 		formData,
 		schema: revokeAuthorityMandateInputSchema,
 		normalize: (values) => coerceNumbers(values, ["expectedVersion"]),
+		dependencies: createCorporateAdministrationAuthorityDependencies(),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "The submitted authority mandate data is invalid",
+			}),
+		revalidate: revalidateAuthorityRoutes,
 		execute: revokeAuthorityMandate,
 		project: projectAuthorityMandate,
 	});
@@ -155,87 +136,6 @@ function projectAuthorityMandate(
 		status: mandate.status,
 		version: mandate.version,
 	};
-}
-
-async function runAuthorityAction<TPayload, TResult, TProjection>(input: {
-	operationId: Extract<
-		CorporateAdministrationCommandId,
-		"grantAuthorityMandate" | "amendAuthorityMandate" | "revokeAuthorityMandate"
-	>;
-	path: string;
-	safeMessage: string;
-	formData: FormData;
-	schema: z.ZodType<TPayload>;
-	normalize: (
-		values: Record<string, FormDataEntryValue>,
-	) => Record<string, unknown>;
-	execute: AuthorityCommand<TPayload, TResult>;
-	project: (result: TResult) => TProjection;
-}): Promise<ActionResult<TProjection>> {
-	return await runMemberPermissionAction({
-		path: input.path,
-		permission: corporateAdministrationPermissionFor(input.operationId),
-		safeMessage: input.safeMessage,
-		execute: async (session, correlationId) => {
-			const values = formDataObject(input.formData);
-			const metadata = parseSchema(actionMetadataSchema, {
-				organizationSlug: values.organizationSlug,
-				idempotencyKey: optionalString(values.idempotencyKey),
-			});
-			const payload = parseSchema(
-				input.schema,
-				input.normalize(withoutActionMetadata(values)),
-			);
-			if (!(metadata.success && payload.success)) {
-				return errorResult.fail("VALIDATION_ERROR", {
-					publicMessage: "The submitted authority mandate data is invalid",
-				});
-			}
-
-			const result = await input.execute(
-				payload.data,
-				createCorporateAdministrationCommandOptions({
-					organizationId: session.orgId,
-					actorUserId: session.userId,
-					correlationId,
-					idempotencyKey: metadata.data.idempotencyKey ?? randomUUID(),
-				}),
-				createCorporateAdministrationAuthorityDependencies(),
-			);
-			const mapped = mapPackageResult(result);
-			if (!mapped.ok) {
-				return mapped;
-			}
-
-			revalidateAuthorityRoutes(metadata.data.organizationSlug);
-			return errorResult.ok(input.project(mapped.data));
-		},
-	});
-}
-
-function formDataObject(
-	formData: FormData,
-): Record<string, FormDataEntryValue> {
-	return Object.fromEntries(
-		Array.from(formData.entries()).filter(
-			([key]) => !key.startsWith("$ACTION_"),
-		),
-	);
-}
-
-function withoutActionMetadata(
-	values: Record<string, FormDataEntryValue>,
-): Record<string, FormDataEntryValue> {
-	const {
-		organizationSlug: _organizationSlug,
-		idempotencyKey: _key,
-		...payload
-	} = values;
-	return payload;
-}
-
-function optionalString(value: FormDataEntryValue | undefined) {
-	return typeof value === "string" && value.length > 0 ? value : undefined;
 }
 
 /** Optional strict-schema fields must be absent, not empty strings. */

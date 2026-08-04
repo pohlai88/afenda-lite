@@ -1,13 +1,8 @@
 "use server";
 
-import { randomUUID } from "node:crypto";
-
 import {
 	appointOfficer,
 	appointOfficerInputSchema,
-	type CorporateAdministrationCommandId,
-	type CorporateAdministrationCommandOptions,
-	corporateAdministrationPermissionFor,
 	recordOfficerQualification,
 	recordOfficerQualificationInputSchema,
 	removeOfficer,
@@ -15,43 +10,11 @@ import {
 	resignOfficer,
 	resignOfficerInputSchema,
 } from "@afenda/corporate-administration";
-import {
-	type Result as ActionResult,
-	errorResult,
-	type Result,
-} from "@afenda/errors";
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { revalidatePath } from "next/cache";
-import { z } from "zod";
 
-import { mapPackageResult } from "@/app/actions/map-package-result";
-import { runMemberPermissionAction } from "@/app/actions/run-member-permission-action";
-import {
-	createCorporateAdministrationCommandOptions,
-	createCorporateAdministrationOfficerDependencies,
-} from "@/lib/erp/corporate-administration-command-options";
-import { parseSchema } from "@/modules/platform/schemas/common";
-
-const actionMetadataSchema = z
-	.object({
-		organizationSlug: z
-			.string()
-			.trim()
-			.min(1)
-			.max(128)
-			.regex(/^[a-z0-9][a-z0-9-]*$/),
-		idempotencyKey: z.string().trim().min(1).max(128).optional(),
-	})
-	.strict();
-
-type OfficerDependencies = ReturnType<
-	typeof createCorporateAdministrationOfficerDependencies
->;
-
-type OfficerCommand<TPayload, TResult> = (
-	payload: TPayload,
-	options: CorporateAdministrationCommandOptions,
-	dependencies: OfficerDependencies,
-) => Promise<Result<TResult>>;
+import { defineFormDataAction } from "@/app/actions/_runtime/define-form-data-action";
+import { createCorporateAdministrationOfficerDependencies } from "@/lib/erp/corporate-administration-command-options";
 
 export type OfficerAppointmentActionResult = Readonly<{
 	officerAppointmentId: string;
@@ -67,7 +30,7 @@ export type OfficerQualificationActionResult = Readonly<{
 export async function appointOfficerAction(
 	formData: FormData,
 ): Promise<ActionResult<OfficerAppointmentActionResult>> {
-	return await runOfficerAction({
+	return await defineFormDataAction({
 		operationId: "appointOfficer",
 		path: "appointOfficerAction",
 		safeMessage: "Could not appoint the officer.",
@@ -78,6 +41,12 @@ export async function appointOfficerAction(
 				omitEmpty(values, ["appointingAuthorityId", "effectiveTo"]),
 				["expectedOfficeVersion"],
 			),
+		dependencies: createCorporateAdministrationOfficerDependencies(),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "The submitted officer data is invalid",
+			}),
+		revalidate: revalidateOfficerRoutes,
 		execute: appointOfficer,
 		project: (appointment) => ({
 			officerAppointmentId: appointment.id,
@@ -90,7 +59,7 @@ export async function appointOfficerAction(
 export async function recordOfficerQualificationAction(
 	formData: FormData,
 ): Promise<ActionResult<OfficerQualificationActionResult>> {
-	return await runOfficerAction({
+	return await defineFormDataAction({
 		operationId: "recordOfficerQualification",
 		path: "recordOfficerQualificationAction",
 		safeMessage: "Could not record the officer qualification.",
@@ -101,6 +70,12 @@ export async function recordOfficerQualificationAction(
 				omitEmpty(values, ["referenceNumber", "validTo", "verifiedAt"]),
 				["expectedAppointmentVersion"],
 			),
+		dependencies: createCorporateAdministrationOfficerDependencies(),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "The submitted officer data is invalid",
+			}),
+		revalidate: revalidateOfficerRoutes,
 		execute: recordOfficerQualification,
 		project: (qualification) => ({
 			officerQualificationId: qualification.id,
@@ -112,13 +87,19 @@ export async function recordOfficerQualificationAction(
 export async function resignOfficerAction(
 	formData: FormData,
 ): Promise<ActionResult<OfficerAppointmentActionResult>> {
-	return await runOfficerAction({
+	return await defineFormDataAction({
 		operationId: "resignOfficer",
 		path: "resignOfficerAction",
 		safeMessage: "Could not record the officer resignation.",
 		formData,
 		schema: resignOfficerInputSchema,
 		normalize: (values) => coerceNumbers(values, ["expectedVersion"]),
+		dependencies: createCorporateAdministrationOfficerDependencies(),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "The submitted officer data is invalid",
+			}),
+		revalidate: revalidateOfficerRoutes,
 		execute: resignOfficer,
 		project: (appointment) => ({
 			officerAppointmentId: appointment.id,
@@ -131,13 +112,19 @@ export async function resignOfficerAction(
 export async function removeOfficerAction(
 	formData: FormData,
 ): Promise<ActionResult<OfficerAppointmentActionResult>> {
-	return await runOfficerAction({
+	return await defineFormDataAction({
 		operationId: "removeOfficer",
 		path: "removeOfficerAction",
 		safeMessage: "Could not record the officer removal.",
 		formData,
 		schema: removeOfficerInputSchema,
 		normalize: (values) => coerceNumbers(values, ["expectedVersion"]),
+		dependencies: createCorporateAdministrationOfficerDependencies(),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "The submitted officer data is invalid",
+			}),
+		revalidate: revalidateOfficerRoutes,
 		execute: removeOfficer,
 		project: (appointment) => ({
 			officerAppointmentId: appointment.id,
@@ -173,90 +160,6 @@ export async function removeOfficerFormAction(
 	formData: FormData,
 ) {
 	return await removeOfficerAction(formData);
-}
-
-async function runOfficerAction<TPayload, TResult, TProjection>(input: {
-	operationId: Extract<
-		CorporateAdministrationCommandId,
-		| "appointOfficer"
-		| "recordOfficerQualification"
-		| "resignOfficer"
-		| "removeOfficer"
-	>;
-	path: string;
-	safeMessage: string;
-	formData: FormData;
-	schema: z.ZodType<TPayload>;
-	normalize: (
-		values: Record<string, FormDataEntryValue>,
-	) => Record<string, unknown>;
-	execute: OfficerCommand<TPayload, TResult>;
-	project: (result: TResult) => TProjection;
-}): Promise<ActionResult<TProjection>> {
-	return await runMemberPermissionAction({
-		path: input.path,
-		permission: corporateAdministrationPermissionFor(input.operationId),
-		safeMessage: input.safeMessage,
-		execute: async (session, correlationId) => {
-			const values = formDataObject(input.formData);
-			const metadata = parseSchema(actionMetadataSchema, {
-				organizationSlug: values.organizationSlug,
-				idempotencyKey: optionalString(values.idempotencyKey),
-			});
-			const payload = parseSchema(
-				input.schema,
-				input.normalize(withoutActionMetadata(values)),
-			);
-			if (!(metadata.success && payload.success)) {
-				return errorResult.fail("VALIDATION_ERROR", {
-					publicMessage: "The submitted officer data is invalid",
-				});
-			}
-
-			const result = await input.execute(
-				payload.data,
-				createCorporateAdministrationCommandOptions({
-					organizationId: session.orgId,
-					actorUserId: session.userId,
-					correlationId,
-					idempotencyKey: metadata.data.idempotencyKey ?? randomUUID(),
-				}),
-				createCorporateAdministrationOfficerDependencies(),
-			);
-			const mapped = mapPackageResult(result);
-			if (!mapped.ok) {
-				return mapped;
-			}
-
-			revalidateOfficerRoutes(metadata.data.organizationSlug);
-			return errorResult.ok(input.project(mapped.data));
-		},
-	});
-}
-
-function formDataObject(
-	formData: FormData,
-): Record<string, FormDataEntryValue> {
-	return Object.fromEntries(
-		Array.from(formData.entries()).filter(
-			([key]) => !key.startsWith("$ACTION_"),
-		),
-	);
-}
-
-function withoutActionMetadata(
-	values: Record<string, FormDataEntryValue>,
-): Record<string, FormDataEntryValue> {
-	const {
-		organizationSlug: _organizationSlug,
-		idempotencyKey: _key,
-		...payload
-	} = values;
-	return payload;
-}
-
-function optionalString(value: FormDataEntryValue | undefined) {
-	return typeof value === "string" && value.length > 0 ? value : undefined;
 }
 
 /** Optional strict-schema fields must be absent, not empty strings. */
