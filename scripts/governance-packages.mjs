@@ -50,13 +50,17 @@ async function main() {
 	);
 	await runPnpm(["validate:modules"]);
 	await runPnpm(["governance:lifecycle-coupling"]);
+	await runPnpm(["governance:erp-symmetry"]);
+	await runPnpm(["governance:emission-drain"]);
+	await runPnpm(["governance:cross-import"]);
+	await runPnpm(["governance:architecture-debt"]);
 	console.log("governance:packages OK");
 	// A gate must not claim evidence it does not own. `check:env-consumers` is a
 	// peer ci-required gate with its own contract, fixtures, owner, and
 	// diagnostics — the dispatcher runs it, not this script. Re-running it here
 	// would double execution and make failure ownership ambiguous.
 	console.log(
-		"Evidence: validate:modules (catalog-to-disk, workspace-edge register, dependency DAG, schema write-owner, deep-import, ERP manifests), governance:lifecycle-coupling (active manifests must not require scaffolded dependencies).",
+		"Evidence: validate:modules (catalog-to-disk, workspace-edge register, dependency DAG, schema write-owner, deep-import, ERP manifests), governance:lifecycle-coupling, governance:erp-symmetry, governance:emission-drain, governance:cross-import, governance:architecture-debt.",
 	);
 	console.log(
 		"Also required for production eligibility: pnpm exec turbo run typecheck test",
