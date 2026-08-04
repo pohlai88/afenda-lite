@@ -1,10 +1,6 @@
 "use server";
 
-import {
-	type Result as ActionResult,
-	errorResult,
-	type Result,
-} from "@afenda/errors";
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import type {
 	CareerPlan,
 	CareerPlanAction,
@@ -134,16 +130,9 @@ import {
 } from "@afenda/human-resources";
 
 import { defineAction } from "@/app/actions/_runtime/define-action";
-import {
-	hrActionSchema,
-	withHrSessionContext as withSessionContext,
-} from "@/app/actions/hr-mutation-context";
-import { mapPackageResult } from "@/app/actions/map-package-result";
+import { hrActionSchema } from "@/app/actions/hr-mutation-context";
 import { runHrTalentOperatorPermissionAction as runOperatorPermissionAction } from "@/app/actions/run-hr-operator-permission-action";
 import { createHumanResourcesCommandOptions } from "@/lib/erp/human-resources-command-options";
-import type { ProductPermissionCode } from "@/modules/identity/domain/session-permission";
-
-import { parseSchema } from "@/modules/platform/schemas/common";
 
 const talentAdminPermission = "human-resources.talent.admin";
 const talentSensitiveReadPermission =
@@ -151,50 +140,6 @@ const talentSensitiveReadPermission =
 const successionAdminPermission = "human-resources.succession.admin";
 const successionExecutiveReadPermission =
 	"human-resources.succession.executive.read";
-
-type TalentActionData<Key extends string, Value> = {
-	[Property in Key]: Value;
-};
-
-async function runTalentAction<Key extends string, Value>(config: {
-	input: unknown;
-	schema: Parameters<typeof parseSchema>[0];
-	path: string;
-	permission: ProductPermissionCode;
-	safeMessage: string;
-	validationMessage: string;
-	dataKey: Key;
-	execute: (input: never) => Promise<Result<Value>>;
-}): Promise<ActionResult<TalentActionData<Key, Value>>> {
-	return await runOperatorPermissionAction({
-		path: config.path,
-		permission: config.permission,
-		safeMessage: config.safeMessage,
-		execute: async (session, correlationId) => {
-			const parsed = parseSchema(config.schema, config.input);
-			if (!parsed.success) {
-				return errorResult.fail("VALIDATION_ERROR", {
-					publicMessage: "The submitted data is invalid",
-				});
-			}
-			const result = await config.execute(
-				withSessionContext(
-					session,
-					correlationId,
-					parsed.data as Record<string, unknown>,
-				) as never,
-			);
-			const mapped = mapPackageResult(result);
-			if (!mapped.ok) {
-				return mapped;
-			}
-			return {
-				ok: true,
-				data: { [config.dataKey]: mapped.data } as TalentActionData<Key, Value>,
-			};
-		},
-	});
-}
 
 export async function createTalentProfileAction(
 	input: unknown,
@@ -222,470 +167,640 @@ export async function createTalentProfileAction(
 export async function updateTalentProfileAction(
 	input: unknown,
 ): Promise<ActionResult<{ profile: TalentProfile }>> {
-	return await runTalentAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: hrActionSchema(updateTalentProfileInputSchema),
 		path: "updateTalentProfileAction",
 		permission: talentAdminPermission,
 		safeMessage: "Could not update talent profile.",
-		validationMessage: "Enter a valid talent profile update.",
-		dataKey: "profile",
-		execute: (data) =>
-			updateTalentProfile(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid talent profile update.",
+			}),
+		invoke: (stamped) =>
+			updateTalentProfile(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ profile: value }),
 	});
 }
 
 export async function archiveTalentProfileAction(
 	input: unknown,
 ): Promise<ActionResult<{ profile: TalentProfile }>> {
-	return await runTalentAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: hrActionSchema(archiveTalentProfileInputSchema),
 		path: "archiveTalentProfileAction",
 		permission: talentAdminPermission,
 		safeMessage: "Could not archive talent profile.",
-		validationMessage: "Enter a valid talent profile archive request.",
-		dataKey: "profile",
-		execute: (data) =>
-			archiveTalentProfile(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid talent profile archive request.",
+			}),
+		invoke: (stamped) =>
+			archiveTalentProfile(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ profile: value }),
 	});
 }
 
 export async function getTalentProfileByEmployeeAction(
 	input: unknown,
 ): Promise<ActionResult<{ profile: TalentProfile | null }>> {
-	return await runTalentAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: hrActionSchema(getTalentProfileByEmployeeInputSchema),
 		path: "getTalentProfileByEmployeeAction",
 		permission: talentSensitiveReadPermission,
 		safeMessage: "Could not get talent profile.",
-		validationMessage: "Enter a valid talent profile lookup.",
-		dataKey: "profile",
-		execute: (data) =>
-			getTalentProfileByEmployee(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid talent profile lookup.",
+			}),
+		invoke: (stamped) =>
+			getTalentProfileByEmployee(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ profile: value }),
 	});
 }
 
 export async function recordTalentProfileAssessmentAction(
 	input: unknown,
 ): Promise<ActionResult<{ assessment: TalentProfileAssessment }>> {
-	return await runTalentAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: hrActionSchema(recordTalentProfileAssessmentInputSchema),
 		path: "recordTalentProfileAssessmentAction",
 		permission: talentAdminPermission,
 		safeMessage: "Could not record talent profile assessment.",
-		validationMessage: "Enter a valid talent profile assessment.",
-		dataKey: "assessment",
-		execute: (data) =>
-			recordTalentProfileAssessment(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid talent profile assessment.",
+			}),
+		invoke: (stamped) =>
+			recordTalentProfileAssessment(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ assessment: value }),
 	});
 }
 
 export async function confirmTalentProfileAssessmentAction(
 	input: unknown,
 ): Promise<ActionResult<{ assessment: TalentProfileAssessment }>> {
-	return await runTalentAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: hrActionSchema(confirmTalentProfileAssessmentInputSchema),
 		path: "confirmTalentProfileAssessmentAction",
 		permission: talentAdminPermission,
 		safeMessage: "Could not confirm talent profile assessment.",
-		validationMessage: "Enter a valid talent profile assessment confirmation.",
-		dataKey: "assessment",
-		execute: (data) =>
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid talent profile assessment confirmation.",
+			}),
+		invoke: (stamped) =>
 			confirmTalentProfileAssessment(
-				data,
+				stamped as never,
 				createHumanResourcesCommandOptions(),
 			),
+		project: (value) => ({ assessment: value }),
 	});
 }
 
 export async function listTalentProfileAssessmentsAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: ProjectedTalentProfileAssessmentListPage }>> {
-	return await runTalentAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: hrActionSchema(listTalentProfileAssessmentsInputSchema),
 		path: "listTalentProfileAssessmentsAction",
 		permission: talentSensitiveReadPermission,
 		safeMessage: "Could not list talent profile assessments.",
-		validationMessage: "Enter valid talent profile assessment filters.",
-		dataKey: "page",
-		execute: (data) =>
-			listTalentProfileAssessments(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter valid talent profile assessment filters.",
+			}),
+		invoke: (stamped) =>
+			listTalentProfileAssessments(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ page: value }),
 	});
 }
 
 export async function recordTalentProfileMobilityAction(
 	input: unknown,
 ): Promise<ActionResult<{ mobility: TalentProfileMobility }>> {
-	return await runTalentAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: hrActionSchema(recordTalentProfileMobilityInputSchema),
 		path: "recordTalentProfileMobilityAction",
 		permission: talentAdminPermission,
 		safeMessage: "Could not record talent mobility.",
-		validationMessage: "Enter a valid talent mobility record.",
-		dataKey: "mobility",
-		execute: (data) =>
-			recordTalentProfileMobility(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid talent mobility record.",
+			}),
+		invoke: (stamped) =>
+			recordTalentProfileMobility(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ mobility: value }),
 	});
 }
 
 export async function listTalentProfileMobilityAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: ProjectedTalentProfileMobilityListPage }>> {
-	return await runTalentAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: hrActionSchema(listTalentProfileMobilityInputSchema),
 		path: "listTalentProfileMobilityAction",
 		permission: talentSensitiveReadPermission,
 		safeMessage: "Could not list talent mobility.",
-		validationMessage: "Enter valid talent mobility filters.",
-		dataKey: "page",
-		execute: (data) =>
-			listTalentProfileMobility(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter valid talent mobility filters.",
+			}),
+		invoke: (stamped) =>
+			listTalentProfileMobility(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ page: value }),
 	});
 }
 
 export async function createCompetencyAction(
 	input: unknown,
 ): Promise<ActionResult<{ competency: Competency }>> {
-	return await runTalentAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: hrActionSchema(createCompetencyInputSchema),
 		path: "createCompetencyAction",
 		permission: talentAdminPermission,
 		safeMessage: "Could not create competency.",
-		validationMessage: "Enter a valid competency.",
-		dataKey: "competency",
-		execute: (data) =>
-			createCompetency(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid competency.",
+			}),
+		invoke: (stamped) =>
+			createCompetency(stamped as never, createHumanResourcesCommandOptions()),
+		project: (value) => ({ competency: value }),
 	});
 }
 
 export async function updateCompetencyAction(
 	input: unknown,
 ): Promise<ActionResult<{ competency: Competency }>> {
-	return await runTalentAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: hrActionSchema(updateCompetencyInputSchema),
 		path: "updateCompetencyAction",
 		permission: talentAdminPermission,
 		safeMessage: "Could not update competency.",
-		validationMessage: "Enter a valid competency update.",
-		dataKey: "competency",
-		execute: (data) =>
-			updateCompetency(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid competency update.",
+			}),
+		invoke: (stamped) =>
+			updateCompetency(stamped as never, createHumanResourcesCommandOptions()),
+		project: (value) => ({ competency: value }),
 	});
 }
 
 export async function retireCompetencyAction(
 	input: unknown,
 ): Promise<ActionResult<{ competency: Competency }>> {
-	return await runTalentAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: hrActionSchema(retireCompetencyInputSchema),
 		path: "retireCompetencyAction",
 		permission: talentAdminPermission,
 		safeMessage: "Could not retire competency.",
-		validationMessage: "Enter a valid competency retire request.",
-		dataKey: "competency",
-		execute: (data) =>
-			retireCompetency(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid competency retire request.",
+			}),
+		invoke: (stamped) =>
+			retireCompetency(stamped as never, createHumanResourcesCommandOptions()),
+		project: (value) => ({ competency: value }),
 	});
 }
 
 export async function mapCompetencyToJobAction(
 	input: unknown,
 ): Promise<ActionResult<{ jobCompetency: JobCompetency }>> {
-	return await runTalentAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: hrActionSchema(mapCompetencyToJobInputSchema),
 		path: "mapCompetencyToJobAction",
 		permission: talentAdminPermission,
 		safeMessage: "Could not map competency to job.",
-		validationMessage: "Enter a valid competency job mapping.",
-		dataKey: "jobCompetency",
-		execute: (data) =>
-			mapCompetencyToJob(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid competency job mapping.",
+			}),
+		invoke: (stamped) =>
+			mapCompetencyToJob(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ jobCompetency: value }),
 	});
 }
 
 export async function removeCompetencyFromJobAction(
 	input: unknown,
 ): Promise<ActionResult<{ jobCompetency: JobCompetency }>> {
-	return await runTalentAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: hrActionSchema(removeCompetencyFromJobInputSchema),
 		path: "removeCompetencyFromJobAction",
 		permission: talentAdminPermission,
 		safeMessage: "Could not remove competency from job.",
-		validationMessage: "Enter a valid competency job removal.",
-		dataKey: "jobCompetency",
-		execute: (data) =>
-			removeCompetencyFromJob(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid competency job removal.",
+			}),
+		invoke: (stamped) =>
+			removeCompetencyFromJob(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ jobCompetency: value }),
 	});
 }
 
 export async function assessEmployeeCompetencyAction(
 	input: unknown,
 ): Promise<ActionResult<{ assessment: CompetencyAssessment }>> {
-	return await runTalentAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: hrActionSchema(assessEmployeeCompetencyInputSchema),
 		path: "assessEmployeeCompetencyAction",
 		permission: talentAdminPermission,
 		safeMessage: "Could not assess employee competency.",
-		validationMessage: "Enter a valid employee competency assessment.",
-		dataKey: "assessment",
-		execute: (data) =>
-			assessEmployeeCompetency(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid employee competency assessment.",
+			}),
+		invoke: (stamped) =>
+			assessEmployeeCompetency(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ assessment: value }),
 	});
 }
 
 export async function supersedeCompetencyAssessmentAction(
 	input: unknown,
 ): Promise<ActionResult<{ assessment: CompetencyAssessment }>> {
-	return await runTalentAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: hrActionSchema(supersedeCompetencyAssessmentInputSchema),
 		path: "supersedeCompetencyAssessmentAction",
 		permission: talentAdminPermission,
 		safeMessage: "Could not supersede competency assessment.",
-		validationMessage: "Enter a valid competency assessment supersession.",
-		dataKey: "assessment",
-		execute: (data) =>
-			supersedeCompetencyAssessment(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid competency assessment supersession.",
+			}),
+		invoke: (stamped) =>
+			supersedeCompetencyAssessment(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ assessment: value }),
 	});
 }
 
 export async function expireCompetencyAssessmentAction(
 	input: unknown,
 ): Promise<ActionResult<{ assessment: CompetencyAssessment }>> {
-	return await runTalentAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: hrActionSchema(expireCompetencyAssessmentInputSchema),
 		path: "expireCompetencyAssessmentAction",
 		permission: talentAdminPermission,
 		safeMessage: "Could not expire competency assessment.",
-		validationMessage: "Enter a valid competency assessment expiry.",
-		dataKey: "assessment",
-		execute: (data) =>
-			expireCompetencyAssessment(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid competency assessment expiry.",
+			}),
+		invoke: (stamped) =>
+			expireCompetencyAssessment(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ assessment: value }),
 	});
 }
 
 export async function getCompetencyByIdAction(
 	input: unknown,
 ): Promise<ActionResult<{ competency: Competency | null }>> {
-	return await runTalentAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: hrActionSchema(getCompetencyByIdInputSchema),
 		path: "getCompetencyByIdAction",
 		permission: talentSensitiveReadPermission,
 		safeMessage: "Could not get competency.",
-		validationMessage: "Enter a valid competency lookup.",
-		dataKey: "competency",
-		execute: (data) =>
-			getCompetencyById(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid competency lookup.",
+			}),
+		invoke: (stamped) =>
+			getCompetencyById(stamped as never, createHumanResourcesCommandOptions()),
+		project: (value) => ({ competency: value }),
 	});
 }
 
 export async function listCompetenciesAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: CompetencyListPage }>> {
-	return await runTalentAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: hrActionSchema(listCompetenciesInputSchema),
 		path: "listCompetenciesAction",
 		permission: talentSensitiveReadPermission,
 		safeMessage: "Could not list competencies.",
-		validationMessage: "Enter valid competency filters.",
-		dataKey: "page",
-		execute: (data) =>
-			listCompetencies(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter valid competency filters.",
+			}),
+		invoke: (stamped) =>
+			listCompetencies(stamped as never, createHumanResourcesCommandOptions()),
+		project: (value) => ({ page: value }),
 	});
 }
 
 export async function listJobCompetenciesAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: JobCompetencyListPage }>> {
-	return await runTalentAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: hrActionSchema(listJobCompetenciesInputSchema),
 		path: "listJobCompetenciesAction",
 		permission: talentSensitiveReadPermission,
 		safeMessage: "Could not list job competencies.",
-		validationMessage: "Enter valid job competency filters.",
-		dataKey: "page",
-		execute: (data) =>
-			listJobCompetencies(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter valid job competency filters.",
+			}),
+		invoke: (stamped) =>
+			listJobCompetencies(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ page: value }),
 	});
 }
 
 export async function getEmployeeCompetencyProfileAction(
 	input: unknown,
 ): Promise<ActionResult<{ profile: ProjectedEmployeeCompetencyProfile }>> {
-	return await runTalentAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: hrActionSchema(getEmployeeCompetencyProfileInputSchema),
 		path: "getEmployeeCompetencyProfileAction",
 		permission: talentSensitiveReadPermission,
 		safeMessage: "Could not get employee competency profile.",
-		validationMessage: "Enter a valid employee competency profile lookup.",
-		dataKey: "profile",
-		execute: (data) =>
-			getEmployeeCompetencyProfile(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid employee competency profile lookup.",
+			}),
+		invoke: (stamped) =>
+			getEmployeeCompetencyProfile(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ profile: value }),
 	});
 }
 
 export async function createCareerPlanAction(
 	input: unknown,
 ): Promise<ActionResult<{ plan: CareerPlan }>> {
-	return await runTalentAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: hrActionSchema(createCareerPlanInputSchema),
 		path: "createCareerPlanAction",
 		permission: talentAdminPermission,
 		safeMessage: "Could not create career plan.",
-		validationMessage: "Enter a valid career plan.",
-		dataKey: "plan",
-		execute: (data) =>
-			createCareerPlan(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid career plan.",
+			}),
+		invoke: (stamped) =>
+			createCareerPlan(stamped as never, createHumanResourcesCommandOptions()),
+		project: (value) => ({ plan: value }),
 	});
 }
 
 export async function updateCareerPlanAction(
 	input: unknown,
 ): Promise<ActionResult<{ plan: CareerPlan }>> {
-	return await runTalentAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: hrActionSchema(updateCareerPlanInputSchema),
 		path: "updateCareerPlanAction",
 		permission: talentAdminPermission,
 		safeMessage: "Could not update career plan.",
-		validationMessage: "Enter a valid career plan update.",
-		dataKey: "plan",
-		execute: (data) =>
-			updateCareerPlan(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid career plan update.",
+			}),
+		invoke: (stamped) =>
+			updateCareerPlan(stamped as never, createHumanResourcesCommandOptions()),
+		project: (value) => ({ plan: value }),
 	});
 }
 
 export async function acknowledgeCareerPlanAction(
 	input: unknown,
 ): Promise<ActionResult<{ plan: CareerPlan }>> {
-	return await runTalentAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: hrActionSchema(acknowledgeCareerPlanInputSchema),
 		path: "acknowledgeCareerPlanAction",
 		permission: talentAdminPermission,
 		safeMessage: "Could not acknowledge career plan.",
-		validationMessage: "Enter a valid career plan acknowledgement.",
-		dataKey: "plan",
-		execute: (data) =>
-			acknowledgeCareerPlan(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid career plan acknowledgement.",
+			}),
+		invoke: (stamped) =>
+			acknowledgeCareerPlan(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ plan: value }),
 	});
 }
 
 export async function addCareerPlanItemAction(
 	input: unknown,
 ): Promise<ActionResult<{ action: CareerPlanAction }>> {
-	return await runTalentAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: hrActionSchema(addCareerPlanActionInputSchema),
 		path: "addCareerPlanItemAction",
 		permission: talentAdminPermission,
 		safeMessage: "Could not add career plan action.",
-		validationMessage: "Enter a valid career plan action.",
-		dataKey: "action",
-		execute: (data) =>
-			addCareerPlanActionCommand(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid career plan action.",
+			}),
+		invoke: (stamped) =>
+			addCareerPlanActionCommand(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ action: value }),
 	});
 }
 
 export async function completeCareerPlanItemAction(
 	input: unknown,
 ): Promise<ActionResult<{ action: CareerPlanAction }>> {
-	return await runTalentAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: hrActionSchema(completeCareerPlanActionInputSchema),
 		path: "completeCareerPlanItemAction",
 		permission: talentAdminPermission,
 		safeMessage: "Could not complete career plan action.",
-		validationMessage: "Enter a valid career plan action completion.",
-		dataKey: "action",
-		execute: (data) =>
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid career plan action completion.",
+			}),
+		invoke: (stamped) =>
 			completeCareerPlanActionCommand(
-				data,
+				stamped as never,
 				createHumanResourcesCommandOptions(),
 			),
+		project: (value) => ({ action: value }),
 	});
 }
 
 export async function closeCareerPlanAction(
 	input: unknown,
 ): Promise<ActionResult<{ plan: CareerPlan }>> {
-	return await runTalentAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: hrActionSchema(closeCareerPlanInputSchema),
 		path: "closeCareerPlanAction",
 		permission: talentAdminPermission,
 		safeMessage: "Could not close career plan.",
-		validationMessage: "Enter a valid career plan closure.",
-		dataKey: "plan",
-		execute: (data) =>
-			closeCareerPlan(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid career plan closure.",
+			}),
+		invoke: (stamped) =>
+			closeCareerPlan(stamped as never, createHumanResourcesCommandOptions()),
+		project: (value) => ({ plan: value }),
 	});
 }
 
 export async function getCareerPlanByIdAction(
 	input: unknown,
 ): Promise<ActionResult<{ plan: CareerPlanWithActions | null }>> {
-	return await runTalentAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: hrActionSchema(getCareerPlanByIdInputSchema),
 		path: "getCareerPlanByIdAction",
 		permission: talentSensitiveReadPermission,
 		safeMessage: "Could not get career plan.",
-		validationMessage: "Enter a valid career plan lookup.",
-		dataKey: "plan",
-		execute: (data) =>
-			getCareerPlanById(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid career plan lookup.",
+			}),
+		invoke: (stamped) =>
+			getCareerPlanById(stamped as never, createHumanResourcesCommandOptions()),
+		project: (value) => ({ plan: value }),
 	});
 }
 
 export async function listEmployeeCareerPlansAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: CareerPlanListPage }>> {
-	return await runTalentAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: hrActionSchema(listEmployeeCareerPlansInputSchema),
 		path: "listEmployeeCareerPlansAction",
 		permission: talentSensitiveReadPermission,
 		safeMessage: "Could not list employee career plans.",
-		validationMessage: "Enter valid employee career plan filters.",
-		dataKey: "page",
-		execute: (data) =>
-			listEmployeeCareerPlans(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter valid employee career plan filters.",
+			}),
+		invoke: (stamped) =>
+			listEmployeeCareerPlans(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ page: value }),
 	});
 }
 
 export async function recordCriticalRoleReadinessAction(
 	input: unknown,
 ): Promise<ActionResult<{ readiness: TalentCriticalRoleReadiness }>> {
-	return await runTalentAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: hrActionSchema(recordCriticalRoleReadinessInputSchema),
 		path: "recordCriticalRoleReadinessAction",
 		permission: successionAdminPermission,
 		safeMessage: "Could not record critical role readiness.",
-		validationMessage: "Enter a valid critical role readiness record.",
-		dataKey: "readiness",
-		execute: (data) =>
-			recordCriticalRoleReadiness(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid critical role readiness record.",
+			}),
+		invoke: (stamped) =>
+			recordCriticalRoleReadiness(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ readiness: value }),
 	});
 }
 
@@ -694,303 +809,427 @@ export async function listCriticalRoleReadinessAction(
 ): Promise<
 	ActionResult<{ page: ProjectedTalentCriticalRoleReadinessListPage }>
 > {
-	return await runTalentAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: hrActionSchema(listCriticalRoleReadinessInputSchema),
 		path: "listCriticalRoleReadinessAction",
 		permission: successionExecutiveReadPermission,
 		safeMessage: "Could not list critical role readiness.",
-		validationMessage: "Enter valid critical role readiness filters.",
-		dataKey: "page",
-		execute: (data) =>
-			listCriticalRoleReadiness(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter valid critical role readiness filters.",
+			}),
+		invoke: (stamped) =>
+			listCriticalRoleReadiness(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ page: value }),
 	});
 }
 
 export async function createTalentPoolAction(
 	input: unknown,
 ): Promise<ActionResult<{ pool: TalentPool }>> {
-	return await runTalentAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: hrActionSchema(createTalentPoolInputSchema),
 		path: "createTalentPoolAction",
 		permission: talentAdminPermission,
 		safeMessage: "Could not create talent pool.",
-		validationMessage: "Enter a valid talent pool.",
-		dataKey: "pool",
-		execute: (data) =>
-			createTalentPool(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid talent pool.",
+			}),
+		invoke: (stamped) =>
+			createTalentPool(stamped as never, createHumanResourcesCommandOptions()),
+		project: (value) => ({ pool: value }),
 	});
 }
 
 export async function updateTalentPoolAction(
 	input: unknown,
 ): Promise<ActionResult<{ pool: TalentPool }>> {
-	return await runTalentAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: hrActionSchema(updateTalentPoolInputSchema),
 		path: "updateTalentPoolAction",
 		permission: talentAdminPermission,
 		safeMessage: "Could not update talent pool.",
-		validationMessage: "Enter a valid talent pool update.",
-		dataKey: "pool",
-		execute: (data) =>
-			updateTalentPool(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid talent pool update.",
+			}),
+		invoke: (stamped) =>
+			updateTalentPool(stamped as never, createHumanResourcesCommandOptions()),
+		project: (value) => ({ pool: value }),
 	});
 }
 
 export async function closeTalentPoolAction(
 	input: unknown,
 ): Promise<ActionResult<{ pool: TalentPool }>> {
-	return await runTalentAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: hrActionSchema(closeTalentPoolInputSchema),
 		path: "closeTalentPoolAction",
 		permission: talentAdminPermission,
 		safeMessage: "Could not close talent pool.",
-		validationMessage: "Enter a valid talent pool closure.",
-		dataKey: "pool",
-		execute: (data) =>
-			closeTalentPool(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid talent pool closure.",
+			}),
+		invoke: (stamped) =>
+			closeTalentPool(stamped as never, createHumanResourcesCommandOptions()),
+		project: (value) => ({ pool: value }),
 	});
 }
 
 export async function nominateTalentPoolMemberAction(
 	input: unknown,
 ): Promise<ActionResult<{ member: TalentPoolMember }>> {
-	return await runTalentAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: hrActionSchema(nominateTalentPoolMemberInputSchema),
 		path: "nominateTalentPoolMemberAction",
 		permission: talentAdminPermission,
 		safeMessage: "Could not nominate talent pool member.",
-		validationMessage: "Enter a valid talent pool nomination.",
-		dataKey: "member",
-		execute: (data) =>
-			nominateTalentPoolMember(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid talent pool nomination.",
+			}),
+		invoke: (stamped) =>
+			nominateTalentPoolMember(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ member: value }),
 	});
 }
 
 export async function approveTalentPoolMemberAction(
 	input: unknown,
 ): Promise<ActionResult<{ member: TalentPoolMember }>> {
-	return await runTalentAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: hrActionSchema(approveTalentPoolMemberInputSchema),
 		path: "approveTalentPoolMemberAction",
 		permission: talentAdminPermission,
 		safeMessage: "Could not approve talent pool member.",
-		validationMessage: "Enter a valid talent pool approval.",
-		dataKey: "member",
-		execute: (data) =>
-			approveTalentPoolMember(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid talent pool approval.",
+			}),
+		invoke: (stamped) =>
+			approveTalentPoolMember(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ member: value }),
 	});
 }
 
 export async function removeTalentPoolMemberAction(
 	input: unknown,
 ): Promise<ActionResult<{ member: TalentPoolMember }>> {
-	return await runTalentAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: hrActionSchema(removeTalentPoolMemberInputSchema),
 		path: "removeTalentPoolMemberAction",
 		permission: talentAdminPermission,
 		safeMessage: "Could not remove talent pool member.",
-		validationMessage: "Enter a valid talent pool member removal.",
-		dataKey: "member",
-		execute: (data) =>
-			removeTalentPoolMember(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid talent pool member removal.",
+			}),
+		invoke: (stamped) =>
+			removeTalentPoolMember(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ member: value }),
 	});
 }
 
 export async function listTalentPoolMembersAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: TalentPoolMemberListPage }>> {
-	return await runTalentAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: hrActionSchema(listTalentPoolMembersInputSchema),
 		path: "listTalentPoolMembersAction",
 		permission: talentSensitiveReadPermission,
 		safeMessage: "Could not list talent pool members.",
-		validationMessage: "Enter valid talent pool member filters.",
-		dataKey: "page",
-		execute: (data) =>
-			listTalentPoolMembers(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter valid talent pool member filters.",
+			}),
+		invoke: (stamped) =>
+			listTalentPoolMembers(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ page: value }),
 	});
 }
 
 export async function createSuccessionPlanAction(
 	input: unknown,
 ): Promise<ActionResult<{ plan: SuccessionPlan }>> {
-	return await runTalentAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: hrActionSchema(createSuccessionPlanInputSchema),
 		path: "createSuccessionPlanAction",
 		permission: successionAdminPermission,
 		safeMessage: "Could not create succession plan.",
-		validationMessage: "Enter a valid succession plan.",
-		dataKey: "plan",
-		execute: (data) =>
-			createSuccessionPlan(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid succession plan.",
+			}),
+		invoke: (stamped) =>
+			createSuccessionPlan(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ plan: value }),
 	});
 }
 
 export async function updateSuccessionPlanAction(
 	input: unknown,
 ): Promise<ActionResult<{ plan: SuccessionPlan }>> {
-	return await runTalentAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: hrActionSchema(updateSuccessionPlanInputSchema),
 		path: "updateSuccessionPlanAction",
 		permission: successionAdminPermission,
 		safeMessage: "Could not update succession plan.",
-		validationMessage: "Enter a valid succession plan update.",
-		dataKey: "plan",
-		execute: (data) =>
-			updateSuccessionPlan(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid succession plan update.",
+			}),
+		invoke: (stamped) =>
+			updateSuccessionPlan(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ plan: value }),
 	});
 }
 
 export async function closeSuccessionPlanAction(
 	input: unknown,
 ): Promise<ActionResult<{ plan: SuccessionPlan }>> {
-	return await runTalentAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: hrActionSchema(successionPlanStatusTransitionInputSchema),
 		path: "closeSuccessionPlanAction",
 		permission: successionAdminPermission,
 		safeMessage: "Could not close succession plan.",
-		validationMessage: "Enter a valid succession plan closure.",
-		dataKey: "plan",
-		execute: (data) =>
-			closeSuccessionPlan(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid succession plan closure.",
+			}),
+		invoke: (stamped) =>
+			closeSuccessionPlan(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ plan: value }),
 	});
 }
 
 export async function nominateSuccessionCandidateAction(
 	input: unknown,
 ): Promise<ActionResult<{ candidate: SuccessionCandidate }>> {
-	return await runTalentAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: hrActionSchema(nominateSuccessionCandidateInputSchema),
 		path: "nominateSuccessionCandidateAction",
 		permission: successionAdminPermission,
 		safeMessage: "Could not nominate succession candidate.",
-		validationMessage: "Enter a valid succession candidate nomination.",
-		dataKey: "candidate",
-		execute: (data) =>
-			nominateSuccessionCandidate(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid succession candidate nomination.",
+			}),
+		invoke: (stamped) =>
+			nominateSuccessionCandidate(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ candidate: value }),
 	});
 }
 
 export async function assessSuccessionReadinessAction(
 	input: unknown,
 ): Promise<ActionResult<{ candidate: SuccessionCandidate }>> {
-	return await runTalentAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: hrActionSchema(assessSuccessionReadinessInputSchema),
 		path: "assessSuccessionReadinessAction",
 		permission: successionAdminPermission,
 		safeMessage: "Could not assess succession readiness.",
-		validationMessage: "Enter a valid succession readiness assessment.",
-		dataKey: "candidate",
-		execute: (data) =>
-			assessSuccessionReadiness(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid succession readiness assessment.",
+			}),
+		invoke: (stamped) =>
+			assessSuccessionReadiness(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ candidate: value }),
 	});
 }
 
 export async function approveSuccessionCandidateAction(
 	input: unknown,
 ): Promise<ActionResult<{ candidate: SuccessionCandidate }>> {
-	return await runTalentAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: hrActionSchema(approveSuccessionCandidateInputSchema),
 		path: "approveSuccessionCandidateAction",
 		permission: successionAdminPermission,
 		safeMessage: "Could not approve succession candidate.",
-		validationMessage: "Enter a valid succession candidate approval.",
-		dataKey: "candidate",
-		execute: (data) =>
-			approveSuccessionCandidate(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid succession candidate approval.",
+			}),
+		invoke: (stamped) =>
+			approveSuccessionCandidate(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ candidate: value }),
 	});
 }
 
 export async function removeSuccessionCandidateAction(
 	input: unknown,
 ): Promise<ActionResult<{ candidate: SuccessionCandidate }>> {
-	return await runTalentAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: hrActionSchema(removeSuccessionCandidateInputSchema),
 		path: "removeSuccessionCandidateAction",
 		permission: successionAdminPermission,
 		safeMessage: "Could not remove succession candidate.",
-		validationMessage: "Enter a valid succession candidate removal.",
-		dataKey: "candidate",
-		execute: (data) =>
-			removeSuccessionCandidate(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid succession candidate removal.",
+			}),
+		invoke: (stamped) =>
+			removeSuccessionCandidate(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ candidate: value }),
 	});
 }
 
 export async function getSuccessionPlanByIdAction(
 	input: unknown,
 ): Promise<ActionResult<{ plan: SuccessionPlan | null }>> {
-	return await runTalentAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: hrActionSchema(getSuccessionPlanByIdInputSchema),
 		path: "getSuccessionPlanByIdAction",
 		permission: successionExecutiveReadPermission,
 		safeMessage: "Could not get succession plan.",
-		validationMessage: "Enter a valid succession plan lookup.",
-		dataKey: "plan",
-		execute: (data) =>
-			getSuccessionPlanById(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid succession plan lookup.",
+			}),
+		invoke: (stamped) =>
+			getSuccessionPlanById(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ plan: value }),
 	});
 }
 
 export async function listSuccessionPlansAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: SuccessionPlanListPage }>> {
-	return await runTalentAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: hrActionSchema(listSuccessionPlansInputSchema),
 		path: "listSuccessionPlansAction",
 		permission: successionExecutiveReadPermission,
 		safeMessage: "Could not list succession plans.",
-		validationMessage: "Enter valid succession plan filters.",
-		dataKey: "page",
-		execute: (data) =>
-			listSuccessionPlans(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter valid succession plan filters.",
+			}),
+		invoke: (stamped) =>
+			listSuccessionPlans(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ page: value }),
 	});
 }
 
 export async function listSuccessionCandidatesAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: ProjectedSuccessionCandidateListPage }>> {
-	return await runTalentAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: hrActionSchema(listSuccessionCandidatesInputSchema),
 		path: "listSuccessionCandidatesAction",
 		permission: successionExecutiveReadPermission,
 		safeMessage: "Could not list succession candidates.",
-		validationMessage: "Enter valid succession candidate filters.",
-		dataKey: "page",
-		execute: (data) =>
-			listSuccessionCandidates(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter valid succession candidate filters.",
+			}),
+		invoke: (stamped) =>
+			listSuccessionCandidates(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ page: value }),
 	});
 }
 
 export async function getPositionSuccessionCoverageAction(
 	input: unknown,
 ): Promise<ActionResult<{ coverage: PositionSuccessionCoverage }>> {
-	return await runTalentAction({
+	return await defineAction({
+		runner: runOperatorPermissionAction,
 		input,
 		schema: hrActionSchema(getPositionSuccessionCoverageInputSchema),
 		path: "getPositionSuccessionCoverageAction",
 		permission: successionExecutiveReadPermission,
 		safeMessage: "Could not get position succession coverage.",
-		validationMessage: "Enter a valid position succession coverage request.",
-		dataKey: "coverage",
-		execute: (data) =>
-			getPositionSuccessionCoverage(data, createHumanResourcesCommandOptions()),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid position succession coverage request.",
+			}),
+		invoke: (stamped) =>
+			getPositionSuccessionCoverage(
+				stamped as never,
+				createHumanResourcesCommandOptions(),
+			),
+		project: (value) => ({ coverage: value }),
 	});
 }
