@@ -118,7 +118,8 @@
 		"check:package-internals": "node scripts/check-package-internals.mjs",
 		"check:package-policy": "pnpm exec tsx scripts/check-package-policy.mts",
 		"check:governance": "node scripts/check-governance.mjs",
-		"check:env-example": "pnpm exec tsx scripts/check-env-example.mjs"
+		"check:env-example": "pnpm exec tsx scripts/check-env-example.mjs",
+		"check:package-scaffold-residue": "node scripts/check-package-scaffold-residue.mjs"
 	},
 	"devDependencies": {
 		"@afenda/config": "workspace:*",

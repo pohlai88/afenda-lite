@@ -74,6 +74,18 @@ export const GOVERNANCE_GATES = [
 		negativeFixture: "scripts/__tests__/check-package-internals.test.mjs",
 	},
 	{
+		id: "package-scaffold-residue",
+		command: "pnpm check:package-scaffold-residue",
+		kind: "leaf",
+		tier: "ci-required",
+		owner: "monorepo-architecture",
+		domain: "package-governance",
+		description:
+			"Proves no consumed workspace package carries generator placeholder text — the signature of a scaffold overwriting live capability.",
+		negativeFixture:
+			"scripts/__tests__/check-package-scaffold-residue.test.mjs",
+	},
+	{
 		id: "protected-files",
 		command: "pnpm --filter @afenda/env protect:check",
 		kind: "leaf",
