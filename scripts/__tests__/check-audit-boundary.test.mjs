@@ -93,3 +93,42 @@ test("rejects unprepared production audit-table writes", () => {
 		rmSync(root, { recursive: true, force: true });
 	}
 });
+
+test("accepts a write whose entry is prepared by an imported sibling module", () => {
+	// The shape human-resources/.../time.drizzle.ts uses: audit-command
+	// construction factored into one module per feature, rather than the
+	// capability call inlined at every write site.
+	const root = fixture(
+		'import { prepareTimeAudit } from "./time-transactions";\nconst prepared = prepareTimeAudit({});\nconst query = sql`INSERT INTO platform_audit_log (id) VALUES (1)`;\nvoid prepared;\nvoid query;\n',
+	);
+	try {
+		writeFileSync(
+			join(root, "apps/web/time-transactions.ts"),
+			'import { audit as afendaAudit } from "@afenda/audit";\nexport const prepareTimeAudit = (input) => afendaAudit.transaction.prepare(input);\n',
+		);
+		const result = run(root);
+		assert.equal(result.status, 0);
+		assert.match(result.output, CHECK_OK_PATTERN);
+	} finally {
+		rmSync(root, { recursive: true, force: true });
+	}
+});
+
+test("still rejects a write whose sibling helper fakes the entry", () => {
+	// The loosening must not become "import anything and you are exempt": the
+	// helper has to actually reach the capability.
+	const root = fixture(
+		'import { prepareTimeAudit } from "./hand-rolled";\nconst prepared = prepareTimeAudit({});\nconst query = sql`INSERT INTO platform_audit_log (id) VALUES (1)`;\nvoid prepared;\nvoid query;\n',
+	);
+	try {
+		writeFileSync(
+			join(root, "apps/web/hand-rolled.ts"),
+			"export const prepareTimeAudit = (input) => ({ ...input, id: crypto.randomUUID() });\n",
+		);
+		const result = run(root);
+		assert.equal(result.status, 1);
+		assert.match(result.output, BYPASS_PATTERN);
+	} finally {
+		rmSync(root, { recursive: true, force: true });
+	}
+});
