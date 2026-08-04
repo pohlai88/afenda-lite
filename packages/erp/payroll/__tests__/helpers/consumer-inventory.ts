@@ -9,11 +9,9 @@ import { z } from "zod";
  * Payroll adaptation of HR's consumer/entrypoint inventory scanner
  * (`packages/erp/human-resources/__tests__/helpers/consumer-inventory.ts`).
  * The algorithm is package-agnostic; only the package name and filesystem
- * marker differ. Payroll's `package.json` currently declares a single root
- * entrypoint. The `./testing` entrypoint and `approvedTestingConsumers`
- * projection stay in the algorithm so the fixture top-level shape matches HR
- * for `governance:erp-symmetry`; both recompute empty until a consumer imports
- * `@afenda/payroll/testing` after that subpath is declared on the package.
+ * marker differ. Declared entrypoints are `.` and `./testing`.
+ * `approvedTestingConsumers` recomputes from real `@afenda/payroll/testing`
+ * imports (empty until package tests or other suites migrate onto the subpath).
  */
 
 const consumerClassSchema = z.enum(["production", "testing", "tooling"]);
@@ -56,6 +54,7 @@ const consumerInventorySchema = z.object({
 	approvedTestingConsumers: z.array(z.string().min(1)),
 	entrypointIsolation: z.object({
 		".": z.literal("sole production business facade"),
+		"./testing": z.literal("test-only construction and parity harnesses"),
 	}),
 	packageName: z.literal("@afenda/payroll"),
 	references: z.array(consumerReferenceSchema),
@@ -485,6 +484,7 @@ export function buildConsumerInventory(
 		].toSorted(),
 		entrypointIsolation: {
 			".": "sole production business facade",
+			"./testing": "test-only construction and parity harnesses",
 		},
 		packageName: PAYROLL_PACKAGE,
 		references: sortedReferences,

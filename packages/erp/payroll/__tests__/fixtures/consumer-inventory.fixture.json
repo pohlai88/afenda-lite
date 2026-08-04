@@ -1,7 +1,8 @@
 {
 	"approvedTestingConsumers": [],
 	"entrypointIsolation": {
-		".": "sole production business facade"
+		".": "sole production business facade",
+		"./testing": "test-only construction and parity harnesses"
 	},
 	"packageName": "@afenda/payroll",
 	"references": [

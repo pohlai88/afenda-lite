@@ -17,6 +17,15 @@ not UI shells, HTTP handlers, or HR command engines.
 Honest interim posture until HR promotion evidence and calculator sourcing
 decisions close ([hr-payroll-decisions.md](./docs/hr-payroll-decisions.md) A1).
 
+Contract evidence fixtures:
+
+| Fixture | Role |
+| --- | --- |
+| [`public-contract.fixture.json`](./__tests__/fixtures/public-contract.fixture.json) | Accepted root + testing entrypoints |
+| [`registry-projection.fixture.json`](./__tests__/fixtures/registry-projection.fixture.json) | Operation governance projection |
+| [`consumer-inventory.fixture.json`](./__tests__/fixtures/consumer-inventory.fixture.json) | Consumer graph |
+| [`architecture-debt.fixture.json`](./__tests__/fixtures/architecture-debt.fixture.json) | Reporting-only containment baseline (targets remain zero; not an allowlist) |
+
 ## Verify
 
 | Loop | Command |
@@ -43,28 +52,65 @@ import {
 
 const payroll = createPayrollCapabilityOptions({
 	authorization: payrollAuthorization,
-	workforce: payrollWorkforce,
 });
 
 const result = await createPayrollCalendar(input, payroll);
 ```
 
-Import from `@afenda/payroll` only. Never deep-import `@afenda/*/src/...`.
+Import from `@afenda/payroll` or the declared `./testing` subpath only.
+Never deep-import `@afenda/*/src/...`.
 
-The package publishes exactly one entrypoint. The capability context is opaque:
-consumers cannot inject stores, raw ports, or calculators. Production
-persistence, audit/event wiring, and calculation selection stay inside the
-Payroll owner.
+| Entrypoint | Role |
+| --- | --- |
+| `@afenda/payroll` | Production facade: operations, domain contracts, opaque execution context |
+| `@afenda/payroll/testing` | Test-only memory store and calculator helpers — never import from product code |
+
+The capability context is opaque: consumers cannot inject stores, raw ports, or
+calculators. Production persistence, audit/event wiring, and calculation
+selection stay inside the Payroll owner.
+
+### HR ↔ Payroll transport (single path)
+
+Identical wording on both package READMEs ([bridging B1](../../../docs/erp/hr-payroll-bridging.md)):
+
+```text
+HR command (queuePayrollDelivery)
+  └─ hr_payroll_handoff_delivery row (status: pending) — one HR transaction
+        │
+apps/web producer (modules/platform/domain/human-resources-payroll-delivery.ts)
+  ├─ 1. ingestApprovedPayrollHandoff(...)  → payroll_accepted_handoff row (idempotent)
+  └─ 2. publish platform.human-resources.payroll-delivery.requested.v1
+        (fan-out telemetry only — NOT the ingest path)
+        │
+HR feedback (recordPayrollDeliveryFeedback: acknowledged | rejected | correction_required)
+```
+
+- Production composition does **not** wire `PayrollWorkforceCapability`
+  ([`payroll-command-options.ts`](../../../apps/web/lib/erp/payroll-command-options.ts)).
+  Calculation-time reads use the accepted-handoff ledger. The optional
+  `workforce` field on capability options is a **test-only** seam.
+- Ingest and event publish share no transaction; safety depends on ingest
+  idempotency (payload hash / delivery identity — bridging C1).
+- Retry/recovery: `recoverPendingPayrollDeliveries` + HR reliability worker.
+- Corrections: atomic supersessions with optimistic source-version locking.
 
 | Constraint | Rule |
 | --- | --- |
-| Workforce | Facts arrive through `PayrollWorkforceCapability`. No HR runtime dependency; `apps/web` projects the sealed HR handoff. Pay-group membership is Payroll-owned. |
+| Workforce | Facts arrive through the push/sync-ingest path above. No HR runtime dependency. Pay-group membership is Payroll-owned. |
 | Runs | Create/transition commits run row, audit, and outbox facts in one production DB transaction. Finalized runs emit `payroll.payment-requested.v1` and `payroll.posting-requested.v1`. |
 | Reversal | Preserves sealed original evidence; emits compensating payment/posting corrections exactly once. |
 | Payslips | Deterministic versioned views over finalized evidence. Own vs all-payslip permissions stay distinct. |
 | Money / dates | ISO calendar dates only. Monetary parse accepts at most 12 fractional digits; excess precision fails closed. |
 | Statutory | Production activation is fail-closed. Bundled `synth.v1` is test-only — see [PRODUCTION_READINESS.md](./PRODUCTION_READINESS.md). |
 | Setup rules | Effective-dated versions with exclusion constraints; finalized versions cannot be mutated or retired. |
+
+**Security:** Commands require injected `PayrollAuthorizationCapability`. Input
+schemas reject tenant-field injection — the composition root stamps
+`organizationId`, `actorUserId`, and `correlationId` after validation.
+
+**Tenancy:** Shared Neon schema with organization-scoped rows. Hard-tenant-root
+names derive from `packages/data-plane/db/src/hard-tenant-roots.ts` (`payroll_*`).
+This is not multi-DB isolation. Callers cannot supply tenant identity.
 
 ### Domain features
 
@@ -84,8 +130,27 @@ Business behavior lives under `src/features/`. Features never import `facade`,
 | `payslips` | Authorized deterministic payslip views |
 | `reconciliation` | Payroll/downstream discrepancy resolution |
 
-Manifest: [`src/composition/module.manifest.ts`](./src/composition/module.manifest.ts)
-(repository-governance input, not a consumer subpath).
+### Composition entries
+
+| Surface | Path |
+| --- | --- |
+| Module manifest | [`src/composition/module.manifest.ts`](./src/composition/module.manifest.ts) |
+| Drizzle adapters | [`src/composition/adapters/drizzle.ts`](./src/composition/adapters/drizzle.ts) |
+| Production ports | [`src/composition/production/ports.ts`](./src/composition/production/ports.ts) |
+| Store contract | [`src/composition/store/contract.ts`](./src/composition/store/contract.ts) |
+| Store slices | [`src/composition/store/compose-slices.ts`](./src/composition/store/compose-slices.ts) |
+| Store resolve | [`src/composition/store/resolve-store.ts`](./src/composition/store/resolve-store.ts) |
+
+Manifest is a repository-governance input, not a consumer subpath.
+
+### Product composition
+
+| Journey or worker | Composition entry |
+| --- | --- |
+| Payroll command options | [`payroll-command-options.ts`](../../../apps/web/lib/erp/payroll-command-options.ts) |
+| Payroll delivery producer | [`human-resources-payroll-delivery.ts`](../../../apps/web/modules/platform/domain/human-resources-payroll-delivery.ts) |
+| HR payroll delivery actions | [`hr-payroll-delivery.ts`](../../../apps/web/app/actions/hr-payroll-delivery.ts) |
+| HR reliability worker | [`human-resources-reliability-worker.ts`](../../../apps/web/modules/platform/domain/human-resources-reliability-worker.ts) |
 
 ## Quickstart
 
@@ -99,15 +164,18 @@ pnpm --filter @afenda/payroll check
 | --- | --- |
 | `pnpm --filter @afenda/payroll lint` | Lint |
 | `pnpm --filter @afenda/payroll typecheck` | Types |
-| `pnpm --filter @afenda/payroll test` | Package tests |
+| `pnpm --filter @afenda/payroll test` | Package unit tests |
 | `pnpm --filter @afenda/payroll check` | Lint + typecheck + test |
 
 After manifest or register changes:
 
 ```bash
-pnpm validate:modules --write
+pnpm validate:modules
 pnpm governance:packages
 ```
+
+CI uses check-only `pnpm validate:modules`. Local regeneration, when a write path
+exists again, is an explicit maintainer action — not the README default.
 
 ## Boundaries
 
@@ -136,6 +204,8 @@ posting → Payments disbursement. Product boundary:
 | Topic | Link |
 | --- | --- |
 | Malaysia/Vietnam Payroll PRD | [docs/PAYROLL-PRD-MY-VN.md](./docs/PAYROLL-PRD-MY-VN.md) |
+| Development roadmap | [docs/development-roadmap.md](./docs/development-roadmap.md) |
+| Baseline verification | [docs/baseline-verification.md](./docs/baseline-verification.md) |
 | Production readiness | [PRODUCTION_READINESS.md](./PRODUCTION_READINESS.md) |
 | HR ↔ Payroll closure guideline | [hr-payroll-bridging.md](../../../docs/erp/hr-payroll-bridging.md) |
 | HR ↔ Payroll decisions register | [hr-payroll-decisions.md](./docs/hr-payroll-decisions.md) |

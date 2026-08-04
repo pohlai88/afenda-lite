@@ -20,8 +20,10 @@ const publicSymbolSchema = z.object({
 	name: z.string().min(1),
 });
 
+const publicEntrypointOwnerSchema = z.enum(["production", "testing"]);
+
 const publicEntrypointSchema = z.object({
-	owner: z.literal("production"),
+	owner: publicEntrypointOwnerSchema,
 	symbols: z.array(publicSymbolSchema),
 });
 
@@ -37,7 +39,7 @@ const publicContractFixtureSchema = z.object({
 	entrypoints: z.record(
 		z.string(),
 		z.object({
-			owner: z.literal("production"),
+			owner: publicEntrypointOwnerSchema,
 			symbolCount: z.number().int().nonnegative(),
 		}),
 	),
@@ -116,33 +118,44 @@ function stableValue(value: unknown): string {
 	return JSON.stringify(value);
 }
 
-export function buildPublicContract(packageRoot: string): PublicContract {
-	const packageJson = z
-		.object({
-			exports: z.record(z.string(), z.unknown()),
-			name: z.literal(PACKAGE_NAME),
-		})
-		.parse(
-			JSON.parse(readFileSync(path.join(packageRoot, "package.json"), "utf8")),
-		);
-	const entrypointNames = Object.keys(packageJson.exports);
-	if (entrypointNames.length !== 1 || entrypointNames[0] !== ".") {
-		throw new Error(
-			"Payroll public-contract generator expects exactly one root entrypoint.",
-		);
+function entrypointOwner(
+	entrypoint: string,
+): z.infer<typeof publicEntrypointOwnerSchema> {
+	if (entrypoint === ".") {
+		return "production";
 	}
-	const program = loadProgram(packageRoot);
+	if (entrypoint === "./testing") {
+		return "testing";
+	}
+	throw new Error(`Unexpected payroll entrypoint ${entrypoint}.`);
+}
+
+function entrypointSourcePath(packageRoot: string, entrypoint: string): string {
+	if (entrypoint === ".") {
+		return path.join(packageRoot, "src/index.ts");
+	}
+	if (entrypoint === "./testing") {
+		return path.join(packageRoot, "src/testing/index.ts");
+	}
+	throw new Error(`Unexpected payroll entrypoint ${entrypoint}.`);
+}
+
+function exportSymbolsForEntrypoint(
+	program: ts.Program,
+	packageRoot: string,
+	entrypoint: string,
+): z.infer<typeof publicSymbolSchema>[] {
 	const checker = program.getTypeChecker();
-	const indexPath = path.join(packageRoot, "src/index.ts");
-	const sourceFile = program.getSourceFile(indexPath);
+	const sourcePath = entrypointSourcePath(packageRoot, entrypoint);
+	const sourceFile = program.getSourceFile(sourcePath);
 	if (sourceFile === undefined) {
-		throw new Error(`Unable to load root barrel from ${indexPath}.`);
+		throw new Error(`Unable to load barrel from ${sourcePath}.`);
 	}
 	const moduleSymbol = checker.getSymbolAtLocation(sourceFile);
 	if (moduleSymbol === undefined) {
-		throw new Error("Unable to resolve payroll root module symbol.");
+		throw new Error(`Unable to resolve module symbol for ${entrypoint}.`);
 	}
-	const symbols = checker
+	return checker
 		.getExportsOfModule(moduleSymbol)
 		.map((exported) => {
 			const resolved = resolveAliasedSymbol(checker, exported);
@@ -152,14 +165,40 @@ export function buildPublicContract(packageRoot: string): PublicContract {
 			};
 		})
 		.toSorted((left, right) => left.name.localeCompare(right.name));
+}
+
+export function buildPublicContract(packageRoot: string): PublicContract {
+	const packageJson = z
+		.object({
+			exports: z.record(z.string(), z.unknown()),
+			name: z.literal(PACKAGE_NAME),
+		})
+		.parse(
+			JSON.parse(readFileSync(path.join(packageRoot, "package.json"), "utf8")),
+		);
+	const entrypointNames = Object.keys(packageJson.exports).toSorted();
+	if (
+		entrypointNames.length !== 2 ||
+		entrypointNames[0] !== "." ||
+		entrypointNames[1] !== "./testing"
+	) {
+		throw new Error(
+			'Payroll public-contract generator expects exports "." and "./testing".',
+		);
+	}
+	const program = loadProgram(packageRoot);
+	const entrypoints = Object.fromEntries(
+		entrypointNames.map((entrypoint) => [
+			entrypoint,
+			{
+				owner: entrypointOwner(entrypoint),
+				symbols: exportSymbolsForEntrypoint(program, packageRoot, entrypoint),
+			},
+		]),
+	);
 
 	return publicContractSchema.parse({
-		entrypoints: {
-			".": {
-				owner: "production",
-				symbols,
-			},
-		},
+		entrypoints,
 		errorCodeSets: {},
 		packageName: PACKAGE_NAME,
 		schemaVersion: 1,

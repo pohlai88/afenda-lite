@@ -15,8 +15,10 @@ checkout-wide doctrine. This file wins only for **conflicts inside this package*
 ## Deltas (only)
 
 - Sole mutator of `payroll_*`. Do not dual-write payroll tables from `apps/web`.
-- Do not import `@afenda/human-resources` or peer ERP packages. Workforce facts
-  cross `PayrollWorkforceCapability` supplied by the app composition root.
+- Do not import `@afenda/human-resources` or peer ERP packages. Production
+  workforce facts arrive via push/sync ingest into `payroll_accepted_handoff`;
+  `PayrollWorkforceCapability` is a test-only override, never wired in
+  `apps/web` composition.
 - Do not insert or update `payment*`, `journal*`, or `hr_*` tables from this package.
 - Keep uniform ERP roots only: `facade/`, `kernel/`, `composition/`, `features/`,
   `testing/`, plus root `index.ts`. Features never import `facade`, `composition`,

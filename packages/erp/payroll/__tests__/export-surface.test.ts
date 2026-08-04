@@ -165,12 +165,15 @@ describe("@afenda/payroll export surface contract", () => {
 		expect((root as Record<string, unknown>).MutationPorts).toBeUndefined();
 	}, 45_000);
 
-	it("publishes exactly one permanent root entrypoint", () => {
+	it("publishes the production root and isolated testing entrypoints", () => {
 		const pkg = JSON.parse(readFileSync(pkgPath, "utf8")) as {
 			exports?: Record<string, unknown>;
 		};
 
-		expect(Object.keys(pkg.exports ?? {})).toEqual(["."]);
+		expect(Object.keys(pkg.exports ?? {}).toSorted()).toEqual([
+			".",
+			"./testing",
+		]);
 	});
 
 	it("keeps implementation and composition internals out of the root barrel", () => {

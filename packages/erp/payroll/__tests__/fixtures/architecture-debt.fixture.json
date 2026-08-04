@@ -651,7 +651,7 @@
 		{
 			"items": [
 				{
-					"evidence": "src/facade/contracts.ts:21 declares an optional PayrollWorkforceCapability pull port that production wires nowhere (bridging doc B1: single push transport is live)",
+					"evidence": "src/facade/contracts.ts:23 declares an optional PayrollWorkforceCapability pull port that production wires nowhere (bridging doc B1: single push transport is live)",
 					"file": "src/facade/contracts.ts"
 				}
 			],

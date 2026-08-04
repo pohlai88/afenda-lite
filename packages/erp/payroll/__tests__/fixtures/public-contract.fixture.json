@@ -1,9 +1,13 @@
 {
-	"contractDigest": "8f15eb2c617c0fe8762e01a31bdd50ddbec10c7e7e9af70a0fd8e2f4269809d4",
+	"contractDigest": "6344161af699c392c1ee2b107f25dbca7c51088be5bdf5fce2b4f7815476e82c",
 	"entrypoints": {
 		".": {
 			"owner": "production",
 			"symbolCount": 65
+		},
+		"./testing": {
+			"owner": "testing",
+			"symbolCount": 4
 		}
 	},
 	"errorCodeSets": {},

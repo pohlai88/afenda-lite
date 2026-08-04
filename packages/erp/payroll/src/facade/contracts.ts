@@ -15,8 +15,10 @@ export interface PayrollCapabilityComposition {
 	readonly authorization: PayrollAuthorizationCapability;
 	readonly observability?: PayrollObservabilityPort;
 	/**
-	 * Optional override for workforce fact reads. When omitted, operations read
-	 * the accepted-handoff ledger sealed by ingestApprovedPayrollHandoff (PRD R1).
+	 * Test-only override for workforce fact reads. Production composition omits
+	 * this field — operations read the accepted-handoff ledger sealed by
+	 * ingestApprovedPayrollHandoff (PRD R1 / bridging B1). Do not wire a second
+	 * pull transport through this seam.
 	 */
 	readonly workforce?: PayrollWorkforceCapability;
 }

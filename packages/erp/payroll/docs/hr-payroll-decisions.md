@@ -14,6 +14,7 @@
 | B5 | Neon parity loop | **PARTIAL** | `pnpm test:payroll:parity` lane + failure-injection helpers/tests shipped. Finalize atomicity/concurrency green on Neon; workforce-ingress Neon cases skip until `payroll_accepted_handoff` is migrated on the preview target. | 2026-08-05 | Payroll |
 | B2 | Governance fixtures | **CLOSED** | Four fixtures + `governance-fixtures.test.ts` (public-contract, registry-projection, consumer-inventory, architecture-debt). | 2026-08-05 | Payroll |
 | B4 | Emission registry | **CLOSED** | `PAYROLL_EMISSION_REGISTRY` owns command→event→dispatcher mapping; manifest `events.emits` derives from it; retired `docs-V2` citation removed from `mutation-tables.ts`. | 2026-08-05 | Payroll |
+| B1 | Transport docs + testing subpath | **CLOSED** | Document single push/sync-ingest transport on both READMEs; PayrollWorkforceCapability is test-only; declare @afenda/payroll/testing. | 2026-08-05 | Payroll / HR |
 
 ## A1 evidence
 
