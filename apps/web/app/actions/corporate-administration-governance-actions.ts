@@ -1,17 +1,12 @@
 "use server";
 
-import { randomUUID } from "node:crypto";
-
 import {
 	adoptResolution,
 	adoptResolutionInputSchema,
 	assignResolutionAction,
 	assignResolutionActionInputSchema,
-	type CorporateAdministrationCommandId,
-	type CorporateAdministrationCommandOptions,
 	completeResolutionAction,
 	completeResolutionActionInputSchema,
-	corporateAdministrationPermissionFor,
 	recordMeetingParticipant,
 	recordMeetingParticipantInputSchema,
 	recordMeetingVote,
@@ -23,43 +18,11 @@ import {
 	scheduleGovernanceMeeting,
 	scheduleGovernanceMeetingInputSchema,
 } from "@afenda/corporate-administration";
-import {
-	type Result as ActionResult,
-	errorResult,
-	type Result,
-} from "@afenda/errors";
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import { revalidatePath } from "next/cache";
-import { z } from "zod";
 
-import { mapPackageResult } from "@/app/actions/map-package-result";
-import { runMemberPermissionAction } from "@/app/actions/run-member-permission-action";
-import {
-	createCorporateAdministrationCommandOptions,
-	createCorporateAdministrationGovernanceDependencies,
-} from "@/lib/erp/corporate-administration-command-options";
-import { parseSchema } from "@/modules/platform/schemas/common";
-
-const actionMetadataSchema = z
-	.object({
-		organizationSlug: z
-			.string()
-			.trim()
-			.min(1)
-			.max(128)
-			.regex(/^[a-z0-9][a-z0-9-]*$/),
-		idempotencyKey: z.string().trim().min(1).max(128).optional(),
-	})
-	.strict();
-
-type GovernanceDependencies = ReturnType<
-	typeof createCorporateAdministrationGovernanceDependencies
->;
-
-type GovernanceCommand<TPayload, TResult> = (
-	payload: TPayload,
-	options: CorporateAdministrationCommandOptions,
-	dependencies: GovernanceDependencies,
-) => Promise<Result<TResult>>;
+import { defineFormDataAction } from "@/app/actions/_runtime/define-form-data-action";
+import { createCorporateAdministrationGovernanceDependencies } from "@/lib/erp/corporate-administration-command-options";
 
 export type MeetingVoteActionResult = Readonly<{
 	meetingVoteId: string;
@@ -100,7 +63,7 @@ export type MeetingQuorumActionResult = Readonly<{
 export async function scheduleGovernanceMeetingAction(
 	formData: FormData,
 ): Promise<ActionResult<MeetingScheduleActionResult>> {
-	return await runGovernanceAction({
+	return await defineFormDataAction({
 		operationId: "scheduleGovernanceMeeting",
 		path: "scheduleGovernanceMeetingAction",
 		safeMessage: "Could not schedule the governance meeting.",
@@ -115,6 +78,12 @@ export async function scheduleGovernanceMeetingAction(
 				]),
 				["noticePeriodDays", "expectedBodyVersion"],
 			),
+		dependencies: createCorporateAdministrationGovernanceDependencies(),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "The submitted governance data is invalid",
+			}),
+		revalidate: revalidateGovernanceRoutes,
 		execute: scheduleGovernanceMeeting,
 		project: (meeting) => ({
 			governanceMeetingId: meeting.id,
@@ -127,7 +96,7 @@ export async function scheduleGovernanceMeetingAction(
 export async function recordMeetingParticipantAction(
 	formData: FormData,
 ): Promise<ActionResult<MeetingParticipantActionResult>> {
-	return await runGovernanceAction({
+	return await defineFormDataAction({
 		operationId: "recordMeetingParticipant",
 		path: "recordMeetingParticipantAction",
 		safeMessage: "Could not record the meeting participant.",
@@ -143,6 +112,12 @@ export async function recordMeetingParticipantAction(
 				]),
 				["expectedMeetingVersion"],
 			),
+		dependencies: createCorporateAdministrationGovernanceDependencies(),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "The submitted governance data is invalid",
+			}),
+		revalidate: revalidateGovernanceRoutes,
 		execute: recordMeetingParticipant,
 		project: (participant) => ({
 			meetingParticipantId: participant.id,
@@ -155,7 +130,7 @@ export async function recordMeetingParticipantAction(
 export async function recordQuorumAction(
 	formData: FormData,
 ): Promise<ActionResult<MeetingQuorumActionResult>> {
-	return await runGovernanceAction({
+	return await defineFormDataAction({
 		operationId: "recordQuorum",
 		path: "recordQuorumAction",
 		safeMessage: "Could not record the meeting quorum.",
@@ -169,6 +144,12 @@ export async function recordQuorumAction(
 				]),
 				["eligibleVotingOnly"],
 			),
+		dependencies: createCorporateAdministrationGovernanceDependencies(),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "The submitted governance data is invalid",
+			}),
+		revalidate: revalidateGovernanceRoutes,
 		execute: recordQuorum,
 		project: (quorum) => ({
 			meetingQuorumResultId: quorum.id,
@@ -202,7 +183,7 @@ export async function recordQuorumFormAction(
 export async function recordMeetingVoteAction(
 	formData: FormData,
 ): Promise<ActionResult<MeetingVoteActionResult>> {
-	return await runGovernanceAction({
+	return await defineFormDataAction({
 		operationId: "recordMeetingVote",
 		path: "recordMeetingVoteAction",
 		safeMessage: "Could not record the meeting vote.",
@@ -217,6 +198,12 @@ export async function recordMeetingVoteAction(
 				"requiredFor",
 				"expectedMeetingVersion",
 			]),
+		dependencies: createCorporateAdministrationGovernanceDependencies(),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "The submitted governance data is invalid",
+			}),
+		revalidate: revalidateGovernanceRoutes,
 		execute: recordMeetingVote,
 		project: (vote) => ({
 			meetingVoteId: vote.id,
@@ -229,13 +216,19 @@ export async function recordMeetingVoteAction(
 export async function adoptResolutionAction(
 	formData: FormData,
 ): Promise<ActionResult<ResolutionActionResult>> {
-	return await runGovernanceAction({
+	return await defineFormDataAction({
 		operationId: "adoptResolution",
 		path: "adoptResolutionAction",
 		safeMessage: "Could not adopt the resolution.",
 		formData,
 		schema: adoptResolutionInputSchema,
 		normalize: (values) => coerceNumbers(values, ["expectedVoteVersion"]),
+		dependencies: createCorporateAdministrationGovernanceDependencies(),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "The submitted governance data is invalid",
+			}),
+		revalidate: revalidateGovernanceRoutes,
 		execute: adoptResolution,
 		project: (resolution) => ({
 			resolutionId: resolution.id,
@@ -248,13 +241,19 @@ export async function adoptResolutionAction(
 export async function assignResolutionActionAction(
 	formData: FormData,
 ): Promise<ActionResult<ResolutionImplementationActionResult>> {
-	return await runGovernanceAction({
+	return await defineFormDataAction({
 		operationId: "assignResolutionAction",
 		path: "assignResolutionActionAction",
 		safeMessage: "Could not assign the resolution action.",
 		formData,
 		schema: assignResolutionActionInputSchema,
 		normalize: (values) => coerceNumbers(values, ["expectedResolutionVersion"]),
+		dependencies: createCorporateAdministrationGovernanceDependencies(),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "The submitted governance data is invalid",
+			}),
+		revalidate: revalidateGovernanceRoutes,
 		execute: assignResolutionAction,
 		project: (action) => ({
 			resolutionActionId: action.id,
@@ -267,13 +266,19 @@ export async function assignResolutionActionAction(
 export async function completeResolutionActionAction(
 	formData: FormData,
 ): Promise<ActionResult<ResolutionImplementationActionResult>> {
-	return await runGovernanceAction({
+	return await defineFormDataAction({
 		operationId: "completeResolutionAction",
 		path: "completeResolutionActionAction",
 		safeMessage: "Could not complete the resolution action.",
 		formData,
 		schema: completeResolutionActionInputSchema,
 		normalize: (values) => coerceNumbers(values, ["expectedVersion"]),
+		dependencies: createCorporateAdministrationGovernanceDependencies(),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "The submitted governance data is invalid",
+			}),
+		revalidate: revalidateGovernanceRoutes,
 		execute: completeResolutionAction,
 		project: (action) => ({
 			resolutionActionId: action.id,
@@ -286,13 +291,19 @@ export async function completeResolutionActionAction(
 export async function recordMinutesDocumentAction(
 	formData: FormData,
 ): Promise<ActionResult<ResolutionActionResult>> {
-	return await runGovernanceAction({
+	return await defineFormDataAction({
 		operationId: "recordMinutesDocument",
 		path: "recordMinutesDocumentAction",
 		safeMessage: "Could not record the minutes document.",
 		formData,
 		schema: recordMinutesDocumentInputSchema,
 		normalize: (values) => coerceNumbers(values, ["expectedVersion"]),
+		dependencies: createCorporateAdministrationGovernanceDependencies(),
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "The submitted governance data is invalid",
+			}),
+		revalidate: revalidateGovernanceRoutes,
 		execute: recordMinutesDocument,
 		project: (resolution) => ({
 			resolutionId: resolution.id,
@@ -335,94 +346,6 @@ export async function recordMinutesDocumentFormAction(
 	formData: FormData,
 ) {
 	return await recordMinutesDocumentAction(formData);
-}
-
-async function runGovernanceAction<TPayload, TResult, TProjection>(input: {
-	operationId: Extract<
-		CorporateAdministrationCommandId,
-		| "recordMeetingVote"
-		| "adoptResolution"
-		| "assignResolutionAction"
-		| "completeResolutionAction"
-		| "recordMinutesDocument"
-		| "scheduleGovernanceMeeting"
-		| "recordMeetingParticipant"
-		| "recordQuorum"
-	>;
-	path: string;
-	safeMessage: string;
-	formData: FormData;
-	schema: z.ZodType<TPayload>;
-	normalize: (
-		values: Record<string, FormDataEntryValue>,
-	) => Record<string, unknown>;
-	execute: GovernanceCommand<TPayload, TResult>;
-	project: (result: TResult) => TProjection;
-}): Promise<ActionResult<TProjection>> {
-	return await runMemberPermissionAction({
-		path: input.path,
-		permission: corporateAdministrationPermissionFor(input.operationId),
-		safeMessage: input.safeMessage,
-		execute: async (session, correlationId) => {
-			const values = formDataObject(input.formData);
-			const metadata = parseSchema(actionMetadataSchema, {
-				organizationSlug: values.organizationSlug,
-				idempotencyKey: optionalString(values.idempotencyKey),
-			});
-			const payload = parseSchema(
-				input.schema,
-				input.normalize(withoutActionMetadata(values)),
-			);
-			if (!(metadata.success && payload.success)) {
-				return errorResult.fail("VALIDATION_ERROR", {
-					publicMessage: "The submitted governance data is invalid",
-				});
-			}
-
-			const result = await input.execute(
-				payload.data,
-				createCorporateAdministrationCommandOptions({
-					organizationId: session.orgId,
-					actorUserId: session.userId,
-					correlationId,
-					idempotencyKey: metadata.data.idempotencyKey ?? randomUUID(),
-				}),
-				createCorporateAdministrationGovernanceDependencies(),
-			);
-			const mapped = mapPackageResult(result);
-			if (!mapped.ok) {
-				return mapped;
-			}
-
-			revalidateGovernanceRoutes(metadata.data.organizationSlug);
-			return errorResult.ok(input.project(mapped.data));
-		},
-	});
-}
-
-function formDataObject(
-	formData: FormData,
-): Record<string, FormDataEntryValue> {
-	return Object.fromEntries(
-		Array.from(formData.entries()).filter(
-			([key]) => !key.startsWith("$ACTION_"),
-		),
-	);
-}
-
-function withoutActionMetadata(
-	values: Record<string, FormDataEntryValue>,
-): Record<string, FormDataEntryValue> {
-	const {
-		organizationSlug: _organizationSlug,
-		idempotencyKey: _key,
-		...payload
-	} = values;
-	return payload;
-}
-
-function optionalString(value: FormDataEntryValue | undefined) {
-	return typeof value === "string" && value.length > 0 ? value : undefined;
 }
 
 /** Optional strict-schema fields must be absent, not empty strings. */
