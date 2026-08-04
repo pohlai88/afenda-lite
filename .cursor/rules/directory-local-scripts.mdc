@@ -1,0 +1,46 @@
+---
+description: Keep scripts with their owning directory — forbid dumps into root scripts/ and scripts under docs/template/
+alwaysApply: true
+---
+
+# Directory-local scripts
+
+**NOT ALLOWED. NOT ALLOWED. NOT ALLOWED.**
+
+Agents must not dump temporary, domain, or kit scripts into repo-root `scripts/`. Scripts stay with their owning directory. `docs/template/` is markdown-only.
+
+## Architecture
+
+| Home | Role |
+|------|------|
+| `scripts/` | Monorepo-wide gates and ops only (`check-*`, `audit-*`, `validate-*`, `lib/`, `__tests__/`) |
+| `governance/scripts/` | Kernel governance check and its tests |
+| `packages/*/scripts/` | Package-local tooling when the package owns the gate |
+| `docs/template/**` | Markdown README/AGENTS hand-copy kits — **no** `.ts`/`.mjs`/`.cjs` generators |
+
+Root `package.json` may **call** co-located scripts (example: `pnpm check:kernel-governance` → `governance/scripts/check-kernel-governance.mts`). That does not authorize moving those bodies into `scripts/`.
+
+## Forbidden
+
+- Agent temp dumps under `scripts/`: `_tmp*`, `_write*`, `_fix*`, `_staging*`, `_kit*`, `_polish*`, `_patch*`, `tmp-*`, `scratch-*`
+- Domain/kit bodies in root `scripts/`: `*kernel-governance*`, `*generate*readme*`, `*readme*kit*`, `*template*kit*`, `*agents*kit*`
+- Any executable under `docs/template/**` (`.ts`, `.mts`, `.js`, `.mjs`, `.cjs`, …)
+- Shell redirects / copies that create the above paths
+
+## Required behavior
+
+1. Put domain scripts beside the owner (`governance/scripts/`, package tree, …), **or**
+2. Prefer markdown templates / existing monorepo gates — do not invent a root dump script, **or**
+3. Stop and ask when placement is unclear.
+
+## Narrow exceptions
+
+| Exception | Rule |
+|-----------|------|
+| User letter this turn | Explicit named exception for a root `scripts/` path **in this chat turn** |
+| Ban surfaces | Rules/hooks that **state** this prohibition |
+| Legitimate monorepo gates | New `scripts/check-*` / `audit-*` / `validate-*` / `lib/**` that are truly repo-wide |
+
+## Hook enforcement
+
+`preToolUse` + `beforeShellExecution` → `.cursor/hooks/directory-local-scripts.mjs` denies Write/StrReplace/EditNotebook and shell dumps that violate placement. Do not rename, encode, or split edits to bypass the hook.

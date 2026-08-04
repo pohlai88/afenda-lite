@@ -77,6 +77,7 @@ Task arrives (this repo / Afenda-Lite)
     ├── React composition / compound-component / provider API architecture? → afenda-elite-react-composition (after `afenda-elite-ui-compose` classifies capability; vendor `vercel-composition-patterns` is progressive disclosure only)
     ├── React runtime / performance (waterfalls · rerenders · bundle · serialization · hydration)? → afenda-elite-react-best-practices (App Router/cache stays with `afenda-elite-nextjs-best-practice`; vendor `vercel-react-best-practices` is progressive disclosure only)
     ├── Root / package / app README · Diátaxis intro / compose · audit · README Score / Path to 100%? → afenda-readme-diataxis (not controlled Living docs/ bodies)
+    ├── Bootstrap / standardize README or AGENTS from docs/template/ (hand-copy, no generator)? → afenda-doc-template-kits → then afenda-readme-diataxis for README score
     ├── Internal technical docs prose (spec · ADR · runbook · migration)? → technical-writing (after `afenda-elite-doc-control` / `documentation-and-adrs` farm is fixed)
     ├── TS / coding discipline (brands · unions · any/as · boundary hygiene) after farm fixed? → afenda-coding-discipline (not PR review / simplify / API SSOT / React perf)
     ├── Generic engineering lifecycle? ─────────────────────→ using-agent-skills

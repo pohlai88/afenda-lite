@@ -90,7 +90,9 @@ A readable README that violates a higher rule is a **failed change**. Do not ski
 
 ```text
 Need README
-  → /using-afenda-elite-skills → afenda-readme-diataxis
+  → /using-afenda-elite-skills
+  → missing/standardize from kit? → afenda-doc-template-kits (hand-copy docs/template/readme/*)
+  → afenda-readme-diataxis
   → QUALITY ORDER → Read target + package.json engines/scripts + Test-Path links
   → compose / revise / audit
   → if controlled docs/ body needed → STOP → afenda-elite-doc-control

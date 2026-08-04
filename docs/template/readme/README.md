@@ -1,33 +1,28 @@
-# Afenda package README template kit
+# README template kit
 
-Scaffold and refresh private `@afenda/*` package READMEs. This kit **orients**;
-it does not own Living DOC-001 spines or product SSOT.
+Hand-copy workflow for package and folder `README.md` files.
 
-Flat layout (no nested folders):
+Method after fill: [`afenda-readme-diataxis`](../../../.cursor/skills/afenda-readme-diataxis/SKILL.md) (QUALITY ORDER + README Score).
+Kit ownership: [`afenda-doc-template-kits`](../../../.cursor/skills/afenda-doc-template-kits/SKILL.md).
 
-| File | Role |
+## Files
+
+| File | Use when |
 | --- | --- |
-| [`readme.template.md`](./readme.template.md) | Marker-driven template |
-| [`generate.readme.ts`](./generate.readme.ts) | Fills AUTO markers from `package.json` |
-| [`quickstart.ts`](./quickstart.ts) | Embeddable example (replace before ship) |
-| [`README.md`](./README.md) | This kit guide |
+| [`package.readme.template.md`](./package.readme.template.md) | `packages/**/README.md` for an `@afenda/*` package |
+| [`folder.readme.template.md`](./folder.readme.template.md) | Non-package tree (e.g. `governance/README.md`) |
 
-## Generate
+## Steps
 
-```bash
-pnpm exec tsx docs/template/readme/generate.readme.ts --package packages/foundation/errors
-```
+1. Copy the matching template to the target as `README.md`.
+2. Fill every `{{TOKEN}}` from on-disk facts (`package.json`, root engines, real commands).
+3. Omit sections that do not apply.
+4. Run `pnpm check:readme`.
+5. Complete Diátaxis QUALITY ORDER + README Score.
 
-Drift check (CI / pre-merge):
+## Do not
 
-```bash
-pnpm exec tsx docs/template/readme/generate.readme.ts --package packages/foundation/errors --check
-```
-
-## Rules
-
-1. Hand-write **Why / status / boundaries / authority** outside AUTO markers.
-2. Consumers import `@afenda/<name>` (declared `exports` only) — never `../packages/...` or `@afenda/*/src/...`.
-3. Script tables use `pnpm --filter <name> <script>` — never invent root `npm run` for workspace packages.
-4. After generation, run `pnpm check:readme` and finish Diátaxis prose via `afenda-readme-diataxis`.
-5. Do not restore retired `docs/erp/**`, `docs/kernel/**`, or `docs/_scratch/**` from this kit.
+- Add a README generator under this kit
+- Deep-import guidance (`@afenda/*/src/...`)
+- Absolute local disk paths in consumer-facing READMEs
+- Duplicate Living ARCH / Decision locks — link instead

@@ -17281,17 +17281,6 @@
 		{
 			"consumerClass": "tooling",
 			"disposition": "manual-review",
-			"entrypoint": "filesystem",
-			"file": "scripts/scaffold-hr-aggregates.mjs",
-			"package": "afenda-lite",
-			"referenceKind": "filesystem",
-			"resolution": "not-applicable",
-			"symbol": "packages/erp/human-resources/src",
-			"useMode": "filesystem"
-		},
-		{
-			"consumerClass": "tooling",
-			"disposition": "manual-review",
 			"entrypoint": "generated",
 			"file": "scripts/validate-modules/checks.mjs",
 			"package": "afenda-lite",

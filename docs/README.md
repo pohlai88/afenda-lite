@@ -6,7 +6,9 @@ Repo-root `docs/` is the live documentation trunk marker. `docs-V2/` is retired 
 
 | Path | Role |
 | --- | --- |
-| [`template/readme/`](template/readme/README.md) | Afenda `@afenda/*` package README scaffold + generator |
+| [`template/`](template/README.md) | Markdown-only README + AGENTS hand-copy kits |
+| [`template/readme/`](template/readme/README.md) | Package and folder README templates |
+| [`template/agents/`](template/agents/README.md) | Root-shape and package AGENTS stubs |
 
 Forward product/kernel authority lives beside owners:
 
@@ -16,7 +18,7 @@ Forward product/kernel authority lives beside owners:
 | Kernel doctrine projections | `packages/KERNEL-GOVERNANCE.md` · `packages/KERNEL-PRD-INDEX.md` |
 | Per-package kernel PRDs | Owning package `docs/` (for example `packages/foundation/errors/docs/`) |
 | ERP scaffolding | `packages/erp/ERP-SCAFFOLDING.md` |
-| Module product PRDs | Owning ERP package `docs/` (for example `packages/erp/human-resources/docs/`) |
+| Module product PRDs | Owning ERP package `docs/` |
 | Official human docs site | `apps/docs` (`@afenda/docs`) — not DOC-001 register SSOT |
 | Living ARCH / ADR bodies | Absent until an explicit Docs-lane reopen |
 
@@ -26,6 +28,6 @@ Do not recreate:
 
 - `docs/erp/**`
 - `docs/_scratch/**`
-- `docs/template/**` except `docs/template/readme/**`
+- `docs/template/**` except `docs/template/readme/**` and `docs/template/agents/**`
 - `docs/kernel/**`
 - Nested architecture trunks listed by `pnpm check:docs-trunk-ban`

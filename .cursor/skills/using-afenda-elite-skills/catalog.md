@@ -123,6 +123,7 @@ Management = `local`. Status = `keep`. Method library invoked after a farm is fi
 | Skill | Source class | Evidence |
 |-------|--------------|----------|
 | `afenda-readme-diataxis` | local-method | `.cursor/skills/afenda-readme-diataxis/SKILL.md` (Diátaxis triage + QUALITY ORDER + README Score / Path to 100%; handoff to doc-control / technical-writing / documentation-and-adrs) |
+| `afenda-doc-template-kits` | local-method | `.cursor/skills/afenda-doc-template-kits/SKILL.md` (markdown-only README + AGENTS hand-copy kits under `docs/template/`; no generators; then README score via `afenda-readme-diataxis`) |
 | `technical-writing` | local-method | `.cursor/skills/technical-writing/SKILL.md` |
 | `afenda-coding-discipline` | local-method | `.cursor/skills/afenda-coding-discipline/SKILL.md` (full TS/coding table after farm fixed; L0 floor = alwaysApply `.cursor/rules/coding-discipline.mdc` → PREFLIGHT **Rules**; skill name only under **Skills** when loaded) |
 | `afenda-semantic-registry-cutover` | local-method | `.cursor/skills/afenda-semantic-registry-cutover/SKILL.md` (ERP coding/refactoring, uniform feature capsules, one-way feature-to-composition boundaries, internal semantic-owner registries, derived projections, narrow capabilities, stable facade, and final superseded-source deletion; invoked after owning farm + kernel boundary) |

@@ -46,6 +46,12 @@
         "matcher": "\\bdb:(migrate|push|pull)\\b|drizzle-kit|apply-[\\w-]+\\.mjs|prepare_database_migration|run_sql",
         "failClosed": true,
         "timeout": 20
+      },
+      {
+        "command": "node .cursor/hooks/directory-local-scripts.mjs",
+        "matcher": "scripts/|docs/template/",
+        "failClosed": false,
+        "timeout": 20
       }
     ],
     "preToolUse": [
@@ -111,6 +117,12 @@
       },
       {
         "command": "node .cursor/hooks/ui-contract-manifest.mjs",
+        "matcher": "Write|StrReplace|EditNotebook",
+        "failClosed": false,
+        "timeout": 20
+      },
+      {
+        "command": "node .cursor/hooks/directory-local-scripts.mjs",
         "matcher": "Write|StrReplace|EditNotebook",
         "failClosed": false,
         "timeout": 20

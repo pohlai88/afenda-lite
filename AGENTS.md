@@ -140,6 +140,7 @@ Full inventory: [catalog.md](.cursor/skills/using-afenda-elite-skills/catalog.md
 | Cross-package import / DAG | `afenda-elite-monorepo-discipline` |
 | Dead code / skill-catalog drift | `afenda-elite-repo-housekeeping` |
 | Root / package / app README · Diátaxis · README Score | `afenda-readme-diataxis` (not controlled `docs/` bodies) |
+| README / AGENTS hand-copy templates (`docs/template/`) | `afenda-doc-template-kits` → then `afenda-readme-diataxis` for README score |
 | TS / coding discipline (brands · unions · any/as · boundary) | L0 [coding-discipline](.cursor/rules/coding-discipline.mdc) rule (PREFLIGHT **Rules**); full table `afenda-coding-discipline` skill after farm fixed |
 | Neon tenancy ops ladder | `neon-tenancy-efficiency` |
 | Generic engineering phases | `using-agent-skills` (method library **after** Elite router) |
