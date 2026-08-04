@@ -91,6 +91,8 @@ enterprise closure matrix or create an enterprise seal.
 | CA-CL-04 Tenant isolation | DONE | Database-backed hostile cross-organization rejection for CA-APP-01 cohorts. Existing `legal-company-tenant-isolation.neon.test.ts` plus new `__tests__/database/ca-app-01-tenant-isolation.neon.test.ts` (2026-08-05 on `ca-0-4-demo`, preview): establishment/governance/officer/meeting/resolution reads+writes fail closed without owner disclosure; establishment list empty for attacker; owner cursor reused by attacker → `VALIDATION_ERROR`; governance body list empty for attacker. Result: 6 passed / 0 failed. Approval-path tenant binding remains under CA-CL-01 (platform approvals BLOCKED). |
 | CA-CL-05 Migration and recovery | BLOCKED | Separate 0034–0046 and 0050 deployment-review lane: inventory/checksums, impact, backup/restore, staging rehearsal, compatibility, locks, approvals, verification, rollback/roll-forward, and maintenance window. No production application here. |
 
+Boundary-10 follow-on (not a separate CA-CL id): `__tests__/database/ca-app-01-audit-outbox-privacy.neon.test.ts` (2026-08-05, `ca-0-4-demo`, preview) — 6 passed. Each CA-APP-01 CREATE path persists one matching `platform_audit_log` row (null `old_value`/`new_value`, empty `changes`) and one redacted `platform_domain_event` payload that omits display names, titles, registration identifiers, document digests, and location/remote summaries.
+
 Closure work is evidence around the real workflow. It cannot replace delivery of
 the workspace, and the workspace cannot claim an enterprise seal.
 

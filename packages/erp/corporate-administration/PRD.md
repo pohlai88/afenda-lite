@@ -82,7 +82,7 @@ acceptance are in `IMPLEMENTATION-SLICES.md`.
 ## Enterprise closure matrix
 
 This row-level matrix is the authority for enterprise readiness. It remains exactly
-eight `DONE` and six non-`DONE` rows until direct evidence changes a row.
+nine `DONE` and five non-`DONE` rows until direct evidence changes a row.
 
 | # | Boundary | Status | Remaining condition |
 | ---: | --- | --- | --- |
@@ -95,7 +95,7 @@ eight `DONE` and six non-`DONE` rows until direct evidence changes a row.
 | 7 | Authorization, approvals and segregation of duties | BLOCKED | Real platform approval verifier and integrated SoD evidence |
 | 8 | Domain behavior and historical truth | DONE | — |
 | 9 | Idempotency, concurrency and atomicity | DONE | CA-CL-03 outbox atomicity plus 2026-08-05 Neon replay/fingerprint-conflict (`ca-app-01-idempotency-replay.neon.test.ts`, 5 passed) and natural-key concurrency (`ca-app-01-natural-key.concurrency.test.ts`, 4 passed) on `ca-0-4-demo`. Hybrid schedule input now requires remote access summary so completed receipts remain replayable |
-| 10 | Events, audit and privacy | PARTIAL | Persisted evidence and redaction coverage for exposed workflows |
+| 10 | Events, audit and privacy | DONE | CA-APP-01 Neon persisted audit+outbox redaction evidence recorded 2026-08-05 (`ca-app-01-audit-outbox-privacy.neon.test.ts`, 6 passed on `ca-0-4-demo`): company/establishment/governance/officer/meeting/resolution CREATE facts have null snapshots, no forbidden metadata fragments, and outbox payloads omit titles/identifiers/document digests |
 | 11 | Adapter parity and database semantics | DONE | CA-APP-01 cohort memory/Drizzle/Neon parity recorded 2026-08-05 (`ca-0-4-demo`, 52 passed / 0 failed) |
 | 12 | App composition and Server Actions | DONE | — |
 | 13 | UI, journeys and accessibility | BLOCKED | Authenticated workflow evidence for the beta cohort |

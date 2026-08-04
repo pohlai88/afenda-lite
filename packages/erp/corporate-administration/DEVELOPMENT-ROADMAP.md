@@ -26,7 +26,7 @@ semantic feature group and does not surface the `authority` capability.
 | Atomicity and concurrency | Done | CA-CL-03 outbox atomicity plus CA-APP-01 Neon replay/fingerprint-conflict and natural-key concurrency recorded 2026-08-05 (`ca-0-4-demo`) |
 | Tenant isolation | Done | CA-APP-01 Neon hostile cross-org evidence recorded 2026-08-05 (CA-CL-04); approval tenant binding stays with CA-CL-01 |
 | Migration/recovery review | Separate lane | Validate 0034–0046 and 0050; do not apply production migrations here |
-| Operational assurance | Parallel | Use the real beta workflow for accessibility, privacy, monitoring, recovery, and support evidence |
+| Operational assurance | Parallel | Audit/outbox privacy DONE for CA-APP-01 creates (2026-08-05). Still need accessibility, monitoring, recovery, and support evidence from the real beta workflow |
 
 Track B is required for the enterprise seal. It does not block Track A from
 shipping the existing cohort when the workflow-specific beta acceptance passes.
