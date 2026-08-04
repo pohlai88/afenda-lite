@@ -91,7 +91,7 @@ five `DONE` and nine non-`DONE` rows until direct evidence changes a row.
 | 3 | Public package contracts | DONE | — |
 | 4 | Reference and peer boundaries | DONE | — |
 | 5 | Schema and migrations | BLOCKED | Separate 0034–0046 and 0050 deployment-review lane; do not apply here |
-| 6 | Tenancy and data isolation | PARTIAL | Database evidence for every exposed cohort and hostile path |
+| 6 | Tenancy and data isolation | DONE | CA-APP-01 Neon hostile cross-org evidence recorded 2026-08-05 (`ca-app-01-tenant-isolation.neon.test.ts` + legal-company neon isolation). Approval binding remains CA-CL-01 |
 | 7 | Authorization, approvals and segregation of duties | BLOCKED | Real platform approval verifier and integrated SoD evidence |
 | 8 | Domain behavior and historical truth | DONE | — |
 | 9 | Idempotency, concurrency and atomicity | PARTIAL | Outbox-failure atomicity DONE for CA-APP-01 exposed commands (CA-CL-03, 2026-08-05). Still need replay/conflict and concurrency evidence |
