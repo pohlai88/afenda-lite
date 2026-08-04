@@ -2,7 +2,7 @@ import { authServer } from "@afenda/auth";
 
 import { forbidPermissionAccess } from "@/features/auth/require-permission";
 
-import { loadRecruitmentWorkspace } from "./load-recruitment-workspace";
+import { loadRecruitmentWorkspace } from "./load-recruitment-workspace.server";
 import {
 	hasRecruitmentCapability,
 	resolveRecruitmentCapabilities,

@@ -120,6 +120,18 @@ export const GOVERNANCE_GATES = [
 			"scripts/__tests__/check-action-identity-stamp-order.test.mjs",
 	},
 	{
+		id: "app-loader-server-suffix",
+		command: "pnpm check:app-loader-server-suffix",
+		kind: "leaf",
+		tier: "ci-required",
+		owner: "application-composition",
+		domain: "app-scaffolding",
+		description:
+			"Requires feature load-*.ts modules to use the .server.ts suffix (APP-SCAFFOLDING §9.1 Loaders).",
+		negativeFixture:
+			"scripts/__tests__/check-app-loader-server-suffix.test.mjs",
+	},
+	{
 		id: "env-example-parity",
 		command: "pnpm check:env-example",
 		kind: "leaf",
@@ -538,8 +550,10 @@ function validateWorkflowParity(gates, workflowCommands) {
 	const problems = [];
 
 	// Registry → CI: required gates must actually be dispatched somewhere.
+	// Use invocation detection (not substring presence) so a prose mention of
+	// "check:governance" in an unrelated step cannot satisfy the control.
 	const dispatched = workflowCommands.some(({ run }) =>
-		run.includes("check:governance"),
+		invokesScript(run, "check:governance"),
 	);
 	if (gates.some((gate) => gate.tier === "ci-required") && !dispatched) {
 		problems.push(
@@ -549,8 +563,12 @@ function validateWorkflowParity(gates, workflowCommands) {
 
 	// CI → registry: without this direction, inline gates keep accumulating.
 	for (const gate of gates) {
+		const parsed = parseGateCommand(gate.command);
+		if (!parsed) {
+			continue;
+		}
 		for (const { file, run } of workflowCommands) {
-			if (run.includes(gate.command)) {
+			if (invokesScript(run, parsed.script)) {
 				problems.push(
 					`${file}: invokes registered gate "${gate.id}" directly — remove the inline step; the dispatcher runs it`,
 				);

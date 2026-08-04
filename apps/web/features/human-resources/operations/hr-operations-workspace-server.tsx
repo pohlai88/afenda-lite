@@ -7,7 +7,7 @@ import {
 	resolveHrOperationsCapabilities,
 } from "./hr-operations-permissions";
 import { HrOperationsWorkspace } from "./hr-operations-workspace";
-import { loadHrOperations } from "./load-hr-operations";
+import { loadHrOperations } from "./load-hr-operations.server";
 
 export async function HrOperationsWorkspaceServer({
 	page,

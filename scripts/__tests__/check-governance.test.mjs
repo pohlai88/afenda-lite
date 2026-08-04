@@ -117,6 +117,21 @@ describe("gate registry validation", () => {
 		expect(problems.join("\n")).toContain("no workflow invokes");
 	});
 
+	it("does not treat a prose mention of check:governance as dispatch", () => {
+		const problems = validateGateRegistry(
+			[VALID_GATE],
+			healthyContext({
+				workflowCommands: [
+					{
+						file: "ci.yml",
+						run: 'echo "see check:governance docs"',
+					},
+				],
+			}),
+		);
+		expect(problems.join("\n")).toContain("no workflow invokes");
+	});
+
 	it("rejects a workflow invoking a registered gate directly (CI → registry)", () => {
 		// The invariant that stops inline gates accumulating outside the registry.
 		const problems = validateGateRegistry(
@@ -129,6 +144,22 @@ describe("gate registry validation", () => {
 			}),
 		);
 		expect(problems.join("\n")).toContain("directly");
+	});
+
+	it("does not treat a prose mention of a gate command as an inline invoke", () => {
+		const problems = validateGateRegistry(
+			[VALID_GATE],
+			healthyContext({
+				workflowCommands: [
+					{ file: "ci.yml", run: "pnpm check:governance --tier ci-required" },
+					{
+						file: "ci.yml",
+						run: "echo documenting check:example without invoking it",
+					},
+				],
+			}),
+		);
+		expect(problems.join("\n")).not.toContain("directly");
 	});
 });
 

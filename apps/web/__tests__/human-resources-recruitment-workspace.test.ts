@@ -30,7 +30,7 @@ vi.mock("@/lib/erp/human-resources-command-options", () => ({
 	createHumanResourcesCommandOptions: () => ({ kind: "hr-options" }),
 }));
 
-import { loadRecruitmentWorkspace } from "../features/human-resources/recruitment/load-recruitment-workspace";
+import { loadRecruitmentWorkspace } from "../features/human-resources/recruitment/load-recruitment-workspace.server";
 import {
 	hasRecruitmentCapability,
 	resolveRecruitmentCapabilities,

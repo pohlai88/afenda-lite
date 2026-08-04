@@ -4,7 +4,7 @@ import { forbidPermissionAccess } from "@/features/auth/require-permission";
 import type { HrDisplayPreferences } from "@/features/human-resources/display-preferences";
 import { createHumanResourcesIdentityResolverPort } from "@/lib/erp/human-resources-identity-resolver-port";
 
-import { loadSelfServiceSnapshot } from "./load-self-service";
+import { loadSelfServiceSnapshot } from "./load-self-service.server";
 import {
 	hasSelfServiceCapability,
 	resolveSelfServicePermissions,

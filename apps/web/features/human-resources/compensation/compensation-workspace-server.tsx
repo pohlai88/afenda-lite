@@ -5,7 +5,7 @@ import {
 	resolveCompensationCapabilities,
 } from "./compensation-permissions";
 import { CompensationWorkspace } from "./compensation-workspace";
-import { loadCompensationWorkspace } from "./load-compensation-workspace";
+import { loadCompensationWorkspace } from "./load-compensation-workspace.server";
 
 export async function CompensationWorkspaceServer() {
 	const session = await authServer.session.requireRole("operator");

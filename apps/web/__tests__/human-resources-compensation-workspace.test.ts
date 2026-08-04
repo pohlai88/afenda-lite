@@ -22,7 +22,7 @@ import {
 	hasCompensationCapability,
 	resolveCompensationCapabilities,
 } from "../features/human-resources/compensation/compensation-permissions";
-import { loadCompensationWorkspace } from "../features/human-resources/compensation/load-compensation-workspace";
+import { loadCompensationWorkspace } from "../features/human-resources/compensation/load-compensation-workspace.server";
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const source = (relativePath: string) =>

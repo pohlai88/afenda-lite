@@ -379,9 +379,11 @@ unenforced convention in a 75k-line app is a rule that has already been broken
 somewhere: §5.2 and §4.1 both exist because prose rules drifted unobserved for
 months.
 
-**Status: partial.** `check:app-scaffolding` does not exist on disk yet.
-Identity stamp order is enforced now by `pnpm check:action-identity-stamp-order`
-(registered `action-identity-stamp-order` in [`scripts/lib/governance-gates.mjs`](../scripts/lib/governance-gates.mjs)).
+**Status: partial.** `check:app-scaffolding` does not exist as one aggregate yet.
+Enforced rows so far:
+- Identity stamp order — `pnpm check:action-identity-stamp-order`
+- Loaders `.server.ts` suffix — `pnpm check:app-loader-server-suffix`
+
 Until the remaining rows below are registered with negative fixtures proving they
 fire, those rows stay review-enforced. Do not cite `pnpm check:app-scaffolding`
 as an available command.
@@ -393,7 +395,7 @@ over `apps/<app>/**`:
 | --- | --- |
 | Runners | No `run*Action` declaration outside `app/actions/_runtime/` |
 | Action layout | Every `app/actions/<group>/` matches a declared `@afenda/*` dependency; group/file limits |
-| Loaders | Every module exporting a session or facade read is named `*.server.ts` |
+| Loaders | Every module named `load-*.ts` under `features/` uses `*.server.ts` — enforced by `check:app-loader-server-suffix` |
 | Traceability | No `correlation.create()` outside `_runtime/`; every `logger.event` call site carries the four required fields |
 | Identity stamp order | `organizationId` / actor stamps appear after `...parsed.data` — enforced by `check:action-identity-stamp-order` |
 | Composition | No `features/**` import of `app/(shell)/**`; no cross-feature non-`shared` import |

@@ -30,7 +30,7 @@ import {
 	hasHrOperationsCapability,
 	resolveHrOperationsCapabilities,
 } from "../features/human-resources/operations/hr-operations-permissions";
-import { loadHrOperations } from "../features/human-resources/operations/load-hr-operations";
+import { loadHrOperations } from "../features/human-resources/operations/load-hr-operations.server";
 
 const webRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const source = (relativePath: string) =>

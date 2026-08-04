@@ -36,9 +36,12 @@ vi.mock("@/lib/erp/human-resources-identity-resolver-port", () => ({
 	}),
 }));
 
-vi.mock("@/features/human-resources/self-service/load-self-service", () => ({
-	loadSelfServiceSnapshot: mocks.loadSelfServiceSnapshot,
-}));
+vi.mock(
+	"@/features/human-resources/self-service/load-self-service.server",
+	() => ({
+		loadSelfServiceSnapshot: mocks.loadSelfServiceSnapshot,
+	}),
+);
 
 import { SelfServiceWorkspace } from "@/features/human-resources/self-service/self-service-workspace";
 import { SelfServiceWorkspaceServer } from "@/features/human-resources/self-service/self-service-workspace-server";
