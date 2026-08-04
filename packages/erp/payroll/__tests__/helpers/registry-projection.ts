@@ -7,15 +7,19 @@ import {
 	PAYROLL_OPERATION_DEFINITIONS,
 	PAYROLL_QUERY_AUTHORIZATION,
 } from "../../src/kernel/operations/registry";
+import { buildPublicContract } from "./public-contract";
 
 /**
  * Payroll's registry-projection fixture mirrors HR's top-level shape
- * (`authorizationProjection`, `operations`, `packageName`, `schemaVersion`)
- * at HR's own reduced field set for Payroll: HR's operation governance
- * manifest (event catalog, temporal policy, privacy disposition, ...) has no
- * Payroll counterpart today — per task-5 brief this projects exactly what
- * `src/kernel/operations/registry.ts` owns: id, kind, owner, permission,
- * publicName.
+ * (`authorizationProjection`, `errorCodeSets`, `eventCatalog`, `operations`,
+ * `packageName`, `schemaVersion`, `temporalPolicyOverrides`) so
+ * `governance:erp-symmetry` can diff shapes across both ERP packages.
+ * Per-operation fields project exactly what `src/kernel/operations/registry.ts`
+ * owns (id, kind, owner, permission, publicName). `eventCatalog` and
+ * `temporalPolicyOverrides` recompute empty because Payroll has no committed
+ * event-catalog or temporal-policy register; `errorCodeSets` is derived from
+ * the public-contract projection (also empty until per-signature error-code
+ * extraction lands in that helper).
  */
 
 const registryOperationSchema = z.object({
@@ -28,9 +32,12 @@ const registryOperationSchema = z.object({
 
 const registryProjectionContractSchema = z.object({
 	authorizationProjection: z.record(z.string(), z.string()),
+	errorCodeSets: z.record(z.string(), z.array(z.string().min(1))),
+	eventCatalog: z.array(z.string().min(1)),
 	operations: z.array(registryOperationSchema),
 	packageName: z.literal("@afenda/payroll"),
 	schemaVersion: z.literal(1),
+	temporalPolicyOverrides: z.record(z.string(), z.string()),
 });
 
 export type RegistryProjectionContract = z.infer<
@@ -45,7 +52,9 @@ export interface RegistryProjectionIssue {
 	readonly id: string;
 }
 
-export function buildRegistryProjectionContract(): RegistryProjectionContract {
+export function buildRegistryProjectionContract(
+	packageRoot: string,
+): RegistryProjectionContract {
 	const operations = Object.values(PAYROLL_OPERATION_DEFINITIONS)
 		.map((definition) => ({
 			id: definition.id,
@@ -55,15 +64,19 @@ export function buildRegistryProjectionContract(): RegistryProjectionContract {
 			publicName: definition.publicName,
 		}))
 		.toSorted((left, right) => left.id.localeCompare(right.id));
+	const publicContract = buildPublicContract(packageRoot);
 
 	return registryProjectionContractSchema.parse({
 		authorizationProjection: {
 			...PAYROLL_COMMAND_AUTHORIZATION,
 			...PAYROLL_QUERY_AUTHORIZATION,
 		},
+		errorCodeSets: publicContract.errorCodeSets,
+		eventCatalog: [],
 		operations,
 		packageName: "@afenda/payroll",
 		schemaVersion: 1,
+		temporalPolicyOverrides: {},
 	});
 }
 

@@ -55,7 +55,7 @@ describe("@afenda/payroll registry projection fixture", () => {
 	let contract: RegistryProjectionContract;
 
 	beforeAll(() => {
-		contract = buildRegistryProjectionContract();
+		contract = buildRegistryProjectionContract(packageRoot);
 	});
 
 	it("matches the intentionally reviewed projection of the operation registry", () => {
@@ -146,6 +146,27 @@ describe("@afenda/payroll consumer and entrypoint inventory fixture", () => {
 				entrypoint: ".",
 				referenceKind: "module",
 				resolution: "unresolved",
+			}),
+		).toBe("forbidden");
+	});
+
+	it("allowlists every test-only entrypoint consumer by exact file", () => {
+		const testingConsumers = inventory.references
+			.filter((reference) => reference.entrypoint === "./testing")
+			.map((reference) => reference.file);
+
+		expect([...new Set(testingConsumers)].toSorted()).toEqual(
+			inventory.approvedTestingConsumers,
+		);
+	});
+
+	it("rejects production access to the testing entrypoint", () => {
+		expect(
+			classifyConsumerDisposition({
+				consumerClass: "production",
+				entrypoint: "./testing",
+				referenceKind: "module",
+				resolution: "resolved",
 			}),
 		).toBe("forbidden");
 	});

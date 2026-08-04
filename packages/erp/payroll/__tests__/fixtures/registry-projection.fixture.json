@@ -48,6 +48,8 @@
 		"payroll.payslip.read-all": "payroll.payslip.read-all",
 		"payroll.reconciliation.list": "payroll.reconciliation.manage"
 	},
+	"errorCodeSets": {},
+	"eventCatalog": [],
 	"operations": [
 		{
 			"id": "payroll.assignment.create",
@@ -380,5 +382,6 @@
 		}
 	],
 	"packageName": "@afenda/payroll",
-	"schemaVersion": 1
+	"schemaVersion": 1,
+	"temporalPolicyOverrides": {}
 }

@@ -1,4 +1,5 @@
 {
+	"approvedTestingConsumers": [],
 	"entrypointIsolation": {
 		".": "sole production business facade"
 	},

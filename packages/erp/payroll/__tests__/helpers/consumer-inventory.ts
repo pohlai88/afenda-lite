@@ -8,22 +8,30 @@ import { z } from "zod";
 /**
  * Payroll adaptation of HR's consumer/entrypoint inventory scanner
  * (`packages/erp/human-resources/__tests__/helpers/consumer-inventory.ts`).
- * The algorithm is package-agnostic; only the package name, filesystem
- * marker, and declared entrypoints differ. Payroll's `package.json` declares
- * a single root entrypoint (no `./testing` subpath today — B2 tracks that as
- * an open item), so the entrypoint/disposition surface is narrower than HR's.
+ * The algorithm is package-agnostic; only the package name and filesystem
+ * marker differ. Payroll's `package.json` currently declares a single root
+ * entrypoint. The `./testing` entrypoint and `approvedTestingConsumers`
+ * projection stay in the algorithm so the fixture top-level shape matches HR
+ * for `governance:erp-symmetry`; both recompute empty until a consumer imports
+ * `@afenda/payroll/testing` after that subpath is declared on the package.
  */
 
 const consumerClassSchema = z.enum(["production", "testing", "tooling"]);
 const entrypointSchema = z.enum([
 	".",
+	"./testing",
 	"deep-internal",
 	"filesystem",
 	"generated",
 ]);
 const referenceKindSchema = z.enum(["filesystem", "generated", "module"]);
 const resolutionSchema = z.enum(["not-applicable", "resolved", "unresolved"]);
-const dispositionSchema = z.enum(["allowed", "forbidden", "manual-review"]);
+const dispositionSchema = z.enum([
+	"allowed",
+	"allowlisted",
+	"forbidden",
+	"manual-review",
+]);
 
 const consumerReferenceSchema = z.object({
 	consumerClass: consumerClassSchema,
@@ -45,6 +53,7 @@ const consumerReferenceSchema = z.object({
 });
 
 const consumerInventorySchema = z.object({
+	approvedTestingConsumers: z.array(z.string().min(1)),
 	entrypointIsolation: z.object({
 		".": z.literal("sole production business facade"),
 	}),
@@ -174,6 +183,9 @@ function compilerOptionsFor(
 function entrypointFor(specifier: string): Entrypoint | undefined {
 	if (specifier === PAYROLL_PACKAGE) {
 		return ".";
+	}
+	if (specifier === `${PAYROLL_PACKAGE}/testing`) {
+		return "./testing";
 	}
 	if (specifier.startsWith(`${PAYROLL_PACKAGE}/`)) {
 		return "deep-internal";
@@ -332,6 +344,9 @@ export function classifyConsumerDisposition(
 	if (input.referenceKind !== "module") {
 		return "manual-review";
 	}
+	if (input.entrypoint === "./testing") {
+		return input.consumerClass === "testing" ? "allowlisted" : "forbidden";
+	}
 	return input.consumerClass === "tooling" ? "manual-review" : "allowed";
 }
 
@@ -461,6 +476,13 @@ export function buildConsumerInventory(
 			referenceSortKey(left).localeCompare(referenceSortKey(right)),
 	);
 	const inventory = consumerInventorySchema.parse({
+		approvedTestingConsumers: [
+			...new Set(
+				sortedReferences
+					.filter((reference) => reference.entrypoint === "./testing")
+					.map((reference) => reference.file),
+			),
+		].toSorted(),
 		entrypointIsolation: {
 			".": "sole production business facade",
 		},
