@@ -17,6 +17,7 @@ afterEach(() => {
 function fixtureDrizzle(
 	entries: { idx: number; tag: string }[],
 	sqlTags: string[],
+	snapshotIdxs: number[] = [],
 ) {
 	const root = mkdtempSync(join(tmpdir(), "afenda-db-journal-"));
 	dirs.push(root);
@@ -38,6 +39,13 @@ function fixtureDrizzle(
 	);
 	for (const tag of sqlTags) {
 		writeFileSync(join(root, `${tag}.sql`), "-- fixture\n");
+	}
+	for (const idx of snapshotIdxs) {
+		const padded = String(idx).padStart(4, "0");
+		writeFileSync(
+			join(meta, `${padded}_snapshot.json`),
+			JSON.stringify({ id: padded, prevId: null, version: "7" }),
+		);
 	}
 	return root;
 }
@@ -120,5 +128,42 @@ describe("assertMigrationJournal", () => {
 		const result = assertMigrationJournal(dir);
 		expect(result.ok).toBe(false);
 		expect(result.issues.some((i) => i.includes("orphan SQL"))).toBe(true);
+	});
+
+	it("accepts snapshots whose idx appears in the journal", () => {
+		const dir = fixtureDrizzle(
+			[
+				{ idx: 0, tag: "0000_a" },
+				{ idx: 2, tag: "0002_b" },
+			],
+			["0000_a", "0002_b"],
+			[0, 2],
+		);
+		expect(assertMigrationJournal(dir)).toEqual({ ok: true, issues: [] });
+	});
+
+	it("allows journal entries without a matching snapshot file", () => {
+		const dir = fixtureDrizzle(
+			[
+				{ idx: 0, tag: "0000_a" },
+				{ idx: 1, tag: "0001_b" },
+			],
+			["0000_a", "0001_b"],
+			[0],
+		);
+		expect(assertMigrationJournal(dir).ok).toBe(true);
+	});
+
+	it("detects orphan snapshot files whose idx is not in the journal", () => {
+		const dir = fixtureDrizzle(
+			[{ idx: 0, tag: "0000_a" }],
+			["0000_a"],
+			[0, 99],
+		);
+		const result = assertMigrationJournal(dir);
+		expect(result.ok).toBe(false);
+		expect(
+			result.issues.some((i) => i.includes("orphan snapshot")),
+		).toBe(true);
 	});
 });

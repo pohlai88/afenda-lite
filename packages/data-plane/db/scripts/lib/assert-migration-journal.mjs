@@ -1,8 +1,10 @@
 /**
  * Journal ↔ SQL file integrity for packages/data-plane/db/drizzle (N2).
  * Checks: duplicate tags, duplicate idx, non-monotonic idx order,
- * missing SQL for journal tags, orphan SQL files.
- * Does not require gapless idx sequences (Drizzle may leave gaps).
+ * missing SQL for journal tags, orphan SQL files, and snapshot honesty:
+ * every `NNNN_snapshot.json` idx must appear in the journal (snapshot ⊆ journal).
+ * Does not require gapless idx sequences or invent missing snapshot files
+ * (Drizzle may leave gaps; journal entries without a snapshot stay allowed).
  */
 
 import { existsSync, readdirSync, readFileSync } from "node:fs";
@@ -13,13 +15,16 @@ import { join } from "node:path";
  * @typedef {{ ok: boolean, issues: string[] }} JournalAssertResult
  */
 
+const SNAPSHOT_FILE = /^(\d+)_snapshot\.json$/u;
+
 /**
  * @param {string} drizzleDir absolute path to packages/data-plane/db/drizzle
  * @returns {JournalAssertResult}
  */
 export function assertMigrationJournal(drizzleDir) {
 	const issues = [];
-	const journalPath = join(drizzleDir, "meta", "_journal.json");
+	const metaDir = join(drizzleDir, "meta");
+	const journalPath = join(metaDir, "_journal.json");
 
 	if (!existsSync(journalPath)) {
 		return {
@@ -89,6 +94,19 @@ export function assertMigrationJournal(drizzleDir) {
 		const tag = file.slice(0, -".sql".length);
 		if (!tags.has(tag)) {
 			issues.push(`orphan SQL file (not in journal): ${file}`);
+		}
+	}
+
+	if (existsSync(metaDir)) {
+		for (const file of readdirSync(metaDir)) {
+			const match = SNAPSHOT_FILE.exec(file);
+			if (!match) {
+				continue;
+			}
+			const snapshotIdx = Number(match[1]);
+			if (!idxs.has(snapshotIdx)) {
+				issues.push(`orphan snapshot (idx not in journal): meta/${file}`);
+			}
 		}
 	}
 

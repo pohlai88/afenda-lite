@@ -28,7 +28,7 @@ if (!journal.ok) {
 	}
 	process.exit(1);
 }
-console.log("@afenda/db db:check: journal assert OK");
+console.log("@afenda/db db:check: journal assert OK (SQL + snapshot⊆journal)");
 
 const sqlFiles = readdirSync(drizzleDir).filter((file) =>
 	file.endsWith(".sql"),
