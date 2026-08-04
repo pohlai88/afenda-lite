@@ -4,13 +4,19 @@
 #
 # Job `name: quality` is the PR required status-check context (`pnpm protect:main`).
 #
-# Every verification step carries `if: ${{ !cancelled() }}` so the job reports the
-# state of ALL gates, not just the first one to fail. Without it, steps run
-# sequentially and stop at the first failure: a db:check failure at step 3 hid
+# Every verification step is guarded with
+#   if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+# so the job reports the state of ALL gates, not just the first one to fail.
+# Without it, steps stop at the first failure: a db:check failure at step 3 hid
 # lint, typecheck, test, the governance dispatcher, Storybook, and E2E for nine
-# days, and a broken apps/web typecheck went unreported that entire time. A run
-# that costs a few extra minutes when already red is worth far more than one that
-# tells you a single fact about a broken tree.
+# days, and a broken apps/web typecheck went unreported that entire time.
+#
+# The install clause is load-bearing. Any `if:` removes the implicit "all
+# previous steps succeeded" condition, so a bare `!cancelled()` would turn one
+# failed install into fourteen red verification steps that all look like
+# separate defects. Requiring a successful install keeps setup failures to a
+# single honest red step while still reporting every gate once the tree is
+# actually installable. Setup and install steps stay unguarded by design.
 # In-CI secrets: `secrets-presence` probes non-empty injection (no `gh secret list`).
 # Ops name-list audit remains `pnpm audit:github-actions-secrets` (keyring gh).
 name: CI
@@ -61,14 +67,15 @@ jobs:
           fi
 
       - name: Install dependencies
+        id: install
         run: pnpm install --frozen-lockfile
 
       - name: Database migration journal check
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm --filter @afenda/db db:check
 
       - name: Tenancy soft-residue scan (N9 / ARCH-023 R1)
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm check:tenancy-residue
 
       # Single dispatch point for registered governance gates. The gate list is
@@ -81,48 +88,48 @@ jobs:
       # ci-required command, which is what keeps the protection digest honest
       # (CI verifies it and can never refresh it).
       - name: Repository governance
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm check:governance --tier ci-required
 
       - name: Configuration capability boundary
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm check:config-boundary && pnpm check:biome-governance
 
       - name: Repo tooling and config suites (Vitest repo-tooling lane)
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm test:repo-tooling
 
       - name: Biome adopted packages (wave 1)
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm --filter @afenda/config --filter @afenda/env --filter @afenda/errors --filter @afenda/testing --filter @afenda/auth --filter @afenda/admin --filter @afenda/logger --filter @afenda/http --filter @afenda/cache --filter @afenda/rate-limit --filter @afenda/security --filter @afenda/metrics --filter @afenda/openapi --filter @afenda/audit --filter @afenda/db --filter @afenda/search --filter @afenda/notifications --filter @afenda/events --filter @afenda/ai-the-machine --filter @afenda/master-data --filter @afenda/sales --filter @afenda/purchasing --filter @afenda/inventory --filter @afenda/receiving --filter @afenda/fulfillment --filter @afenda/receivables --filter @afenda/payables --filter @afenda/payments --filter @afenda/accounting lint
 
       - name: Biome CI
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm run lint:ci
 
       # docs-V2/docs/automation.md — lean docs gate (generate OpenAPI MDX + lint:links)
       - name: Docs app gate
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm check:docs-app
 
       - name: Package governance (catalog · edges · sole-mutator)
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm governance:packages
 
       - name: Typecheck · unit test
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm typecheck:root && pnpm exec turbo run typecheck test --concurrency=50%
 
       - name: Install Storybook Chromium
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm exec playwright install --with-deps chromium
 
       - name: Storybook catalog · browser · visual gate
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm check:storybook
 
       - name: Upload Storybook visual report
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         uses: actions/upload-artifact@v4
         with:
           name: storybook-visual-report
@@ -132,11 +139,11 @@ jobs:
           retention-days: 14
 
       - name: HR Neon parity (serial)
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm test:hr:parity
 
       - name: Master-data Neon parity and integration (serial)
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: pnpm test:master-data:parity
 
   # N9 / ARCH-023 — live null-org audit on eight hard tenant roots.
@@ -228,7 +235,7 @@ jobs:
         run: pnpm test:e2e:smoke
 
       - name: Upload Playwright smoke evidence
-        if: ${{ !cancelled() }}
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         uses: actions/upload-artifact@v4
         with:
           name: e2e-smoke-evidence
