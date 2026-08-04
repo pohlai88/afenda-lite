@@ -96,7 +96,7 @@ five `DONE` and nine non-`DONE` rows until direct evidence changes a row.
 | 8 | Domain behavior and historical truth | DONE | — |
 | 9 | Idempotency, concurrency and atomicity | PARTIAL | Database-backed failure, replay, and concurrency evidence |
 | 10 | Events, audit and privacy | PARTIAL | Persisted evidence and redaction coverage for exposed workflows |
-| 11 | Adapter parity and database semantics | PARTIAL | Deployed governance, officer, meeting, and resolution cohorts |
+| 11 | Adapter parity and database semantics | DONE | CA-APP-01 cohort memory/Drizzle/Neon parity recorded 2026-08-05 (`ca-0-4-demo`, 52 passed / 0 failed) |
 | 12 | App composition and Server Actions | DONE | — |
 | 13 | UI, journeys and accessibility | BLOCKED | Authenticated workflow evidence for the beta cohort |
 | 14 | Operations and production readiness | BLOCKED | Runbooks, recovery, deployment sequencing, monitoring, and production verification |

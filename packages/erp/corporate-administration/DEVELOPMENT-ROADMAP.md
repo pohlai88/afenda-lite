@@ -5,8 +5,8 @@
 | Product authority | [PRD.md](PRD.md) |
 | Current delivery authority | [IMPLEMENTATION-SLICES.md](IMPLEMENTATION-SLICES.md) |
 | Current authorization | `CA-APP-01` plus closure evidence for CA-FR-001 through CA-FR-005 |
-| Enterprise posture | 5 `DONE`, 9 non-`DONE`; no enterprise seal |
-| Updated | 2026-08-03 |
+| Enterprise posture | 6 `DONE`, 8 non-`DONE`; no enterprise seal |
+| Updated | 2026-08-05 |
 
 ## Current work: two parallel tracks
 
@@ -22,7 +22,7 @@ semantic feature group and does not surface the `authority` capability.
 | Closure lane | Priority | Scope |
 | --- | ---: | --- |
 | Platform approval integration | Blocked externally | Integrate a real verifier when `PLATFORM-APPROVALS-01` exists; keep protected actions fail-closed |
-| Adapter parity | High | Prove memory/Drizzle/Neon behavior first for workflows exposed by CA-APP-01 |
+| Adapter parity | Done | CA-APP-01 memory/Drizzle/Neon parity recorded on `ca-0-4-demo` (2026-08-05; see IMPLEMENTATION-SLICES CA-CL-02) |
 | Atomicity and concurrency | High | Prove rollback, replay, conflicts, and concurrency for exposed commands |
 | Tenant isolation | High | Prove database-backed adversarial rejection for exposed workflows |
 | Migration/recovery review | Separate lane | Validate 0034–0046 and 0050; do not apply production migrations here |

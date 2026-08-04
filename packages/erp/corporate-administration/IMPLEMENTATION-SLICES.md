@@ -7,7 +7,7 @@
 | Authorized product slice | `CA-APP-01` |
 | Authorized closure work | `CA-CL-01` through `CA-CL-05` |
 | Not authorized | New CA-FR-007 through CA-FR-013 semantics; workspace exposure of CA-FR-006 |
-| Updated | 2026-08-03 |
+| Updated | 2026-08-05 |
 
 ## CA-APP-01 — Corporate Entity Workspace
 
@@ -86,7 +86,7 @@ enterprise closure matrix or create an enterprise seal.
 | Slice | Status | Scope and completion evidence |
 | --- | --- | --- |
 | CA-CL-01 Platform approvals | BLOCKED | When `PLATFORM-APPROVALS-01` exists, integrate its real production verifier. Prove version, provenance, expiry, revocation, independent approver, requester/subject/tenant/fingerprint binding, replay protection, and fail-closed behavior. |
-| CA-CL-02 Adapter parity | IN PROGRESS | Run memory/Drizzle/Neon parity for CA-APP-01 commands and queries first; compare public outcomes and durable facts, recording target identity and pass/fail/skip counts. |
+| CA-CL-02 Adapter parity | DONE | Memory/Drizzle/Neon parity for CA-APP-01 company, establishment, governance, officer, meeting, and resolution stores/queries. Evidence (2026-08-05): `pnpm test:corporate-administration:parity` on isolated branch `ca-0-4-demo` (`br-fragrant-morning-aoywrnzr`, parent `production`, reset earlier this session); `AFENDA_DATABASE_TEST_TARGET=preview`; `REQUIRE_DATABASE_TESTS=1`. Result: passed=52 failed=0 skipped=0 files=29 duration≈170s exit=0. Includes new `__tests__/parity/resolution-workflow.parity.test.ts` (vote → resolution → action → minutes → supersession). |
 | CA-CL-03 Atomicity | PARTIAL | Inject database failure around state, history, audit, outbox, and idempotency completion; prove rollback, retry, replay conflict, and concurrency behavior for exposed commands. |
 | CA-CL-04 Tenant isolation | PARTIAL | Prove database-backed hostile cross-organization rejection for exposed reads, writes, references, cursors, histories, and approvals. |
 | CA-CL-05 Migration and recovery | BLOCKED | Separate 0034–0046 and 0050 deployment-review lane: inventory/checksums, impact, backup/restore, staging rehearsal, compatibility, locks, approvals, verification, rollback/roll-forward, and maintenance window. No production application here. |
