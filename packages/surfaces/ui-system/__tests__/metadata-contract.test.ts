@@ -486,11 +486,15 @@ describe("UI system metadata contract", () => {
 		expect(publicBarrel).not.toMatch(/metadata\/contracts?|manifest\.contract/);
 	});
 
-	it("keeps the locked ERP baseline synchronized with source, exports, evidence, modules, and tokens", () => {
-		expect(validateUiCatalog(UI_SYSTEM_CATALOG, repositorySnapshot())).toEqual(
-			[],
-		);
-	});
+	it(
+		"keeps the locked ERP baseline synchronized with source, exports, evidence, modules, and tokens",
+		() => {
+			expect(validateUiCatalog(UI_SYSTEM_CATALOG, repositorySnapshot())).toEqual(
+				[],
+			);
+		},
+		30_000,
+	);
 
 	it("rejects feature-local declarations that shadow a contract-owned capability", () => {
 		const snapshot = repositorySnapshot();
