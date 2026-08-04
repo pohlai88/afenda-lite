@@ -36,10 +36,10 @@ export async function postJournalAction(
 			const mapped = mapPackageResult(
 				await postJournal(
 					{
+						...parsed.data,
 						organizationId: session.orgId,
 						actorUserId: session.userId,
 						correlationId,
-						...parsed.data,
 					},
 					createAccountingCommandOptions(),
 				),

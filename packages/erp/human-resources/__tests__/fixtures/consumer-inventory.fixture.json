@@ -17172,6 +17172,17 @@
 			"consumerClass": "testing",
 			"disposition": "manual-review",
 			"entrypoint": "generated",
+			"file": "packages/erp/corporate-administration/__tests__/package-boundary.test.ts",
+			"package": "@afenda/corporate-administration",
+			"referenceKind": "generated",
+			"resolution": "not-applicable",
+			"symbol": "*",
+			"useMode": "generated"
+		},
+		{
+			"consumerClass": "testing",
+			"disposition": "manual-review",
+			"entrypoint": "generated",
 			"file": "packages/erp/payroll/__tests__/approved-payroll-handoff-parser.test.ts",
 			"package": "@afenda/payroll",
 			"referenceKind": "generated",

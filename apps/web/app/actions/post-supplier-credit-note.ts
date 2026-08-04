@@ -40,10 +40,10 @@ export async function postSupplierCreditNoteAction(
 			const mapped = mapPackageResult(
 				await postSupplierCreditNote(
 					{
+						...parsed.data,
 						organizationId: session.orgId,
 						actorUserId: session.userId,
 						correlationId,
-						...parsed.data,
 					},
 					createPayablesCommandOptions(session.userId),
 				),

@@ -40,11 +40,11 @@ export async function closeDeliveryAction(
 			}
 			const result = await closeDelivery(
 				{
+					...parsed.data,
 					organizationId: session.orgId,
 					actorUserId: session.userId,
 					correlationId,
 					idempotencyKey: `close:${correlationId}`,
-					...parsed.data,
 				},
 				createFulfillmentCommandOptions(),
 			);

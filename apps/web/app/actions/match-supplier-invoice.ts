@@ -45,10 +45,10 @@ export async function matchSupplierInvoiceAction(
 			const mapped = mapPackageResult(
 				await matchSupplierInvoice(
 					{
+						...parsed.data,
 						organizationId: session.orgId,
 						actorUserId: session.userId,
 						correlationId,
-						...parsed.data,
 					},
 					createPayablesCommandOptions(session.userId),
 				),

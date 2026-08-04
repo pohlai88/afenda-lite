@@ -39,9 +39,9 @@ export async function listPaymentsAction(input?: {
 			const mapped = mapPackageResult(
 				await listPayments(
 					{
+						...parsed.data,
 						organizationId: session.orgId,
 						actorUserId: session.userId,
-						...parsed.data,
 					},
 					createPaymentsCommandOptions(),
 				),

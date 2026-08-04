@@ -52,11 +52,11 @@ export async function addPaymentApplicationInstructionAction(
 			const mapped = mapPackageResult(
 				await addPaymentApplicationInstruction(
 					{
+						...parsed.data,
 						organizationId: session.orgId,
 						actorUserId: session.userId,
 						correlationId,
 						idempotencyKey: randomUUID(),
-						...parsed.data,
 					},
 					createPaymentsCommandOptions(),
 				),

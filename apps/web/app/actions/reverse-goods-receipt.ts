@@ -43,11 +43,11 @@ export async function reverseGoodsReceiptAction(
 			}
 			const result = await reverseGoodsReceipt(
 				{
+					...parsed.data,
 					organizationId: session.orgId,
 					actorUserId: session.userId,
 					correlationId,
 					idempotencyKey: `reverse:${correlationId}:${parsed.data.receiptId}`,
-					...parsed.data,
 				},
 				createReceivingCommandOptions(),
 			);

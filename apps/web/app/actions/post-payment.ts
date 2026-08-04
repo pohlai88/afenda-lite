@@ -39,11 +39,11 @@ export async function postPaymentAction(
 			const mapped = mapPackageResult(
 				await postPayment(
 					{
+						...parsed.data,
 						organizationId: session.orgId,
 						actorUserId: session.userId,
 						correlationId,
 						idempotencyKey: randomUUID(),
-						...parsed.data,
 					},
 					createPaymentsCommandOptions(),
 				),

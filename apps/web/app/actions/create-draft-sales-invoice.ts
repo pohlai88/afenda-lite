@@ -59,11 +59,11 @@ export async function createDraftSalesInvoiceAction(
 			}
 			const result = await createDraftSalesInvoice(
 				{
+					...parsed.data,
 					organizationId: session.orgId,
 					actorUserId: session.userId,
 					correlationId,
 					invoiceSource: "manual",
-					...parsed.data,
 				},
 				createReceivablesCommandOptions(),
 			);

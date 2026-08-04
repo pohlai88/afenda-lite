@@ -53,10 +53,10 @@ export async function issueCreditNoteAction(
 			}
 			const result = await issueCreditNote(
 				{
+					...parsed.data,
 					organizationId: session.orgId,
 					actorUserId: session.userId,
 					correlationId,
-					...parsed.data,
 				},
 				createReceivablesCommandOptions(),
 			);

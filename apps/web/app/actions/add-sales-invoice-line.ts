@@ -57,10 +57,10 @@ export async function addSalesInvoiceLineAction(
 			}
 			const result = await addSalesInvoiceLine(
 				{
+					...parsed.data,
 					organizationId: session.orgId,
 					actorUserId: session.userId,
 					correlationId,
-					...parsed.data,
 				},
 				createReceivablesCommandOptions(),
 			);

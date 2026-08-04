@@ -41,9 +41,9 @@ export async function getCustomerAgingAction(input: {
 			const mapped = mapPackageResult(
 				await getCustomerAging(
 					{
+						...parsed.data,
 						organizationId: session.orgId,
 						actorUserId: session.userId,
-						...parsed.data,
 					},
 					createReceivablesCommandOptions(),
 				),

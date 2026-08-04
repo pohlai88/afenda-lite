@@ -61,11 +61,11 @@ export async function addDeliveryLineAction(
 			}
 			const result = await addDeliveryLine(
 				{
+					...parsed.data,
 					organizationId: session.orgId,
 					actorUserId: session.userId,
 					correlationId,
 					idempotencyKey: `line:${correlationId}`,
-					...parsed.data,
 				},
 				createFulfillmentCommandOptions(),
 			);

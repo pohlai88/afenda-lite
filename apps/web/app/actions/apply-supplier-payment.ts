@@ -52,10 +52,10 @@ export async function applySupplierPaymentAction(
 			const mapped = mapPackageResult(
 				await applySupplierPayment(
 					{
+						...parsed.data,
 						organizationId: session.orgId,
 						actorUserId: session.userId,
 						correlationId,
-						...parsed.data,
 					},
 					createPayablesCommandOptions(session.userId),
 				),

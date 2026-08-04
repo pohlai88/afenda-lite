@@ -27,9 +27,9 @@ export async function getTrialBalanceAction(input?: {
 			const mapped = mapPackageResult(
 				await getTrialBalance(
 					{
+						...parsed.data,
 						organizationId: session.orgId,
 						actorUserId: session.userId,
-						...parsed.data,
 					},
 					createAccountingCommandOptions(),
 				),

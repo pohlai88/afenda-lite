@@ -888,7 +888,14 @@ export async function auditDocs(options = {}) {
           cwd: root,
           onlyFiles: true,
           dot: true,
-          ignore: scopeRel === "docs" ? ["docs/scratch/**"] : [],
+          // Hand-copy kits under docs/template/** are not DOC-001 controlled
+          // documents (docs/README.md · docs/template/README.md).
+          ignore:
+            scopeRel === "docs"
+              ? ["docs/scratch/**", "docs/template/**"]
+              : scopeRel === "docs/template" || scopeRel.startsWith("docs/template/")
+                ? ["**/*"]
+                : [],
         })
       ).sort();
     } else {

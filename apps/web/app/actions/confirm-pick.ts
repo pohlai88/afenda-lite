@@ -50,11 +50,11 @@ export async function confirmPickAction(
 			}
 			const result = await confirmPick(
 				{
+					...parsed.data,
 					organizationId: session.orgId,
 					actorUserId: session.userId,
 					correlationId,
 					idempotencyKey: `pick:${correlationId}`,
-					...parsed.data,
 				},
 				createFulfillmentCommandOptions(),
 			);

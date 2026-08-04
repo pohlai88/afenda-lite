@@ -117,8 +117,8 @@ export async function repairHumanResourcesConnectorCursorAction(input: {
 				});
 			}
 			const result = await checkpointProductionConnectorCursor({
-				organizationId: session.orgId,
 				...parsed.data,
+				organizationId: session.orgId,
 			});
 			if (!result.ok) {
 				return mapPackageResult(result);

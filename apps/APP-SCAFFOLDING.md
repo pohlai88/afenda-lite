@@ -379,11 +379,12 @@ unenforced convention in a 75k-line app is a rule that has already been broken
 somewhere: §5.2 and §4.1 both exist because prose rules drifted unobserved for
 months.
 
-**Status: not yet implemented.** `check:app-scaffolding` does not exist on disk.
-Until it is registered in [`scripts/lib/governance-gates.mjs`](../scripts/lib/governance-gates.mjs)
-with a negative fixture proving it fires, every row in §9 is review-enforced and
-this section is the one open commitment of this document. Do not cite
-`pnpm check:app-scaffolding` as an available command.
+**Status: partial.** `check:app-scaffolding` does not exist on disk yet.
+Identity stamp order is enforced now by `pnpm check:action-identity-stamp-order`
+(registered `action-identity-stamp-order` in [`scripts/lib/governance-gates.mjs`](../scripts/lib/governance-gates.mjs)).
+Until the remaining rows below are registered with negative fixtures proving they
+fire, those rows stay review-enforced. Do not cite `pnpm check:app-scaffolding`
+as an available command.
 
 Enforcement scope when built, in dependency order — each row is a static scan
 over `apps/<app>/**`:
@@ -394,6 +395,7 @@ over `apps/<app>/**`:
 | Action layout | Every `app/actions/<group>/` matches a declared `@afenda/*` dependency; group/file limits |
 | Loaders | Every module exporting a session or facade read is named `*.server.ts` |
 | Traceability | No `correlation.create()` outside `_runtime/`; every `logger.event` call site carries the four required fields |
+| Identity stamp order | `organizationId` / actor stamps appear after `...parsed.data` — enforced by `check:action-identity-stamp-order` |
 | Composition | No `features/**` import of `app/(shell)/**`; no cross-feature non-`shared` import |
 | UI source / env | Already covered by `check:ui-system` and `check:env-consumers` — do not duplicate |
 

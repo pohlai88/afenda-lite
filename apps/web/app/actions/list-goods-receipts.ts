@@ -41,9 +41,9 @@ export async function listGoodsReceiptsAction(input?: {
 			}
 			const result = await listGoodsReceipts(
 				{
+					...parsed.data,
 					organizationId: session.orgId,
 					actorUserId: session.userId,
-					...parsed.data,
 				},
 				createReceivingCommandOptions(),
 			);

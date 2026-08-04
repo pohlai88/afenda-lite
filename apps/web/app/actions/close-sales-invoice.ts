@@ -43,10 +43,10 @@ export async function closeSalesInvoiceAction(
 			const mapped = mapPackageResult(
 				await closeSalesInvoice(
 					{
+						...parsed.data,
 						organizationId: session.orgId,
 						actorUserId: session.userId,
 						correlationId,
-						...parsed.data,
 					},
 					createReceivablesCommandOptions(),
 				),

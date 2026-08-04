@@ -59,11 +59,11 @@ export async function postRefundAction(
 			const mapped = mapPackageResult(
 				await postRefund(
 					{
+						...parsed.data,
 						organizationId: session.orgId,
 						actorUserId: session.userId,
 						correlationId,
 						idempotencyKey: randomUUID(),
-						...parsed.data,
 					},
 					createPaymentsCommandOptions(),
 				),

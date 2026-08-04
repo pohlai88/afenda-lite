@@ -32,9 +32,9 @@ export async function getSupplierBalanceAction(input: {
 			const mapped = mapPackageResult(
 				await getSupplierBalance(
 					{
+						...parsed.data,
 						organizationId: session.orgId,
 						actorUserId: session.userId,
-						...parsed.data,
 					},
 					createPayablesCommandOptions(session.userId),
 				),

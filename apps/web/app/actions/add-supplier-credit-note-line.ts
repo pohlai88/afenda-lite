@@ -50,10 +50,10 @@ export async function addSupplierCreditNoteLineAction(
 			const mapped = mapPackageResult(
 				await addSupplierCreditNoteLine(
 					{
+						...parsed.data,
 						organizationId: session.orgId,
 						actorUserId: session.userId,
 						correlationId,
-						...parsed.data,
 					},
 					createPayablesCommandOptions(session.userId),
 				),

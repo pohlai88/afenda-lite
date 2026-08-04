@@ -40,10 +40,10 @@ export async function reverseJournalAction(
 			const mapped = mapPackageResult(
 				await reverseJournal(
 					{
+						...parsed.data,
 						organizationId: session.orgId,
 						actorUserId: session.userId,
 						correlationId,
-						...parsed.data,
 					},
 					createAccountingCommandOptions(),
 				),

@@ -108,6 +108,18 @@ export const GOVERNANCE_GATES = [
 		negativeFixture: "scripts/__tests__/check-env-consumers.test.mjs",
 	},
 	{
+		id: "action-identity-stamp-order",
+		command: "pnpm check:action-identity-stamp-order",
+		kind: "leaf",
+		tier: "ci-required",
+		owner: "application-composition",
+		domain: "app-scaffolding",
+		description:
+			"Rejects Server Action payloads that stamp session organizationId before ...parsed.data (client override hole).",
+		negativeFixture:
+			"scripts/__tests__/check-action-identity-stamp-order.test.mjs",
+	},
+	{
 		id: "env-example-parity",
 		command: "pnpm check:env-example",
 		kind: "leaf",

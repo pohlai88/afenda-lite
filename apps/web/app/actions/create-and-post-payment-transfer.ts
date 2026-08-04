@@ -58,11 +58,11 @@ export async function createAndPostPaymentTransferAction(
 			const mapped = mapPackageResult(
 				await createAndPostPaymentTransfer(
 					{
+						...parsed.data,
 						organizationId: session.orgId,
 						actorUserId: session.userId,
 						correlationId,
 						idempotencyKey: randomUUID(),
-						...parsed.data,
 					},
 					createPaymentsCommandOptions(),
 				),

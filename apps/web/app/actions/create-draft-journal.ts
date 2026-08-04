@@ -46,10 +46,10 @@ export async function createDraftJournalAction(
 			const mapped = mapPackageResult(
 				await createDraftJournal(
 					{
+						...parsed.data,
 						organizationId: session.orgId,
 						actorUserId: session.userId,
 						correlationId,
-						...parsed.data,
 						description: parsed.data.description ?? null,
 						journalType: "manual",
 					},

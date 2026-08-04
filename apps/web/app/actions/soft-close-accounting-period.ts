@@ -42,10 +42,10 @@ export async function softCloseAccountingPeriodAction(
 			const mapped = mapPackageResult(
 				await softCloseAccountingPeriod(
 					{
+						...parsed.data,
 						organizationId: session.orgId,
 						actorUserId: session.userId,
 						correlationId,
-						...parsed.data,
 					},
 					createAccountingCommandOptions(),
 				),

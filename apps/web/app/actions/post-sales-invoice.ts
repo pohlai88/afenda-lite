@@ -42,10 +42,10 @@ export async function postSalesInvoiceAction(
 			}
 			const result = await postSalesInvoice(
 				{
+					...parsed.data,
 					organizationId: session.orgId,
 					actorUserId: session.userId,
 					correlationId,
-					...parsed.data,
 				},
 				createReceivablesCommandOptions(),
 			);

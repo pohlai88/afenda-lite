@@ -500,10 +500,10 @@ export async function startOnboardingJourneyAction(
 				});
 			}
 			const owned = await loadOwnedEmployment({
+				...parsed.data,
 				organizationId: session.orgId,
 				actorUserId: session.userId,
 				correlationId,
-				...parsed.data,
 			});
 			if (!owned.ok) {
 				return owned;
@@ -554,10 +554,10 @@ export async function startOffboardingJourneyAction(
 				});
 			}
 			const owned = await loadOwnedEmployment({
+				...parsed.data,
 				organizationId: session.orgId,
 				actorUserId: session.userId,
 				correlationId,
-				...parsed.data,
 			});
 			if (!owned.ok) {
 				return owned;

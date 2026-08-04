@@ -65,11 +65,11 @@ export async function createDraftPaymentAction(
 			const mapped = mapPackageResult(
 				await createDraftPayment(
 					{
+						...parsed.data,
 						organizationId: session.orgId,
 						actorUserId: session.userId,
 						correlationId,
 						idempotencyKey: randomUUID(),
-						...parsed.data,
 					},
 					createPaymentsCommandOptions(),
 				),

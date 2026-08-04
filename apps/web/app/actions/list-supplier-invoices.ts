@@ -42,9 +42,9 @@ export async function listSupplierInvoicesAction(input?: {
 			const mapped = mapPackageResult(
 				await listSupplierInvoices(
 					{
+						...parsed.data,
 						organizationId: session.orgId,
 						actorUserId: session.userId,
-						...parsed.data,
 					},
 					createPayablesCommandOptions(session.userId),
 				),

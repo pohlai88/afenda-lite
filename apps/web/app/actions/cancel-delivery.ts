@@ -40,11 +40,11 @@ export async function cancelDeliveryAction(
 			}
 			const result = await cancelDelivery(
 				{
+					...parsed.data,
 					organizationId: session.orgId,
 					actorUserId: session.userId,
 					correlationId,
 					idempotencyKey: `cancel:${correlationId}`,
-					...parsed.data,
 				},
 				createFulfillmentCommandOptions(),
 			);

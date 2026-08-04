@@ -44,10 +44,10 @@ export async function reverseCustomerReceiptApplicationAction(
 			const mapped = mapPackageResult(
 				await reverseCustomerReceiptApplication(
 					{
+						...parsed.data,
 						organizationId: session.orgId,
 						actorUserId: session.userId,
 						correlationId,
-						...parsed.data,
 					},
 					createReceivablesCommandOptions(),
 				),

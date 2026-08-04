@@ -45,10 +45,10 @@ export async function applySupplierCreditAction(
 			const mapped = mapPackageResult(
 				await applySupplierCredit(
 					{
+						...parsed.data,
 						organizationId: session.orgId,
 						actorUserId: session.userId,
 						correlationId,
-						...parsed.data,
 					},
 					createPayablesCommandOptions(session.userId),
 				),

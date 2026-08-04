@@ -46,10 +46,10 @@ export async function cancelSalesInvoiceAction(
 			}
 			const result = await cancelDraftSalesInvoice(
 				{
+					...parsed.data,
 					organizationId: session.orgId,
 					actorUserId: session.userId,
 					correlationId,
-					...parsed.data,
 				},
 				createReceivablesCommandOptions(),
 			);

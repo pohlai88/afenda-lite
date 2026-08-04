@@ -40,11 +40,11 @@ export async function postGoodsReceiptAction(
 			}
 			const result = await postGoodsReceipt(
 				{
+					...parsed.data,
 					organizationId: session.orgId,
 					actorUserId: session.userId,
 					correlationId,
 					idempotencyKey: `post:${correlationId}:${parsed.data.receiptId}`,
-					...parsed.data,
 				},
 				createReceivingCommandOptions(),
 			);

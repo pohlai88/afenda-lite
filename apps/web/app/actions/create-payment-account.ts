@@ -45,11 +45,11 @@ export async function createPaymentAccountAction(
 			const mapped = mapPackageResult(
 				await createPaymentAccount(
 					{
+						...parsed.data,
 						organizationId: session.orgId,
 						actorUserId: session.userId,
 						correlationId,
 						idempotencyKey: randomUUID(),
-						...parsed.data,
 					},
 					createPaymentsCommandOptions(),
 				),

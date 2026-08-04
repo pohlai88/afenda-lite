@@ -43,10 +43,10 @@ export async function reverseSupplierPaymentApplicationAction(
 			const mapped = mapPackageResult(
 				await reverseSupplierPaymentApplication(
 					{
+						...parsed.data,
 						organizationId: session.orgId,
 						actorUserId: session.userId,
 						correlationId,
-						...parsed.data,
 					},
 					createPayablesCommandOptions(session.userId),
 				),

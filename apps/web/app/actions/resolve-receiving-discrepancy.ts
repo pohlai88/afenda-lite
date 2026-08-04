@@ -48,11 +48,11 @@ export async function resolveReceivingDiscrepancyAction(
 			}
 			const result = await resolveReceivingDiscrepancy(
 				{
+					...parsed.data,
 					organizationId: session.orgId,
 					actorUserId: session.userId,
 					correlationId,
 					idempotencyKey: `disc-resolve:${correlationId}:${parsed.data.discrepancyId}`,
-					...parsed.data,
 				},
 				createReceivingCommandOptions(),
 			);

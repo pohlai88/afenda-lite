@@ -42,10 +42,10 @@ export async function closeAccountingPeriodAction(
 			const mapped = mapPackageResult(
 				await closeAccountingPeriod(
 					{
+						...parsed.data,
 						organizationId: session.orgId,
 						actorUserId: session.userId,
 						correlationId,
-						...parsed.data,
 						closeReason: null,
 					},
 					createAccountingCommandOptions(),

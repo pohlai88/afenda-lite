@@ -39,9 +39,9 @@ export async function listSalesInvoicesAction(input?: {
 			}
 			const result = await listSalesInvoices(
 				{
+					...parsed.data,
 					organizationId: session.orgId,
 					actorUserId: session.userId,
-					...parsed.data,
 				},
 				createReceivablesCommandOptions(),
 			);

@@ -50,10 +50,10 @@ export async function addSupplierInvoiceLineAction(
 			const mapped = mapPackageResult(
 				await addSupplierInvoiceLine(
 					{
+						...parsed.data,
 						organizationId: session.orgId,
 						actorUserId: session.userId,
 						correlationId,
-						...parsed.data,
 					},
 					createPayablesCommandOptions(session.userId),
 				),

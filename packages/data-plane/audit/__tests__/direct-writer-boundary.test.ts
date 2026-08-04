@@ -22,7 +22,7 @@ const approvedLegacyWriters = new Set<string>();
 
 const governedCteWriters = new Map([
 	[
-		"packages/erp/fulfillment/src/drizzle-store.ts",
+		"packages/erp/fulfillment/src/features/deliveries/deliveries.drizzle.ts",
 		{
 			expectedWrites: 6,
 			preparationCallPattern: /afendaAudit\.transaction\.prepare\(\{/g,
@@ -263,21 +263,21 @@ const governedCteWriters = new Map([
 		},
 	],
 	[
-		"packages/erp/inventory/src/drizzle-store.ts",
+		"packages/erp/inventory/src/features/movements/movements.drizzle.ts",
 		{
 			expectedWrites: 7,
 			preparationCallPattern: /afendaAudit\.transaction\.prepare\(\{/g,
 		},
 	],
 	[
-		"packages/erp/purchasing/src/drizzle-store.ts",
+		"packages/erp/purchasing/src/features/orders/orders.drizzle.ts",
 		{
 			expectedWrites: 5,
 			preparationCallPattern: /afendaAudit\.transaction\.prepare\(\{/g,
 		},
 	],
 	[
-		"packages/erp/receiving/src/drizzle-store.ts",
+		"packages/erp/receiving/src/features/receipts/receipts.drizzle.ts",
 		{
 			expectedWrites: 7,
 			preparationCallPattern: /afendaAudit\.transaction\.prepare\(\{/g,

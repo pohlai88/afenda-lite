@@ -40,11 +40,11 @@ export async function postDeliveryAction(
 			}
 			const result = await postDelivery(
 				{
+					...parsed.data,
 					organizationId: session.orgId,
 					actorUserId: session.userId,
 					correlationId,
 					idempotencyKey: `post:${correlationId}`,
-					...parsed.data,
 				},
 				createFulfillmentCommandOptions(),
 			);

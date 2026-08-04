@@ -72,11 +72,11 @@ export async function recordProofOfDeliveryAction(
 			}
 			const result = await recordProofOfDelivery(
 				{
+					...parsed.data,
 					organizationId: session.orgId,
 					actorUserId: session.userId,
 					correlationId,
 					idempotencyKey: `pod:${correlationId}`,
-					...parsed.data,
 				},
 				createFulfillmentCommandOptions(),
 			);

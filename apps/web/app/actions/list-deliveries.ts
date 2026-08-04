@@ -46,9 +46,9 @@ export async function listDeliveriesAction(input?: {
 			}
 			const result = await listDeliveries(
 				{
+					...parsed.data,
 					organizationId: session.orgId,
 					actorUserId: session.userId,
-					...parsed.data,
 				},
 				createFulfillmentCommandOptions(),
 			);

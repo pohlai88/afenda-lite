@@ -35,9 +35,9 @@ export async function getCustomerBalanceAction(input: {
 			}
 			const result = await getCustomerBalance(
 				{
+					...parsed.data,
 					organizationId: session.orgId,
 					actorUserId: session.userId,
-					...parsed.data,
 				},
 				createReceivablesCommandOptions(),
 			);

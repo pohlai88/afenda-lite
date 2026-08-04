@@ -56,10 +56,10 @@ export async function applyCustomerReceiptAction(
 			const mapped = mapPackageResult(
 				await applyCustomerReceipt(
 					{
+						...parsed.data,
 						organizationId: session.orgId,
 						actorUserId: session.userId,
 						correlationId,
-						...parsed.data,
 					},
 					createReceivablesCommandOptions(),
 				),

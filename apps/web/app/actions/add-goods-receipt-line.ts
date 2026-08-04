@@ -73,11 +73,11 @@ export async function addGoodsReceiptLineAction(
 
 			const result = await addGoodsReceiptLine(
 				{
+					...parsed.data,
 					organizationId: session.orgId,
 					actorUserId: session.userId,
 					correlationId,
 					idempotencyKey: `line:${correlationId}:${parsed.data.receiptId}:${parsed.data.itemId}`,
-					...parsed.data,
 				},
 				createReceivingCommandOptions(),
 			);

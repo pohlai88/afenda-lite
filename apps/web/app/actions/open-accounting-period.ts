@@ -44,10 +44,10 @@ export async function openAccountingPeriodAction(
 			const mapped = mapPackageResult(
 				await openAccountingPeriod(
 					{
+						...parsed.data,
 						organizationId: session.orgId,
 						actorUserId: session.userId,
 						correlationId,
-						...parsed.data,
 					},
 					createAccountingCommandOptions(),
 				),

@@ -73,11 +73,11 @@ export async function recordReceivingDiscrepancyAction(
 			}
 			const result = await recordReceivingDiscrepancy(
 				{
+					...parsed.data,
 					organizationId: session.orgId,
 					actorUserId: session.userId,
 					correlationId,
 					idempotencyKey: `disc:${correlationId}:${parsed.data.receiptId}:${parsed.data.discrepancyType}`,
-					...parsed.data,
 				},
 				createReceivingCommandOptions(),
 			);

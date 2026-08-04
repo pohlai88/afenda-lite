@@ -56,10 +56,10 @@ export async function issueSupplierCreditNoteAction(
 			const mapped = mapPackageResult(
 				await issueSupplierCreditNote(
 					{
+						...parsed.data,
 						organizationId: session.orgId,
 						actorUserId: session.userId,
 						correlationId,
-						...parsed.data,
 					},
 					createPayablesCommandOptions(session.userId),
 				),

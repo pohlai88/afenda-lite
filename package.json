@@ -54,6 +54,7 @@
 		"check:errors-semantics": "node scripts/check-errors-semantics.mjs --strict",
 		"check:kernel-governance": "pnpm exec tsx governance/scripts/check-kernel-governance.mts",
 		"check:env-consumers": "node scripts/check-env-consumers.mjs",
+		"check:action-identity-stamp-order": "node scripts/check-action-identity-stamp-order.mjs",
 		"check:testing-governance": "pnpm exec tsx scripts/check-testing-governance.mts",
 		"check:biome-governance": "node scripts/check-biome-governance.mjs",
 		"check:config-boundary": "node packages/foundation/config/scripts/check-config-boundary.mjs",

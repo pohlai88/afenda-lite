@@ -41,11 +41,11 @@ export async function cancelGoodsReceiptAction(
 			}
 			const result = await cancelGoodsReceipt(
 				{
+					...parsed.data,
 					organizationId: session.orgId,
 					actorUserId: session.userId,
 					correlationId,
 					idempotencyKey: `cancel:${correlationId}:${parsed.data.receiptId}`,
-					...parsed.data,
 				},
 				createReceivingCommandOptions(),
 			);

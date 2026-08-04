@@ -63,11 +63,11 @@ export async function createDraftDeliveryAction(
 			}
 			const result = await createDraftDelivery(
 				{
+					...parsed.data,
 					organizationId: session.orgId,
 					actorUserId: session.userId,
 					correlationId,
 					idempotencyKey: `create:${correlationId}`,
-					...parsed.data,
 				},
 				createFulfillmentCommandOptions(),
 			);
