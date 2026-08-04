@@ -1,6 +1,6 @@
 "use server";
 
-import type { Result as ActionResult } from "@afenda/errors";
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import type {
 	EmployeeCase,
 	EmployeeCaseAction,
@@ -57,11 +57,10 @@ import {
 	updateEmployeeCaseClassification,
 	updateEmployeeCaseClassificationInputSchema,
 } from "@afenda/human-resources";
-import {
-	invokeHrPackage,
-	runHrComplianceHumanResourcesAction as runHrHumanResourcesAction,
-} from "@/app/actions/hr-action-runner";
+import { defineAction } from "@/app/actions/_runtime/define-action";
+import { invokeHrPackage } from "@/app/actions/hr-action-runner";
 import { hrActionSchema } from "@/app/actions/hr-mutation-context";
+import { runHrComplianceOperatorPermissionAction } from "@/app/actions/run-hr-operator-permission-action";
 
 const CASE_OPEN = "human-resources.employee-case.open" as const;
 const CASE_ASSIGNED_READ =
@@ -144,240 +143,304 @@ const getEmployeeCaseOutcomeActionSchema = hrActionSchema(
 export async function openEmployeeCaseAction(
 	input: unknown,
 ): Promise<ActionResult<{ case: EmployeeCase }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrComplianceOperatorPermissionAction,
 		path: "openEmployeeCaseAction",
 		permission: CASE_OPEN,
 		safeMessage: "Could not open employee case.",
-		validationMessage: "Enter a valid employee case.",
-		actionSchema: openEmployeeCaseActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid employee case.",
+			}),
+		schema: openEmployeeCaseActionSchema,
 		input,
 		invoke: invokeHrPackage(openEmployeeCase),
-		mapData: (employeeCase: EmployeeCase) => ({ case: employeeCase }),
+		project: (employeeCase: EmployeeCase) => ({ case: employeeCase }),
 	});
 }
 
 export async function updateEmployeeCaseClassificationAction(
 	input: unknown,
 ): Promise<ActionResult<{ case: EmployeeCase }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrComplianceOperatorPermissionAction,
 		path: "updateEmployeeCaseClassificationAction",
 		permission: CASE_INVESTIGATE,
 		safeMessage: "Could not update employee case classification.",
-		validationMessage: "Enter a valid employee case classification.",
-		actionSchema: updateEmployeeCaseClassificationActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid employee case classification.",
+			}),
+		schema: updateEmployeeCaseClassificationActionSchema,
 		input,
 		invoke: invokeHrPackage(updateEmployeeCaseClassification),
-		mapData: (employeeCase: EmployeeCase) => ({ case: employeeCase }),
+		project: (employeeCase: EmployeeCase) => ({ case: employeeCase }),
 	});
 }
 
 export async function assignEmployeeCaseOwnerAction(
 	input: unknown,
 ): Promise<ActionResult<{ case: EmployeeCase }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrComplianceOperatorPermissionAction,
 		path: "assignEmployeeCaseOwnerAction",
 		permission: CASE_EXCEPTIONAL_ADMIN,
 		safeMessage: "Could not assign employee case owner.",
-		validationMessage: "Enter a valid employee case owner assignment.",
-		actionSchema: assignEmployeeCaseOwnerActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid employee case owner assignment.",
+			}),
+		schema: assignEmployeeCaseOwnerActionSchema,
 		input,
 		invoke: invokeHrPackage(assignEmployeeCaseOwner),
-		mapData: (employeeCase: EmployeeCase) => ({ case: employeeCase }),
+		project: (employeeCase: EmployeeCase) => ({ case: employeeCase }),
 	});
 }
 
 export async function addEmployeeCaseParticipantAction(
 	input: unknown,
 ): Promise<ActionResult<{ case: EmployeeCase }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrComplianceOperatorPermissionAction,
 		path: "addEmployeeCaseParticipantAction",
 		permission: CASE_INVESTIGATE,
 		safeMessage: "Could not add employee case participant.",
-		validationMessage: "Enter a valid employee case participant.",
-		actionSchema: addEmployeeCaseParticipantActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid employee case participant.",
+			}),
+		schema: addEmployeeCaseParticipantActionSchema,
 		input,
 		invoke: invokeHrPackage(addEmployeeCaseParticipant),
-		mapData: (employeeCase: EmployeeCase) => ({ case: employeeCase }),
+		project: (employeeCase: EmployeeCase) => ({ case: employeeCase }),
 	});
 }
 
 export async function recordEmployeeCaseEventAction(
 	input: unknown,
 ): Promise<ActionResult<{ event: EmployeeCaseEvent }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrComplianceOperatorPermissionAction,
 		path: "recordEmployeeCaseEventAction",
 		permission: CASE_INVESTIGATE,
 		safeMessage: "Could not record employee case event.",
-		validationMessage: "Enter a valid employee case event.",
-		actionSchema: recordEmployeeCaseEventActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid employee case event.",
+			}),
+		schema: recordEmployeeCaseEventActionSchema,
 		input,
 		invoke: invokeHrPackage(recordEmployeeCaseEvent),
-		mapData: (event: EmployeeCaseEvent) => ({ event }),
+		project: (event: EmployeeCaseEvent) => ({ event }),
 	});
 }
 
 export async function addEmployeeCaseEvidenceReferenceAction(
 	input: unknown,
 ): Promise<ActionResult<{ event: EmployeeCaseEvent }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrComplianceOperatorPermissionAction,
 		path: "addEmployeeCaseEvidenceReferenceAction",
 		permission: CASE_INVESTIGATE,
 		safeMessage: "Could not add employee case evidence.",
-		validationMessage: "Enter a valid employee case evidence reference.",
-		actionSchema: addEmployeeCaseEvidenceReferenceActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid employee case evidence reference.",
+			}),
+		schema: addEmployeeCaseEvidenceReferenceActionSchema,
 		input,
 		invoke: invokeHrPackage(addEmployeeCaseEvidenceReference),
-		mapData: (event: EmployeeCaseEvent) => ({ event }),
+		project: (event: EmployeeCaseEvent) => ({ event }),
 	});
 }
 
 export async function redactEmployeeCaseEvidenceReferenceAction(
 	input: unknown,
 ): Promise<ActionResult<{ event: EmployeeCaseEvent }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrComplianceOperatorPermissionAction,
 		path: "redactEmployeeCaseEvidenceReferenceAction",
 		permission: CASE_EXCEPTIONAL_ADMIN,
 		safeMessage: "Could not redact employee case evidence.",
-		validationMessage: "Enter a valid employee case evidence redaction.",
-		actionSchema: redactEmployeeCaseEvidenceReferenceActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid employee case evidence redaction.",
+			}),
+		schema: redactEmployeeCaseEvidenceReferenceActionSchema,
 		input,
 		invoke: invokeHrPackage(redactEmployeeCaseEvidenceReference),
-		mapData: (event: EmployeeCaseEvent) => ({ event }),
+		project: (event: EmployeeCaseEvent) => ({ event }),
 	});
 }
 
 export async function issueInterimEmployeeMeasureAction(
 	input: unknown,
 ): Promise<ActionResult<{ case: EmployeeCase }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrComplianceOperatorPermissionAction,
 		path: "issueInterimEmployeeMeasureAction",
 		permission: CASE_INVESTIGATE,
 		safeMessage: "Could not issue interim employee measure.",
-		validationMessage: "Enter a valid interim employee measure.",
-		actionSchema: issueInterimEmployeeMeasureActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid interim employee measure.",
+			}),
+		schema: issueInterimEmployeeMeasureActionSchema,
 		input,
 		invoke: invokeHrPackage(issueInterimEmployeeMeasure),
-		mapData: (employeeCase: EmployeeCase) => ({ case: employeeCase }),
+		project: (employeeCase: EmployeeCase) => ({ case: employeeCase }),
 	});
 }
 
 export async function recordEmployeeCaseFindingAction(
 	input: unknown,
 ): Promise<ActionResult<{ case: EmployeeCase }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrComplianceOperatorPermissionAction,
 		path: "recordEmployeeCaseFindingAction",
 		permission: CASE_FINDING,
 		safeMessage: "Could not record employee case finding.",
-		validationMessage: "Enter a valid employee case finding.",
-		actionSchema: recordEmployeeCaseFindingActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid employee case finding.",
+			}),
+		schema: recordEmployeeCaseFindingActionSchema,
 		input,
 		invoke: invokeHrPackage(recordEmployeeCaseFinding),
-		mapData: (employeeCase: EmployeeCase) => ({ case: employeeCase }),
+		project: (employeeCase: EmployeeCase) => ({ case: employeeCase }),
 	});
 }
 
 export async function recommendEmployeeCaseActionAction(
 	input: unknown,
 ): Promise<ActionResult<{ action: EmployeeCaseAction }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrComplianceOperatorPermissionAction,
 		path: "recommendEmployeeCaseActionAction",
 		permission: CASE_FINDING,
 		safeMessage: "Could not recommend employee case action.",
-		validationMessage: "Enter a valid employee case action recommendation.",
-		actionSchema: recommendEmployeeCaseActionActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid employee case action recommendation.",
+			}),
+		schema: recommendEmployeeCaseActionActionSchema,
 		input,
 		invoke: invokeHrPackage(recommendEmployeeCaseAction),
-		mapData: (action: EmployeeCaseAction) => ({ action }),
+		project: (action: EmployeeCaseAction) => ({ action }),
 	});
 }
 
 export async function approveEmployeeCaseActionAction(
 	input: unknown,
 ): Promise<ActionResult<{ action: EmployeeCaseAction }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrComplianceOperatorPermissionAction,
 		path: "approveEmployeeCaseActionAction",
 		permission: CASE_ACTION_APPROVE,
 		safeMessage: "Could not approve employee case action.",
-		validationMessage: "Enter a valid employee case action approval.",
-		actionSchema: approveEmployeeCaseActionActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid employee case action approval.",
+			}),
+		schema: approveEmployeeCaseActionActionSchema,
 		input,
 		invoke: invokeHrPackage(approveEmployeeCaseAction),
-		mapData: (action: EmployeeCaseAction) => ({ action }),
+		project: (action: EmployeeCaseAction) => ({ action }),
 	});
 }
 
 export async function recordEmployeeCaseAppealAction(
 	input: unknown,
 ): Promise<ActionResult<{ appeal: EmployeeCaseAppeal }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrComplianceOperatorPermissionAction,
 		path: "recordEmployeeCaseAppealAction",
 		permission: CASE_APPEAL,
 		safeMessage: "Could not record employee case appeal.",
-		validationMessage: "Enter a valid employee case appeal.",
-		actionSchema: recordEmployeeCaseAppealActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid employee case appeal.",
+			}),
+		schema: recordEmployeeCaseAppealActionSchema,
 		input,
 		invoke: invokeHrPackage(recordEmployeeCaseAppeal),
-		mapData: (appeal: EmployeeCaseAppeal) => ({ appeal }),
+		project: (appeal: EmployeeCaseAppeal) => ({ appeal }),
 	});
 }
 
 export async function resolveEmployeeCaseAppealAction(
 	input: unknown,
 ): Promise<ActionResult<{ appeal: EmployeeCaseAppeal }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrComplianceOperatorPermissionAction,
 		path: "resolveEmployeeCaseAppealAction",
 		permission: CASE_APPEAL,
 		safeMessage: "Could not resolve employee case appeal.",
-		validationMessage: "Enter a valid employee case appeal resolution.",
-		actionSchema: resolveEmployeeCaseAppealActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid employee case appeal resolution.",
+			}),
+		schema: resolveEmployeeCaseAppealActionSchema,
 		input,
 		invoke: invokeHrPackage(resolveEmployeeCaseAppeal),
-		mapData: (appeal: EmployeeCaseAppeal) => ({ appeal }),
+		project: (appeal: EmployeeCaseAppeal) => ({ appeal }),
 	});
 }
 
 export async function closeEmployeeCaseAction(
 	input: unknown,
 ): Promise<ActionResult<{ case: EmployeeCase }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrComplianceOperatorPermissionAction,
 		path: "closeEmployeeCaseAction",
 		permission: CASE_FINDING,
 		safeMessage: "Could not close employee case.",
-		validationMessage: "Enter a valid employee case close request.",
-		actionSchema: closeEmployeeCaseActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid employee case close request.",
+			}),
+		schema: closeEmployeeCaseActionSchema,
 		input,
 		invoke: invokeHrPackage(closeEmployeeCase),
-		mapData: (employeeCase: EmployeeCase) => ({ case: employeeCase }),
+		project: (employeeCase: EmployeeCase) => ({ case: employeeCase }),
 	});
 }
 
 export async function reopenEmployeeCaseAction(
 	input: unknown,
 ): Promise<ActionResult<{ case: EmployeeCase }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrComplianceOperatorPermissionAction,
 		path: "reopenEmployeeCaseAction",
 		permission: CASE_EXCEPTIONAL_ADMIN,
 		safeMessage: "Could not reopen employee case.",
-		validationMessage: "Enter a valid employee case reopen request.",
-		actionSchema: reopenEmployeeCaseActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid employee case reopen request.",
+			}),
+		schema: reopenEmployeeCaseActionSchema,
 		input,
 		invoke: invokeHrPackage(reopenEmployeeCase),
-		mapData: (employeeCase: EmployeeCase) => ({ case: employeeCase }),
+		project: (employeeCase: EmployeeCase) => ({ case: employeeCase }),
 	});
 }
 
 export async function getEmployeeCaseByIdAction(
 	input: unknown,
 ): Promise<ActionResult<{ case: ProjectedEmployeeCase | null }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrComplianceOperatorPermissionAction,
 		path: "getEmployeeCaseByIdAction",
 		permission: CASE_ASSIGNED_READ,
 		safeMessage: "Could not get employee case.",
-		validationMessage: "Enter a valid employee case lookup.",
-		actionSchema: getEmployeeCaseByIdActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid employee case lookup.",
+			}),
+		schema: getEmployeeCaseByIdActionSchema,
 		input,
 		invoke: invokeHrPackage(getEmployeeCaseById),
-		mapData: (employeeCase: ProjectedEmployeeCase | null) => ({
+		project: (employeeCase: ProjectedEmployeeCase | null) => ({
 			case: employeeCase,
 		}),
 	});
@@ -386,89 +449,113 @@ export async function getEmployeeCaseByIdAction(
 export async function listEmployeeCasesAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: EmployeeCaseListPage }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrComplianceOperatorPermissionAction,
 		path: "listEmployeeCasesAction",
 		permission: CASE_EXCEPTIONAL_ADMIN,
 		safeMessage: "Could not list employee cases.",
-		validationMessage: "Enter valid employee case filters.",
-		actionSchema: listEmployeeCasesActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter valid employee case filters.",
+			}),
+		schema: listEmployeeCasesActionSchema,
 		input,
 		invoke: invokeHrPackage(listEmployeeCases),
-		mapData: (page: EmployeeCaseListPage) => ({ page }),
+		project: (page: EmployeeCaseListPage) => ({ page }),
 	});
 }
 
 export async function listCasesAssignedToActorAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: EmployeeCaseListPage }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrComplianceOperatorPermissionAction,
 		path: "listCasesAssignedToActorAction",
 		permission: CASE_ASSIGNED_READ,
 		safeMessage: "Could not list assigned employee cases.",
-		validationMessage: "Enter valid assigned employee case filters.",
-		actionSchema: listCasesAssignedToActorActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter valid assigned employee case filters.",
+			}),
+		schema: listCasesAssignedToActorActionSchema,
 		input,
 		invoke: invokeHrPackage(listCasesAssignedToActor),
-		mapData: (page: EmployeeCaseListPage) => ({ page }),
+		project: (page: EmployeeCaseListPage) => ({ page }),
 	});
 }
 
 export async function listOpenEmployeeRelationsCasesAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: EmployeeCaseListPage }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrComplianceOperatorPermissionAction,
 		path: "listOpenEmployeeRelationsCasesAction",
 		permission: CASE_EXCEPTIONAL_ADMIN,
 		safeMessage: "Could not list open employee relations cases.",
-		validationMessage: "Enter valid open employee relations case filters.",
-		actionSchema: listOpenEmployeeRelationsCasesActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter valid open employee relations case filters.",
+			}),
+		schema: listOpenEmployeeRelationsCasesActionSchema,
 		input,
 		invoke: invokeHrPackage(listOpenEmployeeRelationsCases),
-		mapData: (page: EmployeeCaseListPage) => ({ page }),
+		project: (page: EmployeeCaseListPage) => ({ page }),
 	});
 }
 
 export async function getEmployeeRelationsHistoryByEmployeeAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: EmployeeCaseListPage }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrComplianceOperatorPermissionAction,
 		path: "getEmployeeRelationsHistoryByEmployeeAction",
 		permission: CASE_ASSIGNED_READ,
 		safeMessage: "Could not get employee relations history.",
-		validationMessage: "Enter a valid employee relations history request.",
-		actionSchema: getEmployeeRelationsHistoryByEmployeeActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid employee relations history request.",
+			}),
+		schema: getEmployeeRelationsHistoryByEmployeeActionSchema,
 		input,
 		invoke: invokeHrPackage(getEmployeeRelationsHistoryByEmployee),
-		mapData: (page: EmployeeCaseListPage) => ({ page }),
+		project: (page: EmployeeCaseListPage) => ({ page }),
 	});
 }
 
 export async function getEmployeeCaseTimelineAction(
 	input: unknown,
 ): Promise<ActionResult<{ timeline: EmployeeCaseTimeline }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrComplianceOperatorPermissionAction,
 		path: "getEmployeeCaseTimelineAction",
 		permission: CASE_ASSIGNED_READ,
 		safeMessage: "Could not get employee case timeline.",
-		validationMessage: "Enter a valid employee case timeline request.",
-		actionSchema: getEmployeeCaseTimelineActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid employee case timeline request.",
+			}),
+		schema: getEmployeeCaseTimelineActionSchema,
 		input,
 		invoke: invokeHrPackage(getEmployeeCaseTimeline),
-		mapData: (timeline: EmployeeCaseTimeline) => ({ timeline }),
+		project: (timeline: EmployeeCaseTimeline) => ({ timeline }),
 	});
 }
 
 export async function getEmployeeCaseOutcomeAction(
 	input: unknown,
 ): Promise<ActionResult<{ outcome: EmployeeCaseOutcome }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrComplianceOperatorPermissionAction,
 		path: "getEmployeeCaseOutcomeAction",
 		permission: CASE_ASSIGNED_READ,
 		safeMessage: "Could not get employee case outcome.",
-		validationMessage: "Enter a valid employee case outcome request.",
-		actionSchema: getEmployeeCaseOutcomeActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid employee case outcome request.",
+			}),
+		schema: getEmployeeCaseOutcomeActionSchema,
 		input,
 		invoke: invokeHrPackage(getEmployeeCaseOutcome),
-		mapData: (outcome: EmployeeCaseOutcome) => ({ outcome }),
+		project: (outcome: EmployeeCaseOutcome) => ({ outcome }),
 	});
 }

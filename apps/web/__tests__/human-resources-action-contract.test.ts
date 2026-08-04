@@ -74,8 +74,13 @@ describe("HR standard Action contract", () => {
 		] as const;
 		for (const file of actionFiles) {
 			const contents = source(`app/actions/${file}`);
+			// `defineAction` is an approved route by construction: its `runner`
+			// field is required and typed `ActionRunner`, so an action cannot
+			// reach a package facade through it without passing an actor-class
+			// runner. Area-specific runners (runHr<Area>OperatorPermissionAction)
+			// are factory outputs of the same base runner.
 			expect(contents, file).toMatch(
-				/runHrHumanResourcesAction|runOperatorPermissionAction|runMemberPermissionAction/,
+				/defineAction|runHrHumanResourcesAction|run(?:Hr[A-Za-z]*)?OperatorPermissionAction|runMemberPermissionAction/,
 			);
 			expect(contents, file).not.toMatch(/\{\s*success\s*:/);
 		}

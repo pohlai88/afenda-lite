@@ -1,6 +1,6 @@
 "use server";
 
-import type { Result as ActionResult } from "@afenda/errors";
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import type {
 	ComplianceExpiryOperations,
 	DocumentRequirement,
@@ -70,11 +70,10 @@ import {
 	verifyWorkEligibilityInputSchema,
 	workEligibilityTransitionInputSchema,
 } from "@afenda/human-resources";
-import {
-	invokeHrPackage,
-	runHrComplianceHumanResourcesAction as runHrHumanResourcesAction,
-} from "@/app/actions/hr-action-runner";
+import { defineAction } from "@/app/actions/_runtime/define-action";
+import { invokeHrPackage } from "@/app/actions/hr-action-runner";
 import { hrActionSchema } from "@/app/actions/hr-mutation-context";
+import { runHrComplianceOperatorPermissionAction } from "@/app/actions/run-hr-operator-permission-action";
 
 const COMPLIANCE_ADMIN = "human-resources.compliance.administer" as const;
 const DOCUMENT_REQUIREMENT_MANAGE =
@@ -169,150 +168,190 @@ const detectComplianceExpiryOperationsActionSchema = hrActionSchema(
 export async function createDocumentRequirementAction(
 	input: unknown,
 ): Promise<ActionResult<{ requirement: DocumentRequirement }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrComplianceOperatorPermissionAction,
 		path: "createDocumentRequirementAction",
 		permission: DOCUMENT_REQUIREMENT_MANAGE,
 		safeMessage: "Could not create document requirement.",
-		validationMessage: "Enter a valid document requirement.",
-		actionSchema: createDocumentRequirementActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid document requirement.",
+			}),
+		schema: createDocumentRequirementActionSchema,
 		input,
 		invoke: invokeHrPackage(createDocumentRequirement),
-		mapData: (requirement: DocumentRequirement) => ({ requirement }),
+		project: (requirement: DocumentRequirement) => ({ requirement }),
 	});
 }
 
 export async function updateDocumentRequirementAction(
 	input: unknown,
 ): Promise<ActionResult<{ requirement: DocumentRequirement }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrComplianceOperatorPermissionAction,
 		path: "updateDocumentRequirementAction",
 		permission: DOCUMENT_REQUIREMENT_MANAGE,
 		safeMessage: "Could not update document requirement.",
-		validationMessage: "Enter a valid document requirement update.",
-		actionSchema: updateDocumentRequirementActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid document requirement update.",
+			}),
+		schema: updateDocumentRequirementActionSchema,
 		input,
 		invoke: invokeHrPackage(updateDocumentRequirement),
-		mapData: (requirement: DocumentRequirement) => ({ requirement }),
+		project: (requirement: DocumentRequirement) => ({ requirement }),
 	});
 }
 
 export async function publishDocumentRequirementAction(
 	input: unknown,
 ): Promise<ActionResult<{ requirement: DocumentRequirement }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrComplianceOperatorPermissionAction,
 		path: "publishDocumentRequirementAction",
 		permission: DOCUMENT_REQUIREMENT_MANAGE,
 		safeMessage: "Could not publish document requirement.",
-		validationMessage: "Enter a valid document requirement publish request.",
-		actionSchema: documentRequirementTransitionActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid document requirement publish request.",
+			}),
+		schema: documentRequirementTransitionActionSchema,
 		input,
 		invoke: invokeHrPackage(publishDocumentRequirement),
-		mapData: (requirement: DocumentRequirement) => ({ requirement }),
+		project: (requirement: DocumentRequirement) => ({ requirement }),
 	});
 }
 
 export async function retireDocumentRequirementAction(
 	input: unknown,
 ): Promise<ActionResult<{ requirement: DocumentRequirement }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrComplianceOperatorPermissionAction,
 		path: "retireDocumentRequirementAction",
 		permission: DOCUMENT_REQUIREMENT_MANAGE,
 		safeMessage: "Could not retire document requirement.",
-		validationMessage: "Enter a valid document requirement retire request.",
-		actionSchema: documentRequirementTransitionActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid document requirement retire request.",
+			}),
+		schema: documentRequirementTransitionActionSchema,
 		input,
 		invoke: invokeHrPackage(retireDocumentRequirement),
-		mapData: (requirement: DocumentRequirement) => ({ requirement }),
+		project: (requirement: DocumentRequirement) => ({ requirement }),
 	});
 }
 
 export async function registerEmployeeDocumentAction(
 	input: unknown,
 ): Promise<ActionResult<{ document: EmployeeDocument }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrComplianceOperatorPermissionAction,
 		path: "registerEmployeeDocumentAction",
 		permission: EMPLOYEE_DOCUMENT_OWN_REGISTER,
 		safeMessage: "Could not register employee document.",
-		validationMessage: "Enter a valid employee document.",
-		actionSchema: registerEmployeeDocumentActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid employee document.",
+			}),
+		schema: registerEmployeeDocumentActionSchema,
 		input,
 		invoke: invokeHrPackage(registerEmployeeDocument),
-		mapData: (document: EmployeeDocument) => ({ document }),
+		project: (document: EmployeeDocument) => ({ document }),
 	});
 }
 
 export async function updateEmployeeDocumentMetadataAction(
 	input: unknown,
 ): Promise<ActionResult<{ document: EmployeeDocument }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrComplianceOperatorPermissionAction,
 		path: "updateEmployeeDocumentMetadataAction",
 		permission: EMPLOYEE_DOCUMENT_VERIFY,
 		safeMessage: "Could not update employee document.",
-		validationMessage: "Enter a valid employee document update.",
-		actionSchema: updateEmployeeDocumentMetadataActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid employee document update.",
+			}),
+		schema: updateEmployeeDocumentMetadataActionSchema,
 		input,
 		invoke: invokeHrPackage(updateEmployeeDocumentMetadata),
-		mapData: (document: EmployeeDocument) => ({ document }),
+		project: (document: EmployeeDocument) => ({ document }),
 	});
 }
 
 export async function verifyEmployeeDocumentAction(
 	input: unknown,
 ): Promise<ActionResult<{ document: EmployeeDocument }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrComplianceOperatorPermissionAction,
 		path: "verifyEmployeeDocumentAction",
 		permission: EMPLOYEE_DOCUMENT_VERIFY,
 		safeMessage: "Could not verify employee document.",
-		validationMessage: "Enter a valid employee document verification.",
-		actionSchema: verifyEmployeeDocumentActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid employee document verification.",
+			}),
+		schema: verifyEmployeeDocumentActionSchema,
 		input,
 		invoke: invokeHrPackage(verifyEmployeeDocument),
-		mapData: (document: EmployeeDocument) => ({ document }),
+		project: (document: EmployeeDocument) => ({ document }),
 	});
 }
 
 export async function rejectEmployeeDocumentAction(
 	input: unknown,
 ): Promise<ActionResult<{ document: EmployeeDocument }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrComplianceOperatorPermissionAction,
 		path: "rejectEmployeeDocumentAction",
 		permission: EMPLOYEE_DOCUMENT_VERIFY,
 		safeMessage: "Could not reject employee document.",
-		validationMessage: "Enter a valid employee document rejection.",
-		actionSchema: rejectEmployeeDocumentActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid employee document rejection.",
+			}),
+		schema: rejectEmployeeDocumentActionSchema,
 		input,
 		invoke: invokeHrPackage(rejectEmployeeDocument),
-		mapData: (document: EmployeeDocument) => ({ document }),
+		project: (document: EmployeeDocument) => ({ document }),
 	});
 }
 
 export async function revokeEmployeeDocumentVerificationAction(
 	input: unknown,
 ): Promise<ActionResult<{ document: EmployeeDocument }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrComplianceOperatorPermissionAction,
 		path: "revokeEmployeeDocumentVerificationAction",
 		permission: EMPLOYEE_DOCUMENT_VERIFY,
 		safeMessage: "Could not revoke employee document verification.",
-		validationMessage: "Enter a valid employee document revoke request.",
-		actionSchema: employeeDocumentTransitionActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid employee document revoke request.",
+			}),
+		schema: employeeDocumentTransitionActionSchema,
 		input,
 		invoke: invokeHrPackage(revokeEmployeeDocumentVerification),
-		mapData: (document: EmployeeDocument) => ({ document }),
+		project: (document: EmployeeDocument) => ({ document }),
 	});
 }
 
 export async function markEmployeeDocumentExpiredAction(
 	input: unknown,
 ): Promise<ActionResult<{ document: EmployeeDocument }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrComplianceOperatorPermissionAction,
 		path: "markEmployeeDocumentExpiredAction",
 		permission: EMPLOYEE_DOCUMENT_VERIFY,
 		safeMessage: "Could not mark employee document expired.",
-		validationMessage: "Enter a valid employee document expiry request.",
-		actionSchema: employeeDocumentTransitionActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid employee document expiry request.",
+			}),
+		schema: employeeDocumentTransitionActionSchema,
 		input,
 		invoke: invokeHrPackage(markEmployeeDocumentExpired),
-		mapData: (document: EmployeeDocument) => ({ document }),
+		project: (document: EmployeeDocument) => ({ document }),
 	});
 }
 
@@ -321,15 +360,19 @@ export async function getEmployeeDocumentAction(input: unknown): Promise<
 		document: EmployeeDocumentListItem | EmployeeDocumentSensitiveDetail;
 	}>
 > {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrComplianceOperatorPermissionAction,
 		path: "getEmployeeDocumentAction",
 		permission: EMPLOYEE_DOCUMENT_OWN_READ,
 		safeMessage: "Could not get employee document.",
-		validationMessage: "Enter a valid employee document lookup.",
-		actionSchema: getEmployeeDocumentActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid employee document lookup.",
+			}),
+		schema: getEmployeeDocumentActionSchema,
 		input,
 		invoke: invokeHrPackage(getEmployeeDocument),
-		mapData: (
+		project: (
 			document: EmployeeDocumentListItem | EmployeeDocumentSensitiveDetail,
 		) => ({ document }),
 	});
@@ -338,211 +381,267 @@ export async function getEmployeeDocumentAction(input: unknown): Promise<
 export async function listMissingRequiredDocumentsAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: DocumentRequirementListPage }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrComplianceOperatorPermissionAction,
 		path: "listMissingRequiredDocumentsAction",
 		permission: COMPLIANCE_ADMIN,
 		safeMessage: "Could not list missing documents.",
-		validationMessage: "Enter valid missing-document filters.",
-		actionSchema: listMissingRequiredDocumentsActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter valid missing-document filters.",
+			}),
+		schema: listMissingRequiredDocumentsActionSchema,
 		input,
 		invoke: invokeHrPackage(listMissingRequiredDocuments),
-		mapData: (page: DocumentRequirementListPage) => ({ page }),
+		project: (page: DocumentRequirementListPage) => ({ page }),
 	});
 }
 
 export async function listExpiringEmployeeDocumentsAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: EmployeeDocumentListPage }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrComplianceOperatorPermissionAction,
 		path: "listExpiringEmployeeDocumentsAction",
 		permission: COMPLIANCE_ADMIN,
 		safeMessage: "Could not list expiring employee documents.",
-		validationMessage: "Enter valid expiring-document filters.",
-		actionSchema: listExpiringEmployeeDocumentsActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter valid expiring-document filters.",
+			}),
+		schema: listExpiringEmployeeDocumentsActionSchema,
 		input,
 		invoke: invokeHrPackage(listExpiringEmployeeDocuments),
-		mapData: (page: EmployeeDocumentListPage) => ({ page }),
+		project: (page: EmployeeDocumentListPage) => ({ page }),
 	});
 }
 
 export async function recordWorkEligibilityAction(
 	input: unknown,
 ): Promise<ActionResult<{ eligibility: WorkEligibility }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrComplianceOperatorPermissionAction,
 		path: "recordWorkEligibilityAction",
 		permission: WORK_ELIGIBILITY_VERIFY,
 		safeMessage: "Could not record work eligibility.",
-		validationMessage: "Enter valid work eligibility.",
-		actionSchema: recordWorkEligibilityActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter valid work eligibility.",
+			}),
+		schema: recordWorkEligibilityActionSchema,
 		input,
 		invoke: invokeHrPackage(recordWorkEligibility),
-		mapData: (eligibility: WorkEligibility) => ({ eligibility }),
+		project: (eligibility: WorkEligibility) => ({ eligibility }),
 	});
 }
 
 export async function verifyWorkEligibilityAction(
 	input: unknown,
 ): Promise<ActionResult<{ eligibility: WorkEligibility }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrComplianceOperatorPermissionAction,
 		path: "verifyWorkEligibilityAction",
 		permission: WORK_ELIGIBILITY_VERIFY,
 		safeMessage: "Could not verify work eligibility.",
-		validationMessage: "Enter a valid work eligibility verification.",
-		actionSchema: verifyWorkEligibilityActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid work eligibility verification.",
+			}),
+		schema: verifyWorkEligibilityActionSchema,
 		input,
 		invoke: invokeHrPackage(verifyWorkEligibility),
-		mapData: (eligibility: WorkEligibility) => ({ eligibility }),
+		project: (eligibility: WorkEligibility) => ({ eligibility }),
 	});
 }
 
 export async function suspendWorkEligibilityAction(
 	input: unknown,
 ): Promise<ActionResult<{ eligibility: WorkEligibility }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrComplianceOperatorPermissionAction,
 		path: "suspendWorkEligibilityAction",
 		permission: WORK_ELIGIBILITY_VERIFY,
 		safeMessage: "Could not suspend work eligibility.",
-		validationMessage: "Enter a valid work eligibility suspend request.",
-		actionSchema: workEligibilityTransitionActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid work eligibility suspend request.",
+			}),
+		schema: workEligibilityTransitionActionSchema,
 		input,
 		invoke: invokeHrPackage(suspendWorkEligibility),
-		mapData: (eligibility: WorkEligibility) => ({ eligibility }),
+		project: (eligibility: WorkEligibility) => ({ eligibility }),
 	});
 }
 
 export async function renewWorkEligibilityAction(
 	input: unknown,
 ): Promise<ActionResult<{ eligibility: WorkEligibility }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrComplianceOperatorPermissionAction,
 		path: "renewWorkEligibilityAction",
 		permission: WORK_ELIGIBILITY_VERIFY,
 		safeMessage: "Could not renew work eligibility.",
-		validationMessage: "Enter a valid work eligibility renewal.",
-		actionSchema: renewWorkEligibilityActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid work eligibility renewal.",
+			}),
+		schema: renewWorkEligibilityActionSchema,
 		input,
 		invoke: invokeHrPackage(renewWorkEligibility),
-		mapData: (eligibility: WorkEligibility) => ({ eligibility }),
+		project: (eligibility: WorkEligibility) => ({ eligibility }),
 	});
 }
 
 export async function closeWorkEligibilityAction(
 	input: unknown,
 ): Promise<ActionResult<{ eligibility: WorkEligibility }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrComplianceOperatorPermissionAction,
 		path: "closeWorkEligibilityAction",
 		permission: WORK_ELIGIBILITY_VERIFY,
 		safeMessage: "Could not close work eligibility.",
-		validationMessage: "Enter a valid work eligibility close request.",
-		actionSchema: workEligibilityTransitionActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid work eligibility close request.",
+			}),
+		schema: workEligibilityTransitionActionSchema,
 		input,
 		invoke: invokeHrPackage(closeWorkEligibility),
-		mapData: (eligibility: WorkEligibility) => ({ eligibility }),
+		project: (eligibility: WorkEligibility) => ({ eligibility }),
 	});
 }
 
 export async function getEmployeeWorkEligibilityAction(
 	input: unknown,
 ): Promise<ActionResult<{ eligibility: WorkEligibility | null }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrComplianceOperatorPermissionAction,
 		path: "getEmployeeWorkEligibilityAction",
 		permission: EMPLOYEE_DOCUMENT_OWN_READ,
 		safeMessage: "Could not get work eligibility.",
-		validationMessage: "Enter a valid work eligibility lookup.",
-		actionSchema: getEmployeeWorkEligibilityActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid work eligibility lookup.",
+			}),
+		schema: getEmployeeWorkEligibilityActionSchema,
 		input,
 		invoke: invokeHrPackage(getEmployeeWorkEligibility),
-		mapData: (eligibility: WorkEligibility | null) => ({ eligibility }),
+		project: (eligibility: WorkEligibility | null) => ({ eligibility }),
 	});
 }
 
 export async function listEmployeesWithWorkEligibilityRiskAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: WorkEligibilityRiskListPage }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrComplianceOperatorPermissionAction,
 		path: "listEmployeesWithWorkEligibilityRiskAction",
 		permission: COMPLIANCE_ADMIN,
 		safeMessage: "Could not list work eligibility risk.",
-		validationMessage: "Enter valid work eligibility risk filters.",
-		actionSchema: listEmployeesWithWorkEligibilityRiskActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter valid work eligibility risk filters.",
+			}),
+		schema: listEmployeesWithWorkEligibilityRiskActionSchema,
 		input,
 		invoke: invokeHrPackage(listEmployeesWithWorkEligibilityRisk),
-		mapData: (page: WorkEligibilityRiskListPage) => ({ page }),
+		project: (page: WorkEligibilityRiskListPage) => ({ page }),
 	});
 }
 
 export async function issuePolicyAcknowledgementRequirementAction(
 	input: unknown,
 ): Promise<ActionResult<{ acknowledgement: PolicyAcknowledgement }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrComplianceOperatorPermissionAction,
 		path: "issuePolicyAcknowledgementRequirementAction",
 		permission: POLICY_ACK_ADMIN,
 		safeMessage: "Could not issue policy acknowledgement.",
-		validationMessage: "Enter a valid policy acknowledgement requirement.",
-		actionSchema: issuePolicyAcknowledgementRequirementActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid policy acknowledgement requirement.",
+			}),
+		schema: issuePolicyAcknowledgementRequirementActionSchema,
 		input,
 		invoke: invokeHrPackage(issuePolicyAcknowledgementRequirement),
-		mapData: (acknowledgement: PolicyAcknowledgement) => ({ acknowledgement }),
+		project: (acknowledgement: PolicyAcknowledgement) => ({ acknowledgement }),
 	});
 }
 
 export async function acknowledgePolicyAction(
 	input: unknown,
 ): Promise<ActionResult<{ acknowledgement: PolicyAcknowledgement }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrComplianceOperatorPermissionAction,
 		path: "acknowledgePolicyAction",
 		permission: EMPLOYEE_DOCUMENT_OWN_READ,
 		safeMessage: "Could not acknowledge policy.",
-		validationMessage: "Enter a valid policy acknowledgement.",
-		actionSchema: acknowledgePolicyActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid policy acknowledgement.",
+			}),
+		schema: acknowledgePolicyActionSchema,
 		input,
 		invoke: invokeHrPackage(acknowledgePolicy),
-		mapData: (acknowledgement: PolicyAcknowledgement) => ({ acknowledgement }),
+		project: (acknowledgement: PolicyAcknowledgement) => ({ acknowledgement }),
 	});
 }
 
 export async function revokePolicyAcknowledgementAction(
 	input: unknown,
 ): Promise<ActionResult<{ acknowledgement: PolicyAcknowledgement }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrComplianceOperatorPermissionAction,
 		path: "revokePolicyAcknowledgementAction",
 		permission: POLICY_ACK_ADMIN,
 		safeMessage: "Could not revoke policy acknowledgement.",
-		validationMessage: "Enter a valid policy acknowledgement revoke request.",
-		actionSchema: revokePolicyAcknowledgementActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid policy acknowledgement revoke request.",
+			}),
+		schema: revokePolicyAcknowledgementActionSchema,
 		input,
 		invoke: invokeHrPackage(revokePolicyAcknowledgement),
-		mapData: (acknowledgement: PolicyAcknowledgement) => ({ acknowledgement }),
+		project: (acknowledgement: PolicyAcknowledgement) => ({ acknowledgement }),
 	});
 }
 
 export async function supersedePolicyAcknowledgementRequirementAction(
 	input: unknown,
 ): Promise<ActionResult<{ acknowledgement: PolicyAcknowledgement }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrComplianceOperatorPermissionAction,
 		path: "supersedePolicyAcknowledgementRequirementAction",
 		permission: POLICY_ACK_ADMIN,
 		safeMessage: "Could not supersede policy acknowledgement.",
-		validationMessage:
-			"Enter a valid policy acknowledgement supersede request.",
-		actionSchema: supersedePolicyAcknowledgementRequirementActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage:
+					"Enter a valid policy acknowledgement supersede request.",
+			}),
+		schema: supersedePolicyAcknowledgementRequirementActionSchema,
 		input,
 		invoke: invokeHrPackage(supersedePolicyAcknowledgementRequirement),
-		mapData: (acknowledgement: PolicyAcknowledgement) => ({ acknowledgement }),
+		project: (acknowledgement: PolicyAcknowledgement) => ({ acknowledgement }),
 	});
 }
 
 export async function getPolicyAcknowledgementStatusAction(
 	input: unknown,
 ): Promise<ActionResult<{ acknowledgement: PolicyAcknowledgement | null }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrComplianceOperatorPermissionAction,
 		path: "getPolicyAcknowledgementStatusAction",
 		permission: EMPLOYEE_DOCUMENT_OWN_READ,
 		safeMessage: "Could not get policy acknowledgement status.",
-		validationMessage: "Enter a valid policy acknowledgement lookup.",
-		actionSchema: getPolicyAcknowledgementStatusActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid policy acknowledgement lookup.",
+			}),
+		schema: getPolicyAcknowledgementStatusActionSchema,
 		input,
 		invoke: invokeHrPackage(getPolicyAcknowledgementStatus),
-		mapData: (acknowledgement: PolicyAcknowledgement | null) => ({
+		project: (acknowledgement: PolicyAcknowledgement | null) => ({
 			acknowledgement,
 		}),
 	});
@@ -551,44 +650,56 @@ export async function getPolicyAcknowledgementStatusAction(
 export async function listOutstandingPolicyAcknowledgementsAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: PolicyAcknowledgementListPage }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrComplianceOperatorPermissionAction,
 		path: "listOutstandingPolicyAcknowledgementsAction",
 		permission: COMPLIANCE_ADMIN,
 		safeMessage: "Could not list outstanding policy acknowledgements.",
-		validationMessage: "Enter valid policy acknowledgement filters.",
-		actionSchema: listOutstandingPolicyAcknowledgementsActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter valid policy acknowledgement filters.",
+			}),
+		schema: listOutstandingPolicyAcknowledgementsActionSchema,
 		input,
 		invoke: invokeHrPackage(listOutstandingPolicyAcknowledgements),
-		mapData: (page: PolicyAcknowledgementListPage) => ({ page }),
+		project: (page: PolicyAcknowledgementListPage) => ({ page }),
 	});
 }
 
 export async function getEmployeeComplianceSummaryAction(
 	input: unknown,
 ): Promise<ActionResult<{ summary: EmployeeComplianceSummary }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrComplianceOperatorPermissionAction,
 		path: "getEmployeeComplianceSummaryAction",
 		permission: COMPLIANCE_ADMIN,
 		safeMessage: "Could not get employee compliance summary.",
-		validationMessage: "Enter a valid compliance summary request.",
-		actionSchema: getEmployeeComplianceSummaryActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid compliance summary request.",
+			}),
+		schema: getEmployeeComplianceSummaryActionSchema,
 		input,
 		invoke: invokeHrPackage(getEmployeeComplianceSummary),
-		mapData: (summary: EmployeeComplianceSummary) => ({ summary }),
+		project: (summary: EmployeeComplianceSummary) => ({ summary }),
 	});
 }
 
 export async function detectComplianceExpiryOperationsAction(
 	input: unknown,
 ): Promise<ActionResult<{ operations: ComplianceExpiryOperations }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrComplianceOperatorPermissionAction,
 		path: "detectComplianceExpiryOperationsAction",
 		permission: COMPLIANCE_ADMIN,
 		safeMessage: "Could not detect compliance expiry operations.",
-		validationMessage: "Enter a valid compliance expiry request.",
-		actionSchema: detectComplianceExpiryOperationsActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid compliance expiry request.",
+			}),
+		schema: detectComplianceExpiryOperationsActionSchema,
 		input,
 		invoke: invokeHrPackage(detectComplianceExpiryOperations),
-		mapData: (operations: ComplianceExpiryOperations) => ({ operations }),
+		project: (operations: ComplianceExpiryOperations) => ({ operations }),
 	});
 }

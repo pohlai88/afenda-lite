@@ -34,6 +34,8 @@ export function createHrOperatorPermissionActionRunner(
 
 export const runHrBulkOperatorPermissionAction =
 	createHrOperatorPermissionActionRunner("bulk");
+export const runHrComplianceOperatorPermissionAction =
+	createHrOperatorPermissionActionRunner("compliance");
 export const runHrIntegrationOperatorPermissionAction =
 	createHrOperatorPermissionActionRunner("integration");
 export const runHrLeaveOperatorPermissionAction =

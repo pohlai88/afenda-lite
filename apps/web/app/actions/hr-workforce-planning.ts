@@ -1,6 +1,6 @@
 "use server";
 
-import type { Result as ActionResult } from "@afenda/errors";
+import { type Result as ActionResult, errorResult } from "@afenda/errors";
 import type {
 	HeadcountAvailability,
 	HeadcountPlan,
@@ -50,11 +50,10 @@ import {
 	updateHeadcountPlanLine,
 	updateHeadcountPlanLineInputSchema,
 } from "@afenda/human-resources";
-import {
-	invokeHrPackage,
-	runHrWorkforceHumanResourcesAction as runHrHumanResourcesAction,
-} from "@/app/actions/hr-action-runner";
+import { defineAction } from "@/app/actions/_runtime/define-action";
+import { invokeHrPackage } from "@/app/actions/hr-action-runner";
 import { hrActionSchema } from "@/app/actions/hr-mutation-context";
+import { runHrWorkforceOperatorPermissionAction } from "@/app/actions/run-hr-operator-permission-action";
 
 const PLAN_READ = "human-resources.workforce-plan.read" as const;
 const PLAN_PREPARE = "human-resources.workforce-plan.prepare" as const;
@@ -116,299 +115,379 @@ const getWorkforcePlanVarianceActionSchema = hrActionSchema(
 export async function createHeadcountPlanAction(
 	input: unknown,
 ): Promise<ActionResult<{ plan: HeadcountPlan }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrWorkforceOperatorPermissionAction,
 		path: "createHeadcountPlanAction",
 		permission: PLAN_PREPARE,
 		safeMessage: "Could not create headcount plan.",
-		validationMessage: "Enter a valid headcount plan.",
-		actionSchema: createHeadcountPlanActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid headcount plan.",
+			}),
+		schema: createHeadcountPlanActionSchema,
 		input,
 		invoke: invokeHrPackage(createHeadcountPlan),
-		mapData: (plan: HeadcountPlan) => ({ plan }),
+		project: (plan: HeadcountPlan) => ({ plan }),
 	});
 }
 
 export async function updateHeadcountPlanAction(
 	input: unknown,
 ): Promise<ActionResult<{ plan: HeadcountPlan }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrWorkforceOperatorPermissionAction,
 		path: "updateHeadcountPlanAction",
 		permission: PLAN_PREPARE,
 		safeMessage: "Could not update headcount plan.",
-		validationMessage: "Enter a valid headcount plan update.",
-		actionSchema: updateHeadcountPlanActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid headcount plan update.",
+			}),
+		schema: updateHeadcountPlanActionSchema,
 		input,
 		invoke: invokeHrPackage(updateHeadcountPlan),
-		mapData: (plan: HeadcountPlan) => ({ plan }),
+		project: (plan: HeadcountPlan) => ({ plan }),
 	});
 }
 
 export async function submitHeadcountPlanAction(
 	input: unknown,
 ): Promise<ActionResult<{ plan: HeadcountPlan }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrWorkforceOperatorPermissionAction,
 		path: "submitHeadcountPlanAction",
 		permission: PLAN_PREPARE,
 		safeMessage: "Could not submit headcount plan.",
-		validationMessage: "Enter a valid headcount plan submission.",
-		actionSchema: headcountPlanStatusTransitionActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid headcount plan submission.",
+			}),
+		schema: headcountPlanStatusTransitionActionSchema,
 		input,
 		invoke: invokeHrPackage(submitHeadcountPlan),
-		mapData: (plan: HeadcountPlan) => ({ plan }),
+		project: (plan: HeadcountPlan) => ({ plan }),
 	});
 }
 
 export async function approveHeadcountPlanAction(
 	input: unknown,
 ): Promise<ActionResult<{ plan: HeadcountPlan }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrWorkforceOperatorPermissionAction,
 		path: "approveHeadcountPlanAction",
 		permission: PLAN_APPROVE,
 		safeMessage: "Could not approve headcount plan.",
-		validationMessage: "Enter a valid headcount plan approval.",
-		actionSchema: headcountPlanStatusTransitionActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid headcount plan approval.",
+			}),
+		schema: headcountPlanStatusTransitionActionSchema,
 		input,
 		invoke: invokeHrPackage(approveHeadcountPlan),
-		mapData: (plan: HeadcountPlan) => ({ plan }),
+		project: (plan: HeadcountPlan) => ({ plan }),
 	});
 }
 
 export async function rejectHeadcountPlanAction(
 	input: unknown,
 ): Promise<ActionResult<{ plan: HeadcountPlan }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrWorkforceOperatorPermissionAction,
 		path: "rejectHeadcountPlanAction",
 		permission: PLAN_APPROVE,
 		safeMessage: "Could not reject headcount plan.",
-		validationMessage: "Enter a valid headcount plan rejection.",
-		actionSchema: headcountPlanStatusTransitionActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid headcount plan rejection.",
+			}),
+		schema: headcountPlanStatusTransitionActionSchema,
 		input,
 		invoke: invokeHrPackage(rejectHeadcountPlan),
-		mapData: (plan: HeadcountPlan) => ({ plan }),
+		project: (plan: HeadcountPlan) => ({ plan }),
 	});
 }
 
 export async function closeHeadcountPlanAction(
 	input: unknown,
 ): Promise<ActionResult<{ plan: HeadcountPlan }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrWorkforceOperatorPermissionAction,
 		path: "closeHeadcountPlanAction",
 		permission: PLAN_APPROVE,
 		safeMessage: "Could not close headcount plan.",
-		validationMessage: "Enter a valid headcount plan close request.",
-		actionSchema: headcountPlanStatusTransitionActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid headcount plan close request.",
+			}),
+		schema: headcountPlanStatusTransitionActionSchema,
 		input,
 		invoke: invokeHrPackage(closeHeadcountPlan),
-		mapData: (plan: HeadcountPlan) => ({ plan }),
+		project: (plan: HeadcountPlan) => ({ plan }),
 	});
 }
 
 export async function supersedeHeadcountPlanAction(
 	input: unknown,
 ): Promise<ActionResult<{ plan: HeadcountPlan }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrWorkforceOperatorPermissionAction,
 		path: "supersedeHeadcountPlanAction",
 		permission: PLAN_PREPARE,
 		safeMessage: "Could not supersede headcount plan.",
-		validationMessage: "Enter a valid headcount plan supersede request.",
-		actionSchema: supersedeHeadcountPlanActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid headcount plan supersede request.",
+			}),
+		schema: supersedeHeadcountPlanActionSchema,
 		input,
 		invoke: invokeHrPackage(supersedeHeadcountPlan),
-		mapData: (plan: HeadcountPlan) => ({ plan }),
+		project: (plan: HeadcountPlan) => ({ plan }),
 	});
 }
 
 export async function addHeadcountPlanLineAction(
 	input: unknown,
 ): Promise<ActionResult<{ line: HeadcountPlanLine }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrWorkforceOperatorPermissionAction,
 		path: "addHeadcountPlanLineAction",
 		permission: PLAN_PREPARE,
 		safeMessage: "Could not add headcount plan line.",
-		validationMessage: "Enter a valid headcount plan line.",
-		actionSchema: addHeadcountPlanLineActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid headcount plan line.",
+			}),
+		schema: addHeadcountPlanLineActionSchema,
 		input,
 		invoke: invokeHrPackage(addHeadcountPlanLine),
-		mapData: (line: HeadcountPlanLine) => ({ line }),
+		project: (line: HeadcountPlanLine) => ({ line }),
 	});
 }
 
 export async function updateHeadcountPlanLineAction(
 	input: unknown,
 ): Promise<ActionResult<{ line: HeadcountPlanLine }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrWorkforceOperatorPermissionAction,
 		path: "updateHeadcountPlanLineAction",
 		permission: PLAN_PREPARE,
 		safeMessage: "Could not update headcount plan line.",
-		validationMessage: "Enter a valid headcount plan line update.",
-		actionSchema: updateHeadcountPlanLineActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid headcount plan line update.",
+			}),
+		schema: updateHeadcountPlanLineActionSchema,
 		input,
 		invoke: invokeHrPackage(updateHeadcountPlanLine),
-		mapData: (line: HeadcountPlanLine) => ({ line }),
+		project: (line: HeadcountPlanLine) => ({ line }),
 	});
 }
 
 export async function removeHeadcountPlanLineAction(
 	input: unknown,
 ): Promise<ActionResult<{ removed: true }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrWorkforceOperatorPermissionAction,
 		path: "removeHeadcountPlanLineAction",
 		permission: PLAN_PREPARE,
 		safeMessage: "Could not remove headcount plan line.",
-		validationMessage: "Enter a valid headcount plan line removal.",
-		actionSchema: removeHeadcountPlanLineActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid headcount plan line removal.",
+			}),
+		schema: removeHeadcountPlanLineActionSchema,
 		input,
 		invoke: invokeHrPackage(removeHeadcountPlanLine),
-		mapData: () => ({ removed: true }),
+		project: () => ({ removed: true }),
 	});
 }
 
 export async function reserveHeadcountAction(
 	input: unknown,
 ): Promise<ActionResult<{ reservation: HeadcountReservation }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrWorkforceOperatorPermissionAction,
 		path: "reserveHeadcountAction",
 		permission: HEADCOUNT_RESERVE,
 		safeMessage: "Could not reserve headcount.",
-		validationMessage: "Enter a valid headcount reservation.",
-		actionSchema: reserveHeadcountActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid headcount reservation.",
+			}),
+		schema: reserveHeadcountActionSchema,
 		input,
 		invoke: invokeHrPackage(reserveHeadcount),
-		mapData: (reservation: HeadcountReservation) => ({ reservation }),
+		project: (reservation: HeadcountReservation) => ({ reservation }),
 	});
 }
 
 export async function releaseHeadcountReservationAction(
 	input: unknown,
 ): Promise<ActionResult<{ reservation: HeadcountReservation }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrWorkforceOperatorPermissionAction,
 		path: "releaseHeadcountReservationAction",
 		permission: HEADCOUNT_RESERVE,
 		safeMessage: "Could not release headcount reservation.",
-		validationMessage: "Enter a valid headcount reservation release.",
-		actionSchema: releaseHeadcountReservationActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid headcount reservation release.",
+			}),
+		schema: releaseHeadcountReservationActionSchema,
 		input,
 		invoke: invokeHrPackage(releaseHeadcountReservation),
-		mapData: (reservation: HeadcountReservation) => ({ reservation }),
+		project: (reservation: HeadcountReservation) => ({ reservation }),
 	});
 }
 
 export async function consumeHeadcountReservationAction(
 	input: unknown,
 ): Promise<ActionResult<{ reservation: HeadcountReservation }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrWorkforceOperatorPermissionAction,
 		path: "consumeHeadcountReservationAction",
 		permission: HEADCOUNT_RESERVE,
 		safeMessage: "Could not consume headcount reservation.",
-		validationMessage: "Enter a valid headcount reservation consumption.",
-		actionSchema: consumeHeadcountReservationActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid headcount reservation consumption.",
+			}),
+		schema: consumeHeadcountReservationActionSchema,
 		input,
 		invoke: invokeHrPackage(consumeHeadcountReservation),
-		mapData: (reservation: HeadcountReservation) => ({ reservation }),
+		project: (reservation: HeadcountReservation) => ({ reservation }),
 	});
 }
 
 export async function getHeadcountPlanByIdAction(
 	input: unknown,
 ): Promise<ActionResult<{ plan: HeadcountPlan | null }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrWorkforceOperatorPermissionAction,
 		path: "getHeadcountPlanByIdAction",
 		permission: PLAN_READ,
 		safeMessage: "Could not get headcount plan.",
-		validationMessage: "Enter a valid headcount plan lookup.",
-		actionSchema: getHeadcountPlanByIdActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid headcount plan lookup.",
+			}),
+		schema: getHeadcountPlanByIdActionSchema,
 		input,
 		invoke: invokeHrPackage(getHeadcountPlanById),
-		mapData: (plan: HeadcountPlan | null) => ({ plan }),
+		project: (plan: HeadcountPlan | null) => ({ plan }),
 	});
 }
 
 export async function listHeadcountPlansAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: HeadcountPlanListPage }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrWorkforceOperatorPermissionAction,
 		path: "listHeadcountPlansAction",
 		permission: PLAN_READ,
 		safeMessage: "Could not list headcount plans.",
-		validationMessage: "Enter valid headcount plan filters.",
-		actionSchema: listHeadcountPlansActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter valid headcount plan filters.",
+			}),
+		schema: listHeadcountPlansActionSchema,
 		input,
 		invoke: invokeHrPackage(listHeadcountPlans),
-		mapData: (page: HeadcountPlanListPage) => ({ page }),
+		project: (page: HeadcountPlanListPage) => ({ page }),
 	});
 }
 
 export async function getApprovedHeadcountPlanAction(
 	input: unknown,
 ): Promise<ActionResult<{ plan: HeadcountPlan | null }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrWorkforceOperatorPermissionAction,
 		path: "getApprovedHeadcountPlanAction",
 		permission: PLAN_READ,
 		safeMessage: "Could not get approved headcount plan.",
-		validationMessage: "Enter a valid approved headcount plan lookup.",
-		actionSchema: getApprovedHeadcountPlanActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid approved headcount plan lookup.",
+			}),
+		schema: getApprovedHeadcountPlanActionSchema,
 		input,
 		invoke: invokeHrPackage(getApprovedHeadcountPlan),
-		mapData: (plan: HeadcountPlan | null) => ({ plan }),
+		project: (plan: HeadcountPlan | null) => ({ plan }),
 	});
 }
 
 export async function getHeadcountAvailabilityAction(
 	input: unknown,
 ): Promise<ActionResult<{ availability: HeadcountAvailability }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrWorkforceOperatorPermissionAction,
 		path: "getHeadcountAvailabilityAction",
 		permission: PLAN_READ,
 		safeMessage: "Could not get headcount availability.",
-		validationMessage: "Enter a valid headcount availability request.",
-		actionSchema: getHeadcountAvailabilityActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid headcount availability request.",
+			}),
+		schema: getHeadcountAvailabilityActionSchema,
 		input,
 		invoke: invokeHrPackage(getHeadcountAvailability),
-		mapData: (availability: HeadcountAvailability) => ({ availability }),
+		project: (availability: HeadcountAvailability) => ({ availability }),
 	});
 }
 
 export async function listHeadcountReservationsAction(
 	input: unknown,
 ): Promise<ActionResult<{ page: HeadcountReservationListPage }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrWorkforceOperatorPermissionAction,
 		path: "listHeadcountReservationsAction",
 		permission: PLAN_READ,
 		safeMessage: "Could not list headcount reservations.",
-		validationMessage: "Enter valid headcount reservation filters.",
-		actionSchema: listHeadcountReservationsActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter valid headcount reservation filters.",
+			}),
+		schema: listHeadcountReservationsActionSchema,
 		input,
 		invoke: invokeHrPackage(listHeadcountReservations),
-		mapData: (page: HeadcountReservationListPage) => ({ page }),
+		project: (page: HeadcountReservationListPage) => ({ page }),
 	});
 }
 
 export async function getRecruitmentHeadcountHandoffAction(
 	input: unknown,
 ): Promise<ActionResult<{ handoff: RecruitmentHeadcountHandoff | null }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrWorkforceOperatorPermissionAction,
 		path: "getRecruitmentHeadcountHandoffAction",
 		permission: PLAN_READ,
 		safeMessage: "Could not get recruitment headcount handoff.",
-		validationMessage: "Enter a valid recruitment headcount handoff request.",
-		actionSchema: getRecruitmentHeadcountHandoffActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid recruitment headcount handoff request.",
+			}),
+		schema: getRecruitmentHeadcountHandoffActionSchema,
 		input,
 		invoke: invokeHrPackage(getRecruitmentHeadcountHandoff),
-		mapData: (handoff: RecruitmentHeadcountHandoff | null) => ({ handoff }),
+		project: (handoff: RecruitmentHeadcountHandoff | null) => ({ handoff }),
 	});
 }
 
 export async function getWorkforcePlanVarianceAction(
 	input: unknown,
 ): Promise<ActionResult<{ variance: WorkforcePlanVariance }>> {
-	return await runHrHumanResourcesAction({
+	return await defineAction({
+		runner: runHrWorkforceOperatorPermissionAction,
 		path: "getWorkforcePlanVarianceAction",
 		permission: PLAN_READ,
 		safeMessage: "Could not get workforce plan variance.",
-		validationMessage: "Enter a valid workforce plan variance request.",
-		actionSchema: getWorkforcePlanVarianceActionSchema,
+		onInvalid: () =>
+			errorResult.fail("VALIDATION_ERROR", {
+				publicMessage: "Enter a valid workforce plan variance request.",
+			}),
+		schema: getWorkforcePlanVarianceActionSchema,
 		input,
 		invoke: invokeHrPackage(getWorkforcePlanVariance),
-		mapData: (variance: WorkforcePlanVariance) => ({ variance }),
+		project: (variance: WorkforcePlanVariance) => ({ variance }),
 	});
 }
