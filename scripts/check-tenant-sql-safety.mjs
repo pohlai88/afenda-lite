@@ -193,6 +193,105 @@ function tableColumnReferences(predicateText, tableIdentifier) {
 	].map((match) => match[1]);
 }
 
+/**
+ * Split a lowercased SQL statement into CTE bodies + the final statement.
+ * Unqualified organization_id is then judged per scope, not globally, so
+ * multi-CTE atomic writes stop failing when each CTE owns exactly one
+ * hard-tenant table (gate defect documented in 5a48c35d).
+ *
+ * @param {string} statement
+ * @returns {ReadonlyArray<{ start: number, end: number, text: string }>}
+ */
+export function extractSqlScopes(statement) {
+	/** @type {Array<{ start: number, end: number, text: string }>} */
+	const scopes = [];
+	const withMatch = statement.match(/\bwith\b/);
+	if (!withMatch || withMatch.index === undefined) {
+		return [{ start: 0, end: statement.length, text: statement }];
+	}
+
+	let cursor = withMatch.index + withMatch[0].length;
+	while (cursor < statement.length) {
+		while (cursor < statement.length && /[\s,]/.test(statement[cursor] ?? "")) {
+			cursor += 1;
+		}
+		const nameMatch = /[a-z_][a-z0-9_$]*/y;
+		nameMatch.lastIndex = cursor;
+		if (!nameMatch.test(statement)) {
+			break;
+		}
+		cursor = nameMatch.lastIndex;
+		const asMatch = /\s+as\s*\(/y;
+		asMatch.lastIndex = cursor;
+		if (!asMatch.test(statement)) {
+			break;
+		}
+		const bodyStart = asMatch.lastIndex;
+		let depth = 1;
+		let bodyEnd = bodyStart;
+		while (bodyEnd < statement.length && depth > 0) {
+			const ch = statement[bodyEnd];
+			if (ch === "(") {
+				depth += 1;
+			} else if (ch === ")") {
+				depth -= 1;
+			}
+			bodyEnd += 1;
+		}
+		scopes.push({
+			start: bodyStart,
+			end: bodyEnd - 1,
+			text: statement.slice(bodyStart, bodyEnd - 1),
+		});
+		cursor = bodyEnd;
+		while (cursor < statement.length && /\s/.test(statement[cursor] ?? "")) {
+			cursor += 1;
+		}
+		if (statement[cursor] === ",") {
+			cursor += 1;
+			continue;
+		}
+		break;
+	}
+
+	if (cursor < statement.length) {
+		scopes.push({
+			start: cursor,
+			end: statement.length,
+			text: statement.slice(cursor),
+		});
+	}
+
+	if (scopes.length === 0) {
+		return [{ start: 0, end: statement.length, text: statement }];
+	}
+	return scopes;
+}
+
+/**
+ * @param {ReadonlyArray<{ start: number, end: number, text: string }>} scopes
+ * @param {number} index
+ */
+function innermostScopeAt(scopes, index) {
+	/** @type {{ start: number, end: number, text: string } | null} */
+	let best = null;
+	for (const scope of scopes) {
+		if (index >= scope.start && index < scope.end) {
+			if (!best || scope.end - scope.start < best.end - best.start) {
+				best = scope;
+			}
+		}
+	}
+	return (
+		best ??
+		scopes.at(-1) ?? { start: 0, end: Number.POSITIVE_INFINITY, text: "" }
+	);
+}
+
+function scopeHasUnqualifiedOrganizationId(scopeText) {
+	return /\b(?:where|on|and|or)\b[\s\S]*\borganization_id\b/.test(scopeText);
+}
+
 function lineOf(sourceFile, node) {
 	return (
 		sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile)).line + 1
@@ -410,19 +509,30 @@ export function analyzeTenantSqlSafety({
 					candidateAlias && !aliasStopWords.has(candidateAlias)
 						? candidateAlias
 						: table;
-				references.push({ alias, node, table });
+				references.push({
+					alias,
+					index: reference.index ?? 0,
+					node,
+					table,
+				});
 			}
 		}
 
-		const hasUnqualifiedOwnership =
-			/\b(?:where|on)\b[\s\S]*\borganization_id\b/.test(statement);
+		const scopes = extractSqlScopes(statement);
 		for (const reference of references) {
-			const { alias, table } = reference;
+			const { alias, index, table } = reference;
 			if (
-				new RegExp(`\\b${alias}\\s*\\.\\s*organization_id\\b`).test(
-					statement,
-				) ||
-				(references.length === 1 && hasUnqualifiedOwnership)
+				new RegExp(`\\b${alias}\\s*\\.\\s*organization_id\\b`).test(statement)
+			) {
+				continue;
+			}
+			const scope = innermostScopeAt(scopes, index);
+			const refsInScope = references.filter(
+				(entry) => entry.index >= scope.start && entry.index < scope.end,
+			);
+			if (
+				refsInScope.length === 1 &&
+				scopeHasUnqualifiedOrganizationId(scope.text)
 			) {
 				continue;
 			}

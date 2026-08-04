@@ -137,6 +137,54 @@ test("accepts explicitly scoped raw SQL", () => {
 	assert.deepEqual(findings, []);
 });
 
+test("accepts multi-CTE raw SQL when each CTE scopes its sole hard-tenant table", () => {
+	const findings = analyzeTenantSqlSafety({
+		file: "fixture.ts",
+		hardTenantTables,
+		hardTenantTableNames: new Set([
+			"supplier_invoice",
+			"supplier_credit_note",
+		]),
+		source: `database.transaction((sqlTag) => [
+			sqlTag\`
+				WITH invoice_bumped AS (
+					UPDATE supplier_invoice SET version = version + 1
+					WHERE id = \${invoiceId} AND organization_id = \${organizationId}
+					RETURNING id
+				), credit_bumped AS (
+					UPDATE supplier_credit_note SET version = version + 1
+					WHERE id = \${creditId} AND organization_id = \${organizationId}
+					RETURNING id
+				)
+				SELECT 1 FROM invoice_bumped INNER JOIN credit_bumped ON true
+			\`,
+		]);`,
+	});
+	assert.deepEqual(findings, []);
+});
+
+test("rejects multi-table raw SQL in one scope when only one table is org-scoped", () => {
+	const findings = analyzeTenantSqlSafety({
+		file: "fixture.ts",
+		hardTenantTables,
+		hardTenantTableNames: new Set([
+			"platform_role_assignment",
+			"joined_tenant",
+		]),
+		source: `database.transaction((sqlTag) => [
+			sqlTag\`
+				SELECT *
+				FROM platform_role_assignment assignment
+				INNER JOIN joined_tenant joined ON joined.assignment_id = assignment.id
+				WHERE assignment.organization_id = \${organizationId}
+			\`,
+		]);`,
+	});
+	assert.equal(findings.length, 1);
+	assert.equal(findings[0]?.table, "joined_tenant");
+	assert.equal(findings[0]?.rule, "raw-tenant-sql-missing-organization");
+});
+
 test("restricts registered system SQL to its canonical owner source", () => {
 	const systemSqlOperationOwners = new Map([
 		[
