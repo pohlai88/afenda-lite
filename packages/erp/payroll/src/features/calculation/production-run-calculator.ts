@@ -10,6 +10,11 @@ import type {
 	PayrollStatutoryRule,
 } from "../../kernel/contracts/projected-types";
 import type {
+	PayrollClockCapability,
+	PayrollCurrencyCapability,
+	PayrollStatutoryCapability,
+} from "../../kernel/execution/capability-ports";
+import type {
 	PayrollRunCalculatorPort,
 	PayrollWorkforceInputPort,
 } from "../../kernel/execution/ports";
@@ -19,14 +24,12 @@ import {
 	parsePayrollStatutoryResultId,
 } from "../../kernel/identity/brands";
 import {
-	DEFAULT_PAYROLL_ROUNDING_POLICY,
 	PAYROLL_CALCULATION_VERSION,
 	type PayrollRoundingPolicy,
 } from "../../kernel/money/rounding-policy";
 import { payrollJsonObjectSchema } from "../../kernel/validation/common.schema";
 import type { PayrollAssignmentsStore } from "../employee-assignments/assignments.store";
 import type { PayrollSetupStore } from "../payroll-setup/setup.store";
-import { isStatutoryCalculatorProductionApproved } from "../statutory-rules/calculator-registry";
 import type { PayrollStatutoryStore } from "../statutory-rules/statutory.store";
 import type { PayrollInputsStore } from "../variable-inputs/inputs.store";
 import { normalizePayrollWorkforceHandoff } from "../workforce-ingress/normalize-workforce-handoff";
@@ -43,6 +46,8 @@ import type {
 	PayrollEmployeeCalcSnapshot,
 } from "./calculation.types";
 import type { PayrollOutputsStore } from "./outputs.store";
+
+const ISO_CALENDAR_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 type PayrollCalculationStore = PayrollAssignmentsStore &
 	PayrollInputsStore &
@@ -108,10 +113,17 @@ function compareCanonicalRecords(
 export function createProductionPayrollRunCalculator(input: {
 	store: PayrollCalculationStore;
 	employees: PayrollWorkforceInputPort;
+	currency: PayrollCurrencyCapability;
+	statutory: PayrollStatutoryCapability;
+	clock: PayrollClockCapability;
 	roundingPolicy?: PayrollRoundingPolicy;
 }): PayrollRunCalculatorPort {
-	const roundingPolicy =
-		input.roundingPolicy ?? DEFAULT_PAYROLL_ROUNDING_POLICY;
+	const today = input.clock.today();
+	if (!ISO_CALENDAR_DATE.test(today)) {
+		throw new TypeError(
+			"PayrollClockCapability.today() must return an ISO calendar date (YYYY-MM-DD).",
+		);
+	}
 
 	return {
 		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: This fail-closed coordinator keeps load, calculation, evidence aggregation, and replacement persistence visibly ordered.
@@ -142,6 +154,14 @@ export function createProductionPayrollRunCalculator(input: {
 					publicMessage: "Pay group not found",
 				});
 			}
+
+			const currencyRounding = input.currency.payableRounding({
+				currencyCode: payGroup.data.currencyCode,
+			});
+			if (!currencyRounding.ok) {
+				return currencyRounding;
+			}
+			const roundingPolicy = input.roundingPolicy ?? currencyRounding.data;
 
 			const effectiveDate = payrollPeriod.periodEnd;
 
@@ -203,9 +223,12 @@ export function createProductionPayrollRunCalculator(input: {
 			if (
 				statutoryRules.data.some((rule) => {
 					const { calculatorId } = rule.configJson;
-					return (
-						typeof calculatorId !== "string" ||
-						!isStatutoryCalculatorProductionApproved(calculatorId)
+					if (typeof calculatorId !== "string") {
+						return true;
+					}
+					const registered = input.statutory.requireCalculator(calculatorId);
+					return !(
+						registered.ok && input.statutory.isProductionApproved(calculatorId)
 					);
 				})
 			) {

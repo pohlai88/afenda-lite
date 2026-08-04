@@ -61,6 +61,17 @@ export type {
 	PayrollWorkforceCapability,
 } from "./facade/contracts";
 export {
+	createFixedPayrollClock,
+	createJurisdictionPayrollCurrency,
+	createRegistryPayrollStatutory,
+	createSystemPayrollClock,
+} from "./facade/system-capabilities";
+export type {
+	PayrollClockCapability,
+	PayrollCurrencyCapability,
+	PayrollStatutoryCapability,
+} from "./kernel/execution/capability-ports";
+export {
 	PAYROLL_PERMISSION_CODES,
 	PAYROLL_PERMISSION_INPUT_MANAGE,
 	PAYROLL_PERMISSION_PAYSLIP_READ_ALL,

@@ -1,5 +1,10 @@
 import type { PayrollAuthorizationPort } from "./authorization";
 import type {
+	PayrollClockCapability,
+	PayrollCurrencyCapability,
+	PayrollStatutoryCapability,
+} from "./capability-ports";
+import type {
 	MutationPorts,
 	PayrollObservabilityPort,
 	PayrollRunCalculatorPort,
@@ -8,8 +13,11 @@ import type {
 
 interface PayrollExecutionOptions<TStore> {
 	authorization?: PayrollAuthorizationPort;
+	clock?: PayrollClockCapability;
+	currency?: PayrollCurrencyCapability;
 	employees?: PayrollWorkforceInputPort;
 	observability?: PayrollObservabilityPort;
+	statutory?: PayrollStatutoryCapability;
 	store?: TStore;
 }
 

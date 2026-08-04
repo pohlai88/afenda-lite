@@ -399,6 +399,10 @@
 					"file": "src/kernel/execution/authorized-operation.ts"
 				},
 				{
+					"evidence": "src/kernel/execution/capability-ports.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/execution/capability-ports.ts"
+				},
+				{
 					"evidence": "src/kernel/execution/command-options.ts exceeds src/<owner>/<file>",
 					"file": "src/kernel/execution/command-options.ts"
 				},
@@ -520,27 +524,23 @@
 					"file": "src/features/calculation/outputs.schema.ts"
 				},
 				{
-					"evidence": "src/features/calculation/production-run-calculator.ts:27 -> src/features/employee-assignments/assignments.store.ts (calculation -> employee-assignments)",
+					"evidence": "src/features/calculation/production-run-calculator.ts:31 -> src/features/employee-assignments/assignments.store.ts (calculation -> employee-assignments)",
 					"file": "src/features/calculation/production-run-calculator.ts"
 				},
 				{
-					"evidence": "src/features/calculation/production-run-calculator.ts:28 -> src/features/payroll-setup/setup.store.ts (calculation -> payroll-setup)",
+					"evidence": "src/features/calculation/production-run-calculator.ts:32 -> src/features/payroll-setup/setup.store.ts (calculation -> payroll-setup)",
 					"file": "src/features/calculation/production-run-calculator.ts"
 				},
 				{
-					"evidence": "src/features/calculation/production-run-calculator.ts:29 -> src/features/statutory-rules/calculator-registry.ts (calculation -> statutory-rules)",
+					"evidence": "src/features/calculation/production-run-calculator.ts:33 -> src/features/statutory-rules/statutory.store.ts (calculation -> statutory-rules)",
 					"file": "src/features/calculation/production-run-calculator.ts"
 				},
 				{
-					"evidence": "src/features/calculation/production-run-calculator.ts:30 -> src/features/statutory-rules/statutory.store.ts (calculation -> statutory-rules)",
+					"evidence": "src/features/calculation/production-run-calculator.ts:34 -> src/features/variable-inputs/inputs.store.ts (calculation -> variable-inputs)",
 					"file": "src/features/calculation/production-run-calculator.ts"
 				},
 				{
-					"evidence": "src/features/calculation/production-run-calculator.ts:31 -> src/features/variable-inputs/inputs.store.ts (calculation -> variable-inputs)",
-					"file": "src/features/calculation/production-run-calculator.ts"
-				},
-				{
-					"evidence": "src/features/calculation/production-run-calculator.ts:32 -> src/features/workforce-ingress/normalize-workforce-handoff.ts (calculation -> workforce-ingress)",
+					"evidence": "src/features/calculation/production-run-calculator.ts:35 -> src/features/workforce-ingress/normalize-workforce-handoff.ts (calculation -> workforce-ingress)",
 					"file": "src/features/calculation/production-run-calculator.ts"
 				},
 				{
@@ -651,7 +651,7 @@
 		{
 			"items": [
 				{
-					"evidence": "src/facade/contracts.ts:23 declares an optional PayrollWorkforceCapability pull port that production wires nowhere (bridging doc B1: single push transport is live)",
+					"evidence": "src/facade/contracts.ts:31 declares an optional PayrollWorkforceCapability pull port that production wires nowhere (bridging doc B1: single push transport is live)",
 					"file": "src/facade/contracts.ts"
 				}
 			],
@@ -678,6 +678,6 @@
 	"schemaVersion": 1,
 	"summary": {
 		"featureCount": 9,
-		"sourceTypeScriptFiles": 127
+		"sourceTypeScriptFiles": 129
 	}
 }

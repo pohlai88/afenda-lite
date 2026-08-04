@@ -46,12 +46,18 @@ PowerShell outer loop: `$env:REQUIRE_DATABASE_TESTS = "1"; pnpm test:payroll:par
 
 ```ts
 import {
+	createJurisdictionPayrollCurrency,
 	createPayrollCalendar,
 	createPayrollCapabilityOptions,
+	createRegistryPayrollStatutory,
+	createSystemPayrollClock,
 } from "@afenda/payroll";
 
 const payroll = createPayrollCapabilityOptions({
 	authorization: payrollAuthorization,
+	clock: createSystemPayrollClock(),
+	currency: createJurisdictionPayrollCurrency(),
+	statutory: createRegistryPayrollStatutory(),
 });
 
 const result = await createPayrollCalendar(input, payroll);

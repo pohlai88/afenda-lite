@@ -34,6 +34,9 @@ export function createPayrollCapabilityOptions(
 	internalOptions.set(context, {
 		authorization: composition.authorization,
 		employees: workforce,
+		clock: composition.clock,
+		currency: composition.currency,
+		statutory: composition.statutory,
 		...(composition.observability === undefined
 			? {}
 			: { observability: composition.observability }),
@@ -42,6 +45,9 @@ export function createPayrollCapabilityOptions(
 		calculator: createProductionPayrollRunCalculator({
 			store,
 			employees: workforce,
+			currency: composition.currency,
+			statutory: composition.statutory,
+			clock: composition.clock,
 		}),
 	});
 

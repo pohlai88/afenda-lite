@@ -1,7 +1,10 @@
 import { errorResult } from "@afenda/errors";
 import {
+	createFixedPayrollClock,
+	createJurisdictionPayrollCurrency,
 	createPayrollCalendar,
 	createPayrollCapabilityOptions,
+	createRegistryPayrollStatutory,
 	type PayrollCapabilityComposition,
 	type PayrollCapabilityOptions,
 } from "@afenda/payroll";
@@ -16,6 +19,11 @@ function createComposition(): PayrollCapabilityComposition {
 				return Promise.resolve(true);
 			},
 		},
+		clock: createFixedPayrollClock({
+			now: new Date("2025-01-15T00:00:00.000Z"),
+		}),
+		currency: createJurisdictionPayrollCurrency(),
+		statutory: createRegistryPayrollStatutory(),
 		workforce: {
 			getApprovedPayrollHandoff() {
 				return Promise.resolve(errorResult.ok(null));

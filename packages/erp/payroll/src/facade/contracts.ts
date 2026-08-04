@@ -1,5 +1,10 @@
 import type { PayrollAuthorizationPort } from "../kernel/execution/authorization";
 import type {
+	PayrollClockCapability,
+	PayrollCurrencyCapability,
+	PayrollStatutoryCapability,
+} from "../kernel/execution/capability-ports";
+import type {
 	PayrollObservabilityPort,
 	PayrollWorkforceInputPort,
 } from "../kernel/execution/ports";
@@ -13,7 +18,10 @@ export type PayrollWorkforceCapability = PayrollWorkforceInputPort;
 /** Stable composition input for the permanent Payroll execution facade. */
 export interface PayrollCapabilityComposition {
 	readonly authorization: PayrollAuthorizationCapability;
+	readonly clock: PayrollClockCapability;
+	readonly currency: PayrollCurrencyCapability;
 	readonly observability?: PayrollObservabilityPort;
+	readonly statutory: PayrollStatutoryCapability;
 	/**
 	 * Test-only override for workforce fact reads. Production composition omits
 	 * this field — operations read the accepted-handoff ledger sealed by

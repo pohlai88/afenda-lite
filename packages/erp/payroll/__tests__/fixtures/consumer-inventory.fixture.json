@@ -49,7 +49,43 @@
 			"referenceKind": "module",
 			"resolution": "resolved",
 			"resolvedTarget": "packages/erp/payroll/src/index.ts",
+			"symbol": "createJurisdictionPayrollCurrency",
+			"useMode": "runtime"
+		},
+		{
+			"consumerClass": "production",
+			"disposition": "allowed",
+			"entrypoint": ".",
+			"file": "apps/web/lib/erp/payroll-command-options.ts",
+			"package": "@afenda/web",
+			"referenceKind": "module",
+			"resolution": "resolved",
+			"resolvedTarget": "packages/erp/payroll/src/index.ts",
 			"symbol": "createPayrollCapabilityOptions",
+			"useMode": "runtime"
+		},
+		{
+			"consumerClass": "production",
+			"disposition": "allowed",
+			"entrypoint": ".",
+			"file": "apps/web/lib/erp/payroll-command-options.ts",
+			"package": "@afenda/web",
+			"referenceKind": "module",
+			"resolution": "resolved",
+			"resolvedTarget": "packages/erp/payroll/src/index.ts",
+			"symbol": "createRegistryPayrollStatutory",
+			"useMode": "runtime"
+		},
+		{
+			"consumerClass": "production",
+			"disposition": "allowed",
+			"entrypoint": ".",
+			"file": "apps/web/lib/erp/payroll-command-options.ts",
+			"package": "@afenda/web",
+			"referenceKind": "module",
+			"resolution": "resolved",
+			"resolvedTarget": "packages/erp/payroll/src/index.ts",
+			"symbol": "createSystemPayrollClock",
 			"useMode": "runtime"
 		},
 		{
@@ -173,6 +209,61 @@
 			"resolution": "not-applicable",
 			"symbol": "packages/erp/payroll/__tests__/payroll-store-contract.test.ts",
 			"useMode": "filesystem"
+		},
+		{
+			"consumerClass": "tooling",
+			"disposition": "manual-review",
+			"entrypoint": "filesystem",
+			"file": "scripts/governance-architecture-debt.mjs",
+			"package": "afenda-lite",
+			"referenceKind": "filesystem",
+			"resolution": "not-applicable",
+			"symbol": "packages/erp/payroll/__tests__/fixtures/architecture-debt.fixture.json",
+			"useMode": "filesystem"
+		},
+		{
+			"consumerClass": "tooling",
+			"disposition": "manual-review",
+			"entrypoint": "filesystem",
+			"file": "scripts/governance-cross-import.mjs",
+			"package": "afenda-lite",
+			"referenceKind": "filesystem",
+			"resolution": "not-applicable",
+			"symbol": "packages/erp/payroll/src",
+			"useMode": "filesystem"
+		},
+		{
+			"consumerClass": "tooling",
+			"disposition": "manual-review",
+			"entrypoint": "filesystem",
+			"file": "scripts/governance-emission-drain.mjs",
+			"package": "afenda-lite",
+			"referenceKind": "filesystem",
+			"resolution": "not-applicable",
+			"symbol": "packages/erp/payroll/__tests__/fixtures/architecture-debt.fixture.json",
+			"useMode": "filesystem"
+		},
+		{
+			"consumerClass": "tooling",
+			"disposition": "manual-review",
+			"entrypoint": "filesystem",
+			"file": "scripts/governance-emission-drain.mjs",
+			"package": "afenda-lite",
+			"referenceKind": "filesystem",
+			"resolution": "not-applicable",
+			"symbol": "packages/erp/payroll/src/kernel/emissions/emission-registry.ts",
+			"useMode": "filesystem"
+		},
+		{
+			"consumerClass": "tooling",
+			"disposition": "manual-review",
+			"entrypoint": "generated",
+			"file": "scripts/governance-erp-symmetry.mjs",
+			"package": "afenda-lite",
+			"referenceKind": "generated",
+			"resolution": "not-applicable",
+			"symbol": "*",
+			"useMode": "generated"
 		},
 		{
 			"consumerClass": "tooling",
