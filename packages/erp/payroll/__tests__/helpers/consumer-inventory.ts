@@ -345,10 +345,25 @@ function referenceSortKey(reference: ConsumerReference): string {
 	].join(":");
 }
 
+const inventoryCache = new Map<string, ConsumerInventory>();
+
+function mayReferencePayroll(sourceText: string): boolean {
+	return (
+		sourceText.includes(PAYROLL_PACKAGE) ||
+		sourceText.includes(PAYROLL_FILESYSTEM_MARKER)
+	);
+}
+
 export function buildConsumerInventory(
 	workspaceRoot: string,
 	packageRoot: string,
 ): ConsumerInventory {
+	const cacheKey = `${workspaceRoot}\0${packageRoot}`;
+	const cached = inventoryCache.get(cacheKey);
+	if (cached !== undefined) {
+		return cached;
+	}
+
 	const references: ConsumerReference[] = [];
 	const compilerOptions = new Map<string, ts.CompilerOptions>();
 	for (const file of workspaceFiles(workspaceRoot)) {
@@ -357,6 +372,9 @@ export function buildConsumerInventory(
 			continue;
 		}
 		const sourceText = readFileSync(absoluteFile, "utf8");
+		if (!mayReferencePayroll(sourceText)) {
+			continue;
+		}
 		const sourceFile = ts.createSourceFile(
 			absoluteFile,
 			sourceText,
@@ -442,7 +460,7 @@ export function buildConsumerInventory(
 		(left, right) =>
 			referenceSortKey(left).localeCompare(referenceSortKey(right)),
 	);
-	return consumerInventorySchema.parse({
+	const inventory = consumerInventorySchema.parse({
 		entrypointIsolation: {
 			".": "sole production business facade",
 		},
@@ -450,6 +468,8 @@ export function buildConsumerInventory(
 		references: sortedReferences,
 		schemaVersion: 1,
 	});
+	inventoryCache.set(cacheKey, inventory);
+	return inventory;
 }
 
 export function readConsumerInventoryFixture(file: string): ConsumerInventory {

@@ -12,7 +12,8 @@
  *
  * HR agreement tables (hr_allowance_entitlement, hr_employee_compensation, …):
  * @afenda/human-resources only.
- * Authority: docs-V2/_scratch/erp/allowance-deduction-ownership.md
+ * Authority: docs/erp/hr-payroll-bridging.md (ownership + emission drain).
+ * Emission → dispatcher mapping: ./emission-registry.ts.
  */
 export const PAYROLL_MUTATION_TABLES = [
 	"payroll_calendar",
