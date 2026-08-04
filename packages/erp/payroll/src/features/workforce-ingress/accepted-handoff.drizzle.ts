@@ -7,13 +7,9 @@ import {
 	isNull,
 	payrollAcceptedHandoff,
 } from "@afenda/db";
-import {
-	errorIngress,
-	errorProject,
-	errorResult,
-	type Result,
-} from "@afenda/errors";
+import { errorResult, type Result } from "@afenda/errors";
 
+import { mapPersistenceFailure } from "../../kernel/execution/persistence-errors";
 import type {
 	AcceptedPayrollHandoff,
 	AcceptHandoffRecord,
@@ -24,10 +20,8 @@ import {
 	isStrictlyNewerHandoffRevision,
 } from "./handoff-revision";
 
-function failFromPersistence(error: unknown, _fallbackMessage: string) {
-	return errorProject.result(
-		errorIngress.postgres(error, { operation: "persistence.postgres" }),
-	);
+function failFromPersistence(error: unknown, fallbackMessage: string) {
+	return mapPersistenceFailure(error, fallbackMessage);
 }
 
 type AcceptedHandoffRow = typeof payrollAcceptedHandoff.$inferSelect;
@@ -127,39 +121,45 @@ export const drizzleWorkforceIngressMethods: PayrollWorkforceIngressStore = {
 			}
 
 			const payloadJson = JSON.stringify(record.payload);
-			const [rows] = await afendaDatabase.transaction((sql) => [
+			const identityLockKey = [
+				record.organizationId,
+				record.employeeId,
+				record.effectiveDate,
+				record.periodStart ?? "",
+				record.periodEnd ?? "",
+			].join(":");
+			// Serialize supersession per active identity: Neon HTTP transactions
+			// are one-shot, so advisory xact lock + ordered UPDATE then INSERT
+			// keeps the partial unique index honest under concurrent ingest.
+			const [, , rows] = await afendaDatabase.transaction((sql) => [
+				sql`SELECT pg_advisory_xact_lock(hashtextextended(${`payroll-handoff:${identityLockKey}`}, 0))`,
 				sql`
-					WITH inserted AS (
-						INSERT INTO payroll_accepted_handoff (
-							id, organization_id, employee_id, employment_id, contract_version,
-							effective_date, period_start, period_end, payload, payload_hash,
-							status, create_idempotency_key, create_request_fingerprint,
-							version, created_by, updated_by
-						) VALUES (
-							${id}, ${record.organizationId}, ${record.employeeId},
-							${record.employmentId}, ${record.contractVersion},
-							${record.effectiveDate}::date, ${record.periodStart}::date,
-							${record.periodEnd}::date, ${payloadJson}::jsonb,
-							${record.payloadHash}, 'accepted', ${record.idempotencyKey},
-							${record.payloadHash}, 1, ${record.actorUserId}, ${record.actorUserId}
-						)
-						RETURNING id
-					),
-					superseded AS (
-						UPDATE payroll_accepted_handoff
-						SET status = 'superseded', superseded_by_handoff_id = ${id},
-							version = version + 1, updated_by = ${record.actorUserId},
-							updated_at = now()
-						WHERE organization_id = ${record.organizationId}
-							AND employee_id = ${record.employeeId}
-							AND effective_date = ${record.effectiveDate}::date
-							AND period_start IS NOT DISTINCT FROM ${record.periodStart}::date
-							AND period_end IS NOT DISTINCT FROM ${record.periodEnd}::date
-							AND status = 'accepted'
-							AND id <> ${id}
-						RETURNING id
+					UPDATE payroll_accepted_handoff
+					SET status = 'superseded', superseded_by_handoff_id = ${id},
+						version = version + 1, updated_by = ${record.actorUserId},
+						updated_at = now()
+					WHERE organization_id = ${record.organizationId}
+						AND employee_id = ${record.employeeId}
+						AND effective_date = ${record.effectiveDate}::date
+						AND period_start IS NOT DISTINCT FROM ${record.periodStart}::date
+						AND period_end IS NOT DISTINCT FROM ${record.periodEnd}::date
+						AND status = 'accepted'
+				`,
+				sql`
+					INSERT INTO payroll_accepted_handoff (
+						id, organization_id, employee_id, employment_id, contract_version,
+						effective_date, period_start, period_end, payload, payload_hash,
+						status, create_idempotency_key, create_request_fingerprint,
+						version, created_by, updated_by
+					) VALUES (
+						${id}, ${record.organizationId}, ${record.employeeId},
+						${record.employmentId}, ${record.contractVersion},
+						${record.effectiveDate}::date, ${record.periodStart}::date,
+						${record.periodEnd}::date, ${payloadJson}::jsonb,
+						${record.payloadHash}, 'accepted', ${record.idempotencyKey},
+						${record.payloadHash}, 1, ${record.actorUserId}, ${record.actorUserId}
 					)
-					SELECT inserted.id FROM inserted
+					RETURNING id
 				`,
 			]);
 			if (rows[0] === undefined) {

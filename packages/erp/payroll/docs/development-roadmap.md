@@ -39,7 +39,7 @@ Entrypoints: `@afenda/payroll` (production) · `@afenda/payroll/testing` (test-o
 | C9 finalize SoD | **CLOSED** | `finalization.ts` maker ≠ checker |
 | B2 governance fixtures | **CLOSED** | Four fixtures + `governance-fixtures.test.ts` |
 | B4 emission registry | **CLOSED** | `src/kernel/emissions/emission-registry.ts` |
-| B5 parity loop | **PARTIAL** | `pnpm test:payroll:parity`; ingress Neon skips until handoff table on target |
+| B5 parity loop | **CLOSED** | `pnpm test:payroll:parity` 7/7 on preview with handoff table; lock + UPDATE-then-INSERT |
 | B1 transport docs + `./testing` | **CLOSED** | README transport + package `exports["./testing"]` |
 | B7 governance gates | **CLOSED** | `governance:erp-symmetry` · `emission-drain` · `cross-import` · `architecture-debt` |
 | B3 capability signature | **CLOSED** | Required `clock` · `currency` · `statutory` on composition |
@@ -49,11 +49,9 @@ Entrypoints: `@afenda/payroll` (production) · `@afenda/payroll/testing` (test-o
 | Item | Bridging | Notes |
 | --- | --- | --- |
 | Statutory calculator sourcing | A2 | No production jurisdiction until reviewer-approved calculator |
-| Retention vs privacy erasure | A3 | Restriction posture until counsel cites clocks |
-| Settlement authority | A4 | Needs settlement-ingress (D2) |
 | Outbox drain | B6 | Platform dispatcher + Payments/Accounting consumers — own mission |
-| Privacy / settlement / retro / final-settlement / filings / jobs | D1–D6 | Feature capsules not yet present |
-| Neon ingress parity close | B5 | Apply `payroll_accepted_handoff` on preview test target |
+| Privacy / settlement / retro / final-settlement / filings / jobs | D1–D6 | Feature capsules not yet present (A3/A4 postures closed; D2 still required for settlement ingress) |
+| Production handoff DDL | ops | Apply `0049_payroll_accepted_handoff.sql` off PL-S9 when migrate is approved |
 
 ## 4. Verify loops
 

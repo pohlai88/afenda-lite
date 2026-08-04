@@ -8,10 +8,10 @@
 | --- | --- | --- | --- | --- | --- |
 | A1 | Lifecycle coupling | **CLOSED** | Demote Payroll to `lifecycle: "scaffolded"` until HR promotion evidence exists. Enforce with `pnpm governance:packages` → `governance-lifecycle-coupling.mjs` (active module must not require a scaffolded module). | 2026-08-05 | Payroll / platform governance |
 | A2 | Statutory calculator sourcing | OPEN | Choose build / vendor table / rates feed per MY and VN instrument; record authoritative citation before production activation. | — | Pending product + finance |
-| A3 | Retention vs privacy erasure | OPEN | Interim engineering posture: Payroll evidence uses **restriction**, not cascade erasure from HR privacy deletes, until counsel cites statutory retention clocks. | — | Pending counsel |
-| A4 | Settlement authority | OPEN | Interim engineering posture: payroll reversal only while disbursement is un-settled; settled recovery is Accounting clawback. Requires settlement-ingress (D2). | — | Pending Payments / Accounting |
+| A3 | Retention vs privacy erasure | **CLOSED** | Adopted bridging posture: Payroll evidence uses **restriction**, not cascade erasure from HR privacy deletes, until counsel cites statutory retention clocks. Erasure automation stays forbidden without that citation. | 2026-08-05 | Payroll (counsel citation still required before erasure) |
+| A4 | Settlement authority | **CLOSED** | Adopted bridging posture: payroll reversal only while disbursement is un-settled; settled recovery is Accounting clawback. Settlement-ingress (D2) is a delivery dependency, not an open product fork. | 2026-08-05 | Payroll / Payments / Accounting |
 | C9 | Finalize segregation of duties | **CLOSED** | Maker-checker is calculate-actor ≠ finalize-actor (`run.updatedBy` vs finalize `actorUserId` → `CONFLICT`). No distinct `payroll.run.approve` yet; break-glass lands with the approval-workflow slice. | 2026-08-05 | Payroll |
-| B5 | Neon parity loop | **PARTIAL** | `pnpm test:payroll:parity` lane + failure-injection helpers/tests shipped. Finalize atomicity/concurrency green on Neon; workforce-ingress Neon cases skip until `payroll_accepted_handoff` is migrated on the preview target. | 2026-08-05 | Payroll |
+| B5 | Neon parity loop | **CLOSED** | `pnpm test:payroll:parity` green on preview target with `payroll_accepted_handoff` present (7/7). Supersession uses advisory xact lock + UPDATE-then-INSERT so the active-identity unique index holds under concurrent ingest. Production migrate remains ops-gated (PL-S9). | 2026-08-05 | Payroll |
 | B2 | Governance fixtures | **CLOSED** | Four fixtures + `governance-fixtures.test.ts` (public-contract, registry-projection, consumer-inventory, architecture-debt). | 2026-08-05 | Payroll |
 | B4 | Emission registry | **CLOSED** | `PAYROLL_EMISSION_REGISTRY` owns command→event→dispatcher mapping; manifest `events.emits` derives from it; retired `docs-V2` citation removed from `mutation-tables.ts`. | 2026-08-05 | Payroll |
 | B1 | Transport docs + testing subpath | **CLOSED** | Document single push/sync-ingest transport on both READMEs; PayrollWorkforceCapability is test-only; declare @afenda/payroll/testing. | 2026-08-05 | Payroll / HR |
@@ -36,9 +36,11 @@ Shipped in `src/features/payroll-runs/finalization.ts`: when status is `calculat
 
 - Gate helpers: `__tests__/helpers/payroll-neon-parity.ts`, `__tests__/helpers/payroll-neon-cleanup.ts`
 - Failure injection: `__tests__/failure-injection/run-finalize-atomicity.test.ts`, `__tests__/failure-injection/workforce-ingress-atomicity.test.ts`
+- Adapter: `accepted-handoff.drizzle.ts` — `pg_advisory_xact_lock` on identity, supersede prior accepted row, then insert
 - Lane: `testing/vitest.payroll-parity.config.ts` · root `pnpm test:payroll:parity` · package `pnpm --filter @afenda/payroll test:parity`
+- Verify: `REQUIRE_DATABASE_TESTS=1` + `AFENDA_DATABASE_TEST_TARGET=preview|test` + non-prod `DATABASE_URL` with migration `0049_payroll_accepted_handoff.sql` applied
 - Inner loop (no Neon): `pnpm check:payroll`
 
 ## Open-decision rule
 
-Do not promote either module to `active`, claim enterprise seal, or enable production statutory calculators while A2–A4 remain OPEN.
+Do not promote either module to `active`, claim enterprise seal, or enable production statutory calculators while **A2** remains OPEN. A3/A4 closed postures still require D2 settlement-ingress and counsel-cited retention clocks before erasure or settled clawback automation.
