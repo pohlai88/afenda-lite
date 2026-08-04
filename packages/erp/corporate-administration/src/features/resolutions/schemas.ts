@@ -9,7 +9,10 @@ import {
 	resolutionIdSchema,
 	userIdSchema,
 } from "../../kernel/brands";
-import { canonicalDateSchema } from "../../kernel/dates";
+import {
+	canonicalDateSchema,
+	canonicalInstantSchema,
+} from "../../kernel/dates";
 
 const sourceDocumentIdSchema = z.string().trim().min(1).max(128);
 const referenceSchema = z.string().trim().min(1).max(128);
@@ -218,7 +221,7 @@ export const recordWrittenResolutionInputSchema = z
 		textDigest: digestSchema,
 		documentId: referenceSchema,
 		effectiveFrom: canonicalDateSchema,
-		approvedAt: z.coerce.date(),
+		approvedAt: canonicalInstantSchema,
 		eligibleVotes: positiveIntegerSchema,
 		votesFor: positiveIntegerSchema,
 		thresholdType: voteThresholdTypeSchema,

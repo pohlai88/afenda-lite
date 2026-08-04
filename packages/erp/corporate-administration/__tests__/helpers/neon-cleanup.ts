@@ -11,12 +11,17 @@ import {
 	caCompanyStatusHistory,
 	caEstablishmentStatusHistory,
 	caGovernanceBody,
+	caGovernanceMeeting,
 	caGovernanceMembership,
 	caLegalCompany,
 	caLegalEstablishment,
 	caMutationReceipt,
+	caOfficerAppointment,
 	caPremise,
 	caRegisteredAddress,
+	caResolution,
+	caResolutionAction,
+	caStatutoryOffice,
 	eq,
 	type NeonHttpSql,
 	platformAuditLog,
@@ -264,6 +269,76 @@ export async function countCorporateAdministrationGovernanceBodies(
 		.select({ value: sql<number>`count(*)::int` })
 		.from(caGovernanceBody)
 		.where(eq(caGovernanceBody.organizationId, organizationId));
+	return Number(rows[0]?.value ?? 0);
+}
+
+export async function cleanupCorporateAdministrationOfficerTestData(
+	organizationId: string,
+): Promise<void> {
+	const scopedOrganizationId = normalizeTestOrganizationId(organizationId);
+	await afendaDatabase.client
+		.delete(caOfficerAppointment)
+		.where(eq(caOfficerAppointment.organizationId, scopedOrganizationId));
+	await afendaDatabase.client
+		.delete(caStatutoryOffice)
+		.where(eq(caStatutoryOffice.organizationId, scopedOrganizationId));
+	await cleanupCorporateAdministrationInfrastructureTestData(
+		scopedOrganizationId,
+	);
+}
+
+export async function countCorporateAdministrationStatutoryOffices(
+	organizationId: string,
+): Promise<number> {
+	const rows = await afendaDatabase.client
+		.select({ value: sql<number>`count(*)::int` })
+		.from(caStatutoryOffice)
+		.where(eq(caStatutoryOffice.organizationId, organizationId));
+	return Number(rows[0]?.value ?? 0);
+}
+
+export async function cleanupCorporateAdministrationMeetingTestData(
+	organizationId: string,
+): Promise<void> {
+	const scopedOrganizationId = normalizeTestOrganizationId(organizationId);
+	await afendaDatabase.client
+		.delete(caGovernanceMeeting)
+		.where(eq(caGovernanceMeeting.organizationId, scopedOrganizationId));
+	await cleanupCorporateAdministrationGovernanceTestData(scopedOrganizationId);
+}
+
+export async function countCorporateAdministrationGovernanceMeetings(
+	organizationId: string,
+): Promise<number> {
+	const rows = await afendaDatabase.client
+		.select({ value: sql<number>`count(*)::int` })
+		.from(caGovernanceMeeting)
+		.where(eq(caGovernanceMeeting.organizationId, organizationId));
+	return Number(rows[0]?.value ?? 0);
+}
+
+export async function cleanupCorporateAdministrationResolutionTestData(
+	organizationId: string,
+): Promise<void> {
+	const scopedOrganizationId = normalizeTestOrganizationId(organizationId);
+	await afendaDatabase.client
+		.delete(caResolutionAction)
+		.where(eq(caResolutionAction.organizationId, scopedOrganizationId));
+	await afendaDatabase.client
+		.delete(caResolution)
+		.where(eq(caResolution.organizationId, scopedOrganizationId));
+	await cleanupCorporateAdministrationInfrastructureTestData(
+		scopedOrganizationId,
+	);
+}
+
+export async function countCorporateAdministrationResolutions(
+	organizationId: string,
+): Promise<number> {
+	const rows = await afendaDatabase.client
+		.select({ value: sql<number>`count(*)::int` })
+		.from(caResolution)
+		.where(eq(caResolution.organizationId, organizationId));
 	return Number(rows[0]?.value ?? 0);
 }
 

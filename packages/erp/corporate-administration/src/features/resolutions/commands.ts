@@ -233,7 +233,7 @@ export async function recordWrittenResolution(
 				textDigest: parsed.data.textDigest,
 				documentId: parsed.data.documentId,
 				effectiveFrom: parsed.data.effectiveFrom,
-				approvedAt: parsed.data.approvedAt,
+				approvedAt: new Date(parsed.data.approvedAt),
 				rejectedAt: null,
 				sourceDocumentId: parsed.data.sourceDocumentId,
 				recordedAt: context.occurredAt,

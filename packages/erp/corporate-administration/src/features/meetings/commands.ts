@@ -132,8 +132,12 @@ export async function scheduleGovernanceMeeting(
 				governanceBodyId: parsed.data.governanceBodyId,
 				procedureType: parsed.data.procedureType,
 				title: parsed.data.title,
-				scheduledStartAt: parsed.data.scheduledStartAt,
-				scheduledEndAt: parsed.data.scheduledEndAt ?? null,
+				scheduledStartAt: new Date(parsed.data.scheduledStartAt),
+				scheduledEndAt:
+					parsed.data.scheduledEndAt === undefined ||
+					parsed.data.scheduledEndAt === null
+						? null
+						: new Date(parsed.data.scheduledEndAt),
 				noticePeriodDays: parsed.data.noticePeriodDays,
 				locationSummary: parsed.data.locationSummary ?? null,
 				remoteAccessSummary: parsed.data.remoteAccessSummary ?? null,

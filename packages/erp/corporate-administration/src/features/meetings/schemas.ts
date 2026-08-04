@@ -15,7 +15,10 @@ import {
 	organizationIdSchema,
 	userIdSchema,
 } from "../../kernel/brands";
-import { canonicalDateSchema } from "../../kernel/dates";
+import {
+	canonicalDateSchema,
+	canonicalInstantSchema,
+} from "../../kernel/dates";
 import { opaqueCursorSchema } from "../../kernel/pagination";
 
 const sourceDocumentIdSchema = z.string().trim().min(1).max(128);
@@ -254,8 +257,8 @@ export const scheduleGovernanceMeetingInputSchema = z
 		governanceBodyId: governanceBodyIdSchema,
 		procedureType: governanceMeetingProcedureTypeSchema,
 		title: descriptionSchema,
-		scheduledStartAt: z.coerce.date(),
-		scheduledEndAt: z.coerce.date().nullable().optional(),
+		scheduledStartAt: canonicalInstantSchema,
+		scheduledEndAt: canonicalInstantSchema.nullable().optional(),
 		noticePeriodDays: nonNegativeIntegerSchema,
 		locationSummary: descriptionSchema.nullable().optional(),
 		remoteAccessSummary: descriptionSchema.nullable().optional(),
