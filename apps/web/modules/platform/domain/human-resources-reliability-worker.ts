@@ -324,23 +324,18 @@ export async function runProductionReliabilityScheduler(
 			}
 			// biome-ignore lint/style/useDefaultSwitchClause: Reliability statuses are exhaustively accounted for.
 			switch (result.data.status) {
-				// biome-ignore lint/suspicious/noUnnecessaryConditions: The public kernel result can carry this persisted reliability status.
 				case "succeeded":
 					summary.succeeded += 1;
 					break;
-				// biome-ignore lint/suspicious/noUnnecessaryConditions: The public kernel result can carry this persisted reliability status.
 				case "awaiting_acknowledgement":
 					summary.awaitingAcknowledgement += 1;
 					break;
-				// biome-ignore lint/suspicious/noUnnecessaryConditions: The public kernel result can carry this persisted reliability status.
 				case "pending":
 					summary.retried += 1;
 					break;
-				// biome-ignore lint/suspicious/noUnnecessaryConditions: The public kernel result can carry this persisted reliability status.
 				case "dead_lettered":
 					summary.deadLettered += 1;
 					break;
-				// biome-ignore lint/suspicious/noUnnecessaryConditions: The public kernel result can carry this persisted reliability status.
 				case "processing":
 					summary.failed += 1;
 					break;

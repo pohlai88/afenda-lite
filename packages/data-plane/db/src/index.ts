@@ -25,5 +25,5 @@ export type {
 	NeonHttpTransactionQuery,
 	NeonHttpTransactionResults,
 } from "./http-transaction";
-export type { SystemSqlOperation } from "./system-sql-policy";
 export * from "./schema";
+export type { SystemSqlOperation } from "./system-sql-policy";

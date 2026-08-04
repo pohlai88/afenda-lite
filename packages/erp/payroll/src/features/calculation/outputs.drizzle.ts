@@ -120,19 +120,19 @@ export const drizzleOutputsMethods: PayrollOutputsStore = {
 				`,
 				sqlValue`
 					DELETE FROM payroll_result_line
-					WHERE organization_id = ${input.organizationId} AND run_id = ${input.runId}
+					WHERE payroll_result_line.organization_id = ${input.organizationId} AND run_id = ${input.runId}
 						AND EXISTS (
 							SELECT 1 FROM payroll_run
-							WHERE organization_id = ${input.organizationId} AND id = ${input.runId}
+							WHERE payroll_run.organization_id = ${input.organizationId} AND id = ${input.runId}
 								AND status NOT IN ('calculated', 'finalized', 'reversed')
 						)
 				`,
 				sqlValue`
 					DELETE FROM payroll_run_employee
-					WHERE organization_id = ${input.organizationId} AND run_id = ${input.runId}
+					WHERE payroll_run_employee.organization_id = ${input.organizationId} AND run_id = ${input.runId}
 						AND EXISTS (
 							SELECT 1 FROM payroll_run
-							WHERE organization_id = ${input.organizationId} AND id = ${input.runId}
+							WHERE payroll_run.organization_id = ${input.organizationId} AND id = ${input.runId}
 								AND status NOT IN ('calculated', 'finalized', 'reversed')
 						)
 				`,
@@ -184,14 +184,14 @@ export const drizzleOutputsMethods: PayrollOutputsStore = {
 				`,
 				sqlValue`
 					DELETE FROM payroll_result_line
-					WHERE organization_id = ${input.organizationId} AND run_id = ${input.runId}
-						AND EXISTS (SELECT 1 FROM payroll_run WHERE organization_id = ${input.organizationId}
+					WHERE payroll_result_line.organization_id = ${input.organizationId} AND run_id = ${input.runId}
+						AND EXISTS (SELECT 1 FROM payroll_run WHERE payroll_run.organization_id = ${input.organizationId}
 							AND id = ${input.runId} AND status NOT IN ('calculated', 'finalized', 'reversed'))
 				`,
 				sqlValue`
 					DELETE FROM payroll_run_employee
-					WHERE organization_id = ${input.organizationId} AND run_id = ${input.runId}
-						AND EXISTS (SELECT 1 FROM payroll_run WHERE organization_id = ${input.organizationId}
+					WHERE payroll_run_employee.organization_id = ${input.organizationId} AND run_id = ${input.runId}
+						AND EXISTS (SELECT 1 FROM payroll_run WHERE payroll_run.organization_id = ${input.organizationId}
 							AND id = ${input.runId} AND status NOT IN ('calculated', 'finalized', 'reversed'))
 				`,
 				sqlValue`

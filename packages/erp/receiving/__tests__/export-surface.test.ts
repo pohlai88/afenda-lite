@@ -64,16 +64,14 @@ describe("receiving export surface", () => {
 		expect(entries).toEqual([...ALLOWED_ROOTS].sort());
 	});
 
-	it(
-		"keeps every frozen public runtime export available",
-		{ timeout: 30_000 },
-		async () => {
-			const module = await import("../src/index");
-			const actual = Object.keys(module).sort();
-			const missing = PUBLIC_RUNTIME_EXPORTS.filter(
-				(name) => !actual.includes(name),
-			);
-			expect(missing).toEqual([]);
-		},
-	);
+	it("keeps every frozen public runtime export available", {
+		timeout: 30_000,
+	}, async () => {
+		const module = await import("../src/index");
+		const actual = Object.keys(module).sort();
+		const missing = PUBLIC_RUNTIME_EXPORTS.filter(
+			(name) => !actual.includes(name),
+		);
+		expect(missing).toEqual([]);
+	});
 });

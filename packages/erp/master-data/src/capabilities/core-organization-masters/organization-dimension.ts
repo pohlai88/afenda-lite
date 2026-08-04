@@ -662,17 +662,18 @@ export function createDrizzleOrganizationDimensionStore(): OrganizationDimension
 									)
 							)
 						),
-						closed_predecessor AS (
-							UPDATE md_organization_dimension predecessor_row
-							SET
-								effective_to = (${record.effectiveFrom}::date - 1),
-								version = predecessor_row.version + 1,
-								updated_by = ${record.createdBy},
-								updated_at = now()
-							FROM predecessor, range_guard
-							WHERE predecessor_row.id = predecessor.id
-							RETURNING predecessor_row.*
-						),
+					closed_predecessor AS (
+						UPDATE md_organization_dimension predecessor_row
+						SET
+							effective_to = (${record.effectiveFrom}::date - 1),
+							version = predecessor_row.version + 1,
+							updated_by = ${record.createdBy},
+							updated_at = now()
+						FROM predecessor, range_guard
+						WHERE predecessor_row.id = predecessor.id
+							AND predecessor_row.organization_id = ${record.organizationId}
+						RETURNING predecessor_row.*
+					),
 						create_guard AS (
 							SELECT 1
 							FROM range_guard
@@ -793,15 +794,15 @@ export function createDrizzleOrganizationDimensionStore(): OrganizationDimension
 				const [, rows] = await afendaDatabase.transaction((sql) => [
 					sql`SELECT pg_advisory_xact_lock(hashtextextended(${`${record.organizationId}:${record.id}`}, 0))`,
 					sql`
-						WITH current_row AS (
-							SELECT *
-							FROM md_organization_dimension
-							WHERE organization_id = ${record.organizationId}
-								AND id = ${record.id}
-								AND version = ${record.expectedVersion}
-								AND status <> 'archived'
-							FOR UPDATE
-						),
+					WITH current_row AS (
+						SELECT *
+						FROM md_organization_dimension
+						WHERE md_organization_dimension.organization_id = ${record.organizationId}
+							AND id = ${record.id}
+							AND version = ${record.expectedVersion}
+							AND status <> 'archived'
+						FOR UPDATE
+					),
 						parent_guard AS (
 							SELECT 1
 							FROM current_row
@@ -991,14 +992,14 @@ export function createDrizzleOrganizationDimensionStore(): OrganizationDimension
 				const [, rows] = await afendaDatabase.transaction((sql) => [
 					sql`SELECT pg_advisory_xact_lock(hashtextextended(${`${input.organizationId}:${input.id}`}, 0))`,
 					sql`
-						WITH current_row AS (
-							SELECT *
-							FROM md_organization_dimension
-							WHERE organization_id = ${input.organizationId}
-								AND id = ${input.id}
-								AND version = ${input.expectedVersion}
-							FOR UPDATE
-						),
+					WITH current_row AS (
+						SELECT *
+						FROM md_organization_dimension
+						WHERE md_organization_dimension.organization_id = ${input.organizationId}
+							AND id = ${input.id}
+							AND version = ${input.expectedVersion}
+						FOR UPDATE
+					),
 						mutated AS (
 							UPDATE md_organization_dimension dimension
 							SET

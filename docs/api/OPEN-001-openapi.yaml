@@ -1,0 +1,449 @@
+# GENERATED — do not hand-edit.
+# Source: scripts/generate-openapi.mts
+# Authority: docs/api (live trunk OpenAPI machine SSOT)
+# Regenerate: pnpm openapi:generate
+openapi: 3.0.3
+info:
+  title: Afenda-Lite HTTP (api-now)
+  version: 1.0.0
+  description: "Machine OpenAPI for implemented Route Handlers only. Success JSON uses `{ data }`
+    (healthJson / apiData). Error responses derive from the canonical @afenda/errors registry. Neon
+    Auth `/api/auth/*` is excluded. Contract-only REST lives in REST-001 until handlers exist.
+    One-version rule: no `/api/v1`."
+servers:
+  - url: https://afenda-lite.vercel.app
+    description: Production
+  - url: http://localhost:3000
+    description: Local next dev
+tags:
+  - name: Health
+    description: Public probes
+  - name: Observability
+    description: Prometheus scrape
+components:
+  securitySchemes:
+    neonAuthSession:
+      type: apiKey
+      in: cookie
+      name: session
+      description: Neon Auth client session cookie (browser same-origin). Cookie name here is illustrative
+        — Neon owns the real name.
+    metricsScrapeBearer:
+      type: http
+      scheme: bearer
+      description: Bearer token matching server env METRICS_SCRAPE_TOKEN. Unset token → 404 (fail closed).
+  schemas:
+    LivenessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - alive
+        timestamp:
+          type: string
+          format: date-time
+      required:
+        - status
+        - timestamp
+    ReadinessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+            - ready
+            - degraded
+            - not_ready
+        checks:
+          type: object
+          properties:
+            storage:
+              type: object
+              properties:
+                provider:
+                  type: string
+                  enum:
+                    - postgres
+                status:
+                  type: string
+                  enum:
+                    - reachable
+                    - unreachable
+                latencyMs:
+                  type: integer
+                  minimum: 0
+                  description: Wall-clock milliseconds for the bounded select 1 probe. Timeout at
+                    MAX_SELECT1_LATENCY_MS already yields status unreachable; latencyMs remains the
+                    measured elapsed time.
+              required:
+                - provider
+                - status
+                - latencyMs
+            auth:
+              type: object
+              properties:
+                provider:
+                  type: string
+                  enum:
+                    - neon_auth
+                status:
+                  type: string
+                  enum:
+                    - configured
+                    - misconfigured
+                reachability:
+                  type: string
+                  enum:
+                    - reachable
+                    - unreachable
+                    - not_probed
+                  description: HTTP reachability of NEON_AUTH_BASE_URL. not_probed when auth env/config is incomplete
+                    (cheap fail before fetch).
+                latencyMs:
+                  type: integer
+                  minimum: 0
+                  description: Wall-clock milliseconds for the bounded Neon Auth base-URL probe. 0 when reachability
+                    is not_probed.
+              required:
+                - provider
+                - status
+                - reachability
+                - latencyMs
+          required:
+            - storage
+            - auth
+        probes:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+                enum:
+                  - postgres
+                  - neon_auth
+              status:
+                type: string
+                enum:
+                  - up
+                  - down
+                  - skipped
+              critical:
+                type: boolean
+                description: Critical probe failure → overall not_ready; non-critical → degraded. postgres is
+                  critical; neon_auth is not.
+              latencyMs:
+                type: integer
+                minimum: 0
+              checkedAt:
+                type: string
+                format: date-time
+            required:
+              - name
+              - status
+              - critical
+              - latencyMs
+              - checkedAt
+          minItems: 1
+          description: Real multi-probe fan-out (postgres select 1 + Neon Auth HTTP). No invented
+            NATS/Redis/port fleet.
+        topology:
+          type: string
+          enum:
+            - neon-shared-schema
+        connection:
+          type: object
+          properties:
+            pooler:
+              type: boolean
+            ssl:
+              type: string
+              minLength: 1
+          required:
+            - pooler
+            - ssl
+        timestamp:
+          type: string
+          format: date-time
+      required:
+        - status
+        - checks
+        - probes
+        - topology
+        - connection
+        - timestamp
+    LivenessEnvelope:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            status:
+              type: string
+              enum:
+                - alive
+            timestamp:
+              type: string
+              format: date-time
+          required:
+            - status
+            - timestamp
+      required:
+        - data
+    ReadinessEnvelope:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            status:
+              type: string
+              enum:
+                - ready
+                - degraded
+                - not_ready
+            checks:
+              type: object
+              properties:
+                storage:
+                  type: object
+                  properties:
+                    provider:
+                      type: string
+                      enum:
+                        - postgres
+                    status:
+                      type: string
+                      enum:
+                        - reachable
+                        - unreachable
+                    latencyMs:
+                      type: integer
+                      minimum: 0
+                      description: Wall-clock milliseconds for the bounded select 1 probe. Timeout at
+                        MAX_SELECT1_LATENCY_MS already yields status unreachable; latencyMs remains
+                        the measured elapsed time.
+                  required:
+                    - provider
+                    - status
+                    - latencyMs
+                auth:
+                  type: object
+                  properties:
+                    provider:
+                      type: string
+                      enum:
+                        - neon_auth
+                    status:
+                      type: string
+                      enum:
+                        - configured
+                        - misconfigured
+                    reachability:
+                      type: string
+                      enum:
+                        - reachable
+                        - unreachable
+                        - not_probed
+                      description: HTTP reachability of NEON_AUTH_BASE_URL. not_probed when auth env/config is incomplete
+                        (cheap fail before fetch).
+                    latencyMs:
+                      type: integer
+                      minimum: 0
+                      description: Wall-clock milliseconds for the bounded Neon Auth base-URL probe. 0 when reachability
+                        is not_probed.
+                  required:
+                    - provider
+                    - status
+                    - reachability
+                    - latencyMs
+              required:
+                - storage
+                - auth
+            probes:
+              type: array
+              items:
+                type: object
+                properties:
+                  name:
+                    type: string
+                    enum:
+                      - postgres
+                      - neon_auth
+                  status:
+                    type: string
+                    enum:
+                      - up
+                      - down
+                      - skipped
+                  critical:
+                    type: boolean
+                    description: Critical probe failure → overall not_ready; non-critical → degraded. postgres is
+                      critical; neon_auth is not.
+                  latencyMs:
+                    type: integer
+                    minimum: 0
+                  checkedAt:
+                    type: string
+                    format: date-time
+                required:
+                  - name
+                  - status
+                  - critical
+                  - latencyMs
+                  - checkedAt
+              minItems: 1
+              description: Real multi-probe fan-out (postgres select 1 + Neon Auth HTTP). No invented
+                NATS/Redis/port fleet.
+            topology:
+              type: string
+              enum:
+                - neon-shared-schema
+            connection:
+              type: object
+              properties:
+                pooler:
+                  type: boolean
+                ssl:
+                  type: string
+                  minLength: 1
+              required:
+                - pooler
+                - ssl
+            timestamp:
+              type: string
+              format: date-time
+          required:
+            - status
+            - checks
+            - probes
+            - topology
+            - connection
+            - timestamp
+      required:
+        - data
+  parameters: {}
+paths:
+  /api/health/liveness:
+    get:
+      summary: Process liveness probe
+      description: Public process-up check. Optional short public CDN cache.
+      tags:
+        - Health
+      responses:
+        "200":
+          description: Process is alive
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LivenessEnvelope"
+      operationId: getHealthLiveness
+      x-afenda-status: api-now
+  /api/health/readiness:
+    get:
+      summary: Dependency readiness probe
+      description: "DB / auth dependency snapshot. Prefer Cache-Control: no-store. HTTP 503 when status is
+        not_ready (critical storage unreachable); 200 for ready and degraded."
+      tags:
+        - Health
+      responses:
+        "200":
+          description: Ready or degraded snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReadinessEnvelope"
+        "503":
+          description: "Not ready — critical dependency (postgres) unreachable; body still `{ data:
+            ReadinessResponse }`"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReadinessEnvelope"
+      operationId: getHealthReadiness
+      x-afenda-status: api-now
+  /api/metrics:
+    get:
+      summary: Prometheus metrics scrape
+      description: "Prometheus text exposition from @afenda/metrics. Requires Authorization: Bearer
+        matching METRICS_SCRAPE_TOKEN. Fail closed when token unset (404)."
+      tags:
+        - Observability
+      security:
+        - metricsScrapeBearer: []
+      responses:
+        "200":
+          description: Prometheus exposition text
+          content:
+            text/plain:
+              schema:
+                type: string
+                description: Prometheus metrics body
+        "401":
+          description: Authentication is required
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  error:
+                    type: object
+                    additionalProperties: false
+                    properties:
+                      code:
+                        type: string
+                        enum:
+                          - UNAUTHORIZED
+                      message:
+                        type: string
+                        enum:
+                          - Authentication is required
+                      messageKey:
+                        type: string
+                        enum:
+                          - errors.unauthorized
+                    required:
+                      - code
+                      - message
+                      - messageKey
+                required:
+                  - error
+        "404":
+          description: The requested resource was not found
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                properties:
+                  error:
+                    type: object
+                    additionalProperties: false
+                    properties:
+                      code:
+                        type: string
+                        enum:
+                          - NOT_FOUND
+                      message:
+                        type: string
+                        maxLength: 500
+                        minLength: 1
+                      messageKey:
+                        type: string
+                        enum:
+                          - errors.notFound
+                    required:
+                      - code
+                      - message
+                      - messageKey
+                required:
+                  - error
+      operationId: getMetricsScrape
+      x-afenda-status: api-now
+x-afenda-document:
+  id: OPEN-001
+  version: 1.2.0
+  generatedAt: 2026-07-20
+

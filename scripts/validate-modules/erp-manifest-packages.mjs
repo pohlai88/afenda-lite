@@ -54,9 +54,9 @@ const findAuthorizationPath = (packageDir) => {
  *   state: "canonical" | "historical" | "missing" | "duplicate-identical" | "duplicate-conflict",
  * }[]>}
  */
-export const listErpManifestPackageAuthority = async (repositoryRoot) => {
+export const listErpManifestPackageAuthority = (repositoryRoot) => {
 	const erpRoot = join(repositoryRoot, ERP_ROOT);
-	if (!existsSync(erpRoot) || !statSync(erpRoot).isDirectory()) {
+	if (!(existsSync(erpRoot) && statSync(erpRoot).isDirectory())) {
 		return Object.freeze([]);
 	}
 

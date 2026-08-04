@@ -14,7 +14,7 @@
  * down.
  */
 
-import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -97,7 +97,9 @@ function* walk(directory) {
 		return;
 	}
 	for (const name of entries) {
-		if (SKIP_DIRECTORIES.has(name)) continue;
+		if (SKIP_DIRECTORIES.has(name)) {
+			continue;
+		}
 		const path = join(directory, name);
 		let stats;
 		try {
@@ -105,16 +107,20 @@ function* walk(directory) {
 		} catch {
 			continue;
 		}
-		if (stats.isDirectory()) yield* walk(path);
-		else yield path;
+		if (stats.isDirectory()) {
+			yield* walk(path);
+		} else {
+			yield path;
+		}
 	}
 }
 
 /** tsconfig.json is JSONC in practice; biome.jsonc always is. */
 function readJsonc(file, violations) {
 	const raw = readFileSync(file, "utf8")
-		.replace(/\\"|"(?:\\"|[^"])*"|(\/\/.*$|\/\*[\s\S]*?\*\/)/gm, (match, comment) =>
-			comment ? "" : match,
+		.replace(
+			/\\"|"(?:\\"|[^"])*"|(\/\/.*$|\/\*[\s\S]*?\*\/)/gm,
+			(match, comment) => (comment ? "" : match),
 		)
 		.replace(/,(\s*[}\]])/g, "$1");
 	try {
@@ -132,13 +138,19 @@ function readJsonc(file, violations) {
  * chain, mirroring TypeScript's replace-not-merge semantics.
  */
 function effectiveOption(profiles, name, key, seen = new Set()) {
-	if (seen.has(name)) return [];
+	if (seen.has(name)) {
+		return [];
+	}
 	seen.add(name);
 	const profile = profiles[name] ?? {};
 	const own = profile.compilerOptions?.[key];
-	if (Array.isArray(own)) return own;
+	if (Array.isArray(own)) {
+		return own;
+	}
 	const parent =
-		typeof profile.extends === "string" ? profile.extends.replace("./", "") : null;
+		typeof profile.extends === "string"
+			? profile.extends.replace("./", "")
+			: null;
 	return parent ? effectiveOption(profiles, parent, key, seen) : [];
 }
 
@@ -149,13 +161,19 @@ function effectiveOption(profiles, name, key, seen = new Set()) {
  * and forbidding it in the latter would be an invariant nobody wrote.
  */
 function governedKeys(profiles, name, seen = new Set()) {
-	if (!name || seen.has(name)) return new Set();
+	if (!name || seen.has(name)) {
+		return new Set();
+	}
 	seen.add(name);
 	const profile = profiles[name] ?? {};
 	const keys = new Set(Object.keys(profile.compilerOptions ?? {}));
 	const parent =
-		typeof profile.extends === "string" ? profile.extends.replace("./", "") : null;
-	for (const key of governedKeys(profiles, parent, seen)) keys.add(key);
+		typeof profile.extends === "string"
+			? profile.extends.replace("./", "")
+			: null;
+	for (const key of governedKeys(profiles, parent, seen)) {
+		keys.add(key);
+	}
 	return keys;
 }
 
@@ -168,9 +186,15 @@ function governedKeys(profiles, name, seen = new Set()) {
 const ES_LIB = /^ES(\d{4})(\.|$)/i;
 
 function libSubsumes(declared, inherited) {
-	if (declared.some((entry) => entry.toLowerCase() === inherited.toLowerCase())) return true;
+	if (
+		declared.some((entry) => entry.toLowerCase() === inherited.toLowerCase())
+	) {
+		return true;
+	}
 	const target = ES_LIB.exec(inherited);
-	if (!target) return false;
+	if (!target) {
+		return false;
+	}
 	return declared.some((entry) => {
 		const candidate = ES_LIB.exec(entry);
 		return candidate ? Number(candidate[1]) >= Number(target[1]) : false;
@@ -189,10 +213,19 @@ export function checkConfigBoundary(repositoryRoot) {
 	};
 
 	const files = [];
-	for (const root of SOURCE_ROOTS) files.push(...walk(join(repositoryRoot, root)));
-	for (const name of ["package.json", "tsconfig.json", "biome.jsonc", "biome.json"]) {
+	for (const root of SOURCE_ROOTS) {
+		files.push(...walk(join(repositoryRoot, root)));
+	}
+	for (const name of [
+		"package.json",
+		"tsconfig.json",
+		"biome.jsonc",
+		"biome.json",
+	]) {
 		const path = join(repositoryRoot, name);
-		if (existsSync(path)) files.push(path);
+		if (existsSync(path)) {
+			files.push(path);
+		}
 	}
 
 	const manifests = files
@@ -200,9 +233,13 @@ export function checkConfigBoundary(repositoryRoot) {
 		.map((file) => ({ file, json: readJsonc(file, violations) }))
 		.filter((manifest) => manifest.json);
 
-	const configPackage = manifests.find((manifest) => manifest.json.name === PKG);
+	const configPackage = manifests.find(
+		(manifest) => manifest.json.name === PKG,
+	);
 	if (!configPackage) {
-		violations.push(`SETUP  .: could not locate ${PKG} in ${SOURCE_ROOTS.join(", ")}.`);
+		violations.push(
+			`SETUP  .: could not locate ${PKG} in ${SOURCE_ROOTS.join(", ")}.`,
+		);
 		return violations.toSorted();
 	}
 
@@ -221,7 +258,11 @@ export function checkConfigBoundary(repositoryRoot) {
 	}
 	for (const [key, target] of Object.entries(exportsMap)) {
 		if (typeof target !== "string" || !target.startsWith("./")) {
-			fail("INV-1", configPackage.file, `export "${key}" does not point to a local file.`);
+			fail(
+				"INV-1",
+				configPackage.file,
+				`export "${key}" does not point to a local file.`,
+			);
 		}
 	}
 	if (existsSync(join(configDirectory, "src"))) {
@@ -235,7 +276,9 @@ export function checkConfigBoundary(repositoryRoot) {
 	/* ---------- INV-2 · target is the identically named JSON artifact ---------- */
 
 	for (const [key, target] of Object.entries(exportsMap)) {
-		if (key === ".") continue;
+		if (key === ".") {
+			continue;
+		}
 		if (!key.endsWith(".json")) {
 			fail(
 				"INV-2",
@@ -259,9 +302,17 @@ export function checkConfigBoundary(repositoryRoot) {
 	/* ---------- INV-3 · devDependencies only ---------- */
 
 	for (const { file, json } of manifests) {
-		for (const field of ["dependencies", "peerDependencies", "optionalDependencies"]) {
+		for (const field of [
+			"dependencies",
+			"peerDependencies",
+			"optionalDependencies",
+		]) {
 			if (json[field]?.[PKG]) {
-				fail("INV-3", file, `${PKG} is declared in ${field}; it must be a devDependency.`);
+				fail(
+					"INV-3",
+					file,
+					`${PKG} is declared in ${field}; it must be a devDependency.`,
+				);
 			}
 		}
 	}
@@ -275,10 +326,16 @@ export function checkConfigBoundary(repositoryRoot) {
 	);
 
 	for (const file of files) {
-		if (!/\.[cm]?[jt]sx?$/.test(file)) continue;
-		if (/\.(config|test|spec)\./.test(file)) continue;
+		if (!/\.[cm]?[jt]sx?$/.test(file)) {
+			continue;
+		}
+		if (/\.(config|test|spec)\./.test(file)) {
+			continue;
+		}
 		const relativePath = toPosix(relative(repositoryRoot, file));
-		if (!RUNTIME_TREE.test(relativePath)) continue;
+		if (!RUNTIME_TREE.test(relativePath)) {
+			continue;
+		}
 		if (RUNTIME_REFERENCE.test(readFileSync(file, "utf8"))) {
 			fail(
 				"INV-4",
@@ -291,7 +348,8 @@ export function checkConfigBoundary(repositoryRoot) {
 	/* ---------- INV-5 · every extends specifier is a declared export ---------- */
 
 	const tsconfigs = files.filter(
-		(file) => /[/\\]tsconfig(\.\w+)?\.json$/.test(file) && !insideConfigPackage(file),
+		(file) =>
+			/[/\\]tsconfig(\.\w+)?\.json$/.test(file) && !insideConfigPackage(file),
 	);
 	const biomeConfigs = files.filter(
 		(file) => /[/\\]biome\.jsonc?$/.test(file) && !insideConfigPackage(file),
@@ -299,7 +357,9 @@ export function checkConfigBoundary(repositoryRoot) {
 
 	for (const file of [...tsconfigs, ...biomeConfigs]) {
 		const json = readJsonc(file, violations);
-		if (!json) continue;
+		if (!json) {
+			continue;
+		}
 		const specifiers = [json.extends]
 			.flat()
 			.filter((value) => typeof value === "string" && value.startsWith(PKG));
@@ -333,7 +393,9 @@ export function checkConfigBoundary(repositoryRoot) {
 	for (const file of tsconfigs) {
 		const json = readJsonc(file, violations);
 		const compilerOptions = json?.compilerOptions;
-		if (!compilerOptions) continue;
+		if (!compilerOptions) {
+			continue;
+		}
 
 		if (Object.hasOwn(compilerOptions, "baseUrl")) {
 			fail(
@@ -353,7 +415,9 @@ export function checkConfigBoundary(repositoryRoot) {
 		const governed = governedKeys(profiles, profile);
 
 		for (const key of Object.keys(compilerOptions)) {
-			if (CONSUMER_OWNED.has(key) || key === "baseUrl" || !governed.has(key)) continue;
+			if (CONSUMER_OWNED.has(key) || key === "baseUrl" || !governed.has(key)) {
+				continue;
+			}
 
 			if (SUPERSET_ONLY.has(key)) {
 				const value = compilerOptions[key];
@@ -399,17 +463,29 @@ export function checkConfigBoundary(repositoryRoot) {
 
 	for (const { file, json } of manifests) {
 		const directory = dirname(file);
-		if (directory === repositoryRoot || insideConfigPackage(file)) continue;
-		if (!json.name) continue;
+		if (directory === repositoryRoot || insideConfigPackage(file)) {
+			continue;
+		}
+		if (!json.name) {
+			continue;
+		}
 
 		const relativeDirectory = toPosix(relative(repositoryRoot, directory));
-		const zone = PROFILE_ZONES.find(([pattern]) => pattern.test(relativeDirectory));
-		if (!zone) continue;
+		const zone = PROFILE_ZONES.find(([pattern]) =>
+			pattern.test(relativeDirectory),
+		);
+		if (!zone) {
+			continue;
+		}
 		const expected = PROFILE_EXCEPTIONS.get(relativeDirectory) ?? zone[1];
 
 		const tsconfigFile = join(directory, "tsconfig.json");
 		if (!existsSync(tsconfigFile)) {
-			fail("INV-9", directory, `no tsconfig.json; expected one extending ${expected}.`);
+			fail(
+				"INV-9",
+				directory,
+				`no tsconfig.json; expected one extending ${expected}.`,
+			);
 			continue;
 		}
 		const tsconfig = readJsonc(tsconfigFile, violations);
@@ -417,7 +493,11 @@ export function checkConfigBoundary(repositoryRoot) {
 			.flat()
 			.find((value) => typeof value === "string" && value.startsWith(PKG));
 		if (!specifier) {
-			fail("INV-9", tsconfigFile, `does not extend a ${PKG} profile. Expected ${expected}.`);
+			fail(
+				"INV-9",
+				tsconfigFile,
+				`does not extend a ${PKG} profile. Expected ${expected}.`,
+			);
 		} else if (!specifier.endsWith(expected)) {
 			fail(
 				"INV-9",
@@ -430,9 +510,7 @@ export function checkConfigBoundary(repositoryRoot) {
 	/* ---------- INV-10 · contract and implementation agree ---------- */
 
 	const contractFile = join(configDirectory, "CONTRACT.md");
-	if (!existsSync(contractFile)) {
-		fail("INV-10", configDirectory, "CONTRACT.md is missing; the invariants have no stated source.");
-	} else {
+	if (existsSync(contractFile)) {
 		const contract = readFileSync(contractFile, "utf8");
 		const documented = new Set(contract.match(/\bINV-\d+\b/g) ?? []);
 		const implemented = new Set(IMPLEMENTED);
@@ -454,6 +532,12 @@ export function checkConfigBoundary(repositoryRoot) {
 				);
 			}
 		}
+	} else {
+		fail(
+			"INV-10",
+			configDirectory,
+			"CONTRACT.md is missing; the invariants have no stated source.",
+		);
 	}
 
 	return violations.toSorted();
@@ -463,22 +547,32 @@ export function checkConfigBoundary(repositoryRoot) {
 export function findRepositoryRoot(from) {
 	let current = resolve(from);
 	for (;;) {
-		if (existsSync(join(current, "pnpm-workspace.yaml"))) return current;
+		if (existsSync(join(current, "pnpm-workspace.yaml"))) {
+			return current;
+		}
 		const parent = dirname(current);
 		if (parent === current) {
-			throw new Error("Could not locate the repository root (no pnpm-workspace.yaml found).");
+			throw new Error(
+				"Could not locate the repository root (no pnpm-workspace.yaml found).",
+			);
 		}
 		current = parent;
 	}
 }
 
 function main() {
-	const repositoryRoot = findRepositoryRoot(dirname(fileURLToPath(import.meta.url)));
+	const repositoryRoot = findRepositoryRoot(
+		dirname(fileURLToPath(import.meta.url)),
+	);
 	const violations = checkConfigBoundary(repositoryRoot);
 	if (violations.length > 0) {
 		console.error(`\n${PKG} boundary: ${violations.length} violation(s)\n`);
-		for (const violation of violations) console.error(`  ${violation}\n`);
-		console.error("See packages/foundation/config/CONTRACT.md for each invariant.\n");
+		for (const violation of violations) {
+			console.error(`  ${violation}\n`);
+		}
+		console.error(
+			"See packages/foundation/config/CONTRACT.md for each invariant.\n",
+		);
 		process.exitCode = 1;
 		return;
 	}

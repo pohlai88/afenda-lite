@@ -1,10 +1,10 @@
 {
-  "pages": [
-    "index",
-    "getHealthLiveness",
-    "getHealthReadiness",
-    "getMetricsScrape"
-  ],
-  "title": "HTTP API",
-  "icon": "CodeXml"
+	"pages": [
+		"index",
+		"getHealthLiveness",
+		"getHealthReadiness",
+		"getMetricsScrape"
+	],
+	"title": "HTTP API",
+	"icon": "CodeXml"
 }

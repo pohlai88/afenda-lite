@@ -862,7 +862,7 @@ export async function drizzleActivateEmployeeCompensation(
 					SELECT ended_comp.id
 					FROM ended_comp, audit_ended, outbox_ended
 				`,
-				sqlTag`
+			sqlTag`
 					WITH
 					mutated AS (
 						UPDATE hr_employee_compensation AS scheduled_compensation
@@ -1140,8 +1140,8 @@ export async function drizzleCorrectEmployeeCompensation(
 
 	try {
 		const [, rows] = await afendaDatabase.transaction((sqlTag) => [
-				successorStatus === "active"
-					? sqlTag`
+			successorStatus === "active"
+				? sqlTag`
 						WITH superseded AS (
 							UPDATE hr_employee_compensation AS corrected_predecessor
 							SET status = 'superseded',

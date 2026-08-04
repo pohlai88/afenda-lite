@@ -11,7 +11,7 @@ import { parse as parseYaml } from "yaml";
 import { validateOpenApiFile } from "../.cursor/skills/afenda-elite-doc-integrity/scripts/doc-integrity-core.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const yamlPath = join(root, "docs-V2", "api", "OPEN-001-openapi.yaml");
+const yamlPath = join(root, "docs", "api", "OPEN-001-openapi.yaml");
 const webApiRoot = join(root, "apps", "web", "app", "api");
 const tsxCliPath = fileURLToPath(import.meta.resolve("tsx/cli"));
 const API_PATH_PREFIX_PATTERN = /^\/api\/?/;
@@ -82,10 +82,10 @@ function assertApiNowHandlersOnDisk(document) {
 }
 
 if (!existsSync(yamlPath)) {
-	console.log(
-		"check:openapi: skipped — docs-V2 removed, no OpenAPI YAML to validate",
+	fail(
+		"OPEN-001-openapi.yaml missing at docs/api — run pnpm openapi:generate",
+		2,
 	);
-	process.exit(0);
 }
 
 const dir = mkdtempSync(join(tmpdir(), "afenda-openapi-"));

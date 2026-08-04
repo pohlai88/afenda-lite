@@ -53,10 +53,7 @@ describe("assertSystemSqlSafety", () => {
 		),
 	])("rejects a widened or lineage-incomplete claim", (statement) => {
 		expect(() =>
-			assertSystemSqlSafety(
-				"human-resources.reliability.claim-due",
-				statement,
-			),
+			assertSystemSqlSafety("human-resources.reliability.claim-due", statement),
 		).toThrow(/System SQL policy rejected/);
 	});
 

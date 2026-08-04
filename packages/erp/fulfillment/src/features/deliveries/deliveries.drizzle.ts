@@ -384,19 +384,19 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 		try {
 			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
-					WITH parent AS (
-						UPDATE delivery
-						SET version = version + 1, updated_by = ${record.createdBy},
-							updated_at = now()
-						WHERE id = ${record.deliveryId}
-							AND organization_id = ${record.organizationId}
-							AND status = 'draft' AND version = ${record.expectedVersion}
-						RETURNING *
-					), numbered AS (
-						SELECT COALESCE(MAX(line_no), 0) + 1 AS line_no
-						FROM delivery_line
-						WHERE organization_id = ${record.organizationId}
-							AND delivery_id = ${record.deliveryId}
+				WITH parent AS (
+					UPDATE delivery
+					SET version = version + 1, updated_by = ${record.createdBy},
+						updated_at = now()
+					WHERE id = ${record.deliveryId}
+						AND delivery.organization_id = ${record.organizationId}
+						AND status = 'draft' AND version = ${record.expectedVersion}
+					RETURNING *
+				), numbered AS (
+					SELECT COALESCE(MAX(line_no), 0) + 1 AS line_no
+					FROM delivery_line
+					WHERE delivery_line.organization_id = ${record.organizationId}
+						AND delivery_id = ${record.deliveryId}
 					), mutated AS (
 						INSERT INTO delivery_line (
 							id, organization_id, delivery_id, line_no, item_id,
@@ -1278,31 +1278,31 @@ export class DrizzleFulfillmentStore implements FulfillmentStore {
 		try {
 			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
-					WITH mutated AS (
-						UPDATE delivery
-						SET status = ${to}, version = ${nextVersion},
-							updated_by = ${record.actorUserId}, updated_at = now(),
-							posted_at = CASE WHEN ${to} = 'posted' THEN now() ELSE posted_at END,
-							posted_by = CASE WHEN ${to} = 'posted' THEN ${record.actorUserId} ELSE posted_by END,
-							cancelled_at = CASE WHEN ${to} = 'cancelled' THEN now() ELSE cancelled_at END,
-							cancelled_by = CASE WHEN ${to} = 'cancelled' THEN ${record.actorUserId} ELSE cancelled_by END,
-							closed_at = CASE WHEN ${to} = 'closed' THEN now() ELSE closed_at END,
-							closed_by = CASE WHEN ${to} = 'closed' THEN ${record.actorUserId} ELSE closed_by END,
-							post_idempotency_key = CASE WHEN ${to} = 'posted' THEN ${record.idempotencyKey} ELSE post_idempotency_key END,
-							cancel_idempotency_key = CASE WHEN ${to} = 'cancelled' THEN ${record.idempotencyKey} ELSE cancel_idempotency_key END,
-							close_idempotency_key = CASE WHEN ${to} = 'closed' THEN ${record.idempotencyKey} ELSE close_idempotency_key END,
-							pick_start_idempotency_key = CASE WHEN ${to} = 'picking' THEN ${record.idempotencyKey} ELSE pick_start_idempotency_key END
-						WHERE id = ${record.deliveryId}
-							AND organization_id = ${record.organizationId}
-							AND status = ${from} AND version = ${record.expectedVersion}
-							AND (
-								${requireLines} = false OR EXISTS (
-									SELECT 1 FROM delivery_line
-									WHERE organization_id = ${record.organizationId}
-										AND delivery_id = ${record.deliveryId}
-								)
+				WITH mutated AS (
+					UPDATE delivery
+					SET status = ${to}, version = ${nextVersion},
+						updated_by = ${record.actorUserId}, updated_at = now(),
+						posted_at = CASE WHEN ${to} = 'posted' THEN now() ELSE posted_at END,
+						posted_by = CASE WHEN ${to} = 'posted' THEN ${record.actorUserId} ELSE posted_by END,
+						cancelled_at = CASE WHEN ${to} = 'cancelled' THEN now() ELSE cancelled_at END,
+						cancelled_by = CASE WHEN ${to} = 'cancelled' THEN ${record.actorUserId} ELSE cancelled_by END,
+						closed_at = CASE WHEN ${to} = 'closed' THEN now() ELSE closed_at END,
+						closed_by = CASE WHEN ${to} = 'closed' THEN ${record.actorUserId} ELSE closed_by END,
+						post_idempotency_key = CASE WHEN ${to} = 'posted' THEN ${record.idempotencyKey} ELSE post_idempotency_key END,
+						cancel_idempotency_key = CASE WHEN ${to} = 'cancelled' THEN ${record.idempotencyKey} ELSE cancel_idempotency_key END,
+						close_idempotency_key = CASE WHEN ${to} = 'closed' THEN ${record.idempotencyKey} ELSE close_idempotency_key END,
+						pick_start_idempotency_key = CASE WHEN ${to} = 'picking' THEN ${record.idempotencyKey} ELSE pick_start_idempotency_key END
+					WHERE id = ${record.deliveryId}
+						AND delivery.organization_id = ${record.organizationId}
+						AND status = ${from} AND version = ${record.expectedVersion}
+						AND (
+							${requireLines} = false OR EXISTS (
+								SELECT 1 FROM delivery_line
+								WHERE delivery_line.organization_id = ${record.organizationId}
+									AND delivery_id = ${record.deliveryId}
 							)
-						RETURNING *
+						)
+					RETURNING *
 					), audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module,

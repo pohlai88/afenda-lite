@@ -6,7 +6,7 @@ description: 'Prometheus text exposition from @afenda/metrics. Requires
 full: true
 _openapi:
   preload:
-    - ../../docs-V2/api/OPEN-001-openapi.yaml
+    - ../../docs/api/OPEN-001-openapi.yaml
   method: GET
   webhook: false
   toc: []
@@ -27,7 +27,7 @@ export default function Layout(props) {
   return (
     <>
       {props.children}
-      <Comp document="../../docs-V2/api/OPEN-001-openapi.yaml" operations={[{"path":"/api/metrics","method":"get"}]} />
+      <Comp document="../../docs/api/OPEN-001-openapi.yaml" operations={[{"path":"/api/metrics","method":"get"}]} />
     </>
   );
 }

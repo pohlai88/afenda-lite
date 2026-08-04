@@ -167,15 +167,15 @@ export function createDrizzleSourcePostingMethods(
 							RETURNING id, version
 						`,
 						sql`
-							DELETE FROM posting_profile_line
-							WHERE organization_id = ${record.organizationId}
-								AND posting_profile_id IN (
-									SELECT id FROM posting_profile
-									WHERE organization_id = ${record.organizationId}
-										AND code = ${record.code}
-										AND version_number = ${record.versionNumber}
-								)
-						`,
+					DELETE FROM posting_profile_line
+					WHERE posting_profile_line.organization_id = ${record.organizationId}
+							AND posting_profile_id IN (
+								SELECT id FROM posting_profile
+								WHERE posting_profile.organization_id = ${record.organizationId}
+									AND code = ${record.code}
+									AND version_number = ${record.versionNumber}
+							)
+					`,
 					];
 					for (const line of lineRows) {
 						statements.push(sql`
@@ -226,13 +226,14 @@ export function createDrizzleSourcePostingMethods(
 				const [rows] = await afendaDatabase.transaction(
 					(sql) => [
 						sql`
-						SELECT pp.*, json_agg(json_build_object(
-							'id', ppl.id, 'lineNo', ppl.line_no,
-							'side', ppl.side, 'accountRole', ppl.account_role
-						) ORDER BY ppl.line_no) FILTER (WHERE ppl.id IS NOT NULL) AS lines
-						FROM posting_profile pp
-						LEFT JOIN posting_profile_line ppl ON ppl.posting_profile_id = pp.id
-						WHERE pp.organization_id = ${organizationId}
+					SELECT pp.*, json_agg(json_build_object(
+						'id', ppl.id, 'lineNo', ppl.line_no,
+						'side', ppl.side, 'accountRole', ppl.account_role
+					) ORDER BY ppl.line_no) FILTER (WHERE ppl.id IS NOT NULL) AS lines
+					FROM posting_profile pp
+					LEFT JOIN posting_profile_line ppl ON ppl.posting_profile_id = pp.id
+						AND ppl.organization_id = ${organizationId}
+					WHERE pp.organization_id = ${organizationId}
 							AND pp.code = ${code} AND pp.status = 'active'
 						GROUP BY pp.id
 						ORDER BY pp.version_number DESC

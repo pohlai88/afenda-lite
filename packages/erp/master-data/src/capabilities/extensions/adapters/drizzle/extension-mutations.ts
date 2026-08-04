@@ -1422,15 +1422,15 @@ export async function drizzleCreatePartyAddress(
 						WHERE country.id = ${record.countryId} AND country.active = true
 						FOR SHARE
 					),
-					demoted AS (
-						UPDATE md_party_address
-						SET is_primary = false,
-							version = version + 1,
-							updated_by = ${record.createdBy},
-							updated_at = now()
-						WHERE organization_id = ${record.organizationId}
-							AND party_id = ${record.partyId}
-							AND purpose = ${record.purpose}
+				demoted AS (
+					UPDATE md_party_address
+					SET is_primary = false,
+						version = version + 1,
+						updated_by = ${record.createdBy},
+						updated_at = now()
+					WHERE md_party_address.organization_id = ${record.organizationId}
+						AND party_id = ${record.partyId}
+						AND purpose = ${record.purpose}
 							AND is_primary = true
 							AND status = 'active'
 							AND archived_at IS NULL
@@ -2098,15 +2098,15 @@ export async function drizzleCreatePartyContact(
 							AND party.merged_into_id IS NULL
 						FOR UPDATE
 					),
-					demoted AS (
-						UPDATE md_party_contact
-						SET is_primary = false,
-							version = version + 1,
-							updated_by = ${record.createdBy},
-							updated_at = now()
-						WHERE organization_id = ${record.organizationId}
-							AND party_id = ${record.partyId}
-							AND contact_type = ${record.contactType}
+				demoted AS (
+					UPDATE md_party_contact
+					SET is_primary = false,
+						version = version + 1,
+						updated_by = ${record.createdBy},
+						updated_at = now()
+					WHERE md_party_contact.organization_id = ${record.organizationId}
+						AND party_id = ${record.partyId}
+						AND contact_type = ${record.contactType}
 							AND coalesce(purpose, '') = ${record.purpose ?? ""}
 							AND is_primary = true
 							AND status = 'active'
@@ -2649,7 +2649,7 @@ export async function drizzleCreatePartyExternalId(
 						SET is_primary = false, version = version + 1,
 							updated_at = now(), updated_by = ${record.createdBy}
 						WHERE ${record.isPrimary} = true
-							AND organization_id = ${record.organizationId}
+							AND md_party_external_id.organization_id = ${record.organizationId}
 							AND party_id = ${record.partyId}
 							AND source_system = ${record.sourceSystem}
 							AND external_id_type = ${record.externalIdType}
@@ -3351,19 +3351,19 @@ export async function drizzleCreateItemUom(
 									AND base_dimension.code = 'count'
 									AND ${record.packagingApprovalReference} IS NOT NULL)
 							)
-					), defaults_demoted AS (
-						UPDATE md_item_uom
-						SET is_default_purchase_uom = CASE
-								WHEN ${record.isDefaultPurchaseUom} THEN false
-								ELSE is_default_purchase_uom
-							END,
-							is_default_sales_uom = CASE
-								WHEN ${record.isDefaultSalesUom} THEN false
-								ELSE is_default_sales_uom
-							END,
-							version = version + 1,
-							updated_by = ${record.createdBy}, updated_at = now()
-						WHERE organization_id = ${record.organizationId}
+				), defaults_demoted AS (
+					UPDATE md_item_uom
+					SET is_default_purchase_uom = CASE
+							WHEN ${record.isDefaultPurchaseUom} THEN false
+							ELSE is_default_purchase_uom
+						END,
+						is_default_sales_uom = CASE
+							WHEN ${record.isDefaultSalesUom} THEN false
+							ELSE is_default_sales_uom
+						END,
+						version = version + 1,
+						updated_by = ${record.createdBy}, updated_at = now()
+					WHERE md_item_uom.organization_id = ${record.organizationId}
 							AND item_id = ${record.itemId}
 							AND status = 'active' AND archived_at IS NULL
 							AND (
@@ -3604,13 +3604,13 @@ export async function drizzleCreateItemBarcode(
 								)
 							)
 						)
-					), primary_demoted AS (
-						UPDATE md_item_barcode
-						SET is_primary = false, version = version + 1,
-							updated_by = ${record.createdBy}, updated_at = now()
-						WHERE organization_id = ${record.organizationId}
-							AND item_id = ${record.itemId}
-							AND uom_id IS NOT DISTINCT FROM ${record.uomId}::uuid
+				), primary_demoted AS (
+					UPDATE md_item_barcode
+					SET is_primary = false, version = version + 1,
+						updated_by = ${record.createdBy}, updated_at = now()
+					WHERE md_item_barcode.organization_id = ${record.organizationId}
+						AND item_id = ${record.itemId}
+						AND uom_id IS NOT DISTINCT FROM ${record.uomId}::uuid
 							AND is_primary = true
 							AND status = 'active' AND archived_at IS NULL
 							AND ${record.isPrimary} = true
@@ -3845,20 +3845,20 @@ export async function drizzleCreateItemExternalId(
 							AND item.status <> 'retired'
 							AND item.retired_at IS NULL
 						FOR UPDATE
-					), demoted AS (
-						UPDATE md_item_external_id
-						SET is_primary = false, version = version + 1,
-							updated_at = now(), updated_by = ${record.createdBy}
-						WHERE ${record.isPrimary} = true
-							AND organization_id = ${record.organizationId}
-							AND item_id = ${record.itemId}
-							AND source_system = ${record.sourceSystem}
-							AND external_id_type = ${record.externalIdType}
-							AND is_primary = true AND status = 'active' AND archived_at IS NULL
-							AND EXISTS (SELECT 1 FROM parent_locked)
-						RETURNING id, organization_id, version
-					), mutated AS (
-						INSERT INTO md_item_external_id (
+				), demoted AS (
+					UPDATE md_item_external_id
+					SET is_primary = false, version = version + 1,
+						updated_at = now(), updated_by = ${record.createdBy}
+					WHERE ${record.isPrimary} = true
+						AND md_item_external_id.organization_id = ${record.organizationId}
+						AND item_id = ${record.itemId}
+						AND source_system = ${record.sourceSystem}
+						AND external_id_type = ${record.externalIdType}
+						AND is_primary = true AND status = 'active' AND archived_at IS NULL
+						AND EXISTS (SELECT 1 FROM parent_locked)
+					RETURNING id, organization_id, version
+				), mutated AS (
+					INSERT INTO md_item_external_id (
 							id, organization_id, item_id, source_system, external_id_type,
 							external_value, normalized_value, case_sensitivity, is_primary,
 							status, version, created_by, updated_by

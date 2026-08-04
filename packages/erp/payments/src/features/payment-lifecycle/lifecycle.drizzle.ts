@@ -639,23 +639,23 @@ export const drizzlePaymentLifecycleMethods: PaymentsLifecycleStore = {
 		try {
 			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
-					WITH mutated AS (
-						UPDATE payment
-						SET status = 'posted',
-							posted_at = now(),
-							posted_by = ${record.actorUserId},
-							post_idempotency_key = ${record.idempotencyKey},
-							method_snapshot = ${methodSnapshotJson},
-							updated_at = now(),
-							updated_by = ${record.actorUserId},
-							version = version + 1
-						WHERE id = ${record.paymentId}
-							AND organization_id = ${record.organizationId}
-							AND status = 'draft'
-							AND direction <> 'refund'
-							AND version = ${record.expectedVersion}
-						RETURNING *
-					),
+				WITH mutated AS (
+					UPDATE payment
+					SET status = 'posted',
+						posted_at = now(),
+						posted_by = ${record.actorUserId},
+						post_idempotency_key = ${record.idempotencyKey},
+						method_snapshot = ${methodSnapshotJson},
+						updated_at = now(),
+						updated_by = ${record.actorUserId},
+						version = version + 1
+					WHERE id = ${record.paymentId}
+						AND payment.organization_id = ${record.organizationId}
+						AND status = 'draft'
+						AND direction <> 'refund'
+						AND version = ${record.expectedVersion}
+					RETURNING *
+				),
 					frozen AS (
 						UPDATE payment_deduction d
 						SET functional_amount = line->>'functionalAmount'
@@ -804,21 +804,21 @@ export const drizzlePaymentLifecycleMethods: PaymentsLifecycleStore = {
 		try {
 			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
-					WITH from_account AS (
-						SELECT id, currency_code FROM payment_account
-						WHERE id = ${record.fromPaymentAccountId}
-							AND organization_id = ${record.organizationId}
-							AND active = true
-							AND currency_code = ${record.currencyCode}
-					),
-					to_account AS (
-						SELECT id, currency_code FROM payment_account
-						WHERE id = ${record.toPaymentAccountId}
-							AND organization_id = ${record.organizationId}
-							AND active = true
-							AND currency_code = ${record.currencyCode}
-							AND id <> ${record.fromPaymentAccountId}
-					),
+				WITH from_account AS (
+					SELECT id, currency_code FROM payment_account
+					WHERE id = ${record.fromPaymentAccountId}
+						AND payment_account.organization_id = ${record.organizationId}
+						AND active = true
+						AND currency_code = ${record.currencyCode}
+				),
+				to_account AS (
+					SELECT id, currency_code FROM payment_account
+					WHERE id = ${record.toPaymentAccountId}
+						AND payment_account.organization_id = ${record.organizationId}
+						AND active = true
+						AND currency_code = ${record.currencyCode}
+						AND id <> ${record.fromPaymentAccountId}
+				),
 					outgoing AS (
 						INSERT INTO payment (
 							id, organization_id, code, normalized_code, payment_account_id,

@@ -229,16 +229,16 @@ function importRowAppliedQuery(
 				AND batch.id = import_row.batch_id
 				AND batch.status = 'applying'
 				AND batch.lease_owner = ${context.leaseOwner}
-				AND EXISTS (
-					SELECT 1 FROM platform_audit_log
-					WHERE id = ${input.auditId}
-						AND organization_id = ${context.organizationId}
-				)
-				AND EXISTS (
-					SELECT 1 FROM platform_domain_event
-					WHERE id = ${input.eventId}
-						AND organization_id = ${context.organizationId}
-				)
+			AND EXISTS (
+				SELECT 1 FROM platform_audit_log
+				WHERE id = ${input.auditId}
+					AND platform_audit_log.organization_id = ${context.organizationId}
+			)
+			AND EXISTS (
+				SELECT 1 FROM platform_domain_event
+				WHERE id = ${input.eventId}
+					AND platform_domain_event.organization_id = ${context.organizationId}
+			)
 			RETURNING import_row.id
 		)
 		SELECT 1 / CASE
@@ -328,12 +328,6 @@ function taxRegistrationValidityFailure(_message: string): Result<never> {
 }
 
 function _codeConflict(_message: string): Result<never> {
-	return errorResult.fail("CONFLICT", {
-		publicMessage: "The request conflicts with current state",
-	});
-}
-
-function versionConflict(_message: string): Result<never> {
 	return errorResult.fail("CONFLICT", {
 		publicMessage: "The request conflicts with current state",
 	});
@@ -1717,7 +1711,9 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			]);
 			const [row] = rows;
 			if (row === undefined) {
-				return versionConflict("Party version conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Party version conflict",
+				});
 			}
 			return errorResult.ok(mapPartySqlRow(row));
 		} catch (error) {
@@ -1872,16 +1868,16 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 								WHEN ${record.toStatus} = 'retired' THEN ${retiredBy}
 								ELSE NULL
 							END
-						WHERE id = ${record.id}
-							AND organization_id = ${record.organizationId}
-							AND version = ${record.expectedVersion}
-							AND status = ${existing.status}
-							AND (
-								${requireActiveRole} = false
-								OR EXISTS (
-									SELECT 1
-									FROM md_party_role role
-									WHERE role.organization_id = ${record.organizationId}
+					WHERE id = ${record.id}
+						AND md_party.organization_id = ${record.organizationId}
+						AND version = ${record.expectedVersion}
+						AND status = ${existing.status}
+						AND (
+							${requireActiveRole} = false
+							OR EXISTS (
+								SELECT 1
+								FROM md_party_role role
+								WHERE role.organization_id = ${record.organizationId}
 										AND role.party_id = ${record.id}
 										AND role.status = 'active'
 										AND role.archived_at IS NULL
@@ -1922,19 +1918,19 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 					SELECT mutated.* FROM mutated, audited, outboxed
 				`
 					: transactionSql`
-					WITH claimed AS (
-						UPDATE md_change_request
-						SET
-							status = 'applied',
-							version = version + 1,
-							applied_by = ${record.actorUserId},
-							applied_at = now(),
-							updated_at = now()
-						WHERE id = ${crId}
-							AND organization_id = ${record.organizationId}
-							AND status = 'approved'
-							AND command_kind = 'activate_party'
-							AND subject_entity_id = ${record.id}
+					WITH 					claimed AS (
+					UPDATE md_change_request
+					SET
+						status = 'applied',
+						version = version + 1,
+						applied_by = ${record.actorUserId},
+						applied_at = now(),
+						updated_at = now()
+					WHERE id = ${crId}
+						AND md_change_request.organization_id = ${record.organizationId}
+						AND status = 'approved'
+						AND command_kind = 'activate_party'
+						AND subject_entity_id = ${record.id}
 						RETURNING *
 					),
 					mutated AS (
@@ -1970,15 +1966,15 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 								WHEN ${record.toStatus} = 'retired' THEN ${retiredBy}
 								ELSE NULL
 							END
-						WHERE id = ${record.id}
-							AND organization_id = ${record.organizationId}
-							AND version = ${record.expectedVersion}
-							AND status = ${existing.status}
-							AND EXISTS (SELECT 1 FROM claimed)
-							AND EXISTS (
-								SELECT 1
-								FROM md_party_role role
-								WHERE role.organization_id = ${record.organizationId}
+					WHERE id = ${record.id}
+						AND md_party.organization_id = ${record.organizationId}
+						AND version = ${record.expectedVersion}
+						AND status = ${existing.status}
+						AND EXISTS (SELECT 1 FROM claimed)
+						AND EXISTS (
+							SELECT 1
+							FROM md_party_role role
+							WHERE role.organization_id = ${record.organizationId}
 									AND role.party_id = ${record.id}
 									AND role.status = 'active'
 									AND role.archived_at IS NULL
@@ -2061,7 +2057,9 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			]);
 			const [row] = rows;
 			if (row === undefined) {
-				return versionConflict("Party version conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Party version conflict",
+				});
 			}
 			return errorResult.ok(mapPartySqlRow(row));
 		} catch (error) {
@@ -2212,19 +2210,19 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		try {
 			const [rows] = await afendaDatabase.transaction((transactionSql) => [
 				transactionSql`
-					WITH claimed AS (
-						UPDATE md_change_request
-						SET
-							status = 'applied',
-							version = version + 1,
-							applied_by = ${record.actorUserId},
-							applied_at = now(),
-							updated_at = now()
-						WHERE id = ${record.changeRequestId}
-							AND organization_id = ${record.organizationId}
-							AND status = 'approved'
-							AND command_kind = 'merge_parties'
-							AND subject_entity_id = ${target.id}
+				WITH claimed AS (
+					UPDATE md_change_request
+					SET
+						status = 'applied',
+						version = version + 1,
+						applied_by = ${record.actorUserId},
+						applied_at = now(),
+						updated_at = now()
+					WHERE id = ${record.changeRequestId}
+						AND md_change_request.organization_id = ${record.organizationId}
+						AND status = 'approved'
+						AND command_kind = 'merge_parties'
+						AND subject_entity_id = ${target.id}
 						RETURNING *
 					),
 					survivor AS (
@@ -2240,30 +2238,30 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 							version = version + 1,
 							updated_by = ${record.actorUserId},
 							updated_at = now()
-						WHERE id = ${target.id}
-							AND organization_id = ${record.organizationId}
-							AND version = ${target.version}
-							AND merged_into_id IS NULL
-							AND EXISTS (SELECT 1 FROM claimed)
-						RETURNING *
-					),
-					merged AS (
-						UPDATE md_party
-						SET
-							merged_into_id = ${target.id},
-							status = 'retired',
-							version = version + 1,
-							updated_by = ${record.actorUserId},
-							updated_at = now(),
-							retired_at = now(),
-							retired_by = ${record.actorUserId}
-						WHERE id = ${source.id}
-							AND organization_id = ${record.organizationId}
-							AND version = ${source.version}
-							AND merged_into_id IS NULL
-							AND EXISTS (SELECT 1 FROM claimed)
-						RETURNING *
-					),
+					WHERE id = ${target.id}
+						AND md_party.organization_id = ${record.organizationId}
+						AND version = ${target.version}
+						AND merged_into_id IS NULL
+						AND EXISTS (SELECT 1 FROM claimed)
+					RETURNING *
+				),
+				merged AS (
+					UPDATE md_party
+					SET
+						merged_into_id = ${target.id},
+						status = 'retired',
+						version = version + 1,
+						updated_by = ${record.actorUserId},
+						updated_at = now(),
+						retired_at = now(),
+						retired_by = ${record.actorUserId}
+					WHERE id = ${source.id}
+						AND md_party.organization_id = ${record.organizationId}
+						AND version = ${source.version}
+						AND merged_into_id IS NULL
+						AND EXISTS (SELECT 1 FROM claimed)
+					RETURNING *
+				),
 					roles_archived_colliding AS (
 						UPDATE md_party_role r
 						SET
@@ -2444,7 +2442,9 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			]);
 			const [survivorRow] = rows;
 			if (survivorRow === undefined) {
-				return versionConflict("Party version conflict on merge");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Party version conflict on merge",
+				});
 			}
 			const mergedParty: Party = {
 				...source,
@@ -2712,11 +2712,11 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		try {
 			const [rows] = await afendaDatabase.transaction((transactionSql) => [
 				transactionSql`
-						WITH RECURSIVE ancestor AS (
-							SELECT id, parent_id, ARRAY[id] AS path
-							FROM md_item_group
-							WHERE id = ${nextParentId}::uuid
-								AND organization_id = ${record.organizationId}
+					WITH RECURSIVE ancestor AS (
+						SELECT id, parent_id, ARRAY[id] AS path
+						FROM md_item_group
+						WHERE id = ${nextParentId}::uuid
+							AND md_item_group.organization_id = ${record.organizationId}
 							UNION ALL
 							SELECT parent.id, parent.parent_id, child.path || parent.id
 							FROM md_item_group parent
@@ -2741,18 +2741,18 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 									)
 								)
 						),
-						mutated AS (
-							UPDATE md_item_group
-							SET
-								name = ${nextName},
-								parent_id = ${nextParentId},
-								version = version + 1,
-								updated_by = ${record.updatedBy},
-								updated_at = now()
-							WHERE id = ${record.id}
-								AND organization_id = ${record.organizationId}
-								AND version = ${record.expectedVersion}
-								AND EXISTS (SELECT 1 FROM eligible_parent)
+					mutated AS (
+						UPDATE md_item_group
+						SET
+							name = ${nextName},
+							parent_id = ${nextParentId},
+							version = version + 1,
+							updated_by = ${record.updatedBy},
+							updated_at = now()
+						WHERE id = ${record.id}
+							AND md_item_group.organization_id = ${record.organizationId}
+							AND version = ${record.expectedVersion}
+							AND EXISTS (SELECT 1 FROM eligible_parent)
 							RETURNING *
 						),
 						audited AS (
@@ -2793,7 +2793,9 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			]);
 			const [row] = rows;
 			if (row === undefined) {
-				return versionConflict("Item group version conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Item group version conflict",
+				});
 			}
 			return errorResult.ok(mapItemGroupSqlRow(row));
 		} catch (error) {
@@ -2884,17 +2886,17 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 									WHEN ${record.toStatus} = 'retired' THEN ${retiredBy}
 									ELSE NULL
 								END
-							WHERE id = ${record.id}
-								AND organization_id = ${record.organizationId}
-								AND version = ${record.expectedVersion}
-								AND status = ${existing.status}
-								AND (
-									${record.toStatus}::text <> 'active'
-									OR parent_id IS NULL
-									OR EXISTS (
-										SELECT 1
-										FROM md_item_group parent
-										WHERE parent.id = md_item_group.parent_id
+					WHERE id = ${record.id}
+							AND md_item_group.organization_id = ${record.organizationId}
+							AND version = ${record.expectedVersion}
+							AND status = ${existing.status}
+							AND (
+								${record.toStatus}::text <> 'active'
+								OR parent_id IS NULL
+								OR EXISTS (
+									SELECT 1
+									FROM md_item_group parent
+									WHERE parent.id = md_item_group.parent_id
 											AND parent.organization_id = ${record.organizationId}
 											AND parent.status = 'active'
 											AND parent.retired_at IS NULL
@@ -2956,7 +2958,9 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			]);
 			const [row] = rows;
 			if (row === undefined) {
-				return versionConflict("Item group version conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Item group version conflict",
+				});
 			}
 			return errorResult.ok(mapItemGroupSqlRow(row));
 		} catch (error) {
@@ -3323,12 +3327,12 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 							version = version + 1,
 							updated_by = ${record.updatedBy},
 							updated_at = now()
-						WHERE id = ${record.id}
-							AND organization_id = ${record.organizationId}
-							AND version = ${record.expectedVersion}
-							AND base_uom_id = ${nextBaseUomId}::uuid
-							AND EXISTS (
-								SELECT 1 FROM ref_uom base_uom
+					WHERE id = ${record.id}
+						AND md_item.organization_id = ${record.organizationId}
+						AND version = ${record.expectedVersion}
+						AND base_uom_id = ${nextBaseUomId}::uuid
+						AND EXISTS (
+							SELECT 1 FROM ref_uom base_uom
 								WHERE base_uom.id = ${nextBaseUomId}::uuid
 									AND base_uom.active = true
 							)
@@ -3414,7 +3418,9 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			]);
 			const [row] = rows;
 			if (row === undefined) {
-				return versionConflict("Item version conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Item version conflict",
+				});
 			}
 			return errorResult.ok(mapItemSqlRow(row));
 		} catch (error) {
@@ -3733,11 +3739,11 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 								version = version + 1,
 								updated_by = ${record.updatedBy},
 								updated_at = now()
-							WHERE id = ${record.id}
-								AND organization_id = ${record.organizationId}
-								AND version = ${record.expectedVersion}
-								AND (
-									${nextLocationType}::text = ${existing.locationType}::text
+						WHERE id = ${record.id}
+							AND md_warehouse.organization_id = ${record.organizationId}
+							AND version = ${record.expectedVersion}
+							AND (
+								${nextLocationType}::text = ${existing.locationType}::text
 									OR (
 										status = 'draft'
 										AND (
@@ -3817,7 +3823,9 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			]);
 			const [row] = rows;
 			if (row === undefined) {
-				return versionConflict("Warehouse version conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Warehouse version conflict",
+				});
 			}
 			return errorResult.ok(mapWarehouseSqlRow(row));
 		} catch (error) {
@@ -3883,11 +3891,11 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 		try {
 			const [rows] = await afendaDatabase.transaction((transactionSql) => [
 				transactionSql`
-						WITH RECURSIVE ancestor AS (
-							SELECT id, parent_id, ARRAY[id] AS path
-							FROM md_warehouse
-							WHERE id = ${record.parentId}::uuid
-								AND organization_id = ${record.organizationId}
+					WITH RECURSIVE ancestor AS (
+						SELECT id, parent_id, ARRAY[id] AS path
+						FROM md_warehouse
+						WHERE id = ${record.parentId}::uuid
+							AND md_warehouse.organization_id = ${record.organizationId}
 							UNION ALL
 							SELECT parent.id, parent.parent_id, child.path || parent.id
 							FROM md_warehouse parent
@@ -3927,12 +3935,12 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 								version = version + 1,
 								updated_by = ${record.updatedBy},
 								updated_at = now()
-							WHERE id = ${record.id}
-								AND organization_id = ${record.organizationId}
-								AND version = ${record.expectedVersion}
-								AND status = ${existing.status}
-								AND status IN ('draft', 'inactive')
-								AND EXISTS (SELECT 1 FROM eligible_parent)
+						WHERE id = ${record.id}
+							AND md_warehouse.organization_id = ${record.organizationId}
+							AND version = ${record.expectedVersion}
+							AND status = ${existing.status}
+							AND status IN ('draft', 'inactive')
+							AND EXISTS (SELECT 1 FROM eligible_parent)
 							RETURNING *
 						),
 						audited AS (
@@ -3966,7 +3974,9 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			]);
 			const [row] = rows;
 			if (row === undefined) {
-				return versionConflict("Warehouse version conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Warehouse version conflict",
+				});
 			}
 			return errorResult.ok(mapWarehouseSqlRow(row));
 		} catch (error) {
@@ -4057,16 +4067,16 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 									WHEN ${record.toStatus} = 'retired' THEN ${retiredBy}
 									ELSE NULL
 								END
-							WHERE id = ${record.id}
-								AND organization_id = ${record.organizationId}
-								AND version = ${record.expectedVersion}
-								AND status = ${existing.status}
-								AND (
-									${record.toStatus}::text <> 'active'
-									OR parent_id IS NULL
-									OR EXISTS (
-										SELECT 1 FROM md_warehouse parent
-										WHERE parent.id = md_warehouse.parent_id
+						WHERE id = ${record.id}
+							AND md_warehouse.organization_id = ${record.organizationId}
+							AND version = ${record.expectedVersion}
+							AND status = ${existing.status}
+							AND (
+								${record.toStatus}::text <> 'active'
+								OR parent_id IS NULL
+								OR EXISTS (
+									SELECT 1 FROM md_warehouse parent
+									WHERE parent.id = md_warehouse.parent_id
 											AND parent.organization_id = ${record.organizationId}
 											AND parent.status = 'active'
 											AND parent.retired_at IS NULL
@@ -4124,7 +4134,9 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			]);
 			const [row] = rows;
 			if (row === undefined) {
-				return versionConflict("Warehouse version conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Warehouse version conflict",
+				});
 			}
 			return errorResult.ok(mapWarehouseSqlRow(row));
 		} catch (error) {
@@ -4450,7 +4462,9 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			]);
 			const [row] = rows;
 			if (row === undefined) {
-				return versionConflict("Payment term version conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Payment term version conflict",
+				});
 			}
 			return errorResult.ok(mapPaymentTermSqlRow(row));
 		} catch (error) {
@@ -4581,7 +4595,9 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			]);
 			const [row] = rows;
 			if (row === undefined) {
-				return versionConflict("Payment term version conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Payment term version conflict",
+				});
 			}
 			return errorResult.ok(mapPaymentTermSqlRow(row));
 		} catch (error) {
@@ -4914,11 +4930,11 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 								version = version + 1,
 								updated_by = ${record.updatedBy},
 								updated_at = now()
-							WHERE id = ${record.id}
-								AND organization_id = ${record.organizationId}
-								AND version = ${record.expectedVersion}
-								AND status = ${existing.status}
-								AND status <> 'retired'
+						WHERE id = ${record.id}
+							AND md_tax_registration.organization_id = ${record.organizationId}
+							AND version = ${record.expectedVersion}
+							AND status = ${existing.status}
+							AND status <> 'retired'
 								AND (
 									status <> 'active'
 									OR (
@@ -4988,7 +5004,9 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			);
 			const [row] = rows;
 			if (row === undefined) {
-				return versionConflict("Tax registration version conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Tax registration version conflict",
+				});
 			}
 			return errorResult.ok(mapTaxRegistrationSqlRow(row));
 		} catch (error) {
@@ -5135,12 +5153,12 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 									WHEN ${record.toStatus} = 'retired' THEN ${retiredBy}
 									ELSE NULL
 								END
-							WHERE id = ${record.id}
-								AND organization_id = ${record.organizationId}
-								AND version = ${record.expectedVersion}
-								AND status = ${existing.status}
-								AND (
-									${record.toStatus} <> 'active'
+						WHERE id = ${record.id}
+							AND md_tax_registration.organization_id = ${record.organizationId}
+							AND version = ${record.expectedVersion}
+							AND status = ${existing.status}
+							AND (
+								${record.toStatus} <> 'active'
 									OR (
 										valid_from IS NOT NULL
 						AND (valid_to IS NULL OR valid_to > valid_from)
@@ -5211,7 +5229,9 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 			);
 			const [row] = rows;
 			if (row === undefined) {
-				return versionConflict("Tax registration version conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Tax registration version conflict",
+				});
 			}
 			return errorResult.ok(mapTaxRegistrationSqlRow(row));
 		} catch (error) {
@@ -5242,7 +5262,9 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 				return notFound("Party not found");
 			}
 			if (row.version !== expectedVersion) {
-				return versionConflict("Party version conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Party version conflict",
+				});
 			}
 			return errorResult.ok(mapParty(row));
 		} catch (error) {
@@ -5270,7 +5292,9 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 				return notFound("Item group not found");
 			}
 			if (row.version !== expectedVersion) {
-				return versionConflict("Item group version conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Item group version conflict",
+				});
 			}
 			return errorResult.ok(mapItemGroup(row));
 		} catch (error) {
@@ -5301,7 +5325,9 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 				return notFound("Item not found");
 			}
 			if (row.version !== expectedVersion) {
-				return versionConflict("Item version conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Item version conflict",
+				});
 			}
 			return errorResult.ok(mapItem(row));
 		} catch (error) {
@@ -5329,7 +5355,9 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 				return notFound("Warehouse not found");
 			}
 			if (row.version !== expectedVersion) {
-				return versionConflict("Warehouse version conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Warehouse version conflict",
+				});
 			}
 			return errorResult.ok(mapWarehouse(row));
 		} catch (error) {
@@ -5363,7 +5391,9 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 				return notFound("Payment term not found");
 			}
 			if (row.version !== expectedVersion) {
-				return versionConflict("Payment term version conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Payment term version conflict",
+				});
 			}
 			return errorResult.ok(mapPaymentTerm(row));
 		} catch (error) {
@@ -5397,7 +5427,9 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 				return notFound("Tax registration not found");
 			}
 			if (row.version !== expectedVersion) {
-				return versionConflict("Tax registration version conflict");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Tax registration version conflict",
+				});
 			}
 			return errorResult.ok(mapTaxRegistration(row));
 		} catch (error) {
@@ -5654,16 +5686,16 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 							lease_expires_at = NULL,
 							completed_at = now(),
 							updated_at = now()
-						WHERE organization_id = ${record.organizationId}
-							AND batch_id = ${record.batchId}
-							AND source_row_number = ${row.sourceRowNumber}
-							AND (status <> 'applied' OR ${row.status} = 'applied')
-							AND EXISTS (
-								SELECT 1 FROM md_import_batch
-								WHERE organization_id = ${record.organizationId}
-									AND id = ${record.batchId}
-									AND lease_owner = ${record.leaseOwner}
-							)
+					WHERE md_import_batch_row.organization_id = ${record.organizationId}
+						AND batch_id = ${record.batchId}
+						AND source_row_number = ${row.sourceRowNumber}
+						AND (status <> 'applied' OR ${row.status} = 'applied')
+						AND EXISTS (
+							SELECT 1 FROM md_import_batch
+							WHERE md_import_batch.organization_id = ${record.organizationId}
+								AND id = ${record.batchId}
+								AND lease_owner = ${record.leaseOwner}
+						)
 					`,
 					),
 					transactionSql`
@@ -5683,7 +5715,9 @@ export class DrizzleMasterDataStore implements MasterDataStore {
 				],
 			);
 			if (!isImportClaimResult(transactionResults[record.rows.length])) {
-				return versionConflict("Import batch lease was lost");
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Import batch lease was lost",
+				});
 			}
 			const completed = await this.getImportBatchById(
 				record.organizationId,

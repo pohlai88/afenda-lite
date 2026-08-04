@@ -224,7 +224,6 @@ function addFinding(findings, category, file, message) {
 	});
 }
 
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: This audit intentionally applies its independent normalization rules in one linear catalog.
 function analyzeSource({ relativePath, content }) {
 	const findings = [];
 	const isRuntimeBoundary = isRuntimeBoundaryPath(relativePath);

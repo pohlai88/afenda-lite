@@ -335,10 +335,8 @@ export function analyzeTenantSqlSafety({
 				ts.isPropertyAccessExpression(current.expression.expression) &&
 				current.expression.expression.name.text === "system"
 			) {
-				const operation = current.arguments[0];
-				return operation && ts.isStringLiteral(operation)
-					? operation.text
-					: "";
+				const [operation] = current.arguments;
+				return operation && ts.isStringLiteral(operation) ? operation.text : "";
 			}
 			current = current.parent;
 		}
@@ -407,7 +405,7 @@ export function analyzeTenantSqlSafety({
 				"g",
 			);
 			for (const reference of statement.matchAll(referencePattern)) {
-				const candidateAlias = reference[1];
+				const [, candidateAlias] = reference;
 				const alias =
 					candidateAlias && !aliasStopWords.has(candidateAlias)
 						? candidateAlias
@@ -420,20 +418,20 @@ export function analyzeTenantSqlSafety({
 			/\b(?:where|on)\b[\s\S]*\borganization_id\b/.test(statement);
 		for (const reference of references) {
 			const { alias, table } = reference;
-				if (
-					new RegExp(`\\b${alias}\\s*\\.\\s*organization_id\\b`).test(
-						statement,
-					) ||
-					(references.length === 1 && hasUnqualifiedOwnership)
-				) {
-					continue;
-				}
-				addFinding(
-					node,
-					"raw-tenant-sql-missing-organization",
-					table,
-					`Raw SQL reference ${alias} must carry an explicit organization_id predicate`,
-				);
+			if (
+				new RegExp(`\\b${alias}\\s*\\.\\s*organization_id\\b`).test(
+					statement,
+				) ||
+				(references.length === 1 && hasUnqualifiedOwnership)
+			) {
+				continue;
+			}
+			addFinding(
+				node,
+				"raw-tenant-sql-missing-organization",
+				table,
+				`Raw SQL reference ${alias} must carry an explicit organization_id predicate`,
+			);
 		}
 	}
 

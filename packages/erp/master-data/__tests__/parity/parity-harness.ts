@@ -265,10 +265,13 @@ export function defineRootParityTests<T extends VersionedPublicRoot>(
 			if (stale.ok) {
 				return;
 			}
+			// CONFLICT carries no public details (sealed @afenda/errors registry).
+			// Stores may use entity-specific sanitized public messages; all must
+			// be CONFLICT with the shared messageKey and a version-conflict message.
 			expect(stale.code).toBe("CONFLICT");
-			expect(stale.details).toMatchObject({
-				reason: "MASTER_VERSION_CONFLICT",
-			});
+			expect(stale.messageKey).toBe("errors.conflict");
+			expect(stale.message.toLowerCase()).toContain("version conflict");
+			expect("details" in stale ? stale.details : undefined).toBeUndefined();
 		});
 	});
 }

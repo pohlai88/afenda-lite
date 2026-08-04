@@ -25,7 +25,7 @@ const packageJsonPath = join(appDir, "package.json");
 const cliJsonPath = join(appDir, "cli.json");
 
 /** SSOT string lives in openapi-document-id.ts — server + generator import the binding. */
-const OPENAPI_DOCUMENT_ID = "../../docs-V2/api/OPEN-001-openapi.yaml";
+const OPENAPI_DOCUMENT_ID = "../../docs/api/OPEN-001-openapi.yaml";
 const openApiYamlPath = join(appDir, OPENAPI_DOCUMENT_ID);
 const openApiDocumentIdPath = join(appDir, "lib/openapi-document-id.ts");
 
@@ -88,13 +88,13 @@ function collectSourceFiles(dir: string): string[] {
 }
 
 describe("docs OpenAPI wire", () => {
-	it("resolves the docs-V2 OpenAPI YAML on disk", () => {
+	it("resolves the live-trunk OpenAPI YAML on disk", () => {
 		expect(existsSync(openApiYamlPath)).toBe(true);
 		const documentIdSource = readFileSync(openApiDocumentIdPath, "utf8");
 		expect(documentIdSource).toContain("OPENAPI_DOCUMENT_PATH");
 		expect(documentIdSource).toContain("fileURLToPath");
 		expect(documentIdSource).toContain("dirname");
-		// dirname(lib/file) → lib; join(.., "..") → apps/docs; then ../../docs-V2 → repo root.
+		// dirname(lib/file) → lib; join(.., "..") → apps/docs; then ../../docs → repo root.
 		expect(documentIdSource).toContain(
 			'join(dirname(fileURLToPath(import.meta.url)), "..")',
 		);
@@ -103,10 +103,10 @@ describe("docs OpenAPI wire", () => {
 		) as { OPENAPI_DOCUMENT_PATH: string };
 		expect(existsSync(OPENAPI_DOCUMENT_PATH)).toBe(true);
 		expect(OPENAPI_DOCUMENT_PATH.replaceAll("\\", "/")).toMatch(
-			/\/docs-V2\/api\/OPEN-001-openapi\.yaml$/,
+			/\/docs\/api\/OPEN-001-openapi\.yaml$/,
 		);
 		expect(OPENAPI_DOCUMENT_PATH.replaceAll("\\", "/")).not.toContain(
-			"/apps/docs-V2/",
+			"/apps/docs/",
 		);
 	});
 
@@ -1251,10 +1251,10 @@ describe("docs OpenAPI wire", () => {
 
 		const envPackageDocs = readFileSync(join(packagesDir, "env.mdx"), "utf8");
 		expect(envPackageDocs).toContain(
-			"`@afenda/env` | `env` (web T3 schema) + Neon contract / performance / recovery helpers; does not export or evaluate `docsEnv`",
+			"| `@afenda/env` | **Yes** — validates at import, fails closed | `env` + `is*Now()` runtime predicates; does not export or evaluate `docsEnv` |",
 		);
 		expect(envPackageDocs).toContain(
-			"`@afenda/env/docs` | `docsEnv` only — site origin + optional GitHub App feedback keys; avoids loading web Neon schema",
+			'Prefer `import { env } from "@afenda/env"` (web) or `import { docsEnv } from "@afenda/env/docs"` (docs site)',
 		);
 		expect(envPackageDocs).not.toContain("docsEnv` re-export");
 		expect(envPackageDocs).not.toContain("web Neon secrets");

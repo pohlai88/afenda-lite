@@ -76,7 +76,7 @@ function specPresent(): boolean {
 
 if (!specPresent()) {
 	console.log(
-		`[generate:openapi-docs] skipped — docs-V2 removed, no OpenAPI spec at ${OPENAPI_DOCUMENT_PATH}`,
+		`[generate:openapi-docs] skipped — OpenAPI spec missing at ${OPENAPI_DOCUMENT_PATH}`,
 	);
 	process.exit(0);
 }

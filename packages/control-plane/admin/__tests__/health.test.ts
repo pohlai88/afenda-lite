@@ -25,6 +25,9 @@ const mockedEnv = vi.hoisted(() => ({
 
 vi.mock("@afenda/env", () => ({
 	env: mockedEnv,
+}));
+
+vi.mock("@afenda/env/performance", () => ({
 	MAX_SELECT1_LATENCY_MS: 50,
 }));
 

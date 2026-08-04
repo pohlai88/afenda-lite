@@ -1849,9 +1849,7 @@ export const drizzleLearningMethods: DrizzleLearningMethods &
 							: eq(hrLearningSession.courseId, input.courseId),
 					),
 				)
-				.orderBy(
-				desc(hrLearningSession.scheduledStartsAt),
-			);
+				.orderBy(desc(hrLearningSession.scheduledStartsAt));
 			const totalCount = rows.length;
 			const start = (input.page - 1) * input.pageSize;
 			const paged = rows.slice(start, start + input.pageSize);

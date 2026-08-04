@@ -180,7 +180,10 @@ if (rage.status === 0) {
 	}
 	for (const rule of bannedTypeAwareRules) {
 		// rage lists enabled rules only; a banned rule must not appear as enabled.
-		const enabledLine = new RegExp(`^\\s{4}${rule.replace("/", "\\/")}\\s*$`, "m");
+		const enabledLine = new RegExp(
+			`^\\s{4}${rule.replace("/", "\\/")}\\s*$`,
+			"m",
+		);
 		if (enabledLine.test(rage.output)) {
 			errors.push(
 				`effective root Biome config must keep ${rule} off (types-domain rule forces TypeAware monorepo scan)`,

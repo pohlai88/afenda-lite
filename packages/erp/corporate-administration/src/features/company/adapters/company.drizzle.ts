@@ -2734,57 +2734,13 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 			input.transaction.enqueue((database) => {
 				const txSql = asTransactionSql(database);
 				return txSql`
-					WITH updated_company AS (
-						UPDATE ca_legal_company
-						SET state = ${input.status},
-							updated_at = ${new Date(input.recordedAt)},
-							updated_by = ${input.recordedByUserId},
-							version = version + 1
-						WHERE organization_id = ${input.organizationId}
-							AND id = ${input.legalCompanyId}
-							AND version = ${input.expectedCompanyVersion}
-						RETURNING id
-					),
-					assert_updated AS (
-						SELECT CASE
-							WHEN EXISTS (SELECT 1 FROM updated_company) THEN 1
-							ELSE 1 / 0
-						END AS checked
-					),
-					closed_status AS (
-						UPDATE ca_company_status_history
-						SET effective_to = ${input.effectiveFrom}
-						WHERE organization_id = ${input.organizationId}
-							AND legal_company_id = ${input.legalCompanyId}
-							AND effective_to IS NULL
-							AND EXISTS (SELECT 1 FROM updated_company)
-						RETURNING id
-					)
-					INSERT INTO ca_company_status_history (
-						id, organization_id, legal_company_id, status, effective_from,
-						effective_to, recorded_at, recorded_by, reason, source_document_id,
-						version
-					)
-					SELECT
-						${record.id}, ${record.organizationId}, ${record.legalCompanyId},
-						${record.status}, ${record.effectiveFrom}, ${record.effectiveTo},
-						${record.recordedAt}, ${record.recordedBy}, ${record.reason},
-						${record.sourceDocumentId}, ${record.version}
-					FROM assert_updated, (SELECT count(*) FROM closed_status) closed
-				`;
-			});
-			return errorResult.ok(record);
-		}
-
-		try {
-			await this.#database.execute(sql`
 				WITH updated_company AS (
 					UPDATE ca_legal_company
 					SET state = ${input.status},
 						updated_at = ${new Date(input.recordedAt)},
 						updated_by = ${input.recordedByUserId},
 						version = version + 1
-					WHERE organization_id = ${input.organizationId}
+					WHERE ca_legal_company.organization_id = ${input.organizationId}
 						AND id = ${input.legalCompanyId}
 						AND version = ${input.expectedCompanyVersion}
 					RETURNING id
@@ -2798,7 +2754,7 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 				closed_status AS (
 					UPDATE ca_company_status_history
 					SET effective_to = ${input.effectiveFrom}
-					WHERE organization_id = ${input.organizationId}
+					WHERE ca_company_status_history.organization_id = ${input.organizationId}
 						AND legal_company_id = ${input.legalCompanyId}
 						AND effective_to IS NULL
 						AND EXISTS (SELECT 1 FROM updated_company)
@@ -2815,7 +2771,51 @@ class DrizzleCorporateAdministrationLegalCompanyStore
 					${record.recordedAt}, ${record.recordedBy}, ${record.reason},
 					${record.sourceDocumentId}, ${record.version}
 				FROM assert_updated, (SELECT count(*) FROM closed_status) closed
-			`);
+			`;
+			});
+			return errorResult.ok(record);
+		}
+
+		try {
+			await this.#database.execute(sql`
+			WITH updated_company AS (
+				UPDATE ca_legal_company
+				SET state = ${input.status},
+					updated_at = ${new Date(input.recordedAt)},
+					updated_by = ${input.recordedByUserId},
+					version = version + 1
+				WHERE ca_legal_company.organization_id = ${input.organizationId}
+					AND id = ${input.legalCompanyId}
+					AND version = ${input.expectedCompanyVersion}
+				RETURNING id
+			),
+			assert_updated AS (
+				SELECT CASE
+					WHEN EXISTS (SELECT 1 FROM updated_company) THEN 1
+					ELSE 1 / 0
+				END AS checked
+			),
+			closed_status AS (
+				UPDATE ca_company_status_history
+				SET effective_to = ${input.effectiveFrom}
+				WHERE ca_company_status_history.organization_id = ${input.organizationId}
+					AND legal_company_id = ${input.legalCompanyId}
+					AND effective_to IS NULL
+					AND EXISTS (SELECT 1 FROM updated_company)
+				RETURNING id
+			)
+			INSERT INTO ca_company_status_history (
+				id, organization_id, legal_company_id, status, effective_from,
+				effective_to, recorded_at, recorded_by, reason, source_document_id,
+				version
+			)
+			SELECT
+				${record.id}, ${record.organizationId}, ${record.legalCompanyId},
+				${record.status}, ${record.effectiveFrom}, ${record.effectiveTo},
+				${record.recordedAt}, ${record.recordedBy}, ${record.reason},
+				${record.sourceDocumentId}, ${record.version}
+			FROM assert_updated, (SELECT count(*) FROM closed_status) closed
+		`);
 			return errorResult.ok(record);
 		} catch (error) {
 			const translated =

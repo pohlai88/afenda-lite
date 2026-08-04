@@ -213,7 +213,7 @@ export function createDrizzleReliabilityStore(): ReliabilityStorePort {
 				const [claimed] = await afendaDatabase.system.transaction(
 					"human-resources.reliability.claim-due",
 					(sqlTag) => [
-					sqlTag`
+						sqlTag`
 						WITH ranked AS (
 							SELECT id, organization_id,
 								row_number() OVER (

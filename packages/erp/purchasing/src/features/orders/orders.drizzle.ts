@@ -733,21 +733,21 @@ export class DrizzlePurchasingStore implements PurchasingStore {
 					const nextLineVersion = (currentLine?.version ?? 1) + 1;
 					// Gate on posted header version so a header miss cannot stamp lines.
 					statements.push(sql`
-						UPDATE purchase_order_line
-						SET item_code = ${snap.itemCode},
-							item_name = ${snap.itemName},
-							base_uom_id = ${snap.baseUomId},
-							base_uom_code = ${snap.baseUomCode},
-							unit_price = ${snap.unitPrice},
-							discount_amount = ${snap.discountAmount},
-							tax_classification = ${snap.taxClassification},
-							line_amount = ${snap.lineAmount},
-							updated_by = ${record.actorUserId},
-							updated_at = now(),
-							version = ${nextLineVersion}
-						WHERE id = ${snap.lineId}
-							AND organization_id = ${record.organizationId}
-							AND order_id = ${record.orderId}
+					UPDATE purchase_order_line
+					SET item_code = ${snap.itemCode},
+						item_name = ${snap.itemName},
+						base_uom_id = ${snap.baseUomId},
+						base_uom_code = ${snap.baseUomCode},
+						unit_price = ${snap.unitPrice},
+						discount_amount = ${snap.discountAmount},
+						tax_classification = ${snap.taxClassification},
+						line_amount = ${snap.lineAmount},
+						updated_by = ${record.actorUserId},
+						updated_at = now(),
+						version = ${nextLineVersion}
+					WHERE id = ${snap.lineId}
+						AND purchase_order_line.organization_id = ${record.organizationId}
+						AND order_id = ${record.orderId}
 							AND EXISTS (
 								SELECT 1
 								FROM purchase_order o

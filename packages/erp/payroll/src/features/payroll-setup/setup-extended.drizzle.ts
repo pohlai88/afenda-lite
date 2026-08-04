@@ -783,20 +783,20 @@ export function createDrizzleSetupExtendedMethods(
 				const [, rows] = await afendaDatabase.transaction((sqlValue) => [
 					sqlValue`SELECT pg_advisory_xact_lock(hashtextextended(${ruleInput.organizationId}::text || ':earning:' || ${ruleInput.ruleId}::uuid::text, 0))`,
 					sqlValue`
-						UPDATE payroll_earning_rule
-						SET name = ${name}, amount = ${amount},
-							rate = ${rate}, effective_to = ${effectiveTo},
-							version = version + 1, updated_by = ${ruleInput.actorUserId},
-							updated_at = NOW()
-						WHERE organization_id = ${ruleInput.organizationId}
-							AND id = ${ruleInput.ruleId} AND version = ${ruleInput.expectedVersion}
-							AND status = 'active'
-							AND NOT EXISTS (
-								SELECT 1 FROM payroll_rule_finalized_usage
-								WHERE organization_id = ${ruleInput.organizationId}
-									AND rule_kind = 'earning' AND rule_id = ${ruleInput.ruleId}
-							)
-						RETURNING id
+					UPDATE payroll_earning_rule
+					SET name = ${name}, amount = ${amount},
+						rate = ${rate}, effective_to = ${effectiveTo},
+						version = version + 1, updated_by = ${ruleInput.actorUserId},
+						updated_at = NOW()
+					WHERE payroll_earning_rule.organization_id = ${ruleInput.organizationId}
+						AND id = ${ruleInput.ruleId} AND version = ${ruleInput.expectedVersion}
+						AND status = 'active'
+						AND NOT EXISTS (
+							SELECT 1 FROM payroll_rule_finalized_usage
+							WHERE payroll_rule_finalized_usage.organization_id = ${ruleInput.organizationId}
+								AND rule_kind = 'earning' AND rule_id = ${ruleInput.ruleId}
+						)
+					RETURNING id
 					`,
 				]);
 				if (rows.length === 0) {
@@ -870,17 +870,17 @@ export function createDrizzleSetupExtendedMethods(
 				const [, rows] = await afendaDatabase.transaction((sqlValue) => [
 					sqlValue`SELECT pg_advisory_xact_lock(hashtextextended(${ruleInput.organizationId}::text || ':earning:' || ${ruleInput.ruleId}::uuid::text, 0))`,
 					sqlValue`
-						UPDATE payroll_earning_rule
-						SET status = 'archived', version = version + 1,
-							updated_by = ${ruleInput.actorUserId}, updated_at = NOW()
-						WHERE organization_id = ${ruleInput.organizationId}
-							AND id = ${ruleInput.ruleId} AND version = ${ruleInput.expectedVersion}
-							AND NOT EXISTS (
-								SELECT 1 FROM payroll_rule_finalized_usage
-								WHERE organization_id = ${ruleInput.organizationId}
-									AND rule_kind = 'earning' AND rule_id = ${ruleInput.ruleId}
-							)
-						RETURNING id
+					UPDATE payroll_earning_rule
+					SET status = 'archived', version = version + 1,
+						updated_by = ${ruleInput.actorUserId}, updated_at = NOW()
+					WHERE payroll_earning_rule.organization_id = ${ruleInput.organizationId}
+						AND id = ${ruleInput.ruleId} AND version = ${ruleInput.expectedVersion}
+						AND NOT EXISTS (
+							SELECT 1 FROM payroll_rule_finalized_usage
+							WHERE payroll_rule_finalized_usage.organization_id = ${ruleInput.organizationId}
+								AND rule_kind = 'earning' AND rule_id = ${ruleInput.ruleId}
+						)
+					RETURNING id
 					`,
 				]);
 				if (rows.length === 0) {
@@ -1006,19 +1006,19 @@ export function createDrizzleSetupExtendedMethods(
 					sqlValue`SELECT pg_advisory_xact_lock(hashtextextended(${record.organizationId}::text || ':earning:' || ${record.ruleId}::uuid::text, 0))`,
 					sqlValue`
 						WITH superseded AS (
-							UPDATE payroll_earning_rule
-							SET status = 'superseded',
-								effective_to = ${endSupersededEffectiveRange(existing.effectiveTo, record.effectiveFrom)},
-								version = version + 1, updated_by = ${record.createdBy}, updated_at = NOW()
-							WHERE organization_id = ${record.organizationId}
-								AND id = ${record.ruleId} AND version = ${record.expectedVersion}
-								AND status = 'active'
-								AND NOT EXISTS (
-									SELECT 1 FROM payroll_rule_finalized_usage
-									WHERE organization_id = ${record.organizationId}
-										AND rule_kind = 'earning' AND rule_id = ${record.ruleId}
-								)
-							RETURNING id
+						UPDATE payroll_earning_rule
+						SET status = 'superseded',
+							effective_to = ${endSupersededEffectiveRange(existing.effectiveTo, record.effectiveFrom)},
+							version = version + 1, updated_by = ${record.createdBy}, updated_at = NOW()
+						WHERE payroll_earning_rule.organization_id = ${record.organizationId}
+							AND id = ${record.ruleId} AND version = ${record.expectedVersion}
+							AND status = 'active'
+							AND NOT EXISTS (
+								SELECT 1 FROM payroll_rule_finalized_usage
+								WHERE payroll_rule_finalized_usage.organization_id = ${record.organizationId}
+									AND rule_kind = 'earning' AND rule_id = ${record.ruleId}
+							)
+						RETURNING id
 						), successor AS (
 							INSERT INTO payroll_earning_rule (
 								id, organization_id, pay_group_id, code, name, rule_type,
@@ -1190,20 +1190,20 @@ export function createDrizzleSetupExtendedMethods(
 				const [, rows] = await afendaDatabase.transaction((sqlValue) => [
 					sqlValue`SELECT pg_advisory_xact_lock(hashtextextended(${ruleInput.organizationId}::text || ':deduction:' || ${ruleInput.ruleId}::uuid::text, 0))`,
 					sqlValue`
-						UPDATE payroll_deduction_rule
-						SET name = ${name}, amount = ${amount},
-							rate = ${rate}, tax_timing = ${taxTiming},
-							effective_to = ${effectiveTo}, version = version + 1,
-							updated_by = ${ruleInput.actorUserId}, updated_at = NOW()
-						WHERE organization_id = ${ruleInput.organizationId}
-							AND id = ${ruleInput.ruleId} AND version = ${ruleInput.expectedVersion}
-							AND status = 'active'
-							AND NOT EXISTS (
-								SELECT 1 FROM payroll_rule_finalized_usage
-								WHERE organization_id = ${ruleInput.organizationId}
-									AND rule_kind = 'deduction' AND rule_id = ${ruleInput.ruleId}
-							)
-						RETURNING id
+					UPDATE payroll_deduction_rule
+					SET name = ${name}, amount = ${amount},
+						rate = ${rate}, tax_timing = ${taxTiming},
+						effective_to = ${effectiveTo}, version = version + 1,
+						updated_by = ${ruleInput.actorUserId}, updated_at = NOW()
+					WHERE payroll_deduction_rule.organization_id = ${ruleInput.organizationId}
+						AND id = ${ruleInput.ruleId} AND version = ${ruleInput.expectedVersion}
+						AND status = 'active'
+						AND NOT EXISTS (
+							SELECT 1 FROM payroll_rule_finalized_usage
+							WHERE payroll_rule_finalized_usage.organization_id = ${ruleInput.organizationId}
+								AND rule_kind = 'deduction' AND rule_id = ${ruleInput.ruleId}
+						)
+					RETURNING id
 					`,
 				]);
 				if (rows.length === 0) {
@@ -1277,17 +1277,17 @@ export function createDrizzleSetupExtendedMethods(
 				const [, rows] = await afendaDatabase.transaction((sqlValue) => [
 					sqlValue`SELECT pg_advisory_xact_lock(hashtextextended(${ruleInput.organizationId}::text || ':deduction:' || ${ruleInput.ruleId}::uuid::text, 0))`,
 					sqlValue`
-						UPDATE payroll_deduction_rule
-						SET status = 'archived', version = version + 1,
-							updated_by = ${ruleInput.actorUserId}, updated_at = NOW()
-						WHERE organization_id = ${ruleInput.organizationId}
-							AND id = ${ruleInput.ruleId} AND version = ${ruleInput.expectedVersion}
-							AND NOT EXISTS (
-								SELECT 1 FROM payroll_rule_finalized_usage
-								WHERE organization_id = ${ruleInput.organizationId}
-									AND rule_kind = 'deduction' AND rule_id = ${ruleInput.ruleId}
-							)
-						RETURNING id
+					UPDATE payroll_deduction_rule
+					SET status = 'archived', version = version + 1,
+						updated_by = ${ruleInput.actorUserId}, updated_at = NOW()
+					WHERE payroll_deduction_rule.organization_id = ${ruleInput.organizationId}
+						AND id = ${ruleInput.ruleId} AND version = ${ruleInput.expectedVersion}
+						AND NOT EXISTS (
+							SELECT 1 FROM payroll_rule_finalized_usage
+							WHERE payroll_rule_finalized_usage.organization_id = ${ruleInput.organizationId}
+								AND rule_kind = 'deduction' AND rule_id = ${ruleInput.ruleId}
+						)
+					RETURNING id
 					`,
 				]);
 				if (rows.length === 0) {
@@ -1413,19 +1413,19 @@ export function createDrizzleSetupExtendedMethods(
 					sqlValue`SELECT pg_advisory_xact_lock(hashtextextended(${record.organizationId}::text || ':deduction:' || ${record.ruleId}::uuid::text, 0))`,
 					sqlValue`
 					WITH superseded AS (
-						UPDATE payroll_deduction_rule
-						SET status = 'superseded',
-							effective_to = ${endSupersededEffectiveRange(existing.effectiveTo, record.effectiveFrom)},
-							version = version + 1, updated_by = ${record.createdBy}, updated_at = NOW()
-						WHERE organization_id = ${record.organizationId}
-							AND id = ${record.ruleId} AND version = ${record.expectedVersion}
-							AND status = 'active'
-							AND NOT EXISTS (
-								SELECT 1 FROM payroll_rule_finalized_usage
-								WHERE organization_id = ${record.organizationId}
-									AND rule_kind = 'deduction' AND rule_id = ${record.ruleId}
-							)
-						RETURNING id
+					UPDATE payroll_deduction_rule
+					SET status = 'superseded',
+						effective_to = ${endSupersededEffectiveRange(existing.effectiveTo, record.effectiveFrom)},
+						version = version + 1, updated_by = ${record.createdBy}, updated_at = NOW()
+					WHERE payroll_deduction_rule.organization_id = ${record.organizationId}
+						AND id = ${record.ruleId} AND version = ${record.expectedVersion}
+						AND status = 'active'
+						AND NOT EXISTS (
+							SELECT 1 FROM payroll_rule_finalized_usage
+							WHERE payroll_rule_finalized_usage.organization_id = ${record.organizationId}
+								AND rule_kind = 'deduction' AND rule_id = ${record.ruleId}
+						)
+					RETURNING id
 					), successor AS (
 						INSERT INTO payroll_deduction_rule (
 							id, organization_id, pay_group_id, code, name, rule_type,
@@ -1587,20 +1587,20 @@ export function createDrizzleSetupExtendedMethods(
 				const [, rows] = await afendaDatabase.transaction((sqlValue) => [
 					sqlValue`SELECT pg_advisory_xact_lock(hashtextextended(${ruleInput.organizationId}::text || ':statutory:' || ${ruleInput.ruleId}::uuid::text, 0))`,
 					sqlValue`
-						UPDATE payroll_statutory_rule
-						SET name = ${name}, jurisdiction_code = ${jurisdictionCode},
-							config_json = ${configJson}::jsonb, effective_to = ${effectiveTo},
-							version = version + 1, updated_by = ${ruleInput.actorUserId},
-							updated_at = NOW()
-						WHERE organization_id = ${ruleInput.organizationId}
-							AND id = ${ruleInput.ruleId} AND version = ${ruleInput.expectedVersion}
-							AND status = 'active'
-							AND NOT EXISTS (
-								SELECT 1 FROM payroll_rule_finalized_usage
-								WHERE organization_id = ${ruleInput.organizationId}
-									AND rule_kind = 'statutory' AND rule_id = ${ruleInput.ruleId}
-							)
-						RETURNING id
+					UPDATE payroll_statutory_rule
+					SET name = ${name}, jurisdiction_code = ${jurisdictionCode},
+						config_json = ${configJson}::jsonb, effective_to = ${effectiveTo},
+						version = version + 1, updated_by = ${ruleInput.actorUserId},
+						updated_at = NOW()
+					WHERE payroll_statutory_rule.organization_id = ${ruleInput.organizationId}
+						AND id = ${ruleInput.ruleId} AND version = ${ruleInput.expectedVersion}
+						AND status = 'active'
+						AND NOT EXISTS (
+							SELECT 1 FROM payroll_rule_finalized_usage
+							WHERE payroll_rule_finalized_usage.organization_id = ${ruleInput.organizationId}
+								AND rule_kind = 'statutory' AND rule_id = ${ruleInput.ruleId}
+						)
+					RETURNING id
 					`,
 				]);
 				if (rows.length === 0) {
@@ -1674,17 +1674,17 @@ export function createDrizzleSetupExtendedMethods(
 				const [, rows] = await afendaDatabase.transaction((sqlValue) => [
 					sqlValue`SELECT pg_advisory_xact_lock(hashtextextended(${ruleInput.organizationId}::text || ':statutory:' || ${ruleInput.ruleId}::uuid::text, 0))`,
 					sqlValue`
-						UPDATE payroll_statutory_rule
-						SET status = 'archived', version = version + 1,
-							updated_by = ${ruleInput.actorUserId}, updated_at = NOW()
-						WHERE organization_id = ${ruleInput.organizationId}
-							AND id = ${ruleInput.ruleId} AND version = ${ruleInput.expectedVersion}
-							AND NOT EXISTS (
-								SELECT 1 FROM payroll_rule_finalized_usage
-								WHERE organization_id = ${ruleInput.organizationId}
-									AND rule_kind = 'statutory' AND rule_id = ${ruleInput.ruleId}
-							)
-						RETURNING id
+					UPDATE payroll_statutory_rule
+					SET status = 'archived', version = version + 1,
+						updated_by = ${ruleInput.actorUserId}, updated_at = NOW()
+					WHERE payroll_statutory_rule.organization_id = ${ruleInput.organizationId}
+						AND id = ${ruleInput.ruleId} AND version = ${ruleInput.expectedVersion}
+						AND NOT EXISTS (
+							SELECT 1 FROM payroll_rule_finalized_usage
+							WHERE payroll_rule_finalized_usage.organization_id = ${ruleInput.organizationId}
+								AND rule_kind = 'statutory' AND rule_id = ${ruleInput.ruleId}
+						)
+					RETURNING id
 					`,
 				]);
 				if (rows.length === 0) {
@@ -1803,20 +1803,20 @@ export function createDrizzleSetupExtendedMethods(
 				const [, rows] = await afendaDatabase.transaction((sqlValue) => [
 					sqlValue`SELECT pg_advisory_xact_lock(hashtextextended(${record.organizationId}::text || ':statutory:' || ${record.ruleId}::uuid::text, 0))`,
 					sqlValue`
-					WITH superseded AS (
-						UPDATE payroll_statutory_rule
-						SET status = 'superseded',
-							effective_to = ${endSupersededEffectiveRange(existing.effectiveTo, record.effectiveFrom)},
-							version = version + 1, updated_by = ${record.createdBy}, updated_at = NOW()
-						WHERE organization_id = ${record.organizationId}
-							AND id = ${record.ruleId} AND version = ${record.expectedVersion}
-							AND status = 'active'
-							AND NOT EXISTS (
-								SELECT 1 FROM payroll_rule_finalized_usage
-								WHERE organization_id = ${record.organizationId}
-									AND rule_kind = 'statutory' AND rule_id = ${record.ruleId}
-							)
-						RETURNING id
+				WITH superseded AS (
+					UPDATE payroll_statutory_rule
+					SET status = 'superseded',
+						effective_to = ${endSupersededEffectiveRange(existing.effectiveTo, record.effectiveFrom)},
+						version = version + 1, updated_by = ${record.createdBy}, updated_at = NOW()
+					WHERE payroll_statutory_rule.organization_id = ${record.organizationId}
+						AND id = ${record.ruleId} AND version = ${record.expectedVersion}
+						AND status = 'active'
+						AND NOT EXISTS (
+							SELECT 1 FROM payroll_rule_finalized_usage
+							WHERE payroll_rule_finalized_usage.organization_id = ${record.organizationId}
+								AND rule_kind = 'statutory' AND rule_id = ${record.ruleId}
+						)
+					RETURNING id
 					), successor AS (
 						INSERT INTO payroll_statutory_rule (
 							id, organization_id, pay_group_id, code, name, jurisdiction_code,

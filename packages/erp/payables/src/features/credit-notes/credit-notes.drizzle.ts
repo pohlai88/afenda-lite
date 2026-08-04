@@ -125,27 +125,27 @@ export const drizzleCreditNoteMethods: PayablesCreditNotesStore = {
 		try {
 			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
-					WITH eligible AS (
-						SELECT id FROM supplier_credit_note
-						WHERE id = ${record.creditNoteId} AND organization_id = ${record.organizationId}
-							AND status = 'draft'
-					), inserted AS (
-						INSERT INTO supplier_credit_note_line (
-							id, organization_id, credit_note_id, line_no, item_id, item_code, item_name,
-							quantity, unit_price, line_amount, version, created_by, updated_by
-						)
-						SELECT ${id}, ${record.organizationId}, ${record.creditNoteId},
-							(SELECT COALESCE(MAX(line_no), 0) + 1 FROM supplier_credit_note_line
-								WHERE organization_id = ${record.organizationId} AND credit_note_id = ${record.creditNoteId}),
-							${record.itemId}, ${record.itemId}, ${record.description}, ${record.quantity},
-							${record.unitPrice}, (${record.quantity}::numeric * ${record.unitPrice}::numeric)::text,
-							1, ${record.actorUserId}, ${record.actorUserId}
-						FROM eligible RETURNING line_no, created_at
-					), bumped AS (
-						UPDATE supplier_credit_note SET version = version + 1, updated_by = ${record.actorUserId}, updated_at = now()
-						WHERE id = ${record.creditNoteId} AND organization_id = ${record.organizationId}
-							AND EXISTS (SELECT 1 FROM inserted)
-					) SELECT * FROM inserted
+				WITH eligible AS (
+					SELECT id FROM supplier_credit_note
+					WHERE id = ${record.creditNoteId} AND supplier_credit_note.organization_id = ${record.organizationId}
+						AND status = 'draft'
+				), inserted AS (
+					INSERT INTO supplier_credit_note_line (
+						id, organization_id, credit_note_id, line_no, item_id, item_code, item_name,
+						quantity, unit_price, line_amount, version, created_by, updated_by
+					)
+					SELECT ${id}, ${record.organizationId}, ${record.creditNoteId},
+						(SELECT COALESCE(MAX(line_no), 0) + 1 FROM supplier_credit_note_line
+							WHERE supplier_credit_note_line.organization_id = ${record.organizationId} AND credit_note_id = ${record.creditNoteId}),
+						${record.itemId}, ${record.itemId}, ${record.description}, ${record.quantity},
+						${record.unitPrice}, (${record.quantity}::numeric * ${record.unitPrice}::numeric)::text,
+						1, ${record.actorUserId}, ${record.actorUserId}
+					FROM eligible RETURNING line_no, created_at
+				), bumped AS (
+					UPDATE supplier_credit_note SET version = version + 1, updated_by = ${record.actorUserId}, updated_at = now()
+					WHERE id = ${record.creditNoteId} AND supplier_credit_note.organization_id = ${record.organizationId}
+						AND EXISTS (SELECT 1 FROM inserted)
+				) SELECT * FROM inserted
 				`,
 			]);
 			const [row] = rows;
@@ -186,18 +186,20 @@ export const drizzleCreditNoteMethods: PayablesCreditNotesStore = {
 			// was emitted after commit, losing atomicity on partial failure).
 			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
-					WITH totaled AS (
-						SELECT credit.*, (SELECT COALESCE(SUM(line_amount::numeric), 0) FROM supplier_credit_note_line
-							WHERE credit_note_id = credit.id AND organization_id = credit.organization_id) AS total
-						FROM supplier_credit_note credit
-						WHERE id = ${record.creditNoteId} AND organization_id = ${record.organizationId}
-							AND status = 'draft' AND version = ${record.expectedVersion}
-					), mutated AS (
-						UPDATE supplier_credit_note SET status = 'posted', amount = totaled.total::text,
-							posted_at = now(), posted_by = ${record.actorUserId}, version = version + 1,
-							updated_at = now(), updated_by = ${record.actorUserId}
-						FROM totaled WHERE supplier_credit_note.id = totaled.id AND totaled.total > 0 RETURNING supplier_credit_note.*
-					), projected AS (
+				WITH totaled AS (
+					SELECT credit.*, (SELECT COALESCE(SUM(line_amount::numeric), 0) FROM supplier_credit_note_line
+						WHERE credit_note_id = credit.id AND supplier_credit_note_line.organization_id = credit.organization_id) AS total
+					FROM supplier_credit_note credit
+					WHERE id = ${record.creditNoteId} AND credit.organization_id = ${record.organizationId}
+						AND status = 'draft' AND version = ${record.expectedVersion}
+					), 				mutated AS (
+					UPDATE supplier_credit_note SET status = 'posted', amount = totaled.total::text,
+						posted_at = now(), posted_by = ${record.actorUserId}, version = version + 1,
+						updated_at = now(), updated_by = ${record.actorUserId}
+					FROM totaled WHERE supplier_credit_note.id = totaled.id
+						AND supplier_credit_note.organization_id = ${record.organizationId}
+						AND totaled.total > 0 RETURNING supplier_credit_note.*
+				), projected AS (
 						INSERT INTO supplier_balance_projection (id, organization_id, supplier_party_id, currency_code, open_balance, version, created_by, updated_by)
 						SELECT ${randomUUID()}, organization_id, supplier_party_id, currency_code, (-amount::numeric)::text, 1, ${record.actorUserId}, ${record.actorUserId}
 						FROM mutated ON CONFLICT (organization_id, supplier_party_id, currency_code) DO UPDATE SET

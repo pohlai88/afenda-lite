@@ -1258,7 +1258,7 @@ export const drizzleWorkforcePlanningMethods: DrizzleWorkforcePlanningMethods &
 						)
 						SELECT mutated.* FROM mutated JOIN audited ON true
 					`,
-					sqlValue5`
+				sqlValue5`
 						INSERT INTO hr_headcount_plan_line (
 							id, organization_id, plan_id, department_id, job_id, position_id,
 							location_code, employment_type, planned_fte, planned_headcount,

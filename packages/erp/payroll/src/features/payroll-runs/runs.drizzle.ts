@@ -582,42 +582,42 @@ export const drizzleRunsMethods: PayrollRunsStore = {
 							reversal_idempotency_key = ${nextReversalIdempotencyKey},
 							reversal_request_fingerprint = ${nextReversalRequestFingerprint},
 							updated_by = ${input.actorUserId}, updated_at = NOW()
-						WHERE organization_id = ${input.organizationId}
-							AND id = ${input.runId} AND version = ${input.expectedVersion}
-							AND (
-								${nextStatus}::text <> 'finalized'
-								OR (
-									NOT EXISTS (
-										SELECT 1 FROM payroll_exception
-										WHERE organization_id = ${input.organizationId}
-											AND run_id = ${input.runId} AND severity = 'blocking'
-									)
-									AND NOT EXISTS (
-										SELECT 1 FROM snapshot_rule_refs
-										WHERE CASE snapshot_rule_refs.rule_kind
-											WHEN 'earning' THEN NOT EXISTS (
-												SELECT 1 FROM payroll_earning_rule
-												WHERE organization_id = ${input.organizationId}
-													AND id = snapshot_rule_refs.rule_id
-													AND version = snapshot_rule_refs.record_version
-											)
-											WHEN 'deduction' THEN NOT EXISTS (
-												SELECT 1 FROM payroll_deduction_rule
-												WHERE organization_id = ${input.organizationId}
-													AND id = snapshot_rule_refs.rule_id
-													AND version = snapshot_rule_refs.record_version
-											)
-											WHEN 'statutory' THEN NOT EXISTS (
-												SELECT 1 FROM payroll_statutory_rule
-												WHERE organization_id = ${input.organizationId}
-													AND id = snapshot_rule_refs.rule_id
-													AND version = snapshot_rule_refs.record_version
-											)
-											ELSE TRUE
-										END
-									)
+					WHERE payroll_run.organization_id = ${input.organizationId}
+						AND id = ${input.runId} AND version = ${input.expectedVersion}
+						AND (
+							${nextStatus}::text <> 'finalized'
+							OR (
+								NOT EXISTS (
+									SELECT 1 FROM payroll_exception
+									WHERE payroll_exception.organization_id = ${input.organizationId}
+										AND run_id = ${input.runId} AND severity = 'blocking'
+								)
+								AND NOT EXISTS (
+									SELECT 1 FROM snapshot_rule_refs
+									WHERE CASE snapshot_rule_refs.rule_kind
+										WHEN 'earning' THEN NOT EXISTS (
+											SELECT 1 FROM payroll_earning_rule
+											WHERE payroll_earning_rule.organization_id = ${input.organizationId}
+												AND id = snapshot_rule_refs.rule_id
+												AND version = snapshot_rule_refs.record_version
+										)
+										WHEN 'deduction' THEN NOT EXISTS (
+											SELECT 1 FROM payroll_deduction_rule
+											WHERE payroll_deduction_rule.organization_id = ${input.organizationId}
+												AND id = snapshot_rule_refs.rule_id
+												AND version = snapshot_rule_refs.record_version
+										)
+										WHEN 'statutory' THEN NOT EXISTS (
+											SELECT 1 FROM payroll_statutory_rule
+											WHERE payroll_statutory_rule.organization_id = ${input.organizationId}
+												AND id = snapshot_rule_refs.rule_id
+												AND version = snapshot_rule_refs.record_version
+										)
+										ELSE TRUE
+									END
 								)
 							)
+						)
 						RETURNING id, organization_id, updated_by
 					),
 					finalized_rule_usage AS (
@@ -927,20 +927,20 @@ export const drizzleRunsMethods: PayrollRunsStore = {
 		try {
 			const [rows] = await afendaDatabase.transaction((sqlValue) => [
 				sqlValue`
-					WITH locked_run AS MATERIALIZED (
-						SELECT id FROM payroll_run
-						WHERE organization_id = ${input.organizationId}
-							AND id = ${input.runId}
-							AND status NOT IN ('finalized', 'reversed')
-						FOR UPDATE
-					),
-					deleted AS (
-						DELETE FROM payroll_exception
-						WHERE organization_id = ${input.organizationId}
-							AND run_id = ${input.runId}
-							AND EXISTS (SELECT 1 FROM locked_run)
-						RETURNING id
-					),
+				WITH locked_run AS MATERIALIZED (
+					SELECT id FROM payroll_run
+					WHERE payroll_run.organization_id = ${input.organizationId}
+						AND id = ${input.runId}
+						AND status NOT IN ('finalized', 'reversed')
+					FOR UPDATE
+				),
+				deleted AS (
+					DELETE FROM payroll_exception
+					WHERE payroll_exception.organization_id = ${input.organizationId}
+						AND run_id = ${input.runId}
+						AND EXISTS (SELECT 1 FROM locked_run)
+					RETURNING id
+				),
 					deleted_summary AS (
 						SELECT count(*) AS deleted_count FROM deleted
 					),

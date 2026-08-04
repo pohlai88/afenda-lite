@@ -1821,7 +1821,7 @@ async function submitAssessment(
 
 	try {
 		const [rows] = await afendaDatabase.transaction((sqlTag) => [
-				sqlTag`
+			sqlTag`
 				WITH updated_assessment AS (
 					UPDATE hr_performance_assessment AS performance_assessment
 					SET rating = ${input.rating},

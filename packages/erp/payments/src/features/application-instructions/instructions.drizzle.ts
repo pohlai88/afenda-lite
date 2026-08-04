@@ -99,16 +99,16 @@ export function createDrizzleApplicationInstructionMethods(
 							FROM eligible
 							RETURNING *
 						),
-						bumped AS (
-							UPDATE payment
-							SET version = version + 1,
-								updated_by = ${record.actorUserId},
-								updated_at = now()
-							WHERE id = ${record.paymentId}
-								AND organization_id = ${record.organizationId}
-								AND EXISTS (SELECT 1 FROM allocated)
-							RETURNING id
-						),
+					bumped AS (
+						UPDATE payment
+						SET version = version + 1,
+							updated_by = ${record.actorUserId},
+							updated_at = now()
+						WHERE id = ${record.paymentId}
+							AND payment.organization_id = ${record.organizationId}
+							AND EXISTS (SELECT 1 FROM allocated)
+						RETURNING id
+					),
 						outboxed AS (
 							INSERT INTO platform_domain_event (
 								id, organization_id, type, source_module, correlation_id,

@@ -244,10 +244,10 @@ export class DrizzleEventStore implements EventStore {
 				Date.now() - EVENT_LIFECYCLE_POLICY.claimLeaseMs,
 			);
 			const result = await afendaDatabase.client.execute(sql`
-				WITH candidates AS (
-					SELECT id
-					FROM platform_domain_event
-					WHERE organization_id = ${options.organizationId}
+			WITH candidates AS (
+				SELECT id
+				FROM platform_domain_event
+				WHERE platform_domain_event.organization_id = ${options.organizationId}
 						AND attempts < ${EVENT_LIFECYCLE_POLICY.maxAttempts}
 						AND (
 							status = 'pending'

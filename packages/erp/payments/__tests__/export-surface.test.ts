@@ -76,5 +76,5 @@ describe("payments export surface", () => {
 		const actual = Object.keys(module).sort();
 		const missing = PUBLIC_EXPORTS.filter((name) => !actual.includes(name));
 		expect(missing).toEqual([]);
-	});
+	}, 10_000); // 10s timeout for dynamic import
 });

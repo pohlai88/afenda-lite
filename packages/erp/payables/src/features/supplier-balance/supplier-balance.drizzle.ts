@@ -35,15 +35,16 @@ export const drizzleSupplierBalanceMethods: PayablesSupplierBalanceStore = {
 		try {
 			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
-					SELECT balance.organization_id, balance.supplier_party_id AS supplier_id,
-						balance.currency_code, balance.open_balance, balance.updated_at,
-						(SELECT COALESCE(SUM(line.line_amount::numeric), 0)::text
-							FROM supplier_invoice invoice
-							JOIN supplier_invoice_line line ON line.invoice_id = invoice.id
-							WHERE invoice.organization_id = balance.organization_id
-								AND invoice.supplier_party_id = balance.supplier_party_id
-								AND invoice.currency_code = balance.currency_code
-								AND invoice.status = 'posted') AS invoiced_amount,
+				SELECT balance.organization_id, balance.supplier_party_id AS supplier_id,
+					balance.currency_code, balance.open_balance, balance.updated_at,
+					(SELECT COALESCE(SUM(line.line_amount::numeric), 0)::text
+						FROM supplier_invoice invoice
+						JOIN supplier_invoice_line line ON line.invoice_id = invoice.id
+						WHERE invoice.organization_id = balance.organization_id
+							AND line.organization_id = balance.organization_id
+							AND invoice.supplier_party_id = balance.supplier_party_id
+							AND invoice.currency_code = balance.currency_code
+							AND invoice.status = 'posted') AS invoiced_amount,
 						(SELECT COALESCE(SUM(credit.amount::numeric), 0)::text
 							FROM supplier_credit_note credit
 							WHERE credit.organization_id = balance.organization_id

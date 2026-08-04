@@ -281,13 +281,13 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 						GROUP BY invoice.id
 						RETURNING id
 					),
-					bumped AS (
-						UPDATE sales_invoice
-						SET version = version + 1, updated_at = now(), updated_by = ${record.actorUserId}
-						WHERE id = ${record.invoiceId} AND organization_id = ${record.organizationId}
-							AND EXISTS (SELECT 1 FROM inserted)
-						RETURNING id
-					)
+				bumped AS (
+					UPDATE sales_invoice
+					SET version = version + 1, updated_at = now(), updated_by = ${record.actorUserId}
+					WHERE id = ${record.invoiceId} AND sales_invoice.organization_id = ${record.organizationId}
+						AND EXISTS (SELECT 1 FROM inserted)
+					RETURNING id
+				)
 					SELECT inserted.id FROM inserted, bumped
 				`,
 			]);
@@ -349,22 +349,22 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 			const balanceId = randomUUID();
 			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
-					WITH mutated AS (
-						UPDATE sales_invoice
-						SET status = 'posted', posted_at = now(), posted_by = ${record.actorUserId},
-							post_idempotency_key = ${record.idempotencyKey}, updated_at = now(),
-							updated_by = ${record.actorUserId}, version = version + 1
-						WHERE id = ${record.invoiceId} AND organization_id = ${record.organizationId}
-							AND status = 'draft' AND version = ${record.expectedVersion}
-							AND (SELECT COALESCE(SUM(line_amount::numeric), 0) FROM sales_invoice_line
-								WHERE invoice_id = ${record.invoiceId} AND organization_id = ${record.organizationId}) > 0
-						RETURNING *
-					),
-					totaled AS (
-						SELECT mutated.*, (SELECT SUM(line_amount::numeric) FROM sales_invoice_line
-							WHERE invoice_id = mutated.id AND organization_id = mutated.organization_id) AS total_amount
-						FROM mutated
-					),
+				WITH mutated AS (
+					UPDATE sales_invoice
+					SET status = 'posted', posted_at = now(), posted_by = ${record.actorUserId},
+						post_idempotency_key = ${record.idempotencyKey}, updated_at = now(),
+						updated_by = ${record.actorUserId}, version = version + 1
+					WHERE id = ${record.invoiceId} AND sales_invoice.organization_id = ${record.organizationId}
+						AND status = 'draft' AND version = ${record.expectedVersion}
+						AND (SELECT COALESCE(SUM(line_amount::numeric), 0) FROM sales_invoice_line
+							WHERE invoice_id = ${record.invoiceId} AND sales_invoice_line.organization_id = ${record.organizationId}) > 0
+					RETURNING *
+				),
+				totaled AS (
+					SELECT mutated.*, (SELECT SUM(line_amount::numeric) FROM sales_invoice_line
+						WHERE invoice_id = mutated.id AND sales_invoice_line.organization_id = mutated.organization_id) AS total_amount
+					FROM mutated
+				),
 					projected AS (
 						INSERT INTO customer_balance_projection (
 							id, organization_id, customer_party_id, currency_code, open_balance,
@@ -432,18 +432,18 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 			const balanceId = randomUUID();
 			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
-					WITH eligible AS (
-						SELECT invoice.*, (SELECT COALESCE(SUM(line_amount::numeric), 0) FROM sales_invoice_line
-							WHERE invoice_id = invoice.id AND organization_id = invoice.organization_id)
-							- (SELECT COALESCE(SUM(amount::numeric), 0) FROM customer_allocation
-								WHERE sales_invoice_id = invoice.id AND organization_id = invoice.organization_id AND status = 'active')
-							- (SELECT COALESCE(SUM(amount::numeric), 0) FROM sales_credit_note
-								WHERE sales_invoice_id = invoice.id AND organization_id = invoice.organization_id AND status = 'posted')
-							AS open_amount
-						FROM sales_invoice invoice
-						WHERE id = ${record.salesInvoiceId} AND organization_id = ${record.organizationId}
-							AND status = 'posted'
-					),
+				WITH eligible AS (
+					SELECT invoice.*, (SELECT COALESCE(SUM(line_amount::numeric), 0) FROM sales_invoice_line
+						WHERE invoice_id = invoice.id AND sales_invoice_line.organization_id = invoice.organization_id)
+						- (SELECT COALESCE(SUM(amount::numeric), 0) FROM customer_allocation
+							WHERE sales_invoice_id = invoice.id AND customer_allocation.organization_id = invoice.organization_id AND status = 'active')
+						- (SELECT COALESCE(SUM(amount::numeric), 0) FROM sales_credit_note
+							WHERE sales_invoice_id = invoice.id AND sales_credit_note.organization_id = invoice.organization_id AND status = 'posted')
+						AS open_amount
+					FROM sales_invoice invoice
+					WHERE id = ${record.salesInvoiceId} AND invoice.organization_id = ${record.organizationId}
+						AND status = 'posted'
+				),
 					credited AS (
 						INSERT INTO sales_credit_note (
 							id, organization_id, code, normalized_code, status, customer_party_id,
@@ -459,11 +459,11 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 							AND ${record.amount}::numeric > 0 AND ${record.amount}::numeric <= open_amount
 						RETURNING *
 					),
-					bumped AS (
-						UPDATE sales_invoice SET version = version + 1, updated_at = now(), updated_by = ${record.actorUserId}
-						WHERE id = ${record.salesInvoiceId} AND organization_id = ${record.organizationId}
-							AND EXISTS (SELECT 1 FROM credited) RETURNING *
-					),
+				bumped AS (
+					UPDATE sales_invoice SET version = version + 1, updated_at = now(), updated_by = ${record.actorUserId}
+					WHERE id = ${record.salesInvoiceId} AND sales_invoice.organization_id = ${record.organizationId}
+						AND EXISTS (SELECT 1 FROM credited) RETURNING *
+				),
 					projected AS (
 						INSERT INTO customer_balance_projection (
 							id, organization_id, customer_party_id, currency_code, open_balance, version, created_by, updated_by
@@ -534,24 +534,24 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 			const eventId = randomUUID();
 			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
-					WITH eligible AS (
-						SELECT invoice.*, (SELECT COALESCE(SUM(line_amount::numeric), 0) FROM sales_invoice_line
-							WHERE invoice_id = invoice.id AND organization_id = invoice.organization_id)
-							- (SELECT COALESCE(SUM(amount::numeric), 0) FROM customer_allocation
-								WHERE sales_invoice_id = invoice.id AND organization_id = invoice.organization_id AND status = 'active')
-							- (SELECT COALESCE(SUM(amount::numeric), 0) FROM sales_credit_note
-								WHERE sales_invoice_id = invoice.id AND organization_id = invoice.organization_id AND status = 'posted')
-							AS open_amount
-						FROM sales_invoice invoice
-						WHERE id = ${record.invoiceId} AND organization_id = ${record.organizationId}
-							AND status = 'posted' AND version = ${record.expectedInvoiceVersion}
-					),
-					mutated AS (
-						UPDATE sales_invoice SET version = version + 1, updated_at = now(), updated_by = ${record.actorUserId}
-						WHERE id = ${record.invoiceId} AND organization_id = ${record.organizationId}
-							AND ${record.amount}::numeric > 0 AND ${record.amount}::numeric <= (SELECT open_amount FROM eligible)
-						RETURNING *
-					),
+				WITH eligible AS (
+					SELECT invoice.*, (SELECT COALESCE(SUM(line_amount::numeric), 0) FROM sales_invoice_line
+						WHERE invoice_id = invoice.id AND sales_invoice_line.organization_id = invoice.organization_id)
+						- (SELECT COALESCE(SUM(amount::numeric), 0) FROM customer_allocation
+							WHERE sales_invoice_id = invoice.id AND customer_allocation.organization_id = invoice.organization_id AND status = 'active')
+						- (SELECT COALESCE(SUM(amount::numeric), 0) FROM sales_credit_note
+							WHERE sales_invoice_id = invoice.id AND sales_credit_note.organization_id = invoice.organization_id AND status = 'posted')
+						AS open_amount
+					FROM sales_invoice invoice
+					WHERE id = ${record.invoiceId} AND invoice.organization_id = ${record.organizationId}
+						AND status = 'posted' AND version = ${record.expectedInvoiceVersion}
+				),
+				mutated AS (
+					UPDATE sales_invoice SET version = version + 1, updated_at = now(), updated_by = ${record.actorUserId}
+					WHERE id = ${record.invoiceId} AND sales_invoice.organization_id = ${record.organizationId}
+						AND ${record.amount}::numeric > 0 AND ${record.amount}::numeric <= (SELECT open_amount FROM eligible)
+					RETURNING *
+				),
 					allocated AS (
 						INSERT INTO customer_allocation (
 							id, organization_id, customer_party_id, sales_invoice_id, payment_id,
@@ -563,15 +563,15 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 							${record.actorUserId}, ${record.idempotencyKey}, 1, ${record.actorUserId}, ${record.actorUserId}
 						FROM mutated RETURNING *
 					),
-					projected AS (
-						UPDATE customer_balance_projection SET
-							open_balance = (open_balance::numeric - ${record.amount}::numeric)::text,
-							version = version + 1, updated_at = now(), updated_by = ${record.actorUserId}
-						WHERE organization_id = ${record.organizationId}
-							AND customer_party_id = (SELECT customer_party_id FROM mutated)
-							AND currency_code = (SELECT currency_code FROM mutated)
-						RETURNING id
-					),
+				projected AS (
+					UPDATE customer_balance_projection SET
+						open_balance = (open_balance::numeric - ${record.amount}::numeric)::text,
+						version = version + 1, updated_at = now(), updated_by = ${record.actorUserId}
+					WHERE customer_balance_projection.organization_id = ${record.organizationId}
+						AND customer_party_id = (SELECT customer_party_id FROM mutated)
+						AND currency_code = (SELECT currency_code FROM mutated)
+					RETURNING id
+				),
 					outboxed AS (
 						INSERT INTO platform_domain_event (
 							id, organization_id, type, source_module, correlation_id, actor_user_id, payload, status, attempts
@@ -617,14 +617,14 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 			const eventId = randomUUID();
 			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
-					WITH reversed AS (
-						UPDATE customer_allocation SET status = 'reversed', reversed_at = now(),
-							reversed_by = ${record.actorUserId}, updated_at = now(), updated_by = ${record.actorUserId},
-							version = version + 1
-						WHERE id = ${record.allocationId} AND organization_id = ${record.organizationId}
-							AND status = 'active'
-						RETURNING *
-					),
+				WITH reversed AS (
+					UPDATE customer_allocation SET status = 'reversed', reversed_at = now(),
+						reversed_by = ${record.actorUserId}, updated_at = now(), updated_by = ${record.actorUserId},
+						version = version + 1
+					WHERE id = ${record.allocationId} AND customer_allocation.organization_id = ${record.organizationId}
+						AND status = 'active'
+					RETURNING *
+				),
 					mutated AS (
 						UPDATE sales_invoice invoice SET status = CASE WHEN invoice.status = 'closed' THEN 'posted' ELSE invoice.status END,
 							closed_at = CASE WHEN invoice.status = 'closed' THEN NULL ELSE invoice.closed_at END,
@@ -820,23 +820,23 @@ export class DrizzleReceivablesStore implements ReceivablesStore {
 			const eventId = randomUUID();
 			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
-					WITH eligible AS (
-						SELECT invoice.id FROM sales_invoice invoice
-						WHERE invoice.id = ${record.invoiceId} AND invoice.organization_id = ${record.organizationId}
-							AND invoice.status = 'posted' AND invoice.version = ${record.expectedVersion}
-							AND (SELECT COALESCE(SUM(line_amount::numeric), 0) FROM sales_invoice_line
-								WHERE invoice_id = invoice.id AND organization_id = invoice.organization_id)
-								- (SELECT COALESCE(SUM(amount::numeric), 0) FROM customer_allocation
-									WHERE sales_invoice_id = invoice.id AND organization_id = invoice.organization_id AND status = 'active')
-								- (SELECT COALESCE(SUM(amount::numeric), 0) FROM sales_credit_note
-									WHERE sales_invoice_id = invoice.id AND organization_id = invoice.organization_id AND status = 'posted') = 0
-					),
-					mutated AS (
-						UPDATE sales_invoice SET status = 'closed', closed_at = now(), closed_by = ${record.actorUserId},
-							close_idempotency_key = ${record.idempotencyKey}, updated_at = now(), updated_by = ${record.actorUserId},
-							version = version + 1 WHERE id = ${record.invoiceId} AND organization_id = ${record.organizationId}
-							AND EXISTS (SELECT 1 FROM eligible) RETURNING *
-					),
+				WITH eligible AS (
+					SELECT invoice.id FROM sales_invoice invoice
+					WHERE invoice.id = ${record.invoiceId} AND invoice.organization_id = ${record.organizationId}
+						AND invoice.status = 'posted' AND invoice.version = ${record.expectedVersion}
+						AND (SELECT COALESCE(SUM(line_amount::numeric), 0) FROM sales_invoice_line
+							WHERE invoice_id = invoice.id AND sales_invoice_line.organization_id = invoice.organization_id)
+							- (SELECT COALESCE(SUM(amount::numeric), 0) FROM customer_allocation
+								WHERE sales_invoice_id = invoice.id AND customer_allocation.organization_id = invoice.organization_id AND status = 'active')
+							- (SELECT COALESCE(SUM(amount::numeric), 0) FROM sales_credit_note
+								WHERE sales_invoice_id = invoice.id AND sales_credit_note.organization_id = invoice.organization_id AND status = 'posted') = 0
+				),
+				mutated AS (
+					UPDATE sales_invoice SET status = 'closed', closed_at = now(), closed_by = ${record.actorUserId},
+						close_idempotency_key = ${record.idempotencyKey}, updated_at = now(), updated_by = ${record.actorUserId},
+						version = version + 1 WHERE id = ${record.invoiceId} AND sales_invoice.organization_id = ${record.organizationId}
+						AND EXISTS (SELECT 1 FROM eligible) RETURNING *
+				),
 					outboxed AS (
 						INSERT INTO platform_domain_event (id, organization_id, type, source_module, correlation_id, actor_user_id, payload, status, attempts)
 						SELECT ${eventId}, organization_id, 'receivables.invoice.closed.v1', 'receivables',

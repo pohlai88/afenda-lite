@@ -76,30 +76,30 @@ export const drizzleAllocationMethods: PayablesAllocationsStore = {
 			}
 			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
-					WITH eligible AS (
-						SELECT invoice.*, (
-							SELECT COALESCE(SUM(line_amount::numeric), 0)
-							FROM supplier_invoice_line
-							WHERE invoice_id = invoice.id
-								AND organization_id = invoice.organization_id
-						) - (
-							SELECT COALESCE(SUM(amount::numeric), 0)
-							FROM supplier_allocation
-							WHERE supplier_invoice_id = invoice.id
-								AND organization_id = invoice.organization_id
-						) AS open_amount
-						FROM supplier_invoice invoice
-						WHERE id = ${record.invoiceId} AND organization_id = ${record.organizationId}
-							AND status = 'posted'
-					),
-					mutated AS (
-						UPDATE supplier_invoice
-						SET version = version + 1, updated_by = ${record.actorUserId}, updated_at = now()
-						WHERE id = ${record.invoiceId} AND organization_id = ${record.organizationId}
-							AND ${record.amount}::numeric > 0
-							AND (SELECT open_amount FROM eligible) >= ${record.amount}::numeric
-						RETURNING *
-					),
+				WITH eligible AS (
+					SELECT invoice.*, (
+						SELECT COALESCE(SUM(line_amount::numeric), 0)
+						FROM supplier_invoice_line
+						WHERE invoice_id = invoice.id
+							AND supplier_invoice_line.organization_id = invoice.organization_id
+					) - (
+						SELECT COALESCE(SUM(amount::numeric), 0)
+						FROM supplier_allocation
+						WHERE supplier_invoice_id = invoice.id
+							AND supplier_allocation.organization_id = invoice.organization_id
+					) AS open_amount
+					FROM supplier_invoice invoice
+					WHERE id = ${record.invoiceId} AND invoice.organization_id = ${record.organizationId}
+						AND status = 'posted'
+				),
+				mutated AS (
+					UPDATE supplier_invoice
+					SET version = version + 1, updated_by = ${record.actorUserId}, updated_at = now()
+					WHERE id = ${record.invoiceId} AND supplier_invoice.organization_id = ${record.organizationId}
+						AND ${record.amount}::numeric > 0
+						AND (SELECT open_amount FROM eligible) >= ${record.amount}::numeric
+					RETURNING *
+				),
 					allocated AS (
 						INSERT INTO supplier_allocation (
 							id, organization_id, supplier_party_id, supplier_invoice_id, payment_id,
@@ -112,12 +112,12 @@ export const drizzleAllocationMethods: PayablesAllocationsStore = {
 							${record.actorUserId}, ${record.actorUserId}
 						FROM mutated RETURNING *
 					),
-					projected AS (
-						UPDATE supplier_balance_projection
-						SET open_balance = (open_balance::numeric - ${record.amount}::numeric)::text,
-							version = version + 1, updated_by = ${record.actorUserId}, updated_at = now()
-						WHERE organization_id = ${record.organizationId}
-							AND supplier_party_id = (SELECT supplier_party_id FROM mutated)
+				projected AS (
+					UPDATE supplier_balance_projection
+					SET open_balance = (open_balance::numeric - ${record.amount}::numeric)::text,
+						version = version + 1, updated_by = ${record.actorUserId}, updated_at = now()
+					WHERE supplier_balance_projection.organization_id = ${record.organizationId}
+						AND supplier_party_id = (SELECT supplier_party_id FROM mutated)
 							AND currency_code = (SELECT currency_code FROM mutated)
 						RETURNING id
 					),
@@ -194,17 +194,17 @@ export const drizzleAllocationMethods: PayablesAllocationsStore = {
 			// (previously no event was emitted at all for credit applies).
 			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
-					WITH invoice AS (
-						SELECT row.*, (SELECT COALESCE(SUM(amount::numeric), 0) FROM supplier_allocation
-							WHERE supplier_invoice_id = row.id AND organization_id = row.organization_id AND status = 'active') AS applied
-						FROM supplier_invoice row
-						WHERE id = ${record.invoiceId} AND organization_id = ${record.organizationId} AND status = 'posted'
-					), credit AS (
-						SELECT row.*, (SELECT COALESCE(SUM(amount::numeric), 0) FROM supplier_allocation
-							WHERE credit_note_id = row.id AND organization_id = row.organization_id AND status = 'active') AS applied
-						FROM supplier_credit_note row
-						WHERE id = ${record.creditNoteId} AND organization_id = ${record.organizationId} AND status = 'posted'
-					), allocated AS (
+				WITH invoice AS (
+					SELECT row.*, (SELECT COALESCE(SUM(amount::numeric), 0) FROM supplier_allocation
+						WHERE supplier_invoice_id = row.id AND supplier_allocation.organization_id = row.organization_id AND status = 'active') AS applied
+					FROM supplier_invoice row
+					WHERE id = ${record.invoiceId} AND row.organization_id = ${record.organizationId} AND status = 'posted'
+				), credit AS (
+					SELECT row.*, (SELECT COALESCE(SUM(amount::numeric), 0) FROM supplier_allocation
+						WHERE credit_note_id = row.id AND supplier_allocation.organization_id = row.organization_id AND status = 'active') AS applied
+					FROM supplier_credit_note row
+					WHERE id = ${record.creditNoteId} AND row.organization_id = ${record.organizationId} AND status = 'posted'
+				), allocated AS (
 						INSERT INTO supplier_allocation (
 							id, organization_id, supplier_party_id, supplier_invoice_id, credit_note_id,
 							status, apply_idempotency_key, amount, allocated_at, allocated_by, version, created_by, updated_by
@@ -214,20 +214,20 @@ export const drizzleAllocationMethods: PayablesAllocationsStore = {
 							${record.actorUserId}, ${record.actorUserId}
 						FROM invoice JOIN credit ON credit.organization_id = invoice.organization_id
 							AND credit.supplier_party_id = invoice.supplier_party_id AND credit.currency_code = invoice.currency_code
-						WHERE ${record.amount}::numeric > 0
-							AND (SELECT COALESCE(SUM(line_amount::numeric), 0) FROM supplier_invoice_line WHERE invoice_id = invoice.id AND organization_id = invoice.organization_id) - invoice.applied >= ${record.amount}::numeric
+					WHERE ${record.amount}::numeric > 0
+						AND (SELECT COALESCE(SUM(line_amount::numeric), 0) FROM supplier_invoice_line WHERE invoice_id = invoice.id AND supplier_invoice_line.organization_id = invoice.organization_id) - invoice.applied >= ${record.amount}::numeric
 							AND credit.amount::numeric - credit.applied >= ${record.amount}::numeric
 						RETURNING *
-					), invoice_bumped AS (
-						UPDATE supplier_invoice SET version = version + 1, updated_by = ${record.actorUserId}, updated_at = now()
-						WHERE id = ${record.invoiceId} AND organization_id = ${record.organizationId} AND EXISTS (SELECT 1 FROM allocated)
-					), credit_bumped AS (
-						UPDATE supplier_credit_note SET version = version + 1, updated_by = ${record.actorUserId}, updated_at = now()
-						WHERE id = ${record.creditNoteId} AND organization_id = ${record.organizationId} AND EXISTS (SELECT 1 FROM allocated)
-					), projected AS (
-						UPDATE supplier_balance_projection SET open_balance = (open_balance::numeric - ${record.amount}::numeric)::text,
-							version = version + 1, updated_by = ${record.actorUserId}, updated_at = now()
-						WHERE organization_id = ${record.organizationId}
+				), invoice_bumped AS (
+					UPDATE supplier_invoice SET version = version + 1, updated_by = ${record.actorUserId}, updated_at = now()
+					WHERE id = ${record.invoiceId} AND supplier_invoice.organization_id = ${record.organizationId} AND EXISTS (SELECT 1 FROM allocated)
+				), credit_bumped AS (
+					UPDATE supplier_credit_note SET version = version + 1, updated_by = ${record.actorUserId}, updated_at = now()
+					WHERE id = ${record.creditNoteId} AND supplier_credit_note.organization_id = ${record.organizationId} AND EXISTS (SELECT 1 FROM allocated)
+				), projected AS (
+					UPDATE supplier_balance_projection SET open_balance = (open_balance::numeric - ${record.amount}::numeric)::text,
+						version = version + 1, updated_by = ${record.actorUserId}, updated_at = now()
+					WHERE supplier_balance_projection.organization_id = ${record.organizationId}
 							AND supplier_party_id = (SELECT supplier_party_id FROM allocated)
 							AND currency_code = (SELECT currency_code FROM invoice)
 					), outboxed AS (
@@ -277,12 +277,12 @@ export const drizzleAllocationMethods: PayablesAllocationsStore = {
 		try {
 			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
-					WITH deleted AS (
-						UPDATE supplier_allocation
-						SET status = 'reversed', reversed_at = now(), reversed_by = ${record.actorUserId},
-							updated_at = now(), updated_by = ${record.actorUserId}, version = version + 1
-						WHERE organization_id = ${record.organizationId}
-							AND payment_id = ${record.paymentId} AND status = 'active'
+				WITH deleted AS (
+					UPDATE supplier_allocation
+					SET status = 'reversed', reversed_at = now(), reversed_by = ${record.actorUserId},
+						updated_at = now(), updated_by = ${record.actorUserId}, version = version + 1
+					WHERE supplier_allocation.organization_id = ${record.organizationId}
+						AND payment_id = ${record.paymentId} AND status = 'active'
 						RETURNING *
 					),
 					by_invoice AS (

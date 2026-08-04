@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
  * Relative to the apps/docs package root (not process.cwd()).
  */
 export const OPENAPI_DOCUMENT_ID =
-	"../../docs-V2/api/OPEN-001-openapi.yaml" as const;
+	"../../docs/api/OPEN-001-openapi.yaml" as const;
 
 export type OpenApiDocumentId = typeof OPENAPI_DOCUMENT_ID;
 
@@ -16,7 +16,7 @@ export type OpenApiDocumentId = typeof OPENAPI_DOCUMENT_ID;
 const docsAppDir = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 /**
- * Absolute filesystem path to the docs-V2 OpenAPI SSOT.
+ * Absolute filesystem path to the live-trunk OpenAPI SSOT.
  * Resolved from the apps/docs package root — cwd-independent.
  * Do not copy YAML under apps/docs/openapi/.
  */

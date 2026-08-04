@@ -1,10 +1,10 @@
 /**
- * Emit docs-V2/api/OPEN-001-openapi.yaml for api-now HTTP only.
+ * Emit docs/api/OPEN-001-openapi.yaml for api-now HTTP only.
  *
  * Zod SSOT: apps/web/modules/platform schemas + `@afenda/openapi` helpers.
  * Run with: pnpm exec tsx --tsconfig apps/web/tsconfig.json scripts/generate-openapi.mts
  *
- * @see docs-V2/api/rest.md
+ * @see docs/api/OPEN-001-openapi.yaml
  */
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -18,7 +18,7 @@ import {
 } from "../apps/web/modules/platform/schemas/health";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const OUT_REL = join("docs-V2", "api", "OPEN-001-openapi.yaml");
+const OUT_REL = join("docs", "api", "OPEN-001-openapi.yaml");
 const outPath = process.env.OPENAPI_OUT
 	? process.env.OPENAPI_OUT
 	: join(root, OUT_REL);
@@ -26,7 +26,7 @@ const outPath = process.env.OPENAPI_OUT
 const YAML_HEADER_LINES = [
 	"# GENERATED — do not hand-edit.",
 	"# Source: scripts/generate-openapi.mts",
-	"# Scratch authority: docs-V2/api/rest.md",
+	"# Authority: docs/api (live trunk OpenAPI machine SSOT)",
 	"# Regenerate: pnpm openapi:generate",
 	"",
 ] as const;

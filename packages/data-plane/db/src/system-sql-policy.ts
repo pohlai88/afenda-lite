@@ -17,16 +17,35 @@ const RELIABILITY_CLAIM_OPERATION = "human-resources.reliability.claim-due";
 
 export type SystemSqlOperation = keyof typeof SYSTEM_SQL_OPERATION_POLICIES;
 
+// Required-pattern constants for the reliability claim-due operation validator.
+// Grouped here so additions stay co-located with the single operation they guard.
+const RELIABILITY_PARTITION_BY_ORG = /\bpartition\s+by\s+organization_id\b/;
+const RELIABILITY_FOR_UPDATE_SKIP_LOCKED =
+	/\bfor\s+update\s+of\s+work\s+skip\s+locked\b/;
+const RELIABILITY_UPDATE_WORK_ITEM =
+	/\bupdate\s+hr_reliability_work_item\s+(?:as\s+)?work\b/;
+const RELIABILITY_RANKED_ORG_EQ_WORK_ORG =
+	/\branked\.organization_id\s*=\s*work\.organization_id\b/;
+const RELIABILITY_WORK_ORG_EQ_ELIGIBLE_ORG =
+	/\bwork\.organization_id\s*=\s*eligible\.organization_id\b/;
+const RELIABILITY_RETURNING_WORK_ORG =
+	/\breturning\b[\s\S]*\bwork\.organization_id\b/;
+
+const RELIABILITY_CLAIM_DUE_REQUIRED_PATTERNS = [
+	RELIABILITY_PARTITION_BY_ORG,
+	RELIABILITY_FOR_UPDATE_SKIP_LOCKED,
+	RELIABILITY_UPDATE_WORK_ITEM,
+	RELIABILITY_RANKED_ORG_EQ_WORK_ORG,
+	RELIABILITY_WORK_ORG_EQ_ELIGIBLE_ORG,
+	RELIABILITY_RETURNING_WORK_ORG,
+];
+
 function assertReliabilityClaimDue(statement: string): void {
-	const requiredPatterns = [
-		/\bpartition\s+by\s+organization_id\b/,
-		/\bfor\s+update\s+of\s+work\s+skip\s+locked\b/,
-		/\bupdate\s+hr_reliability_work_item\s+(?:as\s+)?work\b/,
-		/\branked\.organization_id\s*=\s*work\.organization_id\b/,
-		/\bwork\.organization_id\s*=\s*eligible\.organization_id\b/,
-		/\breturning\b[\s\S]*\bwork\.organization_id\b/,
-	];
-	if (requiredPatterns.some((pattern) => !pattern.test(statement))) {
+	if (
+		RELIABILITY_CLAIM_DUE_REQUIRED_PATTERNS.some(
+			(pattern) => !pattern.test(statement),
+		)
+	) {
 		throw new Error(
 			`System SQL policy rejected operation: ${RELIABILITY_CLAIM_OPERATION}`,
 		);
@@ -48,7 +67,9 @@ export function assertSystemSqlSafety(
 	}
 
 	const hardTenantMentions = [
-		...statement.matchAll(/\b(?:[a-z_][a-z0-9_$]*\.)?(hr_[a-z0-9_]+|platform_[a-z0-9_]+|erp_[a-z0-9_]+)\b/g),
+		...statement.matchAll(
+			/\b(?:[a-z_][a-z0-9_$]*\.)?(hr_[a-z0-9_]+|platform_[a-z0-9_]+|erp_[a-z0-9_]+)\b/g,
+		),
 	]
 		.map((match) => match[1])
 		.filter((table): table is string => table !== undefined);

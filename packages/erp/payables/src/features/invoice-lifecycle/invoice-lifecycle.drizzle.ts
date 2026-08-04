@@ -301,37 +301,37 @@ export const drizzleInvoiceLifecycleMethods: PayablesInvoiceLifecycleStore = {
 		try {
 			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
-					WITH numbered AS (
-						SELECT COALESCE(MAX(line_no), 0) + 1 AS line_no
-						FROM supplier_invoice_line
-						WHERE organization_id = ${record.organizationId}
-							AND invoice_id = ${record.invoiceId}
-					),
-					inserted AS (
-						INSERT INTO supplier_invoice_line (
-							id, organization_id, invoice_id, line_no, item_id, item_code,
-							item_name, quantity, unit_price, line_amount, version, created_by, updated_by
-						)
-						SELECT ${id}, ${record.organizationId}, ${record.invoiceId}, numbered.line_no,
-							${record.itemId}, ${record.itemId}, ${record.description}, ${record.quantity},
-							${record.unitPrice}, (${record.quantity}::numeric * ${record.unitPrice}::numeric)::text,
-							1, ${record.actorUserId}, ${record.actorUserId}
-						FROM numbered
-						WHERE EXISTS (
-							SELECT 1 FROM supplier_invoice
-							WHERE id = ${record.invoiceId} AND organization_id = ${record.organizationId}
-								AND status = 'draft'
-						)
-						RETURNING id
-					),
-					bumped AS (
-						UPDATE supplier_invoice
-						SET version = version + 1, updated_by = ${record.actorUserId}, updated_at = now()
-						WHERE id = ${record.invoiceId} AND organization_id = ${record.organizationId}
-							AND EXISTS (SELECT 1 FROM inserted)
-						RETURNING id
+				WITH numbered AS (
+					SELECT COALESCE(MAX(line_no), 0) + 1 AS line_no
+					FROM supplier_invoice_line
+					WHERE supplier_invoice_line.organization_id = ${record.organizationId}
+						AND invoice_id = ${record.invoiceId}
+				),
+				inserted AS (
+					INSERT INTO supplier_invoice_line (
+						id, organization_id, invoice_id, line_no, item_id, item_code,
+						item_name, quantity, unit_price, line_amount, version, created_by, updated_by
 					)
-					SELECT inserted.id FROM inserted, bumped
+					SELECT ${id}, ${record.organizationId}, ${record.invoiceId}, numbered.line_no,
+						${record.itemId}, ${record.itemId}, ${record.description}, ${record.quantity},
+						${record.unitPrice}, (${record.quantity}::numeric * ${record.unitPrice}::numeric)::text,
+						1, ${record.actorUserId}, ${record.actorUserId}
+					FROM numbered
+					WHERE EXISTS (
+						SELECT 1 FROM supplier_invoice
+						WHERE id = ${record.invoiceId} AND supplier_invoice.organization_id = ${record.organizationId}
+							AND status = 'draft'
+					)
+					RETURNING id
+				),
+				bumped AS (
+					UPDATE supplier_invoice
+					SET version = version + 1, updated_by = ${record.actorUserId}, updated_at = now()
+					WHERE id = ${record.invoiceId} AND supplier_invoice.organization_id = ${record.organizationId}
+						AND EXISTS (SELECT 1 FROM inserted)
+					RETURNING id
+				)
+				SELECT inserted.id FROM inserted, bumped
 				`,
 			]);
 			if (rows[0] === undefined) {
@@ -371,27 +371,27 @@ export const drizzleInvoiceLifecycleMethods: PayablesInvoiceLifecycleStore = {
 			});
 			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
-					WITH mutated AS (
-						UPDATE supplier_invoice
-						SET status = CASE WHEN ${record.matchStatus} = 'exception' THEN 'draft' ELSE 'matched' END,
-							purchase_order_id = ${record.purchaseOrderId},
-							updated_at = now(),
-							updated_by = ${record.actorUserId}, version = version + 1
-						WHERE id = ${record.invoiceId} AND organization_id = ${record.organizationId}
-							AND status = 'draft' AND version = ${record.expectedVersion}
-							AND EXISTS (
-								SELECT 1 FROM supplier_invoice_line
-								WHERE invoice_id = ${record.invoiceId}
-									AND organization_id = ${record.organizationId}
-							)
-							AND (
-								SELECT COALESCE(SUM(line_amount::numeric), 0)
-								FROM supplier_invoice_line
-								WHERE invoice_id = ${record.invoiceId}
-									AND organization_id = ${record.organizationId}
-							) > 0
-						RETURNING *
-					),
+				WITH mutated AS (
+					UPDATE supplier_invoice
+					SET status = CASE WHEN ${record.matchStatus} = 'exception' THEN 'draft' ELSE 'matched' END,
+						purchase_order_id = ${record.purchaseOrderId},
+						updated_at = now(),
+						updated_by = ${record.actorUserId}, version = version + 1
+					WHERE id = ${record.invoiceId} AND supplier_invoice.organization_id = ${record.organizationId}
+						AND status = 'draft' AND version = ${record.expectedVersion}
+						AND EXISTS (
+							SELECT 1 FROM supplier_invoice_line
+							WHERE invoice_id = ${record.invoiceId}
+								AND supplier_invoice_line.organization_id = ${record.organizationId}
+						)
+						AND (
+							SELECT COALESCE(SUM(line_amount::numeric), 0)
+							FROM supplier_invoice_line
+							WHERE invoice_id = ${record.invoiceId}
+								AND supplier_invoice_line.organization_id = ${record.organizationId}
+						) > 0
+					RETURNING *
+				),
 					matched AS (
 						INSERT INTO three_way_match_result (
 							id, organization_id, supplier_invoice_id, purchase_order_id,
@@ -451,21 +451,21 @@ export const drizzleInvoiceLifecycleMethods: PayablesInvoiceLifecycleStore = {
 			});
 			const [rows] = await afendaDatabase.transaction((sql) => [
 				sql`
-					WITH mutated AS (
-						UPDATE supplier_invoice
-						SET status = 'posted', posted_at = now(), posted_by = ${record.actorUserId},
-							updated_at = now(), updated_by = ${record.actorUserId}, version = version + 1
-						WHERE id = ${record.invoiceId} AND organization_id = ${record.organizationId}
-							AND status = 'matched' AND version = ${record.expectedVersion}
-						RETURNING *
-					),
-					totaled AS (
-						SELECT mutated.*, (
-							SELECT SUM(line_amount::numeric) FROM supplier_invoice_line
-							WHERE invoice_id = mutated.id
-								AND organization_id = mutated.organization_id
-						) AS total_amount FROM mutated
-					),
+				WITH mutated AS (
+					UPDATE supplier_invoice
+					SET status = 'posted', posted_at = now(), posted_by = ${record.actorUserId},
+						updated_at = now(), updated_by = ${record.actorUserId}, version = version + 1
+					WHERE id = ${record.invoiceId} AND supplier_invoice.organization_id = ${record.organizationId}
+						AND status = 'matched' AND version = ${record.expectedVersion}
+					RETURNING *
+				),
+				totaled AS (
+					SELECT mutated.*, (
+						SELECT SUM(line_amount::numeric) FROM supplier_invoice_line
+						WHERE invoice_id = mutated.id
+							AND supplier_invoice_line.organization_id = mutated.organization_id
+					) AS total_amount FROM mutated
+				),
 					projected AS (
 						INSERT INTO supplier_balance_projection (
 							id, organization_id, supplier_party_id, currency_code, open_balance,

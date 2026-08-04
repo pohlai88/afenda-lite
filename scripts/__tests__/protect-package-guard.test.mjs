@@ -161,7 +161,9 @@ describe("CI enforces protection without being able to forge it", async () => {
 		// ci-required gate that the dispatcher runs. Assert the enforcement path
 		// that actually exists, not the one that used to.
 		const { GOVERNANCE_GATES } = await import("../lib/governance-gates.mjs");
-		const gate = GOVERNANCE_GATES.find((entry) => entry.id === "protected-files");
+		const gate = GOVERNANCE_GATES.find(
+			(entry) => entry.id === "protected-files",
+		);
 
 		expect(gate, "protected-files gate must be registered").toBeDefined();
 		expect(gate.tier).toBe("ci-required");

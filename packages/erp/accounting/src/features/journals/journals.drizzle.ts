@@ -562,12 +562,13 @@ export const drizzleJournalsMethods: AccountingJournalsStore = {
 			const [rows] = await afendaDatabase.transaction(
 				(sql) => [
 					sql`
-					SELECT lp.journal_id, j.code AS journal_code, lp.period_id,
-						lp.account_code, lp.debit_amount, lp.credit_amount,
-						lp.posted_at
-					FROM ledger_posting lp
-					JOIN journal j ON j.id = lp.journal_id
-					WHERE lp.organization_id = ${filter.organizationId}
+				SELECT lp.journal_id, j.code AS journal_code, lp.period_id,
+					lp.account_code, lp.debit_amount, lp.credit_amount,
+					lp.posted_at
+				FROM ledger_posting lp
+				JOIN journal j ON j.id = lp.journal_id
+				WHERE lp.organization_id = ${filter.organizationId}
+					AND j.organization_id = ${filter.organizationId}
 						AND (${filter.accountCode ?? null}::text IS NULL
 							OR lp.account_code = ${filter.accountCode ?? null}::text)
 						AND (${filter.periodId ?? null}::uuid IS NULL

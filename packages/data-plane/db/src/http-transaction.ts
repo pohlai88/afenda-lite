@@ -63,9 +63,7 @@ function createGovernedSql(
 		get(target, property, receiver) {
 			if (property === "unsafe") {
 				return () => {
-					throw new Error(
-						`${label} Neon SQL: sql.unsafe is not permitted`,
-					);
+					throw new Error(`${label} Neon SQL: sql.unsafe is not permitted`);
 				};
 			}
 			const value = Reflect.get(target, property, receiver);
@@ -187,18 +185,25 @@ export async function runNeonHttpTransaction<
 	// touches `sql`, so a builder that returns [] hits the empty-list guard
 	// before any connection or env requirement. The Proxy target must be a
 	// function because the Neon sql object is itself callable.
-	const lazySql = new Proxy((() => {}) as unknown as NeonHttpSql, {
-		get(_, prop) {
-			return Reflect.get(getNeonDriverSql() as object, prop);
+	const lazySql = new Proxy(
+		// The Proxy target must be a callable; the real sql function is provided
+		// by the get/apply traps below. This stub is never invoked directly.
+		(() => {
+			/* proxy target — calls forwarded by apply trap */
+		}) as unknown as NeonHttpSql,
+		{
+			get(_, prop) {
+				return Reflect.get(getNeonDriverSql() as object, prop);
+			},
+			apply(_, thisArg, argList) {
+				return Reflect.apply(
+					getNeonDriverSql() as unknown as (...args: unknown[]) => unknown,
+					thisArg,
+					argList,
+				);
+			},
 		},
-		apply(_, thisArg, argList) {
-			return Reflect.apply(
-				getNeonDriverSql() as unknown as (...args: unknown[]) => unknown,
-				thisArg,
-				argList,
-			);
-		},
-	});
+	);
 	const queries = buildQueries(lazySql);
 	if (!Array.isArray(queries)) {
 		throw new TypeError(

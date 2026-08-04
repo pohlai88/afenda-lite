@@ -723,52 +723,53 @@ export class DrizzleReceivingStore implements ReceivingStore {
 					`);
 				}
 				statements.push(txSql`
-					WITH need AS (
-						SELECT *
-						FROM unnest(
-							${guardParams.lineIds}::uuid[],
-							${guardParams.thisAccepted}::numeric[],
-							${guardParams.ceilings}::numeric[]
-						) AS t(line_id, this_qty, ceiling)
-					),
-					sums AS (
-						SELECT grl.purchase_order_line_id AS line_id,
-							coalesce(sum(grl.quantity_accepted::numeric), 0) AS accepted
-						FROM goods_receipt_line grl
-						INNER JOIN goods_receipt gr
-							ON gr.id = grl.goods_receipt_id
-						WHERE ${guard !== undefined}
-							AND gr.organization_id = ${record.organizationId}
-							AND gr.source_type = 'purchase_order'
-						AND gr.source_id = ${guardParams.purchaseOrderId}
-							AND gr.status = 'posted'
-							AND gr.reversed_by_receipt_id IS NULL
-							AND gr.reverses_receipt_id IS NULL
-							AND gr.id <> ${record.receiptId}
-						AND grl.purchase_order_line_id = ANY(${guardParams.lineIds}::uuid[])
-						GROUP BY grl.purchase_order_line_id
-					),
-					over AS (
-						SELECT need.line_id
-						FROM need
-						LEFT JOIN sums ON sums.line_id = need.line_id
-						WHERE ${guard !== undefined}
-							AND coalesce(sums.accepted, 0) + need.this_qty > need.ceiling
-					),
-					mutated AS (
-						UPDATE goods_receipt
-						SET status = 'posted', warehouse_code = ${record.warehouseCode},
-							warehouse_name = ${record.warehouseName}, posted_at = now(),
-							posted_by = ${record.actorUserId},
-							post_idempotency_key = ${record.postIdempotencyKey},
-							inventory_application_status = 'pending',
-							updated_by = ${record.actorUserId},
-							updated_at = now(), version = ${nextVersion}
-						WHERE id = ${record.receiptId}
-							AND organization_id = ${record.organizationId}
-							AND status = 'draft' AND version = ${record.expectedVersion}
-							AND NOT EXISTS (SELECT 1 FROM over)
-						RETURNING *
+				WITH need AS (
+					SELECT *
+					FROM unnest(
+						${guardParams.lineIds}::uuid[],
+						${guardParams.thisAccepted}::numeric[],
+						${guardParams.ceilings}::numeric[]
+					) AS t(line_id, this_qty, ceiling)
+				),
+				sums AS (
+					SELECT grl.purchase_order_line_id AS line_id,
+						coalesce(sum(grl.quantity_accepted::numeric), 0) AS accepted
+					FROM goods_receipt_line grl
+					INNER JOIN goods_receipt gr
+						ON gr.id = grl.goods_receipt_id
+					WHERE ${guard !== undefined}
+						AND gr.organization_id = ${record.organizationId}
+						AND grl.organization_id = ${record.organizationId}
+						AND gr.source_type = 'purchase_order'
+					AND gr.source_id = ${guardParams.purchaseOrderId}
+						AND gr.status = 'posted'
+						AND gr.reversed_by_receipt_id IS NULL
+						AND gr.reverses_receipt_id IS NULL
+						AND gr.id <> ${record.receiptId}
+					AND grl.purchase_order_line_id = ANY(${guardParams.lineIds}::uuid[])
+					GROUP BY grl.purchase_order_line_id
+				),
+				over AS (
+					SELECT need.line_id
+					FROM need
+					LEFT JOIN sums ON sums.line_id = need.line_id
+					WHERE ${guard !== undefined}
+						AND coalesce(sums.accepted, 0) + need.this_qty > need.ceiling
+				),
+				mutated AS (
+					UPDATE goods_receipt
+					SET status = 'posted', warehouse_code = ${record.warehouseCode},
+						warehouse_name = ${record.warehouseName}, posted_at = now(),
+						posted_by = ${record.actorUserId},
+						post_idempotency_key = ${record.postIdempotencyKey},
+						inventory_application_status = 'pending',
+						updated_by = ${record.actorUserId},
+						updated_at = now(), version = ${nextVersion}
+					WHERE id = ${record.receiptId}
+						AND goods_receipt.organization_id = ${record.organizationId}
+						AND status = 'draft' AND version = ${record.expectedVersion}
+						AND NOT EXISTS (SELECT 1 FROM over)
+					RETURNING *
 					), audited AS (
 						INSERT INTO platform_audit_log (
 							id, organization_id, actor_user_id, correlation_id, module,
@@ -797,23 +798,23 @@ export class DrizzleReceivingStore implements ReceivingStore {
 				`);
 				for (const snapshot of record.lineSnapshots) {
 					statements.push(txSql`
-						UPDATE goods_receipt_line
-						SET item_code = ${snapshot.itemCode},
-							item_name = ${snapshot.itemName},
-							base_uom_id = ${snapshot.baseUomId},
-							base_uom_code = ${snapshot.baseUomCode},
-							updated_by = ${record.actorUserId}, updated_at = now(),
-							version = version + 1
-						WHERE id = ${snapshot.lineId}
-							AND organization_id = ${record.organizationId}
-							AND goods_receipt_id = ${record.receiptId}
-							AND EXISTS (
-								SELECT 1 FROM goods_receipt
-								WHERE id = ${record.receiptId}
-									AND organization_id = ${record.organizationId}
-									AND status = 'posted' AND version = ${nextVersion}
-							)
-					`);
+					UPDATE goods_receipt_line
+					SET item_code = ${snapshot.itemCode},
+						item_name = ${snapshot.itemName},
+						base_uom_id = ${snapshot.baseUomId},
+						base_uom_code = ${snapshot.baseUomCode},
+						updated_by = ${record.actorUserId}, updated_at = now(),
+						version = version + 1
+					WHERE id = ${snapshot.lineId}
+						AND goods_receipt_line.organization_id = ${record.organizationId}
+						AND goods_receipt_id = ${record.receiptId}
+						AND EXISTS (
+							SELECT 1 FROM goods_receipt
+							WHERE id = ${record.receiptId}
+								AND goods_receipt.organization_id = ${record.organizationId}
+								AND status = 'posted' AND version = ${nextVersion}
+						)
+				`);
 				}
 				return statements;
 			});
@@ -1121,43 +1122,43 @@ export class DrizzleReceivingStore implements ReceivingStore {
 			const [rows] = await afendaDatabase.transaction((txSql) => {
 				const statements = [
 					txSql`
-						WITH claimed AS (
-							UPDATE goods_receipt
-							SET version = ${nextOriginalVersion},
-								reverse_reason = ${record.reason},
-								updated_by = ${record.actorUserId},
-								updated_at = now()
-							WHERE id = ${record.originalReceiptId}
-								AND organization_id = ${record.organizationId}
-								AND status = 'posted'
-								AND reversed_by_receipt_id IS NULL
-								AND version = ${record.expectedVersion}
-							RETURNING *
-						), inserted AS (
-							INSERT INTO goods_receipt (
-								id, organization_id, code, normalized_code, status,
-								source_type, source_id, warehouse_id, warehouse_code,
-								warehouse_name, notes, reverses_receipt_id, reverse_reason,
-								inventory_application_status, reverse_idempotency_key,
-								version, created_by, updated_by, posted_at, posted_by
-							)
-							SELECT ${reverseId}, organization_id, ${record.code},
-								${record.normalizedCode}, 'posted',
-								source_type, source_id, warehouse_id, warehouse_code,
-								warehouse_name, notes, id, ${record.reason},
-								${inventoryApplicationStatus}, ${record.reverseIdempotencyKey},
-								1, ${record.actorUserId}, ${record.actorUserId}, now(),
-								${record.actorUserId}
-							FROM claimed
-							RETURNING *
-						), linked AS (
-							UPDATE goods_receipt
-							SET reversed_by_receipt_id = ${reverseId}
-							WHERE id = ${record.originalReceiptId}
-								AND organization_id = ${record.organizationId}
-								AND EXISTS (SELECT 1 FROM inserted)
-							RETURNING id
-						), audited AS (
+					WITH claimed AS (
+						UPDATE goods_receipt
+						SET version = ${nextOriginalVersion},
+							reverse_reason = ${record.reason},
+							updated_by = ${record.actorUserId},
+							updated_at = now()
+						WHERE id = ${record.originalReceiptId}
+							AND goods_receipt.organization_id = ${record.organizationId}
+							AND status = 'posted'
+							AND reversed_by_receipt_id IS NULL
+							AND version = ${record.expectedVersion}
+						RETURNING *
+					), inserted AS (
+						INSERT INTO goods_receipt (
+							id, organization_id, code, normalized_code, status,
+							source_type, source_id, warehouse_id, warehouse_code,
+							warehouse_name, notes, reverses_receipt_id, reverse_reason,
+							inventory_application_status, reverse_idempotency_key,
+							version, created_by, updated_by, posted_at, posted_by
+						)
+						SELECT ${reverseId}, organization_id, ${record.code},
+							${record.normalizedCode}, 'posted',
+							source_type, source_id, warehouse_id, warehouse_code,
+							warehouse_name, notes, id, ${record.reason},
+							${inventoryApplicationStatus}, ${record.reverseIdempotencyKey},
+							1, ${record.actorUserId}, ${record.actorUserId}, now(),
+							${record.actorUserId}
+						FROM claimed
+						RETURNING *
+					), linked AS (
+						UPDATE goods_receipt
+						SET reversed_by_receipt_id = ${reverseId}
+						WHERE id = ${record.originalReceiptId}
+							AND goods_receipt.organization_id = ${record.organizationId}
+							AND EXISTS (SELECT 1 FROM inserted)
+						RETURNING id
+					), audited AS (
 							INSERT INTO platform_audit_log (
 								id, organization_id, actor_user_id, correlation_id, module,
 								entity, entity_id, action, changes, old_value, new_value,

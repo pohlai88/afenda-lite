@@ -2401,7 +2401,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 
 		try {
 			const [rows] = await afendaDatabase.transaction((sqlTag) => [
-					sqlTag`
+				sqlTag`
 						WITH employment AS (
 							SELECT employment_root.id, employment_root.organization_id, employment_root.employee_id
 							FROM hr_employment AS employment_root
@@ -3354,7 +3354,7 @@ export const drizzleCompensationBenefitsMethods: DrizzleCompensationBenefitsMeth
 
 		try {
 			const [rows] = await afendaDatabase.transaction((sqlTag) => [
-					sqlTag`
+				sqlTag`
 						WITH active_comp AS (
 							SELECT active_compensation.id, active_compensation.version
 							FROM hr_employee_compensation AS active_compensation

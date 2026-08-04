@@ -2241,11 +2241,11 @@ export async function drizzleTransitionItemWithVariantSideEffect(
 									WHEN ${record.toStatus} = 'retired' THEN ${retiredBy}
 									ELSE NULL
 								END
-							WHERE id = ${record.id}
-								AND organization_id = ${record.organizationId}
-								AND version = ${record.expectedVersion}
-								AND status = ${existing.status}
-								AND (${expectedVariantId}::uuid IS NULL OR EXISTS (
+						WHERE id = ${record.id}
+							AND md_item.organization_id = ${record.organizationId}
+							AND version = ${record.expectedVersion}
+							AND status = ${existing.status}
+							AND (${expectedVariantId}::uuid IS NULL OR EXISTS (
 									SELECT 1 FROM md_item_variant expected_variant
 									WHERE expected_variant.id = ${expectedVariantId}::uuid
 										AND expected_variant.organization_id = ${record.organizationId}
@@ -2387,12 +2387,12 @@ export async function drizzleTransitionItemWithVariantSideEffect(
 									WHEN ${record.toStatus} = 'retired' THEN ${retiredBy}
 									ELSE NULL
 								END
-							WHERE id = ${record.id}
-								AND organization_id = ${record.organizationId}
-								AND version = ${record.expectedVersion}
-								AND status = ${existing.status}
-								AND (
-									${record.toStatus}::text <> 'active'
+						WHERE id = ${record.id}
+							AND md_item.organization_id = ${record.organizationId}
+							AND version = ${record.expectedVersion}
+							AND status = ${existing.status}
+							AND (
+								${record.toStatus}::text <> 'active'
 									OR (
 										EXISTS (
 											SELECT 1 FROM md_item_group item_group
