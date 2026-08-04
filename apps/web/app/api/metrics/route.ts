@@ -2,7 +2,7 @@ import { createHash, timingSafeEqual } from "node:crypto";
 
 import { env } from "@afenda/env";
 import { errorResult } from "@afenda/errors";
-import { metrics } from "@afenda/metrics/node";
+import { metrics } from "@afenda/metrics";
 
 import { jsonFailure } from "@/modules/platform/api/json-response";
 import { createPlatformRouteHandler } from "@/modules/platform/api/route-pipeline";

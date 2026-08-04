@@ -1,5 +1,5 @@
 import { type HttpHandler, type HttpMiddleware, http } from "@afenda/http";
-import { metrics } from "@afenda/metrics/node";
+import { metrics } from "@afenda/metrics";
 import { type CorsConfig, security } from "@afenda/security";
 
 export interface PlatformRouteOptions {

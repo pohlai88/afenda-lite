@@ -18,14 +18,14 @@ describe("@afenda/metrics package contract", () => {
 		expect(typeof resetMetricsForTests).toBe("function");
 	});
 
-	it("declares only explicit runtime and testing exports", () => {
+	it("declares one root capability entrypoint and testing, nothing else", () => {
 		const manifest = JSON.parse(
 			readFileSync(join(import.meta.dirname, "..", "package.json"), "utf8"),
 		);
-		expect(Object.keys(manifest.exports)).toEqual([
-			"./core",
-			"./node",
-			"./testing",
-		]);
+		// `./core` and `./node` were removed: node.ts re-exported the same
+		// `metrics` capability as the root with a narrower type set, and core.ts
+		// was types-only. Neither carried a runtime distinction, so they were
+		// duplicate surfaces for one capability rather than an edge/node split.
+		expect(Object.keys(manifest.exports)).toEqual([".", "./testing"]);
 	});
 });
