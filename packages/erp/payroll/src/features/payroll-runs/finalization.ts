@@ -5,6 +5,7 @@ import { PAYROLL_COMMAND_RUN_FINALIZE } from "../../kernel/operations/module-ids
 import { buildPayrollFinalizationProjection } from "../calculation/finalization-evidence";
 import type { PayrollRunCommandOptions as PayrollCommandOptions } from "./operation-store";
 import {
+	PAYROLL_RUN_VERSION_CONFLICT_MESSAGE,
 	hasBlockingPayrollExceptions,
 	loadPayrollRun,
 	transitionPayrollRun,
@@ -52,6 +53,12 @@ export function finalizePayrollRun(
 			if (hasBlockingPayrollExceptions(exceptions.data)) {
 				return errorResult.fail("CONFLICT", {
 					publicMessage: "Blocking payroll exceptions prevent finalization",
+				});
+			}
+
+			if (data.expectedVersion !== run.version) {
+				return errorResult.fail("CONFLICT", {
+					publicMessage: PAYROLL_RUN_VERSION_CONFLICT_MESSAGE,
 				});
 			}
 

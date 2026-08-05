@@ -679,6 +679,14 @@ describe("payroll run lifecycle commands", () => {
 			return;
 		}
 		expect(staleFinalize.code).toBe("CONFLICT");
+		// Same actor calculated and is retrying finalize with a stale version:
+		// the version-conflict wording must win over the segregation-of-duties
+		// wording so retry logic sees an optimistic-lock failure, not an
+		// authorization failure.
+		expect(staleFinalize.message).toBe(
+			"The request conflicts with current state",
+		);
+		expect(staleFinalize.message).not.toContain("Segregation of duties");
 	});
 
 	it("handles concurrent calculate attempts with one winner", async () => {
