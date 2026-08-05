@@ -428,6 +428,38 @@ async function executeInitiate(
 	employees: PayrollWorkforceInputPort | undefined,
 	options: PayrollFinalSettlementCommandOptions,
 ): Promise<Result<PayrollFinalSettlement>> {
+	const facts = buildFacts(data);
+	// Caller-supplied identity only. The compensation pin is deliberately NOT
+	// part of the request fingerprint: HR may supersede compensation between a
+	// first attempt and its retry, and an idempotent replay must return the
+	// settlement that was already pinned rather than conflict on a freshly
+	// recomputed snapshot hash. The replay lookup therefore also runs before
+	// anything is pinned.
+	const requestFingerprint = fingerprintPayrollFinalSettlement({
+		employeeId: data.employeeId,
+		facts,
+		idempotencyKey: data.idempotencyKey,
+		organizationId: data.organizationId,
+		originRunId: data.originRunId ?? null,
+		payGroupId: data.payGroupId,
+		periodId: data.periodId,
+		terminationEffectiveOn: data.terminationEffectiveOn,
+		terminationId: data.terminationId,
+	});
+	const existing = await existingOrConflict(
+		store,
+		{
+			idempotencyKey: data.idempotencyKey,
+			organizationId: data.organizationId,
+		},
+		requestFingerprint,
+	);
+	if (!existing.ok) {
+		return existing;
+	}
+	if (existing.data !== null) {
+		return errorResult.ok(existing.data);
+	}
 	const period = await requirePeriod(store, {
 		organizationId: data.organizationId,
 		periodId: data.periodId,
@@ -456,36 +488,9 @@ async function executeInitiate(
 	if (!origin.ok) {
 		return origin;
 	}
-	const facts = buildFacts(data);
 	const compensationSnapshotHash = fingerprintPayrollFinalSettlement(
 		pinned.data,
 	);
-	const requestFingerprint = fingerprintPayrollFinalSettlement({
-		compensationSnapshotHash,
-		employeeId: data.employeeId,
-		facts,
-		idempotencyKey: data.idempotencyKey,
-		organizationId: data.organizationId,
-		originRunId: origin.data.originRunId,
-		payGroupId: data.payGroupId,
-		periodId: data.periodId,
-		terminationEffectiveOn: data.terminationEffectiveOn,
-		terminationId: data.terminationId,
-	});
-	const existing = await existingOrConflict(
-		store,
-		{
-			idempotencyKey: data.idempotencyKey,
-			organizationId: data.organizationId,
-		},
-		requestFingerprint,
-	);
-	if (!existing.ok) {
-		return existing;
-	}
-	if (existing.data !== null) {
-		return errorResult.ok(existing.data);
-	}
 	return store.createFinalSettlement({
 		settlement: buildInitiatedSettlement({
 			compensationSnapshot: pinned.data,

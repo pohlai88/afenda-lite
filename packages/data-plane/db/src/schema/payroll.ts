@@ -1381,6 +1381,11 @@ export const payrollFinalSettlement = pgTable(
 			foreignColumns: [payrollPayGroup.organizationId, payrollPayGroup.id],
 			name: "payroll_final_settlement_org_pay_group_fk",
 		}),
+		foreignKey({
+			columns: [t.organizationId, t.originRunId],
+			foreignColumns: [payrollRun.organizationId, payrollRun.id],
+			name: "payroll_final_settlement_org_origin_run_fk",
+		}),
 		check(
 			"payroll_final_settlement_status_check",
 			sql`${t.status} IN ('initiated', 'clearance_required', 'calculated', 'finalized')`,

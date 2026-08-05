@@ -16,6 +16,10 @@ import { buildConsumerInventory } from "./consumer-inventory";
  *    production)
  *  - `synthetic-statutory-calculator` (A2 — statutory calculators are
  *    synth-only, fail-closed)
+ *  - `hr-termination-fact-gap` (D0 — the termination leave balance a final
+ *    settlement encashes is caller-asserted, not a pinned HR fact)
+ *  - `settlement-transition-audit-gap` (D4 — final-settlement status
+ *    transitions persist without the audit + outbox CTE payroll runs use)
  * The mechanical categories are computed from the real source tree, same as
  * HR; HR's package-specific categories (`feature-composite-store`,
  * `adapter-composite-store`, `retired-path-reading-test`) reference HR-only
@@ -35,6 +39,8 @@ export const architectureDebtCategoryKeys = [
 	"undrained-outbox-emission",
 	"dormant-workforce-port",
 	"synthetic-statutory-calculator",
+	"hr-termination-fact-gap",
+	"settlement-transition-audit-gap",
 ] as const;
 
 const categoryKeySchema = z.enum(architectureDebtCategoryKeys);
@@ -314,14 +320,60 @@ function featureCycleItems(
 	];
 }
 
-/** Real, reviewed narrative debt — see docs/erp/hr-payroll-bridging.md B1/A2/B6. */
+/** Anchors a narrative debt item to the living line that still carries it. */
+function anchoredNarrativeItem(input: {
+	evidence: string;
+	file: string;
+	marker: string;
+	packageRoot: string;
+}): readonly MutableDebtItem[] {
+	const content = readFileSync(
+		path.join(input.packageRoot, input.file),
+		"utf8",
+	);
+	const lineIndex = content
+		.split("
+")
+		.findIndex((line) => line.includes(input.marker));
+	if (lineIndex === -1) {
+		return [];
+	}
+	return [
+		{
+			evidence: `${input.file}:${lineIndex + 1} ${input.evidence}`,
+			file: input.file,
+		},
+	];
+}
+
+/** Real, reviewed narrative debt — see docs/erp/hr-payroll-bridging.md B1/A2/B6/D0/D4. */
 function narrativeDebtItems(
 	key:
 		| "dormant-workforce-port"
+		| "hr-termination-fact-gap"
+		| "settlement-transition-audit-gap"
 		| "synthetic-statutory-calculator"
 		| "undrained-outbox-emission",
 	packageRoot: string,
 ): readonly MutableDebtItem[] {
+	if (key === "hr-termination-fact-gap") {
+		return anchoredNarrativeItem({
+			evidence:
+				"accepts the termination leave balance as caller-asserted input; the closing balance is an HR fact that is not pinned into the settlement snapshot until D0 fact-widening lands (bridging doc D0/D4)",
+			file: "src/features/final-settlement/settlement.schema.ts",
+			marker: "leaveBalanceDays: payrollDecimalStringSchema,",
+			packageRoot,
+		});
+	}
+	if (key === "settlement-transition-audit-gap") {
+		return anchoredNarrativeItem({
+			evidence:
+				"updates a final-settlement status transition without the audit + outbox CTE pattern payroll runs use (src/features/payroll-runs/runs.drizzle.ts is the target shape); closing it requires a settlement lifecycle event in @afenda/events plus dispatcher wiring, so it is measured debt rather than a contained change (bridging doc D4/B6)",
+			file: "src/features/final-settlement/settlement.drizzle.ts",
+			marker: "async saveFinalSettlementTransition(input) {",
+			packageRoot,
+		});
+	}
 	if (key === "dormant-workforce-port") {
 		const file = "src/facade/contracts.ts";
 		const content = readFileSync(path.join(packageRoot, file), "utf8");
@@ -412,6 +464,9 @@ export function buildArchitectureDebtReport(
 			...narrativeDebtItems("dormant-workforce-port", packageRoot),
 		],
 		"feature-cycle": [...featureCycleItems(edges)],
+		"hr-termination-fact-gap": [
+			...narrativeDebtItems("hr-termination-fact-gap", packageRoot),
+		],
 		"feature-to-composition": edges
 			.filter(
 				(edge) =>
@@ -433,6 +488,9 @@ export function buildArchitectureDebtReport(
 					edge.target.startsWith("src/testing/"),
 			)
 			.map((edge) => edgeItem(edge, "production -> testing")),
+		"settlement-transition-audit-gap": [
+			...narrativeDebtItems("settlement-transition-audit-gap", packageRoot),
+		],
 		"synthetic-statutory-calculator": [
 			...narrativeDebtItems("synthetic-statutory-calculator", packageRoot),
 		],

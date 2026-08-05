@@ -63,6 +63,8 @@ ALTER TABLE "payroll_final_settlement" ADD CONSTRAINT "payroll_final_settlement_
 --> statement-breakpoint
 ALTER TABLE "payroll_final_settlement" ADD CONSTRAINT "payroll_final_settlement_org_pay_group_fk" FOREIGN KEY ("organization_id","pay_group_id") REFERENCES "payroll_pay_group"("organization_id","id");
 --> statement-breakpoint
+ALTER TABLE "payroll_final_settlement" ADD CONSTRAINT "payroll_final_settlement_org_origin_run_fk" FOREIGN KEY ("organization_id","origin_run_id") REFERENCES "payroll_run"("organization_id","id");
+--> statement-breakpoint
 CREATE INDEX "payroll_final_settlement_line_org_id_idx" ON "payroll_final_settlement_line" ("organization_id","id");
 --> statement-breakpoint
 CREATE INDEX "payroll_final_settlement_line_org_settlement_idx" ON "payroll_final_settlement_line" ("organization_id","settlement_id");
