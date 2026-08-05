@@ -428,26 +428,26 @@ Payroll runs are long batches over thousands of employees with no durable job in
 
 ## Order of work
 
-| # | Item | Phase | Why here |
+| # | Item | Phase | Status (2026-08-05, `feat/hr-payroll-closure`) |
 | --- | --- | --- | --- |
-| 1 | Lifecycle decision + revive governance gate (lifecycle-coupling check reading manifests) | A1/B7 | Costs little, unblocks honesty; today nothing enforces anything |
-| 2 | Calculator sourcing decision | A2 | Longest lead time — start it in parallel with everything |
-| 3 | Retention legal basis | A3 | Needs counsel; long clock |
-| 4 | C1 hash-conflict reject + C9 maker-checker | C | Cheapest correctness fixes; kills the silent-overwrite and single-actor-finalize classes |
-| 5 | Payroll parity loop + failure injection (mirror corporate-administration pattern) | B5 | Biggest engineering gap; proven template in-repo |
-| 6 | Emission registry + four fixtures + `check:payroll` / `test:payroll:*` scripts | B4/B2 | Governance floor |
-| 7 | Transport residue: dormant pull-port decision + README rewrite both sides | B1 | Docs + one deletion; transport itself already collapsed |
-| 8 | Outbox drain (platform dispatcher + Payments/Accounting consumer — own mission) | B6 | Silent-failure risk; platform-wide, not payroll-local |
-| 9 | Capability signature: currency, clock, statutory | B3 | Blocks all calculator work |
-| 10 | D0 fact widening | D0 | Blocks calculators; rewrite risk if skipped |
-| 11 | `settlement-ingress` | D2 | Unblocks C8 |
-| 12 | `privacy` | D1 ✅ | Restriction + retention evidence + DSAR; erasure still forbidden without counsel citation |
-| 13 | `payroll-jobs` | D6 | Needed before large-tenant runs |
-| 14 | `retro-pay`, `final-settlement`, `statutory-filings` | D3–D5 | Domain completion |
-| 15 | HR D7 residue (restriction op, PRODUCTION_READINESS, promotion gate, cut-off/termination docs) | D7 | Parallelizable throughout |
-| 16 | Phase E evidence + promotion | E | Ship |
+| 1 | Lifecycle decision + governance gates | A1/B7 | ✅ payroll demoted to `scaffolded`; lifecycle-coupling + erp-symmetry + emission-drain + cross-import + architecture-debt gates live in `governance:packages` |
+| 2 | Calculator sourcing decision | A2 | ⏳ **open — longest lead time**; payroll stays synth-only, fail-closed until decided |
+| 3 | Retention legal basis | A3 | ◐ decision recorded (restriction-not-erasure, `hr-payroll-decisions.md`); counsel-confirmed citations still open |
+| 4 | C1 hash-conflict reject + C2 ordering + C9 maker-checker | C | ✅ C1 pre-existed; C2 `sourceVersion` ordering + advisory-lock supersession + no-axis validation reject; C9 calculate≠finalize guard |
+| 5 | Payroll parity loop + failure injection | B5 | ✅ lanes exclusive; ingress Neon cases PARTIAL until `payroll_accepted_handoff` migration reaches the test target |
+| 6 | Emission registry + four fixtures + `check:payroll` / `test:payroll:*` scripts | B4/B2 | ✅ |
+| 7 | Transport residue: README truth both sides | B1 | ✅ single-transport wording identical; workforce port is a ledger-backed default with test-only override |
+| 8 | Outbox drain | B6 | ✅ platform drain + cron route + payments/accounting event mapping in `apps/web` |
+| 9 | Capability signature: currency, clock, statutory | B3 | ✅ required composition inputs |
+| 10 | D0 fact widening | D0 | ⏳ **open** — needs HR-side capture (columns + gated migration) first; do not widen the event schema with unpopulated fields |
+| 11 | `settlement-ingress` | D2 | ✅ + C8 reversal-bounded-by-settlement guard |
+| 12 | `privacy` | D1 | ✅ restriction + retention evidence + DSAR; erasure still forbidden without counsel citation |
+| 13 | `payroll-jobs` | D6 | 🔄 in progress |
+| 14 | `retro-pay`, `final-settlement`, `statutory-filings` | D3–D5 | ⏳ open — after D6 |
+| 15 | HR D7 residue | D7 | ✅ restriction ops, PRODUCTION_READINESS promotion gate, cut-off + termination + breaking-change docs (C3/C6 enforcement rows honestly partial — payroll-side enforcement + tests pending) |
+| 16 | Phase E evidence + promotion | E | ⏳ open — gated on 2, 3, 10, 14 and D7's two partial rows |
 
-Items 1, 4, and 5 are the ones to do first: 1 and 4 are small and eliminate the failure classes outright; 5 is the engineering floor everything later stands on.
+Remaining critical path: **A2 sourcing (longest lead) → D0 capture + widening → D3–D5 → Phase E.** Everything in Phases B and C is closed.
 
 ---
 
