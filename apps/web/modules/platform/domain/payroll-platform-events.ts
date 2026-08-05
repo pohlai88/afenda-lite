@@ -2,16 +2,18 @@
 import { audit } from "@afenda/audit";
 import { postFinancialSourceEvent } from "@afenda/accounting";
 import {
+	type CanonicalErrorCode,
 	errorIngress,
 	errorResult,
 	errorWire,
-	type Result,
+	type ResultFailure,
 } from "@afenda/errors";
 import type { DomainEvent, DomainEventHandlerMap } from "@afenda/events";
 import {
 	PAYROLL_EVENT_IDS,
 	PAYROLL_PAYMENT_CORRECTION_REQUESTED_EVENT,
 	PAYROLL_PAYMENT_REQUESTED_EVENT,
+	PAYROLL_PAYSLIP_PUBLISHED_EVENT,
 	PAYROLL_POSTING_CORRECTION_REQUESTED_EVENT,
 	PAYROLL_POSTING_REQUESTED_EVENT,
 	PAYROLL_RUN_CALCULATED_EVENT,
@@ -68,18 +70,95 @@ type PayrollPostingCorrectionPayload = z.infer<
 	typeof payrollPostingCorrectionRequestedPayloadSchema
 >;
 
+function parseWithPayrollSchema<S extends z.ZodTypeAny>(
+	schema: S,
+	payload: unknown,
+	operation: string,
+): z.infer<S> {
+	const parsed = schema.safeParse(payload);
+	if (!parsed.success) {
+		throw errorIngress.code("VALIDATION_ERROR", {
+			operation,
+			publicMessage: "Invalid payroll event payload.",
+		});
+	}
+	return parsed.data;
+}
+
+/**
+ * One closure per event type, each built from its own concrete schema so
+ * `z.infer` binds to that schema directly. A single function generic over
+ * `PayrollEventType` and indexing `PayrollEventSchemas` by that type
+ * parameter cannot be typed without an unsafe cast: TypeScript resolves a
+ * method call (`.safeParse`) on a generically-indexed union of distinct
+ * `ZodObject` instances into the union of all schemas' outputs, which loses
+ * the link back to the caller's specific `T`. Indexing this map of plain
+ * functions by the same generic key does preserve that link.
+ */
+const PAYROLL_EVENT_PARSERS: {
+	[K in PayrollEventType]: (payload: unknown) => z.infer<(typeof PayrollEventSchemas)[K]>;
+} = {
+	[PAYROLL_RUN_STARTED_EVENT]: (payload) =>
+		parseWithPayrollSchema(
+			PayrollEventSchemas[PAYROLL_RUN_STARTED_EVENT],
+			payload,
+			`payroll.${PAYROLL_RUN_STARTED_EVENT}.payload`,
+		),
+	[PAYROLL_RUN_CALCULATED_EVENT]: (payload) =>
+		parseWithPayrollSchema(
+			PayrollEventSchemas[PAYROLL_RUN_CALCULATED_EVENT],
+			payload,
+			`payroll.${PAYROLL_RUN_CALCULATED_EVENT}.payload`,
+		),
+	[PAYROLL_RUN_FINALIZED_EVENT]: (payload) =>
+		parseWithPayrollSchema(
+			PayrollEventSchemas[PAYROLL_RUN_FINALIZED_EVENT],
+			payload,
+			`payroll.${PAYROLL_RUN_FINALIZED_EVENT}.payload`,
+		),
+	[PAYROLL_RUN_REVERSED_EVENT]: (payload) =>
+		parseWithPayrollSchema(
+			PayrollEventSchemas[PAYROLL_RUN_REVERSED_EVENT],
+			payload,
+			`payroll.${PAYROLL_RUN_REVERSED_EVENT}.payload`,
+		),
+	[PAYROLL_PAYMENT_REQUESTED_EVENT]: (payload) =>
+		parseWithPayrollSchema(
+			PayrollEventSchemas[PAYROLL_PAYMENT_REQUESTED_EVENT],
+			payload,
+			`payroll.${PAYROLL_PAYMENT_REQUESTED_EVENT}.payload`,
+		),
+	[PAYROLL_POSTING_REQUESTED_EVENT]: (payload) =>
+		parseWithPayrollSchema(
+			PayrollEventSchemas[PAYROLL_POSTING_REQUESTED_EVENT],
+			payload,
+			`payroll.${PAYROLL_POSTING_REQUESTED_EVENT}.payload`,
+		),
+	[PAYROLL_PAYMENT_CORRECTION_REQUESTED_EVENT]: (payload) =>
+		parseWithPayrollSchema(
+			PayrollEventSchemas[PAYROLL_PAYMENT_CORRECTION_REQUESTED_EVENT],
+			payload,
+			`payroll.${PAYROLL_PAYMENT_CORRECTION_REQUESTED_EVENT}.payload`,
+		),
+	[PAYROLL_POSTING_CORRECTION_REQUESTED_EVENT]: (payload) =>
+		parseWithPayrollSchema(
+			PayrollEventSchemas[PAYROLL_POSTING_CORRECTION_REQUESTED_EVENT],
+			payload,
+			`payroll.${PAYROLL_POSTING_CORRECTION_REQUESTED_EVENT}.payload`,
+		),
+	[PAYROLL_PAYSLIP_PUBLISHED_EVENT]: (payload) =>
+		parseWithPayrollSchema(
+			PayrollEventSchemas[PAYROLL_PAYSLIP_PUBLISHED_EVENT],
+			payload,
+			`payroll.${PAYROLL_PAYSLIP_PUBLISHED_EVENT}.payload`,
+		),
+};
+
 function parsePayrollEventPayload<T extends PayrollEventType>(
 	event: DomainEvent,
 	eventType: T,
 ): z.infer<(typeof PayrollEventSchemas)[T]> {
-	const schema = PayrollEventSchemas[eventType];
-	const parsed = schema.safeParse(event.payload);
-	if (!parsed.success) {
-		throw errorIngress.code("VALIDATION_ERROR", {
-			operation: `payroll.${eventType}.payload`,
-		});
-	}
-	return parsed.data;
+	return PAYROLL_EVENT_PARSERS[eventType](event.payload);
 }
 
 function assertPayrollEventEnvelope(
@@ -92,11 +171,12 @@ function assertPayrollEventEnvelope(
 	) {
 		throw errorIngress.code("VALIDATION_ERROR", {
 			operation: "payroll.event.envelope",
+			publicMessage: "Payroll event envelope does not match its payload identifiers.",
 		});
 	}
 }
 
-function throwResult<T>(result: Result<T>): never {
+function throwResult<C extends CanonicalErrorCode>(result: ResultFailure<C>): never {
 	throw errorWire.deserialize(errorWire.serialize(result));
 }
 
@@ -111,9 +191,10 @@ function parseMoneyAmount(amount: string): bigint {
 	if (!/^(?:0|[1-9]\d*)(?:\.\d+)?$/.test(digits)) {
 		throw errorIngress.code("VALIDATION_ERROR", {
 			operation: "payroll.money.parse",
+			publicMessage: "Invalid payroll money amount.",
 		});
 	}
-	const [whole, fraction = ""] = digits.split(".");
+	const [whole = "0", fraction = ""] = digits.split(".");
 	const scale = 10n ** BigInt(fraction.length);
 	const value = BigInt(whole) * scale + BigInt(fraction.padEnd(0, "0") || "0");
 	return negative ? -value : value;
@@ -150,7 +231,7 @@ async function recordPayrollTelemetryAudit(
 ): Promise<void> {
 	const parsed = parsePayrollEventPayload(event, eventType);
 	assertPayrollEventEnvelope(event, parsed);
-	const recorded = await audit.record({
+	const recorded = await audit.recorder().record({
 		organizationId: event.organizationId,
 		actorUserId: event.actorUserId,
 		correlationId: event.correlationId,
@@ -204,18 +285,18 @@ async function resolvePayrollDisbursementRouting(input: {
 		activeAccounts.find(
 			(entry) => entry.currencyCode === input.currencyCode,
 		) ?? activeAccounts[0];
+	// The canonical seeded "Bank transfer" payment method
+	// (packages/erp/payments/src/features/payment-methods/methods.operations.ts
+	// DEFAULT_PAYMENT_METHODS) uses method kind "wire"; there is no
+	// "bank-transfer" member of PaymentMethodKind, so "wire" is the real
+	// electronic-transfer disbursement mapping, not "bank-transfer".
 	const activeMethods = methods.data.filter((method) => method.active);
 	const method =
-		activeMethods.find((entry) => entry.kind === "bank-transfer") ??
+		activeMethods.find((entry) => entry.kind === "wire") ??
 		activeMethods[0];
 
 	if (account === undefined || method === undefined) {
-		throwResult(
-			errorResult.fail("SERVICE_UNAVAILABLE", {
-				publicMessage:
-					"Payroll disbursement routing is not configured for this organization.",
-			}),
-		);
+		throwResult(errorResult.fail("SERVICE_UNAVAILABLE"));
 	}
 
 	return {

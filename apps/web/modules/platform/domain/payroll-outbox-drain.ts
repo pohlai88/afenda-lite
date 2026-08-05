@@ -1,7 +1,14 @@
-import { database as afendaDatabase, platformDomainEvent } from "@afenda/db";
+import {
+	and,
+	database as afendaDatabase,
+	eq,
+	lte,
+	or,
+	platformDomainEvent,
+	sql,
+} from "@afenda/db";
 import { errorResult, type Result } from "@afenda/errors";
 import { events, type EventDispatchSummary } from "@afenda/events";
-import { and, eq, lte, or, sql } from "drizzle-orm";
 
 const PAYROLL_OUTBOX_CLAIM_LEASE_MS = 60_000;
 const PAYROLL_OUTBOX_MAX_ATTEMPTS = 10;
@@ -52,9 +59,7 @@ async function listOrganizationsWithPendingPayrollEvents(input: {
 			result.rows.map((row) => String(row.organizationId)),
 		);
 	} catch {
-		return errorResult.fail("INTERNAL_ERROR", {
-			publicMessage: "Could not discover payroll outbox backlog.",
-		});
+		return errorResult.fail("INTERNAL_ERROR");
 	}
 }
 

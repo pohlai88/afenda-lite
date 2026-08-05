@@ -22,7 +22,9 @@ const accountingMocks = vi.hoisted(() => ({
 
 vi.mock("@afenda/audit", () => ({
 	audit: {
-		record: auditMocks.record,
+		recorder: () => ({
+			record: auditMocks.record,
+		}),
 	},
 }));
 
@@ -63,8 +65,6 @@ function buildEvent(
 		attempts: 1,
 		lastError: null,
 		processedAt: null,
-		claimedAt: new Date(),
-		createdAt: new Date(),
 		occurredAt: new Date(),
 	};
 }
@@ -94,7 +94,7 @@ describe("createPayrollPlatformEventHandlers", () => {
 				{
 					id: "e47ac10b-58cc-4372-a567-0e02b2c3d479",
 					active: true,
-					kind: "bank-transfer",
+					kind: "wire",
 				},
 			]),
 		);
