@@ -258,6 +258,48 @@ describe("payroll workforce ingress (PRD R1)", () => {
 		expect(active.data?.id).toBe(first.data.id);
 	});
 
+	it("rejects a handoff with no sourceVersion key (fail-closed, never CONFLICT)", async () => {
+		const options = createOptions();
+		const payload = buildSyntheticHandoff() as Record<string, unknown>;
+		payload.sourceVersion = undefined;
+		const result = await ingestApprovedPayrollHandoff(
+			ingestInput({ payload }),
+			options,
+		);
+
+		expect(result.ok).toBe(false);
+		if (result.ok) {
+			return;
+		}
+		// The shared HR schema requires the `sourceVersion` key itself, so an
+		// absent key is already rejected at the parse step (generic message)
+		// before this feature's declared-axis guard runs; still VALIDATION_ERROR
+		// before any store call, so it can never surface as a stale-revision
+		// CONFLICT.
+		expect(result.code).toBe("VALIDATION_ERROR");
+	});
+
+	it("rejects a handoff with an empty sourceVersion object (fail-closed)", async () => {
+		const options = createOptions();
+		const result = await ingestApprovedPayrollHandoff(
+			ingestInput({
+				payload: buildSyntheticHandoff({
+					sourceVersion: {} as unknown as { compensationVersion: number },
+				}),
+			}),
+			options,
+		);
+
+		expect(result.ok).toBe(false);
+		if (result.ok) {
+			return;
+		}
+		expect(result.code).toBe("VALIDATION_ERROR");
+		expect(result.message).toBe(
+			"Approved payroll handoff must declare at least one sourceVersion axis",
+		);
+	});
+
 	it("returns the same record when a new key repeats the active payload", async () => {
 		const options = createOptions();
 		const first = await ingestApprovedPayrollHandoff(ingestInput(), options);

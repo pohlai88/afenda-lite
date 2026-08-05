@@ -52,6 +52,21 @@ export function extractHandoffSourceRevision(
 }
 
 /**
+ * An empty revision can never supersede or be superseded (every delta is
+ * zero), so two such handoffs would silently collide instead of ordering.
+ * Ingress must reject before that ambiguity is reached rather than let the
+ * caller land on the misleading "stale revision" conflict.
+ */
+export function hasDeclaredHandoffRevision(payload: unknown): boolean {
+	const revision = extractHandoffSourceRevision(payload);
+	return (
+		revision.compensationVersion !== EMPTY_REVISION.compensationVersion ||
+		revision.leavePolicyVersion !== EMPTY_REVISION.leavePolicyVersion ||
+		revision.timesheetVersion !== EMPTY_REVISION.timesheetVersion
+	);
+}
+
+/**
  * Incoming is newer only when every axis is ≥ active and at least one axis is
  * strictly greater. Incomparable or equal revisions cannot supersede.
  */

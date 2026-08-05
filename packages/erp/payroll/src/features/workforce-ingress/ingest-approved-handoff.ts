@@ -9,6 +9,7 @@ import type {
 	AcceptedPayrollHandoff,
 	PayrollWorkforceIngressStore,
 } from "./accepted-handoff.store";
+import { hasDeclaredHandoffRevision } from "./handoff-revision";
 import { ingestApprovedPayrollHandoffInputSchema } from "./ingest.schema";
 import { parseApprovedPayrollHandoff } from "./parse-approved-payroll-handoff";
 
@@ -61,6 +62,15 @@ export function ingestApprovedPayrollHandoff(
 			if (parsed.data.organizationId !== data.organizationId) {
 				return errorResult.fail("VALIDATION_ERROR", {
 					publicMessage: "Invalid approved payroll handoff input.",
+				});
+			}
+			// Fail-closed: an undeclared sourceVersion can never supersede or be
+			// superseded, so accepting it would silently collide instead of
+			// ordering handoffs. Reject before any store call.
+			if (!hasDeclaredHandoffRevision(data.payload)) {
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage:
+						"Approved payroll handoff must declare at least one sourceVersion axis",
 				});
 			}
 			return await store.acceptWorkforceHandoff({
