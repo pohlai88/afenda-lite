@@ -5,6 +5,7 @@ import {
 	DEFAULT_HANDOFF_ROUNDING_MODE,
 	deriveHandoffDecimalScale,
 	HANDOFF_PAYROLL_CONTRACT_VERSION,
+	handoffStatutoryProfileSchema,
 } from "@afenda/events/schemas";
 import type {
 	ApprovedCompensationHandoff,
@@ -12,6 +13,8 @@ import type {
 	ApprovedTimeHandoff,
 	BenefitEnrollment,
 	EmployeeCompensation,
+	PriorEmployerYtd,
+	StatutoryProfile,
 	WorkAssignment,
 } from "../../kernel/contracts";
 import {
@@ -29,7 +32,10 @@ export interface MapApprovedPayrollHandoffInput {
 	correlationId: string;
 	effectiveDate: string;
 	employmentStatus: EmploymentStatus;
+	leaveBalanceAtTermination: ApprovedPayrollHandoff["leaveBalanceAtTermination"];
 	leaveHandoffs: readonly ApprovedLeaveHandoff[];
+	priorEmployerYtd: readonly PriorEmployerYtd[];
+	statutoryProfile: StatutoryProfile | null;
 	timeHandoff: ApprovedTimeHandoff | null;
 }
 
@@ -153,6 +159,57 @@ function mapTimeFacts(
 	};
 }
 
+function mapStatutoryProfile(
+	profile: StatutoryProfile,
+): Result<NonNullable<ApprovedPayrollHandoff["statutoryProfile"]>> {
+	const parsed = handoffStatutoryProfileSchema.safeParse({
+		dependantCount: profile.dependantCount,
+		employeeProvidentFundNumber: profile.employeeProvidentFundNumber,
+		expatriate: profile.expatriate,
+		jurisdictionCode: profile.jurisdictionCode,
+		minimumWageZone: profile.minimumWageZone,
+		nationalityCountryCode: profile.nationalityCountryCode,
+		profileId: profile.id,
+		reliefDeclarations: profile.reliefDeclarations.map((declaration) => ({
+			amount: declaration.amount,
+			currencyCode: declaration.currencyCode,
+			dependantReference: declaration.dependantReference,
+			evidenceRef: declaration.evidenceRef,
+			reliefCode: declaration.reliefCode,
+		})),
+		reliefDeclarationVersion: profile.reliefDeclarationVersion,
+		socialInsuranceBookNumber: profile.socialInsuranceBookNumber,
+		socialSecurityNumber: profile.socialSecurityNumber,
+		sourceVersion: profile.version,
+		taxFileNumber: profile.taxFileNumber,
+		taxResidencyStatus: profile.taxResidencyStatus,
+	});
+	if (!parsed.success) {
+		return errorResult.fail("VALIDATION_ERROR", {
+			publicMessage: "The submitted data is invalid",
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_INVALID_INPUT,
+			),
+		});
+	}
+	return errorResult.ok(parsed.data);
+}
+
+function mapPriorEmployerYtd(
+	records: readonly PriorEmployerYtd[],
+): NonNullable<ApprovedPayrollHandoff["priorEmployerYtd"]> {
+	return records.map((record) => ({
+		currencyCode: record.currencyCode,
+		grossAmount: record.grossAmount,
+		jurisdictionCode: record.jurisdictionCode,
+		priorEmployerName: record.priorEmployerName,
+		recordedOn: record.recordedOn,
+		statutoryContributionAmount: record.statutoryContributionAmount,
+		taxWithheldAmount: record.taxWithheldAmount,
+		taxYear: record.taxYear,
+	}));
+}
+
 function mapOvertimeFacts(
 	timeHandoff: ApprovedTimeHandoff | null,
 ): ApprovedPayrollHandoff["overtimeFacts"] {
@@ -239,6 +296,15 @@ export function mapApprovedPayrollHandoff(
 		undefined,
 	);
 
+	let statutoryProfile: ApprovedPayrollHandoff["statutoryProfile"] = null;
+	if (input.statutoryProfile !== null) {
+		const mappedProfile = mapStatutoryProfile(input.statutoryProfile);
+		if (!mappedProfile.ok) {
+			return mappedProfile;
+		}
+		statutoryProfile = mappedProfile.data;
+	}
+
 	const handoff: ApprovedPayrollHandoff = {
 		contractVersion: HANDOFF_PAYROLL_CONTRACT_VERSION,
 		organizationId: input.compensationHandoff.organizationId,
@@ -266,11 +332,17 @@ export function mapApprovedPayrollHandoff(
 		payFrequency: compensation.payFrequency,
 		components,
 		leaveFacts: mapLeaveFacts(input.leaveHandoffs),
+		leaveBalanceAtTermination: input.leaveBalanceAtTermination ?? null,
+		priorEmployerYtd: mapPriorEmployerYtd(input.priorEmployerYtd),
+		statutoryProfile,
 		timeFacts: input.timeHandoff ? mapTimeFacts(input.timeHandoff) : null,
 		overtimeFacts: mapOvertimeFacts(input.timeHandoff),
 		sourceVersion: {
 			compensationVersion: compensation.version,
 			...(leavePolicyVersion === undefined ? {} : { leavePolicyVersion }),
+			...(input.statutoryProfile === null
+				? {}
+				: { statutoryProfileVersion: input.statutoryProfile.version }),
 			...(input.timeHandoff === null
 				? {}
 				: { timesheetVersion: input.timeHandoff.timesheetVersion }),

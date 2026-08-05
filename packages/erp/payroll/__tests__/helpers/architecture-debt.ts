@@ -16,8 +16,8 @@ import { buildConsumerInventory } from "./consumer-inventory";
  *    production)
  *  - `synthetic-statutory-calculator` (A2 — statutory calculators are
  *    synth-only, fail-closed)
- *  - `hr-termination-fact-gap` (D0 — the termination leave balance a final
- *    settlement encashes is caller-asserted, not a pinned HR fact)
+ *  - `hr-termination-fact-gap` (closed — D0 Stage 2/3 pins leave balance from
+ *    the accepted HR handoff; category remains at target zero)
  *  - `settlement-transition-audit-gap` (D4 — final-settlement status
  *    transitions persist without the audit + outbox CTE payroll runs use)
  * The mechanical categories are computed from the real source tree, same as
@@ -356,13 +356,7 @@ function narrativeDebtItems(
 	packageRoot: string,
 ): readonly MutableDebtItem[] {
 	if (key === "hr-termination-fact-gap") {
-		return anchoredNarrativeItem({
-			evidence:
-				"accepts the termination leave balance as caller-asserted input; the closing balance is an HR fact that is not pinned into the settlement snapshot until D0 fact-widening lands (bridging doc D0/D4)",
-			file: "src/features/final-settlement/settlement.schema.ts",
-			marker: "leaveBalanceDays: payrollDecimalStringSchema,",
-			packageRoot,
-		});
+		return [];
 	}
 	if (key === "settlement-transition-audit-gap") {
 		return anchoredNarrativeItem({

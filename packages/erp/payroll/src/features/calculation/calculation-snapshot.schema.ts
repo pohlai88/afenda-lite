@@ -3,7 +3,9 @@ import {
 	handoffCompensationComponentKindSchema,
 	handoffLeaveFactSchema,
 	handoffOvertimeFactSchema,
+	handoffPriorEmployerYtdSchema,
 	handoffSourceVersionSchema,
+	handoffStatutoryProfileSchema,
 	handoffTimeFactsSchema,
 } from "@afenda/events/schemas";
 import { z } from "zod";
@@ -163,9 +165,22 @@ export const payrollEmployeeCalcSnapshotSchema = z
 		periodId: identifierSchema,
 		recurringDeductions: z.array(calcRecurringDeductionSnapshotSchema),
 		recurringEarnings: z.array(calcRecurringEarningSnapshotSchema),
+		priorEmployerYtd: z.array(handoffPriorEmployerYtdSchema).optional(),
 		roundingPolicy: payrollRoundingPolicySchema,
+		statutoryProfile: handoffStatutoryProfileSchema.nullable().optional(),
 		statutoryRules: z.array(calcStatutoryRuleSnapshotSchema),
 		variableInputs: z.array(payrollCalcVariableInputSnapshotSchema),
+		yearToDate: z
+			.object({
+				currencyCode: currencyCodeSchema,
+				employeeStatutory: payrollDecimalStringSchema,
+				employerStatutory: payrollDecimalStringSchema,
+				gross: payrollDecimalStringSchema,
+				taxYear: z.number().int().min(1900).max(9999),
+				taxableBase: payrollDecimalStringSchema,
+			})
+			.strict()
+			.optional(),
 	})
 	.strict();
 

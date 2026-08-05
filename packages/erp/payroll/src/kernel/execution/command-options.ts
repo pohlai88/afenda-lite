@@ -8,6 +8,7 @@ import type {
 	PayrollClockCapability,
 	PayrollCurrencyCapability,
 	PayrollStatutoryCapability,
+	PayrollYearToDateCapability,
 } from "./capability-ports";
 import type {
 	MutationPorts,
@@ -27,6 +28,7 @@ interface PayrollExecutionOptions<TStore> {
 	privacy?: PayrollPrivacyPort;
 	statutory?: PayrollStatutoryCapability;
 	store?: TStore;
+	yearToDate?: PayrollYearToDateCapability;
 }
 
 export interface PayrollCommandOptions<TStore>

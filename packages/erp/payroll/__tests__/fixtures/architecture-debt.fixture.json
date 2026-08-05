@@ -503,6 +503,10 @@
 					"file": "src/features/statutory-rules/statutory.store.ts"
 				},
 				{
+					"evidence": "src/features/statutory-rules/year-to-date-capability.ts exceeds src/<owner>/<file>",
+					"file": "src/features/statutory-rules/year-to-date-capability.ts"
+				},
+				{
 					"evidence": "src/features/variable-inputs/inputs.drizzle.ts exceeds src/<owner>/<file>",
 					"file": "src/features/variable-inputs/inputs.drizzle.ts"
 				},
@@ -704,6 +708,10 @@
 					"file": "src/features/calculation/calculation-pipeline.ts"
 				},
 				{
+					"evidence": "src/features/calculation/calculation-pipeline.ts:12 -> src/features/statutory-rules/year-to-date-capability.ts (calculation -> statutory-rules)",
+					"file": "src/features/calculation/calculation-pipeline.ts"
+				},
+				{
 					"evidence": "src/features/calculation/calculation.ts:23 -> src/features/statutory-rules/calculator.types.ts (calculation -> statutory-rules)",
 					"file": "src/features/calculation/calculation.ts"
 				},
@@ -716,7 +724,11 @@
 					"file": "src/features/calculation/calculation.ts"
 				},
 				{
-					"evidence": "src/features/calculation/calculation.types.ts:14 -> src/features/workforce-ingress/parse-approved-payroll-handoff.ts (calculation -> workforce-ingress)",
+					"evidence": "src/features/calculation/calculation.types.ts:16 -> src/features/statutory-rules/calculator.types.ts (calculation -> statutory-rules)",
+					"file": "src/features/calculation/calculation.types.ts"
+				},
+				{
+					"evidence": "src/features/calculation/calculation.types.ts:17 -> src/features/workforce-ingress/parse-approved-payroll-handoff.ts (calculation -> workforce-ingress)",
 					"file": "src/features/calculation/calculation.types.ts"
 				},
 				{
@@ -724,23 +736,27 @@
 					"file": "src/features/calculation/outputs.schema.ts"
 				},
 				{
-					"evidence": "src/features/calculation/production-run-calculator.ts:31 -> src/features/employee-assignments/assignments.store.ts (calculation -> employee-assignments)",
+					"evidence": "src/features/calculation/production-run-calculator.ts:32 -> src/features/employee-assignments/assignments.store.ts (calculation -> employee-assignments)",
 					"file": "src/features/calculation/production-run-calculator.ts"
 				},
 				{
-					"evidence": "src/features/calculation/production-run-calculator.ts:32 -> src/features/payroll-setup/setup.store.ts (calculation -> payroll-setup)",
+					"evidence": "src/features/calculation/production-run-calculator.ts:33 -> src/features/payroll-setup/setup.store.ts (calculation -> payroll-setup)",
 					"file": "src/features/calculation/production-run-calculator.ts"
 				},
 				{
-					"evidence": "src/features/calculation/production-run-calculator.ts:33 -> src/features/statutory-rules/statutory.store.ts (calculation -> statutory-rules)",
+					"evidence": "src/features/calculation/production-run-calculator.ts:34 -> src/features/statutory-rules/statutory.store.ts (calculation -> statutory-rules)",
 					"file": "src/features/calculation/production-run-calculator.ts"
 				},
 				{
-					"evidence": "src/features/calculation/production-run-calculator.ts:34 -> src/features/variable-inputs/inputs.store.ts (calculation -> variable-inputs)",
+					"evidence": "src/features/calculation/production-run-calculator.ts:35 -> src/features/statutory-rules/year-to-date-capability.ts (calculation -> statutory-rules)",
 					"file": "src/features/calculation/production-run-calculator.ts"
 				},
 				{
-					"evidence": "src/features/calculation/production-run-calculator.ts:35 -> src/features/workforce-ingress/normalize-workforce-handoff.ts (calculation -> workforce-ingress)",
+					"evidence": "src/features/calculation/production-run-calculator.ts:39 -> src/features/variable-inputs/inputs.store.ts (calculation -> variable-inputs)",
+					"file": "src/features/calculation/production-run-calculator.ts"
+				},
+				{
+					"evidence": "src/features/calculation/production-run-calculator.ts:40 -> src/features/workforce-ingress/normalize-workforce-handoff.ts (calculation -> workforce-ingress)",
 					"file": "src/features/calculation/production-run-calculator.ts"
 				},
 				{
@@ -776,7 +792,11 @@
 					"file": "src/features/final-settlement/settlement.command.ts"
 				},
 				{
-					"evidence": "src/features/final-settlement/settlement.command.ts:30 -> src/features/workforce-ingress/normalize-workforce-handoff.ts (final-settlement -> workforce-ingress)",
+					"evidence": "src/features/final-settlement/settlement.command.ts:30 -> src/features/statutory-rules/year-to-date-capability.ts (final-settlement -> statutory-rules)",
+					"file": "src/features/final-settlement/settlement.command.ts"
+				},
+				{
+					"evidence": "src/features/final-settlement/settlement.command.ts:34 -> src/features/workforce-ingress/normalize-workforce-handoff.ts (final-settlement -> workforce-ingress)",
 					"file": "src/features/final-settlement/settlement.command.ts"
 				},
 				{
@@ -968,12 +988,7 @@
 			"target": 0
 		},
 		{
-			"items": [
-				{
-					"evidence": "src/features/final-settlement/settlement.schema.ts:44 accepts the termination leave balance as caller-asserted input; the closing balance is an HR fact that is not pinned into the settlement snapshot until D0 fact-widening lands (bridging doc D0/D4)",
-					"file": "src/features/final-settlement/settlement.schema.ts"
-				}
-			],
+			"items": [],
 			"key": "hr-termination-fact-gap",
 			"target": 0
 		},
@@ -997,6 +1012,6 @@
 	"schemaVersion": 1,
 	"summary": {
 		"featureCount": 15,
-		"sourceTypeScriptFiles": 179
+		"sourceTypeScriptFiles": 180
 	}
 }

@@ -31,3 +31,26 @@ export interface PayrollStatutoryCapability {
 	isProductionApproved: (calculatorId: string) => boolean;
 	requireCalculator: (calculatorId: string) => Result<{ calculatorId: string }>;
 }
+
+/**
+ * Payroll-owned year-to-date totals from finalized history (bridging D0).
+ * Prior-employer figures arrive on the HR handoff; this port never invents them.
+ */
+export interface PayrollYearToDateTotals {
+	currencyCode: string;
+	employeeStatutory: string;
+	employerStatutory: string;
+	gross: string;
+	taxableBase: string;
+	taxYear: number;
+}
+
+export interface PayrollYearToDateCapability {
+	employeeTotals: (input: {
+		currencyCode: string;
+		employeeId: string;
+		organizationId: string;
+		taxYear: number;
+		throughDate: string;
+	}) => Promise<Result<PayrollYearToDateTotals>>;
+}

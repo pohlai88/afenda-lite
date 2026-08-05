@@ -2,7 +2,9 @@ import type {
 	HandoffApprovalEvidence,
 	HandoffLeaveFact,
 	HandoffOvertimeFact,
+	HandoffPriorEmployerYtd,
 	HandoffSourceVersion,
+	HandoffStatutoryProfile,
 	HandoffTimeFacts,
 } from "@afenda/events/schemas";
 import type { PayrollExceptionSeverity } from "../../kernel/contracts/projected-types";
@@ -11,6 +13,7 @@ import type {
 	PayrollRoundingPolicy,
 } from "../../kernel/money/rounding-policy";
 import type { PayrollJsonObject } from "../../kernel/validation/common.schema";
+import type { StatutoryYearToDateFacts } from "../statutory-rules/calculator.types";
 import type { ApprovedPayrollHandoffParsedComponent } from "../workforce-ingress/parse-approved-payroll-handoff";
 
 export type PayrollResultLineKind =
@@ -128,11 +131,14 @@ export interface PayrollEmployeeCalcSnapshot {
 	organizationId: string;
 	payGroupId: string;
 	periodId: string;
+	priorEmployerYtd?: readonly HandoffPriorEmployerYtd[] | undefined;
 	recurringDeductions: PayrollCalcRecurringDeductionSnapshot[];
 	recurringEarnings: PayrollCalcRecurringEarningSnapshot[];
 	roundingPolicy: PayrollRoundingPolicy;
+	statutoryProfile?: HandoffStatutoryProfile | null | undefined;
 	statutoryRules: PayrollCalcStatutoryRuleSnapshot[];
 	variableInputs: PayrollCalcVariableInputSnapshot[];
+	yearToDate?: StatutoryYearToDateFacts | undefined;
 }
 
 export interface PayrollCalcException {

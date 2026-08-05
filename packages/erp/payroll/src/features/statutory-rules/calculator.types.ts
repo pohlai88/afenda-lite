@@ -1,14 +1,31 @@
+import type {
+	HandoffPriorEmployerYtd,
+	HandoffStatutoryProfile,
+} from "@afenda/events/schemas";
+
 import type { PayrollRoundingPolicy } from "../../kernel/money/rounding-policy";
+
+export interface StatutoryYearToDateFacts {
+	currencyCode: string;
+	employeeStatutory: string;
+	employerStatutory: string;
+	gross: string;
+	taxableBase: string;
+	taxYear: number;
+}
 
 export interface StatutoryCalculatorInput {
 	configJson: Record<string, unknown>;
 	currencyCode: string;
 	gross: bigint;
 	jurisdictionCode: string;
+	priorEmployerYtd: readonly HandoffPriorEmployerYtd[];
 	roundingPolicy: PayrollRoundingPolicy;
 	ruleCode: string;
 	ruleVersion: string;
+	statutoryProfile: HandoffStatutoryProfile | null;
 	taxableBase: bigint;
+	yearToDate: StatutoryYearToDateFacts;
 }
 
 export interface StatutoryCalculatorOutput {

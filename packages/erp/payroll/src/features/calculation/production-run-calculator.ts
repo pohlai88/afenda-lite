@@ -13,6 +13,7 @@ import type {
 	PayrollClockCapability,
 	PayrollCurrencyCapability,
 	PayrollStatutoryCapability,
+	PayrollYearToDateCapability,
 } from "../../kernel/execution/capability-ports";
 import type {
 	PayrollRunCalculatorPort,
@@ -31,6 +32,10 @@ import { payrollJsonObjectSchema } from "../../kernel/validation/common.schema";
 import type { PayrollAssignmentsStore } from "../employee-assignments/assignments.store";
 import type { PayrollSetupStore } from "../payroll-setup/setup.store";
 import type { PayrollStatutoryStore } from "../statutory-rules/statutory.store";
+import {
+	emptyPayrollYearToDateTotals,
+	taxYearFromIsoDate,
+} from "../statutory-rules/year-to-date-capability";
 import type { PayrollInputsStore } from "../variable-inputs/inputs.store";
 import { normalizePayrollWorkforceHandoff } from "../workforce-ingress/normalize-workforce-handoff";
 import {
@@ -117,6 +122,7 @@ export function createProductionPayrollRunCalculator(input: {
 	statutory: PayrollStatutoryCapability;
 	clock: PayrollClockCapability;
 	roundingPolicy?: PayrollRoundingPolicy;
+	yearToDate?: PayrollYearToDateCapability;
 }): PayrollRunCalculatorPort {
 	const today = input.clock.today();
 	if (!ISO_CALENDAR_DATE.test(today)) {
@@ -154,9 +160,10 @@ export function createProductionPayrollRunCalculator(input: {
 					publicMessage: "Pay group not found",
 				});
 			}
+			const payGroupRecord = payGroup.data;
 
 			const currencyRounding = input.currency.payableRounding({
-				currencyCode: payGroup.data.currencyCode,
+				currencyCode: payGroupRecord.currencyCode,
 			});
 			if (!currencyRounding.ok) {
 				return currencyRounding;
@@ -287,11 +294,27 @@ export function createProductionPayrollRunCalculator(input: {
 								effectiveDate,
 							}),
 						]);
+					const yearToDate =
+						input.yearToDate === undefined
+							? errorResult.ok(
+									emptyPayrollYearToDateTotals({
+										currencyCode: payGroupRecord.currencyCode,
+										taxYear: taxYearFromIsoDate(payrollPeriod.periodStart),
+									}),
+								)
+							: await input.yearToDate.employeeTotals({
+									currencyCode: payGroupRecord.currencyCode,
+									employeeId: assignment.employeeId,
+									organizationId: calcInput.organizationId,
+									taxYear: taxYearFromIsoDate(payrollPeriod.periodStart),
+									throughDate: payrollPeriod.periodStart,
+								});
 					return {
 						assignment,
 						employeeFacts,
-						recurringEarnings,
 						recurringDeductions,
+						recurringEarnings,
+						yearToDate,
 					};
 				}),
 			);
@@ -308,8 +331,9 @@ export function createProductionPayrollRunCalculator(input: {
 				const {
 					assignment,
 					employeeFacts,
-					recurringEarnings,
 					recurringDeductions,
+					recurringEarnings,
+					yearToDate,
 				} = context;
 				if (!employeeFacts.ok) {
 					return employeeFacts;
@@ -343,6 +367,9 @@ export function createProductionPayrollRunCalculator(input: {
 				if (!recurringDeductions.ok) {
 					return recurringDeductions;
 				}
+				if (!yearToDate.ok) {
+					return yearToDate;
+				}
 
 				const employeeVariableInputs = variableInputs.data.filter(
 					(entry) =>
@@ -370,13 +397,19 @@ export function createProductionPayrollRunCalculator(input: {
 					assignmentId: assignment.id,
 					payGroupId: calcInput.payGroupId,
 					periodId: calcInput.periodId,
-					currencyCode: payGroup.data.currencyCode,
+					currencyCode: payGroupRecord.currencyCode,
 					calculationVersion: PAYROLL_CALCULATION_VERSION,
+					priorEmployerYtd: [
+						...(payrollEmployee.approvedHandoff.priorEmployerYtd ?? []),
+					],
 					roundingPolicy,
+					statutoryProfile:
+						payrollEmployee.approvedHandoff.statutoryProfile ?? null,
+					yearToDate: yearToDate.data,
 					eligibility: {
 						eligible:
 							payrollEmployee.employmentStatus !== "terminated" &&
-							payrollEmployee.currencyCode === payGroup.data.currencyCode,
+							payrollEmployee.currencyCode === payGroupRecord.currencyCode,
 						reason: null,
 					},
 					employee: {

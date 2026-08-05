@@ -113,6 +113,10 @@ function terminationHandoff(
 		employmentId: `employment-${EMPLOYEE_ID}`,
 		employmentStatus: "notice",
 		effectiveDate: TERMINATION_ON,
+		leaveBalanceAtTermination: {
+			asOf: TERMINATION_ON,
+			days: "2",
+		},
 		baseAmount,
 		decimalScale: 0,
 		components: [
@@ -245,7 +249,6 @@ function initiateInput(
 		...context(),
 		employeeId: EMPLOYEE_ID,
 		idempotencyKey: "idem-final-1",
-		leaveBalanceDays: "2",
 		noticeInLieuAmount: "200",
 		noticePayAmount: "300",
 		payGroupId: seeded.payGroupId,
@@ -342,10 +345,67 @@ describe("final-settlement initiate", () => {
 		expect(current.compensationSnapshotHash).toMatch(/^[0-9a-f]{64}$/);
 		// The HR-delivered balance is carried verbatim, never derived by payroll.
 		expect(current.facts.leaveBalanceDays).toBe("2");
+		expect(current.compensationSnapshot.yearToDate).toEqual({
+			currencyCode: "USD",
+			employeeStatutory: "0",
+			employerStatutory: "0",
+			gross: "0",
+			taxYear: 2025,
+			taxableBase: "0",
+		});
+		expect(current.compensationSnapshot.priorEmployerYtd).toEqual([]);
+		expect(current.compensationSnapshot.statutoryProfile).toBeNull();
 		expect(current.totals).toBeNull();
 		expect(current.statutoryEvidence).toBeNull();
 		// First test in the file absorbs cold module initialization.
 	}, 30_000);
+
+	it("refuses when the termination handoff omits a closing leave balance", async () => {
+		const seeded = await seedOpenPeriod({
+			handoff: terminationHandoff({ leaveBalanceAtTermination: undefined }),
+		});
+		const result = await initiateFinalSettlement(
+			initiateInput(seeded),
+			seeded.options,
+		);
+
+		expect(result.ok).toBe(false);
+		if (!result.ok) {
+			expect(result.code).toBe("CONFLICT");
+			expect(result.message).toContain("closing leave balance");
+		}
+	});
+
+	it("pins year-to-date totals from payroll history at initiate", async () => {
+		const seeded = await seedOpenPeriod();
+		const result = await initiateFinalSettlement(initiateInput(seeded), {
+			...seeded.options,
+			yearToDate: {
+				employeeTotals: async () =>
+					errorResult.ok({
+						currencyCode: "USD",
+						employeeStatutory: "80",
+						employerStatutory: "40",
+						gross: "9000",
+						taxYear: 2025,
+						taxableBase: "8100",
+					}),
+			},
+		});
+
+		expect(result.ok).toBe(true);
+		if (!result.ok) {
+			return;
+		}
+		expect(result.data.compensationSnapshot.yearToDate).toEqual({
+			currencyCode: "USD",
+			employeeStatutory: "80",
+			employerStatutory: "40",
+			gross: "9000",
+			taxYear: 2025,
+			taxableBase: "8100",
+		});
+	});
 
 	it("refuses an employee with no HR termination fact", async () => {
 		const seeded = await seedOpenPeriod({
@@ -391,7 +451,7 @@ describe("final-settlement initiate", () => {
 		const seeded = await seedOpenPeriod();
 		await initiated(seeded);
 		const conflicting = await initiateFinalSettlement(
-			initiateInput(seeded, { leaveBalanceDays: "5" }),
+			initiateInput(seeded, { noticePayAmount: "999" }),
 			seeded.options,
 		);
 

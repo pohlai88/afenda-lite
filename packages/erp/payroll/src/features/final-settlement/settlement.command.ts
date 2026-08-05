@@ -27,6 +27,10 @@ import {
 } from "../../kernel/operations/module-ids";
 import type { PayrollRunsStore } from "../payroll-runs/runs.store";
 import type { PayrollSetupStore } from "../payroll-setup/setup.store";
+import {
+	emptyPayrollYearToDateTotals,
+	taxYearFromIsoDate,
+} from "../statutory-rules/year-to-date-capability";
 import { normalizePayrollWorkforceHandoff } from "../workforce-ingress/normalize-workforce-handoff";
 import { computeFinalSettlement } from "./compute-final-settlement";
 import type {
@@ -157,7 +161,12 @@ async function pinCompensation(
 	input: InitiateInput,
 	period: { periodEnd: string; periodStart: string },
 	options: PayrollFinalSettlementCommandOptions,
-): Promise<Result<PayrollFinalSettlementCompensationSnapshot>> {
+): Promise<
+	Result<{
+		leaveBalanceDays: string;
+		snapshot: PayrollFinalSettlementCompensationSnapshot;
+	}>
+> {
 	if (employees === undefined) {
 		return errorResult.fail("CONFLICT", {
 			publicMessage:
@@ -199,13 +208,44 @@ async function pinCompensation(
 				"The employee has no HR termination fact for a final settlement",
 		});
 	}
+	const leaveBalance = facts.approvedHandoff.leaveBalanceAtTermination;
+	if (leaveBalance === null || leaveBalance === undefined) {
+		return errorResult.fail("CONFLICT", {
+			publicMessage:
+				"The termination handoff does not pin a closing leave balance",
+		});
+	}
 	const roundingPolicy = resolveRoundingPolicy(options, facts.currencyCode);
 	if (!roundingPolicy.ok) {
 		return roundingPolicy;
 	}
-	return errorResult.ok(
-		buildCompensationSnapshot(facts, input, roundingPolicy.data),
-	);
+	const yearToDate =
+		options.yearToDate === undefined
+			? errorResult.ok(
+					emptyPayrollYearToDateTotals({
+						currencyCode: facts.currencyCode,
+						taxYear: taxYearFromIsoDate(input.terminationEffectiveOn),
+					}),
+				)
+			: await options.yearToDate.employeeTotals({
+					currencyCode: facts.currencyCode,
+					employeeId: facts.employeeId,
+					organizationId: input.organizationId,
+					taxYear: taxYearFromIsoDate(input.terminationEffectiveOn),
+					throughDate: input.terminationEffectiveOn,
+				});
+	if (!yearToDate.ok) {
+		return yearToDate;
+	}
+	return errorResult.ok({
+		leaveBalanceDays: leaveBalance.days,
+		snapshot: buildCompensationSnapshot(
+			facts,
+			input,
+			roundingPolicy.data,
+			yearToDate.data,
+		),
+	});
 }
 
 /**
@@ -226,6 +266,7 @@ function buildCompensationSnapshot(
 	facts: PayrollEmployeeFacts,
 	input: InitiateInput,
 	roundingPolicy: PayrollRoundingPolicy,
+	yearToDate: PayrollFinalSettlementCompensationSnapshot["yearToDate"],
 ): PayrollFinalSettlementCompensationSnapshot {
 	const { approvedHandoff } = facts;
 	return {
@@ -238,9 +279,12 @@ function buildCompensationSnapshot(
 		employmentStatus:
 			facts.employmentStatus === "notice" ? "notice" : "terminated",
 		payFrequency: approvedHandoff.payFrequency,
+		priorEmployerYtd: [...(approvedHandoff.priorEmployerYtd ?? [])],
 		roundingMode: approvedHandoff.roundingMode,
 		roundingPolicy,
 		sourceVersion: { ...approvedHandoff.sourceVersion },
+		statutoryProfile: approvedHandoff.statutoryProfile ?? null,
+		yearToDate,
 	};
 }
 
@@ -276,9 +320,12 @@ async function requireMatchingPayGroup(
 	return errorResult.ok(true);
 }
 
-function buildFacts(input: InitiateInput): PayrollFinalSettlementFacts {
+function buildFacts(
+	input: InitiateInput,
+	leaveBalanceDays: string,
+): PayrollFinalSettlementFacts {
 	return {
-		leaveBalanceDays: input.leaveBalanceDays,
+		leaveBalanceDays,
 		noticeInLieuAmount: input.noticeInLieuAmount ?? "0",
 		noticePayAmount: input.noticePayAmount ?? "0",
 		recoveries: input.recoveries ?? [],
@@ -428,16 +475,16 @@ async function executeInitiate(
 	employees: PayrollWorkforceInputPort | undefined,
 	options: PayrollFinalSettlementCommandOptions,
 ): Promise<Result<PayrollFinalSettlement>> {
-	const facts = buildFacts(data);
-	// Caller-supplied identity only. The compensation pin is deliberately NOT
-	// part of the request fingerprint: HR may supersede compensation between a
-	// first attempt and its retry, and an idempotent replay must return the
-	// settlement that was already pinned rather than conflict on a freshly
-	// recomputed snapshot hash. The replay lookup therefore also runs before
-	// anything is pinned.
+	// Caller-supplied identity only. Leave balance is pinned from the accepted
+	// handoff after this lookup, so it is not part of the request fingerprint.
 	const requestFingerprint = fingerprintPayrollFinalSettlement({
 		employeeId: data.employeeId,
-		facts,
+		facts: {
+			leaveBalanceDays: "0",
+			noticeInLieuAmount: data.noticeInLieuAmount ?? "0",
+			noticePayAmount: data.noticePayAmount ?? "0",
+			recoveries: data.recoveries ?? [],
+		},
 		idempotencyKey: data.idempotencyKey,
 		organizationId: data.organizationId,
 		originRunId: data.originRunId ?? null,
@@ -471,11 +518,12 @@ async function executeInitiate(
 	if (!pinned.ok) {
 		return pinned;
 	}
+	const facts = buildFacts(data, pinned.data.leaveBalanceDays);
 	const payGroup = await requireMatchingPayGroup(
 		store,
 		data,
 		period.data.payGroupId,
-		pinned.data.currencyCode,
+		pinned.data.snapshot.currencyCode,
 	);
 	if (!payGroup.ok) {
 		return payGroup;
@@ -489,11 +537,11 @@ async function executeInitiate(
 		return origin;
 	}
 	const compensationSnapshotHash = fingerprintPayrollFinalSettlement(
-		pinned.data,
+		pinned.data.snapshot,
 	);
 	return store.createFinalSettlement({
 		settlement: buildInitiatedSettlement({
-			compensationSnapshot: pinned.data,
+			compensationSnapshot: pinned.data.snapshot,
 			compensationSnapshotHash,
 			data,
 			facts,
@@ -554,8 +602,11 @@ async function executeCalculate(
 		periodEnd: period.data.periodEnd,
 		periodStart: period.data.periodStart,
 		resolveStatutory: createFinalSettlementStatutoryResolver({
+			priorEmployerYtd: current.data.compensationSnapshot.priorEmployerYtd,
 			rules: rules.data,
 			statutory: options.statutory,
+			statutoryProfile: current.data.compensationSnapshot.statutoryProfile,
+			yearToDate: current.data.compensationSnapshot.yearToDate,
 		}),
 		settlementId: current.data.id,
 		terminationEffectiveOn: current.data.terminationEffectiveOn,

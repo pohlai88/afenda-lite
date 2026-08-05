@@ -126,10 +126,85 @@ export const handoffOvertimeFactSchema = z
 	})
 	.strict();
 
+export const handoffStatutoryJurisdictionSchema = z.enum(["MY", "VN"]);
+
+export const handoffTaxResidencySchema = z.enum(["resident", "non_resident"]);
+
+export const handoffMinimumWageZoneSchema = z.enum(["I", "II", "III", "IV"]);
+
+export const handoffStatutoryReliefCodeSchema = z.enum([
+	"self",
+	"spouse",
+	"child",
+	"parent",
+	"disabled_self",
+	"disabled_dependant",
+	"life_insurance",
+	"medical_insurance",
+	"education",
+	"approved_donation",
+	"pension_contribution",
+]);
+
+export const HANDOFF_STATUTORY_RELIEF_DECLARATION_VERSION =
+	"hr.statutory-relief.v1" as const;
+
+export const handoffReliefDeclarationSchema = z
+	.object({
+		amount: handoffMoneyAmountSchema.nullable(),
+		currencyCode: z.string().trim().length(3).nullable(),
+		dependantReference: z.string().trim().min(1).max(128).nullable(),
+		evidenceRef: z.string().trim().min(1).max(256).nullable(),
+		reliefCode: handoffStatutoryReliefCodeSchema,
+	})
+	.strict();
+
+export const handoffStatutoryProfileSchema = z
+	.object({
+		dependantCount: z.number().int().nonnegative().max(99),
+		employeeProvidentFundNumber: z.string().trim().min(1).max(64).nullable(),
+		expatriate: z.boolean(),
+		jurisdictionCode: handoffStatutoryJurisdictionSchema,
+		minimumWageZone: handoffMinimumWageZoneSchema.nullable(),
+		nationalityCountryCode: z.string().trim().length(2),
+		profileId: z.string().trim().min(1).max(128),
+		reliefDeclarations: z.array(handoffReliefDeclarationSchema).max(50),
+		reliefDeclarationVersion: z.literal(
+			HANDOFF_STATUTORY_RELIEF_DECLARATION_VERSION,
+		),
+		socialInsuranceBookNumber: z.string().trim().min(1).max(64).nullable(),
+		socialSecurityNumber: z.string().trim().min(1).max(64).nullable(),
+		sourceVersion: z.number().int().positive(),
+		taxFileNumber: z.string().trim().min(1).max(64).nullable(),
+		taxResidencyStatus: handoffTaxResidencySchema,
+	})
+	.strict();
+
+export const handoffPriorEmployerYtdSchema = z
+	.object({
+		currencyCode: z.string().trim().length(3),
+		grossAmount: handoffMoneyAmountSchema,
+		jurisdictionCode: handoffStatutoryJurisdictionSchema,
+		priorEmployerName: z.string().trim().min(1).max(200).nullable(),
+		recordedOn: handoffIsoDateSchema,
+		statutoryContributionAmount: handoffMoneyAmountSchema,
+		taxWithheldAmount: handoffMoneyAmountSchema,
+		taxYear: z.number().int().min(1900).max(9999),
+	})
+	.strict();
+
+export const handoffLeaveBalanceAtTerminationSchema = z
+	.object({
+		asOf: handoffIsoDateSchema,
+		days: handoffQuantitySchema,
+	})
+	.strict();
+
 export const handoffSourceVersionSchema = z
 	.object({
 		compensationVersion: z.number().int().positive().optional(),
 		leavePolicyVersion: z.number().int().positive().optional(),
+		statutoryProfileVersion: z.number().int().positive().optional(),
 		timesheetVersion: z.number().int().positive().optional(),
 	})
 	.strict();
@@ -159,6 +234,11 @@ export const approvedPayrollHandoffSchema = z
 		payFrequency: handoffPayFrequencySchema,
 		components: z.array(handoffCompensationComponentSchema),
 		leaveFacts: z.array(handoffLeaveFactSchema),
+		leaveBalanceAtTermination: handoffLeaveBalanceAtTerminationSchema
+			.nullable()
+			.optional(),
+		priorEmployerYtd: z.array(handoffPriorEmployerYtdSchema).max(16).optional(),
+		statutoryProfile: handoffStatutoryProfileSchema.nullable().optional(),
 		timeFacts: handoffTimeFactsSchema.nullable(),
 		overtimeFacts: z.array(handoffOvertimeFactSchema),
 		sourceVersion: handoffSourceVersionSchema,
@@ -199,6 +279,15 @@ export type HandoffCompensationComponent = z.infer<
 	typeof handoffCompensationComponentSchema
 >;
 export type HandoffLeaveFact = z.infer<typeof handoffLeaveFactSchema>;
+export type HandoffLeaveBalanceAtTermination = z.infer<
+	typeof handoffLeaveBalanceAtTerminationSchema
+>;
+export type HandoffStatutoryProfile = z.infer<
+	typeof handoffStatutoryProfileSchema
+>;
+export type HandoffPriorEmployerYtd = z.infer<
+	typeof handoffPriorEmployerYtdSchema
+>;
 export type HandoffTimeFacts = z.infer<typeof handoffTimeFactsSchema>;
 export type HandoffOvertimeFact = z.infer<typeof handoffOvertimeFactSchema>;
 export type HandoffSourceVersion = z.infer<typeof handoffSourceVersionSchema>;

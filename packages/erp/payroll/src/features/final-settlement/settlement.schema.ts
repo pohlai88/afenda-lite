@@ -1,3 +1,7 @@
+import {
+	handoffPriorEmployerYtdSchema,
+	handoffStatutoryProfileSchema,
+} from "@afenda/events/schemas";
 import { z } from "zod";
 
 import {
@@ -59,12 +63,25 @@ export const payrollFinalSettlementCompensationSnapshotSchema = z
 		employmentStatus: z.enum(PAYROLL_FINAL_SETTLEMENT_TERMINAL_STATUSES),
 		payFrequency: z.string().trim().min(1).max(32),
 		roundingMode: z.string().trim().min(1).max(32),
+		priorEmployerYtd: z.array(handoffPriorEmployerYtdSchema).max(16),
 		roundingPolicy: payrollRoundingPolicySchema,
 		sourceVersion: z
 			.object({
 				compensationVersion: z.number().int().positive().optional(),
 				leavePolicyVersion: z.number().int().positive().optional(),
+				statutoryProfileVersion: z.number().int().positive().optional(),
 				timesheetVersion: z.number().int().positive().optional(),
+			})
+			.strict(),
+		statutoryProfile: handoffStatutoryProfileSchema.nullable(),
+		yearToDate: z
+			.object({
+				currencyCode: z.string().trim().length(3),
+				employeeStatutory: payrollDecimalStringSchema,
+				employerStatutory: payrollDecimalStringSchema,
+				gross: payrollDecimalStringSchema,
+				taxYear: z.number().int().min(0).max(9999),
+				taxableBase: payrollDecimalStringSchema,
 			})
 			.strict(),
 	})
@@ -148,7 +165,6 @@ export const initiateFinalSettlementInputSchema = payrollMutationContextSchema
 	.extend({
 		employeeId: payrollEmployeeIdSchema,
 		idempotencyKey: payrollIdempotencyKeySchema,
-		leaveBalanceDays: payrollDecimalStringSchema,
 		noticeInLieuAmount: payrollDecimalStringSchema.optional(),
 		noticePayAmount: payrollDecimalStringSchema.optional(),
 		originRunId: payrollRunIdSchema.optional(),

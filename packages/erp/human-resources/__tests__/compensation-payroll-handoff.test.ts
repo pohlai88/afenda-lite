@@ -87,7 +87,10 @@ describe("compensation payroll handoff parity (Slice 8.8)", () => {
 
 		const mapped = mapApprovedPayrollHandoff({
 			compensationHandoff: compensationHandoff.data,
+			leaveBalanceAtTermination: null,
 			leaveHandoffs: [],
+			priorEmployerYtd: [],
+			statutoryProfile: null,
 			timeHandoff: null,
 			assignment: syntheticWorkAssignment({
 				organizationId: COMPENSATION_HANDOFF_PARITY_ORG,
@@ -185,7 +188,10 @@ describe("compensation payroll handoff parity (Slice 8.8)", () => {
 
 		const mapped = mapApprovedPayrollHandoff({
 			compensationHandoff: compensationHandoff.data,
+			leaveBalanceAtTermination: null,
 			leaveHandoffs: [],
+			priorEmployerYtd: [],
+			statutoryProfile: null,
 			timeHandoff: null,
 			assignment: syntheticWorkAssignment({
 				organizationId: COMPENSATION_HANDOFF_PARITY_ORG,
@@ -243,7 +249,10 @@ describe("compensation payroll handoff parity (Slice 8.8)", () => {
 
 		const mapped = mapApprovedPayrollHandoff({
 			compensationHandoff: compensationHandoff.data,
+			leaveBalanceAtTermination: null,
 			leaveHandoffs: [],
+			priorEmployerYtd: [],
+			statutoryProfile: null,
 			timeHandoff: null,
 			assignment: syntheticWorkAssignment({
 				organizationId: COMPENSATION_HANDOFF_PARITY_ORG,

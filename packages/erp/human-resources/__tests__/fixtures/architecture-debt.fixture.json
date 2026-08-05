@@ -2596,11 +2596,11 @@
 					"file": "src/features/payroll-handoff/approved-payroll-handoff.ts"
 				},
 				{
-					"evidence": "src/features/payroll-handoff/map-approved-payroll-handoff.ts:22 -> src/features/time/handoff/ports.ts (payroll-handoff -> time)",
+					"evidence": "src/features/payroll-handoff/map-approved-payroll-handoff.ts:25 -> src/features/time/handoff/ports.ts (payroll-handoff -> time)",
 					"file": "src/features/payroll-handoff/map-approved-payroll-handoff.ts"
 				},
 				{
-					"evidence": "src/features/payroll-handoff/map-approved-payroll-handoff.ts:23 -> src/features/workforce-records/employment/employment-status.ts (payroll-handoff -> workforce-records)",
+					"evidence": "src/features/payroll-handoff/map-approved-payroll-handoff.ts:26 -> src/features/workforce-records/employment/employment-status.ts (payroll-handoff -> workforce-records)",
 					"file": "src/features/payroll-handoff/map-approved-payroll-handoff.ts"
 				},
 				{
@@ -2616,11 +2616,15 @@
 					"file": "src/features/payroll-handoff/store.ts"
 				},
 				{
-					"evidence": "src/features/payroll-handoff/store.ts:3 -> src/features/time/store-contract.ts (payroll-handoff -> time)",
+					"evidence": "src/features/payroll-handoff/store.ts:3 -> src/features/statutory-profile/store-contract.ts (payroll-handoff -> statutory-profile)",
 					"file": "src/features/payroll-handoff/store.ts"
 				},
 				{
-					"evidence": "src/features/payroll-handoff/store.ts:4 -> src/features/workforce-records/employment/store-contract.ts (payroll-handoff -> workforce-records)",
+					"evidence": "src/features/payroll-handoff/store.ts:4 -> src/features/time/store-contract.ts (payroll-handoff -> time)",
+					"file": "src/features/payroll-handoff/store.ts"
+				},
+				{
+					"evidence": "src/features/payroll-handoff/store.ts:5 -> src/features/workforce-records/employment/store-contract.ts (payroll-handoff -> workforce-records)",
 					"file": "src/features/payroll-handoff/store.ts"
 				},
 				{

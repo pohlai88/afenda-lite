@@ -5,7 +5,10 @@ import type { PayrollStatutoryCapability } from "../../kernel/execution/capabili
 import { addScaled, formatScaledToDecimal } from "../../kernel/money/money";
 import { getStatutoryCalculator } from "../statutory-rules/calculator-registry";
 import type { PayrollFinalSettlementStatutoryResolver } from "./compute-final-settlement";
-import type { PayrollFinalSettlementStatutoryEvidenceEntry } from "./contract";
+import type {
+	PayrollFinalSettlementCompensationSnapshot,
+	PayrollFinalSettlementStatutoryEvidenceEntry,
+} from "./contract";
 
 function notApprovedForProduction(): Result<never> {
 	return errorResult.fail("CONFLICT", {
@@ -26,8 +29,11 @@ function notApprovedForProduction(): Result<never> {
  * activation fails closed.
  */
 export function createFinalSettlementStatutoryResolver(input: {
+	priorEmployerYtd: PayrollFinalSettlementCompensationSnapshot["priorEmployerYtd"];
 	rules: readonly PayrollStatutoryRule[];
 	statutory: PayrollStatutoryCapability | undefined;
+	statutoryProfile: PayrollFinalSettlementCompensationSnapshot["statutoryProfile"];
+	yearToDate: PayrollFinalSettlementCompensationSnapshot["yearToDate"];
 }): PayrollFinalSettlementStatutoryResolver {
 	return ({ currencyCode, grossScaled, roundingPolicy }) => {
 		const { statutory } = input;
@@ -68,10 +74,13 @@ export function createFinalSettlementStatutoryResolver(input: {
 					currencyCode,
 					gross: grossScaled,
 					jurisdictionCode: rule.jurisdictionCode,
+					priorEmployerYtd: input.priorEmployerYtd,
 					roundingPolicy,
 					ruleCode: rule.code,
 					ruleVersion: rule.ruleVersion,
+					statutoryProfile: input.statutoryProfile,
 					taxableBase: grossScaled,
+					yearToDate: input.yearToDate,
 				});
 			} catch {
 				return errorResult.fail("CONFLICT", {

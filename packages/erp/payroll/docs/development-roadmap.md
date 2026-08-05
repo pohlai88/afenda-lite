@@ -64,7 +64,7 @@ Entrypoints: `@afenda/payroll` (production) · `@afenda/payroll/testing` (test-o
 | Item | Bridging | Notes |
 | --- | --- | --- |
 | Statutory calculator sourcing | A2 | No production jurisdiction until reviewer-approved calculator |
-| D0 fact widening — Stage 2/3 | D0 | HR capture (Stage 1) shipped in `@afenda/human-resources` `statutory-profile` with migration `0056_hr_statutory_profile`; the handoff schema widening and the payroll YTD / prior-employer port remain open, so the D4 leave-balance and prior-employer inputs stay caller-asserted |
+| D0 fact widening — Stage 2/3 | D0 | **CLOSED** — handoff carries statutory profile, prior-employer YTD, and termination leave balance; payroll calculator input + `PayrollYearToDateCapability` consume them; settlement leave is handoff-pinned |
 | Production handoff DDL | ops | Apply `0049_payroll_accepted_handoff.sql` off PL-S9 when migrate is approved |
 | Production retro DDL | ops | Apply `0052_payroll_retro_pay.sql` when migrate is approved |
 | Production final-settlement DDL | ops | Apply `0053_payroll_final_settlement.sql` when migrate is approved |

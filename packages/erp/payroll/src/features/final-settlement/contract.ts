@@ -1,3 +1,9 @@
+import type {
+	HandoffPriorEmployerYtd,
+	HandoffStatutoryProfile,
+} from "@afenda/events/schemas";
+
+import type { PayrollYearToDateTotals } from "../../kernel/execution/capability-ports";
 import type { PayrollRoundingPolicy } from "../../kernel/money/rounding-policy";
 
 /**
@@ -44,12 +50,12 @@ export interface PayrollFinalSettlementRecovery {
 }
 
 /**
- * Non-statutory facts the caller supplies at initiate.
+ * Non-statutory facts sealed at initiate.
  *
- * `leaveBalanceDays` is an **HR-delivered** closing balance: Payroll encashes
- * the balance HR states and never derives one from leave requests. Statutory
- * amounts are deliberately absent — statutory treatment is owned by the
- * fail-closed statutory calculator seam, not by the caller.
+ * `leaveBalanceDays` is the closing balance pinned from the accepted HR
+ * handoff. Payroll encashes that balance and never derives one from leave
+ * requests. Statutory amounts are deliberately absent — statutory treatment
+ * is owned by the fail-closed statutory calculator seam, not by the caller.
  */
 export interface PayrollFinalSettlementFacts {
 	leaveBalanceDays: string;
@@ -74,13 +80,17 @@ export interface PayrollFinalSettlementCompensationSnapshot {
 	employmentId: string;
 	employmentStatus: PayrollFinalSettlementTerminalStatus;
 	payFrequency: string;
+	priorEmployerYtd: readonly HandoffPriorEmployerYtd[];
 	roundingMode: string;
 	roundingPolicy: PayrollRoundingPolicy;
 	sourceVersion: {
 		compensationVersion?: number | undefined;
 		leavePolicyVersion?: number | undefined;
+		statutoryProfileVersion?: number | undefined;
 		timesheetVersion?: number | undefined;
 	};
+	statutoryProfile: HandoffStatutoryProfile | null;
+	yearToDate: PayrollYearToDateTotals;
 }
 
 /** One statutory rule outcome, produced by a production-approved calculator. */

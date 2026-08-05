@@ -5,10 +5,13 @@ import {
 	type HandoffApprovalEvidence,
 	type HandoffAssignment,
 	type HandoffCompensationComponent,
+	type HandoffLeaveBalanceAtTermination,
 	type HandoffLeaveFact,
 	type HandoffOvertimeFact,
 	type HandoffPayFrequency,
+	type HandoffPriorEmployerYtd,
 	type HandoffSourceVersion,
+	type HandoffStatutoryProfile,
 	type HandoffTimeFacts,
 	handoffDecimalScaleMatchesAmount,
 } from "@afenda/events/schemas";
@@ -43,13 +46,16 @@ export interface ApprovedPayrollHandoffParsed {
 	employeeId: string;
 	employmentId: string;
 	employmentStatus: ApprovedPayrollHandoff["employmentStatus"];
+	leaveBalanceAtTermination: HandoffLeaveBalanceAtTermination | null;
 	leaveFacts: readonly HandoffLeaveFact[];
 	organizationId: string;
 	overtimeFacts: readonly HandoffOvertimeFact[];
 	payFrequency: HandoffPayFrequency;
+	priorEmployerYtd: readonly HandoffPriorEmployerYtd[];
 	roundingMode: ApprovedPayrollHandoff["roundingMode"];
 	roundingPolicy: PayrollRoundingPolicy;
 	sourceVersion: HandoffSourceVersion;
+	statutoryProfile: HandoffStatutoryProfile | null;
 	timeFacts: HandoffTimeFacts | null;
 }
 
@@ -169,7 +175,10 @@ export function parseApprovedPayrollHandoff(
 		roundingPolicy,
 		payFrequency: handoff.payFrequency,
 		components,
+		leaveBalanceAtTermination: handoff.leaveBalanceAtTermination ?? null,
 		leaveFacts: handoff.leaveFacts,
+		priorEmployerYtd: handoff.priorEmployerYtd ?? [],
+		statutoryProfile: handoff.statutoryProfile ?? null,
 		timeFacts: handoff.timeFacts,
 		overtimeFacts: handoff.overtimeFacts,
 		sourceVersion: handoff.sourceVersion,

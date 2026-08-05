@@ -164,6 +164,8 @@ export type {
 	PayrollClockCapability,
 	PayrollCurrencyCapability,
 	PayrollStatutoryCapability,
+	PayrollYearToDateCapability,
+	PayrollYearToDateTotals,
 } from "./kernel/execution/capability-ports";
 export {
 	PAYROLL_PERMISSION_CODES,

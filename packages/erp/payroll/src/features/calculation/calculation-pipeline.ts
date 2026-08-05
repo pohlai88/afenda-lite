@@ -9,6 +9,7 @@ import {
 } from "../../kernel/money/money";
 import type { PayrollRoundingPolicy } from "../../kernel/money/rounding-policy";
 import { getStatutoryCalculator } from "../statutory-rules/calculator-registry";
+import { emptyPayrollYearToDateTotals } from "../statutory-rules/year-to-date-capability";
 import type {
 	PayrollCalcDeductionRuleSnapshot,
 	PayrollCalcEarningRuleSnapshot,
@@ -664,8 +665,16 @@ function calculateStatutory(input: {
 				configJson: rule.configJson,
 				currencyCode: input.ctx.snapshot.currencyCode,
 				gross: input.gross,
-				taxableBase,
+				priorEmployerYtd: input.ctx.snapshot.priorEmployerYtd ?? [],
 				roundingPolicy: input.ctx.policy,
+				statutoryProfile: input.ctx.snapshot.statutoryProfile ?? null,
+				taxableBase,
+				yearToDate:
+					input.ctx.snapshot.yearToDate ??
+					emptyPayrollYearToDateTotals({
+						currencyCode: input.ctx.snapshot.currencyCode,
+						taxYear: 0,
+					}),
 			});
 
 			if (

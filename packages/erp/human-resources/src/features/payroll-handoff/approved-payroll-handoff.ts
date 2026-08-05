@@ -79,6 +79,16 @@ type PayrollEmploymentContextStore = Pick<
 	| "getApprovedCompensationHandoff"
 >;
 
+type PayrollStatutoryFactStore = Pick<
+	HumanResourcesPayrollHandoffStore,
+	"getStatutoryProfileAsOf" | "listPriorEmployerYtd"
+>;
+
+type PayrollLeaveBalanceStore = Pick<
+	HumanResourcesPayrollHandoffStore,
+	"getLeaveBalance" | "getLeavePolicyById" | "listLeaveEntitlements"
+>;
+
 async function resolveApprovedLeaveHandoffs(input: {
 	data: AssembleApprovedPayrollHandoffInput;
 	store: PayrollHandoffDiscoveryStore;
@@ -229,6 +239,156 @@ async function resolvePayrollEmploymentContext(input: {
 	});
 }
 
+const TRAILING_ZERO_FRACTION = /0+$/;
+
+function taxYearFromDate(value: string): number {
+	return Number(value.slice(0, 4));
+}
+
+function addQuantity(left: string, right: string): string {
+	const [leftWhole = "0", leftFraction = ""] = left.split(".");
+	const [rightWhole = "0", rightFraction = ""] = right.split(".");
+	const scale = Math.max(leftFraction.length, rightFraction.length);
+	const toScaled = (digits: string, fractionalDigits: string): bigint => {
+		const padded = `${fractionalDigits}${"0".repeat(scale)}`.slice(0, scale);
+		return BigInt(digits) * 10n ** BigInt(scale) + BigInt(padded || "0");
+	};
+	const sum =
+		toScaled(leftWhole, leftFraction) + toScaled(rightWhole, rightFraction);
+	if (scale === 0) {
+		return sum.toString();
+	}
+	const factor = 10n ** BigInt(scale);
+	const wholePart = sum / factor;
+	const fractionPart = (sum % factor)
+		.toString()
+		.padStart(scale, "0")
+		.replace(TRAILING_ZERO_FRACTION, "");
+	return fractionPart.length === 0
+		? wholePart.toString()
+		: `${wholePart}.${fractionPart}`;
+}
+
+async function resolveStatutoryHandoffFacts(input: {
+	data: AssembleApprovedPayrollHandoffInput;
+	store: PayrollStatutoryFactStore;
+}): Promise<
+	Result<{
+		priorEmployerYtd: import("../../kernel/contracts").PriorEmployerYtd[];
+		statutoryProfile: import("../../kernel/contracts").StatutoryProfile | null;
+	}>
+> {
+	const { data, store } = input;
+	const profile = await store.getStatutoryProfileAsOf({
+		asOf: data.effectiveDate,
+		employeeId: data.employeeId,
+		organizationId: data.organizationId,
+	});
+	if (!profile.ok) {
+		return profile;
+	}
+	const priorEmployerYtd = await store.listPriorEmployerYtd({
+		employeeId: data.employeeId,
+		organizationId: data.organizationId,
+		taxYear: taxYearFromDate(data.effectiveDate),
+	});
+	if (!priorEmployerYtd.ok) {
+		return priorEmployerYtd;
+	}
+	return errorResult.ok({
+		priorEmployerYtd: priorEmployerYtd.data,
+		statutoryProfile: profile.data,
+	});
+}
+
+async function resolveLeaveBalanceAtTermination(input: {
+	data: AssembleApprovedPayrollHandoffInput;
+	employmentId: import("../../kernel/identity/brands").HumanResourcesEmploymentId;
+	employmentStatus: import("../workforce-records/employment/employment-status").EmploymentStatus;
+	store: PayrollLeaveBalanceStore;
+}): Promise<
+	Result<
+		import("@afenda/events/schemas").ApprovedPayrollHandoff["leaveBalanceAtTermination"]
+	>
+> {
+	const { data, employmentId, employmentStatus, store } = input;
+	if (employmentStatus !== "notice" && employmentStatus !== "terminated") {
+		return errorResult.ok(null);
+	}
+
+	const entitlements = await store.listLeaveEntitlements({
+		employeeId: data.employeeId,
+		employmentId,
+		organizationId: data.organizationId,
+		page: 1,
+		pageSize: 100,
+	});
+	if (!entitlements.ok) {
+		return entitlements;
+	}
+	if (entitlements.data.totalCount > 100) {
+		return errorResult.fail("CONFLICT", {
+			publicMessage:
+				"Leave entitlement volume exceeds the bounded payroll handoff",
+		});
+	}
+
+	const covering = entitlements.data.entitlements.filter(
+		(entitlement) =>
+			entitlement.status === "active" &&
+			entitlement.periodStart <= data.effectiveDate &&
+			entitlement.periodEnd >= data.effectiveDate,
+	);
+	const balances = await Promise.all(
+		covering.map(async (entitlement) => {
+			const [policy, balance] = await Promise.all([
+				store.getLeavePolicyById({
+					organizationId: data.organizationId,
+					policyId: entitlement.policyId,
+				}),
+				store.getLeaveBalance({
+					entitlementId: entitlement.id,
+					organizationId: data.organizationId,
+				}),
+			]);
+			return { balance, policy };
+		}),
+	);
+
+	let days = "0";
+	for (const entry of balances) {
+		if (!entry.policy.ok) {
+			return entry.policy;
+		}
+		if (!entry.balance.ok) {
+			return entry.balance;
+		}
+		if (entry.policy.data === null || !entry.policy.data.paid) {
+			continue;
+		}
+		if (entry.balance.data === null) {
+			continue;
+		}
+		if (
+			entry.balance.data.unit === "hours" &&
+			entry.balance.data.balance !== "0"
+		) {
+			return errorResult.fail("CONFLICT", {
+				publicMessage:
+					"Hour-unit paid leave cannot be converted to termination leave days",
+			});
+		}
+		if (entry.balance.data.unit === "days") {
+			days = addQuantity(days, entry.balance.data.balance);
+		}
+	}
+
+	return errorResult.ok({
+		asOf: data.effectiveDate,
+		days,
+	});
+}
+
 export function assembleApprovedPayrollHandoff(
 	input: unknown,
 	options: HumanResourcesCommandOptions = {},
@@ -243,6 +403,11 @@ export function assembleApprovedPayrollHandoff(
 			"getApprovedTimeHandoff",
 			"findTimesheetForEmployeePeriod",
 			"listLeaveRequests",
+			"getStatutoryProfileAsOf",
+			"listPriorEmployerYtd",
+			"listLeaveEntitlements",
+			"getLeavePolicyById",
+			"getLeaveBalance",
 		],
 		schema: assembleApprovedPayrollHandoffInputSchema,
 		invalidMessage: "Invalid approved payroll handoff assembly input",
@@ -285,6 +450,22 @@ export function assembleApprovedPayrollHandoff(
 			if (!timeHandoff.ok) {
 				return timeHandoff;
 			}
+			const statutoryFacts = await resolveStatutoryHandoffFacts({
+				data,
+				store,
+			});
+			if (!statutoryFacts.ok) {
+				return statutoryFacts;
+			}
+			const leaveBalanceAtTermination = await resolveLeaveBalanceAtTermination({
+				data,
+				employmentId,
+				employmentStatus: employment.data.status,
+				store,
+			});
+			if (!leaveBalanceAtTermination.ok) {
+				return leaveBalanceAtTermination;
+			}
 
 			const assignmentContextPort = resolveAssignmentContext(options);
 			const contextResult = await assignmentContextPort.resolveAsOf({
@@ -301,7 +482,10 @@ export function assembleApprovedPayrollHandoff(
 			return mapApprovedPayrollHandoff({
 				compensationHandoff: employment.data.compensation,
 				employmentStatus: employment.data.status,
+				leaveBalanceAtTermination: leaveBalanceAtTermination.data,
 				leaveHandoffs: leaveHandoffs.data,
+				priorEmployerYtd: statutoryFacts.data.priorEmployerYtd,
+				statutoryProfile: statutoryFacts.data.statutoryProfile,
 				timeHandoff: timeHandoff.data,
 				assignment: assignment.data,
 				assignmentContext,
