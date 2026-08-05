@@ -52,7 +52,7 @@ describe("Payroll operation registry", () => {
 			"final-settlement",
 			"settlement-ingress",
 		]);
-		expect(definitions).toHaveLength(70);
+		expect(definitions).toHaveLength(71);
 		expect(new Set(operationIds).size).toBe(operationIds.length);
 		for (const definition of definitions) {
 			expect(featureOwners).toContain(definition.owner);
@@ -65,16 +65,17 @@ describe("Payroll operation registry", () => {
 			definitions.map(({ id, kind, permission }) => ({ id, kind, permission })),
 		);
 		expect(createHash("sha256").update(serializedContract).digest("hex")).toBe(
-			// Reviewed 2026-08-05: adds final-settlement (D4) initiate/calculate/
-			// finalize/statement under payroll.run.create/calculate/finalize/review;
-			// all prior ids unchanged.
-			"3a1afd275de18dd555c358e9ba5034e8c0b8fe3fa63f66e41818973cb905a0ef",
+			// Reviewed 2026-08-05: final-settlement (D4) owns initiate/calculate/
+			// finalize under payroll.run.create/calculate/finalize, and the terminal
+			// statement as two queries preserving payroll.payslip.read-own vs
+			// read-all; all prior ids unchanged.
+			"1772a95fbd7e777efeb8899a091a2c2d3f5ba58f21f632f00d395a91318f7b6c",
 		);
 	});
 
 	it("derives exhaustive command, query, and manifest projections", () => {
-		expect(PAYROLL_COMMAND_IDS).toHaveLength(50);
-		expect(PAYROLL_QUERY_IDS).toHaveLength(20);
+		expect(PAYROLL_COMMAND_IDS).toHaveLength(49);
+		expect(PAYROLL_QUERY_IDS).toHaveLength(22);
 		expect(Object.keys(PAYROLL_COMMAND_AUTHORIZATION)).toEqual(
 			PAYROLL_COMMAND_IDS,
 		);

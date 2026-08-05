@@ -9,8 +9,10 @@ CREATE TABLE "payroll_final_settlement" (
 	"origin_run_id" uuid,
 	"status" text NOT NULL,
 	"facts_json" jsonb NOT NULL,
+	"compensation_snapshot_json" jsonb NOT NULL,
+	"compensation_snapshot_hash" text NOT NULL,
 	"totals_json" jsonb,
-	"statement_json" jsonb,
+	"statutory_evidence_json" jsonb,
 	"clearance_required_reason" text,
 	"clearance_reason" text,
 	"clearance_by" text,
@@ -27,10 +29,9 @@ CREATE TABLE "payroll_final_settlement" (
 	"updated_by" text NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "payroll_final_settlement_status_check" CHECK ("status" IN ('initiated', 'clearance_required', 'calculated', 'finalized', 'stated')),
-	CONSTRAINT "payroll_final_settlement_calculated_shape_check" CHECK (("status" NOT IN ('calculated', 'finalized', 'stated')) OR ("totals_json" IS NOT NULL AND "calculated_by" IS NOT NULL AND "calculated_at" IS NOT NULL)),
-	CONSTRAINT "payroll_final_settlement_finalized_shape_check" CHECK (("status" NOT IN ('finalized', 'stated')) OR ("finalized_by" IS NOT NULL AND "finalized_at" IS NOT NULL)),
-	CONSTRAINT "payroll_final_settlement_stated_shape_check" CHECK (("status" <> 'stated') OR ("statement_json" IS NOT NULL))
+	CONSTRAINT "payroll_final_settlement_status_check" CHECK ("status" IN ('initiated', 'clearance_required', 'calculated', 'finalized')),
+	CONSTRAINT "payroll_final_settlement_calculated_shape_check" CHECK (("status" NOT IN ('calculated', 'finalized')) OR ("totals_json" IS NOT NULL AND "statutory_evidence_json" IS NOT NULL AND "calculated_by" IS NOT NULL AND "calculated_at" IS NOT NULL)),
+	CONSTRAINT "payroll_final_settlement_finalized_shape_check" CHECK (("status" <> 'finalized') OR ("finalized_by" IS NOT NULL AND "finalized_at" IS NOT NULL))
 );
 --> statement-breakpoint
 CREATE TABLE "payroll_final_settlement_line" (

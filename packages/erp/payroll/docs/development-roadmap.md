@@ -31,7 +31,7 @@ Uniform ERP roots: `facade/` · `kernel/` · `composition/` · `features/` · `t
 | `settlement-ingress` | Inbound Payments/Accounting settlement facts; C8 reversal guard |
 | `payroll-jobs` | Durable calculation batches: claim, lease, retry, dead letter, replay, chunk merge |
 | `retro-pay` | Queue / snapshot-pinned recompute / apply into an open period / exception review |
-| `final-settlement` | Termination pay: initiate / C6 clearance / calculate / finalize SoD / terminal statement |
+| `final-settlement` | Termination pay: pinned-compensation initiate / C6 clearance / calculate with fail-closed statutory / finalize SoD / terminal statement query |
 
 Entrypoints: `@afenda/payroll` (production) · `@afenda/payroll/testing` (test-only).
 
@@ -53,7 +53,7 @@ Entrypoints: `@afenda/payroll` (production) · `@afenda/payroll/testing` (test-o
 | D1 payroll privacy | **CLOSED** | Restriction / retention evidence / field projection / read-own DSAR; erasure still forbidden |
 | D6 payroll jobs | **CLOSED** | Durable calculation batches + `/api/cron/payroll-jobs`; migrate `0051_payroll_jobs` remains ops-gated |
 | D3 retro pay | **CLOSED** | Queue / recompute under the sealed run snapshot / apply into an open period / exception review; migrate `0052_payroll_retro_pay` remains ops-gated |
-| D4 final settlement | **CLOSED** | Termination pay capsule + C6 human clearance; migrate `0053_payroll_final_settlement` remains ops-gated |
+| D4 final settlement | **CLOSED** | Termination pay from a pinned compensation snapshot, fail-closed statutory calculator seam, C6 human clearance, C9 finalize SoD, read-own/read-all statement query; migrate `0053_payroll_final_settlement` remains ops-gated |
 
 ## 3. Open items (cite bridging, do not invent scope)
 

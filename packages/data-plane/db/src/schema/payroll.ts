@@ -32,7 +32,7 @@ const payrollIdempotencyColumns = {
 	createRequestFingerprint: text("create_request_fingerprint").notNull(),
 };
 
-/** Org pay calendar — scheduling reference for pay groups. */
+/** Org pay calendar â€” scheduling reference for pay groups. */
 export const payrollCalendar = pgTable(
 	"payroll_calendar",
 	{
@@ -71,7 +71,7 @@ export const payrollCalendar = pgTable(
 	],
 );
 
-/** Pay group — currency + calendar binding. */
+/** Pay group â€” currency + calendar binding. */
 export const payrollPayGroup = pgTable(
 	"payroll_pay_group",
 	{
@@ -275,7 +275,7 @@ export const payrollDeductionRule = pgTable(
 	],
 );
 
-/** Generic statutory rule registration — jurisdiction placeholder only (PAY-DEC-004). */
+/** Generic statutory rule registration â€” jurisdiction placeholder only (PAY-DEC-004). */
 export const payrollStatutoryRule = pgTable(
 	"payroll_statutory_rule",
 	{
@@ -329,7 +329,7 @@ export const payrollStatutoryRule = pgTable(
 	],
 );
 
-/** Payroll run — lifecycle root for calculation/finalization slices. */
+/** Payroll run â€” lifecycle root for calculation/finalization slices. */
 export const payrollRun = pgTable(
 	"payroll_run",
 	{
@@ -400,7 +400,7 @@ export const payrollRun = pgTable(
 	],
 );
 
-/** Run-scoped exception — blocking or warning. */
+/** Run-scoped exception â€” blocking or warning. */
 export const payrollException = pgTable(
 	"payroll_exception",
 	{
@@ -432,7 +432,7 @@ export const payrollException = pgTable(
 	],
 );
 
-/** Tracks rule versions referenced by finalized runs — setup immutability guard. */
+/** Tracks rule versions referenced by finalized runs â€” setup immutability guard. */
 export const payrollRuleFinalizedUsage = pgTable(
 	"payroll_rule_finalized_usage",
 	{
@@ -1047,7 +1047,7 @@ export const payrollReconciliation = pgTable(
 );
 
 /**
- * Immutable accepted workforce handoff — the canonical Payroll ingress ledger.
+ * Immutable accepted workforce handoff â€” the canonical Payroll ingress ledger.
  * The raw HR payload is sealed with its hash; corrections supersede, never
  * mutate. Runs read accepted records instead of pulling HR at calculation time.
  */
@@ -1101,7 +1101,7 @@ export const payrollAcceptedHandoff = pgTable(
 	],
 );
 
-/** Durable payroll batch job — calculation checkpoints, not HR bulk import. */
+/** Durable payroll batch job â€” calculation checkpoints, not HR bulk import. */
 export const payrollJob = pgTable(
 	"payroll_job",
 	{
@@ -1212,7 +1212,7 @@ export const payrollJobDeadLetter = pgTable(
 	],
 );
 
-/** Deferred correction for a sealed period — bridging C3/D3 retro-pay. */
+/** Deferred correction for a sealed period â€” bridging C3/D3 retro-pay. */
 export const payrollRetroItem = pgTable(
 	"payroll_retro_item",
 	{
@@ -1320,7 +1320,7 @@ export const payrollRetroLine = pgTable(
 	],
 );
 
-/** Termination pay capsule — bridging D4/C6 final settlement. */
+/** Termination pay capsule â€” bridging D4/C6 final settlement. */
 export const payrollFinalSettlement = pgTable(
 	"payroll_final_settlement",
 	{
@@ -1336,8 +1336,10 @@ export const payrollFinalSettlement = pgTable(
 		originRunId: uuid("origin_run_id"),
 		status: text("status").notNull(),
 		factsJson: jsonb("facts_json").notNull(),
+		compensationSnapshotJson: jsonb("compensation_snapshot_json").notNull(),
+		compensationSnapshotHash: text("compensation_snapshot_hash").notNull(),
 		totalsJson: jsonb("totals_json"),
-		statementJson: jsonb("statement_json"),
+		statutoryEvidenceJson: jsonb("statutory_evidence_json"),
 		clearanceRequiredReason: text("clearance_required_reason"),
 		clearanceReason: text("clearance_reason"),
 		clearanceBy: text("clearance_by"),
@@ -1381,19 +1383,15 @@ export const payrollFinalSettlement = pgTable(
 		}),
 		check(
 			"payroll_final_settlement_status_check",
-			sql`${t.status} IN ('initiated', 'clearance_required', 'calculated', 'finalized', 'stated')`,
+			sql`${t.status} IN ('initiated', 'clearance_required', 'calculated', 'finalized')`,
 		),
 		check(
 			"payroll_final_settlement_calculated_shape_check",
-			sql`(${t.status} NOT IN ('calculated', 'finalized', 'stated')) OR (${t.totalsJson} IS NOT NULL AND ${t.calculatedBy} IS NOT NULL AND ${t.calculatedAt} IS NOT NULL)`,
+			sql`(${t.status} NOT IN ('calculated', 'finalized')) OR (${t.totalsJson} IS NOT NULL AND ${t.statutoryEvidenceJson} IS NOT NULL AND ${t.calculatedBy} IS NOT NULL AND ${t.calculatedAt} IS NOT NULL)`,
 		),
 		check(
 			"payroll_final_settlement_finalized_shape_check",
-			sql`(${t.status} NOT IN ('finalized', 'stated')) OR (${t.finalizedBy} IS NOT NULL AND ${t.finalizedAt} IS NOT NULL)`,
-		),
-		check(
-			"payroll_final_settlement_stated_shape_check",
-			sql`(${t.status} <> 'stated') OR (${t.statementJson} IS NOT NULL)`,
+			sql`(${t.status} <> 'finalized') OR (${t.finalizedBy} IS NOT NULL AND ${t.finalizedAt} IS NOT NULL)`,
 		),
 	],
 );

@@ -6,15 +6,17 @@ import {
 	addScaled,
 	divScaled,
 	formatScaledToDecimal,
-	mulScaled,
+	mulScaledWithRounding,
 	parseDecimalToScaled,
 	roundScaled,
 	subScaled,
 } from "../../kernel/money/money";
-import { DEFAULT_PAYROLL_ROUNDING_POLICY } from "../../kernel/money/rounding-policy";
+import type { PayrollRoundingPolicy } from "../../kernel/money/rounding-policy";
 import type {
+	PayrollFinalSettlementCompensationSnapshot,
 	PayrollFinalSettlementFacts,
 	PayrollFinalSettlementLine,
+	PayrollFinalSettlementStatutoryEvidenceEntry,
 	PayrollFinalSettlementTotals,
 } from "./contract";
 
@@ -24,12 +26,6 @@ export function inclusiveDayCount(start: string, end: string): number {
 	const startUtc = Date.parse(`${start}T00:00:00.000Z`);
 	const endUtc = Date.parse(`${end}T00:00:00.000Z`);
 	return Math.floor((endUtc - startUtc) / MS_PER_DAY) + 1;
-}
-
-function roundMoney(value: bigint): string {
-	return formatScaledToDecimal(
-		roundScaled(value, DEFAULT_PAYROLL_ROUNDING_POLICY),
-	);
 }
 
 function workedDays(input: {
@@ -47,16 +43,51 @@ function workedDays(input: {
 	return inclusiveDayCount(input.periodStart, lastWorkedDay);
 }
 
+/**
+ * Statutory resolution seam. The settlement never accepts caller-supplied
+ * statutory amounts: the command hands in a resolver backed by the same
+ * fail-closed calculator capability payroll runs use, and it is invoked with
+ * the settlement's own gross once the payable components are known.
+ */
+export type PayrollFinalSettlementStatutoryResolver = (input: {
+	currencyCode: string;
+	grossScaled: bigint;
+	roundingPolicy: PayrollRoundingPolicy;
+}) => Result<{
+	employeeScaled: bigint;
+	employerScaled: bigint;
+	evidence: readonly PayrollFinalSettlementStatutoryEvidenceEntry[];
+}>;
+
+interface ComputedEntry {
+	amount: bigint;
+	code: string;
+	kind: PayrollFinalSettlementLine["kind"];
+}
+
+/**
+ * Prices a final settlement from its pinned compensation snapshot.
+ *
+ * One convention, one rounding per component: an unrounded scale-12 daily rate
+ * is derived from the pinned base over the period's payable days, then each
+ * component is multiplied and rounded exactly once under the pinned policy.
+ * Pro-ration and leave encashment therefore share a single daily rate, and the
+ * HR-delivered `leaveBalanceDays` is encashed verbatim — Payroll never derives
+ * a leave balance.
+ */
 export function computeFinalSettlement(input: {
+	compensationSnapshot: PayrollFinalSettlementCompensationSnapshot;
 	facts: PayrollFinalSettlementFacts;
 	now: Date;
 	organizationId: string;
 	periodEnd: string;
 	periodStart: string;
+	resolveStatutory: PayrollFinalSettlementStatutoryResolver;
 	settlementId: string;
 	terminationEffectiveOn: string;
 }): Result<{
 	lines: PayrollFinalSettlementLine[];
+	statutoryEvidence: readonly PayrollFinalSettlementStatutoryEvidenceEntry[];
 	totals: PayrollFinalSettlementTotals;
 }> {
 	const daysInPeriod = inclusiveDayCount(input.periodStart, input.periodEnd);
@@ -66,26 +97,32 @@ export function computeFinalSettlement(input: {
 		});
 	}
 
-	const daysWorked = workedDays(input);
-	const periodDays = parseDecimalToScaled(String(daysInPeriod));
-	const worked = parseDecimalToScaled(String(daysWorked));
-	const { facts } = input;
-	const { baseCompensation, currencyCode, leaveBalanceDays } = facts;
-	const base = parseDecimalToScaled(baseCompensation);
-	const dailyRate = divScaled(base, periodDays);
+	const { compensationSnapshot: pinned, facts } = input;
+	const policy = pinned.roundingPolicy;
+	const round = (value: bigint): string =>
+		formatScaledToDecimal(roundScaled(value, policy));
 
-	const earningEntries: Array<{
-		amount: bigint;
-		code: string;
-		kind: PayrollFinalSettlementLine["kind"];
-	}> = [
+	const dailyRate = divScaled(
+		parseDecimalToScaled(pinned.baseCompensation),
+		parseDecimalToScaled(String(daysInPeriod)),
+	);
+
+	const earningEntries: ComputedEntry[] = [
 		{
-			amount: mulScaled(dailyRate, worked),
+			amount: mulScaledWithRounding(
+				dailyRate,
+				parseDecimalToScaled(String(workedDays(input))),
+				policy,
+			),
 			code: "PRORATED_BASE",
 			kind: "prorated_base",
 		},
 		{
-			amount: mulScaled(dailyRate, parseDecimalToScaled(leaveBalanceDays)),
+			amount: mulScaledWithRounding(
+				dailyRate,
+				parseDecimalToScaled(facts.leaveBalanceDays),
+				policy,
+			),
 			code: "LEAVE_ENCASHMENT",
 			kind: "leave_encashment",
 		},
@@ -101,95 +138,87 @@ export function computeFinalSettlement(input: {
 		},
 	];
 
-	const recoveryEntries = facts.recoveries.map((recovery) => ({
-		amount: parseDecimalToScaled(recovery.amount),
-		code: recovery.code,
-		kind: "recovery" as const,
-	}));
-
-	const employeeStatutory = parseDecimalToScaled(facts.employeeStatutoryAmount);
-	const employerStatutory = parseDecimalToScaled(facts.employerStatutoryAmount);
-
-	let grossScaled = 0n;
-	let recoveryScaled = 0n;
 	const lines: PayrollFinalSettlementLine[] = [];
 	let sequence = 1;
+	const push = (entry: ComputedEntry, amount: string): void => {
+		lines.push({
+			amount,
+			code: entry.code,
+			createdAt: input.now,
+			currencyCode: pinned.currencyCode,
+			id: randomUUID(),
+			kind: entry.kind,
+			organizationId: input.organizationId,
+			sequence,
+			settlementId: input.settlementId,
+		});
+		sequence += 1;
+	};
 
+	let grossScaled = 0n;
 	for (const entry of earningEntries) {
-		const amount = roundMoney(entry.amount);
+		const amount = round(entry.amount);
 		grossScaled = addScaled(grossScaled, parseDecimalToScaled(amount));
-		lines.push({
-			amount,
-			code: entry.code,
-			createdAt: input.now,
-			currencyCode,
-			id: randomUUID(),
-			kind: entry.kind,
-			organizationId: input.organizationId,
-			sequence,
-			settlementId: input.settlementId,
-		});
-		sequence += 1;
+		push(entry, amount);
 	}
 
-	for (const entry of recoveryEntries) {
-		const amount = roundMoney(entry.amount);
+	let recoveryScaled = 0n;
+	for (const recovery of facts.recoveries) {
+		const amount = round(parseDecimalToScaled(recovery.amount));
 		recoveryScaled = addScaled(recoveryScaled, parseDecimalToScaled(amount));
-		lines.push({
+		push(
+			{
+				amount: parseDecimalToScaled(amount),
+				code: recovery.code,
+				kind: "recovery",
+			},
 			amount,
-			code: entry.code,
-			createdAt: input.now,
-			currencyCode,
-			id: randomUUID(),
-			kind: entry.kind,
-			organizationId: input.organizationId,
-			sequence,
-			settlementId: input.settlementId,
-		});
-		sequence += 1;
+		);
 	}
 
-	const employeeStatutoryAmount = roundMoney(employeeStatutory);
-	lines.push({
-		amount: employeeStatutoryAmount,
-		code: "EMPLOYEE_STATUTORY",
-		createdAt: input.now,
-		currencyCode,
-		id: randomUUID(),
-		kind: "employee_statutory",
-		organizationId: input.organizationId,
-		sequence,
-		settlementId: input.settlementId,
+	const statutory = input.resolveStatutory({
+		currencyCode: pinned.currencyCode,
+		grossScaled,
+		roundingPolicy: policy,
 	});
-	sequence += 1;
+	if (!statutory.ok) {
+		return statutory;
+	}
 
-	const employerStatutoryAmount = roundMoney(employerStatutory);
-	lines.push({
-		amount: employerStatutoryAmount,
-		code: "EMPLOYER_STATUTORY",
-		createdAt: input.now,
-		currencyCode,
-		id: randomUUID(),
-		kind: "employer_statutory",
-		organizationId: input.organizationId,
-		sequence,
-		settlementId: input.settlementId,
-	});
+	const employeeStatutory = round(statutory.data.employeeScaled);
+	push(
+		{
+			amount: statutory.data.employeeScaled,
+			code: "EMPLOYEE_STATUTORY",
+			kind: "employee_statutory",
+		},
+		employeeStatutory,
+	);
+	const employerStatutory = round(statutory.data.employerScaled);
+	push(
+		{
+			amount: statutory.data.employerScaled,
+			code: "EMPLOYER_STATUTORY",
+			kind: "employer_statutory",
+		},
+		employerStatutory,
+	);
 
-	const gross = roundMoney(grossScaled);
-	const recoveries = roundMoney(recoveryScaled);
-	const net = roundMoney(
+	const gross = round(grossScaled);
+	const recoveries = round(recoveryScaled);
+	const net = round(
 		subScaled(
 			subScaled(parseDecimalToScaled(gross), parseDecimalToScaled(recoveries)),
-			parseDecimalToScaled(employeeStatutoryAmount),
+			parseDecimalToScaled(employeeStatutory),
 		),
 	);
 
 	return errorResult.ok({
 		lines,
+		statutoryEvidence: statutory.data.evidence,
 		totals: {
-			employeeStatutory: employeeStatutoryAmount,
-			employerStatutory: employerStatutoryAmount,
+			employeeStatutory,
+			employerStatutory,
 			gross,
 			net,
 			recoveries,

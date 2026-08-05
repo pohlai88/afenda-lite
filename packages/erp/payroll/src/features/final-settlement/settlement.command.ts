@@ -7,29 +7,41 @@ import type { PayrollRun } from "../../kernel/contracts/projected-types";
 import type { PayrollCommandOptions as GenericPayrollCommandOptions } from "../../kernel/execution/command-options";
 import { runPayrollCommand } from "../../kernel/execution/execute-operation";
 import type {
-	PayrollPeriodId,
-	PayrollRunId,
+	PayrollEmployeeFacts,
+	PayrollWorkforceInputPort,
+} from "../../kernel/execution/ports";
+import {
+	parsePayrollPayGroupId,
+	parsePayrollPeriodId,
+	type PayrollPeriodId,
+	type PayrollRunId,
 } from "../../kernel/identity/brands";
+import {
+	DEFAULT_PAYROLL_ROUNDING_POLICY,
+	type PayrollRoundingPolicy,
+} from "../../kernel/money/rounding-policy";
 import {
 	PAYROLL_COMMAND_FINAL_SETTLEMENT_CALCULATE,
 	PAYROLL_COMMAND_FINAL_SETTLEMENT_FINALIZE,
 	PAYROLL_COMMAND_FINAL_SETTLEMENT_INITIATE,
-	PAYROLL_COMMAND_FINAL_SETTLEMENT_STATEMENT_ISSUE,
 } from "../../kernel/operations/module-ids";
 import type { PayrollRunsStore } from "../payroll-runs/runs.store";
 import type { PayrollSetupStore } from "../payroll-setup/setup.store";
+import { normalizePayrollWorkforceHandoff } from "../workforce-ingress/normalize-workforce-handoff";
 import { computeFinalSettlement } from "./compute-final-settlement";
 import type {
 	PayrollFinalSettlement,
+	PayrollFinalSettlementCompensationSnapshot,
 	PayrollFinalSettlementFacts,
 	PayrollFinalSettlementView,
 } from "./contract";
+import { PAYROLL_FINAL_SETTLEMENT_TERMINAL_STATUSES } from "./contract";
 import { fingerprintPayrollFinalSettlement } from "./fingerprint";
+import { createFinalSettlementStatutoryResolver } from "./resolve-settlement-statutory";
 import {
 	calculateFinalSettlementInputSchema,
 	finalizeFinalSettlementInputSchema,
 	initiateFinalSettlementInputSchema,
-	issueFinalSettlementStatementInputSchema,
 } from "./settlement.schema";
 import type { PayrollFinalSettlementStore } from "./settlement.store";
 
@@ -54,6 +66,10 @@ const CALCULABLE_STATUSES = new Set<PayrollFinalSettlement["status"]>([
 	"clearance_required",
 	"calculated",
 ]);
+
+const TERMINAL_EMPLOYMENT_STATUSES = new Set<string>(
+	PAYROLL_FINAL_SETTLEMENT_TERMINAL_STATUSES,
+);
 
 function nowFrom(options: PayrollFinalSettlementCommandOptions): Date {
 	return options.clock?.now() ?? new Date();
@@ -126,10 +142,113 @@ async function resolveOriginRun(
 	});
 }
 
+/**
+ * Pins compensation from the accepted workforce handoff (bridging D4 + D3
+ * pinning discipline).
+ *
+ * The termination fact itself is the handoff's `employmentStatus`: a
+ * settlement may only be initiated for an employee HR has placed on notice or
+ * terminated. Everything the calculation prices from — base amount, currency,
+ * scale, rounding, pay frequency, source versions — is sealed here, so a
+ * superseding handoff after initiate cannot change the settlement.
+ */
+async function pinCompensation(
+	employees: PayrollWorkforceInputPort | undefined,
+	input: InitiateInput,
+	period: { periodEnd: string; periodStart: string },
+	options: PayrollFinalSettlementCommandOptions,
+): Promise<Result<PayrollFinalSettlementCompensationSnapshot>> {
+	if (employees === undefined) {
+		return errorResult.fail("CONFLICT", {
+			publicMessage:
+				"Approved workforce facts are required to initiate a final settlement",
+		});
+	}
+	const payload = await employees.getApprovedPayrollHandoff({
+		actorUserId: input.actorUserId,
+		correlationId: input.correlationId,
+		effectiveDate: input.terminationEffectiveOn,
+		employeeId: input.employeeId,
+		organizationId: input.organizationId,
+		periodEnd: period.periodEnd,
+		periodStart: period.periodStart,
+	});
+	if (!payload.ok) {
+		return payload;
+	}
+	if (payload.data === null) {
+		return errorResult.fail("NOT_FOUND", {
+			publicMessage:
+				"No approved workforce handoff was found for the termination date",
+		});
+	}
+	const normalized = normalizePayrollWorkforceHandoff(payload.data, {
+		effectiveDate: input.terminationEffectiveOn,
+		employeeId: input.employeeId,
+		organizationId: input.organizationId,
+		periodEnd: period.periodEnd,
+		periodStart: period.periodStart,
+	});
+	if (!normalized.ok) {
+		return normalized;
+	}
+	const facts = normalized.data;
+	if (!TERMINAL_EMPLOYMENT_STATUSES.has(facts.employmentStatus)) {
+		return errorResult.fail("CONFLICT", {
+			publicMessage:
+				"The employee has no HR termination fact for a final settlement",
+		});
+	}
+	const roundingPolicy = resolveRoundingPolicy(options, facts.currencyCode);
+	if (!roundingPolicy.ok) {
+		return roundingPolicy;
+	}
+	return errorResult.ok(
+		buildCompensationSnapshot(facts, input, roundingPolicy.data),
+	);
+}
+
+/**
+ * Payable rounding is pinned with the compensation, so a later currency-policy
+ * change cannot restate a settlement either.
+ */
+function resolveRoundingPolicy(
+	options: PayrollFinalSettlementCommandOptions,
+	currencyCode: string,
+): Result<PayrollRoundingPolicy> {
+	if (options.currency === undefined) {
+		return errorResult.ok(DEFAULT_PAYROLL_ROUNDING_POLICY);
+	}
+	return options.currency.payableRounding({ currencyCode });
+}
+
+function buildCompensationSnapshot(
+	facts: PayrollEmployeeFacts,
+	input: InitiateInput,
+	roundingPolicy: PayrollRoundingPolicy,
+): PayrollFinalSettlementCompensationSnapshot {
+	const { approvedHandoff } = facts;
+	return {
+		baseCompensation: facts.baseCompensation,
+		currencyCode: facts.currencyCode,
+		decimalScale: approvedHandoff.decimalScale,
+		effectiveDate: input.terminationEffectiveOn,
+		employeeId: facts.employeeId,
+		employmentId: approvedHandoff.employmentId,
+		employmentStatus:
+			facts.employmentStatus === "notice" ? "notice" : "terminated",
+		payFrequency: approvedHandoff.payFrequency,
+		roundingMode: approvedHandoff.roundingMode,
+		roundingPolicy,
+		sourceVersion: { ...approvedHandoff.sourceVersion },
+	};
+}
+
 async function requireMatchingPayGroup(
 	store: FinalSettlementStore,
 	input: InitiateInput,
 	periodPayGroupId: string,
+	currencyCode: string,
 ): Promise<Result<true>> {
 	if (periodPayGroupId !== input.payGroupId) {
 		return errorResult.fail("CONFLICT", {
@@ -148,10 +267,10 @@ async function requireMatchingPayGroup(
 			publicMessage: "The payroll pay group was not found",
 		});
 	}
-	if (payGroup.data.currencyCode !== input.currencyCode) {
+	if (payGroup.data.currencyCode !== currencyCode) {
 		return errorResult.fail("CONFLICT", {
 			publicMessage:
-				"The settlement currency does not match the payroll pay group",
+				"The pinned compensation currency does not match the payroll pay group",
 		});
 	}
 	return errorResult.ok(true);
@@ -159,10 +278,6 @@ async function requireMatchingPayGroup(
 
 function buildFacts(input: InitiateInput): PayrollFinalSettlementFacts {
 	return {
-		baseCompensation: input.baseCompensation,
-		currencyCode: input.currencyCode,
-		employeeStatutoryAmount: input.employeeStatutoryAmount ?? "0",
-		employerStatutoryAmount: input.employerStatutoryAmount ?? "0",
 		leaveBalanceDays: input.leaveBalanceDays,
 		noticeInLieuAmount: input.noticeInLieuAmount ?? "0",
 		noticePayAmount: input.noticePayAmount ?? "0",
@@ -204,6 +319,8 @@ async function existingOrConflict(
 }
 
 function buildInitiatedSettlement(input: {
+	compensationSnapshot: PayrollFinalSettlementCompensationSnapshot;
+	compensationSnapshotHash: string;
 	data: InitiateInput;
 	facts: PayrollFinalSettlementFacts;
 	now: Date;
@@ -223,6 +340,8 @@ function buildInitiatedSettlement(input: {
 		clearanceBy: null,
 		clearanceReason: null,
 		clearanceRequiredReason: requiredReason,
+		compensationSnapshot: input.compensationSnapshot,
+		compensationSnapshotHash: input.compensationSnapshotHash,
 		correlationId: input.data.correlationId,
 		createdAt: input.now,
 		createdBy: input.data.actorUserId,
@@ -237,7 +356,7 @@ function buildInitiatedSettlement(input: {
 		payGroupId: input.data.payGroupId,
 		periodId: input.data.periodId,
 		requestFingerprint: input.requestFingerprint,
-		statement: null,
+		statutoryEvidence: null,
 		status: requiredReason === null ? "initiated" : "clearance_required",
 		terminationEffectiveOn: input.data.terminationEffectiveOn,
 		terminationId: input.data.terminationId,
@@ -294,6 +413,7 @@ function applyCalculation(input: {
 		clearanceReason: cleared
 			? (input.clearanceReason ?? null)
 			: input.settlement.clearanceReason,
+		statutoryEvidence: input.computed.statutoryEvidence,
 		status: "calculated",
 		totals: input.computed.totals,
 		updatedAt: input.now,
@@ -305,6 +425,7 @@ function applyCalculation(input: {
 async function executeInitiate(
 	data: InitiateInput,
 	store: FinalSettlementStore,
+	employees: PayrollWorkforceInputPort | undefined,
 	options: PayrollFinalSettlementCommandOptions,
 ): Promise<Result<PayrollFinalSettlement>> {
 	const period = await requirePeriod(store, {
@@ -314,10 +435,15 @@ async function executeInitiate(
 	if (!period.ok) {
 		return period;
 	}
+	const pinned = await pinCompensation(employees, data, period.data, options);
+	if (!pinned.ok) {
+		return pinned;
+	}
 	const payGroup = await requireMatchingPayGroup(
 		store,
 		data,
 		period.data.payGroupId,
+		pinned.data.currencyCode,
 	);
 	if (!payGroup.ok) {
 		return payGroup;
@@ -331,7 +457,11 @@ async function executeInitiate(
 		return origin;
 	}
 	const facts = buildFacts(data);
+	const compensationSnapshotHash = fingerprintPayrollFinalSettlement(
+		pinned.data,
+	);
 	const requestFingerprint = fingerprintPayrollFinalSettlement({
+		compensationSnapshotHash,
 		employeeId: data.employeeId,
 		facts,
 		idempotencyKey: data.idempotencyKey,
@@ -358,6 +488,8 @@ async function executeInitiate(
 	}
 	return store.createFinalSettlement({
 		settlement: buildInitiatedSettlement({
+			compensationSnapshot: pinned.data,
+			compensationSnapshotHash,
 			data,
 			facts,
 			now: nowFrom(options),
@@ -385,20 +517,41 @@ async function executeCalculate(
 	if (!ready.ok) {
 		return ready;
 	}
+	const periodId = parsePayrollPeriodId(current.data.periodId);
+	if (!periodId.ok) {
+		return periodId;
+	}
+	const payGroupId = parsePayrollPayGroupId(current.data.payGroupId);
+	if (!payGroupId.ok) {
+		return payGroupId;
+	}
 	const period = await requirePeriod(store, {
 		organizationId: data.organizationId,
-		periodId: current.data.periodId as PayrollPeriodId,
+		periodId: periodId.data,
 	});
 	if (!period.ok) {
 		return period;
 	}
+	const rules = await store.listActiveStatutoryRulesForPayGroup({
+		effectiveDate: current.data.terminationEffectiveOn,
+		organizationId: data.organizationId,
+		payGroupId: payGroupId.data,
+	});
+	if (!rules.ok) {
+		return rules;
+	}
 	const now = nowFrom(options);
 	const computed = computeFinalSettlement({
+		compensationSnapshot: current.data.compensationSnapshot,
 		facts: current.data.facts,
 		now,
 		organizationId: data.organizationId,
 		periodEnd: period.data.periodEnd,
 		periodStart: period.data.periodStart,
+		resolveStatutory: createFinalSettlementStatutoryResolver({
+			rules: rules.data,
+			statutory: options.statutory,
+		}),
 		settlementId: current.data.id,
 		terminationEffectiveOn: current.data.terminationEffectiveOn,
 	});
@@ -433,7 +586,8 @@ export function initiateFinalSettlement(
 		schema: initiateFinalSettlementInputSchema,
 		invalidMessage: "Invalid final settlement initiate input",
 		command: PAYROLL_COMMAND_FINAL_SETTLEMENT_INITIATE,
-		execute: (data, { store }) => executeInitiate(data, store, options),
+		execute: (data, { store, employees }) =>
+			executeInitiate(data, store, employees, options),
 	});
 }
 
@@ -466,7 +620,7 @@ export function finalizeFinalSettlement(
 				return current;
 			}
 			const settlement = current.data;
-			if (settlement.status === "finalized" || settlement.status === "stated") {
+			if (settlement.status === "finalized") {
 				return errorResult.ok(settlement);
 			}
 			if (settlement.status !== "calculated") {
@@ -499,93 +653,6 @@ export function finalizeFinalSettlement(
 					version: settlement.version + 1,
 				},
 			});
-		},
-	});
-}
-
-export function issueFinalSettlementStatement(
-	input: unknown,
-	options: PayrollFinalSettlementCommandOptions = {},
-): Promise<Result<PayrollFinalSettlementView>> {
-	return runPayrollCommand(input, options, {
-		schema: issueFinalSettlementStatementInputSchema,
-		invalidMessage: "Invalid final settlement statement input",
-		command: PAYROLL_COMMAND_FINAL_SETTLEMENT_STATEMENT_ISSUE,
-		execute: async (data, { store }) => {
-			const current = await requireSettlement(store, {
-				organizationId: data.organizationId,
-				settlementId: data.settlementId,
-			});
-			if (!current.ok) {
-				return current;
-			}
-			const settlement = current.data;
-			const lines = await store.listFinalSettlementLines({
-				organizationId: data.organizationId,
-				settlementId: data.settlementId,
-			});
-			if (!lines.ok) {
-				return lines;
-			}
-			if (settlement.status === "stated") {
-				return errorResult.ok({ lines: lines.data, settlement });
-			}
-			if (settlement.status !== "finalized") {
-				return errorResult.fail("CONFLICT", {
-					publicMessage:
-						"Final settlement statements are available only after finalization",
-				});
-			}
-			if (settlement.version !== data.expectedVersion) {
-				return errorResult.fail("CONFLICT", {
-					publicMessage: "The request conflicts with current state",
-				});
-			}
-			if (settlement.totals === null) {
-				return errorResult.fail("CONFLICT", {
-					publicMessage: "The final settlement has no calculated totals",
-				});
-			}
-
-			const now = nowFrom(options);
-			const statement = {
-				contentHash: fingerprintPayrollFinalSettlement({
-					employeeId: settlement.employeeId,
-					lines: lines.data.map((line) => ({
-						amount: line.amount,
-						code: line.code,
-						kind: line.kind,
-						sequence: line.sequence,
-					})),
-					settlementId: settlement.id,
-					totals: settlement.totals,
-				}),
-				currencyCode: settlement.facts.currencyCode,
-				employeeId: settlement.employeeId,
-				issuedAt: now,
-				issuedBy: data.actorUserId,
-				lines: lines.data,
-				periodId: settlement.periodId,
-				settlementId: settlement.id,
-				terminationEffectiveOn: settlement.terminationEffectiveOn,
-				terminationId: settlement.terminationId,
-				totals: settlement.totals,
-			};
-			const saved = await store.saveFinalSettlementTransition({
-				expectedVersion: settlement.version,
-				settlement: {
-					...settlement,
-					statement,
-					status: "stated",
-					updatedAt: now,
-					updatedBy: data.actorUserId,
-					version: settlement.version + 1,
-				},
-			});
-			if (!saved.ok) {
-				return saved;
-			}
-			return errorResult.ok({ lines: lines.data, settlement: saved.data });
 		},
 	});
 }

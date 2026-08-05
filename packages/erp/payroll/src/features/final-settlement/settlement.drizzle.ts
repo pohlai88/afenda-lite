@@ -15,13 +15,13 @@ import {
 import type {
 	PayrollFinalSettlement,
 	PayrollFinalSettlementLine,
-	PayrollFinalSettlementStatement,
 } from "./contract";
 import {
+	payrollFinalSettlementCompensationSnapshotSchema,
 	payrollFinalSettlementFactsSchema,
 	payrollFinalSettlementLineKindSchema,
-	payrollFinalSettlementStatementSchema,
 	payrollFinalSettlementStatusSchema,
+	payrollFinalSettlementStatutoryEvidenceSchema,
 	payrollFinalSettlementTotalsSchema,
 } from "./settlement.schema";
 import type { PayrollFinalSettlementStore } from "./settlement.store";
@@ -31,7 +31,11 @@ function mapSettlement(
 ): Result<PayrollFinalSettlement> {
 	const status = payrollFinalSettlementStatusSchema.safeParse(row.status);
 	const facts = payrollFinalSettlementFactsSchema.safeParse(row.factsJson);
-	if (!(status.success && facts.success)) {
+	const compensationSnapshot =
+		payrollFinalSettlementCompensationSnapshotSchema.safeParse(
+			row.compensationSnapshotJson,
+		);
+	if (!(status.success && facts.success && compensationSnapshot.success)) {
 		return errorResult.fail("INTERNAL_ERROR");
 	}
 	let totals: PayrollFinalSettlement["totals"] = null;
@@ -42,15 +46,15 @@ function mapSettlement(
 		}
 		totals = parsed.data;
 	}
-	let statement: PayrollFinalSettlementStatement | null = null;
-	if (row.statementJson !== null) {
-		const parsed = payrollFinalSettlementStatementSchema.safeParse(
-			row.statementJson,
+	let statutoryEvidence: PayrollFinalSettlement["statutoryEvidence"] = null;
+	if (row.statutoryEvidenceJson !== null) {
+		const parsed = payrollFinalSettlementStatutoryEvidenceSchema.safeParse(
+			row.statutoryEvidenceJson,
 		);
 		if (!parsed.success) {
 			return errorResult.fail("INTERNAL_ERROR");
 		}
-		statement = parsed.data;
+		statutoryEvidence = parsed.data;
 	}
 	return errorResult.ok({
 		calculatedAt: row.calculatedAt,
@@ -59,6 +63,8 @@ function mapSettlement(
 		clearanceBy: row.clearanceBy,
 		clearanceReason: row.clearanceReason,
 		clearanceRequiredReason: row.clearanceRequiredReason,
+		compensationSnapshot: compensationSnapshot.data,
+		compensationSnapshotHash: row.compensationSnapshotHash,
 		correlationId: row.correlationId,
 		createdAt: row.createdAt,
 		createdBy: row.createdBy,
@@ -73,7 +79,7 @@ function mapSettlement(
 		payGroupId: row.payGroupId,
 		periodId: row.periodId,
 		requestFingerprint: row.createRequestFingerprint,
-		statement,
+		statutoryEvidence,
 		status: status.data,
 		terminationEffectiveOn: row.terminationEffectiveOn,
 		terminationId: row.terminationId,
@@ -113,7 +119,8 @@ export const drizzleFinalSettlementMethods: PayrollFinalSettlementStore = {
 					INSERT INTO payroll_final_settlement (
 						id, organization_id, employee_id, termination_id,
 						termination_effective_on, period_id, pay_group_id, origin_run_id,
-						status, facts_json, totals_json, statement_json,
+						status, facts_json, compensation_snapshot_json,
+						compensation_snapshot_hash, totals_json, statutory_evidence_json,
 						clearance_required_reason, clearance_reason, clearance_by,
 						clearance_at, calculated_by, calculated_at, finalized_by,
 						finalized_at, correlation_id, create_idempotency_key,
@@ -125,8 +132,10 @@ export const drizzleFinalSettlementMethods: PayrollFinalSettlementStore = {
 						${settlement.terminationEffectiveOn}, ${settlement.periodId}::uuid,
 						${settlement.payGroupId}::uuid, ${settlement.originRunId},
 						${settlement.status}, ${JSON.stringify(settlement.facts)}::jsonb,
+						${JSON.stringify(settlement.compensationSnapshot)}::jsonb,
+						${settlement.compensationSnapshotHash},
 						${settlement.totals === null ? null : JSON.stringify(settlement.totals)}::jsonb,
-						${settlement.statement === null ? null : JSON.stringify(settlement.statement)}::jsonb,
+						${settlement.statutoryEvidence === null ? null : JSON.stringify(settlement.statutoryEvidence)}::jsonb,
 						${settlement.clearanceRequiredReason}, ${settlement.clearanceReason},
 						${settlement.clearanceBy}, ${settlement.clearanceAt},
 						${settlement.calculatedBy}, ${settlement.calculatedAt},
@@ -234,6 +243,11 @@ export const drizzleFinalSettlementMethods: PayrollFinalSettlementStore = {
 						SET
 							status = ${settlement.status},
 							totals_json = ${JSON.stringify(settlement.totals)}::jsonb,
+							statutory_evidence_json = ${
+								settlement.statutoryEvidence === null
+									? null
+									: JSON.stringify(settlement.statutoryEvidence)
+							}::jsonb,
 							clearance_reason = ${settlement.clearanceReason},
 							clearance_by = ${settlement.clearanceBy},
 							clearance_at = ${settlement.clearanceAt},
@@ -299,11 +313,6 @@ export const drizzleFinalSettlementMethods: PayrollFinalSettlementStore = {
 					UPDATE payroll_final_settlement
 					SET
 						status = ${settlement.status},
-						statement_json = ${
-							settlement.statement === null
-								? null
-								: JSON.stringify(settlement.statement)
-						}::jsonb,
 						finalized_by = ${settlement.finalizedBy},
 						finalized_at = ${settlement.finalizedAt},
 						version = ${settlement.version},

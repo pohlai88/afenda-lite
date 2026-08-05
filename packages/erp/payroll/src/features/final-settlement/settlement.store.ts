@@ -6,7 +6,8 @@ import type {
 
 /**
  * Persistence contract for final-settlement. Persistence only; C6 clearance,
- * pro-rata math, SoD, and statement issuance stay in operations.
+ * compensation pinning, pro-rata math, statutory resolution, SoD, and
+ * statement projection stay in operations.
  */
 export interface PayrollFinalSettlementStore {
 	createFinalSettlement: (input: {

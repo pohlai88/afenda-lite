@@ -5,17 +5,22 @@ import {
 	payrollPeriodIdSchema,
 	payrollRunIdSchema,
 } from "../../kernel/identity/brands";
+import { payrollRoundingPolicySchema } from "../../kernel/money/rounding-policy";
 import {
 	isoDateSchema,
+	payrollActorUserIdSchema,
 	payrollDecimalStringSchema,
 	payrollEmployeeIdSchema,
 	payrollExpectedVersionSchema,
 	payrollIdempotencyKeySchema,
 	payrollMutationContextSchema,
+	payrollOrganizationIdSchema,
 } from "../../kernel/validation/common.schema";
 import {
 	PAYROLL_FINAL_SETTLEMENT_LINE_KINDS,
+	PAYROLL_FINAL_SETTLEMENT_STATEMENT_CONTRACT_VERSION,
 	PAYROLL_FINAL_SETTLEMENT_STATUSES,
+	PAYROLL_FINAL_SETTLEMENT_TERMINAL_STATUSES,
 } from "./contract";
 
 export const payrollFinalSettlementStatusSchema = z.enum(
@@ -36,16 +41,50 @@ export const payrollFinalSettlementRecoverySchema = z
 
 export const payrollFinalSettlementFactsSchema = z
 	.object({
-		baseCompensation: payrollDecimalStringSchema,
-		currencyCode: z.string().trim().length(3),
-		employeeStatutoryAmount: payrollDecimalStringSchema,
-		employerStatutoryAmount: payrollDecimalStringSchema,
 		leaveBalanceDays: payrollDecimalStringSchema,
 		noticeInLieuAmount: payrollDecimalStringSchema,
 		noticePayAmount: payrollDecimalStringSchema,
 		recoveries: z.array(payrollFinalSettlementRecoverySchema).max(32),
 	})
 	.strict();
+
+export const payrollFinalSettlementCompensationSnapshotSchema = z
+	.object({
+		baseCompensation: payrollDecimalStringSchema,
+		currencyCode: z.string().trim().length(3),
+		decimalScale: z.number().int().min(0).max(4),
+		effectiveDate: isoDateSchema,
+		employeeId: payrollEmployeeIdSchema,
+		employmentId: z.string().trim().min(1).max(128),
+		employmentStatus: z.enum(PAYROLL_FINAL_SETTLEMENT_TERMINAL_STATUSES),
+		payFrequency: z.string().trim().min(1).max(32),
+		roundingMode: z.string().trim().min(1).max(32),
+		roundingPolicy: payrollRoundingPolicySchema,
+		sourceVersion: z
+			.object({
+				compensationVersion: z.number().int().positive().optional(),
+				leavePolicyVersion: z.number().int().positive().optional(),
+				timesheetVersion: z.number().int().positive().optional(),
+			})
+			.strict(),
+	})
+	.strict();
+
+export const payrollFinalSettlementStatutoryEvidenceEntrySchema = z
+	.object({
+		baseAmount: payrollDecimalStringSchema,
+		calculatorId: z.string().trim().min(1).max(128),
+		employeeAmount: payrollDecimalStringSchema,
+		employerAmount: payrollDecimalStringSchema,
+		jurisdictionCode: z.string().trim().min(1).max(32),
+		ruleCode: z.string().trim().min(1).max(64),
+		ruleVersion: z.string().trim().min(1).max(64),
+	})
+	.strict();
+
+export const payrollFinalSettlementStatutoryEvidenceSchema = z.array(
+	payrollFinalSettlementStatutoryEvidenceEntrySchema,
+);
 
 export const payrollFinalSettlementTotalsSchema = z
 	.object({
@@ -74,26 +113,40 @@ export const payrollFinalSettlementLineSchema = z
 export const payrollFinalSettlementStatementSchema = z
 	.object({
 		contentHash: z.string().trim().min(1).max(256),
+		contractVersion: z.literal(
+			PAYROLL_FINAL_SETTLEMENT_STATEMENT_CONTRACT_VERSION,
+		),
 		currencyCode: z.string().trim().length(3),
 		employeeId: payrollEmployeeIdSchema,
-		issuedAt: z.coerce.date(),
-		issuedBy: z.string().trim().min(1),
-		lines: z.array(payrollFinalSettlementLineSchema),
+		lines: z.array(
+			z
+				.object({
+					amount: payrollDecimalStringSchema,
+					category: payrollFinalSettlementLineKindSchema,
+					code: z.string().trim().min(1).max(64),
+					currencyCode: z.string().trim().length(3),
+					sequence: z.number().int().positive(),
+				})
+				.strict(),
+		),
+		organizationId: payrollOrganizationIdSchema,
 		periodId: payrollPeriodIdSchema,
 		settlementId: z.string().uuid(),
+		status: payrollFinalSettlementStatusSchema,
 		terminationEffectiveOn: isoDateSchema,
 		terminationId: z.string().trim().min(1).max(128),
 		totals: payrollFinalSettlementTotalsSchema,
 	})
 	.strict();
 
+/**
+ * Initiate carries only non-statutory facts. Compensation is pinned from the
+ * accepted handoff (never supplied), and statutory treatment is resolved by
+ * the fail-closed calculator seam at calculate time.
+ */
 export const initiateFinalSettlementInputSchema = payrollMutationContextSchema
 	.extend({
-		baseCompensation: payrollDecimalStringSchema,
-		currencyCode: z.string().trim().length(3),
 		employeeId: payrollEmployeeIdSchema,
-		employeeStatutoryAmount: payrollDecimalStringSchema.optional(),
-		employerStatutoryAmount: payrollDecimalStringSchema.optional(),
 		idempotencyKey: payrollIdempotencyKeySchema,
 		leaveBalanceDays: payrollDecimalStringSchema,
 		noticeInLieuAmount: payrollDecimalStringSchema.optional(),
@@ -125,10 +178,20 @@ export const finalizeFinalSettlementInputSchema = payrollMutationContextSchema
 	})
 	.strict();
 
-export const issueFinalSettlementStatementInputSchema =
-	payrollMutationContextSchema
-		.extend({
-			expectedVersion: payrollExpectedVersionSchema,
-			settlementId: z.string().uuid(),
-		})
-		.strict();
+/** Subject read: the actor may only read their own settlement statement. */
+export const getOwnFinalSettlementStatementInputSchema = z
+	.object({
+		actorUserId: payrollActorUserIdSchema,
+		organizationId: payrollOrganizationIdSchema,
+		settlementId: z.string().uuid(),
+	})
+	.strict();
+
+/** Administrative read: any subject's settlement statement. */
+export const getFinalSettlementStatementInputSchema = z
+	.object({
+		actorUserId: payrollActorUserIdSchema,
+		organizationId: payrollOrganizationIdSchema,
+		settlementId: z.string().uuid(),
+	})
+	.strict();

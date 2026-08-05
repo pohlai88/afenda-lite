@@ -2,7 +2,10 @@ import {
 	PAYROLL_ASSIGNMENT_COMMANDS,
 	PAYROLL_ASSIGNMENT_QUERIES,
 } from "../../features/employee-assignments/operation-registry";
-import { PAYROLL_FINAL_SETTLEMENT_COMMANDS } from "../../features/final-settlement/operation-registry";
+import {
+	PAYROLL_FINAL_SETTLEMENT_COMMANDS,
+	PAYROLL_FINAL_SETTLEMENT_QUERIES,
+} from "../../features/final-settlement/operation-registry";
 import {
 	PAYROLL_JOB_COMMANDS,
 	PAYROLL_JOB_QUERIES,
@@ -59,6 +62,7 @@ composePayrollOperationRegistries(
 	PAYROLL_JOB_QUERIES,
 	PAYROLL_RECONCILIATION_QUERIES,
 	PAYROLL_RETRO_QUERIES,
+	PAYROLL_FINAL_SETTLEMENT_QUERIES,
 );
 
 /** Canonical Payroll operation identity, composed from feature registries. */
@@ -83,6 +87,7 @@ export const PAYROLL_OPERATION_DEFINITIONS = {
 	...PAYROLL_JOB_QUERIES,
 	...PAYROLL_RECONCILIATION_QUERIES,
 	...PAYROLL_RETRO_QUERIES,
+	...PAYROLL_FINAL_SETTLEMENT_QUERIES,
 } as const;
 
 type PayrollOperation =
@@ -236,8 +241,10 @@ export const PAYROLL_COMMAND_FINAL_SETTLEMENT_CALCULATE =
 	PAYROLL_OPERATION_DEFINITIONS.calculateFinalSettlement.id;
 export const PAYROLL_COMMAND_FINAL_SETTLEMENT_FINALIZE =
 	PAYROLL_OPERATION_DEFINITIONS.finalizeFinalSettlement.id;
-export const PAYROLL_COMMAND_FINAL_SETTLEMENT_STATEMENT_ISSUE =
-	PAYROLL_OPERATION_DEFINITIONS.issueFinalSettlementStatement.id;
+export const PAYROLL_QUERY_FINAL_SETTLEMENT_STATEMENT_READ_OWN =
+	PAYROLL_OPERATION_DEFINITIONS.readOwnFinalSettlementStatement.id;
+export const PAYROLL_QUERY_FINAL_SETTLEMENT_STATEMENT_READ_ALL =
+	PAYROLL_OPERATION_DEFINITIONS.readAllFinalSettlementStatements.id;
 
 export const PAYROLL_QUERY_SETUP_CALENDAR_GET =
 	PAYROLL_OPERATION_DEFINITIONS.getCalendar.id;

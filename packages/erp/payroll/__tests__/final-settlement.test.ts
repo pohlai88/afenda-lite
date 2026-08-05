@@ -1,10 +1,16 @@
+import { errorResult } from "@afenda/errors";
+import type { ApprovedPayrollHandoff } from "@afenda/events/schemas";
 import { describe, expect, it } from "vitest";
 
+import { createRegistryPayrollStatutory } from "../src/facade/system-capabilities";
+import {
+	getFinalSettlementStatement,
+	getOwnFinalSettlementStatement,
+} from "../src/features/final-settlement/settlement-statement";
 import {
 	calculateFinalSettlement,
 	finalizeFinalSettlement,
 	initiateFinalSettlement,
-	issueFinalSettlementStatement,
 } from "../src/features/final-settlement/settlement.command";
 import {
 	closePayrollPeriod,
@@ -13,35 +19,52 @@ import {
 import { createPayrollRun } from "../src/features/payroll-runs/payroll-run";
 import { createPayrollCalendar } from "../src/features/payroll-setup/calendar";
 import { createPayrollPayGroup } from "../src/features/payroll-setup/pay-group";
+import { createPayrollStatutoryRule } from "../src/features/payroll-setup/statutory-rule";
+import { createAcceptedWorkforceInputPort } from "../src/features/workforce-ingress/accepted-workforce-input-port";
+import { ingestApprovedPayrollHandoff } from "../src/features/workforce-ingress/ingest-approved-handoff";
 import type { PayrollAuthorizationPort } from "../src/kernel/execution/authorization";
+import type { PayrollStatutoryCapability } from "../src/kernel/execution/capability-ports";
 import {
+	PAYROLL_PERMISSION_INPUT_MANAGE,
+	PAYROLL_PERMISSION_PAYSLIP_READ_ALL,
+	PAYROLL_PERMISSION_PAYSLIP_READ_OWN,
 	PAYROLL_PERMISSION_RUN_CALCULATE,
 	PAYROLL_PERMISSION_RUN_CREATE,
 	PAYROLL_PERMISSION_RUN_FINALIZE,
-	PAYROLL_PERMISSION_RUN_REVIEW,
 	PAYROLL_PERMISSION_SETUP_MANAGE,
 } from "../src/kernel/execution/permissions";
+import type { PayrollWorkforceInputPort } from "../src/kernel/execution/ports";
 import type {
 	PayrollPeriodId,
 	PayrollRunId,
 } from "../src/kernel/identity/brands";
 import { createMemoryPayrollStore } from "../src/testing/index";
+import { buildSyntheticHandoff } from "./fixtures/approved-payroll-handoff-fixtures";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
 
 const ORGANIZATION_ID = "org-payroll-final-settlement";
 const ACTOR_ID = "actor-payroll-final-settlement";
 const CALCULATOR_ID = "actor-payroll-final-settlement-calc";
 const FINALIZER_ID = "actor-payroll-final-settlement-finalizer";
-const REVIEWER_ID = "actor-payroll-final-settlement-reviewer";
+const READER_ID = "actor-payroll-final-settlement-reader";
+const SUBJECT_ACTOR_ID = "actor-payroll-final-settlement-subject";
+const OTHER_SUBJECT_ACTOR_ID = "actor-payroll-final-settlement-other-subject";
 const EMPLOYEE_ID = "emp-payroll-final-001";
+const OTHER_EMPLOYEE_ID = "emp-payroll-final-002";
 const CORRELATION_ID = "corr-payroll-final-settlement";
+
+const PERIOD_START = "2025-01-01";
+const PERIOD_END = "2025-01-31";
+const TERMINATION_ON = "2025-01-15";
 
 const PERMISSIONS = [
 	PAYROLL_PERMISSION_SETUP_MANAGE,
+	PAYROLL_PERMISSION_INPUT_MANAGE,
 	PAYROLL_PERMISSION_RUN_CREATE,
 	PAYROLL_PERMISSION_RUN_CALCULATE,
-	PAYROLL_PERMISSION_RUN_REVIEW,
 	PAYROLL_PERMISSION_RUN_FINALIZE,
+	PAYROLL_PERMISSION_PAYSLIP_READ_OWN,
+	PAYROLL_PERMISSION_PAYSLIP_READ_ALL,
 ];
 
 function authorization(
@@ -67,13 +90,75 @@ function unwrap<T>(
 	return result.data;
 }
 
-async function seedOpenPeriod() {
+/**
+ * Approves the registered calculator for production without mutating the
+ * package registry, so production approval is the only difference between a
+ * payable settlement and a refused one.
+ */
+function approvingStatutory(): PayrollStatutoryCapability {
+	const registry = createRegistryPayrollStatutory();
+	return {
+		isProductionApproved: () => true,
+		requireCalculator: registry.requireCalculator,
+	};
+}
+
+function terminationHandoff(
+	overrides: Partial<ApprovedPayrollHandoff> = {},
+): ApprovedPayrollHandoff {
+	const baseAmount = overrides.baseAmount ?? "3100";
+	return buildSyntheticHandoff({
+		organizationId: ORGANIZATION_ID,
+		employeeId: EMPLOYEE_ID,
+		employmentId: `employment-${EMPLOYEE_ID}`,
+		employmentStatus: "notice",
+		effectiveDate: TERMINATION_ON,
+		baseAmount,
+		decimalScale: 0,
+		components: [
+			{
+				code: "base",
+				kind: "base",
+				amount: baseAmount,
+				currencyCode: "USD",
+				decimalScale: 0,
+				sourceType: "hr_employee_compensation",
+				sourceId: `comp-${EMPLOYEE_ID}`,
+				sourceVersion: 1,
+			},
+		],
+		...overrides,
+	});
+}
+
+function employeesPort(store: unknown): PayrollWorkforceInputPort {
+	const actorEmployees = new Map([
+		[SUBJECT_ACTOR_ID, EMPLOYEE_ID],
+		[OTHER_SUBJECT_ACTOR_ID, OTHER_EMPLOYEE_ID],
+	]);
+	return {
+		...createAcceptedWorkforceInputPort(
+			store as Parameters<typeof createAcceptedWorkforceInputPort>[0],
+		),
+		resolveActorEmployeeId: async ({ actorUserId }) =>
+			errorResult.ok(actorEmployees.get(actorUserId) ?? null),
+	};
+}
+
+async function seedOpenPeriod(
+	seedOptions: {
+		handoff?: ApprovedPayrollHandoff;
+		statutory?: PayrollStatutoryCapability;
+	} = {},
+) {
 	const store = createMemoryPayrollStore();
 	const ports = createMemoryMutationPorts();
 	const options = {
 		store,
 		ports,
 		authorization: authorization(PERMISSIONS),
+		employees: employeesPort(store),
+		statutory: seedOptions.statutory ?? approvingStatutory(),
 	};
 	const calendar = unwrap(
 		await createPayrollCalendar(
@@ -82,7 +167,7 @@ async function seedOpenPeriod() {
 				code: "CAL-FINAL",
 				name: "Final settlement calendar",
 				timezone: "UTC",
-				effectiveFrom: "2025-01-01",
+				effectiveFrom: PERIOD_START,
 				idempotencyKey: "idem-cal-final",
 			},
 			options,
@@ -106,10 +191,43 @@ async function seedOpenPeriod() {
 			{
 				...context(),
 				payGroupId: payGroup.id,
-				periodStart: "2025-01-01",
-				periodEnd: "2025-01-31",
+				periodStart: PERIOD_START,
+				periodEnd: PERIOD_END,
 				cutoffDate: "2025-01-28",
 				idempotencyKey: "idem-period-final",
+			},
+			options,
+		),
+	);
+	unwrap(
+		await createPayrollStatutoryRule(
+			{
+				...context(),
+				payGroupId: payGroup.id,
+				code: "SOC",
+				name: "Social contribution",
+				jurisdictionCode: "MY",
+				configJson: {
+					calculatorId: "synth.v1",
+					baseKind: "gross",
+					employeeRate: "0.05",
+					employerRate: "0.10",
+				},
+				ruleVersion: "v1",
+				effectiveFrom: PERIOD_START,
+				idempotencyKey: "idem-statutory-final",
+			},
+			options,
+		),
+	);
+	unwrap(
+		await ingestApprovedPayrollHandoff(
+			{
+				...context(),
+				idempotencyKey: "idem-handoff-final-1",
+				periodStart: PERIOD_START,
+				periodEnd: PERIOD_END,
+				payload: seedOptions.handoff ?? terminationHandoff(),
 			},
 			options,
 		),
@@ -117,14 +235,12 @@ async function seedOpenPeriod() {
 	return { options, payGroupId: payGroup.id, periodId: period.id, store };
 }
 
-function initiateInput(seeded: Awaited<ReturnType<typeof seedOpenPeriod>>) {
+type Seeded = Awaited<ReturnType<typeof seedOpenPeriod>>;
+
+function initiateInput(seeded: Seeded, overrides: Record<string, unknown> = {}) {
 	return {
 		...context(),
-		baseCompensation: "3100",
-		currencyCode: "USD",
 		employeeId: EMPLOYEE_ID,
-		employeeStatutoryAmount: "100",
-		employerStatutoryAmount: "50",
 		idempotencyKey: "idem-final-1",
 		leaveBalanceDays: "2",
 		noticeInLieuAmount: "200",
@@ -134,39 +250,162 @@ function initiateInput(seeded: Awaited<ReturnType<typeof seedOpenPeriod>>) {
 		recoveries: [
 			{ amount: "50", code: "ADVANCE", reason: "Unrecovered salary advance" },
 		],
-		terminationEffectiveOn: "2025-01-15",
+		terminationEffectiveOn: TERMINATION_ON,
 		terminationId: "term-final-001",
+		...overrides,
 	};
 }
 
-describe("final-settlement", () => {
-	it("initiates, calculates pro-rata facts, finalizes with SoD, and issues a statement", async () => {
+async function supersedeCompensation(
+	seeded: Seeded,
+	baseAmount: string,
+): Promise<void> {
+	unwrap(
+		await ingestApprovedPayrollHandoff(
+			{
+				...context(),
+				idempotencyKey: "idem-handoff-final-2",
+				periodStart: PERIOD_START,
+				periodEnd: PERIOD_END,
+				payload: terminationHandoff({
+					baseAmount,
+					components: [
+						{
+							code: "base",
+							kind: "base",
+							amount: baseAmount,
+							currencyCode: "USD",
+							decimalScale: 0,
+							sourceType: "hr_employee_compensation",
+							sourceId: `comp-${EMPLOYEE_ID}`,
+							sourceVersion: 2,
+						},
+					],
+					sourceVersion: { compensationVersion: 2 },
+				}),
+			},
+			seeded.options,
+		),
+	);
+}
+
+async function initiated(seeded: Seeded) {
+	return unwrap(
+		await initiateFinalSettlement(initiateInput(seeded), seeded.options),
+	);
+}
+
+async function calculated(seeded: Seeded) {
+	const current = await initiated(seeded);
+	return unwrap(
+		await calculateFinalSettlement(
+			{
+				...context(CALCULATOR_ID),
+				expectedVersion: current.version,
+				settlementId: current.id,
+			},
+			seeded.options,
+		),
+	);
+}
+
+async function finalized(seeded: Seeded) {
+	const current = await calculated(seeded);
+	return unwrap(
+		await finalizeFinalSettlement(
+			{
+				...context(FINALIZER_ID),
+				expectedVersion: current.settlement.version,
+				settlementId: current.settlement.id,
+			},
+			seeded.options,
+		),
+	);
+}
+
+describe("final-settlement initiate", () => {
+	it("pins compensation from the accepted handoff instead of caller input", async () => {
 		const seeded = await seedOpenPeriod();
-		const initiated = unwrap(
+		const current = await initiated(seeded);
+
+		expect(current.status).toBe("initiated");
+		expect(current.compensationSnapshot.baseCompensation).toBe("3100");
+		expect(current.compensationSnapshot.currencyCode).toBe("USD");
+		expect(current.compensationSnapshot.employmentStatus).toBe("notice");
+		expect(current.compensationSnapshot.effectiveDate).toBe(TERMINATION_ON);
+		expect(current.compensationSnapshot.sourceVersion).toEqual({
+			compensationVersion: 1,
+		});
+		expect(current.compensationSnapshotHash).toMatch(/^[0-9a-f]{64}$/);
+		// The HR-delivered balance is carried verbatim, never derived by payroll.
+		expect(current.facts.leaveBalanceDays).toBe("2");
+		expect(current.totals).toBeNull();
+		expect(current.statutoryEvidence).toBeNull();
+		// First test in the file absorbs cold module initialization.
+	}, 30_000);
+
+	it("refuses an employee with no HR termination fact", async () => {
+		const seeded = await seedOpenPeriod({
+			handoff: terminationHandoff({ employmentStatus: "active" }),
+		});
+		const result = await initiateFinalSettlement(
+			initiateInput(seeded),
+			seeded.options,
+		);
+
+		expect(result.ok).toBe(false);
+		if (!result.ok) {
+			expect(result.code).toBe("CONFLICT");
+			expect(result.message).toContain("no HR termination fact");
+		}
+	});
+
+	it("refuses when no approved handoff covers the termination date", async () => {
+		const seeded = await seedOpenPeriod();
+		const result = await initiateFinalSettlement(
+			initiateInput(seeded, { terminationEffectiveOn: "2025-01-20" }),
+			seeded.options,
+		);
+
+		expect(result.ok).toBe(false);
+		if (!result.ok) {
+			expect(result.code).toBe("NOT_FOUND");
+		}
+	});
+
+	it("returns the same settlement for matching initiate idempotency", async () => {
+		const seeded = await seedOpenPeriod();
+		const first = await initiated(seeded);
+		const second = unwrap(
 			await initiateFinalSettlement(initiateInput(seeded), seeded.options),
 		);
-		expect(initiated.status).toBe("initiated");
-		expect(initiated.facts.leaveBalanceDays).toBe("2");
 
-		const calculated = unwrap(
-			await calculateFinalSettlement(
-				{
-					...context(CALCULATOR_ID),
-					expectedVersion: initiated.version,
-					settlementId: initiated.id,
-				},
-				seeded.options,
-			),
+		expect(second.id).toBe(first.id);
+		expect(second.version).toBe(first.version);
+	});
+
+	it("fails with CONFLICT when the same key carries a changed payload", async () => {
+		const seeded = await seedOpenPeriod();
+		await initiated(seeded);
+		const conflicting = await initiateFinalSettlement(
+			initiateInput(seeded, { leaveBalanceDays: "5" }),
+			seeded.options,
 		);
-		expect(calculated.settlement.status).toBe("calculated");
-		expect(calculated.settlement.totals).toEqual({
-			employeeStatutory: "100",
-			employerStatutory: "50",
-			gross: "2200",
-			net: "2050",
-			recoveries: "50",
-		});
-		expect(calculated.lines.map((line) => line.kind)).toEqual([
+
+		expect(conflicting.ok).toBe(false);
+		if (!conflicting.ok) {
+			expect(conflicting.code).toBe("CONFLICT");
+		}
+	});
+});
+
+describe("final-settlement calculate", () => {
+	it("prices pro-ration, delivered leave encashment, and calculator statutory", async () => {
+		const seeded = await seedOpenPeriod();
+		const current = await calculated(seeded);
+
+		expect(current.settlement.status).toBe("calculated");
+		expect(current.lines.map((line) => line.kind)).toEqual([
 			"prorated_base",
 			"leave_encashment",
 			"notice_pay",
@@ -175,61 +414,337 @@ describe("final-settlement", () => {
 			"employee_statutory",
 			"employer_statutory",
 		]);
-		expect(calculated.lines[0]?.amount).toBe("1500");
-		expect(calculated.lines[1]?.amount).toBe("200");
+		// 3100 over 31 period days = 100/day; 15 worked days (Jan 1-15 inclusive).
+		expect(current.lines[0]?.amount).toBe("1500");
+		// 2 HR-delivered balance days at the same pinned daily rate.
+		expect(current.lines[1]?.amount).toBe("200");
+		// gross 2200 at synth.v1 employee 5% / employer 10%.
+		expect(current.lines[5]?.amount).toBe("110");
+		expect(current.lines[6]?.amount).toBe("220");
+		expect(current.settlement.totals).toEqual({
+			employeeStatutory: "110",
+			employerStatutory: "220",
+			gross: "2200",
+			net: "2040",
+			recoveries: "50",
+		});
+		expect(current.settlement.statutoryEvidence).toEqual([
+			{
+				baseAmount: "2200",
+				calculatorId: "synth.v1",
+				employeeAmount: "110",
+				employerAmount: "220",
+				jurisdictionCode: "MY",
+				ruleCode: "SOC",
+				ruleVersion: "v1",
+			},
+		]);
+	});
 
-		const sameActor = await finalizeFinalSettlement(
+	it("prices from the pinned snapshot after a live compensation change", async () => {
+		const seeded = await seedOpenPeriod();
+		const current = await initiated(seeded);
+
+		// HR doubles compensation after the settlement was initiated.
+		await supersedeCompensation(seeded, "6200");
+
+		const result = unwrap(
+			await calculateFinalSettlement(
+				{
+					...context(CALCULATOR_ID),
+					expectedVersion: current.version,
+					settlementId: current.id,
+				},
+				seeded.options,
+			),
+		);
+
+		expect(result.settlement.compensationSnapshot.baseCompensation).toBe("3100");
+		expect(result.lines[0]?.amount).toBe("1500");
+		expect(result.lines[1]?.amount).toBe("200");
+		expect(result.settlement.totals?.gross).toBe("2200");
+	});
+
+	it("refuses a stale expected version", async () => {
+		const seeded = await seedOpenPeriod();
+		const current = await initiated(seeded);
+		const result = await calculateFinalSettlement(
 			{
 				...context(CALCULATOR_ID),
-				expectedVersion: calculated.settlement.version,
-				settlementId: initiated.id,
+				expectedVersion: current.version + 1,
+				settlementId: current.id,
 			},
 			seeded.options,
 		);
-		expect(sameActor.ok).toBe(false);
-		if (!sameActor.ok) {
-			expect(sameActor.message).toContain("Segregation of duties");
+
+		expect(result.ok).toBe(false);
+		if (!result.ok) {
+			expect(result.code).toBe("CONFLICT");
 		}
-
-		const finalized = unwrap(
-			await finalizeFinalSettlement(
-				{
-					...context(FINALIZER_ID),
-					expectedVersion: calculated.settlement.version,
-					settlementId: initiated.id,
-				},
-				seeded.options,
-			),
-		);
-		expect(finalized.status).toBe("finalized");
-
-		const stated = unwrap(
-			await issueFinalSettlementStatement(
-				{
-					...context(REVIEWER_ID),
-					expectedVersion: finalized.version,
-					settlementId: initiated.id,
-				},
-				seeded.options,
-			),
-		);
-		expect(stated.settlement.status).toBe("stated");
-		expect(stated.settlement.statement?.totals.net).toBe("2050");
-		expect(stated.settlement.statement?.terminationId).toBe("term-final-001");
 	});
 
-	it("returns the same settlement for matching initiate idempotency", async () => {
+	it("hides a settlement belonging to another organization", async () => {
 		const seeded = await seedOpenPeriod();
-		const first = unwrap(
-			await initiateFinalSettlement(initiateInput(seeded), seeded.options),
+		const current = await initiated(seeded);
+		const result = await calculateFinalSettlement(
+			{
+				...context(CALCULATOR_ID),
+				organizationId: "org-other-tenant",
+				expectedVersion: current.version,
+				settlementId: current.id,
+			},
+			seeded.options,
 		);
-		const second = unwrap(
-			await initiateFinalSettlement(initiateInput(seeded), seeded.options),
+
+		expect(result.ok).toBe(false);
+		if (!result.ok) {
+			expect(result.code).toBe("NOT_FOUND");
+			expect(result.message).not.toContain(EMPLOYEE_ID);
+		}
+	});
+});
+
+describe("final-settlement statutory treatment is fail-closed", () => {
+	it("refuses when the configured calculator is not production approved", async () => {
+		const seeded = await seedOpenPeriod({
+			statutory: createRegistryPayrollStatutory(),
+		});
+		const current = await initiated(seeded);
+		const result = await calculateFinalSettlement(
+			{
+				...context(CALCULATOR_ID),
+				expectedVersion: current.version,
+				settlementId: current.id,
+			},
+			seeded.options,
 		);
-		expect(second.id).toBe(first.id);
+
+		expect(result.ok).toBe(false);
+		if (!result.ok) {
+			expect(result.code).toBe("CONFLICT");
+			expect(result.message).toContain("not approved for production");
+		}
 	});
 
-	it("creates a C6 clearance case when the origin run is already calculated", async () => {
+	it("refuses when no statutory capability is wired at all", async () => {
+		const seeded = await seedOpenPeriod();
+		const current = await initiated(seeded);
+		const { statutory: _statutory, ...withoutStatutory } = seeded.options;
+		const result = await calculateFinalSettlement(
+			{
+				...context(CALCULATOR_ID),
+				expectedVersion: current.version,
+				settlementId: current.id,
+			},
+			withoutStatutory,
+		);
+
+		expect(result.ok).toBe(false);
+		if (!result.ok) {
+			expect(result.code).toBe("CONFLICT");
+			expect(result.message).toContain("not approved for production");
+		}
+	});
+});
+
+describe("final-settlement finalize", () => {
+	it("refuses the calculating actor (C9 segregation of duties)", async () => {
+		const seeded = await seedOpenPeriod();
+		const current = await calculated(seeded);
+		const result = await finalizeFinalSettlement(
+			{
+				...context(CALCULATOR_ID),
+				expectedVersion: current.settlement.version,
+				settlementId: current.settlement.id,
+			},
+			seeded.options,
+		);
+
+		expect(result.ok).toBe(false);
+		if (!result.ok) {
+			expect(result.code).toBe("CONFLICT");
+			expect(result.message).toContain("Segregation of duties");
+		}
+	});
+
+	it("finalizes for a second actor", async () => {
+		const seeded = await seedOpenPeriod();
+		const current = await finalized(seeded);
+
+		expect(current.status).toBe("finalized");
+		expect(current.finalizedBy).toBe(FINALIZER_ID);
+	});
+
+	it("refuses to finalize a settlement that was never calculated", async () => {
+		const seeded = await seedOpenPeriod();
+		const current = await initiated(seeded);
+		const result = await finalizeFinalSettlement(
+			{
+				...context(FINALIZER_ID),
+				expectedVersion: current.version,
+				settlementId: current.id,
+			},
+			seeded.options,
+		);
+
+		expect(result.ok).toBe(false);
+		if (!result.ok) {
+			expect(result.code).toBe("CONFLICT");
+			expect(result.message).toContain("has not been calculated");
+		}
+	});
+});
+
+describe("final-settlement statement", () => {
+	it("discloses the subject's own statement under payroll.payslip.read-own", async () => {
+		const seeded = await seedOpenPeriod();
+		const current = await finalized(seeded);
+		const statement = unwrap(
+			await getOwnFinalSettlementStatement(
+				{
+					actorUserId: SUBJECT_ACTOR_ID,
+					organizationId: ORGANIZATION_ID,
+					settlementId: current.id,
+				},
+				seeded.options,
+			),
+		);
+
+		expect(statement.employeeId).toBe(EMPLOYEE_ID);
+		expect(statement.status).toBe("finalized");
+		expect(statement.totals.net).toBe("2040");
+		expect(statement.terminationId).toBe("term-final-001");
+		expect(statement.lines).toHaveLength(7);
+		expect(statement.contentHash).toMatch(/^[0-9a-f]{64}$/);
+	});
+
+	it("refuses read-own for another subject's settlement", async () => {
+		const seeded = await seedOpenPeriod();
+		const current = await finalized(seeded);
+		const result = await getOwnFinalSettlementStatement(
+			{
+				actorUserId: OTHER_SUBJECT_ACTOR_ID,
+				organizationId: ORGANIZATION_ID,
+				settlementId: current.id,
+			},
+			seeded.options,
+		);
+
+		expect(result.ok).toBe(false);
+		if (!result.ok) {
+			expect(result.code).toBe("NOT_FOUND");
+			expect(result.message).not.toContain(EMPLOYEE_ID);
+		}
+	});
+
+	it("refuses read-own without payroll.payslip.read-own", async () => {
+		const seeded = await seedOpenPeriod();
+		const current = await finalized(seeded);
+		const result = await getOwnFinalSettlementStatement(
+			{
+				actorUserId: SUBJECT_ACTOR_ID,
+				organizationId: ORGANIZATION_ID,
+				settlementId: current.id,
+			},
+			{
+				...seeded.options,
+				authorization: authorization(
+					PERMISSIONS.filter(
+						(permission) => permission !== PAYROLL_PERMISSION_PAYSLIP_READ_OWN,
+					),
+				),
+			},
+		);
+
+		expect(result.ok).toBe(false);
+		if (!result.ok) {
+			expect(result.code).toBe("FORBIDDEN");
+		}
+	});
+
+	it("discloses any subject under payroll.payslip.read-all", async () => {
+		const seeded = await seedOpenPeriod();
+		const current = await finalized(seeded);
+		const statement = unwrap(
+			await getFinalSettlementStatement(
+				{
+					actorUserId: READER_ID,
+					organizationId: ORGANIZATION_ID,
+					settlementId: current.id,
+				},
+				seeded.options,
+			),
+		);
+
+		expect(statement.employeeId).toBe(EMPLOYEE_ID);
+		expect(statement.settlementId).toBe(current.id);
+	});
+
+	it("refuses read-all without payroll.payslip.read-all", async () => {
+		const seeded = await seedOpenPeriod();
+		const current = await finalized(seeded);
+		const result = await getFinalSettlementStatement(
+			{
+				actorUserId: READER_ID,
+				organizationId: ORGANIZATION_ID,
+				settlementId: current.id,
+			},
+			{
+				...seeded.options,
+				authorization: authorization(
+					PERMISSIONS.filter(
+						(permission) => permission !== PAYROLL_PERMISSION_PAYSLIP_READ_ALL,
+					),
+				),
+			},
+		);
+
+		expect(result.ok).toBe(false);
+		if (!result.ok) {
+			expect(result.code).toBe("FORBIDDEN");
+		}
+	});
+
+	it("refuses a statement before finalization", async () => {
+		const seeded = await seedOpenPeriod();
+		const current = await calculated(seeded);
+		const result = await getFinalSettlementStatement(
+			{
+				actorUserId: READER_ID,
+				organizationId: ORGANIZATION_ID,
+				settlementId: current.settlement.id,
+			},
+			seeded.options,
+		);
+
+		expect(result.ok).toBe(false);
+		if (!result.ok) {
+			expect(result.code).toBe("CONFLICT");
+			expect(result.message).toContain("only after finalization");
+		}
+	});
+
+	it("hides a statement belonging to another organization", async () => {
+		const seeded = await seedOpenPeriod();
+		const current = await finalized(seeded);
+		const result = await getFinalSettlementStatement(
+			{
+				actorUserId: READER_ID,
+				organizationId: "org-other-tenant",
+				settlementId: current.id,
+			},
+			seeded.options,
+		);
+
+		expect(result.ok).toBe(false);
+		if (!result.ok) {
+			expect(result.code).toBe("NOT_FOUND");
+		}
+	});
+});
+
+describe("final-settlement C6 human clearance", () => {
+	it("requires clearance when the origin run is already calculating", async () => {
 		const seeded = await seedOpenPeriod();
 		const run = unwrap(
 			await createPayrollRun(
@@ -258,25 +773,20 @@ describe("final-settlement", () => {
 			),
 		);
 
-		const initiated = unwrap(
+		const current = unwrap(
 			await initiateFinalSettlement(
-				{
-					...initiateInput(seeded),
-					originRunId: run.id as PayrollRunId,
-				},
+				initiateInput(seeded, { originRunId: run.id as PayrollRunId }),
 				seeded.options,
 			),
 		);
-		expect(initiated.status).toBe("clearance_required");
-		expect(initiated.clearanceRequiredReason).toContain(
-			"origin run was locked",
-		);
+		expect(current.status).toBe("clearance_required");
+		expect(current.clearanceRequiredReason).toContain("origin run was locked");
 
 		const blocked = await calculateFinalSettlement(
 			{
 				...context(CALCULATOR_ID),
-				expectedVersion: initiated.version,
-				settlementId: initiated.id,
+				expectedVersion: current.version,
+				settlementId: current.id,
 			},
 			seeded.options,
 		);
@@ -285,19 +795,21 @@ describe("final-settlement", () => {
 			expect(blocked.message).toContain("Human clearance is required");
 		}
 
-		const calculated = unwrap(
+		const cleared = unwrap(
 			await calculateFinalSettlement(
 				{
 					...context(CALCULATOR_ID),
 					clearanceReason: "Payroll ops cleared mid-period termination",
-					expectedVersion: initiated.version,
-					settlementId: initiated.id,
+					expectedVersion: current.version,
+					settlementId: current.id,
 				},
 				seeded.options,
 			),
 		);
-		expect(calculated.settlement.status).toBe("calculated");
-		expect(calculated.settlement.clearanceReason).toContain("cleared");
+		expect(cleared.settlement.status).toBe("calculated");
+		expect(cleared.settlement.clearanceReason).toContain("cleared");
+
+		// The locked origin run is never mutated by the settlement.
 		const origin = unwrap(
 			await seeded.store.getRun({
 				organizationId: ORGANIZATION_ID,
@@ -308,7 +820,7 @@ describe("final-settlement", () => {
 		expect(origin?.version).toBe(calculating.version);
 	});
 
-	it("creates a C6 clearance case when the period is already closed", async () => {
+	it("requires clearance when the period is already closed", async () => {
 		const seeded = await seedOpenPeriod();
 		const period = unwrap(
 			await seeded.store.getPeriod({
@@ -330,10 +842,8 @@ describe("final-settlement", () => {
 			),
 		);
 
-		const initiated = unwrap(
-			await initiateFinalSettlement(initiateInput(seeded), seeded.options),
-		);
-		expect(initiated.status).toBe("clearance_required");
-		expect(initiated.clearanceRequiredReason).toContain("period was closed");
+		const current = await initiated(seeded);
+		expect(current.status).toBe("clearance_required");
+		expect(current.clearanceRequiredReason).toContain("period was closed");
 	});
 });
