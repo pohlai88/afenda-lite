@@ -262,7 +262,19 @@ describe("payroll-jobs", () => {
 				chunkSize: 1,
 				idempotencyKey: "job-dlq-1",
 			},
-			options,
+			{
+				...options,
+				// The retry loop below drives a fully simulated clock (attempts
+				// stepped in 10-minute increments starting at 2026-08-05T00:00Z).
+				// The initial work item's nextAttemptAt must be created on that
+				// same simulated timeline, not the real wall clock, or the first
+				// claim's fixed "now" (midnight) can be earlier than real "now"
+				// and the item is never due.
+				clock: {
+					now: () => new Date(Date.UTC(2026, 7, 5, 0, 0)),
+					today: () => "2026-08-05",
+				},
+			},
 		);
 		expect(enqueued.ok).toBe(true);
 		if (!enqueued.ok) {
@@ -291,7 +303,8 @@ describe("payroll-jobs", () => {
 			if (!claimed.ok) {
 				return;
 			}
-			await executePayrollJobWork(
+			expect(claimed.data).toHaveLength(1);
+			const executed = await executePayrollJobWork(
 				{
 					organizationId: ORGANIZATION_ID,
 					actorUserId: ACTOR_ID,
@@ -302,11 +315,12 @@ describe("payroll-jobs", () => {
 				{
 					...options,
 					clock: {
-						now: () => new Date(Date.UTC(2026, 7, 5, 0, attempt * 10, 1)),
+						now: () => new Date(Date.UTC(2026, 7, 5, 0, attempt * 10, 0, 500)),
 						today: () => "2026-08-05",
 					},
 				},
 			);
+			expect(executed.ok).toBe(true);
 		}
 
 		const deadLetters = await listPayrollDeadLetters(

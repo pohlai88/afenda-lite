@@ -421,7 +421,7 @@ export function executePayrollJobWork(
 				currentWork.status !== "processing" ||
 				currentWork.leaseOwner !== data.workerId ||
 				currentWork.leaseExpiresAt === null ||
-				currentWork.leaseExpiresAt <= now
+				currentWork.leaseExpiresAt < now
 			) {
 				return errorResult.fail("CONFLICT", {
 					publicMessage: "The request conflicts with current state",
@@ -467,8 +467,8 @@ export function executePayrollJobWork(
 					attemptCount,
 					currentJob,
 					currentWork,
-					errorCode: executed.error.code,
-					errorMessage: executed.error.publicMessage,
+					errorCode: executed.code,
+					errorMessage: executed.message,
 					now,
 					organizationId: data.organizationId,
 					retryDelayMs: payrollJobRetryDelayMs(policy, attemptCount),
