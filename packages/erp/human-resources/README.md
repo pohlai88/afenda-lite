@@ -31,6 +31,47 @@ Contract evidence fixtures:
 | [`consumer-inventory.fixture.json`](./__tests__/fixtures/consumer-inventory.fixture.json) | Consumer graph |
 | [`architecture-debt.fixture.json`](./__tests__/fixtures/architecture-debt.fixture.json) | Reporting-only containment baseline (targets remain zero; not an allowlist) |
 
+### Fixture breaking-change policy
+
+Any diff to [`public-contract.fixture.json`](./__tests__/fixtures/public-contract.fixture.json)
+is a breaking-change-review event, not a routine edit ([bridging D7 / Phase E](../../../docs/erp/hr-payroll-bridging.md#d7--hr-side-gaps-verified-2026-08-05-several-rows-already-closed)):
+
+1. **Regenerate, never hand-edit.** The fixture is a projection of the live
+   TypeScript AST, produced by `buildPublicContract` +
+   `buildPublicContractFixture`
+   (`__tests__/helpers/public-contract.ts`) and asserted byte-for-byte in
+   [`public-contract-freeze.test.ts`](./__tests__/public-contract-freeze.test.ts).
+   Run the package test suite, take the value the test computed from source
+   (`buildPublicContractFixture(contract)`), and write that back to the
+   fixture file — never edit the JSON by hand.
+2. **Consumer-impact statement in the same PR.** Cross-check the diff
+   against every row in
+   [`consumer-inventory.fixture.json`](./__tests__/fixtures/consumer-inventory.fixture.json)
+   (built by the equivalent serializer in
+   `__tests__/helpers/consumer-inventory.ts`) whose `symbol` or `entrypoint`
+   touches the changed surface, and state in the PR description what each
+   affected consumer does as a result. A diff with no consumer impact still
+   states that explicitly (e.g. "no consumer references the removed
+   internal-only symbol").
+3. **Classify the diff, semver-style:**
+   - **Additive** (new exported symbol, new optional field, widened
+     acceptance) → minor, allowed on its own.
+   - **Removed or renamed** export, narrowed acceptance, or a
+     `signature-mismatch` / `missing-symbol` / `symbol-owner-mismatch` class
+     diff (the same codes `comparePublicContracts` already detects) →
+     breaking. A breaking diff requires every named consumer from step 2 to
+     be updated **in the same commit** — per this repository's one-cutover
+     rule (AGENTS.md, *semantic programming*: "one final cutover... no
+     v1/v2 consumer stacks, deprecated facades, or scheduled cleanup").
+     Splitting a breaking fixture change from its consumer updates across
+     commits or PRs is not permitted.
+4. The roadmap already states the removal-specific corollary of this rule:
+   "a later public-contract review may remove obsolete exports only through
+   an explicitly approved migration that names every affected consumer and
+   deletes the superseded surface once"
+   ([`development-roadmap.md`](./docs/development-roadmap.md)). This section
+   is the general policy that statement is an instance of.
+
 ## Requires
 
 - Node `24.x` | pnpm `>=10.33.4` (root `package.json` engines)
@@ -158,6 +199,111 @@ idempotency (`deliveryId` + payload hash — bridging C1).
 
 Production HR source does not import `@afenda/payroll` and never calculates
 gross-to-net, statutory deductions, net pay, or payslips.
+
+### Handoff contract: cut-off and termination
+
+**Cut-off semantics ([bridging C3](../../../docs/erp/hr-payroll-bridging.md#c3--period-freeze)):**
+
+- `assembleApprovedPayrollHandoff` accepts `effectiveDate` plus an optional
+  `periodStart`/`periodEnd` pair
+  ([`approved-payroll-handoff.ts`](./src/features/payroll-handoff/approved-payroll-handoff.ts)),
+  but that window is used only to discover which approved leave and time
+  facts fall inside it — it is **not** stamped as a binding payroll period
+  identity. The assembled `ApprovedPayrollHandoff` carries no `periodId`.
+- Payroll's ingest command accepts an independent `periodStart`/`periodEnd`
+  pair that defaults to `null`
+  (`ingestApprovedPayrollHandoffInputSchema`,
+  `packages/erp/payroll/src/features/workforce-ingress/ingest.schema.ts:10-11`).
+  The production producer
+  (`apps/web/modules/platform/domain/human-resources-payroll-delivery.ts`)
+  does not populate them, so every accepted handoff row in production today
+  is sealed with `period_start = NULL` / `period_end = NULL`. Delivery
+  identity and supersession are keyed on `(organizationId, employeeId,
+  effectiveDate, periodStart, periodEnd)` — with the last two both null in
+  practice, ordering reduces to `effectiveDate` plus the `sourceVersion`
+  axes (bridging C2).
+- **Enforced today:** `acceptWorkforceHandoff`
+  (`accepted-handoff.drizzle.ts` / `accepted-handoff.memory.ts`) performs no
+  check against payroll period status — a handoff is accepted at any time
+  regardless of whether any payroll period is open or closed. The only place
+  period status gates anything is `createPayrollRun`, which requires
+  `period.data.status === "open"`
+  (`packages/erp/payroll/src/features/payroll-runs/payroll-run.ts:40`).
+  `payroll_period.status` is a two-value enum, `'open' | 'closed'`
+  (`payroll_period_status_check`,
+  `packages/data-plane/db/src/schema/payroll.ts:149-150`) — there is no
+  `inputs_locked` period state in the schema. A payroll **run** separately
+  moves through `draft → calculating → calculated → failed → finalized →
+  reversed`; that run-status lifecycle is also not consulted by ingest.
+  Also enforced today: nothing in Payroll's calculation pipeline currently
+  reads the `payroll_accepted_handoff` ledger — production calculators pull
+  employee input through an injectable `PayrollWorkforceInputPort`
+  (`packages/erp/payroll/src/features/calculation/production-run-calculator.ts`),
+  and production composition wires no workforce port (bridging B1). A
+  handoff accepted by `ingestApprovedPayrollHandoff` is durably sealed and
+  supersession-ordered, but nothing downstream currently consumes it to
+  compute a run.
+- **What a late approval does today:** because ingest never checks period or
+  run status, a correction arriving after a period would-be "lock" point is
+  accepted like any other handoff — subject only to the existing
+  hash-conflict reject (bridging C1) and stale-revision reject (bridging
+  C2) — with no period-cutoff sensitivity, no `deferred_to_next_period`
+  response, and no automatic payroll exception. The `deferred_to_next_period`
+  member of `HandoffAcceptance` (bridging C4) does not exist in code; the
+  ingest command's actual return type is the generic
+  `Result<AcceptedPayrollHandoff>`.
+- **Target contract, not yet built (bridging C3 / D3):** handoffs bind to the
+  `open` period; once a period reaches `inputs_locked`, an incoming
+  correction is queued as a next-period retro item (`payroll/retro-pay`,
+  bridging D3) and never mutates the current run. That target requires the
+  `inputs_locked` period state, a period-lock check in
+  `acceptWorkforceHandoff`, and the retro-pay feature — none of which exist
+  yet.
+
+**Mid-period termination ([bridging C6](../../../docs/erp/hr-payroll-bridging.md#c6--termination-is-a-fact-not-a-recalculation)):**
+
+- Offboarding records a payroll-handoff readiness fact per case:
+  `hr_offboarding_payroll_handoff` — `id`, `organizationId`,
+  `offboardingCaseId` (FK `hr_offboarding_case`, unique per org+case),
+  `employmentId` (FK `hr_employment`), `status` (`pending` \| `ready`),
+  `readyOn` (nullable date), `summary` (nullable text), plus the standard
+  version/audit columns
+  (`packages/data-plane/db/src/schema/human-resources.ts:2044-2083`). It is
+  written through `recordOffboardingPayrollHandoff`
+  (`src/features/employment-lifecycle/offboarding.ts`) as one checklist item
+  alongside clearance and access-revocation — it is a **readiness marker
+  inside the offboarding case**, not itself the payroll fact push.
+- The actual termination signal Payroll receives is the employment status on
+  the ordinary handoff: `ApprovedPayrollHandoff.employmentStatus`, resolved
+  from HR's employment-status history as of the handoff's `effectiveDate`
+  and carried by `mapApprovedPayrollHandoff`
+  (`src/features/payroll-handoff/map-approved-payroll-handoff.ts`). A
+  termination reaches Payroll through the same `queuePayrollDelivery` →
+  ingest transport as any other handoff — there is no separate termination
+  event or endpoint.
+- **Enforced today:** none of C6's exception behavior. Because ingest
+  performs no period/run-status check (see cut-off semantics above), a
+  termination handoff arriving after a period would-be "lock" point is
+  accepted like any other delivery — no payroll exception is raised
+  automatically, and nothing currently calls `recordPayrollException` from
+  the termination path.
+- **The landing zone exists structurally, unwired:** Payroll's exception
+  mechanism is real and already gates finalization —
+  `recordPayrollException` / `listPayrollExceptionsForRun`
+  (`packages/erp/payroll/src/features/payroll-runs/exception.ts`), and
+  `finalizePayrollRun` rejects with "Blocking payroll exceptions prevent
+  finalization" when `hasBlockingPayrollExceptions` is true
+  (`packages/erp/payroll/src/features/payroll-runs/finalization.ts`). This
+  is the correct target landing zone for C6: a late termination should raise
+  a blocking exception on the affected run rather than mutate it. No code
+  path currently connects HR's termination/offboarding facts to
+  `recordPayrollException` — an operator would have to record the exception
+  by hand today.
+- **Honest caveat:** the rule "never silently mutates a calculated run" is
+  not violated today, but only because calculation does not yet consume the
+  accepted-handoff ledger at all (see cut-off semantics above) — this is an
+  accident of missing wiring, not a designed safeguard, and must not be read
+  as C6 being closed.
 
 ### Product composition
 
