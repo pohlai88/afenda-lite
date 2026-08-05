@@ -1,5 +1,10 @@
 import { errorResult } from "@afenda/errors";
-import type { ApprovedPayrollHandoff } from "@afenda/events/schemas";
+import {
+	type ApprovedPayrollHandoff,
+	PAYROLL_FINAL_SETTLEMENT_CALCULATED_EVENT,
+	PAYROLL_FINAL_SETTLEMENT_FINALIZED_EVENT,
+	PAYROLL_FINAL_SETTLEMENT_INITIATED_EVENT,
+} from "@afenda/events/schemas";
 import { describe, expect, it } from "vitest";
 
 import { createRegistryPayrollStatutory } from "../src/facade/system-capabilities";
@@ -638,6 +643,39 @@ describe("final-settlement finalize", () => {
 
 		expect(current.status).toBe("finalized");
 		expect(current.finalizedBy).toBe(FINALIZER_ID);
+		expect(seeded.options.ports.outbox.calls.map((call) => call.type)).toEqual(
+			expect.arrayContaining([
+				PAYROLL_FINAL_SETTLEMENT_INITIATED_EVENT,
+				PAYROLL_FINAL_SETTLEMENT_CALCULATED_EVENT,
+				PAYROLL_FINAL_SETTLEMENT_FINALIZED_EVENT,
+			]),
+		);
+	});
+
+	it("rolls back finalize when outbox append fails", async () => {
+		const seeded = await seedOpenPeriod();
+		const current = await calculated(seeded);
+		const failingPorts = createMemoryMutationPorts({ outboxFailAfter: 0 });
+		const result = await finalizeFinalSettlement(
+			{
+				...context(FINALIZER_ID),
+				expectedVersion: current.settlement.version,
+				settlementId: current.settlement.id,
+			},
+			{ ...seeded.options, ports: failingPorts },
+		);
+
+		expect(result.ok).toBe(false);
+		expect(failingPorts.audit.calls).toHaveLength(0);
+		expect(failingPorts.outbox.calls).toHaveLength(0);
+		const persisted = await seeded.store.getFinalSettlement({
+			organizationId: ORGANIZATION_ID,
+			settlementId: current.settlement.id,
+		});
+		expect(persisted.ok).toBe(true);
+		if (persisted.ok) {
+			expect(persisted.data?.status).toBe("calculated");
+		}
 	});
 
 	it("refuses to finalize a settlement that was never calculated", async () => {

@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import { payrollModuleManifest } from "../src/composition/module.manifest";
+import { PAYROLL_FINAL_SETTLEMENT_LIFECYCLE_EVENTS } from "../src/features/final-settlement/settlement-lifecycle-events";
 import { payrollRunEventsForStatus } from "../src/features/payroll-runs/lifecycle-events";
 import {
 	PAYROLL_EMISSION_REGISTRY,
@@ -49,6 +50,7 @@ describe("payrollModuleManifest", () => {
 			...payrollRunEventsForStatus("calculated"),
 			...payrollRunEventsForStatus("finalized"),
 			...payrollRunEventsForStatus("reversed"),
+			...PAYROLL_FINAL_SETTLEMENT_LIFECYCLE_EVENTS,
 		]);
 		expect([...lifecycleEvents].toSorted()).toEqual(
 			[...registryEvents].toSorted(),

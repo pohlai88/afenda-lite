@@ -1,6 +1,7 @@
 // biome-ignore-all lint/performance/noAwaitInLoops: Payment and posting intake runs sequentially with fail-fast semantics.
-import { audit } from "@afenda/audit";
+
 import { postFinancialSourceEvent } from "@afenda/accounting";
+import { audit } from "@afenda/audit";
 import {
 	type CanonicalErrorCode,
 	errorIngress,
@@ -11,6 +12,9 @@ import {
 import type { DomainEvent, DomainEventHandlerMap } from "@afenda/events";
 import {
 	PAYROLL_EVENT_IDS,
+	PAYROLL_FINAL_SETTLEMENT_CALCULATED_EVENT,
+	PAYROLL_FINAL_SETTLEMENT_FINALIZED_EVENT,
+	PAYROLL_FINAL_SETTLEMENT_INITIATED_EVENT,
 	PAYROLL_PAYMENT_CORRECTION_REQUESTED_EVENT,
 	PAYROLL_PAYMENT_REQUESTED_EVENT,
 	PAYROLL_PAYSLIP_PUBLISHED_EVENT,
@@ -20,8 +24,8 @@ import {
 	PAYROLL_RUN_FINALIZED_EVENT,
 	PAYROLL_RUN_REVERSED_EVENT,
 	PAYROLL_RUN_STARTED_EVENT,
-	type PayrollEventType,
 	PayrollEventSchemas,
+	type PayrollEventType,
 	type payrollPaymentCorrectionRequestedPayloadSchema,
 	type payrollPaymentRequestedPayloadSchema,
 	type payrollPostingCorrectionRequestedPayloadSchema,
@@ -32,18 +36,17 @@ import {
 	listPaymentAccounts,
 	listPaymentMethods,
 	listPayments,
-	reversePayment,
 	type Payment,
+	reversePayment,
 } from "@afenda/payments";
 import type { z } from "zod";
-
-import { PAYROLL_PLATFORM_EVENT_DISPATCHER_ID } from "@afenda/payroll";
 
 import { createAccountingCommandOptions } from "@/lib/erp/accounting-command-options";
 import { createPaymentsCommandOptions } from "@/lib/erp/payments-command-options";
 
-export { PAYROLL_PLATFORM_EVENT_DISPATCHER_ID };
+export { PAYROLL_PLATFORM_EVENT_DISPATCHER_ID } from "@afenda/payroll";
 
+const PAYROLL_MONEY_AMOUNT_PATTERN = /^(?:0|[1-9]\d*)(?:\.\d+)?$/;
 const PAYROLL_POSTING_RULE_FINALIZE = "PAYROLL-RUN-FINALIZE" as const;
 const PAYROLL_POSTING_RULE_REVERSE = "PAYROLL-RUN-REVERSE" as const;
 
@@ -96,7 +99,9 @@ function parseWithPayrollSchema<S extends z.ZodTypeAny>(
  * functions by the same generic key does preserve that link.
  */
 const PAYROLL_EVENT_PARSERS: {
-	[K in PayrollEventType]: (payload: unknown) => z.infer<(typeof PayrollEventSchemas)[K]>;
+	[K in PayrollEventType]: (
+		payload: unknown,
+	) => z.infer<(typeof PayrollEventSchemas)[K]>;
 } = {
 	[PAYROLL_RUN_STARTED_EVENT]: (payload) =>
 		parseWithPayrollSchema(
@@ -152,6 +157,24 @@ const PAYROLL_EVENT_PARSERS: {
 			payload,
 			`payroll.${PAYROLL_PAYSLIP_PUBLISHED_EVENT}.payload`,
 		),
+	[PAYROLL_FINAL_SETTLEMENT_INITIATED_EVENT]: (payload) =>
+		parseWithPayrollSchema(
+			PayrollEventSchemas[PAYROLL_FINAL_SETTLEMENT_INITIATED_EVENT],
+			payload,
+			`payroll.${PAYROLL_FINAL_SETTLEMENT_INITIATED_EVENT}.payload`,
+		),
+	[PAYROLL_FINAL_SETTLEMENT_CALCULATED_EVENT]: (payload) =>
+		parseWithPayrollSchema(
+			PayrollEventSchemas[PAYROLL_FINAL_SETTLEMENT_CALCULATED_EVENT],
+			payload,
+			`payroll.${PAYROLL_FINAL_SETTLEMENT_CALCULATED_EVENT}.payload`,
+		),
+	[PAYROLL_FINAL_SETTLEMENT_FINALIZED_EVENT]: (payload) =>
+		parseWithPayrollSchema(
+			PayrollEventSchemas[PAYROLL_FINAL_SETTLEMENT_FINALIZED_EVENT],
+			payload,
+			`payroll.${PAYROLL_FINAL_SETTLEMENT_FINALIZED_EVENT}.payload`,
+		),
 };
 
 function parsePayrollEventPayload<T extends PayrollEventType>(
@@ -171,12 +194,15 @@ function assertPayrollEventEnvelope(
 	) {
 		throw errorIngress.code("VALIDATION_ERROR", {
 			operation: "payroll.event.envelope",
-			publicMessage: "Payroll event envelope does not match its payload identifiers.",
+			publicMessage:
+				"Payroll event envelope does not match its payload identifiers.",
 		});
 	}
 }
 
-function throwResult<C extends CanonicalErrorCode>(result: ResultFailure<C>): never {
+function throwResult<C extends CanonicalErrorCode>(
+	result: ResultFailure<C>,
+): never {
 	throw errorWire.deserialize(errorWire.serialize(result));
 }
 
@@ -188,7 +214,7 @@ function parseMoneyAmount(amount: string): bigint {
 	const normalized = amount.trim();
 	const negative = normalized.startsWith("-");
 	const digits = negative ? normalized.slice(1) : normalized;
-	if (!/^(?:0|[1-9]\d*)(?:\.\d+)?$/.test(digits)) {
+	if (!PAYROLL_MONEY_AMOUNT_PATTERN.test(digits)) {
 		throw errorIngress.code("VALIDATION_ERROR", {
 			operation: "payroll.money.parse",
 			publicMessage: "Invalid payroll money amount.",
@@ -211,13 +237,12 @@ function formatMoneyAmount(value: bigint, scale = 2): string {
 }
 
 function addMoneyAmounts(left: string, right: string): string {
-	const leftScale = left.includes(".") ? left.split(".")[1]?.length ?? 0 : 0;
+	const leftScale = left.includes(".") ? (left.split(".")[1]?.length ?? 0) : 0;
 	const rightScale = right.includes(".")
-		? right.split(".")[1]?.length ?? 0
+		? (right.split(".")[1]?.length ?? 0)
 		: 0;
 	const scale = Math.max(leftScale, rightScale);
-	const sum =
-		parseMoneyAmount(left) + parseMoneyAmount(right);
+	const sum = parseMoneyAmount(left) + parseMoneyAmount(right);
 	return formatMoneyAmount(sum, scale);
 }
 
@@ -227,7 +252,10 @@ async function recordPayrollTelemetryAudit(
 		| typeof PAYROLL_RUN_STARTED_EVENT
 		| typeof PAYROLL_RUN_CALCULATED_EVENT
 		| typeof PAYROLL_RUN_FINALIZED_EVENT
-		| typeof PAYROLL_RUN_REVERSED_EVENT,
+		| typeof PAYROLL_RUN_REVERSED_EVENT
+		| typeof PAYROLL_FINAL_SETTLEMENT_INITIATED_EVENT
+		| typeof PAYROLL_FINAL_SETTLEMENT_CALCULATED_EVENT
+		| typeof PAYROLL_FINAL_SETTLEMENT_FINALIZED_EVENT,
 ): Promise<void> {
 	const parsed = parsePayrollEventPayload(event, eventType);
 	assertPayrollEventEnvelope(event, parsed);
@@ -280,20 +308,18 @@ async function resolvePayrollDisbursementRouting(input: {
 		throwResult(methods);
 	}
 
-	const activeAccounts = accounts.data.filter((account) => account.active);
+	const activeAccounts = accounts.data.filter((entry) => entry.active);
 	const account =
-		activeAccounts.find(
-			(entry) => entry.currencyCode === input.currencyCode,
-		) ?? activeAccounts[0];
+		activeAccounts.find((entry) => entry.currencyCode === input.currencyCode) ??
+		activeAccounts[0];
 	// The canonical seeded "Bank transfer" payment method
 	// (packages/erp/payments/src/features/payment-methods/methods.operations.ts
 	// DEFAULT_PAYMENT_METHODS) uses method kind "wire"; there is no
 	// "bank-transfer" member of PaymentMethodKind, so "wire" is the real
 	// electronic-transfer disbursement mapping, not "bank-transfer".
-	const activeMethods = methods.data.filter((method) => method.active);
+	const activeMethods = methods.data.filter((entry) => entry.active);
 	const method =
-		activeMethods.find((entry) => entry.kind === "wire") ??
-		activeMethods[0];
+		activeMethods.find((entry) => entry.kind === "wire") ?? activeMethods[0];
 
 	if (account === undefined || method === undefined) {
 		throwResult(errorResult.fail("SERVICE_UNAVAILABLE"));
@@ -441,7 +467,9 @@ function aggregatePostingAmountsByCurrency(
 async function intakePayrollPosting(
 	event: DomainEvent,
 	payload: PayrollPostingRequestedPayload | PayrollPostingCorrectionPayload,
-	postingRuleCode: typeof PAYROLL_POSTING_RULE_FINALIZE | typeof PAYROLL_POSTING_RULE_REVERSE,
+	postingRuleCode:
+		| typeof PAYROLL_POSTING_RULE_FINALIZE
+		| typeof PAYROLL_POSTING_RULE_REVERSE,
 ): Promise<void> {
 	assertPayrollEventEnvelope(event, payload);
 	const grouped = aggregatePostingAmountsByCurrency(payload.lines);
@@ -483,6 +511,24 @@ async function handlePayrollPlatformEvent(event: DomainEvent): Promise<void> {
 			return;
 		case PAYROLL_RUN_REVERSED_EVENT:
 			await recordPayrollTelemetryAudit(event, PAYROLL_RUN_REVERSED_EVENT);
+			return;
+		case PAYROLL_FINAL_SETTLEMENT_INITIATED_EVENT:
+			await recordPayrollTelemetryAudit(
+				event,
+				PAYROLL_FINAL_SETTLEMENT_INITIATED_EVENT,
+			);
+			return;
+		case PAYROLL_FINAL_SETTLEMENT_CALCULATED_EVENT:
+			await recordPayrollTelemetryAudit(
+				event,
+				PAYROLL_FINAL_SETTLEMENT_CALCULATED_EVENT,
+			);
+			return;
+		case PAYROLL_FINAL_SETTLEMENT_FINALIZED_EVENT:
+			await recordPayrollTelemetryAudit(
+				event,
+				PAYROLL_FINAL_SETTLEMENT_FINALIZED_EVENT,
+			);
 			return;
 		case PAYROLL_PAYMENT_REQUESTED_EVENT:
 			await intakePayrollPayment(

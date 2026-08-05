@@ -25,7 +25,7 @@ describe("@afenda/events schemas", () => {
 		const livingTypes = Object.keys(AllEventSchemas).toSorted();
 
 		expect(new Set(livingTypes).size).toBe(livingTypes.length);
-		expect(livingTypes).toHaveLength(381);
+		expect(livingTypes).toHaveLength(384);
 		expect(livingTypes).toEqual([...livingTypes].toSorted());
 		expect(livingTypes).toEqual(
 			expect.arrayContaining([
@@ -46,6 +46,7 @@ describe("@afenda/events schemas", () => {
 				"master_data.payment_term.created.v1",
 				"payables.invoice.matched.v1",
 				"payments.payment.reversed.v1",
+				"payroll.final-settlement.finalized.v1",
 				"purchasing.order.created.v1",
 				"receivables.invoice.created.v1",
 				"receiving.receipt.created.v1",

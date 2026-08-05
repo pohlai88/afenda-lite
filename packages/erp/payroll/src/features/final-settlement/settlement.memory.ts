@@ -1,10 +1,17 @@
-import { errorResult } from "@afenda/errors";
+import { errorResult, type Result } from "@afenda/errors";
+import { events } from "@afenda/events";
 
+import type { MutationPorts } from "../../kernel/execution/ports";
+import { recordPayrollAudit as recordAudit } from "../../kernel/execution/record-audit";
 import type {
 	PayrollFinalSettlement,
 	PayrollFinalSettlementLine,
 } from "./contract";
 import type { PayrollFinalSettlementStore } from "./settlement.store";
+import {
+	buildPayrollFinalSettlementEventPayload,
+	payrollFinalSettlementEventForStatus,
+} from "./settlement-lifecycle-events";
 
 const clone = <T>(value: T): T => structuredClone(value);
 
@@ -34,6 +41,25 @@ function scoped(organizationId: string, value: string): string {
 	return `${organizationId}:${value}`;
 }
 
+function restoreSettlementSnapshot(
+	state: FinalSettlementMemoryState,
+	previous: PayrollFinalSettlement,
+	previousLines?: readonly PayrollFinalSettlementLine[],
+): void {
+	state.settlements.set(previous.id, clone(previous));
+	if (previousLines === undefined) {
+		return;
+	}
+	for (const [lineId, line] of state.lines) {
+		if (line.settlementId === previous.id) {
+			state.lines.delete(lineId);
+		}
+	}
+	for (const line of previousLines) {
+		state.lines.set(line.id, clone(line));
+	}
+}
+
 function saveSettlement(
 	state: FinalSettlementMemoryState,
 	input: { expectedVersion: number; settlement: PayrollFinalSettlement },
@@ -53,11 +79,77 @@ function saveSettlement(
 	return errorResult.ok(clone(input.settlement));
 }
 
+function recordSettlementLifecycleFacts(
+	ports: MutationPorts,
+	input: {
+		action: "CREATE" | "UPDATE";
+		actorUserId: string;
+		correlationId: string;
+		organizationId: string;
+		settlement: PayrollFinalSettlement;
+		previousStatus?: PayrollFinalSettlement["status"];
+	},
+): Promise<Result<void>> {
+	const work = async (): Promise<Result<void>> => {
+		const eventType = payrollFinalSettlementEventForStatus(
+			input.settlement.status,
+		);
+		const payload = buildPayrollFinalSettlementEventPayload({
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: input.correlationId,
+			settlementId: input.settlement.id,
+		});
+		if (
+			!events.registry.validatePayload(eventType, payload).success ||
+			events.registry.sourceModule(eventType) !== "payroll"
+		) {
+			return errorResult.fail("INTERNAL_ERROR");
+		}
+		const audit = await recordAudit(ports, {
+			action: input.action,
+			actorUserId: input.actorUserId,
+			changes:
+				input.previousStatus === undefined ||
+				input.previousStatus === input.settlement.status
+					? []
+					: [
+							{
+								field: "status",
+								oldValue: input.previousStatus,
+								newValue: input.settlement.status,
+							},
+						],
+			correlationId: input.correlationId,
+			entity: "payroll_final_settlement",
+			entityId: input.settlement.id,
+			organizationId: input.organizationId,
+		});
+		if (!audit.ok) {
+			return audit;
+		}
+		const outbox = await ports.outbox.append({
+			type: eventType,
+			organizationId: input.organizationId,
+			actorUserId: input.actorUserId,
+			correlationId: input.correlationId,
+			payload,
+		});
+		if (!outbox.ok) {
+			return outbox;
+		}
+		return errorResult.ok(undefined);
+	};
+	return ports.transaction === undefined
+		? work()
+		: ports.transaction.execute(work);
+}
+
 export function createMemoryFinalSettlementMethods(
 	state: FinalSettlementMemoryState,
 ): PayrollFinalSettlementStore {
 	return {
-		createFinalSettlement(input) {
+		async createFinalSettlement(input, ports) {
 			const key = scoped(
 				input.settlement.organizationId,
 				input.settlement.idempotencyKey,
@@ -71,16 +163,27 @@ export function createMemoryFinalSettlementMethods(
 				state.itemKeys.has(key) ||
 				state.itemKeys.has(terminationKey)
 			) {
-				return Promise.resolve(
-					errorResult.fail("CONFLICT", {
-						publicMessage: "The request conflicts with current state",
-					}),
-				);
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+				});
 			}
 			state.settlements.set(input.settlement.id, clone(input.settlement));
 			state.itemKeys.set(key, input.settlement.id);
 			state.itemKeys.set(terminationKey, input.settlement.id);
-			return Promise.resolve(errorResult.ok(clone(input.settlement)));
+			const facts = await recordSettlementLifecycleFacts(ports, {
+				action: "CREATE",
+				actorUserId: input.settlement.createdBy,
+				correlationId: input.settlement.correlationId,
+				organizationId: input.settlement.organizationId,
+				settlement: input.settlement,
+			});
+			if (!facts.ok) {
+				state.settlements.delete(input.settlement.id);
+				state.itemKeys.delete(key);
+				state.itemKeys.delete(terminationKey);
+				return facts;
+			}
+			return errorResult.ok(clone(input.settlement));
 		},
 		findFinalSettlementByIdempotencyKey(input) {
 			const settlementId = state.itemKeys.get(
@@ -115,10 +218,19 @@ export function createMemoryFinalSettlementMethods(
 				.map(clone);
 			return Promise.resolve(errorResult.ok(lines));
 		},
-		saveFinalSettlementCalculation(input) {
+		async saveFinalSettlementCalculation(input, ports) {
+			const previous = state.settlements.get(input.settlement.id);
+			if (previous === undefined) {
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+				});
+			}
+			const previousLines = [...state.lines.values()].filter(
+				(line) => line.settlementId === input.settlement.id,
+			);
 			const saved = saveSettlement(state, input);
 			if (!saved.ok) {
-				return Promise.resolve(saved);
+				return saved;
 			}
 			for (const [lineId, line] of state.lines) {
 				if (line.settlementId === input.settlement.id) {
@@ -128,10 +240,44 @@ export function createMemoryFinalSettlementMethods(
 			for (const line of input.lines) {
 				state.lines.set(line.id, clone(line));
 			}
-			return Promise.resolve(saved);
+			const facts = await recordSettlementLifecycleFacts(ports, {
+				action: "UPDATE",
+				actorUserId: input.settlement.updatedBy,
+				correlationId: input.settlement.correlationId,
+				organizationId: input.settlement.organizationId,
+				previousStatus: previous.status,
+				settlement: input.settlement,
+			});
+			if (!facts.ok) {
+				restoreSettlementSnapshot(state, previous, previousLines);
+				return facts;
+			}
+			return saved;
 		},
-		saveFinalSettlementTransition(input) {
-			return Promise.resolve(saveSettlement(state, input));
+		async saveFinalSettlementTransition(input, ports) {
+			const previous = state.settlements.get(input.settlement.id);
+			if (previous === undefined) {
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "The request conflicts with current state",
+				});
+			}
+			const saved = saveSettlement(state, input);
+			if (!saved.ok) {
+				return saved;
+			}
+			const facts = await recordSettlementLifecycleFacts(ports, {
+				action: "UPDATE",
+				actorUserId: input.settlement.updatedBy,
+				correlationId: input.settlement.correlationId,
+				organizationId: input.settlement.organizationId,
+				previousStatus: previous.status,
+				settlement: input.settlement,
+			});
+			if (!facts.ok) {
+				restoreSettlementSnapshot(state, previous);
+				return facts;
+			}
+			return saved;
 		},
 	};
 }

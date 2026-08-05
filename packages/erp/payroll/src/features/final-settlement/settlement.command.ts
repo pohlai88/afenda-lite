@@ -7,6 +7,7 @@ import type { PayrollRun } from "../../kernel/contracts/projected-types";
 import type { PayrollCommandOptions as GenericPayrollCommandOptions } from "../../kernel/execution/command-options";
 import { runPayrollCommand } from "../../kernel/execution/execute-operation";
 import type {
+	MutationPorts,
 	PayrollEmployeeFacts,
 	PayrollWorkforceInputPort,
 } from "../../kernel/execution/ports";
@@ -474,6 +475,7 @@ async function executeInitiate(
 	store: FinalSettlementStore,
 	employees: PayrollWorkforceInputPort | undefined,
 	options: PayrollFinalSettlementCommandOptions,
+	ports: MutationPorts,
 ): Promise<Result<PayrollFinalSettlement>> {
 	// Caller-supplied identity only. Leave balance is pinned from the accepted
 	// handoff after this lookup, so it is not part of the request fingerprint.
@@ -539,25 +541,29 @@ async function executeInitiate(
 	const compensationSnapshotHash = fingerprintPayrollFinalSettlement(
 		pinned.data.snapshot,
 	);
-	return store.createFinalSettlement({
-		settlement: buildInitiatedSettlement({
-			compensationSnapshot: pinned.data.snapshot,
-			compensationSnapshotHash,
-			data,
-			facts,
-			now: nowFrom(options),
-			originRunId: origin.data.originRunId,
-			originRunLocked: origin.data.originRunLocked,
-			periodClosed: period.data.status === "closed",
-			requestFingerprint,
-		}),
-	});
+	return store.createFinalSettlement(
+		{
+			settlement: buildInitiatedSettlement({
+				compensationSnapshot: pinned.data.snapshot,
+				compensationSnapshotHash,
+				data,
+				facts,
+				now: nowFrom(options),
+				originRunId: origin.data.originRunId,
+				originRunLocked: origin.data.originRunLocked,
+				periodClosed: period.data.status === "closed",
+				requestFingerprint,
+			}),
+		},
+		ports,
+	);
 }
 
 async function executeCalculate(
 	data: CalculateInput,
 	store: FinalSettlementStore,
 	options: PayrollFinalSettlementCommandOptions,
+	ports: MutationPorts,
 ): Promise<Result<PayrollFinalSettlementView>> {
 	const current = await requireSettlement(store, {
 		organizationId: data.organizationId,
@@ -614,17 +620,20 @@ async function executeCalculate(
 	if (!computed.ok) {
 		return computed;
 	}
-	const saved = await store.saveFinalSettlementCalculation({
-		expectedVersion: current.data.version,
-		lines: computed.data.lines,
-		settlement: applyCalculation({
-			actorUserId: data.actorUserId,
-			clearanceReason: data.clearanceReason,
-			computed: computed.data,
-			now,
-			settlement: current.data,
-		}),
-	});
+	const saved = await store.saveFinalSettlementCalculation(
+		{
+			expectedVersion: current.data.version,
+			lines: computed.data.lines,
+			settlement: applyCalculation({
+				actorUserId: data.actorUserId,
+				clearanceReason: data.clearanceReason,
+				computed: computed.data,
+				now,
+				settlement: current.data,
+			}),
+		},
+		ports,
+	);
 	if (!saved.ok) {
 		return saved;
 	}
@@ -642,8 +651,8 @@ export function initiateFinalSettlement(
 		schema: initiateFinalSettlementInputSchema,
 		invalidMessage: "Invalid final settlement initiate input",
 		command: PAYROLL_COMMAND_FINAL_SETTLEMENT_INITIATE,
-		execute: (data, { store, employees }) =>
-			executeInitiate(data, store, employees, options),
+		execute: (data, { store, employees, ports }) =>
+			executeInitiate(data, store, employees, options, ports),
 	});
 }
 
@@ -655,7 +664,8 @@ export function calculateFinalSettlement(
 		schema: calculateFinalSettlementInputSchema,
 		invalidMessage: "Invalid final settlement calculate input",
 		command: PAYROLL_COMMAND_FINAL_SETTLEMENT_CALCULATE,
-		execute: (data, { store }) => executeCalculate(data, store, options),
+		execute: (data, { store, ports }) =>
+			executeCalculate(data, store, options, ports),
 	});
 }
 
@@ -667,7 +677,7 @@ export function finalizeFinalSettlement(
 		schema: finalizeFinalSettlementInputSchema,
 		invalidMessage: "Invalid final settlement finalize input",
 		command: PAYROLL_COMMAND_FINAL_SETTLEMENT_FINALIZE,
-		execute: async (data, { store }) => {
+		execute: async (data, { store, ports }) => {
 			const current = await requireSettlement(store, {
 				organizationId: data.organizationId,
 				settlementId: data.settlementId,
@@ -697,18 +707,21 @@ export function finalizeFinalSettlement(
 			}
 
 			const now = nowFrom(options);
-			return store.saveFinalSettlementTransition({
-				expectedVersion: settlement.version,
-				settlement: {
-					...settlement,
-					finalizedAt: now,
-					finalizedBy: data.actorUserId,
-					status: "finalized",
-					updatedAt: now,
-					updatedBy: data.actorUserId,
-					version: settlement.version + 1,
+			return store.saveFinalSettlementTransition(
+				{
+					expectedVersion: settlement.version,
+					settlement: {
+						...settlement,
+						finalizedAt: now,
+						finalizedBy: data.actorUserId,
+						status: "finalized",
+						updatedAt: now,
+						updatedBy: data.actorUserId,
+						version: settlement.version + 1,
+					},
 				},
-			});
+				ports,
+			);
 		},
 	});
 }

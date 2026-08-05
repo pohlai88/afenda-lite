@@ -1,6 +1,7 @@
 import { errorResult } from "@afenda/errors";
 import type { DomainEvent } from "@afenda/events";
 import {
+	PAYROLL_FINAL_SETTLEMENT_FINALIZED_EVENT,
 	PAYROLL_PAYMENT_REQUESTED_EVENT,
 	PAYROLL_RUN_STARTED_EVENT,
 } from "@afenda/events/schemas";
@@ -111,6 +112,23 @@ describe("createPayrollPlatformEventHandlers", () => {
 			buildEvent(PAYROLL_RUN_STARTED_EVENT, {
 				organizationId,
 				entityType: "payroll_run",
+				entityId: runId,
+				actorId: actorUserId,
+				correlationId: "corr-1",
+			}),
+		);
+		expect(auditMocks.record).toHaveBeenCalledOnce();
+		expect(paymentsMocks.createDraftPayment).not.toHaveBeenCalled();
+	});
+
+	it("records audit telemetry for final-settlement lifecycle events", async () => {
+		const handlers = createPayrollPlatformEventHandlers();
+		const handler = handlers[PAYROLL_FINAL_SETTLEMENT_FINALIZED_EVENT];
+		expect(handler).toBeDefined();
+		await handler?.(
+			buildEvent(PAYROLL_FINAL_SETTLEMENT_FINALIZED_EVENT, {
+				organizationId,
+				entityType: "payroll_final_settlement",
 				entityId: runId,
 				actorId: actorUserId,
 				correlationId: "corr-1",

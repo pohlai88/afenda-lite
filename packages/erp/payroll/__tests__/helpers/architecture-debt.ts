@@ -18,8 +18,9 @@ import { buildConsumerInventory } from "./consumer-inventory";
  *    synth-only, fail-closed)
  *  - `hr-termination-fact-gap` (closed — D0 Stage 2/3 pins leave balance from
  *    the accepted HR handoff; category remains at target zero)
- *  - `settlement-transition-audit-gap` (D4 — final-settlement status
- *    transitions persist without the audit + outbox CTE payroll runs use)
+ *  - `settlement-transition-audit-gap` (closed — final-settlement create /
+ *    calculate / finalize persist with the run audit + outbox CTE and emit
+ *    settlement lifecycle events drained by B6)
  * The mechanical categories are computed from the real source tree, same as
  * HR; HR's package-specific categories (`feature-composite-store`,
  * `adapter-composite-store`, `retired-path-reading-test`) reference HR-only
@@ -320,31 +321,6 @@ function featureCycleItems(
 	];
 }
 
-/** Anchors a narrative debt item to the living line that still carries it. */
-function anchoredNarrativeItem(input: {
-	evidence: string;
-	file: string;
-	marker: string;
-	packageRoot: string;
-}): readonly MutableDebtItem[] {
-	const content = readFileSync(
-		path.join(input.packageRoot, input.file),
-		"utf8",
-	);
-	const lineIndex = content
-		.split("\n")
-		.findIndex((line) => line.includes(input.marker));
-	if (lineIndex === -1) {
-		return [];
-	}
-	return [
-		{
-			evidence: `${input.file}:${lineIndex + 1} ${input.evidence}`,
-			file: input.file,
-		},
-	];
-}
-
 /** Real, reviewed narrative debt — see docs/erp/hr-payroll-bridging.md B1/A2/B6/D0/D4. */
 function narrativeDebtItems(
 	key:
@@ -359,13 +335,7 @@ function narrativeDebtItems(
 		return [];
 	}
 	if (key === "settlement-transition-audit-gap") {
-		return anchoredNarrativeItem({
-			evidence:
-				"updates a final-settlement status transition without the audit + outbox CTE pattern payroll runs use (src/features/payroll-runs/runs.drizzle.ts is the target shape); closing it requires a settlement lifecycle event in @afenda/events plus dispatcher wiring, so it is measured debt rather than a contained change (bridging doc D4/B6)",
-			file: "src/features/final-settlement/settlement.drizzle.ts",
-			marker: "async saveFinalSettlementTransition(input) {",
-			packageRoot,
-		});
+		return [];
 	}
 	if (key === "dormant-workforce-port") {
 		const file = "src/facade/contracts.ts";

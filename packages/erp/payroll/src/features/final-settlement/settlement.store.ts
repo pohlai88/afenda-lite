@@ -1,4 +1,6 @@
 import type { Result } from "@afenda/errors";
+
+import type { MutationPorts } from "../../kernel/execution/ports";
 import type {
 	PayrollFinalSettlement,
 	PayrollFinalSettlementLine,
@@ -10,9 +12,12 @@ import type {
  * statement projection stay in operations.
  */
 export interface PayrollFinalSettlementStore {
-	createFinalSettlement: (input: {
-		settlement: PayrollFinalSettlement;
-	}) => Promise<Result<PayrollFinalSettlement>>;
+	createFinalSettlement: (
+		input: {
+			settlement: PayrollFinalSettlement;
+		},
+		ports: MutationPorts,
+	) => Promise<Result<PayrollFinalSettlement>>;
 
 	findFinalSettlementByIdempotencyKey: (input: {
 		idempotencyKey: string;
@@ -29,14 +34,20 @@ export interface PayrollFinalSettlementStore {
 		settlementId: string;
 	}) => Promise<Result<readonly PayrollFinalSettlementLine[]>>;
 
-	saveFinalSettlementCalculation: (input: {
-		expectedVersion: number;
-		lines: readonly PayrollFinalSettlementLine[];
-		settlement: PayrollFinalSettlement;
-	}) => Promise<Result<PayrollFinalSettlement>>;
+	saveFinalSettlementCalculation: (
+		input: {
+			expectedVersion: number;
+			lines: readonly PayrollFinalSettlementLine[];
+			settlement: PayrollFinalSettlement;
+		},
+		ports: MutationPorts,
+	) => Promise<Result<PayrollFinalSettlement>>;
 
-	saveFinalSettlementTransition: (input: {
-		expectedVersion: number;
-		settlement: PayrollFinalSettlement;
-	}) => Promise<Result<PayrollFinalSettlement>>;
+	saveFinalSettlementTransition: (
+		input: {
+			expectedVersion: number;
+			settlement: PayrollFinalSettlement;
+		},
+		ports: MutationPorts,
+	) => Promise<Result<PayrollFinalSettlement>>;
 }

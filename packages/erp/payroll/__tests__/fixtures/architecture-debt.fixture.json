@@ -131,6 +131,10 @@
 					"file": "src/features/final-settlement/resolve-settlement-statutory.ts"
 				},
 				{
+					"evidence": "src/features/final-settlement/settlement-lifecycle-events.ts exceeds src/<owner>/<file>",
+					"file": "src/features/final-settlement/settlement-lifecycle-events.ts"
+				},
+				{
 					"evidence": "src/features/final-settlement/settlement-statement.ts exceeds src/<owner>/<file>",
 					"file": "src/features/final-settlement/settlement-statement.ts"
 				},
@@ -784,19 +788,19 @@
 					"file": "src/features/final-settlement/settlement-statement.ts"
 				},
 				{
-					"evidence": "src/features/final-settlement/settlement.command.ts:28 -> src/features/payroll-runs/runs.store.ts (final-settlement -> payroll-runs)",
+					"evidence": "src/features/final-settlement/settlement.command.ts:29 -> src/features/payroll-runs/runs.store.ts (final-settlement -> payroll-runs)",
 					"file": "src/features/final-settlement/settlement.command.ts"
 				},
 				{
-					"evidence": "src/features/final-settlement/settlement.command.ts:29 -> src/features/payroll-setup/setup.store.ts (final-settlement -> payroll-setup)",
+					"evidence": "src/features/final-settlement/settlement.command.ts:30 -> src/features/payroll-setup/setup.store.ts (final-settlement -> payroll-setup)",
 					"file": "src/features/final-settlement/settlement.command.ts"
 				},
 				{
-					"evidence": "src/features/final-settlement/settlement.command.ts:30 -> src/features/statutory-rules/year-to-date-capability.ts (final-settlement -> statutory-rules)",
+					"evidence": "src/features/final-settlement/settlement.command.ts:31 -> src/features/statutory-rules/year-to-date-capability.ts (final-settlement -> statutory-rules)",
 					"file": "src/features/final-settlement/settlement.command.ts"
 				},
 				{
-					"evidence": "src/features/final-settlement/settlement.command.ts:34 -> src/features/workforce-ingress/normalize-workforce-handoff.ts (final-settlement -> workforce-ingress)",
+					"evidence": "src/features/final-settlement/settlement.command.ts:35 -> src/features/workforce-ingress/normalize-workforce-handoff.ts (final-settlement -> workforce-ingress)",
 					"file": "src/features/final-settlement/settlement.command.ts"
 				},
 				{
@@ -993,12 +997,7 @@
 			"target": 0
 		},
 		{
-			"items": [
-				{
-					"evidence": "src/features/final-settlement/settlement.drizzle.ts:308 updates a final-settlement status transition without the audit + outbox CTE pattern payroll runs use (src/features/payroll-runs/runs.drizzle.ts is the target shape); closing it requires a settlement lifecycle event in @afenda/events plus dispatcher wiring, so it is measured debt rather than a contained change (bridging doc D4/B6)",
-					"file": "src/features/final-settlement/settlement.drizzle.ts"
-				}
-			],
+			"items": [],
 			"key": "settlement-transition-audit-gap",
 			"target": 0
 		}
@@ -1012,6 +1011,6 @@
 	"schemaVersion": 1,
 	"summary": {
 		"featureCount": 15,
-		"sourceTypeScriptFiles": 180
+		"sourceTypeScriptFiles": 181
 	}
 }

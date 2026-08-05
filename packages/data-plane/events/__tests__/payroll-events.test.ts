@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+	PAYROLL_FINAL_SETTLEMENT_CALCULATED_EVENT,
+	PAYROLL_FINAL_SETTLEMENT_FINALIZED_EVENT,
+	PAYROLL_FINAL_SETTLEMENT_INITIATED_EVENT,
 	PAYROLL_PAYMENT_CORRECTION_REQUESTED_EVENT,
 	PAYROLL_PAYMENT_REQUESTED_EVENT,
 	PAYROLL_POSTING_CORRECTION_REQUESTED_EVENT,
@@ -21,6 +24,37 @@ const base = {
 };
 
 describe("payroll integration event contracts", () => {
+	it("accepts final-settlement lifecycle entity payloads", () => {
+		const settlementPayload = {
+			organizationId: "org-payroll-events",
+			entityType: "payroll_final_settlement",
+			entityId: "a0000006-0006-4006-8006-000000000006",
+			actorId: "actor-payroll-events",
+			correlationId: "corr-payroll-events",
+		};
+		expect(
+			PayrollEventSchemas[PAYROLL_FINAL_SETTLEMENT_INITIATED_EVENT].safeParse(
+				settlementPayload,
+			).success,
+		).toBe(true);
+		expect(
+			PayrollEventSchemas[PAYROLL_FINAL_SETTLEMENT_CALCULATED_EVENT].safeParse(
+				settlementPayload,
+			).success,
+		).toBe(true);
+		expect(
+			PayrollEventSchemas[PAYROLL_FINAL_SETTLEMENT_FINALIZED_EVENT].safeParse(
+				settlementPayload,
+			).success,
+		).toBe(true);
+		expect(
+			PayrollEventSchemas[PAYROLL_FINAL_SETTLEMENT_FINALIZED_EVENT].safeParse({
+				...settlementPayload,
+				bankAccount: "must-not-leak",
+			}).success,
+		).toBe(false);
+	});
+
 	it("requires semantic finalization totals", () => {
 		expect(
 			PayrollEventSchemas[PAYROLL_RUN_FINALIZED_EVENT].safeParse({
