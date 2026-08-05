@@ -163,6 +163,7 @@ import {
 	hrPolicyAcknowledgement,
 	hrPosition,
 	hrPositionDefinitionVersion,
+	hrPriorEmployerYtd,
 	hrProbationAssessment,
 	hrProbationReview,
 	hrReliabilityDeadLetter,
@@ -173,6 +174,7 @@ import {
 	hrShiftAssignment,
 	hrShiftAssignmentSegment,
 	hrShiftBreak,
+	hrStatutoryProfile,
 	hrSuccessionCandidate,
 	hrSuccessionPlan,
 	hrTalentCriticalRoleReadiness,
@@ -616,6 +618,8 @@ export const HARD_TENANT_ROOT_ENTRIES = [
 	["hr_timesheet_entry", hrTimesheetEntry],
 	["hr_overtime_request", hrOvertimeRequest],
 	["hr_overtime_approval", hrOvertimeApproval],
+	["hr_statutory_profile", hrStatutoryProfile],
+	["hr_prior_employer_ytd", hrPriorEmployerYtd],
 ] as const;
 
 export type HardTenantRootTableName =

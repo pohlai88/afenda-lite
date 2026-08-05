@@ -77,6 +77,12 @@ import type {
 	RequisitionStatus,
 } from "../features/recruitment/status";
 import type {
+	RegionalMinimumWageZone,
+	StatutoryJurisdictionCode,
+	StatutoryProfileStatus,
+	TaxResidencyStatus,
+} from "../features/statutory-profile/status";
+import type {
 	CareerPlanActionStatus,
 	CareerPlanStatus,
 	CompetencyAssessmentStatus,
@@ -180,6 +186,7 @@ import type {
 	HumanResourcesPerformanceCycleParticipantId,
 	HumanResourcesPolicyAcknowledgementId,
 	HumanResourcesPositionId,
+	HumanResourcesPriorEmployerYtdId,
 	HumanResourcesProbationAssessmentId,
 	HumanResourcesProbationReviewId,
 	HumanResourcesReportingLineId,
@@ -192,6 +199,7 @@ import type {
 	HumanResourcesShiftAssignmentSegmentId,
 	HumanResourcesShiftBreakId,
 	HumanResourcesShiftId,
+	HumanResourcesStatutoryProfileId,
 	HumanResourcesSuccessionCandidateId,
 	HumanResourcesSuccessionPlanId,
 	HumanResourcesTalentCriticalRoleReadinessId,
@@ -3066,4 +3074,77 @@ export interface TimesheetCreateRecord {
 	organizationId: string;
 	periodEnd: string;
 	periodStart: string;
+}
+
+/** D0 statutory-fact capture — HR-owned relief declaration entry. */
+export interface StatutoryReliefDeclaration {
+	amount: string | null;
+	currencyCode: string | null;
+	dependantReference: string | null;
+	evidenceRef: string | null;
+	reliefCode: string;
+}
+
+export interface StatutoryProfile {
+	createdAt: Date;
+	createdBy: string;
+	createIdempotencyKey: string;
+	createRequestFingerprint: string;
+	dependantCount: number;
+	effectiveFrom: string;
+	effectiveTo: string | null;
+	employeeId: HumanResourcesEmployeeId;
+	employeeProvidentFundNumber: string | null;
+	expatriate: boolean;
+	id: HumanResourcesStatutoryProfileId;
+	jurisdictionCode: StatutoryJurisdictionCode;
+	minimumWageZone: RegionalMinimumWageZone | null;
+	nationalityCountryCode: string;
+	organizationId: string;
+	reliefDeclarations: StatutoryReliefDeclaration[];
+	reliefDeclarationVersion: string;
+	socialInsuranceBookNumber: string | null;
+	socialSecurityNumber: string | null;
+	status: StatutoryProfileStatus;
+	supersedesStatutoryProfileId: HumanResourcesStatutoryProfileId | null;
+	taxFileNumber: string | null;
+	taxResidencyStatus: TaxResidencyStatus;
+	updatedAt: Date;
+	updatedBy: string;
+	version: number;
+}
+
+export interface StatutoryProfileListPage {
+	page: number;
+	pageSize: number;
+	profiles: StatutoryProfile[];
+	/**
+	 * Rows withheld from `profiles` because the subject carries an active
+	 * processing restriction (A3/C7). `total` still counts the stored
+	 * population, so a caller can see that disclosure was reduced rather
+	 * than silently mis-paginated.
+	 */
+	restrictedExcluded: number;
+	total: number;
+}
+
+export interface PriorEmployerYtd {
+	createdAt: Date;
+	createdBy: string;
+	createIdempotencyKey: string;
+	createRequestFingerprint: string;
+	currencyCode: string;
+	employeeId: HumanResourcesEmployeeId;
+	grossAmount: string;
+	id: HumanResourcesPriorEmployerYtdId;
+	jurisdictionCode: StatutoryJurisdictionCode;
+	organizationId: string;
+	priorEmployerName: string | null;
+	recordedOn: string;
+	statutoryContributionAmount: string;
+	taxWithheldAmount: string;
+	taxYear: number;
+	updatedAt: Date;
+	updatedBy: string;
+	version: number;
 }

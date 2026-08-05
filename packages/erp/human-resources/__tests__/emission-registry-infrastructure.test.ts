@@ -88,7 +88,7 @@ describe("emission registry infrastructure", () => {
 		expect(Object.keys(HUMAN_RESOURCES_PRIVACY_EMISSIONS)).toHaveLength(5);
 		expect(
 			Object.keys(HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD),
-		).toHaveLength(362);
+		).toHaveLength(364);
 	});
 
 	it("keeps leave commands out of Time classifications", () => {
@@ -190,7 +190,7 @@ describe("emission registry infrastructure", () => {
 		expect(mutationInventoryFixture.totalCommandIds).toBe(
 			HUMAN_RESOURCES_COMMAND_IDS.length,
 		);
-		expect(mutationInventoryFixture.classifiedMutationIds).toBe(362);
+		expect(mutationInventoryFixture.classifiedMutationIds).toBe(364);
 		expect(mutationInventoryFixture.unclassifiedMutationIds).toBe(0);
 		expect(mutationInventoryFixture.unclassified).toEqual([]);
 	});

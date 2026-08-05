@@ -133,6 +133,7 @@ or HTTP envelopes.
 | `workforce-planning` | Headcount plans, reservations, and availability |
 | `time` | Work calendars, shifts, attendance, timesheets, and overtime |
 | `payroll-handoff` | Approved immutable payroll inputs, delivery, acknowledgement, and correction state |
+| `statutory-profile` | D0 statutory-fact capture — effective-dated tax residency, nationality / expatriate flag, dependants + relief declarations, statutory identifiers, VN regional minimum-wage zone, and prior-employer hire-year figures; reads are fail-closed on the privacy capability and exclude restriction-active subjects |
 | `privacy` | Field projection, evidence, retention, legal-hold, restriction (`restrictEmployeeData` / `liftEmployeeDataRestriction`), and deletion workflows scoped to `hr_*` only — payroll evidence is restricted, not erased (A3/C7) |
 | `reporting` | Reconciled HR read-model snapshots and feature-owned sources |
 | `bulk-import` | Resumable validated imports and row-level outcomes |
@@ -222,43 +223,26 @@ gross-to-net, statutory deductions, net pay, or payslips.
   effectiveDate, periodStart, periodEnd)` — with the last two both null in
   practice, ordering reduces to `effectiveDate` plus the `sourceVersion`
   axes (bridging C2).
-- **Enforced today:** `acceptWorkforceHandoff`
-  (`accepted-handoff.drizzle.ts` / `accepted-handoff.memory.ts`) performs no
-  check against payroll period status — a handoff is accepted at any time
-  regardless of whether any payroll period is open or closed. The only place
-  period status gates anything is `createPayrollRun`, which requires
-  `period.data.status === "open"`
-  (`packages/erp/payroll/src/features/payroll-runs/payroll-run.ts:40`).
-  `payroll_period.status` is a two-value enum, `'open' | 'closed'`
-  (`payroll_period_status_check`,
-  `packages/data-plane/db/src/schema/payroll.ts:149-150`) — there is no
-  `inputs_locked` period state in the schema. A payroll **run** separately
-  moves through `draft → calculating → calculated → failed → finalized →
-  reversed`; that run-status lifecycle is also not consulted by ingest.
-  Calculation pulls employee input through an injectable
-  `PayrollWorkforceInputPort`
-  (`packages/erp/payroll/src/features/calculation/production-run-calculator.ts`)
-  that **defaults to the accepted-handoff ledger** — when composition wires
-  no override, `createAcceptedWorkforceInputPort` resolves employees from
-  `payroll_accepted_handoff` with effective-dated exact-then-fallback lookup
-  (`packages/erp/payroll/src/facade/context.ts`). The explicit `workforce`
-  override remains a test-only seam (bridging B1).
-- **What a late approval does today:** because ingest never checks period or
-  run status, a correction arriving after a period would-be "lock" point is
-  accepted like any other handoff — subject only to the existing
-  hash-conflict reject (bridging C1) and stale-revision reject (bridging
-  C2) — with no period-cutoff sensitivity, no `deferred_to_next_period`
-  response, and no automatic payroll exception. The `deferred_to_next_period`
-  member of `HandoffAcceptance` (bridging C4) does not exist in code; the
-  ingest command's actual return type is the generic
-  `Result<AcceptedPayrollHandoff>`.
-- **Target contract, not yet built (bridging C3 / D3):** handoffs bind to the
-  `open` period; once a period reaches `inputs_locked`, an incoming
-  correction is queued as a next-period retro item (`payroll/retro-pay`,
-  bridging D3) and never mutates the current run. That target requires the
-  `inputs_locked` period state, a period-lock check in
-  `acceptWorkforceHandoff`, and the retro-pay feature — none of which exist
-  yet.
+- **Enforced today (payroll C3):** `payroll_period.status` is
+  `'open' | 'inputs_locked' | 'closed'` (migrate
+  `0055_payroll_period_inputs_locked`, ops-gated). Operators create at least
+  one run while the period is `open`, then `lockPayrollPeriodInputs`.
+  `createPayrollRun` still requires `open`. Ingest consults covering periods:
+  non-termination handoffs arriving after freeze seal as
+  `deferred_to_next_period` (ingest `ok` — not a producer retry) and are
+  excluded from `createAcceptedWorkforceInputPort`. Money-only corrections
+  still use `retro-pay` (D3); a full workforce handoff is not rewritten as a
+  fake retro line. A payroll **run** still moves through
+  `draft → calculating → calculated → failed → finalized → reversed`
+  independently of period status. Calculation defaults to the
+  accepted-handoff ledger via `PayrollWorkforceInputPort`
+  (`packages/erp/payroll/src/features/calculation/production-run-calculator.ts`);
+  the explicit `workforce` override remains a test-only seam (bridging B1).
+- **What a late approval does today:** after `inputs_locked` / `closed`, a
+  non-termination correction is deferred (C3/C4). Hash-conflict (C1) and
+  stale-revision (C2) rejects still apply. Ingest's public return type remains
+  `Result<AcceptedPayrollHandoff>` with `status` on the sealed record — not
+  the typed `HandoffAcceptance` union from the bridging sketch.
 
 **Mid-period termination ([bridging C6](../../../docs/erp/hr-payroll-bridging.md#c6--termination-is-a-fact-not-a-recalculation)):**
 
@@ -281,29 +265,13 @@ gross-to-net, statutory deductions, net pay, or payslips.
   termination reaches Payroll through the same `queuePayrollDelivery` →
   ingest transport as any other handoff — there is no separate termination
   event or endpoint.
-- **Enforced today:** none of C6's exception behavior. Because ingest
-  performs no period/run-status check (see cut-off semantics above), a
-  termination handoff arriving after a period would-be "lock" point is
-  accepted like any other delivery — no payroll exception is raised
-  automatically, and nothing currently calls `recordPayrollException` from
-  the termination path.
-- **The landing zone exists structurally, unwired:** Payroll's exception
-  mechanism is real and already gates finalization —
-  `recordPayrollException` / `listPayrollExceptionsForRun`
-  (`packages/erp/payroll/src/features/payroll-runs/exception.ts`), and
-  `finalizePayrollRun` rejects with "Blocking payroll exceptions prevent
-  finalization" when `hasBlockingPayrollExceptions` is true
-  (`packages/erp/payroll/src/features/payroll-runs/finalization.ts`). This
-  is the correct target landing zone for C6: a late termination should raise
-  a blocking exception on the affected run rather than mutate it. No code
-  path currently connects HR's termination/offboarding facts to
-  `recordPayrollException` — an operator would have to record the exception
-  by hand today.
-- **Honest caveat:** the rule "never silently mutates a calculated run" is
-  not violated today, but only because calculation does not yet consume the
-  accepted-handoff ledger at all (see cut-off semantics above) — this is an
-  accident of missing wiring, not a designed safeguard, and must not be read
-  as C6 being closed.
+- **Enforced today (payroll C6):** a termination / notice handoff arriving
+  after freeze still seals as `accepted` (it is a fact, not a recalculation)
+  and Payroll writes blocking `MID_PERIOD_TERMINATION` on every
+  non-finalized / non-reversed run in the covering period. Finalize already
+  refuses when `hasBlockingPayrollExceptions` is true
+  (`packages/erp/payroll/src/features/payroll-runs/finalization.ts`). HR does
+  not call `recordPayrollException` — the ordinary ingest path is the wire.
 
 ### Product composition
 

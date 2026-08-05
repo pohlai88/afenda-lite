@@ -712,3 +712,36 @@ export function fingerprintHireFromAcceptedOffer(input: {
 		})),
 	});
 }
+
+export function fingerprintStatutoryProfileUpsert(input: {
+	employeeId: string;
+	jurisdictionCode: string;
+	effectiveFrom: string;
+	taxResidencyStatus: string;
+	nationalityCountryCode: string;
+	expatriate: boolean;
+	minimumWageZone: string | null;
+	dependantCount: number;
+	reliefDeclarationVersion: string;
+	reliefDeclarations: unknown;
+	taxFileNumber: string | null;
+	employeeProvidentFundNumber: string | null;
+	socialSecurityNumber: string | null;
+	socialInsuranceBookNumber: string | null;
+}): string {
+	return sha256Fingerprint(input);
+}
+
+export function fingerprintPriorEmployerYtdRecord(input: {
+	employeeId: string;
+	jurisdictionCode: string;
+	taxYear: number;
+	priorEmployerName: string | null;
+	grossAmount: string;
+	taxWithheldAmount: string;
+	statutoryContributionAmount: string;
+	currencyCode: string;
+	recordedOn: string;
+}): string {
+	return sha256Fingerprint(input);
+}

@@ -15,6 +15,7 @@ export const HUMAN_RESOURCES_CAPABILITY_IDS = [
 	"performance-talent",
 	"learning",
 	"compliance-employee-relations",
+	"statutory-profile",
 	"privacy",
 	"reporting-bulk-reliability",
 ] as const;
@@ -34,6 +35,7 @@ export const HUMAN_RESOURCES_CAPABILITY_OBSERVABILITY_AREAS = {
 	"performance-talent": "talent",
 	learning: "talent",
 	"compliance-employee-relations": "compliance",
+	"statutory-profile": "compliance",
 	privacy: "privacy",
 	"reporting-bulk-reliability": "integration",
 } as const satisfies Record<HumanResourcesCapabilityId, HrObservabilityArea>;

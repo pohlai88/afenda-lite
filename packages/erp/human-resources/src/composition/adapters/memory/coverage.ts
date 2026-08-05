@@ -7,6 +7,7 @@ import type { MemoryLeaveMethods } from "../../../features/leave/adapters/leave.
 import type { MemoryOrganizationMethods } from "../../../features/organization/adapters/organization.memory";
 import type { PerformanceMemoryMethods } from "../../../features/performance/adapters/performance.memory";
 import type { MemoryRecruitmentMethods } from "../../../features/recruitment/adapters/recruitment.memory";
+import type { MemoryStatutoryProfileMethods } from "../../../features/statutory-profile/adapters/statutory-profile.memory";
 import type { MemoryTalentMethods } from "../../../features/talent/adapters/talent.memory";
 import type { HumanResourcesTimeStore } from "../../../features/time/store-contract";
 import type { MemoryWorkforcePlanningMethods } from "../../../features/workforce-planning/adapters/workforce-planning.memory";
@@ -34,6 +35,7 @@ export type MemoryImplementedHumanResourcesMethods = MemoryCoreMethods &
 	MemoryWorkforcePlanningMethods &
 	MemoryComplianceMethods &
 	MemoryEmployeeRelationsMethods &
+	MemoryStatutoryProfileMethods &
 	MemoryIdentityMethods;
 
 /**

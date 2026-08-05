@@ -967,6 +967,54 @@
 					"file": "src/features/reporting/types.ts"
 				},
 				{
+					"evidence": "src/features/statutory-profile/adapters/statutory-profile.drizzle.ts exceeds src/<owner>/<file>",
+					"file": "src/features/statutory-profile/adapters/statutory-profile.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/statutory-profile/adapters/statutory-profile.memory.ts exceeds src/<owner>/<file>",
+					"file": "src/features/statutory-profile/adapters/statutory-profile.memory.ts"
+				},
+				{
+					"evidence": "src/features/statutory-profile/authorization/statutory-profile.ts exceeds src/<owner>/<file>",
+					"file": "src/features/statutory-profile/authorization/statutory-profile.ts"
+				},
+				{
+					"evidence": "src/features/statutory-profile/operation-registry.ts exceeds src/<owner>/<file>",
+					"file": "src/features/statutory-profile/operation-registry.ts"
+				},
+				{
+					"evidence": "src/features/statutory-profile/prior-employer-ytd.ts exceeds src/<owner>/<file>",
+					"file": "src/features/statutory-profile/prior-employer-ytd.ts"
+				},
+				{
+					"evidence": "src/features/statutory-profile/privacy.ts exceeds src/<owner>/<file>",
+					"file": "src/features/statutory-profile/privacy.ts"
+				},
+				{
+					"evidence": "src/features/statutory-profile/run-operation.ts exceeds src/<owner>/<file>",
+					"file": "src/features/statutory-profile/run-operation.ts"
+				},
+				{
+					"evidence": "src/features/statutory-profile/schema.ts exceeds src/<owner>/<file>",
+					"file": "src/features/statutory-profile/schema.ts"
+				},
+				{
+					"evidence": "src/features/statutory-profile/status.ts exceeds src/<owner>/<file>",
+					"file": "src/features/statutory-profile/status.ts"
+				},
+				{
+					"evidence": "src/features/statutory-profile/statutory-profile.ts exceeds src/<owner>/<file>",
+					"file": "src/features/statutory-profile/statutory-profile.ts"
+				},
+				{
+					"evidence": "src/features/statutory-profile/store-contract.ts exceeds src/<owner>/<file>",
+					"file": "src/features/statutory-profile/store-contract.ts"
+				},
+				{
+					"evidence": "src/features/statutory-profile/store.ts exceeds src/<owner>/<file>",
+					"file": "src/features/statutory-profile/store.ts"
+				},
+				{
 					"evidence": "src/features/talent/adapters/talent.drizzle.ts exceeds src/<owner>/<file>",
 					"file": "src/features/talent/adapters/talent.drizzle.ts"
 				},
@@ -1635,6 +1683,10 @@
 					"file": "src/kernel/emissions/domains/recruitment.ts"
 				},
 				{
+					"evidence": "src/kernel/emissions/domains/statutory-profile.ts exceeds src/<owner>/<file>",
+					"file": "src/kernel/emissions/domains/statutory-profile.ts"
+				},
+				{
 					"evidence": "src/kernel/emissions/domains/talent.ts exceeds src/<owner>/<file>",
 					"file": "src/kernel/emissions/domains/talent.ts"
 				},
@@ -2049,6 +2101,14 @@
 					"file": "src/features/reporting/adapters/reporting.memory.ts"
 				},
 				{
+					"evidence": "src/features/statutory-profile/adapters/statutory-profile.drizzle.ts:22 -> src/composition/store/index.ts (feature -> composition)",
+					"file": "src/features/statutory-profile/adapters/statutory-profile.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/statutory-profile/adapters/statutory-profile.memory.ts:3 -> src/composition/store/index.ts (feature -> composition)",
+					"file": "src/features/statutory-profile/adapters/statutory-profile.memory.ts"
+				},
+				{
 					"evidence": "src/features/talent/adapters/talent.drizzle.ts:39 -> src/composition/store/index.ts (feature -> composition)",
 					"file": "src/features/talent/adapters/talent.drizzle.ts"
 				},
@@ -2092,11 +2152,11 @@
 		{
 			"items": [
 				{
-					"evidence": "src/composition/internal-api.ts:151 -> src/testing/performance/index.ts (production -> testing)",
+					"evidence": "src/composition/internal-api.ts:154 -> src/testing/performance/index.ts (production -> testing)",
 					"file": "src/composition/internal-api.ts"
 				},
 				{
-					"evidence": "src/composition/internal-api.ts:152 -> src/testing/recovery/index.ts (production -> testing)",
+					"evidence": "src/composition/internal-api.ts:155 -> src/testing/recovery/index.ts (production -> testing)",
 					"file": "src/composition/internal-api.ts"
 				}
 			],
@@ -2196,6 +2256,14 @@
 				{
 					"evidence": "src/features/reporting/adapters/reporting.memory.ts:2 names HumanResourcesStore",
 					"file": "src/features/reporting/adapters/reporting.memory.ts"
+				},
+				{
+					"evidence": "src/features/statutory-profile/adapters/statutory-profile.drizzle.ts:22 names HumanResourcesStore",
+					"file": "src/features/statutory-profile/adapters/statutory-profile.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/statutory-profile/adapters/statutory-profile.memory.ts:3 names HumanResourcesStore",
+					"file": "src/features/statutory-profile/adapters/statutory-profile.memory.ts"
 				},
 				{
 					"evidence": "src/features/talent/adapters/talent.drizzle.ts:39 names HumanResourcesStore",
@@ -2608,6 +2676,10 @@
 					"file": "src/features/recruitment/validate-offer-compensation-proposal-attachment.ts"
 				},
 				{
+					"evidence": "src/features/statutory-profile/store.ts:1 -> src/features/workforce-records/employment/store-contract.ts (statutory-profile -> workforce-records)",
+					"file": "src/features/statutory-profile/store.ts"
+				},
+				{
 					"evidence": "src/features/talent/adapters/talent.drizzle.ts:93 -> src/features/workforce-records/employment/employment-status.ts (talent -> workforce-records)",
 					"file": "src/features/talent/adapters/talent.drizzle.ts"
 				},
@@ -2892,6 +2964,14 @@
 					"file": "src/features/reporting/adapters/reporting.memory.ts"
 				},
 				{
+					"evidence": "src/features/statutory-profile/adapters/statutory-profile.drizzle.ts:22 names HumanResourcesStore beneath a feature adapter",
+					"file": "src/features/statutory-profile/adapters/statutory-profile.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/statutory-profile/adapters/statutory-profile.memory.ts:3 names HumanResourcesStore beneath a feature adapter",
+					"file": "src/features/statutory-profile/adapters/statutory-profile.memory.ts"
+				},
+				{
 					"evidence": "src/features/talent/adapters/talent.drizzle.ts:39 names HumanResourcesStore beneath a feature adapter",
 					"file": "src/features/talent/adapters/talent.drizzle.ts"
 				},
@@ -2938,7 +3018,7 @@
 	},
 	"schemaVersion": 1,
 	"summary": {
-		"featureCount": 20,
-		"sourceTypeScriptFiles": 502
+		"featureCount": 21,
+		"sourceTypeScriptFiles": 515
 	}
 }

@@ -1126,6 +1126,22 @@ export const HUMAN_RESOURCES_EFFECTIVE_TRUTH_CLASSIFICATION = [
 		cluster: "B",
 		rationale: "Cluster B time — overtime approval decision audit record",
 	}),
+	row({
+		table: "hr_statutory_profile",
+		category: "effective-definition",
+		domain: "compliance",
+		cluster: "C",
+		rationale:
+			"D0 statutory-fact capture — effective-range statutory profile with open-segment supersession",
+	}),
+	row({
+		table: "hr_prior_employer_ytd",
+		category: "append-only-operational-fact",
+		domain: "compliance",
+		cluster: "C",
+		rationale:
+			"D0 statutory-fact capture — prior-employer hire-year figures asserted once per employee, tax year, and jurisdiction",
+	}),
 ] as const satisfies readonly EffectiveTruthClassificationRow[];
 
 export type EffectiveTruthClassificationIssue =

@@ -25,7 +25,9 @@ export const HUMAN_RESOURCES_PRIVACY_EXPORT_STORE_METHODS = [
 	"listPersonContacts",
 	"listPersonIdentifiers",
 	"listPersonIdentityVersions",
+	"listPriorEmployerYtd",
 	"listReportingLinesForEmployee",
+	"listStatutoryProfiles",
 	"listTimesheets",
 ] as const satisfies readonly (keyof HumanResourcesStore)[];
 

@@ -11,6 +11,7 @@ import { HUMAN_RESOURCES_ORGANIZATION_EMISSIONS } from "./domains/organization";
 import { HUMAN_RESOURCES_PERFORMANCE_EMISSIONS } from "./domains/performance";
 import { HUMAN_RESOURCES_PRIVACY_EMISSIONS } from "./domains/privacy";
 import { HUMAN_RESOURCES_RECRUITMENT_EMISSIONS } from "./domains/recruitment";
+import { HUMAN_RESOURCES_STATUTORY_PROFILE_EMISSIONS } from "./domains/statutory-profile";
 import { HUMAN_RESOURCES_TALENT_EMISSIONS } from "./domains/talent";
 import { HUMAN_RESOURCES_TIME_EMISSIONS } from "./domains/time";
 import { HUMAN_RESOURCES_WORKFORCE_FOUNDATION_EMISSIONS } from "./domains/workforce-foundation";
@@ -35,4 +36,5 @@ export const HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD =
 		HUMAN_RESOURCES_LEARNING_EMISSIONS,
 		HUMAN_RESOURCES_TIME_EMISSIONS,
 		HUMAN_RESOURCES_PRIVACY_EMISSIONS,
+		HUMAN_RESOURCES_STATUTORY_PROFILE_EMISSIONS,
 	) satisfies HumanResourcesEmissionRegistry;

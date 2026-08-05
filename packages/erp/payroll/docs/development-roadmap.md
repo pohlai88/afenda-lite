@@ -56,17 +56,20 @@ Entrypoints: `@afenda/payroll` (production) · `@afenda/payroll/testing` (test-o
 | D3 retro pay | **CLOSED** | Queue / recompute under the sealed run snapshot / apply into an open period / exception review; migrate `0052_payroll_retro_pay` remains ops-gated |
 | D4 final settlement | **CLOSED** | Termination pay from a pinned compensation snapshot, fail-closed statutory calculator seam, C6 human clearance, C9 finalize SoD, read-own/read-all statement query; migrate `0053_payroll_final_settlement` remains ops-gated |
 | D5 statutory filings | **CLOSED** | Period/annual artifacts + SoD evidence seal from finalized `payroll_statutory_result` rows (no invented A2 rate tables); generation gated by the fail-closed statutory-calculator capability, so synth-only production refuses; migrate `0054_payroll_statutory_filings` remains ops-gated |
+| C3 period freeze | **CLOSED** | `lockPayrollPeriodInputs` (`open → inputs_locked`); ingest defers non-termination handoffs; `createPayrollRun` stays open-only; lock requires an existing run; migrate `0055_payroll_period_inputs_locked` remains ops-gated |
+| C6 mid-period termination | **CLOSED** | Late `notice` / `terminated` handoff after freeze accepts the fact and writes blocking `MID_PERIOD_TERMINATION` on active runs |
 
 ## 3. Open items (cite bridging, do not invent scope)
 
 | Item | Bridging | Notes |
 | --- | --- | --- |
 | Statutory calculator sourcing | A2 | No production jurisdiction until reviewer-approved calculator |
-| HR D7 residue docs | D7 | Restriction op closed; cut-off / mid-period termination / breaking-change policy docs remain |
+| D0 fact widening — Stage 2/3 | D0 | HR capture (Stage 1) shipped in `@afenda/human-resources` `statutory-profile` with migration `0056_hr_statutory_profile`; the handoff schema widening and the payroll YTD / prior-employer port remain open, so the D4 leave-balance and prior-employer inputs stay caller-asserted |
 | Production handoff DDL | ops | Apply `0049_payroll_accepted_handoff.sql` off PL-S9 when migrate is approved |
 | Production retro DDL | ops | Apply `0052_payroll_retro_pay.sql` when migrate is approved |
 | Production final-settlement DDL | ops | Apply `0053_payroll_final_settlement.sql` when migrate is approved |
 | Production statutory-filings DDL | ops | Apply `0054_payroll_statutory_filings.sql` when migrate is approved |
+| Production period-lock DDL | ops | Apply `0055_payroll_period_inputs_locked.sql` when migrate is approved |
 
 ## 4. Verify loops
 

@@ -80,8 +80,8 @@ describe("Privacy operation registry", () => {
 	});
 
 	it("declares the complete privacy-export read projection once", () => {
-		expect(HUMAN_RESOURCES_PRIVACY_EXPORT_STORE_METHODS).toHaveLength(26);
-		expect(new Set(HUMAN_RESOURCES_PRIVACY_EXPORT_STORE_METHODS).size).toBe(26);
+		expect(HUMAN_RESOURCES_PRIVACY_EXPORT_STORE_METHODS).toHaveLength(28);
+		expect(new Set(HUMAN_RESOURCES_PRIVACY_EXPORT_STORE_METHODS).size).toBe(28);
 		const collector = source("src/features/privacy/subject-data-collector.ts");
 		for (const method of HUMAN_RESOURCES_PRIVACY_EXPORT_STORE_METHODS) {
 			expect(collector).toContain(`input.store.${method}`);

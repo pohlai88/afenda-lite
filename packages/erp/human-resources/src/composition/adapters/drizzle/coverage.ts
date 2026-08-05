@@ -7,6 +7,7 @@ import type { DrizzleLeaveMethods } from "../../../features/leave/adapters/leave
 import type { DrizzleOrganizationMethods } from "../../../features/organization/adapters/organization.drizzle";
 import type { DrizzlePerformanceMethods } from "../../../features/performance/adapters/performance.drizzle";
 import type { DrizzleRecruitmentMethods } from "../../../features/recruitment/adapters/recruitment.drizzle";
+import type { DrizzleStatutoryProfileMethods } from "../../../features/statutory-profile/adapters/statutory-profile.drizzle";
 import type { DrizzleTalentMethods } from "../../../features/talent/adapters/talent.drizzle";
 import type { HumanResourcesTimeStore } from "../../../features/time/store-contract";
 import type { DrizzleWorkforcePlanningMethods } from "../../../features/workforce-planning/adapters/workforce-planning.drizzle";
@@ -34,6 +35,7 @@ export type DrizzleImplementedHumanResourcesMethods = DrizzleCoreMethods &
 	DrizzleWorkforcePlanningMethods &
 	DrizzleComplianceMethods &
 	DrizzleEmployeeRelationsMethods &
+	DrizzleStatutoryProfileMethods &
 	DrizzleIdentityMethods;
 
 /**

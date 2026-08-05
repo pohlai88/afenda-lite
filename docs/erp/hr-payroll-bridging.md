@@ -443,7 +443,7 @@ Leave-balance-at-termination is an **HR fact** delivered through the handoff, no
 | 7 | Transport residue: README truth both sides | B1 | ✅ single-transport wording identical; workforce port is a ledger-backed default with test-only override |
 | 8 | Outbox drain | B6 | ✅ platform drain + cron route + payments/accounting event mapping in `apps/web` |
 | 9 | Capability signature: currency, clock, statutory | B3 | ✅ required composition inputs |
-| 10 | D0 fact widening | D0 | ⏳ **open** — needs HR-side capture (columns + gated migration) first; do not widen the event schema with unpopulated fields |
+| 10 | D0 fact widening | D0 | ◐ **Stage 1 (HR capture) done** — `@afenda/human-resources` `statutory-profile` ships effective-dated `hr_statutory_profile` + `hr_prior_employer_ytd` (migration `0056_hr_statutory_profile`, ops-gated); handoff widening + payroll YTD port open |
 | 11 | `settlement-ingress` | D2 | ✅ + C8 reversal-bounded-by-settlement guard |
 | 12 | `privacy` | D1 | ✅ restriction + retention evidence + DSAR; erasure still forbidden without counsel citation |
 | 13 | `payroll-jobs` | D6 | ✅ durable claim/lease/retry/DLQ + chunk merge + `/api/cron/payroll-jobs` |
@@ -451,7 +451,7 @@ Leave-balance-at-termination is an **HR fact** delivered through the handoff, no
 | 15 | HR D7 residue | D7 | ✅ restriction ops, PRODUCTION_READINESS promotion gate, cut-off + termination + breaking-change docs (C3/C6 enforcement rows honestly partial — payroll-side enforcement + tests pending) |
 | 16 | Phase E evidence + promotion | E | ⏳ open — gated on 2, 3, 10, 14 and D7's two partial rows |
 
-Remaining critical path: **A2 sourcing (longest lead) → D0 capture + widening → Phase E.** Phases B, C, and D3–D5 are closed.
+Remaining critical path: **A2 sourcing (longest lead) → D0 handoff widening + payroll YTD port (HR capture landed 2026-08-06) → Phase E.** Phases B, C, and D3–D5 are closed.
 
 ---
 

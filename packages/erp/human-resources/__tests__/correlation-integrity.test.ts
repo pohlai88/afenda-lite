@@ -173,6 +173,7 @@ import {
 	openRequisition,
 	submitRequisition,
 } from "../src/features/recruitment/requisition";
+import { upsertStatutoryProfile } from "../src/features/statutory-profile/statutory-profile";
 import {
 	approveTalentPoolMember,
 	createTalentPool,
@@ -400,6 +401,7 @@ import {
 	HUMAN_RESOURCES_COMMAND_SHIFT_CREATE,
 	HUMAN_RESOURCES_COMMAND_SHIFT_DEACTIVATE,
 	HUMAN_RESOURCES_COMMAND_SHIFT_UPDATE,
+	HUMAN_RESOURCES_COMMAND_STATUTORY_PROFILE_UPSERT,
 	HUMAN_RESOURCES_COMMAND_TALENT_POOL_MEMBER_REMOVE,
 	HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_CREATE,
 	HUMAN_RESOURCES_COMMAND_TALENT_PROFILE_UPDATE,
@@ -441,6 +443,7 @@ import {
 	HUMAN_RESOURCES_ORGANIZATION_COMMAND_IDS,
 	HUMAN_RESOURCES_PERFORMANCE_COMMAND_IDS,
 	HUMAN_RESOURCES_RECRUITMENT_COMMAND_IDS,
+	HUMAN_RESOURCES_STATUTORY_PROFILE_COMMAND_IDS,
 	HUMAN_RESOURCES_TALENT_COMMAND_IDS,
 	HUMAN_RESOURCES_TIME_COMMAND_IDS,
 	HUMAN_RESOURCES_WORKFORCE_FOUNDATION_COMMAND_IDS,
@@ -627,6 +630,7 @@ describe("correlation integrity", () => {
 			HUMAN_RESOURCES_COMMAND_PRIVACY_RESTRICTION_LIFT,
 			HUMAN_RESOURCES_COMMAND_PRIVACY_RESTRICTION_PLACE,
 			HUMAN_RESOURCES_COMMAND_PRIVACY_SUBJECT_ANONYMIZE,
+			...HUMAN_RESOURCES_STATUTORY_PROFILE_COMMAND_IDS,
 		]);
 		for (const entry of HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY) {
 			expect(covered.has(entry.command)).toBe(true);
@@ -6628,6 +6632,56 @@ describe("correlation integrity", () => {
 		assertCorrelationPropagated(ready, assignCorr, {
 			expectOutbox: true,
 			operation: HUMAN_RESOURCES_COMMAND_LEARNING_ASSIGNMENT_CREATE,
+		});
+	});
+	it("propagates correlationId for statutory profile capture (audit_only)", async () => {
+		const ready = harness();
+		const employee = await createEmployee(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "seed-statutory-employee",
+				idempotencyKey: "idem-statutory-employee",
+				employeeNumber: "E-STAT-1",
+				legalName: "Statutory Worker",
+			},
+			ready,
+		);
+		expect(employee.ok).toBe(true);
+		if (!employee.ok) {
+			return;
+		}
+		const ports = ready.ports as ReturnType<typeof createMemoryMutationPorts>;
+		ports.audit.calls.length = 0;
+		ports.outbox.calls.length = 0;
+
+		const correlationId = "trace-statutory-upsert";
+		const captured = await upsertStatutoryProfile(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId,
+				idempotencyKey: "idem-statutory-upsert",
+				employeeId: employee.data.id,
+				jurisdictionCode: "MY",
+				taxResidencyStatus: "resident",
+				nationalityCountryCode: "MY",
+				expatriate: false,
+				minimumWageZone: null,
+				taxFileNumber: "SG-00000001",
+				employeeProvidentFundNumber: null,
+				socialSecurityNumber: null,
+				socialInsuranceBookNumber: null,
+				dependantCount: 0,
+				reliefDeclarations: [],
+				effectiveFrom: "2026-01-01",
+			},
+			ready,
+		);
+		expect(captured.ok).toBe(true);
+		assertCorrelationPropagated(ready, correlationId, {
+			expectOutbox: false,
+			operation: HUMAN_RESOURCES_COMMAND_STATUTORY_PROFILE_UPSERT,
 		});
 	});
 });

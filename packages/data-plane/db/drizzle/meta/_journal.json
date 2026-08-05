@@ -386,6 +386,20 @@
       "when": 1785978600006,
       "tag": "0054_payroll_statutory_filings",
       "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1785978600007,
+      "tag": "0055_payroll_period_inputs_locked",
+      "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1785978600008,
+      "tag": "0056_hr_statutory_profile",
+      "breakpoints": true
     }
   ]
 }

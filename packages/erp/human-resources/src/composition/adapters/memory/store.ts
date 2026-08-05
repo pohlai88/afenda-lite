@@ -59,6 +59,12 @@ import {
 	resetRecruitmentMemoryState,
 } from "../../../features/recruitment/adapters/recruitment.memory";
 import {
+	createMemoryStatutoryProfileMethods,
+	createStatutoryProfileMemoryState,
+	resetStatutoryProfileMemoryState,
+	type StatutoryProfileMemoryState,
+} from "../../../features/statutory-profile/adapters/statutory-profile.memory";
+import {
 	createMemoryTalentMethods,
 	createTalentMemoryState,
 	resetTalentMemoryState,
@@ -104,6 +110,7 @@ export interface MemoryHumanResourcesStoreState {
 	organization: OrganizationMemoryState;
 	performance: PerformanceMemoryState;
 	recruitment: RecruitmentMemoryState;
+	statutoryProfile: StatutoryProfileMemoryState;
 	talent: TalentMemoryState;
 	time: TimeMemoryState;
 	workforceFoundation: WorkforceFoundationMemoryState;
@@ -132,6 +139,7 @@ function createMemoryHumanResourcesStoreState(): MemoryHumanResourcesStoreState 
 		employeeRelations: createEmployeeRelationsMemoryState(),
 		workforceFoundation: createWorkforceFoundationMemoryState(),
 		hireOrchestration: createHireOrchestrationMemoryState(),
+		statutoryProfile: createStatutoryProfileMemoryState(),
 	};
 }
 
@@ -153,6 +161,7 @@ function resetMemoryHumanResourcesStoreState(
 	resetEmployeeRelationsMemoryState(state.employeeRelations);
 	resetWorkforceFoundationMemoryState(state.workforceFoundation);
 	resetHireOrchestrationMemoryState(state.hireOrchestration);
+	resetStatutoryProfileMemoryState(state.statutoryProfile);
 }
 
 /** Composition root for Vitest and local harnesses. */
@@ -188,6 +197,7 @@ export function createMemoryHumanResourcesStore(): MemoryHumanResourcesStore {
 		}),
 		createMemoryHireOrchestrationMethods(state.hireOrchestration),
 		createMemoryHumanResourcesIdentityStore(state.organization),
+		createMemoryStatutoryProfileMethods(state.statutoryProfile),
 	) as MemoryHumanResourcesStore;
 
 	Object.defineProperty(store, "state", {

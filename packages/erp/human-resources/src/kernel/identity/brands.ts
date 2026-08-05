@@ -2467,3 +2467,47 @@ export function parseHumanResourcesOvertimeRequestId(
 	}
 	return errorResult.ok(parsed.data);
 }
+
+export const humanResourcesStatutoryProfileIdSchema = z
+	.string()
+	.uuid()
+	.brand<"HumanResourcesStatutoryProfileId">();
+export type HumanResourcesStatutoryProfileId = z.infer<
+	typeof humanResourcesStatutoryProfileIdSchema
+>;
+
+export const humanResourcesPriorEmployerYtdIdSchema = z
+	.string()
+	.uuid()
+	.brand<"HumanResourcesPriorEmployerYtdId">();
+export type HumanResourcesPriorEmployerYtdId = z.infer<
+	typeof humanResourcesPriorEmployerYtdIdSchema
+>;
+
+export function parseHumanResourcesStatutoryProfileId(
+	id: string,
+): Result<HumanResourcesStatutoryProfileId> {
+	const parsed = humanResourcesStatutoryProfileIdSchema.safeParse(id);
+	if (!parsed.success) {
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
+	}
+	return errorResult.ok(parsed.data);
+}
+
+export function parseHumanResourcesPriorEmployerYtdId(
+	id: string,
+): Result<HumanResourcesPriorEmployerYtdId> {
+	const parsed = humanResourcesPriorEmployerYtdIdSchema.safeParse(id);
+	if (!parsed.success) {
+		return errorResult.fail("INTERNAL_ERROR", {
+			internalContext: humanResourcesErrorDetails(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			),
+		});
+	}
+	return errorResult.ok(parsed.data);
+}

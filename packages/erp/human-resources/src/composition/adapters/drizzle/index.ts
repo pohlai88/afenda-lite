@@ -13,6 +13,7 @@ export * from "../../../features/payroll-handoff/delivery/adapters/payroll-deliv
 export * from "../../../features/performance/adapters/performance.drizzle";
 export * from "../../../features/recruitment/adapters/recruitment.drizzle";
 export * from "../../../features/reporting/adapters/reporting.drizzle";
+export * from "../../../features/statutory-profile/adapters/statutory-profile.drizzle";
 export * from "../../../features/talent/adapters/talent.drizzle";
 export * from "../../../features/time/adapters/work-calendar-lookup.drizzle";
 export * from "../../../features/workforce-planning/adapters/workforce-planning.drizzle";

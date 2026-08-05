@@ -74,6 +74,11 @@ export const HUMAN_RESOURCES_POLICY_SENSITIVITY_DEFAULTS = Object.freeze({
 	[HUMAN_RESOURCES_COMPENSATION_PAYROLL_HANDOFF_POLICY_ID]:
 		HUMAN_RESOURCES_COMPENSATION_SENSITIVITY,
 	"hr.recruitment": HUMAN_RESOURCES_BACKGROUND_CHECK_SENSITIVITY,
+	"hr.statutory-profile": defineSensitivity({
+		resourceType: "personal_identifiers",
+		subjectPolicy: "privileged_only",
+		fieldClasses: ["personal_identifiers"],
+	}),
 	"hr.performance": defineSensitivity({
 		resourceType: "performance",
 		subjectPolicy: "manager_or_privileged",
