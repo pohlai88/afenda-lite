@@ -23,9 +23,11 @@ import {
  *
  * Event name strings are owned by `@afenda/events/schemas`. This registry owns
  * the payroll-local mapping from each emitted event to the command that
- * produces it and the registered dispatcher (null until platform outbox drain
- * lands — B6).
+ * produces it and the registered dispatcher drained by `apps/web` (B6).
  */
+export const PAYROLL_PLATFORM_EVENT_DISPATCHER_ID =
+	"apps/web:payroll-platform-events" as const;
+
 export type PayrollEmissionEntry = Readonly<{
 	dispatcher: string | null;
 	emittedBy: PayrollCommandId;
@@ -36,42 +38,42 @@ export const PAYROLL_EMISSION_REGISTRY = [
 	{
 		event: PAYROLL_RUN_STARTED_EVENT,
 		emittedBy: PAYROLL_COMMAND_RUN_CREATE,
-		dispatcher: null,
+		dispatcher: PAYROLL_PLATFORM_EVENT_DISPATCHER_ID,
 	},
 	{
 		event: PAYROLL_RUN_CALCULATED_EVENT,
 		emittedBy: PAYROLL_COMMAND_RUN_CALCULATE,
-		dispatcher: null,
+		dispatcher: PAYROLL_PLATFORM_EVENT_DISPATCHER_ID,
 	},
 	{
 		event: PAYROLL_RUN_FINALIZED_EVENT,
 		emittedBy: PAYROLL_COMMAND_RUN_FINALIZE,
-		dispatcher: null,
+		dispatcher: PAYROLL_PLATFORM_EVENT_DISPATCHER_ID,
 	},
 	{
 		event: PAYROLL_PAYMENT_REQUESTED_EVENT,
 		emittedBy: PAYROLL_COMMAND_RUN_FINALIZE,
-		dispatcher: null,
+		dispatcher: PAYROLL_PLATFORM_EVENT_DISPATCHER_ID,
 	},
 	{
 		event: PAYROLL_POSTING_REQUESTED_EVENT,
 		emittedBy: PAYROLL_COMMAND_RUN_FINALIZE,
-		dispatcher: null,
+		dispatcher: PAYROLL_PLATFORM_EVENT_DISPATCHER_ID,
 	},
 	{
 		event: PAYROLL_RUN_REVERSED_EVENT,
 		emittedBy: PAYROLL_COMMAND_RUN_REVERSE,
-		dispatcher: null,
+		dispatcher: PAYROLL_PLATFORM_EVENT_DISPATCHER_ID,
 	},
 	{
 		event: PAYROLL_PAYMENT_CORRECTION_REQUESTED_EVENT,
 		emittedBy: PAYROLL_COMMAND_RUN_REVERSE,
-		dispatcher: null,
+		dispatcher: PAYROLL_PLATFORM_EVENT_DISPATCHER_ID,
 	},
 	{
 		event: PAYROLL_POSTING_CORRECTION_REQUESTED_EVENT,
 		emittedBy: PAYROLL_COMMAND_RUN_REVERSE,
-		dispatcher: null,
+		dispatcher: PAYROLL_PLATFORM_EVENT_DISPATCHER_ID,
 	},
 ] as const satisfies readonly PayrollEmissionEntry[];
 

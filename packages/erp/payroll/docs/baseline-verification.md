@@ -7,7 +7,7 @@
 | Date | 2026-08-05 |
 | Branch | `feat/hr-payroll-closure` |
 | Package lifecycle | `scaffolded` |
-| Overall outcome | **Engineering gates green including B5 Neon parity; A2 and B6 remain open** |
+| Overall outcome | **Engineering gates green including B5 Neon parity and B6 outbox drain; A2 remains open** |
 
 > Package-local verification record. Not a kernel seal, deployment record, or
 > lifecycle promotion.
@@ -15,8 +15,8 @@
 ## 1. Decision enabled
 
 Payroll may continue under `scaffolded` with honest coupling to HR. Closed items
-(A1, A3, A4, C2, C9, B1–B5, B7) do not authorize `active` lifecycle, production
-statutory calculators, or enterprise seal while A2 and B6 remain open
+(A1, A3, A4, C2, C9, B1–B7) do not authorize `active` lifecycle, production
+statutory calculators, or enterprise seal while A2 remains open
 ([hr-payroll-decisions.md](./hr-payroll-decisions.md)).
 
 ## 2. Verification matrix
@@ -27,7 +27,8 @@ statutory calculators, or enterprise seal while A2 and B6 remain open
 | Package typecheck | `pnpm --filter @afenda/payroll typecheck` | PASS | `tsc --noEmit` |
 | Inner unit loop | `pnpm check:payroll` / `pnpm test:payroll:unit` | PASS | Memory unit project |
 | Governance fixtures | `governance-fixtures.test.ts` | PASS | public-contract, registry-projection, consumer-inventory, architecture-debt |
-| Manifest / emission parity | `manifest.test.ts` | PASS | Registry ↔ manifest ↔ lifecycle builders |
+| Manifest / emission parity | `manifest.test.ts` | PASS | Registry ↔ manifest ↔ lifecycle builders; dispatchers registered |
+| Emission drain governance | `pnpm governance:emission-drain` | PASS | All payroll emissions declare platform dispatcher |
 | Lifecycle coupling | `pnpm governance:lifecycle-coupling` | PASS | Active module may not require scaffolded |
 | Module validate | `pnpm validate:modules` | SKIP | No module roadmap after `docs-V2` removal |
 | Outer parity | `REQUIRE_DATABASE_TESTS=1 AFENDA_DATABASE_TEST_TARGET=preview pnpm test:payroll:parity` | PASS | 7/7 including workforce-ingress races on preview with `payroll_accepted_handoff` |

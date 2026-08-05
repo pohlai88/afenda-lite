@@ -66,6 +66,7 @@ export {
 	createRegistryPayrollStatutory,
 	createSystemPayrollClock,
 } from "./facade/system-capabilities";
+export { PAYROLL_PLATFORM_EVENT_DISPATCHER_ID } from "./kernel/emissions/emission-registry";
 export type {
 	PayrollClockCapability,
 	PayrollCurrencyCapability,

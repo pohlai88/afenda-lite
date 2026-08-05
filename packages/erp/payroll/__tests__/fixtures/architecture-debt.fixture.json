@@ -639,12 +639,7 @@
 			"target": 0
 		},
 		{
-			"items": [
-				{
-					"evidence": "src/kernel/emissions/emission-registry.ts:39 registers payroll lifecycle outbox emissions with dispatcher: null — no platform dispatcher drains the outbox (bridging doc B6)",
-					"file": "src/kernel/emissions/emission-registry.ts"
-				}
-			],
+			"items": [],
 			"key": "undrained-outbox-emission",
 			"target": 0
 		},

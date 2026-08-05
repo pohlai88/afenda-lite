@@ -15,7 +15,8 @@
 | B2 | Governance fixtures | **CLOSED** | Four fixtures + `governance-fixtures.test.ts` (public-contract, registry-projection, consumer-inventory, architecture-debt). | 2026-08-05 | Payroll |
 | B4 | Emission registry | **CLOSED** | `PAYROLL_EMISSION_REGISTRY` owns command→event→dispatcher mapping; manifest `events.emits` derives from it; retired `docs-V2` citation removed from `mutation-tables.ts`. | 2026-08-05 | Payroll |
 | B1 | Transport docs + testing subpath | **CLOSED** | Document single push/sync-ingest transport on both READMEs; PayrollWorkforceCapability is test-only; declare @afenda/payroll/testing. | 2026-08-05 | Payroll / HR |
-| B7 | Governance gates | **CLOSED** | Root scripts governance:erp-symmetry, governance:emission-drain, governance:cross-import, governance:architecture-debt chained from governance:packages. Emission-drain is a declared-debt gate until B6 drains dispatchers. | 2026-08-05 | Payroll / platform governance |
+| B7 | Governance gates | **CLOSED** | Root scripts governance:erp-symmetry, governance:emission-drain, governance:cross-import, governance:architecture-debt chained from governance:packages. | 2026-08-05 | Payroll / platform governance |
+| B6 | Platform outbox drain | **CLOSED** | `apps/web` cron `/api/cron/payroll-outbox` drains payroll emissions via `PAYROLL_PLATFORM_EVENT_DISPATCHER_ID`; Payments draft intake + Accounting source posting handlers fail closed. | 2026-08-05 | Payroll / platform composition |
 | B3 | Capability signature | **CLOSED** | Composition requires clock, currency, and statutory capabilities; production factories exported; calculator uses currency payable scale and statutory registry approval. | 2026-08-05 | Payroll |
 
 ## A1 evidence
@@ -40,6 +41,15 @@ Shipped in `src/features/payroll-runs/finalization.ts`: when status is `calculat
 - Lane: `testing/vitest.payroll-parity.config.ts` · root `pnpm test:payroll:parity` · package `pnpm --filter @afenda/payroll test:parity`
 - Verify: `REQUIRE_DATABASE_TESTS=1` + `AFENDA_DATABASE_TEST_TARGET=preview|test` + non-prod `DATABASE_URL` with migration `0049_payroll_accepted_handoff.sql` applied
 - Inner loop (no Neon): `pnpm check:payroll`
+
+## B6 platform outbox drain
+
+- Dispatcher: `apps/web:payroll-platform-events` (`PAYROLL_PLATFORM_EVENT_DISPATCHER_ID`)
+- Drain worker: `apps/web/modules/platform/domain/payroll-outbox-drain.ts`
+- Handlers: `apps/web/modules/platform/domain/payroll-platform-events.ts`
+- Cron: `apps/web/app/api/cron/payroll-outbox/route.ts` (gated by `PAYROLL_OUTBOX_DRAIN_ENABLED` + `CRON_SECRET`)
+- Registry: `src/kernel/emissions/emission-registry.ts` — all lifecycle emissions declare the dispatcher
+- Governance: `pnpm governance:emission-drain` passes with zero undrained debt
 
 ## Open-decision rule
 

@@ -82,6 +82,10 @@ export function createProductEnvRegistry(runtimeCtx: NeonRuntimeContext) {
 		HR_RELIABILITY_PER_ORG_LIMIT: boundedIntString(1, 25, 5),
 		HR_RELIABILITY_LEASE_SECONDS: boundedIntString(60, 900, 120),
 		HR_RELIABILITY_TIME_BUDGET_MS: boundedIntString(1000, 55_000, 45_000),
+		PAYROLL_OUTBOX_DRAIN_ENABLED: boolString.optional().default(false),
+		PAYROLL_OUTBOX_DRAIN_ORG_BATCH_SIZE: boundedIntString(1, 100, 25),
+		PAYROLL_OUTBOX_DRAIN_PER_ORG_LIMIT: boundedIntString(1, 200, 25),
+		PAYROLL_OUTBOX_DRAIN_TIME_BUDGET_MS: boundedIntString(1000, 55_000, 45_000),
 
 		AI_GATEWAY_API_KEY: nonEmptyOptionalString,
 		AI_THE_MACHINE_MODEL: z

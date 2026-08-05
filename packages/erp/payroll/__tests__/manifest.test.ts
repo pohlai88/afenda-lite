@@ -9,6 +9,7 @@ import { payrollRunEventsForStatus } from "../src/features/payroll-runs/lifecycl
 import {
 	PAYROLL_EMISSION_REGISTRY,
 	PAYROLL_EMITTED_EVENTS,
+	PAYROLL_PLATFORM_EVENT_DISPATCHER_ID,
 } from "../src/kernel/emissions/emission-registry";
 import { PAYROLL_MUTATION_TABLES } from "../src/kernel/emissions/mutation-tables";
 import { PAYROLL_PERMISSION_CODES } from "../src/kernel/execution/permissions";
@@ -54,7 +55,9 @@ describe("payrollModuleManifest", () => {
 		);
 
 		expect(
-			PAYROLL_EMISSION_REGISTRY.every((entry) => entry.dispatcher === null),
+			PAYROLL_EMISSION_REGISTRY.every(
+				(entry) => entry.dispatcher === PAYROLL_PLATFORM_EVENT_DISPATCHER_ID,
+			),
 		).toBe(true);
 		expect(new Set(registryEvents).size).toBe(registryEvents.length);
 	});

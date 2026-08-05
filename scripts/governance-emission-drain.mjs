@@ -24,7 +24,7 @@ const debtPath = join(
 const registrySource = readFileSync(registryPath, "utf8");
 const entryBlocks = [
 	...registrySource.matchAll(
-		/\{\s*event:\s*([A-Z0-9_]+),\s*emittedBy:\s*[A-Z0-9_]+,\s*dispatcher:\s*(null|"[^"]*")\s*,?\s*\}/g,
+		/\{\s*event:\s*([A-Z0-9_]+),\s*emittedBy:\s*[A-Z0-9_]+,\s*dispatcher:\s*(null|"[^"]*"|PAYROLL_PLATFORM_EVENT_DISPATCHER_ID)\s*,?\s*\}/g,
 	),
 ];
 

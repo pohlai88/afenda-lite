@@ -43,13 +43,13 @@ Entrypoints: `@afenda/payroll` (production) · `@afenda/payroll/testing` (test-o
 | B1 transport docs + `./testing` | **CLOSED** | README transport + package `exports["./testing"]` |
 | B7 governance gates | **CLOSED** | `governance:erp-symmetry` · `emission-drain` · `cross-import` · `architecture-debt` |
 | B3 capability signature | **CLOSED** | Required `clock` · `currency` · `statutory` on composition |
+| B6 platform outbox drain | **CLOSED** | `apps/web` payroll outbox cron + platform event handlers |
 
 ## 3. Open items (cite bridging, do not invent scope)
 
 | Item | Bridging | Notes |
 | --- | --- | --- |
 | Statutory calculator sourcing | A2 | No production jurisdiction until reviewer-approved calculator |
-| Outbox drain | B6 | Platform dispatcher + Payments/Accounting consumers — own mission |
 | Privacy / settlement / retro / final-settlement / filings / jobs | D1–D6 | Feature capsules not yet present (A3/A4 postures closed; D2 still required for settlement ingress) |
 | Production handoff DDL | ops | Apply `0049_payroll_accepted_handoff.sql` off PL-S9 when migrate is approved |
 

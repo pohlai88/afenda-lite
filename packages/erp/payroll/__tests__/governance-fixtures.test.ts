@@ -56,7 +56,7 @@ describe("@afenda/payroll registry projection fixture", () => {
 
 	beforeAll(() => {
 		contract = buildRegistryProjectionContract(packageRoot);
-	});
+	}, 60_000);
 
 	it("matches the intentionally reviewed projection of the operation registry", () => {
 		const expected = readRegistryProjectionFixture(

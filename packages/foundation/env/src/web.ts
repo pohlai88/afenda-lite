@@ -79,6 +79,7 @@ type ProductionValues = Parameters<
 		NEON_BRANCH_ID?: string | undefined;
 		UPSTASH_REDIS_REST_URL?: string | undefined;
 		HR_RELIABILITY_ENABLED: boolean;
+		PAYROLL_OUTBOX_DRAIN_ENABLED: boolean;
 		CRON_SECRET?: string | undefined;
 	}>;
 
@@ -284,6 +285,13 @@ function validateProductionRequirements(
 			ctx,
 			"CRON_SECRET",
 			"CRON_SECRET is required in production when HR_RELIABILITY_ENABLED=true.",
+		);
+	}
+	if (value.PAYROLL_OUTBOX_DRAIN_ENABLED && value.CRON_SECRET === undefined) {
+		addCustomIssue(
+			ctx,
+			"CRON_SECRET",
+			"CRON_SECRET is required in production when PAYROLL_OUTBOX_DRAIN_ENABLED=true.",
 		);
 	}
 

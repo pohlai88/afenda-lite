@@ -101,6 +101,18 @@
 			"useMode": "runtime"
 		},
 		{
+			"consumerClass": "production",
+			"disposition": "allowed",
+			"entrypoint": ".",
+			"file": "apps/web/modules/platform/domain/payroll-platform-events.ts",
+			"package": "@afenda/web",
+			"referenceKind": "module",
+			"resolution": "resolved",
+			"resolvedTarget": "packages/erp/payroll/src/index.ts",
+			"symbol": "PAYROLL_PLATFORM_EVENT_DISPATCHER_ID",
+			"useMode": "runtime"
+		},
+		{
 			"consumerClass": "testing",
 			"disposition": "manual-review",
 			"entrypoint": "filesystem",
