@@ -546,20 +546,23 @@ export function createProductionPayrollRunCalculator(input: {
 				snapshotHashes: [...snapshotHashes].sort(),
 			});
 
-			const clearedOutputs = await input.store.deleteCalculationOutputsForRun(
-				{
-					organizationId: calcInput.organizationId,
-					runId: calcInput.runId,
-					actorUserId: calcInput.actorUserId,
-					correlationId: calcInput.correlationId,
-				},
-				ports,
-			);
-			if (!clearedOutputs.ok) {
-				return clearedOutputs;
+			const chunkEmployeeIds = calcInput.employeeIds;
+			if (chunkEmployeeIds === undefined) {
+				const clearedOutputs = await input.store.deleteCalculationOutputsForRun(
+					{
+						organizationId: calcInput.organizationId,
+						runId: calcInput.runId,
+						actorUserId: calcInput.actorUserId,
+						correlationId: calcInput.correlationId,
+					},
+					ports,
+				);
+				if (!clearedOutputs.ok) {
+					return clearedOutputs;
+				}
 			}
 
-			if (runEmployees.length > 0) {
+			if (runEmployees.length > 0 || chunkEmployeeIds !== undefined) {
 				const persisted = await input.store.replaceRunCalculationOutputs(
 					{
 						organizationId: calcInput.organizationId,
@@ -568,6 +571,9 @@ export function createProductionPayrollRunCalculator(input: {
 						resultLines,
 						actorUserId: calcInput.actorUserId,
 						correlationId: calcInput.correlationId,
+						...(chunkEmployeeIds === undefined
+							? {}
+							: { employeeIds: chunkEmployeeIds }),
 					},
 					ports,
 				);
@@ -584,6 +590,9 @@ export function createProductionPayrollRunCalculator(input: {
 						results: statutoryResults,
 						actorUserId: calcInput.actorUserId,
 						correlationId: calcInput.correlationId,
+						...(chunkEmployeeIds === undefined
+							? {}
+							: { employeeIds: chunkEmployeeIds }),
 					},
 					ports,
 				);

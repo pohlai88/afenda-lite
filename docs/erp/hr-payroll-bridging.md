@@ -133,7 +133,7 @@ Bring both packages to the same row set. Missing cells are the work — but seve
 | Observability | ✅ module | partial — `PayrollObservabilityPort` in `src/kernel/execution/ports.ts`, threaded through command options; no feature module |
 | Tenant-injection doctrine in README | ✅ | ❌ **add** |
 | Privacy feature | ✅ | ✅ **exists** (D1) — `src/features/privacy/` restriction/retention/DSAR |
-| Durable job feature | ✅ `bulk-jobs` | ❌ **add** (Phase D6) |
+| Durable job feature | ✅ `bulk-jobs` | ✅ `payroll-jobs` (Phase D6) |
 | Currency/clock/statutory injected into capability | n/a | ❌ **add** (B3 — confirmed: options accept only `authorization` required, `observability?`/`workforce?` optional) |
 
 Also align governance posture: Payroll's README says `pnpm validate:modules --write`, HR's says `pnpm validate:modules`. Pick check-only for CI and `--write` for local; state it identically in both.
@@ -396,7 +396,7 @@ Requires the A2 rate tables to be effective-dated and version-pinned.
 
 ### D6 — `payroll/payroll-jobs`
 
-Payroll runs are long batches over thousands of employees with no durable job infrastructure, while HR has `bulk-jobs` with leases, dead letters, and recovery. Mirror it: durable claims, leases, acknowledgements, retries, dead letters, recovery. A calculation batch that dies at employee 4,000 of 5,000 must resume, not restart or half-commit.
+**CLOSED 2026-08-05.** `payroll-jobs` mirrors HR reliability: enqueue a calculation job, claim with `FOR UPDATE SKIP LOCKED`, execute chunked work, retry with backoff, dead-letter, and replay. Checkpoints record `nextIndex` + processed employee ids so a crash at employee 4,000 of 5,000 resumes the remaining chunk instead of restarting. Chunk persistence merges employee outputs (does not wipe earlier chunks). Web drain: `/api/cron/payroll-jobs` behind `PAYROLL_JOBS_DRAIN_ENABLED` + `CRON_SECRET`. Production migrate remains ops-gated (`0051_payroll_jobs`).
 
 ### D7 — HR-side gaps (verified 2026-08-05; several rows already closed)
 
@@ -442,7 +442,7 @@ Payroll runs are long batches over thousands of employees with no durable job in
 | 10 | D0 fact widening | D0 | ⏳ **open** — needs HR-side capture (columns + gated migration) first; do not widen the event schema with unpopulated fields |
 | 11 | `settlement-ingress` | D2 | ✅ + C8 reversal-bounded-by-settlement guard |
 | 12 | `privacy` | D1 | ✅ restriction + retention evidence + DSAR; erasure still forbidden without counsel citation |
-| 13 | `payroll-jobs` | D6 | 🔄 in progress |
+| 13 | `payroll-jobs` | D6 | ✅ durable claim/lease/retry/DLQ + chunk merge + `/api/cron/payroll-jobs` |
 | 14 | `retro-pay`, `final-settlement`, `statutory-filings` | D3–D5 | ⏳ open — after D6 |
 | 15 | HR D7 residue | D7 | ✅ restriction ops, PRODUCTION_READINESS promotion gate, cut-off + termination + breaking-change docs (C3/C6 enforcement rows honestly partial — payroll-side enforcement + tests pending) |
 | 16 | Phase E evidence + promotion | E | ⏳ open — gated on 2, 3, 10, 14 and D7's two partial rows |

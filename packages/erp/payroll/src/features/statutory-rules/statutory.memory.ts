@@ -61,10 +61,15 @@ export function createMemoryStatutoryMethods(input: {
 				return allowed;
 			}
 
+			const mergeIds =
+				replaceInput.employeeIds === undefined
+					? null
+					: new Set(replaceInput.employeeIds);
 			for (const [id, result] of statutory.statutoryResults.entries()) {
 				if (
 					result.organizationId === replaceInput.organizationId &&
-					result.runId === replaceInput.runId
+					result.runId === replaceInput.runId &&
+					(mergeIds === null || mergeIds.has(result.employeeId))
 				) {
 					statutory.statutoryResults.delete(id);
 				}

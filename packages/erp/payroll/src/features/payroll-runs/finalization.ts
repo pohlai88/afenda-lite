@@ -5,9 +5,9 @@ import { PAYROLL_COMMAND_RUN_FINALIZE } from "../../kernel/operations/module-ids
 import { buildPayrollFinalizationProjection } from "../calculation/finalization-evidence";
 import type { PayrollRunCommandOptions as PayrollCommandOptions } from "./operation-store";
 import {
-	PAYROLL_RUN_VERSION_CONFLICT_MESSAGE,
 	hasBlockingPayrollExceptions,
 	loadPayrollRun,
+	PAYROLL_RUN_VERSION_CONFLICT_MESSAGE,
 	transitionPayrollRun,
 } from "./run-helpers";
 import { finalizePayrollRunInputSchema } from "./runs.schema";

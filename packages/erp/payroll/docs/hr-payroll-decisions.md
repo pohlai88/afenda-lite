@@ -21,6 +21,7 @@
 | D7 | HR restriction operation | **CLOSED** | `restrictEmployeeData` / `liftEmployeeDataRestriction` ship with export exclusion and anonymization block; remaining D7 rows are docs/promotion (cut-off, termination contract, breaking-change policy, PRODUCTION_READINESS already present). | 2026-08-05 | Human Resources |
 | B3 | Capability signature | **CLOSED** | Composition requires clock, currency, and statutory capabilities; production factories exported; calculator uses currency payable scale and statutory registry approval. | 2026-08-05 | Payroll |
 | D1 | Payroll privacy | **CLOSED** | `payroll/privacy` ships restriction, retention evidence, field projection, and read-own DSAR. Admin ops use `payroll.payslip.read-all`; subject access uses `payroll.payslip.read-own`. `expirePayrollRetention` marks eligible only — no erasure without A3 counsel citation. | 2026-08-05 | Payroll |
+| D6 | Payroll jobs | **CLOSED** | `payroll-jobs` durable calculation batches: claim/lease/retry/DLQ/replay + chunk merge persistence. Web cron `/api/cron/payroll-jobs`. Schema `0051_payroll_jobs` (ops-gated migrate). | 2026-08-05 | Payroll |
 
 ## A1 evidence
 

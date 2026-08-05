@@ -2,6 +2,7 @@ import {
 	database as afendaDatabase,
 	and,
 	eq,
+	inArray,
 	payrollRun,
 	payrollStatutoryResult,
 } from "@afenda/db";
@@ -111,6 +112,11 @@ export const drizzleStatutoryMethods: PayrollStatutoryStore = {
 					and(
 						eq(payrollStatutoryResult.organizationId, input.organizationId),
 						eq(payrollStatutoryResult.runId, input.runId),
+						...(input.employeeIds === undefined
+							? []
+							: [
+									inArray(payrollStatutoryResult.employeeId, input.employeeIds),
+								]),
 					),
 				);
 

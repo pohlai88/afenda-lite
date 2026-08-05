@@ -98,18 +98,48 @@ export function createMemoryOutputsMethods(input: {
 			return errorResult.ok({ deleted: true });
 		},
 
+		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: full replace and chunk merge share one audit/persist boundary.
 		async replaceRunCalculationOutputs(replaceInput, ports) {
-			const deleted = await this.deleteCalculationOutputsForRun(
-				{
-					organizationId: replaceInput.organizationId,
-					runId: replaceInput.runId,
-					actorUserId: replaceInput.actorUserId,
-					correlationId: replaceInput.correlationId,
-				},
-				ports,
-			);
-			if (!deleted.ok) {
-				return deleted;
+			const allowed = assertRunAllowsOutputMutation(runs, replaceInput);
+			if (!allowed.ok) {
+				return allowed;
+			}
+			const mergeIds =
+				replaceInput.employeeIds === undefined
+					? null
+					: new Set(replaceInput.employeeIds);
+			if (mergeIds === null) {
+				const deleted = await this.deleteCalculationOutputsForRun(
+					{
+						organizationId: replaceInput.organizationId,
+						runId: replaceInput.runId,
+						actorUserId: replaceInput.actorUserId,
+						correlationId: replaceInput.correlationId,
+					},
+					ports,
+				);
+				if (!deleted.ok) {
+					return deleted;
+				}
+			} else {
+				for (const [id, line] of outputs.resultLines.entries()) {
+					if (
+						line.organizationId === replaceInput.organizationId &&
+						line.runId === replaceInput.runId &&
+						mergeIds.has(line.employeeId)
+					) {
+						outputs.resultLines.delete(id);
+					}
+				}
+				for (const [id, employee] of outputs.runEmployees.entries()) {
+					if (
+						employee.organizationId === replaceInput.organizationId &&
+						employee.runId === replaceInput.runId &&
+						mergeIds.has(employee.employeeId)
+					) {
+						outputs.runEmployees.delete(id);
+					}
+				}
 			}
 
 			const now = new Date();

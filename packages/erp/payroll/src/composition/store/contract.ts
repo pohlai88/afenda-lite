@@ -1,5 +1,6 @@
 import type { PayrollOutputsStore } from "../../features/calculation/outputs.store";
 import type { PayrollAssignmentsStore } from "../../features/employee-assignments/assignments.store";
+import type { PayrollJobStore } from "../../features/payroll-jobs/jobs.store";
 import type { PayrollRunsStore } from "../../features/payroll-runs/runs.store";
 import type { PayrollSetupStore } from "../../features/payroll-setup/setup.store";
 import type { PayrollReconciliationStore } from "../../features/reconciliation/reconciliation.store";
@@ -14,10 +15,12 @@ export type PayrollStore = PayrollSetupStore &
 	PayrollStatutoryStore &
 	PayrollOutputsStore &
 	PayrollReconciliationStore &
-	PayrollWorkforceIngressStore;
+	PayrollWorkforceIngressStore &
+	PayrollJobStore;
 
 export type { PayrollOutputsStore } from "../../features/calculation/outputs.store";
 export type { PayrollAssignmentsStore } from "../../features/employee-assignments/assignments.store";
+export type { PayrollJobStore } from "../../features/payroll-jobs/jobs.store";
 export type { PayrollRunsStore } from "../../features/payroll-runs/runs.store";
 export type { PayrollSetupStore } from "../../features/payroll-setup/setup.store";
 export type { PayrollReconciliationStore } from "../../features/reconciliation/reconciliation.store";

@@ -98,8 +98,8 @@ describe("@afenda/db hard tenant roots (N9 / ARCH-023)", () => {
 	});
 
 	it("lists hard tenant root table names including all HR roots", () => {
-		expect(HARD_TENANT_ROOT_TABLE_NAMES).toHaveLength(278);
-		expect(Object.keys(HARD_TENANT_ROOT_TABLES)).toHaveLength(278);
+		expect(HARD_TENANT_ROOT_TABLE_NAMES).toHaveLength(281);
+		expect(Object.keys(HARD_TENANT_ROOT_TABLES)).toHaveLength(281);
 		const hrRoots = HARD_TENANT_ROOT_TABLE_NAMES.filter((name) =>
 			name.startsWith("hr_"),
 		);
@@ -157,6 +157,9 @@ describe("@afenda/db hard tenant roots (N9 / ARCH-023)", () => {
 			"hr_reliability_dead_letter",
 		);
 		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("hr_connector_cursor");
+		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("payroll_job");
+		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("payroll_job_work_item");
+		expect(HARD_TENANT_ROOT_TABLE_NAMES).toContain("payroll_job_dead_letter");
 	});
 
 	it("exactly covers every schema table with required organization ownership", () => {
@@ -182,8 +185,8 @@ describe("@afenda/db hard tenant roots (N9 / ARCH-023)", () => {
 
 	it("derives one schema export symbol for every hard tenant root", () => {
 		const projection = database.tenancy.rootNamesBySchemaSymbol;
-		expect(Object.keys(projection)).toHaveLength(278);
-		expect([...new Set(Object.values(projection))]).toHaveLength(278);
+		expect(Object.keys(projection)).toHaveLength(281);
+		expect([...new Set(Object.values(projection))]).toHaveLength(281);
 		expect(projection.hrBulkImportJob).toBe("hr_bulk_import_job");
 		expect(projection.hrBulkExportArtifactChunk).toBe(
 			"hr_bulk_export_artifact_chunk",

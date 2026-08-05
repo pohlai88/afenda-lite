@@ -1,6 +1,10 @@
 import { createDrizzlePayrollStore } from "../composition/adapters/drizzle";
 import { createProductionMutationPorts } from "../composition/production/ports";
 import { createProductionPayrollRunCalculator } from "../features/calculation/production-run-calculator";
+import {
+	createProductionPayrollJobChunkExecutor,
+	createProductionPayrollJobEmployeeDirectory,
+} from "../features/payroll-jobs/production-job-ports";
 import { createAcceptedWorkforceInputPort } from "../features/workforce-ingress/accepted-workforce-input-port";
 import type { PayrollCommandOptions } from "../kernel/execution/command-options";
 import type { PayrollCapabilityComposition } from "./contracts";
@@ -27,6 +31,14 @@ export function createPayrollCapabilityOptions(
 	const store = createDrizzlePayrollStore();
 	const workforce =
 		composition.workforce ?? createAcceptedWorkforceInputPort(store);
+	const ports = createProductionMutationPorts();
+	const calculator = createProductionPayrollRunCalculator({
+		store,
+		employees: workforce,
+		currency: composition.currency,
+		statutory: composition.statutory,
+		clock: composition.clock,
+	});
 	const context = Object.freeze({
 		[PAYROLL_CONTEXT]: true,
 	} satisfies PayrollCapabilityOptions);
@@ -43,15 +55,19 @@ export function createPayrollCapabilityOptions(
 		...(composition.privacy === undefined
 			? {}
 			: { privacy: composition.privacy }),
+		jobChunkExecutor:
+			composition.jobChunkExecutor ??
+			createProductionPayrollJobChunkExecutor({
+				store,
+				calculator,
+				ports,
+			}),
+		jobEmployees:
+			composition.jobEmployees ??
+			createProductionPayrollJobEmployeeDirectory(store),
 		store,
-		ports: createProductionMutationPorts(),
-		calculator: createProductionPayrollRunCalculator({
-			store,
-			employees: workforce,
-			currency: composition.currency,
-			statutory: composition.statutory,
-			clock: composition.clock,
-		}),
+		ports,
+		calculator,
 	});
 
 	return context;

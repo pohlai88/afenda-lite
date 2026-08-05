@@ -795,6 +795,17 @@ describe("web environment", () => {
 		);
 	});
 
+	it("requires CRON_SECRET when payroll jobs drain is enabled in production", async () => {
+		setValidProductionWebEnv({
+			CRON_SECRET: undefined,
+			PAYROLL_JOBS_DRAIN_ENABLED: "true",
+		});
+
+		await expect(importFreshWebEnv()).rejects.toThrow(
+			"Invalid environment variables",
+		);
+	});
+
 	it("rejects partial Upstash configuration", async () => {
 		setValidProductionWebEnv({
 			UPSTASH_REDIS_REST_TOKEN: undefined,

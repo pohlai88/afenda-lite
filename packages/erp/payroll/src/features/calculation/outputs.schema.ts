@@ -123,5 +123,6 @@ export const replaceRunCalculationOutputsInputSchema = z
 		resultLines: z.array(payrollResultLineCreateRecordSchema),
 		actorUserId: payrollActorUserIdSchema,
 		correlationId: payrollCorrelationIdSchema,
+		employeeIds: z.array(z.string().min(1)).min(1).optional(),
 	})
 	.strict();

@@ -1100,3 +1100,112 @@ export const payrollAcceptedHandoff = pgTable(
 		),
 	],
 );
+
+/** Durable payroll batch job — calculation checkpoints, not HR bulk import. */
+export const payrollJob = pgTable(
+	"payroll_job",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		kind: text("kind").notNull(),
+		status: text("status").notNull(),
+		targetRunId: uuid("target_run_id").notNull(),
+		actorUserId: text("actor_user_id").notNull(),
+		correlationId: text("correlation_id").notNull(),
+		checkpointJson: jsonb("checkpoint_json").notNull(),
+		lastErrorCode: text("last_error_code"),
+		lastErrorMessage: text("last_error_message"),
+		completedAt: timestamp("completed_at", { withTimezone: true }),
+		...payrollIdempotencyColumns,
+		...payrollAuditColumns,
+	},
+	(t) => [
+		index("payroll_job_org_id_idx").on(t.organizationId, t.id),
+		index("payroll_job_org_status_idx").on(t.organizationId, t.status),
+		index("payroll_job_org_run_idx").on(t.organizationId, t.targetRunId),
+		unique("payroll_job_org_id_uidx").on(t.organizationId, t.id),
+		uniqueIndex("payroll_job_org_create_idempotency_uidx").on(
+			t.organizationId,
+			t.createIdempotencyKey,
+		),
+		check("payroll_job_kind_check", sql`${t.kind} IN ('calculate-run')`),
+		check(
+			"payroll_job_status_check",
+			sql`${t.status} IN ('queued', 'running', 'completed', 'failed', 'dead_lettered')`,
+		),
+	],
+);
+
+export const payrollJobWorkItem = pgTable(
+	"payroll_job_work_item",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		jobId: uuid("job_id").notNull(),
+		status: text("status").notNull(),
+		attemptCount: integer("attempt_count").notNull().default(0),
+		nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true }).notNull(),
+		lastAttemptAt: timestamp("last_attempt_at", { withTimezone: true }),
+		leaseOwner: text("lease_owner"),
+		leaseExpiresAt: timestamp("lease_expires_at", { withTimezone: true }),
+		lastErrorCode: text("last_error_code"),
+		lastErrorMessage: text("last_error_message"),
+		idempotencyKey: text("idempotency_key").notNull(),
+		requestFingerprint: text("request_fingerprint").notNull(),
+		version: integer("version").notNull().default(1),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("payroll_job_work_item_org_id_idx").on(t.organizationId, t.id),
+		index("payroll_job_work_item_org_job_idx").on(t.organizationId, t.jobId),
+		index("payroll_job_work_item_org_due_idx").on(
+			t.organizationId,
+			t.status,
+			t.nextAttemptAt,
+		),
+		unique("payroll_job_work_item_org_id_uidx").on(t.organizationId, t.id),
+		uniqueIndex("payroll_job_work_item_org_idempotency_uidx").on(
+			t.organizationId,
+			t.idempotencyKey,
+		),
+		foreignKey({
+			columns: [t.organizationId, t.jobId],
+			foreignColumns: [payrollJob.organizationId, payrollJob.id],
+			name: "payroll_job_work_item_org_job_fk",
+		}),
+		check(
+			"payroll_job_work_item_status_check",
+			sql`${t.status} IN ('pending', 'processing', 'succeeded', 'dead_lettered')`,
+		),
+	],
+);
+
+export const payrollJobDeadLetter = pgTable(
+	"payroll_job_dead_letter",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		jobId: uuid("job_id").notNull(),
+		workItemId: uuid("work_item_id").notNull(),
+		errorCode: text("error_code").notNull(),
+		errorMessage: text("error_message").notNull(),
+		attemptCount: integer("attempt_count").notNull(),
+		failedAt: timestamp("failed_at", { withTimezone: true }).notNull(),
+		replayedByWorkItemId: uuid("replayed_by_work_item_id"),
+	},
+	(t) => [
+		index("payroll_job_dead_letter_org_id_idx").on(t.organizationId, t.id),
+		index("payroll_job_dead_letter_org_job_idx").on(t.organizationId, t.jobId),
+		unique("payroll_job_dead_letter_org_id_uidx").on(t.organizationId, t.id),
+		foreignKey({
+			columns: [t.organizationId, t.jobId],
+			foreignColumns: [payrollJob.organizationId, payrollJob.id],
+			name: "payroll_job_dead_letter_org_job_fk",
+		}),
+	],
+);

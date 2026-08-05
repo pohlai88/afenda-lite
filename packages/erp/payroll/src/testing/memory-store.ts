@@ -2,6 +2,7 @@ import { composeStoreSlices } from "../composition/store/compose-slices";
 import type { PayrollStore } from "../composition/store/contract";
 import { createMemoryOutputsMethods } from "../features/calculation/outputs.memory";
 import { createMemoryAssignmentsMethods } from "../features/employee-assignments/assignments.memory";
+import { createMemoryJobsMethods } from "../features/payroll-jobs/jobs.memory";
 import { createMemoryRunsMethods } from "../features/payroll-runs/runs.memory";
 import { createMemorySetupMethods } from "../features/payroll-setup/setup.memory";
 import { createMemoryReconciliationMethods } from "../features/reconciliation/reconciliation.memory";
@@ -37,6 +38,7 @@ export function createMemoryPayrollStore(): MemoryPayrollStore {
 			runs: state.runs,
 		}),
 		createMemoryReconciliationMethods(state),
+		createMemoryJobsMethods(state.jobs),
 		createMemoryWorkforceIngressMethods(state.workforceIngress),
 	) as MemoryPayrollStore;
 

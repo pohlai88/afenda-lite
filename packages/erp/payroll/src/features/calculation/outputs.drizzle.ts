@@ -176,6 +176,7 @@ export const drizzleOutputsMethods: PayrollOutputsStore = {
 		try {
 			const employeeRowsJson = JSON.stringify(input.runEmployees);
 			const resultLineRowsJson = JSON.stringify(input.resultLines);
+			const mergeEmployeeIds = input.employeeIds ?? null;
 			const [lockedRows] = await afendaDatabase.transaction((sqlValue) => [
 				sqlValue`
 					SELECT status FROM payroll_run
@@ -185,12 +186,20 @@ export const drizzleOutputsMethods: PayrollOutputsStore = {
 				sqlValue`
 					DELETE FROM payroll_result_line
 					WHERE payroll_result_line.organization_id = ${input.organizationId} AND run_id = ${input.runId}
+						AND (
+							${mergeEmployeeIds}::text[] IS NULL
+							OR payroll_result_line.employee_id = ANY(${mergeEmployeeIds}::text[])
+						)
 						AND EXISTS (SELECT 1 FROM payroll_run WHERE payroll_run.organization_id = ${input.organizationId}
 							AND id = ${input.runId} AND status NOT IN ('calculated', 'finalized', 'reversed'))
 				`,
 				sqlValue`
 					DELETE FROM payroll_run_employee
 					WHERE payroll_run_employee.organization_id = ${input.organizationId} AND run_id = ${input.runId}
+						AND (
+							${mergeEmployeeIds}::text[] IS NULL
+							OR payroll_run_employee.employee_id = ANY(${mergeEmployeeIds}::text[])
+						)
 						AND EXISTS (SELECT 1 FROM payroll_run WHERE payroll_run.organization_id = ${input.organizationId}
 							AND id = ${input.runId} AND status NOT IN ('calculated', 'finalized', 'reversed'))
 				`,

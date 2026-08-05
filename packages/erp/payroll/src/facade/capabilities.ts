@@ -6,6 +6,14 @@ import {
 import { createPayrollRecurringDeduction as createPayrollRecurringDeductionInternal } from "../features/employee-assignments/recurring-deduction";
 import { createPayrollRecurringEarning as createPayrollRecurringEarningInternal } from "../features/employee-assignments/recurring-earning";
 import {
+	claimDuePayrollJobWork as claimDuePayrollJobWorkInternal,
+	enqueuePayrollCalculationJob as enqueuePayrollCalculationJobInternal,
+	executePayrollJobWork as executePayrollJobWorkInternal,
+	getPayrollJob as getPayrollJobInternal,
+	listPayrollDeadLetters as listPayrollDeadLettersInternal,
+	replayPayrollDeadLetter as replayPayrollDeadLetterInternal,
+} from "../features/payroll-jobs/jobs.command";
+import {
 	listPayrollExceptionsForRun as listPayrollExceptionsForRunInternal,
 	recordPayrollException as recordPayrollExceptionInternal,
 } from "../features/payroll-runs/exception";
@@ -145,6 +153,22 @@ export const projectPayrollFields = bindPayrollOperation(
 );
 export const respondToPayrollSubjectAccess = bindPayrollOperation(
 	respondToPayrollSubjectAccessInternal,
+);
+export const enqueuePayrollCalculationJob = bindPayrollOperation(
+	enqueuePayrollCalculationJobInternal,
+);
+export const claimDuePayrollJobWork = bindPayrollOperation(
+	claimDuePayrollJobWorkInternal,
+);
+export const executePayrollJobWork = bindPayrollOperation(
+	executePayrollJobWorkInternal,
+);
+export const replayPayrollDeadLetter = bindPayrollOperation(
+	replayPayrollDeadLetterInternal,
+);
+export const getPayrollJob = bindPayrollOperation(getPayrollJobInternal);
+export const listPayrollDeadLetters = bindPayrollOperation(
+	listPayrollDeadLettersInternal,
 );
 export const recordPayrollReconciliation = bindPayrollOperation(
 	recordPayrollReconciliationInternal,

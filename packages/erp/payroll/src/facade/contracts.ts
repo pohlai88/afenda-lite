@@ -1,3 +1,7 @@
+import type {
+	PayrollJobChunkExecutorPort,
+	PayrollJobEmployeeDirectoryPort,
+} from "../features/payroll-jobs/contract";
 import type { PayrollPrivacyPort } from "../features/privacy/contract";
 import type { PayrollAuthorizationPort } from "../kernel/execution/authorization";
 import type {
@@ -24,6 +28,8 @@ export interface PayrollCapabilityComposition {
 	readonly authorization: PayrollAuthorizationCapability;
 	readonly clock: PayrollClockCapability;
 	readonly currency: PayrollCurrencyCapability;
+	readonly jobChunkExecutor?: PayrollJobChunkExecutorPort;
+	readonly jobEmployees?: PayrollJobEmployeeDirectoryPort;
 	readonly observability?: PayrollObservabilityPort;
 	readonly privacy?: PayrollPrivacyCapability;
 	readonly statutory: PayrollStatutoryCapability;
