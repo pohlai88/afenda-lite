@@ -6,6 +6,12 @@ import {
 import { createPayrollRecurringDeduction as createPayrollRecurringDeductionInternal } from "../features/employee-assignments/recurring-deduction";
 import { createPayrollRecurringEarning as createPayrollRecurringEarningInternal } from "../features/employee-assignments/recurring-earning";
 import {
+	calculateFinalSettlement as calculateFinalSettlementInternal,
+	finalizeFinalSettlement as finalizeFinalSettlementInternal,
+	initiateFinalSettlement as initiateFinalSettlementInternal,
+	issueFinalSettlementStatement as issueFinalSettlementStatementInternal,
+} from "../features/final-settlement/settlement.command";
+import {
 	claimDuePayrollJobWork as claimDuePayrollJobWorkInternal,
 	enqueuePayrollCalculationJob as enqueuePayrollCalculationJobInternal,
 	executePayrollJobWork as executePayrollJobWorkInternal,
@@ -184,6 +190,18 @@ export const applyRetroToPeriod = bindPayrollOperation(
 	applyRetroToPeriodInternal,
 );
 export const listRetroItems = bindPayrollOperation(listRetroItemsInternal);
+export const initiateFinalSettlement = bindPayrollOperation(
+	initiateFinalSettlementInternal,
+);
+export const calculateFinalSettlement = bindPayrollOperation(
+	calculateFinalSettlementInternal,
+);
+export const finalizeFinalSettlement = bindPayrollOperation(
+	finalizeFinalSettlementInternal,
+);
+export const issueFinalSettlementStatement = bindPayrollOperation(
+	issueFinalSettlementStatementInternal,
+);
 export const recordPayrollReconciliation = bindPayrollOperation(
 	recordPayrollReconciliationInternal,
 );

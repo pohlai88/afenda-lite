@@ -49,9 +49,10 @@ describe("Payroll operation registry", () => {
 			"payroll-jobs",
 			"reconciliation",
 			"retro-pay",
+			"final-settlement",
 			"settlement-ingress",
 		]);
-		expect(definitions).toHaveLength(66);
+		expect(definitions).toHaveLength(70);
 		expect(new Set(operationIds).size).toBe(operationIds.length);
 		for (const definition of definitions) {
 			expect(featureOwners).toContain(definition.owner);
@@ -64,15 +65,15 @@ describe("Payroll operation registry", () => {
 			definitions.map(({ id, kind, permission }) => ({ id, kind, permission })),
 		);
 		expect(createHash("sha256").update(serializedContract).digest("hex")).toBe(
-			// Reviewed 2026-08-05: adds retro-pay (D3) queue/calculate/apply under
-			// payroll.input.manage + payroll.run.review and the retro item review
-			// query; all prior ids unchanged.
-			"6de3992e0e37cbfbb802649507dc3756b7e12a2134931608cdafba6d0919c548",
+			// Reviewed 2026-08-05: adds final-settlement (D4) initiate/calculate/
+			// finalize/statement under payroll.run.create/calculate/finalize/review;
+			// all prior ids unchanged.
+			"3a1afd275de18dd555c358e9ba5034e8c0b8fe3fa63f66e41818973cb905a0ef",
 		);
 	});
 
 	it("derives exhaustive command, query, and manifest projections", () => {
-		expect(PAYROLL_COMMAND_IDS).toHaveLength(46);
+		expect(PAYROLL_COMMAND_IDS).toHaveLength(50);
 		expect(PAYROLL_QUERY_IDS).toHaveLength(20);
 		expect(Object.keys(PAYROLL_COMMAND_AUTHORIZATION)).toEqual(
 			PAYROLL_COMMAND_IDS,

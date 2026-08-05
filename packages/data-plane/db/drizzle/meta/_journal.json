@@ -372,6 +372,13 @@
       "when": 1785978600004,
       "tag": "0052_payroll_retro_pay",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1785978600005,
+      "tag": "0053_payroll_final_settlement",
+      "breakpoints": true
     }
   ]
 }

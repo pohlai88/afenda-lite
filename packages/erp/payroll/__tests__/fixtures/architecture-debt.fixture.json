@@ -111,6 +111,42 @@
 					"file": "src/features/employee-assignments/recurring-earning.ts"
 				},
 				{
+					"evidence": "src/features/final-settlement/compute-final-settlement.ts exceeds src/<owner>/<file>",
+					"file": "src/features/final-settlement/compute-final-settlement.ts"
+				},
+				{
+					"evidence": "src/features/final-settlement/contract.ts exceeds src/<owner>/<file>",
+					"file": "src/features/final-settlement/contract.ts"
+				},
+				{
+					"evidence": "src/features/final-settlement/fingerprint.ts exceeds src/<owner>/<file>",
+					"file": "src/features/final-settlement/fingerprint.ts"
+				},
+				{
+					"evidence": "src/features/final-settlement/operation-registry.ts exceeds src/<owner>/<file>",
+					"file": "src/features/final-settlement/operation-registry.ts"
+				},
+				{
+					"evidence": "src/features/final-settlement/settlement.command.ts exceeds src/<owner>/<file>",
+					"file": "src/features/final-settlement/settlement.command.ts"
+				},
+				{
+					"evidence": "src/features/final-settlement/settlement.drizzle.ts exceeds src/<owner>/<file>",
+					"file": "src/features/final-settlement/settlement.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/final-settlement/settlement.memory.ts exceeds src/<owner>/<file>",
+					"file": "src/features/final-settlement/settlement.memory.ts"
+				},
+				{
+					"evidence": "src/features/final-settlement/settlement.schema.ts exceeds src/<owner>/<file>",
+					"file": "src/features/final-settlement/settlement.schema.ts"
+				},
+				{
+					"evidence": "src/features/final-settlement/settlement.store.ts exceeds src/<owner>/<file>",
+					"file": "src/features/final-settlement/settlement.store.ts"
+				},
+				{
 					"evidence": "src/features/payroll-jobs/contract.ts exceeds src/<owner>/<file>",
 					"file": "src/features/payroll-jobs/contract.ts"
 				},
@@ -680,6 +716,14 @@
 					"file": "src/features/employee-assignments/recurring-earning.ts"
 				},
 				{
+					"evidence": "src/features/final-settlement/settlement.command.ts:19 -> src/features/payroll-runs/runs.store.ts (final-settlement -> payroll-runs)",
+					"file": "src/features/final-settlement/settlement.command.ts"
+				},
+				{
+					"evidence": "src/features/final-settlement/settlement.command.ts:20 -> src/features/payroll-setup/setup.store.ts (final-settlement -> payroll-setup)",
+					"file": "src/features/final-settlement/settlement.command.ts"
+				},
+				{
 					"evidence": "src/features/payroll-runs/finalization.ts:5 -> src/features/calculation/finalization-evidence.ts (payroll-runs -> calculation)",
 					"file": "src/features/payroll-runs/finalization.ts"
 				},
@@ -864,7 +908,7 @@
 	},
 	"schemaVersion": 1,
 	"summary": {
-		"featureCount": 13,
-		"sourceTypeScriptFiles": 159
+		"featureCount": 14,
+		"sourceTypeScriptFiles": 168
 	}
 }

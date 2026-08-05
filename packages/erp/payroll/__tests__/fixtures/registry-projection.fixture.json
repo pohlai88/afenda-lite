@@ -45,6 +45,10 @@
 		"payroll.retro.item.queue": "payroll.input.manage",
 		"payroll.retro.difference.calculate": "payroll.run.review",
 		"payroll.retro.period.apply": "payroll.input.manage",
+		"payroll.final-settlement.initiate": "payroll.run.create",
+		"payroll.final-settlement.calculate": "payroll.run.calculate",
+		"payroll.final-settlement.finalize": "payroll.run.finalize",
+		"payroll.final-settlement.statement.issue": "payroll.run.review",
 		"payroll.workforce.ingest": "payroll.input.manage",
 		"payroll.setup.calendar.get": "payroll.setup.manage",
 		"payroll.setup.calendar.list": "payroll.setup.manage",
@@ -97,6 +101,34 @@
 			"owner": "employee-assignments",
 			"permission": "payroll.setup.manage",
 			"publicName": "createRecurringEarning"
+		},
+		{
+			"id": "payroll.final-settlement.calculate",
+			"kind": "command",
+			"owner": "final-settlement",
+			"permission": "payroll.run.calculate",
+			"publicName": "calculateFinalSettlement"
+		},
+		{
+			"id": "payroll.final-settlement.finalize",
+			"kind": "command",
+			"owner": "final-settlement",
+			"permission": "payroll.run.finalize",
+			"publicName": "finalizeFinalSettlement"
+		},
+		{
+			"id": "payroll.final-settlement.initiate",
+			"kind": "command",
+			"owner": "final-settlement",
+			"permission": "payroll.run.create",
+			"publicName": "initiateFinalSettlement"
+		},
+		{
+			"id": "payroll.final-settlement.statement.issue",
+			"kind": "command",
+			"owner": "final-settlement",
+			"permission": "payroll.run.review",
+			"publicName": "issueFinalSettlementStatement"
 		},
 		{
 			"id": "payroll.input.variable.create",

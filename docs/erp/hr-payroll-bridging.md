@@ -383,6 +383,8 @@ Termination pay is mandatory in both jurisdictions and absent from your nine fea
 
 Leave-balance-at-termination is an **HR fact** delivered through the handoff, not a Payroll computation.
 
+**CLOSED 2026-08-05.** `final-settlement` initiates from an HR termination fact (ids, effective date, leave-balance days, notice/in-lieu, recoveries, and last statutory amounts as supplied facts). Pro-rata uses the settlement period calendar and those facts — Payroll never computes leave from HR tables. C6: if the origin run is already `calculating`/`calculated`/`finalized`, or the period is `closed`, initiate records `clearance_required` and does not mutate the origin run; calculate refuses until an explicit `clearanceReason` is supplied. Finalize enforces calculate-actor ≠ finalize-actor. `issueFinalSettlementStatement` publishes a terminal payslip variant on the settlement (not a regular-run payslip). Production migrate remains ops-gated (`0053_payroll_final_settlement`).
+
 ### D5 — `payroll/statutory-filings`
 
 Covers periodic and annual obligations. Absent entirely.

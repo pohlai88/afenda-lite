@@ -41,6 +41,8 @@ export const PAYROLL_MUTATION_TABLES = [
 	"payroll_job_dead_letter",
 	"payroll_retro_item",
 	"payroll_retro_line",
+	"payroll_final_settlement",
+	"payroll_final_settlement_line",
 ] as const;
 
 export const PAYROLL_AGGREGATES = [

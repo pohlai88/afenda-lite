@@ -23,6 +23,7 @@
 | D1 | Payroll privacy | **CLOSED** | `payroll/privacy` ships restriction, retention evidence, field projection, and read-own DSAR. Admin ops use `payroll.payslip.read-all`; subject access uses `payroll.payslip.read-own`. `expirePayrollRetention` marks eligible only — no erasure without A3 counsel citation. | 2026-08-05 | Payroll |
 | D6 | Payroll jobs | **CLOSED** | `payroll-jobs` durable calculation batches: claim/lease/retry/DLQ/replay + chunk merge persistence. Web cron `/api/cron/payroll-jobs`. Schema `0051_payroll_jobs` (ops-gated migrate). | 2026-08-05 | Payroll |
 | D3 | Retro pay | **CLOSED** | `retro-pay` queues C3 corrections, recomputes under the sealed run snapshot (never live setup tables), refuses unreproducible periods, and applies origin-labelled lines into an open target period. Schema `0052_payroll_retro_pay` (ops-gated migrate). | 2026-08-05 | Payroll |
+| D4 | Final settlement | **CLOSED** | `final-settlement` initiates from HR termination facts (leave/notice/recoveries/statutory amounts supplied, never HR-table computed). C6 locked-run or closed-period cases require human clearance before calculate. Finalize is SoD-gated; statement is a terminal payslip variant. Schema `0053_payroll_final_settlement` (ops-gated migrate). | 2026-08-05 | Payroll |
 
 ## A1 evidence
 

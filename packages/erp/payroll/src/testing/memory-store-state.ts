@@ -1,6 +1,11 @@
 import type { OutputsMemoryState } from "../features/calculation/outputs.memory";
 import type { AssignmentsMemoryState } from "../features/employee-assignments/assignments.memory";
 import {
+	createFinalSettlementMemoryState,
+	type FinalSettlementMemoryState,
+	resetFinalSettlementMemoryState,
+} from "../features/final-settlement/settlement.memory";
+import {
 	createJobsMemoryState,
 	type JobsMemoryState,
 	resetJobsMemoryState,
@@ -19,6 +24,7 @@ import type { WorkforceIngressMemoryState } from "../features/workforce-ingress/
 
 export interface MemoryPayrollStoreState {
 	assignments: AssignmentsMemoryState;
+	finalSettlement: FinalSettlementMemoryState;
 	inputs: InputsMemoryState;
 	jobs: JobsMemoryState;
 	outputs: OutputsMemoryState;
@@ -159,6 +165,7 @@ export function createMemoryPayrollStoreState(): MemoryPayrollStoreState {
 		statutory: createStatutoryMemoryState(),
 		reconciliation: createReconciliationMemoryState(),
 		retro: createRetroMemoryState(),
+		finalSettlement: createFinalSettlementMemoryState(),
 		jobs: createJobsMemoryState(),
 		workforceIngress: { acceptedHandoffs: new Map() },
 	};
@@ -175,6 +182,7 @@ export function resetMemoryPayrollStoreState(
 	resetStatutoryMemoryState(state.statutory);
 	resetReconciliationMemoryState(state.reconciliation);
 	resetRetroMemoryState(state.retro);
+	resetFinalSettlementMemoryState(state.finalSettlement);
 	resetJobsMemoryState(state.jobs);
 	state.workforceIngress.acceptedHandoffs.clear();
 }

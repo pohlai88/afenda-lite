@@ -1,5 +1,6 @@
 import { drizzleOutputsMethods } from "../../features/calculation/outputs.drizzle";
 import { drizzleAssignmentsMethods } from "../../features/employee-assignments/assignments.drizzle";
+import { drizzleFinalSettlementMethods } from "../../features/final-settlement/settlement.drizzle";
 import { drizzleJobsMethods } from "../../features/payroll-jobs/jobs.drizzle";
 import { drizzleRunsMethods } from "../../features/payroll-runs/runs.drizzle";
 import { drizzleSetupMethods } from "../../features/payroll-setup/setup.drizzle";
@@ -23,6 +24,7 @@ export function createDrizzlePayrollStore(): PayrollStore {
 		drizzleOutputsMethods,
 		drizzleReconciliationMethods,
 		drizzleRetroMethods,
+		drizzleFinalSettlementMethods,
 		drizzleJobsMethods,
 	);
 

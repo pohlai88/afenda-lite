@@ -1319,3 +1319,128 @@ export const payrollRetroLine = pgTable(
 		),
 	],
 );
+
+/** Termination pay capsule — bridging D4/C6 final settlement. */
+export const payrollFinalSettlement = pgTable(
+	"payroll_final_settlement",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		employeeId: text("employee_id").notNull(),
+		terminationId: text("termination_id").notNull(),
+		terminationEffectiveOn: date("termination_effective_on", {
+			mode: "string",
+		}).notNull(),
+		periodId: uuid("period_id").notNull(),
+		payGroupId: uuid("pay_group_id").notNull(),
+		originRunId: uuid("origin_run_id"),
+		status: text("status").notNull(),
+		factsJson: jsonb("facts_json").notNull(),
+		totalsJson: jsonb("totals_json"),
+		statementJson: jsonb("statement_json"),
+		clearanceRequiredReason: text("clearance_required_reason"),
+		clearanceReason: text("clearance_reason"),
+		clearanceBy: text("clearance_by"),
+		clearanceAt: timestamp("clearance_at", { withTimezone: true }),
+		calculatedBy: text("calculated_by"),
+		calculatedAt: timestamp("calculated_at", { withTimezone: true }),
+		finalizedBy: text("finalized_by"),
+		finalizedAt: timestamp("finalized_at", { withTimezone: true }),
+		correlationId: text("correlation_id").notNull(),
+		...payrollIdempotencyColumns,
+		...payrollAuditColumns,
+	},
+	(t) => [
+		index("payroll_final_settlement_org_id_idx").on(t.organizationId, t.id),
+		index("payroll_final_settlement_org_status_idx").on(
+			t.organizationId,
+			t.status,
+		),
+		index("payroll_final_settlement_org_employee_idx").on(
+			t.organizationId,
+			t.employeeId,
+		),
+		unique("payroll_final_settlement_org_id_uidx").on(t.organizationId, t.id),
+		uniqueIndex("payroll_final_settlement_org_create_idempotency_uidx").on(
+			t.organizationId,
+			t.createIdempotencyKey,
+		),
+		uniqueIndex("payroll_final_settlement_org_termination_uidx").on(
+			t.organizationId,
+			t.terminationId,
+		),
+		foreignKey({
+			columns: [t.organizationId, t.periodId],
+			foreignColumns: [payrollPeriod.organizationId, payrollPeriod.id],
+			name: "payroll_final_settlement_org_period_fk",
+		}),
+		foreignKey({
+			columns: [t.organizationId, t.payGroupId],
+			foreignColumns: [payrollPayGroup.organizationId, payrollPayGroup.id],
+			name: "payroll_final_settlement_org_pay_group_fk",
+		}),
+		check(
+			"payroll_final_settlement_status_check",
+			sql`${t.status} IN ('initiated', 'clearance_required', 'calculated', 'finalized', 'stated')`,
+		),
+		check(
+			"payroll_final_settlement_calculated_shape_check",
+			sql`(${t.status} NOT IN ('calculated', 'finalized', 'stated')) OR (${t.totalsJson} IS NOT NULL AND ${t.calculatedBy} IS NOT NULL AND ${t.calculatedAt} IS NOT NULL)`,
+		),
+		check(
+			"payroll_final_settlement_finalized_shape_check",
+			sql`(${t.status} NOT IN ('finalized', 'stated')) OR (${t.finalizedBy} IS NOT NULL AND ${t.finalizedAt} IS NOT NULL)`,
+		),
+		check(
+			"payroll_final_settlement_stated_shape_check",
+			sql`(${t.status} <> 'stated') OR (${t.statementJson} IS NOT NULL)`,
+		),
+	],
+);
+
+/** Calculated final-settlement line sealed with the settlement case. */
+export const payrollFinalSettlementLine = pgTable(
+	"payroll_final_settlement_line",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		settlementId: uuid("settlement_id").notNull(),
+		kind: text("kind").notNull(),
+		code: text("code").notNull(),
+		amount: numeric("amount", { precision: 24, scale: 12 }).notNull(),
+		currencyCode: text("currency_code").notNull(),
+		sequence: integer("sequence").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("payroll_final_settlement_line_org_id_idx").on(
+			t.organizationId,
+			t.id,
+		),
+		index("payroll_final_settlement_line_org_settlement_idx").on(
+			t.organizationId,
+			t.settlementId,
+		),
+		unique("payroll_final_settlement_line_org_id_uidx").on(
+			t.organizationId,
+			t.id,
+		),
+		uniqueIndex(
+			"payroll_final_settlement_line_org_settlement_sequence_uidx",
+		).on(t.organizationId, t.settlementId, t.sequence),
+		foreignKey({
+			columns: [t.organizationId, t.settlementId],
+			foreignColumns: [
+				payrollFinalSettlement.organizationId,
+				payrollFinalSettlement.id,
+			],
+			name: "payroll_final_settlement_line_org_settlement_fk",
+		}),
+		check(
+			"payroll_final_settlement_line_kind_check",
+			sql`${t.kind} IN ('prorated_base', 'leave_encashment', 'notice_pay', 'notice_in_lieu', 'recovery', 'employee_statutory', 'employer_statutory')`,
+		),
+	],
+);

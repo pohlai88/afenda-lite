@@ -138,6 +138,9 @@ Business behavior lives under `src/features/`. Features never import `facade`,
 | `privacy` | Restriction, retention evidence, field projection, and read-own DSAR |
 | `reconciliation` | Payroll/downstream discrepancy resolution |
 | `settlement-ingress` | Payments/Accounting settlement facts into reconciliation |
+| `payroll-jobs` | Durable calculation batches: claim, lease, retry, dead letter, replay |
+| `retro-pay` | Deferred sealed-period corrections into an open target period |
+| `final-settlement` | Termination pay, C6 clearance, SoD finalize, terminal statement |
 
 ### Composition entries
 
@@ -188,7 +191,7 @@ exists again, is an explicit maintainer action — not the README default.
 
 ## Boundaries
 
-**Mutation tables (25):** `payroll_calendar` … `payroll_retro_line` — see
+**Mutation tables (27):** `payroll_calendar` … `payroll_final_settlement_line` — see
 [`src/kernel/emissions/mutation-tables.ts`](./src/kernel/emissions/mutation-tables.ts).
 
 | Owns | Does not own |
