@@ -332,8 +332,7 @@ function anchoredNarrativeItem(input: {
 		"utf8",
 	);
 	const lineIndex = content
-		.split("
-")
+		.split("\n")
 		.findIndex((line) => line.includes(input.marker));
 	if (lineIndex === -1) {
 		return [];

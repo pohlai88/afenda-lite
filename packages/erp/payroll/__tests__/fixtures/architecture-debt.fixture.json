@@ -962,6 +962,26 @@
 			],
 			"key": "synthetic-statutory-calculator",
 			"target": 0
+		},
+		{
+			"items": [
+				{
+					"evidence": "src/features/final-settlement/settlement.schema.ts:44 accepts the termination leave balance as caller-asserted input; the closing balance is an HR fact that is not pinned into the settlement snapshot until D0 fact-widening lands (bridging doc D0/D4)",
+					"file": "src/features/final-settlement/settlement.schema.ts"
+				}
+			],
+			"key": "hr-termination-fact-gap",
+			"target": 0
+		},
+		{
+			"items": [
+				{
+					"evidence": "src/features/final-settlement/settlement.drizzle.ts:308 updates a final-settlement status transition without the audit + outbox CTE pattern payroll runs use (src/features/payroll-runs/runs.drizzle.ts is the target shape); closing it requires a settlement lifecycle event in @afenda/events plus dispatcher wiring, so it is measured debt rather than a contained change (bridging doc D4/B6)",
+					"file": "src/features/final-settlement/settlement.drizzle.ts"
+				}
+			],
+			"key": "settlement-transition-audit-gap",
+			"target": 0
 		}
 	],
 	"packageName": "@afenda/payroll",
