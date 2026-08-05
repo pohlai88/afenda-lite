@@ -68,6 +68,7 @@ export function createMemoryWorkforceIngressMethods(
 			);
 
 			const now = new Date();
+			const acceptanceStatus = record.acceptanceStatus ?? "accepted";
 			const accepted: StoredAcceptedHandoff = {
 				id: randomUUID(),
 				organizationId: record.organizationId,
@@ -79,7 +80,7 @@ export function createMemoryWorkforceIngressMethods(
 				periodEnd: record.periodEnd,
 				payload: record.payload,
 				payloadHash: record.payloadHash,
-				status: "accepted",
+				status: acceptanceStatus,
 				supersededByHandoffId: null,
 				acceptedAt: now,
 				acceptedBy: record.actorUserId,
@@ -87,7 +88,7 @@ export function createMemoryWorkforceIngressMethods(
 				acceptedIdempotencyKey: record.idempotencyKey,
 			};
 
-			if (active !== undefined) {
+			if (acceptanceStatus === "accepted" && active !== undefined) {
 				if (active.payloadHash === record.payloadHash) {
 					const { acceptedIdempotencyKey: _key, ...surface } = active;
 					return Promise.resolve(errorResult.ok({ ...surface }));

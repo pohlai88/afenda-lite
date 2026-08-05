@@ -32,6 +32,7 @@ import {
 	createPayrollPeriod as createPayrollPeriodInternal,
 	getPayrollPeriod as getPayrollPeriodInternal,
 	listPayrollPeriods as listPayrollPeriodsInternal,
+	lockPayrollPeriodInputs as lockPayrollPeriodInputsInternal,
 	updatePayrollPeriod as updatePayrollPeriodInternal,
 } from "../features/payroll-runs/payroll-period";
 import {
@@ -261,6 +262,9 @@ export const updatePayrollPeriod = bindPayrollOperation(
 );
 export const closePayrollPeriod = bindPayrollOperation(
 	closePayrollPeriodInternal,
+);
+export const lockPayrollPeriodInputs = bindPayrollOperation(
+	lockPayrollPeriodInputsInternal,
 );
 export const getPayrollPeriod = bindPayrollOperation(getPayrollPeriodInternal);
 export const listPayrollPeriods = bindPayrollOperation(

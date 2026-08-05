@@ -129,7 +129,7 @@ Business behavior lives under `src/features/`. Features never import `facade`,
 | --- | --- |
 | `payroll-setup` | Calendars, pay groups, and effective-dated rules |
 | `employee-assignments` | Employee assignment and recurring earning/deduction |
-| `workforce-ingress` | HR handoff validation and canonical normalization |
+| `workforce-ingress` | HR handoff validation, C3 period freeze / deferral, C6 termination exception |
 | `variable-inputs` | Period variable inputs and source idempotency |
 | `payroll-runs` | Period/run lifecycle, exceptions, finalization, and reversal |
 | `calculation` | Deterministic calculation, result lines, and snapshots |

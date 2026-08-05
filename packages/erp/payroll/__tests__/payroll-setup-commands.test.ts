@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+	createPayrollPeriod,
+	lockPayrollPeriodInputs,
+} from "../src/features/payroll-runs/payroll-period";
+import { createPayrollRun } from "../src/features/payroll-runs/payroll-run";
+import {
 	createPayrollCalendar,
 	getPayrollCalendar,
 } from "../src/features/payroll-setup/calendar";
@@ -9,7 +14,10 @@ import {
 } from "../src/features/payroll-setup/earning-rule";
 import { createPayrollPayGroup } from "../src/features/payroll-setup/pay-group";
 import type { PayrollAuthorizationPort } from "../src/kernel/execution/authorization";
-import { PAYROLL_PERMISSION_SETUP_MANAGE } from "../src/kernel/execution/permissions";
+import {
+	PAYROLL_PERMISSION_RUN_CREATE,
+	PAYROLL_PERMISSION_SETUP_MANAGE,
+} from "../src/kernel/execution/permissions";
 import { createMemoryPayrollStore } from "../src/testing/index";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
 
@@ -39,12 +47,11 @@ async function seedCalendarPayGroup(
 	organizationId: string,
 	actorUserId: string,
 	suffix: string,
+	permissions: string[] = [PAYROLL_PERMISSION_SETUP_MANAGE],
 ) {
 	const store = createMemoryPayrollStore();
 	const ports = createMemoryMutationPorts();
-	const authorization = createGrantingAuthorization([
-		PAYROLL_PERMISSION_SETUP_MANAGE,
-	]);
+	const authorization = createGrantingAuthorization(permissions);
 	const options = { store, ports, authorization };
 
 	const calendar = await createPayrollCalendar(
@@ -83,6 +90,7 @@ async function seedCalendarPayGroup(
 		store,
 		ports,
 		authorization,
+		options,
 	};
 }
 
@@ -319,5 +327,106 @@ describe("payroll setup commands", () => {
 			return;
 		}
 		expect(blocked.code).toBe("CONFLICT");
+	});
+
+	it("locks an open period into inputs_locked after a run exists (C3)", async () => {
+		const seeded = await seedCalendarPayGroup(
+			"org-period-lock",
+			"user-period-lock",
+			"plock",
+			[PAYROLL_PERMISSION_SETUP_MANAGE, PAYROLL_PERMISSION_RUN_CREATE],
+		);
+		const { options } = seeded;
+
+		const period = await createPayrollPeriod(
+			{
+				...baseContext("org-period-lock", "user-period-lock"),
+				payGroupId: seeded.payGroup.id,
+				periodStart: "2025-01-01",
+				periodEnd: "2025-01-31",
+				cutoffDate: "2025-01-28",
+				idempotencyKey: "idem-period-plock",
+			},
+			options,
+		);
+		expect(period.ok).toBe(true);
+		if (!period.ok) {
+			return;
+		}
+
+		const blockedWithoutRun = await lockPayrollPeriodInputs(
+			{
+				...baseContext("org-period-lock", "user-period-lock"),
+				periodId: period.data.id,
+				expectedVersion: period.data.version,
+			},
+			options,
+		);
+		expect(blockedWithoutRun.ok).toBe(false);
+		if (blockedWithoutRun.ok) {
+			return;
+		}
+		expect(blockedWithoutRun.code).toBe("CONFLICT");
+
+		const run = await createPayrollRun(
+			{
+				...baseContext("org-period-lock", "user-period-lock"),
+				payGroupId: seeded.payGroup.id,
+				periodId: period.data.id,
+				runType: "regular",
+				sequence: 1,
+				idempotencyKey: "idem-run-plock",
+			},
+			options,
+		);
+		expect(run.ok).toBe(true);
+		if (!run.ok) {
+			return;
+		}
+
+		const locked = await lockPayrollPeriodInputs(
+			{
+				...baseContext("org-period-lock", "user-period-lock"),
+				periodId: period.data.id,
+				expectedVersion: period.data.version,
+			},
+			options,
+		);
+		expect(locked.ok).toBe(true);
+		if (!locked.ok) {
+			return;
+		}
+		expect(locked.data.status).toBe("inputs_locked");
+
+		const again = await lockPayrollPeriodInputs(
+			{
+				...baseContext("org-period-lock", "user-period-lock"),
+				periodId: period.data.id,
+				expectedVersion: locked.data.version,
+			},
+			options,
+		);
+		expect(again.ok).toBe(false);
+		if (again.ok) {
+			return;
+		}
+		expect(again.code).toBe("CONFLICT");
+
+		const blockedRun = await createPayrollRun(
+			{
+				...baseContext("org-period-lock", "user-period-lock"),
+				payGroupId: seeded.payGroup.id,
+				periodId: period.data.id,
+				runType: "regular",
+				sequence: 2,
+				idempotencyKey: "idem-run-plock-2",
+			},
+			options,
+		);
+		expect(blockedRun.ok).toBe(false);
+		if (blockedRun.ok) {
+			return;
+		}
+		expect(blockedRun.code).toBe("CONFLICT");
 	});
 });

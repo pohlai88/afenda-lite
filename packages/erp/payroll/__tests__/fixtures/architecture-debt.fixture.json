@@ -575,6 +575,10 @@
 					"file": "src/features/workforce-ingress/parse-approved-payroll-handoff.ts"
 				},
 				{
+					"evidence": "src/features/workforce-ingress/period-freeze.ts exceeds src/<owner>/<file>",
+					"file": "src/features/workforce-ingress/period-freeze.ts"
+				},
+				{
 					"evidence": "src/kernel/contracts/projected-types.ts exceeds src/<owner>/<file>",
 					"file": "src/kernel/contracts/projected-types.ts"
 				},
@@ -792,7 +796,7 @@
 					"file": "src/features/payroll-runs/operation-store.ts"
 				},
 				{
-					"evidence": "src/features/payroll-runs/payroll-period.ts:15 -> src/features/payroll-setup/setup.schema.ts (payroll-runs -> payroll-setup)",
+					"evidence": "src/features/payroll-runs/payroll-period.ts:16 -> src/features/payroll-setup/setup.schema.ts (payroll-runs -> payroll-setup)",
 					"file": "src/features/payroll-runs/payroll-period.ts"
 				},
 				{
@@ -993,6 +997,6 @@
 	"schemaVersion": 1,
 	"summary": {
 		"featureCount": 15,
-		"sourceTypeScriptFiles": 178
+		"sourceTypeScriptFiles": 179
 	}
 }

@@ -49,6 +49,11 @@ export interface PayrollRunsStore {
 		runId: PayrollRunId;
 	}) => Promise<Result<PayrollException[]>>;
 
+	listRunsForPeriod: (input: {
+		organizationId: string;
+		periodId: string;
+	}) => Promise<Result<PayrollRun[]>>;
+
 	updateRunWithVersion: (
 		input: PayrollRunUpdateInput,
 		ports: MutationPorts,

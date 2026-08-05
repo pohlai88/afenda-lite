@@ -147,7 +147,7 @@ export const payrollPeriod = pgTable(
 		}),
 		check(
 			"payroll_period_status_check",
-			sql`${t.status} IN ('open', 'closed')`,
+			sql`${t.status} IN ('open', 'inputs_locked', 'closed')`,
 		),
 		check(
 			"payroll_period_range_check",
@@ -1092,11 +1092,11 @@ export const payrollAcceptedHandoff = pgTable(
 			.where(sql`${t.status} = 'accepted'`),
 		check(
 			"payroll_accepted_handoff_status_check",
-			sql`${t.status} IN ('accepted', 'superseded')`,
+			sql`${t.status} IN ('accepted', 'superseded', 'deferred_to_next_period')`,
 		),
 		check(
 			"payroll_accepted_handoff_supersession_check",
-			sql`(${t.status} = 'superseded' AND ${t.supersededByHandoffId} IS NOT NULL) OR (${t.status} = 'accepted' AND ${t.supersededByHandoffId} IS NULL)`,
+			sql`(${t.status} = 'superseded' AND ${t.supersededByHandoffId} IS NOT NULL) OR (${t.status} IN ('accepted', 'deferred_to_next_period') AND ${t.supersededByHandoffId} IS NULL)`,
 		),
 	],
 );

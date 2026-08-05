@@ -9,6 +9,7 @@
 		"payroll.setup.period.create": "payroll.setup.manage",
 		"payroll.setup.period.update": "payroll.setup.manage",
 		"payroll.setup.period.close": "payroll.setup.manage",
+		"payroll.setup.period.lock-inputs": "payroll.setup.manage",
 		"payroll.setup.earning-rule.create": "payroll.setup.manage",
 		"payroll.setup.earning-rule.update": "payroll.setup.manage",
 		"payroll.setup.earning-rule.archive": "payroll.setup.manage",
@@ -526,6 +527,13 @@
 			"owner": "payroll-setup",
 			"permission": "payroll.setup.manage",
 			"publicName": "listPeriods"
+		},
+		{
+			"id": "payroll.setup.period.lock-inputs",
+			"kind": "command",
+			"owner": "payroll-setup",
+			"permission": "payroll.setup.manage",
+			"publicName": "lockPeriodInputs"
 		},
 		{
 			"id": "payroll.setup.period.update",

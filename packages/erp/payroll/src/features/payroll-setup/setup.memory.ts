@@ -609,10 +609,19 @@ export function createMemorySetupMethods(
 			return errorResult.ok(clonePeriod(period));
 		},
 
+		async listPeriodsForOrganization(input: {
+			organizationId: string;
+		}): Promise<Result<PayrollPeriod[]>> {
+			const periods = Array.from(state.periods.values()).filter(
+				(period) => period.organizationId === input.organizationId,
+			);
+			return errorResult.ok(periods.map(clonePeriod));
+		},
+
 		async listPeriodsForPayGroup(input: {
 			organizationId: string;
 			payGroupId: PayrollPayGroupId;
-			status?: "open" | "closed";
+			status?: PayrollPeriod["status"];
 		}): Promise<Result<PayrollPeriod[]>> {
 			const periods = Array.from(state.periods.values()).filter((period) => {
 				if (

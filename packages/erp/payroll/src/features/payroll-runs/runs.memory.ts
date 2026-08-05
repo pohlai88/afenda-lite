@@ -345,6 +345,18 @@ export function createMemoryRunsMethods(
 			return errorResult.ok(cloneRun(run));
 		},
 
+		async listRunsForPeriod(input: {
+			organizationId: string;
+			periodId: string;
+		}): Promise<Result<PayrollRun[]>> {
+			const runs = Array.from(state.runs.values()).filter(
+				(run) =>
+					run.organizationId === input.organizationId &&
+					run.periodId === input.periodId,
+			);
+			return errorResult.ok(runs.map(cloneRun));
+		},
+
 		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: The memory adapter mirrors versioned transition validation and explicit rollback behavior.
 		async updateRunWithVersion(
 			input: PayrollRunUpdateInput,

@@ -1,22 +1,35 @@
 import { describe, expect, it } from "vitest";
 
+import {
+	createPayrollPeriod,
+	lockPayrollPeriodInputs,
+} from "../src/features/payroll-runs/payroll-period";
+import { createPayrollRun } from "../src/features/payroll-runs/payroll-run";
+import { createPayrollCalendar } from "../src/features/payroll-setup/calendar";
+import { createPayrollPayGroup } from "../src/features/payroll-setup/pay-group";
 import { createAcceptedWorkforceInputPort } from "../src/features/workforce-ingress/accepted-workforce-input-port";
 import {
 	hashApprovedPayrollHandoffPayload,
 	ingestApprovedPayrollHandoff,
 } from "../src/features/workforce-ingress/ingest-approved-handoff";
+import { MID_PERIOD_TERMINATION_EXCEPTION_CODE } from "../src/features/workforce-ingress/period-freeze";
 import type { PayrollAuthorizationPort } from "../src/kernel/execution/authorization";
-import { PAYROLL_PERMISSION_INPUT_MANAGE } from "../src/kernel/execution/permissions";
+import {
+	PAYROLL_PERMISSION_INPUT_MANAGE,
+	PAYROLL_PERMISSION_RUN_CREATE,
+	PAYROLL_PERMISSION_SETUP_MANAGE,
+} from "../src/kernel/execution/permissions";
 import { createMemoryPayrollStore } from "../src/testing/index";
 import { buildSyntheticHandoff } from "./fixtures/approved-payroll-handoff-fixtures";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
 
 const ORGANIZATION_ID = "org-synth-handoff";
 
-function createGrantingAuthorization(): PayrollAuthorizationPort {
+function createGrantingAuthorization(
+	permissions: string[] = [PAYROLL_PERMISSION_INPUT_MANAGE],
+): PayrollAuthorizationPort {
 	return {
-		can: async ({ permission }) =>
-			permission === PAYROLL_PERMISSION_INPUT_MANAGE,
+		can: async ({ permission }) => permissions.includes(permission),
 	};
 }
 
@@ -370,4 +383,171 @@ describe("payroll workforce ingress (PRD R1)", () => {
 		}
 		expect(missing.data).toBeNull();
 	});
+
+	it("defers a non-termination handoff after inputs_locked (C3/C4)", async () => {
+		const seeded = await seedLockedPeriod("defer");
+		const ingested = await ingestApprovedPayrollHandoff(
+			ingestInput({
+				idempotencyKey: "idem-ingress-defer",
+				periodStart: "2025-01-01",
+				periodEnd: "2025-01-31",
+			}),
+			seeded.options,
+		);
+		expect(ingested.ok).toBe(true);
+		if (!ingested.ok) {
+			return;
+		}
+		expect(ingested.data.status).toBe("deferred_to_next_period");
+
+		const reader = createAcceptedWorkforceInputPort(seeded.options.store);
+		const active = await reader.getApprovedPayrollHandoff({
+			organizationId: ORGANIZATION_ID,
+			employeeId: "emp-synth-handoff",
+			effectiveDate: "2025-01-01",
+			periodStart: "2025-01-01",
+			periodEnd: "2025-01-31",
+			actorUserId: "user-ingress-actor",
+			correlationId: "corr-ingress-test",
+		});
+		expect(active.ok).toBe(true);
+		if (!active.ok) {
+			return;
+		}
+		expect(active.data).toBeNull();
+	});
+
+	it("accepts a late termination and raises a blocking run exception (C6)", async () => {
+		const seeded = await seedLockedPeriod("term");
+		const ingested = await ingestApprovedPayrollHandoff(
+			ingestInput({
+				idempotencyKey: "idem-ingress-term",
+				periodStart: "2025-01-01",
+				periodEnd: "2025-01-31",
+				payload: buildSyntheticHandoff({
+					employmentStatus: "terminated",
+					sourceVersion: { compensationVersion: 2 },
+				}),
+			}),
+			seeded.options,
+		);
+		expect(ingested.ok).toBe(true);
+		if (!ingested.ok) {
+			return;
+		}
+		expect(ingested.data.status).toBe("accepted");
+
+		const exceptions = await seeded.options.store.listExceptionsForRun({
+			organizationId: ORGANIZATION_ID,
+			runId: seeded.run.id,
+		});
+		expect(exceptions.ok).toBe(true);
+		if (!exceptions.ok) {
+			return;
+		}
+		expect(exceptions.data).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					exceptionCode: MID_PERIOD_TERMINATION_EXCEPTION_CODE,
+					severity: "blocking",
+					employeeRef: "emp-synth-handoff",
+				}),
+			]),
+		);
+	});
 });
+
+async function seedLockedPeriod(suffix: string) {
+	const store = createMemoryPayrollStore();
+	const ports = createMemoryMutationPorts();
+	const authorization = createGrantingAuthorization([
+		PAYROLL_PERMISSION_INPUT_MANAGE,
+		PAYROLL_PERMISSION_SETUP_MANAGE,
+		PAYROLL_PERMISSION_RUN_CREATE,
+	]);
+	const options = { store, ports, authorization };
+	const context = {
+		organizationId: ORGANIZATION_ID,
+		actorUserId: "user-ingress-actor",
+		correlationId: "corr-ingress-test",
+	};
+
+	const calendar = await createPayrollCalendar(
+		{
+			...context,
+			code: `CAL-${suffix}`,
+			name: "Ingress calendar",
+			timezone: "UTC",
+			effectiveFrom: "2025-01-01",
+			idempotencyKey: `idem-cal-${suffix}`,
+		},
+		options,
+	);
+	if (!calendar.ok) {
+		throw new Error(calendar.message);
+	}
+
+	const payGroup = await createPayrollPayGroup(
+		{
+			...context,
+			calendarId: calendar.data.id,
+			code: `PG-${suffix}`,
+			name: "Ingress pay group",
+			currencyCode: "USD",
+			idempotencyKey: `idem-pg-${suffix}`,
+		},
+		options,
+	);
+	if (!payGroup.ok) {
+		throw new Error(payGroup.message);
+	}
+
+	const period = await createPayrollPeriod(
+		{
+			...context,
+			payGroupId: payGroup.data.id,
+			periodStart: "2025-01-01",
+			periodEnd: "2025-01-31",
+			cutoffDate: "2025-01-28",
+			idempotencyKey: `idem-period-${suffix}`,
+		},
+		options,
+	);
+	if (!period.ok) {
+		throw new Error(period.message);
+	}
+
+	const run = await createPayrollRun(
+		{
+			...context,
+			payGroupId: payGroup.data.id,
+			periodId: period.data.id,
+			runType: "regular",
+			sequence: 1,
+			idempotencyKey: `idem-run-${suffix}`,
+		},
+		options,
+	);
+	if (!run.ok) {
+		throw new Error(run.message);
+	}
+
+	const locked = await lockPayrollPeriodInputs(
+		{
+			...context,
+			periodId: period.data.id,
+			expectedVersion: period.data.version,
+		},
+		options,
+	);
+	if (!locked.ok) {
+		throw new Error(locked.message);
+	}
+
+	return {
+		options,
+		period: locked.data,
+		run: run.data,
+		payGroup: payGroup.data,
+	};
+}

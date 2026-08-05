@@ -347,6 +347,17 @@
 			"useMode": "generated"
 		},
 		{
+			"consumerClass": "testing",
+			"disposition": "manual-review",
+			"entrypoint": "generated",
+			"file": "packages/erp/human-resources/__tests__/statutory-profile-capability-boundary.test.ts",
+			"package": "@afenda/human-resources",
+			"referenceKind": "generated",
+			"resolution": "not-applicable",
+			"symbol": "*",
+			"useMode": "generated"
+		},
+		{
 			"consumerClass": "production",
 			"disposition": "manual-review",
 			"entrypoint": "generated",

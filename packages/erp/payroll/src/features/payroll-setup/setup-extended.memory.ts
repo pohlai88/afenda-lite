@@ -96,6 +96,7 @@ export function createMemorySetupExtendedMethods(input: {
 	| "archivePayGroup"
 	| "updatePeriod"
 	| "closePeriod"
+	| "lockPeriodInputs"
 	| "getEarningRule"
 	| "updateEarningRule"
 	| "archiveEarningRule"
@@ -311,8 +312,8 @@ export function createMemorySetupExtendedMethods(input: {
 			if (!versionCheck.ok) {
 				return versionCheck;
 			}
-			if (period.status === "closed") {
-				return mapInvalidState("Closed payroll periods cannot be updated");
+			if (period.status !== "open") {
+				return mapInvalidState("Only open payroll periods can be updated");
 			}
 
 			const now = new Date();
@@ -363,6 +364,53 @@ export function createMemorySetupExtendedMethods(input: {
 			const updated: PayrollPeriod = {
 				...period,
 				status: "closed",
+				version: period.version + 1,
+				updatedBy: periodInput.actorUserId,
+				updatedAt: now,
+			};
+			state.periods.set(updated.id, updated);
+
+			const audit = await recordAudit(ports, {
+				organizationId: periodInput.organizationId,
+				actorUserId: periodInput.actorUserId,
+				correlationId: periodInput.correlationId,
+				entity: "payroll_period",
+				entityId: updated.id,
+				action: "UPDATE",
+			});
+			if (!audit.ok) {
+				state.periods.set(period.id, period);
+				return audit;
+			}
+			return errorResult.ok(clonePeriod(updated));
+		},
+
+		async lockPeriodInputs(periodInput, ports) {
+			const period = state.periods.get(periodInput.periodId);
+			if (
+				period === undefined ||
+				period.organizationId !== periodInput.organizationId
+			) {
+				return mapNotFound("Payroll period not found");
+			}
+			const versionCheck = assertExpectedVersion(
+				period.version,
+				periodInput.expectedVersion,
+			);
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
+			if (period.status === "inputs_locked") {
+				return mapInvalidState("Payroll period inputs are already locked");
+			}
+			if (period.status !== "open") {
+				return mapInvalidState("Only open payroll periods can lock inputs");
+			}
+
+			const now = new Date();
+			const updated: PayrollPeriod = {
+				...period,
+				status: "inputs_locked",
 				version: period.version + 1,
 				updatedBy: periodInput.actorUserId,
 				updatedAt: now,

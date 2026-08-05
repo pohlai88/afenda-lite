@@ -26,6 +26,18 @@ function failFromPersistence(error: unknown, fallbackMessage: string) {
 
 type AcceptedHandoffRow = typeof payrollAcceptedHandoff.$inferSelect;
 
+function mapHandoffStatus(
+	status: AcceptedHandoffRow["status"],
+): AcceptedPayrollHandoff["status"] {
+	if (status === "superseded") {
+		return "superseded";
+	}
+	if (status === "deferred_to_next_period") {
+		return "deferred_to_next_period";
+	}
+	return "accepted";
+}
+
 function mapAcceptedHandoff(row: AcceptedHandoffRow): AcceptedPayrollHandoff {
 	return {
 		id: row.id,
@@ -38,7 +50,7 @@ function mapAcceptedHandoff(row: AcceptedHandoffRow): AcceptedPayrollHandoff {
 		periodEnd: row.periodEnd,
 		payload: row.payload,
 		payloadHash: row.payloadHash,
-		status: row.status === "superseded" ? "superseded" : "accepted",
+		status: mapHandoffStatus(row.status),
 		supersededByHandoffId: row.supersededByHandoffId,
 		acceptedAt: row.createdAt,
 		acceptedBy: row.createdBy,
@@ -102,12 +114,13 @@ export const drizzleWorkforceIngressMethods: PayrollWorkforceIngressStore = {
 				return errorResult.ok(mapAcceptedHandoff(replay));
 			}
 
+			const acceptanceStatus = record.acceptanceStatus ?? "accepted";
 			const [active] = await afendaDatabase.client
 				.select()
 				.from(payrollAcceptedHandoff)
 				.where(activeIdentityWhere(record))
 				.limit(1);
-			if (active !== undefined) {
+			if (acceptanceStatus === "accepted" && active !== undefined) {
 				if (active.payloadHash === record.payloadHash) {
 					return errorResult.ok(mapAcceptedHandoff(active));
 				}
@@ -133,7 +146,8 @@ export const drizzleWorkforceIngressMethods: PayrollWorkforceIngressStore = {
 			// keeps the partial unique index honest under concurrent ingest.
 			const [, , rows] = await afendaDatabase.transaction((sql) => [
 				sql`SELECT pg_advisory_xact_lock(hashtextextended(${`payroll-handoff:${identityLockKey}`}, 0))`,
-				sql`
+				acceptanceStatus === "accepted"
+					? sql`
 					UPDATE payroll_accepted_handoff
 					SET status = 'superseded', superseded_by_handoff_id = ${id},
 						version = version + 1, updated_by = ${record.actorUserId},
@@ -144,7 +158,8 @@ export const drizzleWorkforceIngressMethods: PayrollWorkforceIngressStore = {
 						AND period_start IS NOT DISTINCT FROM ${record.periodStart}::date
 						AND period_end IS NOT DISTINCT FROM ${record.periodEnd}::date
 						AND status = 'accepted'
-				`,
+				`
+					: sql`SELECT 1 WHERE false`,
 				sql`
 					INSERT INTO payroll_accepted_handoff (
 						id, organization_id, employee_id, employment_id, contract_version,
@@ -156,7 +171,7 @@ export const drizzleWorkforceIngressMethods: PayrollWorkforceIngressStore = {
 						${record.employmentId}, ${record.contractVersion},
 						${record.effectiveDate}::date, ${record.periodStart}::date,
 						${record.periodEnd}::date, ${payloadJson}::jsonb,
-						${record.payloadHash}, 'accepted', ${record.idempotencyKey},
+						${record.payloadHash}, ${acceptanceStatus}, ${record.idempotencyKey},
 						${record.payloadHash}, 1, ${record.actorUserId}, ${record.actorUserId}
 					)
 					RETURNING id

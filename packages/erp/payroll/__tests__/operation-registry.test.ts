@@ -53,7 +53,7 @@ describe("Payroll operation registry", () => {
 			"statutory-filings",
 			"settlement-ingress",
 		]);
-		expect(definitions).toHaveLength(75);
+		expect(definitions).toHaveLength(76);
 		expect(new Set(operationIds).size).toBe(operationIds.length);
 		for (const definition of definitions) {
 			expect(featureOwners).toContain(definition.owner);
@@ -66,14 +66,13 @@ describe("Payroll operation registry", () => {
 			definitions.map(({ id, kind, permission }) => ({ id, kind, permission })),
 		);
 		expect(createHash("sha256").update(serializedContract).digest("hex")).toBe(
-			// Reviewed 2026-08-05: D4 statement becomes read-own/read-all queries;
-			// D5 statutory-filings generate/annual/seal + obligation list.
-			"385026a6a11577d92a943e824bee5f054ca488068e5c09dfce7b47cf9eab3757",
+			// Reviewed 2026-08-05: C3 lockPeriodInputs command.
+			"24da3bfdd15f78f4dda903303c3a21a2b4aa3606ab57cb074743c0591a2c68ca",
 		);
 	});
 
 	it("derives exhaustive command, query, and manifest projections", () => {
-		expect(PAYROLL_COMMAND_IDS).toHaveLength(52);
+		expect(PAYROLL_COMMAND_IDS).toHaveLength(53);
 		expect(PAYROLL_QUERY_IDS).toHaveLength(23);
 		expect(Object.keys(PAYROLL_COMMAND_AUTHORIZATION)).toEqual(
 			PAYROLL_COMMAND_IDS,

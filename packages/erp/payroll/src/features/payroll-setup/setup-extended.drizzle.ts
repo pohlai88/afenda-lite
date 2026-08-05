@@ -254,6 +254,7 @@ export function createDrizzleSetupExtendedMethods(
 	| "archivePayGroup"
 	| "updatePeriod"
 	| "closePeriod"
+	| "lockPeriodInputs"
 	| "getEarningRule"
 	| "updateEarningRule"
 	| "archiveEarningRule"
@@ -577,8 +578,8 @@ export function createDrizzleSetupExtendedMethods(
 			if (!versionCheck.ok) {
 				return versionCheck;
 			}
-			if (current.data.status === "closed") {
-				return mapInvalidState("Closed payroll periods cannot be updated");
+			if (current.data.status !== "open") {
+				return mapInvalidState("Only open payroll periods can be updated");
 			}
 
 			try {
@@ -691,6 +692,80 @@ export function createDrizzleSetupExtendedMethods(
 				return mapped;
 			} catch (error) {
 				return mapPersistenceFailure(error, "Failed to close payroll period");
+			}
+		},
+
+		async lockPeriodInputs(periodInput, ports) {
+			const current = await host.getPeriod({
+				organizationId: periodInput.organizationId,
+				periodId: periodInput.periodId,
+			});
+			if (!current.ok) {
+				return current;
+			}
+			if (current.data === null) {
+				return mapNotFound("Payroll period not found");
+			}
+
+			const versionCheck = assertExpectedVersion(
+				current.data.version,
+				periodInput.expectedVersion,
+			);
+			if (!versionCheck.ok) {
+				return versionCheck;
+			}
+			if (current.data.status === "inputs_locked") {
+				return mapInvalidState("Payroll period inputs are already locked");
+			}
+			if (current.data.status !== "open") {
+				return mapInvalidState("Only open payroll periods can lock inputs");
+			}
+
+			try {
+				const rows = await afendaDatabase.client
+					.update(payrollPeriod)
+					.set({
+						status: "inputs_locked",
+						version: current.data.version + 1,
+						updatedBy: periodInput.actorUserId,
+						updatedAt: new Date(),
+					})
+					.where(
+						and(
+							eq(payrollPeriod.organizationId, periodInput.organizationId),
+							eq(payrollPeriod.id, periodInput.periodId),
+							eq(payrollPeriod.version, periodInput.expectedVersion),
+						),
+					)
+					.returning();
+				const [row] = rows;
+				if (row === undefined) {
+					return mapConflict("Payroll period version is stale");
+				}
+
+				const mapped = mapPeriodRow(row);
+				if (!mapped.ok) {
+					return mapped;
+				}
+
+				const audit = await recordAudit(ports, {
+					organizationId: periodInput.organizationId,
+					actorUserId: periodInput.actorUserId,
+					correlationId: periodInput.correlationId,
+					entity: "payroll_period",
+					entityId: mapped.data.id,
+					action: "UPDATE",
+				});
+				if (!audit.ok) {
+					return audit;
+				}
+
+				return mapped;
+			} catch (error) {
+				return mapPersistenceFailure(
+					error,
+					"Failed to lock payroll period inputs",
+				);
 			}
 		},
 

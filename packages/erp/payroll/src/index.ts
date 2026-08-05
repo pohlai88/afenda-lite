@@ -55,6 +55,7 @@ export {
 	listPayrollPeriods,
 	listPayrollReconciliationsForRun,
 	listRetroItems,
+	lockPayrollPeriodInputs,
 	projectPayrollFields,
 	queueRetroItem,
 	recordPaymentSettlement,

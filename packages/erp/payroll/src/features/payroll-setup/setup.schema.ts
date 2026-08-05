@@ -24,7 +24,11 @@ import { isValidPayrollAmountRateRuleConfiguration } from "./setup-rule-policy";
 
 export const payrollCalendarStatusSchema = z.enum(["active", "archived"]);
 export const payrollPayGroupStatusSchema = z.enum(["active", "archived"]);
-export const payrollPeriodStatusSchema = z.enum(["open", "closed"]);
+export const payrollPeriodStatusSchema = z.enum([
+	"open",
+	"inputs_locked",
+	"closed",
+]);
 export const payrollRuleTypeSchema = z.enum(["fixed", "rate"]);
 export const payrollRuleStatusSchema = z.enum([
 	"active",
@@ -338,6 +342,13 @@ export const updatePayrollPeriodInputSchema = payrollMutationContextSchema
 	.strict();
 
 export const closePayrollPeriodInputSchema = payrollMutationContextSchema
+	.extend({
+		periodId: payrollPeriodIdSchema,
+		expectedVersion: payrollExpectedVersionSchema,
+	})
+	.strict();
+
+export const lockPayrollPeriodInputsInputSchema = payrollMutationContextSchema
 	.extend({
 		periodId: payrollPeriodIdSchema,
 		expectedVersion: payrollExpectedVersionSchema,

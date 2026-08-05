@@ -5,6 +5,7 @@ import type { AcceptedPayrollHandoff } from "../../kernel/contracts/projected-ty
 export type { AcceptedPayrollHandoff } from "../../kernel/contracts/projected-types";
 
 export interface AcceptHandoffRecord {
+	acceptanceStatus?: "accepted" | "deferred_to_next_period";
 	actorUserId: string;
 	contractVersion: string;
 	correlationId: string;
