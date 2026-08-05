@@ -108,7 +108,7 @@ HR feedback (recordPayrollDeliveryFeedback: acknowledged | rejected | correction
 | Payslips | Deterministic versioned views over finalized evidence. Own vs all-payslip permissions stay distinct. Restricted subjects are excluded from read models and exports until lifted (A3/C7). |
 | Privacy | Restriction, not erasure. HR privacy deletes do not cascade into payroll evidence. Retention clocks must be counsel-cited before any erasure path. |
 | Money / dates | ISO calendar dates only. Monetary parse accepts at most 12 fractional digits; excess precision fails closed. |
-| Statutory | Production activation is fail-closed. Bundled `synth.v1` is test-only — see [PRODUCTION_READINESS.md](./PRODUCTION_READINESS.md). |
+| Statutory | A2 sourcing closed (build in-house). MY/VN packs are `awaiting_review`; `synth.v1` is test-only — see [PRODUCTION_READINESS.md](./PRODUCTION_READINESS.md). |
 | Setup rules | Effective-dated versions with exclusion constraints; finalized versions cannot be mutated or retired. |
 
 **Security:** Commands require injected `PayrollAuthorizationCapability`. Input

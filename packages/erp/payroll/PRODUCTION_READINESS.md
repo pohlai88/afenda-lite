@@ -49,8 +49,12 @@ reconcile its execution in the migration ledger.
 
 ## External acceptance still required
 
-`synth.v1` is synthetic test logic and is explicitly marked `synthetic_only`.
-No production jurisdiction may be activated until qualified payroll/tax reviewers
-approve a versioned calculator, its effective dates, fixtures, and rounding
-policy. The production calculator fails closed when a statutory rule references
-anything without that approval.
+A2 sourcing is closed as **build in-house**. MY/VN calculators
+(`my.*.v1`, `vn.*.v1`) are registered as `awaiting_review` with citations in
+`src/features/statutory-rules/statutory-source-ledger.ts`. Rates belong in
+reviewed rule-pack `configJson`, not calculator source. `synth.v1` remains
+`synthetic_only`. No production jurisdiction may be activated until a qualified
+payroll/tax reviewer sets `productionApproval: approved` (reviewedBy,
+reviewedAt, jurisdictions) for the versioned calculator, its effective-dated
+pack, fixtures, and rounding policy. The production calculator fails closed
+when a statutory rule references anything without that approval.

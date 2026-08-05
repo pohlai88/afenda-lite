@@ -42,6 +42,7 @@ export interface StatutoryRuleCalculator {
 	readonly calculatorId: string;
 	readonly productionApproval:
 		| { readonly status: "synthetic_only" }
+		| { readonly status: "awaiting_review" }
 		| {
 				readonly status: "approved";
 				readonly reviewedBy: string;

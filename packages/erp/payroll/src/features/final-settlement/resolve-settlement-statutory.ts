@@ -25,8 +25,9 @@ function notApprovedForProduction(): Result<never> {
  * step. A settlement may never assert its own statutory amounts: absent the
  * capability, or with any configured rule whose calculator is unregistered or
  * not production-approved, the settlement refuses with `CONFLICT` exactly as a
- * run does. Today's only calculator is `synthetic_only`, so production
- * activation fails closed.
+ * run does. Jurisdiction packs are `awaiting_review` and `synth.v1` is
+ * `synthetic_only`, so production activation fails closed until a pack is
+ * reviewer-approved.
  */
 export function createFinalSettlementStatutoryResolver(input: {
 	rules: readonly PayrollStatutoryRule[];

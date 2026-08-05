@@ -363,19 +363,17 @@ function narrativeDebtItems(
 		return [];
 	}
 	if (key === "synthetic-statutory-calculator") {
-		const file = "src/features/statutory-rules/calculator-synth-v1.ts";
+		const file = "src/features/statutory-rules/calculator-registry.ts";
 		const content = readFileSync(path.join(packageRoot, file), "utf8");
 		const lineIndex = content
 			.split("\n")
-			.findIndex((line) =>
-				line.includes('productionApproval: { status: "synthetic_only" }'),
-			);
+			.findIndex((line) => line.includes("JURISDICTION_STATUTORY_CALCULATORS"));
 		if (lineIndex === -1) {
 			return [];
 		}
 		return [
 			{
-				evidence: `${file}:${lineIndex + 1} registers the only statutory calculator as synthetic_only, fail-closed for production approval (bridging doc A2)`,
+				evidence: `${file}:${lineIndex + 1} registers MY/VN jurisdiction packs as awaiting_review plus synth.v1 as synthetic_only — no calculator is production-approved yet (bridging doc A2 pack review)`,
 				file,
 			},
 		];

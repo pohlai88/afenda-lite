@@ -26,7 +26,7 @@ checkout-wide doctrine. This file wins only for **conflicts inside this package*
 - Treat compensation, tax, deductions, payslips, and statutory identifiers as
   highly sensitive. Use synthetic fixtures only; keep
   `payroll.payslip.read-own` and `payroll.payslip.read-all` distinct.
-- Bundled `synth.v1` statutory calculator is test-only — not a jurisdiction approval.
+- MY/VN jurisdiction calculators are `awaiting_review`; bundled `synth.v1` is test-only — neither is a production approval.
 - Always-apply companions when editing this tree: `payroll-boundaries`,
   `payroll-domain`, `payroll-security`, `payroll-testing`.
 

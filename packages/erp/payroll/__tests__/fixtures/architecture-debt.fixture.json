@@ -479,6 +479,18 @@
 					"file": "src/features/statutory-filings/operation-registry.ts"
 				},
 				{
+					"evidence": "src/features/statutory-rules/calculator-config.ts exceeds src/<owner>/<file>",
+					"file": "src/features/statutory-rules/calculator-config.ts"
+				},
+				{
+					"evidence": "src/features/statutory-rules/calculator-helpers.ts exceeds src/<owner>/<file>",
+					"file": "src/features/statutory-rules/calculator-helpers.ts"
+				},
+				{
+					"evidence": "src/features/statutory-rules/calculator-jurisdiction-packs.ts exceeds src/<owner>/<file>",
+					"file": "src/features/statutory-rules/calculator-jurisdiction-packs.ts"
+				},
+				{
 					"evidence": "src/features/statutory-rules/calculator-registry.ts exceeds src/<owner>/<file>",
 					"file": "src/features/statutory-rules/calculator-registry.ts"
 				},
@@ -489,6 +501,10 @@
 				{
 					"evidence": "src/features/statutory-rules/calculator.types.ts exceeds src/<owner>/<file>",
 					"file": "src/features/statutory-rules/calculator.types.ts"
+				},
+				{
+					"evidence": "src/features/statutory-rules/statutory-source-ledger.ts exceeds src/<owner>/<file>",
+					"file": "src/features/statutory-rules/statutory-source-ledger.ts"
 				},
 				{
 					"evidence": "src/features/statutory-rules/statutory.drizzle.ts exceeds src/<owner>/<file>",
@@ -975,8 +991,8 @@
 		{
 			"items": [
 				{
-					"evidence": "src/features/statutory-rules/calculator-synth-v1.ts:51 registers the only statutory calculator as synthetic_only, fail-closed for production approval (bridging doc A2)",
-					"file": "src/features/statutory-rules/calculator-synth-v1.ts"
+					"evidence": "src/features/statutory-rules/calculator-registry.ts:2 registers MY/VN jurisdiction packs as awaiting_review plus synth.v1 as synthetic_only — no calculator is production-approved yet (bridging doc A2 pack review)",
+					"file": "src/features/statutory-rules/calculator-registry.ts"
 				}
 			],
 			"key": "synthetic-statutory-calculator",
@@ -1012,6 +1028,6 @@
 	"schemaVersion": 1,
 	"summary": {
 		"featureCount": 15,
-		"sourceTypeScriptFiles": 181
+		"sourceTypeScriptFiles": 185
 	}
 }

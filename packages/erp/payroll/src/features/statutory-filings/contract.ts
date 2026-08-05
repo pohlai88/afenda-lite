@@ -8,9 +8,9 @@
  *    live statutory rule configuration at generation time, and no caller may
  *    supply amounts.
  *  - Generation passes the same fail-closed `PayrollStatutoryCapability` seam
- *    payroll runs and final settlements use. While A2 is OPEN the only
- *    registered calculator is `synth.v1` (`synthetic_only`), so production
- *    generation refuses with `CONFLICT`; synth filings are test-only.
+ *    payroll runs and final settlements use. MY/VN packs are `awaiting_review`
+ *    and `synth.v1` is `synthetic_only`, so production generation refuses with
+ *    `CONFLICT` until a pack is reviewer-approved; synth filings are test-only.
  *  - Sealing is segregation-of-duties gated (generator ≠ sealer) and content
  *    hashes the artifact. A sealed filing is immutable: re-sealing replays the
  *    same artifact, and later changes to the source runs never alter it.

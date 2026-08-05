@@ -65,8 +65,8 @@ function nowFrom(options: PayrollStatutoryFilingCommandOptions): Date {
  * at the artifact-generation step. A filing may never assert its own statutory
  * authority: absent the capability, or with any sealed result whose calculator
  * is unregistered or not production-approved, generation refuses with
- * `CONFLICT`. Today's only registered calculator is `synth.v1`
- * (`synthetic_only`), so production filing generation fails closed and synth
+ * `CONFLICT`. Registered MY/VN packs remain `awaiting_review` and `synth.v1`
+ * is `synthetic_only`, so production filing generation fails closed and synth
  * filings stay test-only.
  */
 function assertFilingCalculatorsApproved(

@@ -1,4 +1,5 @@
 import type { StatutoryRuleCalculator } from "./calculator.types";
+import { JURISDICTION_STATUTORY_CALCULATORS } from "./calculator-jurisdiction-packs";
 import {
 	SYNTH_V1_CALCULATOR_ID,
 	synthV1StatutoryCalculator,
@@ -6,6 +7,9 @@ import {
 
 const calculators = new Map<string, StatutoryRuleCalculator>([
 	[SYNTH_V1_CALCULATOR_ID, synthV1StatutoryCalculator],
+	...JURISDICTION_STATUTORY_CALCULATORS.map(
+		(calculator) => [calculator.calculatorId, calculator] as const,
+	),
 ]);
 
 export function getStatutoryCalculator(
