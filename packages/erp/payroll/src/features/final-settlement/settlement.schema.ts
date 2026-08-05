@@ -80,7 +80,7 @@ export const payrollFinalSettlementCompensationSnapshotSchema = z
 				employeeStatutory: payrollDecimalStringSchema,
 				employerStatutory: payrollDecimalStringSchema,
 				gross: payrollDecimalStringSchema,
-				taxYear: z.number().int().min(0).max(9999),
+				taxYear: z.number().int().min(1900).max(9999),
 				taxableBase: payrollDecimalStringSchema,
 			})
 			.strict(),

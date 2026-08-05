@@ -1,4 +1,5 @@
 import type { Result } from "@afenda/errors";
+import type { HandoffPriorEmployerYtd } from "@afenda/events/schemas";
 
 import type { PayrollRoundingPolicy } from "../money/rounding-policy";
 
@@ -46,10 +47,18 @@ export interface PayrollYearToDateTotals {
 }
 
 export interface PayrollYearToDateCapability {
+	/**
+	 * Single owner of the hire-year merge. Callers hand the accepted handoff's
+	 * prior-employer records straight through; the capability returns ONE merged
+	 * total (this employer's finalized history plus any prior-employer figures
+	 * for the same tax year and currency). Calculators never receive the two
+	 * sides separately, so no calculator can re-derive the merge differently.
+	 */
 	employeeTotals: (input: {
 		currencyCode: string;
 		employeeId: string;
 		organizationId: string;
+		priorEmployerYtd: readonly HandoffPriorEmployerYtd[];
 		taxYear: number;
 		throughDate: string;
 	}) => Promise<Result<PayrollYearToDateTotals>>;

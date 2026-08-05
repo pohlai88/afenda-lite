@@ -29,7 +29,6 @@ function notApprovedForProduction(): Result<never> {
  * activation fails closed.
  */
 export function createFinalSettlementStatutoryResolver(input: {
-	priorEmployerYtd: PayrollFinalSettlementCompensationSnapshot["priorEmployerYtd"];
 	rules: readonly PayrollStatutoryRule[];
 	statutory: PayrollStatutoryCapability | undefined;
 	statutoryProfile: PayrollFinalSettlementCompensationSnapshot["statutoryProfile"];
@@ -74,7 +73,6 @@ export function createFinalSettlementStatutoryResolver(input: {
 					currencyCode,
 					gross: grossScaled,
 					jurisdictionCode: rule.jurisdictionCode,
-					priorEmployerYtd: input.priorEmployerYtd,
 					roundingPolicy,
 					ruleCode: rule.code,
 					ruleVersion: rule.ruleVersion,

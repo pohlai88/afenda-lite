@@ -12,8 +12,8 @@ import { buildConsumerInventory } from "./consumer-inventory";
  * plus three narrative categories for the real, documented debt called out
  * in `docs/erp/hr-payroll-bridging.md`:
  *  - `undrained-outbox-emission` (B6 — no dispatcher drains the outbox)
- *  - `dormant-workforce-port` (B1 — optional pull port wired nowhere in
- *    production)
+ *  - `dormant-workforce-port` (closed — B1 single push/sync ingest; production
+ *    composition has no pull-workforce override)
  *  - `synthetic-statutory-calculator` (A2 — statutory calculators are
  *    synth-only, fail-closed)
  *  - `hr-termination-fact-gap` (closed — D0 Stage 2/3 pins leave balance from
@@ -21,6 +21,10 @@ import { buildConsumerInventory } from "./consumer-inventory";
  *  - `settlement-transition-audit-gap` (closed — final-settlement create /
  *    calculate / finalize persist with the run audit + outbox CTE and emit
  *    settlement lifecycle events drained by B6)
+ *  - `ytd-fanout-unbatched` (D0 review — the history year-to-date capability
+ *    loads result lines and statutory results per finalized run, per employee,
+ *    so a run of M employees over N finalized runs issues N x M store reads;
+ *    target is a memoized/batched read)
  * The mechanical categories are computed from the real source tree, same as
  * HR; HR's package-specific categories (`feature-composite-store`,
  * `adapter-composite-store`, `retired-path-reading-test`) reference HR-only
@@ -42,6 +46,7 @@ export const architectureDebtCategoryKeys = [
 	"synthetic-statutory-calculator",
 	"hr-termination-fact-gap",
 	"settlement-transition-audit-gap",
+	"ytd-fanout-unbatched",
 ] as const;
 
 const categoryKeySchema = z.enum(architectureDebtCategoryKeys);
@@ -328,9 +333,26 @@ function narrativeDebtItems(
 		| "hr-termination-fact-gap"
 		| "settlement-transition-audit-gap"
 		| "synthetic-statutory-calculator"
-		| "undrained-outbox-emission",
+		| "undrained-outbox-emission"
+		| "ytd-fanout-unbatched",
 	packageRoot: string,
 ): readonly MutableDebtItem[] {
+	if (key === "ytd-fanout-unbatched") {
+		const file = "src/features/statutory-rules/year-to-date-capability.ts";
+		const content = readFileSync(path.join(packageRoot, file), "utf8");
+		const lineIndex = content
+			.split("\n")
+			.findIndex((line) => line.includes("store.listResultLinesForRun({"));
+		if (lineIndex === -1) {
+			return [];
+		}
+		return [
+			{
+				evidence: `${file}:${lineIndex + 1} loads result lines and statutory results once per finalized run per employee — N x M reads with no memoization or batch (D0 review; target: batched year-to-date reads)`,
+				file,
+			},
+		];
+	}
 	if (key === "hr-termination-fact-gap") {
 		return [];
 	}
@@ -338,20 +360,7 @@ function narrativeDebtItems(
 		return [];
 	}
 	if (key === "dormant-workforce-port") {
-		const file = "src/facade/contracts.ts";
-		const content = readFileSync(path.join(packageRoot, file), "utf8");
-		const lineIndex = content
-			.split("\n")
-			.findIndex((line) => line.includes("workforce?:"));
-		if (lineIndex === -1) {
-			return [];
-		}
-		return [
-			{
-				evidence: `${file}:${lineIndex + 1} declares an optional PayrollWorkforceCapability pull port that production wires nowhere (bridging doc B1: single push transport is live)`,
-				file,
-			},
-		];
+		return [];
 	}
 	if (key === "synthetic-statutory-calculator") {
 		const file = "src/features/statutory-rules/calculator-synth-v1.ts";
@@ -459,6 +468,9 @@ export function buildArchitectureDebtReport(
 		],
 		"undrained-outbox-emission": [
 			...narrativeDebtItems("undrained-outbox-emission", packageRoot),
+		],
+		"ytd-fanout-unbatched": [
+			...narrativeDebtItems("ytd-fanout-unbatched", packageRoot),
 		],
 	};
 

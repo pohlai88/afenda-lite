@@ -149,6 +149,16 @@ export function buildSyntheticCalcSnapshot(
 				},
 			},
 		],
+		// Year-to-date is a required calculation fact once statutory rules exist:
+		// the pipeline blocks rather than zero-filling it.
+		yearToDate: {
+			currencyCode: "USD",
+			employeeStatutory: "0",
+			employerStatutory: "0",
+			gross: "0",
+			taxYear: 2025,
+			taxableBase: "0",
+		},
 	};
 
 	return {
@@ -170,5 +180,6 @@ export function buildSyntheticCalcSnapshot(
 		earningRules: overrides.earningRules ?? base.earningRules,
 		deductionRules: overrides.deductionRules ?? base.deductionRules,
 		statutoryRules: overrides.statutoryRules ?? base.statutoryRules,
+		yearToDate: overrides.yearToDate ?? base.yearToDate,
 	};
 }

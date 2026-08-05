@@ -9,7 +9,6 @@ import {
 } from "../../kernel/money/money";
 import type { PayrollRoundingPolicy } from "../../kernel/money/rounding-policy";
 import { getStatutoryCalculator } from "../statutory-rules/calculator-registry";
-import { emptyPayrollYearToDateTotals } from "../statutory-rules/year-to-date-capability";
 import type {
 	PayrollCalcDeductionRuleSnapshot,
 	PayrollCalcEarningRuleSnapshot,
@@ -25,6 +24,7 @@ const NEGATIVE_AMOUNT_CODE = "NEGATIVE_AMOUNT";
 const INELIGIBLE_EMPLOYEE_CODE = "INELIGIBLE_EMPLOYEE";
 const CURRENCY_MISMATCH_CODE = "CURRENCY_MISMATCH";
 const UNKNOWN_CALCULATOR_CODE = "UNKNOWN_CALCULATOR";
+const MISSING_YEAR_TO_DATE_CODE = "MISSING_YEAR_TO_DATE";
 const STATUTORY_CALCULATION_FAILED_CODE = "STATUTORY_CALCULATION_FAILED";
 
 interface CalculationContext {
@@ -644,6 +644,24 @@ function calculateStatutory(input: {
 	const taxableBase = subScaled(input.gross, input.preTaxDeductions);
 	let employeeStatutory = 0n;
 	const employerContributions: PendingEmployerContribution[] = [];
+	const { yearToDate } = input.ctx.snapshot;
+
+	if (input.ctx.snapshot.statutoryRules.length === 0) {
+		return { employeeStatutory, employerContributions };
+	}
+	if (yearToDate === undefined) {
+		// Fail closed on the pipeline's own channel (C6): a blocking exception
+		// refuses the run and the retro recompute. The previous zero-fill — with
+		// a `taxYear: 0` sentinel — told every calculator the employee had earned
+		// nothing this year, which under-withholds on banded rules.
+		addException(input.ctx, {
+			exceptionCode: MISSING_YEAR_TO_DATE_CODE,
+			message:
+				"Payroll year-to-date facts are not composed for this calculation",
+			sourceRef: input.ctx.snapshot.employeeId,
+		});
+		return { employeeStatutory, employerContributions };
+	}
 
 	for (const rule of input.ctx.snapshot.statutoryRules) {
 		const calculatorIdValue = rule.configJson.calculatorId;
@@ -665,16 +683,10 @@ function calculateStatutory(input: {
 				configJson: rule.configJson,
 				currencyCode: input.ctx.snapshot.currencyCode,
 				gross: input.gross,
-				priorEmployerYtd: input.ctx.snapshot.priorEmployerYtd ?? [],
 				roundingPolicy: input.ctx.policy,
 				statutoryProfile: input.ctx.snapshot.statutoryProfile ?? null,
 				taxableBase,
-				yearToDate:
-					input.ctx.snapshot.yearToDate ??
-					emptyPayrollYearToDateTotals({
-						currencyCode: input.ctx.snapshot.currencyCode,
-						taxYear: 0,
-					}),
+				yearToDate,
 			});
 
 			if (

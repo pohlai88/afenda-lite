@@ -1,4 +1,5 @@
 import { errorResult, type Result } from "@afenda/errors";
+import type { HandoffPriorEmployerYtd } from "@afenda/events/schemas";
 
 import type {
 	PayrollPeriod,
@@ -57,8 +58,23 @@ export function emptyPayrollYearToDateTotals(input: {
 	};
 }
 
+/**
+ * Tax year of a payroll period or settlement.
+ *
+ * Attribution is by `periodStart` (and by the termination effective date for a
+ * final settlement) — deliberately, not by `periodEnd`. A period that straddles
+ * a year boundary belongs to the year it opened in, which is the same year the
+ * HR handoff attributes its prior-employer figures to, so both sides of the
+ * hire-year merge below always agree on which year they are talking about.
+ */
 export function taxYearFromIsoDate(value: string): number {
 	return Number(value.slice(0, 4));
+}
+
+function crossCurrencyConflict(scope: string): Result<never> {
+	return errorResult.fail("CONFLICT", {
+		publicMessage: `Year-to-date totals cannot mix currencies (${scope})`,
+	});
 }
 
 function sumEmployeeHistory(input: {
@@ -67,7 +83,7 @@ function sumEmployeeHistory(input: {
 	lines: readonly PayrollResultLine[];
 	statutoryResults: readonly PayrollStatutoryResult[];
 	taxYear: number;
-}): PayrollYearToDateTotals {
+}): Result<PayrollYearToDateTotals> {
 	let gross = 0n;
 	let preTax = 0n;
 	for (const line of input.lines) {
@@ -75,7 +91,9 @@ function sumEmployeeHistory(input: {
 			continue;
 		}
 		if (line.currencyCode !== input.currencyCode) {
-			continue;
+			// Silently skipping a foreign-currency line under-reports the year to
+			// date and would under-withhold; the totals refuse instead.
+			return crossCurrencyConflict("finalized result line");
 		}
 		const amount = parseDecimalToScaled(line.amount);
 		if (line.lineKind === "earning") {
@@ -93,7 +111,7 @@ function sumEmployeeHistory(input: {
 			continue;
 		}
 		if (result.currencyCode !== input.currencyCode) {
-			continue;
+			return crossCurrencyConflict("finalized statutory result");
 		}
 		employeeStatutory = addScaled(
 			employeeStatutory,
@@ -105,14 +123,64 @@ function sumEmployeeHistory(input: {
 		);
 	}
 
-	return {
+	return errorResult.ok({
 		currencyCode: input.currencyCode,
 		employeeStatutory: formatScaledToDecimal(employeeStatutory),
 		employerStatutory: formatScaledToDecimal(employerStatutory),
 		gross: formatScaledToDecimal(gross),
 		taxYear: input.taxYear,
 		taxableBase: formatScaledToDecimal(subScaled(gross, preTax)),
-	};
+	});
+}
+
+/**
+ * The one and only hire-year merge.
+ *
+ * Prior-employer figures are HR-declared facts for a subject who joined
+ * mid-year; from the statutory calculators' point of view they are simply more
+ * year-to-date. Both employee-side prior figures (`statutoryContributionAmount`
+ * and `taxWithheldAmount`) fold into `employeeStatutory` because that is what
+ * this employer's own `employeeStatutory` already aggregates — every
+ * employee-side statutory result, tax rules included. `employerStatutory` is
+ * untouched: the prior employer's own liability is not this employer's.
+ * Records for another tax year are not part of this year's totals; a record in
+ * another currency refuses rather than being dropped.
+ */
+function mergePriorEmployerYtd(
+	totals: PayrollYearToDateTotals,
+	priorEmployerYtd: readonly HandoffPriorEmployerYtd[],
+): Result<PayrollYearToDateTotals> {
+	let gross = parseDecimalToScaled(totals.gross);
+	let taxableBase = parseDecimalToScaled(totals.taxableBase);
+	let employeeStatutory = parseDecimalToScaled(totals.employeeStatutory);
+
+	for (const record of priorEmployerYtd) {
+		if (record.taxYear !== totals.taxYear) {
+			continue;
+		}
+		if (record.currencyCode !== totals.currencyCode) {
+			return crossCurrencyConflict("prior-employer year-to-date");
+		}
+		const priorGross = parseDecimalToScaled(record.grossAmount);
+		gross = addScaled(gross, priorGross);
+		taxableBase = addScaled(taxableBase, priorGross);
+		employeeStatutory = addScaled(
+			employeeStatutory,
+			addScaled(
+				parseDecimalToScaled(record.statutoryContributionAmount),
+				parseDecimalToScaled(record.taxWithheldAmount),
+			),
+		);
+	}
+
+	return errorResult.ok({
+		currencyCode: totals.currencyCode,
+		employeeStatutory: formatScaledToDecimal(employeeStatutory),
+		employerStatutory: totals.employerStatutory,
+		gross: formatScaledToDecimal(gross),
+		taxYear: totals.taxYear,
+		taxableBase: formatScaledToDecimal(taxableBase),
+	});
 }
 
 function mergeTotals(
@@ -147,6 +215,34 @@ function mergeTotals(
 			),
 		),
 	};
+}
+
+/**
+ * The one fail-closed consumer seam for year-to-date facts.
+ *
+ * An absent capability used to zero-fill, which silently told every statutory
+ * calculator that the employee had earned nothing this year — the same class of
+ * under-withholding the statutory gate already refuses. Payroll now refuses the
+ * calculation instead, exactly like `createFinalSettlementStatutoryResolver`
+ * does when the statutory capability is missing.
+ */
+export async function resolveYearToDate(input: {
+	capability: PayrollYearToDateCapability | undefined;
+	currencyCode: string;
+	employeeId: string;
+	organizationId: string;
+	priorEmployerYtd: readonly HandoffPriorEmployerYtd[];
+	taxYear: number;
+	throughDate: string;
+}): Promise<Result<PayrollYearToDateTotals>> {
+	const { capability, ...request } = input;
+	if (capability === undefined) {
+		return errorResult.fail("CONFLICT", {
+			publicMessage:
+				"Payroll year-to-date facts are not composed for this calculation",
+		});
+	}
+	return await capability.employeeTotals(request);
 }
 
 export function createPayrollHistoryYearToDateCapability(
@@ -207,15 +303,13 @@ export function createPayrollHistoryYearToDateCapability(
 					if (!statutoryResults.ok) {
 						return statutoryResults;
 					}
-					return errorResult.ok(
-						sumEmployeeHistory({
-							currencyCode: input.currencyCode,
-							employeeId: input.employeeId,
-							lines: lines.data,
-							statutoryResults: statutoryResults.data,
-							taxYear: input.taxYear,
-						}),
-					);
+					return sumEmployeeHistory({
+						currencyCode: input.currencyCode,
+						employeeId: input.employeeId,
+						lines: lines.data,
+						statutoryResults: statutoryResults.data,
+						taxYear: input.taxYear,
+					});
 				}),
 			);
 
@@ -230,7 +324,7 @@ export function createPayrollHistoryYearToDateCapability(
 				totals = mergeTotals(totals, history.data);
 			}
 
-			return errorResult.ok(totals);
+			return mergePriorEmployerYtd(totals, input.priorEmployerYtd);
 		},
 	};
 }

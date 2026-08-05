@@ -2592,7 +2592,15 @@
 					"file": "src/features/organization/store.ts"
 				},
 				{
-					"evidence": "src/features/payroll-handoff/approved-payroll-handoff.ts:20 -> src/features/workforce-records/employment/employment-history.ts (payroll-handoff -> workforce-records)",
+					"evidence": "src/features/payroll-handoff/approved-payroll-handoff.ts:20 -> src/features/leave/balance.ts (payroll-handoff -> leave)",
+					"file": "src/features/payroll-handoff/approved-payroll-handoff.ts"
+				},
+				{
+					"evidence": "src/features/payroll-handoff/approved-payroll-handoff.ts:21 -> src/features/statutory-profile/privacy.ts (payroll-handoff -> statutory-profile)",
+					"file": "src/features/payroll-handoff/approved-payroll-handoff.ts"
+				},
+				{
+					"evidence": "src/features/payroll-handoff/approved-payroll-handoff.ts:25 -> src/features/workforce-records/employment/employment-history.ts (payroll-handoff -> workforce-records)",
 					"file": "src/features/payroll-handoff/approved-payroll-handoff.ts"
 				},
 				{

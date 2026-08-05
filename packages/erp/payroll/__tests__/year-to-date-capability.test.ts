@@ -1,6 +1,10 @@
 import { errorResult } from "@afenda/errors";
+import type { HandoffPriorEmployerYtd } from "@afenda/events/schemas";
 import { describe, expect, it } from "vitest";
-import { createPayrollHistoryYearToDateCapability } from "../src/features/statutory-rules/year-to-date-capability";
+import {
+	createPayrollHistoryYearToDateCapability,
+	resolveYearToDate,
+} from "../src/features/statutory-rules/year-to-date-capability";
 import type {
 	PayrollPeriod,
 	PayrollResultLine,
@@ -102,6 +106,25 @@ function earning(input: {
 	};
 }
 
+function priorEmployer(input: {
+	currencyCode?: string;
+	grossAmount: string;
+	statutoryContributionAmount?: string;
+	taxWithheldAmount?: string;
+	taxYear?: number;
+}): HandoffPriorEmployerYtd {
+	return {
+		currencyCode: input.currencyCode ?? "USD",
+		grossAmount: input.grossAmount,
+		jurisdictionCode: "US",
+		priorEmployerName: "Prior Co",
+		recordedOn: "2025-01-02",
+		statutoryContributionAmount: input.statutoryContributionAmount ?? "0",
+		taxWithheldAmount: input.taxWithheldAmount ?? "0",
+		taxYear: input.taxYear ?? 2025,
+	};
+}
+
 function statutory(input: {
 	employeeAmount: string;
 	employerAmount: string;
@@ -186,11 +209,6 @@ describe("createPayrollHistoryYearToDateCapability", () => {
 							runId,
 						}),
 						earning({
-							amount: "9999",
-							currencyCode: "MYR",
-							runId,
-						}),
-						earning({
 							amount: "500",
 							employeeId: "emp-other",
 							runId,
@@ -223,6 +241,7 @@ describe("createPayrollHistoryYearToDateCapability", () => {
 			currencyCode: "USD",
 			employeeId: EMPLOYEE_ID,
 			organizationId: ORGANIZATION_ID,
+			priorEmployerYtd: [],
 			taxYear: 2025,
 			throughDate: "2025-02-15",
 		});
@@ -268,6 +287,7 @@ describe("createPayrollHistoryYearToDateCapability", () => {
 			currencyCode: "USD",
 			employeeId: EMPLOYEE_ID,
 			organizationId: ORGANIZATION_ID,
+			priorEmployerYtd: [],
 			taxYear: 2025,
 			throughDate: "2025-02-01",
 		});
@@ -284,5 +304,170 @@ describe("createPayrollHistoryYearToDateCapability", () => {
 			taxYear: 2025,
 			taxableBase: "0",
 		});
+	});
+
+	it("refuses a cross-currency finalized result line", async () => {
+		const capability = createPayrollHistoryYearToDateCapability({
+			listPeriodsForOrganization: () =>
+				errorResult.ok([
+					period({
+						id: JANUARY_PERIOD_ID,
+						periodEnd: "2025-01-31",
+						periodStart: "2025-01-01",
+					}),
+				]),
+			listRunsForPeriod: () =>
+				errorResult.ok([
+					run({
+						id: JANUARY_RUN_ID,
+						periodId: JANUARY_PERIOD_ID,
+						status: "finalized",
+					}),
+				]),
+			listResultLinesForRun: () =>
+				errorResult.ok([
+					earning({ amount: "3100", runId: JANUARY_RUN_ID }),
+					earning({
+						amount: "9999",
+						currencyCode: "MYR",
+						runId: JANUARY_RUN_ID,
+					}),
+				]),
+			listStatutoryResultsForRun: () => errorResult.ok([]),
+		});
+
+		const totals = await capability.employeeTotals({
+			currencyCode: "USD",
+			employeeId: EMPLOYEE_ID,
+			organizationId: ORGANIZATION_ID,
+			priorEmployerYtd: [],
+			taxYear: 2025,
+			throughDate: "2025-02-01",
+		});
+
+		expect(totals.ok).toBe(false);
+		if (!totals.ok) {
+			expect(totals.code).toBe("CONFLICT");
+		}
+	});
+
+	it("merges same-year prior-employer figures into one hire-year total", async () => {
+		const capability = createPayrollHistoryYearToDateCapability({
+			listPeriodsForOrganization: () =>
+				errorResult.ok([
+					period({
+						id: JANUARY_PERIOD_ID,
+						periodEnd: "2025-01-31",
+						periodStart: "2025-01-01",
+					}),
+				]),
+			listRunsForPeriod: () =>
+				errorResult.ok([
+					run({
+						id: JANUARY_RUN_ID,
+						periodId: JANUARY_PERIOD_ID,
+						status: "finalized",
+					}),
+				]),
+			listResultLinesForRun: () =>
+				errorResult.ok([
+					earning({ amount: "3100", runId: JANUARY_RUN_ID }),
+					earning({
+						amount: "100",
+						lineKind: "pre_tax_deduction",
+						runId: JANUARY_RUN_ID,
+					}),
+				]),
+			listStatutoryResultsForRun: () =>
+				errorResult.ok([
+					statutory({
+						employeeAmount: "80",
+						employerAmount: "40",
+						runId: JANUARY_RUN_ID,
+					}),
+				]),
+		});
+
+		const totals = await capability.employeeTotals({
+			currencyCode: "USD",
+			employeeId: EMPLOYEE_ID,
+			organizationId: ORGANIZATION_ID,
+			priorEmployerYtd: [
+				priorEmployer({
+					grossAmount: "1000",
+					statutoryContributionAmount: "50",
+					taxWithheldAmount: "30",
+				}),
+				priorEmployer({
+					grossAmount: "5000",
+					statutoryContributionAmount: "200",
+					taxWithheldAmount: "100",
+					taxYear: 2024,
+				}),
+			],
+			taxYear: 2025,
+			throughDate: "2025-02-01",
+		});
+
+		expect(totals.ok).toBe(true);
+		if (!totals.ok) {
+			return;
+		}
+		expect(totals.data).toEqual({
+			currencyCode: "USD",
+			employeeStatutory: "160",
+			employerStatutory: "40",
+			gross: "4100",
+			taxYear: 2025,
+			taxableBase: "4000",
+		});
+	});
+
+	it("refuses a cross-currency prior-employer record", async () => {
+		const capability = createPayrollHistoryYearToDateCapability({
+			listPeriodsForOrganization: () => errorResult.ok([]),
+			listRunsForPeriod: () => errorResult.ok([]),
+			listResultLinesForRun: () => errorResult.ok([]),
+			listStatutoryResultsForRun: () => errorResult.ok([]),
+		});
+
+		const totals = await capability.employeeTotals({
+			currencyCode: "USD",
+			employeeId: EMPLOYEE_ID,
+			organizationId: ORGANIZATION_ID,
+			priorEmployerYtd: [
+				priorEmployer({
+					currencyCode: "MYR",
+					grossAmount: "1000",
+				}),
+			],
+			taxYear: 2025,
+			throughDate: "2025-02-01",
+		});
+
+		expect(totals.ok).toBe(false);
+		if (!totals.ok) {
+			expect(totals.code).toBe("CONFLICT");
+		}
+	});
+});
+
+describe("resolveYearToDate", () => {
+	it("refuses when the year-to-date capability is not composed", async () => {
+		const totals = await resolveYearToDate({
+			capability: undefined,
+			currencyCode: "USD",
+			employeeId: EMPLOYEE_ID,
+			organizationId: ORGANIZATION_ID,
+			priorEmployerYtd: [],
+			taxYear: 2025,
+			throughDate: "2025-02-01",
+		});
+
+		expect(totals.ok).toBe(false);
+		if (!totals.ok) {
+			expect(totals.code).toBe("CONFLICT");
+			expect(totals.message).toContain("not composed");
+		}
 	});
 });

@@ -25,6 +25,7 @@ import { createPayrollRun } from "../src/features/payroll-runs/payroll-run";
 import { createPayrollCalendar } from "../src/features/payroll-setup/calendar";
 import { createPayrollPayGroup } from "../src/features/payroll-setup/pay-group";
 import { createPayrollStatutoryRule } from "../src/features/payroll-setup/statutory-rule";
+import { createPayrollHistoryYearToDateCapability } from "../src/features/statutory-rules/year-to-date-capability";
 import { createAcceptedWorkforceInputPort } from "../src/features/workforce-ingress/accepted-workforce-input-port";
 import { ingestApprovedPayrollHandoff } from "../src/features/workforce-ingress/ingest-approved-handoff";
 import type { PayrollAuthorizationPort } from "../src/kernel/execution/authorization";
@@ -168,6 +169,10 @@ async function seedOpenPeriod(
 		authorization: authorization(PERMISSIONS),
 		employees: employeesPort(store),
 		statutory: seedOptions.statutory ?? approvingStatutory(),
+		// Year-to-date is a composed capability, not a defaultable fact: the
+		// suites compose the real history capability exactly as they compose
+		// statutory, so the fail-closed seam is exercised only where asserted.
+		yearToDate: createPayrollHistoryYearToDateCapability(store),
 	};
 	const calendar = unwrap(
 		await createPayrollCalendar(
@@ -364,6 +369,21 @@ describe("final-settlement initiate", () => {
 		expect(current.statutoryEvidence).toBeNull();
 		// First test in the file absorbs cold module initialization.
 	}, 30_000);
+
+	it("refuses initiate when year-to-date facts are not composed", async () => {
+		const seeded = await seedOpenPeriod();
+		const { yearToDate: _yearToDate, ...options } = seeded.options;
+		const result = await initiateFinalSettlement(
+			initiateInput(seeded),
+			options,
+		);
+
+		expect(result.ok).toBe(false);
+		if (!result.ok) {
+			expect(result.code).toBe("CONFLICT");
+			expect(result.message).toContain("not composed");
+		}
+	});
 
 	it("refuses when the termination handoff omits a closing leave balance", async () => {
 		const seeded = await seedOpenPeriod({

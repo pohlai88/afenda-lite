@@ -17,7 +17,7 @@ import type {
 /** Authorization capability supplied once by the application composition root. */
 export type PayrollAuthorizationCapability = PayrollAuthorizationPort;
 
-/** Payroll-owned workforce fact requirement implemented outside this package. */
+/** Accepted-handoff workforce fact reader sealed by ingest (bridging B1). */
 export type PayrollWorkforceCapability = PayrollWorkforceInputPort;
 
 /** Platform privacy adapter supplied once by the application composition root. */
@@ -33,11 +33,4 @@ export interface PayrollCapabilityComposition {
 	readonly observability?: PayrollObservabilityPort;
 	readonly privacy?: PayrollPrivacyCapability;
 	readonly statutory: PayrollStatutoryCapability;
-	/**
-	 * Test-only override for workforce fact reads. Production composition omits
-	 * this field — operations read the accepted-handoff ledger sealed by
-	 * ingestApprovedPayrollHandoff (PRD R1 / bridging B1). Do not wire a second
-	 * pull transport through this seam.
-	 */
-	readonly workforce?: PayrollWorkforceCapability;
 }

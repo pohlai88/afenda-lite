@@ -17,6 +17,11 @@ import {
 	humanResourcesMutationContextSchema,
 	isoDateSchema,
 } from "../../kernel/validation/common";
+import { addLeaveQuantity } from "../leave/balance";
+import {
+	isStatutorySubjectRestricted,
+	statutorySubjectRestrictedFailure,
+} from "../statutory-profile/privacy";
 import { resolveEmploymentStatusAsOf } from "../workforce-records/employment/employment-history";
 import { mapApprovedPayrollHandoff } from "./map-approved-payroll-handoff";
 import { runPayrollHandoffCapabilityQuery } from "./run-operation";
@@ -239,38 +244,22 @@ async function resolvePayrollEmploymentContext(input: {
 	});
 }
 
-const TRAILING_ZERO_FRACTION = /0+$/;
-
+/**
+ * Tax year of the handoff.
+ *
+ * Attribution is by `effectiveDate` — the compensation/termination effective
+ * date the caller pins — not by `periodStart`. `periodStart`/`periodEnd` only
+ * bound *which* approved leave and time facts are discovered; they never move
+ * the statutory year, so a period that straddles a year boundary still reports
+ * prior-employer figures for the year the handoff itself takes effect in.
+ */
 function taxYearFromDate(value: string): number {
 	return Number(value.slice(0, 4));
 }
 
-function addQuantity(left: string, right: string): string {
-	const [leftWhole = "0", leftFraction = ""] = left.split(".");
-	const [rightWhole = "0", rightFraction = ""] = right.split(".");
-	const scale = Math.max(leftFraction.length, rightFraction.length);
-	const toScaled = (digits: string, fractionalDigits: string): bigint => {
-		const padded = `${fractionalDigits}${"0".repeat(scale)}`.slice(0, scale);
-		return BigInt(digits) * 10n ** BigInt(scale) + BigInt(padded || "0");
-	};
-	const sum =
-		toScaled(leftWhole, leftFraction) + toScaled(rightWhole, rightFraction);
-	if (scale === 0) {
-		return sum.toString();
-	}
-	const factor = 10n ** BigInt(scale);
-	const wholePart = sum / factor;
-	const fractionPart = (sum % factor)
-		.toString()
-		.padStart(scale, "0")
-		.replace(TRAILING_ZERO_FRACTION, "");
-	return fractionPart.length === 0
-		? wholePart.toString()
-		: `${wholePart}.${fractionPart}`;
-}
-
 async function resolveStatutoryHandoffFacts(input: {
 	data: AssembleApprovedPayrollHandoffInput;
+	options: HumanResourcesCommandOptions;
 	store: PayrollStatutoryFactStore;
 }): Promise<
 	Result<{
@@ -279,6 +268,21 @@ async function resolveStatutoryHandoffFacts(input: {
 	}>
 > {
 	const { data, store } = input;
+	const restricted = await isStatutorySubjectRestricted(
+		{
+			actorUserId: data.actorUserId,
+			correlationId: data.correlationId,
+			employeeId: data.employeeId,
+			organizationId: data.organizationId,
+		},
+		input.options,
+	);
+	if (!restricted.ok) {
+		return restricted;
+	}
+	if (restricted.data) {
+		return statutorySubjectRestrictedFailure();
+	}
 	const profile = await store.getStatutoryProfileAsOf({
 		asOf: data.effectiveDate,
 		employeeId: data.employeeId,
@@ -379,7 +383,7 @@ async function resolveLeaveBalanceAtTermination(input: {
 			});
 		}
 		if (entry.balance.data.unit === "days") {
-			days = addQuantity(days, entry.balance.data.balance);
+			days = addLeaveQuantity(days, entry.balance.data.balance);
 		}
 	}
 
@@ -414,7 +418,7 @@ export function assembleApprovedPayrollHandoff(
 		query: HUMAN_RESOURCES_QUERY_APPROVED_PAYROLL_HANDOFF_GET,
 		execute: async (
 			data,
-			{ store },
+			{ options: resolvedOptions, store },
 		): Promise<Result<ApprovedPayrollHandoff | null>> => {
 			const employment = await resolvePayrollEmploymentContext({ data, store });
 			if (!employment.ok) {
@@ -452,6 +456,7 @@ export function assembleApprovedPayrollHandoff(
 			}
 			const statutoryFacts = await resolveStatutoryHandoffFacts({
 				data,
+				options: resolvedOptions,
 				store,
 			});
 			if (!statutoryFacts.ok) {

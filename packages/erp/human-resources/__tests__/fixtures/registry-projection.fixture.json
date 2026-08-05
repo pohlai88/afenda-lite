@@ -981,7 +981,10 @@
 			"owner": "reporting-bulk-reliability",
 			"permission": "human-resources.compensation.read",
 			"privacyDisposition": {
-				"mode": "standard"
+				"fieldClasses": ["compensation", "personal_identifiers"],
+				"mode": "sensitive",
+				"resourceType": "personal_identifiers",
+				"subjectPolicy": "privileged_only"
 			},
 			"publicErrorCodeSet": "a44017477f3e95cf5042ef4ea1ec9fb61d7690437b8d69eceecce6c545582e93",
 			"publicName": "assembleApprovedPayrollHandoff",

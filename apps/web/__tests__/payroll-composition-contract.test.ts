@@ -50,4 +50,23 @@ describe("Payroll application composition", () => {
 		expect(source).not.toContain("payload: ApprovedPayrollHandoff");
 		expect(source).not.toContain("approvedPayrollHandoffSchema");
 	});
+
+	it("exposes final-settlement operator actions without caller-authored leave balances", () => {
+		const source = readFileSync(
+			fileURLToPath(
+				new URL("../app/actions/payroll-final-settlement.ts", import.meta.url),
+			),
+			"utf8",
+		);
+
+		expect(source).toContain("initiateFinalSettlement");
+		expect(source).toContain("calculateFinalSettlement");
+		expect(source).toContain("finalizeFinalSettlement");
+		expect(source).toContain("getOwnFinalSettlementStatement");
+		expect(source).toContain("organizationId: session.orgId");
+		expect(source).toContain("actorUserId: session.userId");
+		expect(source).toContain("createPayrollCommandOptions()");
+		expect(source).not.toContain("leaveBalanceDays");
+		expect(source).not.toContain("workforce:");
+	});
 });

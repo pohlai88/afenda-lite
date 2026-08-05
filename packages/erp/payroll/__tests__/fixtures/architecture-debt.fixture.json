@@ -712,10 +712,6 @@
 					"file": "src/features/calculation/calculation-pipeline.ts"
 				},
 				{
-					"evidence": "src/features/calculation/calculation-pipeline.ts:12 -> src/features/statutory-rules/year-to-date-capability.ts (calculation -> statutory-rules)",
-					"file": "src/features/calculation/calculation-pipeline.ts"
-				},
-				{
 					"evidence": "src/features/calculation/calculation.ts:23 -> src/features/statutory-rules/calculator.types.ts (calculation -> statutory-rules)",
 					"file": "src/features/calculation/calculation.ts"
 				},
@@ -972,12 +968,7 @@
 			"target": 0
 		},
 		{
-			"items": [
-				{
-					"evidence": "src/facade/contracts.ts:42 declares an optional PayrollWorkforceCapability pull port that production wires nowhere (bridging doc B1: single push transport is live)",
-					"file": "src/facade/contracts.ts"
-				}
-			],
+			"items": [],
 			"key": "dormant-workforce-port",
 			"target": 0
 		},
@@ -999,6 +990,16 @@
 		{
 			"items": [],
 			"key": "settlement-transition-audit-gap",
+			"target": 0
+		},
+		{
+			"items": [
+				{
+					"evidence": "src/features/statutory-rules/year-to-date-capability.ts:291 loads result lines and statutory results once per finalized run per employee — N x M reads with no memoization or batch (D0 review; target: batched year-to-date reads)",
+					"file": "src/features/statutory-rules/year-to-date-capability.ts"
+				}
+			],
+			"key": "ytd-fanout-unbatched",
 			"target": 0
 		}
 	],

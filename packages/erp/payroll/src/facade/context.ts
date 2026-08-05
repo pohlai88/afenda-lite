@@ -30,8 +30,7 @@ export function createPayrollCapabilityOptions(
 	composition: PayrollCapabilityComposition,
 ): PayrollCapabilityOptions {
 	const store = createDrizzlePayrollStore();
-	const workforce =
-		composition.workforce ?? createAcceptedWorkforceInputPort(store);
+	const workforce = createAcceptedWorkforceInputPort(store);
 	const ports = createProductionMutationPorts();
 	const yearToDate = createPayrollHistoryYearToDateCapability(store);
 	const calculator = createProductionPayrollRunCalculator({

@@ -1,4 +1,3 @@
-import { errorResult } from "@afenda/errors";
 import {
 	createFixedPayrollClock,
 	createJurisdictionPayrollCurrency,
@@ -24,11 +23,6 @@ function createComposition(): PayrollCapabilityComposition {
 		}),
 		currency: createJurisdictionPayrollCurrency(),
 		statutory: createRegistryPayrollStatutory(),
-		workforce: {
-			getApprovedPayrollHandoff() {
-				return Promise.resolve(errorResult.ok(null));
-			},
-		},
 	};
 }
 

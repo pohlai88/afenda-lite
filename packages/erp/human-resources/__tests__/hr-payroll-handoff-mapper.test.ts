@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -136,6 +137,27 @@ const timeHandoff: ApprovedTimeHandoff = {
 	approvalReference: "approval-ref-1",
 };
 
+/** Mirrors the delivery workflow's canonicalize + sha256 payload digest. */
+function canonicalDigest(value: unknown): string {
+	const canonicalize = (input: unknown): unknown => {
+		if (Array.isArray(input)) {
+			return input.map(canonicalize);
+		}
+		if (input !== null && typeof input === "object") {
+			return Object.fromEntries(
+				Object.entries(input as Record<string, unknown>)
+					.filter(([, entry]) => entry !== undefined)
+					.toSorted(([left], [right]) => left.localeCompare(right))
+					.map(([key, entry]) => [key, canonicalize(entry)]),
+			);
+		}
+		return input;
+	};
+	return createHash("sha256")
+		.update(JSON.stringify(canonicalize(value)))
+		.digest("hex");
+}
+
 describe("mapApprovedPayrollHandoff", () => {
 	it("maps domain handoffs into the shared contract with all Slice 8.7 fields", () => {
 		const mapped = mapApprovedPayrollHandoff({
@@ -181,9 +203,11 @@ describe("mapApprovedPayrollHandoff", () => {
 		expect(mapped.data.payFrequency).toBe("monthly");
 		expect(mapped.data.components).toHaveLength(3);
 		expect(mapped.data.leaveFacts).toHaveLength(1);
-		expect(mapped.data.leaveBalanceAtTermination).toBeNull();
-		expect(mapped.data.priorEmployerYtd).toEqual([]);
-		expect(mapped.data.statutoryProfile).toBeNull();
+		// Absent D0 optionals are omitted, not emitted as null/[] — a pre-widening
+		// fact hashes identically before and after the widening.
+		expect(mapped.data.leaveBalanceAtTermination).toBeUndefined();
+		expect(mapped.data.priorEmployerYtd).toBeUndefined();
+		expect(mapped.data.statutoryProfile).toBeUndefined();
 		expect(mapped.data.timeFacts?.timesheetId).toBe(timeHandoff.timesheetId);
 		expect(mapped.data.overtimeFacts).toHaveLength(1);
 		expect(mapped.data.overtimeFacts[0]?.payrollApprovedMinutes).toBe(90);
@@ -287,6 +311,42 @@ describe("mapApprovedPayrollHandoff", () => {
 		expect(mapped.data.statutoryProfile?.profileId).toBe("stat-1");
 		expect(mapped.data.statutoryProfile?.jurisdictionCode).toBe("MY");
 		expect(mapped.data.sourceVersion.statutoryProfileVersion).toBe(3);
+	});
+
+	it("hashes identically to the pre-widening shape when D0 optionals are absent", () => {
+		const mapped = mapApprovedPayrollHandoff({
+			assignment,
+			compensationHandoff,
+			correlationId: "corr-handoff",
+			effectiveDate: "2025-01-01",
+			employmentStatus: "active",
+			leaveBalanceAtTermination: null,
+			leaveHandoffs: [leaveHandoff],
+			priorEmployerYtd: [],
+			statutoryProfile: null,
+			timeHandoff,
+		});
+
+		expect(mapped.ok).toBe(true);
+		if (!mapped.ok) {
+			return;
+		}
+
+		// The delivery workflow hashes with JSON.stringify over a canonicalized
+		// payload, which drops `undefined` but keeps `null` / `[]`. Emitting the
+		// three D0 keys explicitly would therefore have shifted `payloadHash` for
+		// facts that never changed. Constructing the pre-widening shape by
+		// omission must reproduce the identical digest.
+		const preWidening = {
+			...mapped.data,
+			leaveBalanceAtTermination: undefined,
+			priorEmployerYtd: undefined,
+			statutoryProfile: undefined,
+		};
+		expect(canonicalDigest(mapped.data)).toBe(canonicalDigest(preWidening));
+		expect(Object.hasOwn(mapped.data, "leaveBalanceAtTermination")).toBe(false);
+		expect(Object.hasOwn(mapped.data, "priorEmployerYtd")).toBe(false);
+		expect(Object.hasOwn(mapped.data, "statutoryProfile")).toBe(false);
 	});
 
 	it("does not import @afenda/payroll from handoff modules", () => {

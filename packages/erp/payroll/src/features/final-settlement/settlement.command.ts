@@ -29,7 +29,7 @@ import {
 import type { PayrollRunsStore } from "../payroll-runs/runs.store";
 import type { PayrollSetupStore } from "../payroll-setup/setup.store";
 import {
-	emptyPayrollYearToDateTotals,
+	resolveYearToDate,
 	taxYearFromIsoDate,
 } from "../statutory-rules/year-to-date-capability";
 import { normalizePayrollWorkforceHandoff } from "../workforce-ingress/normalize-workforce-handoff";
@@ -220,21 +220,15 @@ async function pinCompensation(
 	if (!roundingPolicy.ok) {
 		return roundingPolicy;
 	}
-	const yearToDate =
-		options.yearToDate === undefined
-			? errorResult.ok(
-					emptyPayrollYearToDateTotals({
-						currencyCode: facts.currencyCode,
-						taxYear: taxYearFromIsoDate(input.terminationEffectiveOn),
-					}),
-				)
-			: await options.yearToDate.employeeTotals({
-					currencyCode: facts.currencyCode,
-					employeeId: facts.employeeId,
-					organizationId: input.organizationId,
-					taxYear: taxYearFromIsoDate(input.terminationEffectiveOn),
-					throughDate: input.terminationEffectiveOn,
-				});
+	const yearToDate = await resolveYearToDate({
+		capability: options.yearToDate,
+		currencyCode: facts.currencyCode,
+		employeeId: facts.employeeId,
+		organizationId: input.organizationId,
+		priorEmployerYtd: facts.approvedHandoff.priorEmployerYtd ?? [],
+		taxYear: taxYearFromIsoDate(input.terminationEffectiveOn),
+		throughDate: input.terminationEffectiveOn,
+	});
 	if (!yearToDate.ok) {
 		return yearToDate;
 	}
@@ -477,12 +471,12 @@ async function executeInitiate(
 	options: PayrollFinalSettlementCommandOptions,
 	ports: MutationPorts,
 ): Promise<Result<PayrollFinalSettlement>> {
-	// Caller-supplied identity only. Leave balance is pinned from the accepted
-	// handoff after this lookup, so it is not part of the request fingerprint.
+	// Caller-supplied fields only. Leave balance is pinned from the accepted
+	// handoff after this lookup, so it is absent from the fingerprint entirely —
+	// a hardcoded "0" placeholder is not a caller-supplied fact.
 	const requestFingerprint = fingerprintPayrollFinalSettlement({
 		employeeId: data.employeeId,
 		facts: {
-			leaveBalanceDays: "0",
 			noticeInLieuAmount: data.noticeInLieuAmount ?? "0",
 			noticePayAmount: data.noticePayAmount ?? "0",
 			recoveries: data.recoveries ?? [],
@@ -608,7 +602,6 @@ async function executeCalculate(
 		periodEnd: period.data.periodEnd,
 		periodStart: period.data.periodStart,
 		resolveStatutory: createFinalSettlementStatutoryResolver({
-			priorEmployerYtd: current.data.compensationSnapshot.priorEmployerYtd,
 			rules: rules.data,
 			statutory: options.statutory,
 			statutoryProfile: current.data.compensationSnapshot.statutoryProfile,

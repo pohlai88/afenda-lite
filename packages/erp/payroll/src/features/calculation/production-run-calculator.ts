@@ -33,7 +33,7 @@ import type { PayrollAssignmentsStore } from "../employee-assignments/assignment
 import type { PayrollSetupStore } from "../payroll-setup/setup.store";
 import type { PayrollStatutoryStore } from "../statutory-rules/statutory.store";
 import {
-	emptyPayrollYearToDateTotals,
+	resolveYearToDate,
 	taxYearFromIsoDate,
 } from "../statutory-rules/year-to-date-capability";
 import type { PayrollInputsStore } from "../variable-inputs/inputs.store";
@@ -294,24 +294,33 @@ export function createProductionPayrollRunCalculator(input: {
 								effectiveDate,
 							}),
 						]);
-					const yearToDate =
-						input.yearToDate === undefined
-							? errorResult.ok(
-									emptyPayrollYearToDateTotals({
-										currencyCode: payGroupRecord.currencyCode,
-										taxYear: taxYearFromIsoDate(payrollPeriod.periodStart),
-									}),
-								)
-							: await input.yearToDate.employeeTotals({
-									currencyCode: payGroupRecord.currencyCode,
-									employeeId: assignment.employeeId,
+					const normalizedEmployee =
+						employeeFacts.ok && employeeFacts.data !== null
+							? normalizePayrollWorkforceHandoff(employeeFacts.data, {
 									organizationId: calcInput.organizationId,
-									taxYear: taxYearFromIsoDate(payrollPeriod.periodStart),
-									throughDate: payrollPeriod.periodStart,
-								});
+									employeeId: assignment.employeeId,
+									effectiveDate,
+									periodStart: payrollPeriod.periodStart,
+									periodEnd: payrollPeriod.periodEnd,
+								})
+							: null;
+					const yearToDate = await resolveYearToDate({
+						capability: input.yearToDate,
+						currencyCode: payGroupRecord.currencyCode,
+						employeeId: assignment.employeeId,
+						organizationId: calcInput.organizationId,
+						priorEmployerYtd:
+							normalizedEmployee?.ok === true
+								? (normalizedEmployee.data.approvedHandoff.priorEmployerYtd ??
+									[])
+								: [],
+						taxYear: taxYearFromIsoDate(payrollPeriod.periodStart),
+						throughDate: payrollPeriod.periodStart,
+					});
 					return {
 						assignment,
 						employeeFacts,
+						normalizedEmployee,
 						recurringDeductions,
 						recurringEarnings,
 						yearToDate,
@@ -331,6 +340,7 @@ export function createProductionPayrollRunCalculator(input: {
 				const {
 					assignment,
 					employeeFacts,
+					normalizedEmployee,
 					recurringDeductions,
 					recurringEarnings,
 					yearToDate,
@@ -347,16 +357,11 @@ export function createProductionPayrollRunCalculator(input: {
 					});
 					continue;
 				}
-				const normalizedEmployee = normalizePayrollWorkforceHandoff(
-					employeeFacts.data,
-					{
-						organizationId: calcInput.organizationId,
-						employeeId: assignment.employeeId,
-						effectiveDate,
-						periodStart: payrollPeriod.periodStart,
-						periodEnd: payrollPeriod.periodEnd,
-					},
-				);
+				if (normalizedEmployee === null) {
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "Payroll workforce facts are unavailable",
+					});
+				}
 				if (!normalizedEmployee.ok) {
 					return normalizedEmployee;
 				}

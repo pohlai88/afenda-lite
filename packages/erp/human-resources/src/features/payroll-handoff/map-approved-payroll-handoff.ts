@@ -332,9 +332,18 @@ export function mapApprovedPayrollHandoff(
 		payFrequency: compensation.payFrequency,
 		components,
 		leaveFacts: mapLeaveFacts(input.leaveHandoffs),
-		leaveBalanceAtTermination: input.leaveBalanceAtTermination ?? null,
-		priorEmployerYtd: mapPriorEmployerYtd(input.priorEmployerYtd),
-		statutoryProfile,
+		// The D0 widening added three optional keys. Emitting them as explicit
+		// `null` / `[]` would shift `payloadHash` for facts that pre-date the
+		// widening, so absent optionals are omitted (canonicalJson strips
+		// `undefined`) and an unchanged fact hashes identically pre/post D0.
+		...(input.leaveBalanceAtTermination === null ||
+		input.leaveBalanceAtTermination === undefined
+			? {}
+			: { leaveBalanceAtTermination: input.leaveBalanceAtTermination }),
+		...(input.priorEmployerYtd.length === 0
+			? {}
+			: { priorEmployerYtd: mapPriorEmployerYtd(input.priorEmployerYtd) }),
+		...(statutoryProfile === null ? {} : { statutoryProfile }),
 		timeFacts: input.timeHandoff ? mapTimeFacts(input.timeHandoff) : null,
 		overtimeFacts: mapOvertimeFacts(input.timeHandoff),
 		sourceVersion: {

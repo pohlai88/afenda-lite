@@ -22,7 +22,6 @@ const context = createPayrollCapabilityOptions({
 	clock,
 	currency,
 	statutory,
-	workforce,
 });
 
 const acceptedOperation = createPayrollCalendar({}, context);
@@ -38,19 +37,17 @@ createPayrollCapabilityOptions({
 	clock,
 	currency,
 	statutory,
-	workforce,
 	// @ts-expect-error Consumers cannot inject a store into production composition.
 	store: {},
 });
 
-// PRD R1: workforce facts default to the accepted-handoff ledger, so the
-// composition root may omit the workforce override. Clock, currency, and
-// statutory remain required composition inputs (bridging B3).
 createPayrollCapabilityOptions({
 	authorization,
 	clock,
 	currency,
 	statutory,
+	// @ts-expect-error B1 closed: production composition has no pull-workforce override.
+	workforce,
 });
 
 export type PayrollPublicContractCompileFixture = [

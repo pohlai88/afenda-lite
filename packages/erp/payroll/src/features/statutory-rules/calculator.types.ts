@@ -1,10 +1,12 @@
-import type {
-	HandoffPriorEmployerYtd,
-	HandoffStatutoryProfile,
-} from "@afenda/events/schemas";
+import type { HandoffStatutoryProfile } from "@afenda/events/schemas";
 
 import type { PayrollRoundingPolicy } from "../../kernel/money/rounding-policy";
 
+/**
+ * Year-to-date facts as ONE merged value. Prior-employer figures are folded in
+ * by `PayrollYearToDateCapability` before a calculator ever sees them, so no
+ * calculator can invent its own hire-year merge.
+ */
 export interface StatutoryYearToDateFacts {
 	currencyCode: string;
 	employeeStatutory: string;
@@ -19,7 +21,6 @@ export interface StatutoryCalculatorInput {
 	currencyCode: string;
 	gross: bigint;
 	jurisdictionCode: string;
-	priorEmployerYtd: readonly HandoffPriorEmployerYtd[];
 	roundingPolicy: PayrollRoundingPolicy;
 	ruleCode: string;
 	ruleVersion: string;
