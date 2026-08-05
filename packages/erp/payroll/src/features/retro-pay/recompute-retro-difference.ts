@@ -27,7 +27,16 @@ interface AggregateKeyParts {
 	ruleVersion: string;
 }
 
-function aggregateKey(parts: AggregateKeyParts): string {
+/**
+ * NUL separator, written as a source escape so the file stays plain ASCII.
+ *
+ * `code` and `ruleCode` are free text up to 64 characters, so any printable
+ * separator lets two distinct rules serialise to the same key and silently
+ * merge their retro amounts. No domain field may contain NUL.
+ */
+const AGGREGATE_KEY_SEPARATOR = "\u0000";
+
+export function aggregateKey(parts: AggregateKeyParts): string {
 	return [
 		parts.lineKind,
 		parts.code,
@@ -35,7 +44,7 @@ function aggregateKey(parts: AggregateKeyParts): string {
 		parts.ruleVersion,
 		parts.ruleKind,
 		parts.currencyCode,
-	].join(" ");
+	].join(AGGREGATE_KEY_SEPARATOR);
 }
 
 function aggregate(

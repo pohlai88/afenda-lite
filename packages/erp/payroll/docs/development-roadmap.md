@@ -30,6 +30,7 @@ Uniform ERP roots: `facade/` · `kernel/` · `composition/` · `features/` · `t
 | `reconciliation` | Downstream discrepancy resolution |
 | `settlement-ingress` | Inbound Payments/Accounting settlement facts; C8 reversal guard |
 | `payroll-jobs` | Durable calculation batches: claim, lease, retry, dead letter, replay, chunk merge |
+| `retro-pay` | Queue / snapshot-pinned recompute / apply into an open period / exception review |
 
 Entrypoints: `@afenda/payroll` (production) · `@afenda/payroll/testing` (test-only).
 

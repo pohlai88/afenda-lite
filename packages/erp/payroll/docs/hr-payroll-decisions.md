@@ -22,6 +22,7 @@
 | B3 | Capability signature | **CLOSED** | Composition requires clock, currency, and statutory capabilities; production factories exported; calculator uses currency payable scale and statutory registry approval. | 2026-08-05 | Payroll |
 | D1 | Payroll privacy | **CLOSED** | `payroll/privacy` ships restriction, retention evidence, field projection, and read-own DSAR. Admin ops use `payroll.payslip.read-all`; subject access uses `payroll.payslip.read-own`. `expirePayrollRetention` marks eligible only — no erasure without A3 counsel citation. | 2026-08-05 | Payroll |
 | D6 | Payroll jobs | **CLOSED** | `payroll-jobs` durable calculation batches: claim/lease/retry/DLQ/replay + chunk merge persistence. Web cron `/api/cron/payroll-jobs`. Schema `0051_payroll_jobs` (ops-gated migrate). | 2026-08-05 | Payroll |
+| D3 | Retro pay | **CLOSED** | `retro-pay` queues C3 corrections, recomputes under the sealed run snapshot (never live setup tables), refuses unreproducible periods, and applies origin-labelled lines into an open target period. Schema `0052_payroll_retro_pay` (ops-gated migrate). | 2026-08-05 | Payroll |
 
 ## A1 evidence
 

@@ -17,6 +17,7 @@ import { createPayrollRun } from "../src/features/payroll-runs/payroll-run";
 import { createPayrollCalendar } from "../src/features/payroll-setup/calendar";
 import { createPayrollEarningRule } from "../src/features/payroll-setup/earning-rule";
 import { createPayrollPayGroup } from "../src/features/payroll-setup/pay-group";
+import { aggregateKey } from "../src/features/retro-pay/recompute-retro-difference";
 import {
 	applyRetroToPeriod,
 	calculateRetroDifference,
@@ -1156,6 +1157,44 @@ describe("retro-pay", () => {
 		expect(difference.totals.gross).toBe("572");
 		expect(difference.lines).toHaveLength(1);
 		expect(difference.lines[0]?.ruleVersion).toBe("1");
+	});
+});
+
+describe("retro-pay aggregate key", () => {
+	it("keeps adjacent free-text fields from colliding into one key", () => {
+		const base = {
+			currencyCode: "USD",
+			lineKind: "earning",
+			ruleKind: "earning",
+			ruleVersion: "1",
+		} as const;
+		// A printable separator would serialise both of these identically.
+		const left = aggregateKey({ ...base, code: "A B", ruleCode: "X" });
+		const right = aggregateKey({ ...base, code: "A", ruleCode: "B X" });
+		expect(left).not.toBe(right);
+	});
+
+	it("separates fields with a single NUL character", () => {
+		const key = aggregateKey({
+			code: "A",
+			currencyCode: "USD",
+			lineKind: "earning",
+			ruleCode: "B",
+			ruleKind: "earning",
+			ruleVersion: "1",
+		});
+		const separators = [...key].filter(
+			(character) => character.charCodeAt(0) === 0,
+		);
+		expect(separators).toHaveLength(5);
+		expect(key.split(String.fromCharCode(0))).toEqual([
+			"earning",
+			"A",
+			"B",
+			"1",
+			"earning",
+			"USD",
+		]);
 	});
 });
 
