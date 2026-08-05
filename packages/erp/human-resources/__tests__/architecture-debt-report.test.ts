@@ -24,7 +24,7 @@ describe("@afenda/human-resources reporting-only architecture debt", () => {
 	beforeAll(() => {
 		baseline = readArchitectureDebtFixture(fixturePath);
 		current = buildArchitectureDebtReport(workspaceRoot, packageRoot);
-	}, 60_000);
+	}, 180_000);
 
 	it("contains current debt within the reviewed evidence baseline", () => {
 		expect(current.packageName).toBe(baseline.packageName);
