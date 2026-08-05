@@ -95,11 +95,6 @@ export interface HumanResourcesStatutoryProfileStore {
 		asOf: string;
 	}) => Promise<Result<StatutoryProfile | null>>;
 
-	getStatutoryProfileById: (input: {
-		organizationId: string;
-		statutoryProfileId: HumanResourcesStatutoryProfileId;
-	}) => Promise<Result<StatutoryProfile | null>>;
-
 	listPriorEmployerYtd: (input: {
 		organizationId: string;
 		employeeId: HumanResourcesEmployeeId;

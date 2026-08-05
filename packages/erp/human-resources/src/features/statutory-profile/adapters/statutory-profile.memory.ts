@@ -57,7 +57,6 @@ export type MemoryStatutoryProfileMethods = Pick<
 	| "findPriorEmployerYtdByTaxYear"
 	| "findStatutoryProfileByIdempotencyKey"
 	| "getStatutoryProfileAsOf"
-	| "getStatutoryProfileById"
 	| "listPriorEmployerYtd"
 	| "listStatutoryProfiles"
 	| "recordPriorEmployerYtd"
@@ -121,20 +120,6 @@ export function createMemoryStatutoryProfileMethods(
 			return await errorResult.ok(
 				record === null ? null : { ...record, profile: { ...record.profile } },
 			);
-		},
-
-		async getStatutoryProfileById(input: {
-			organizationId: string;
-			statutoryProfileId: HumanResourcesStatutoryProfileId;
-		}): Promise<Result<StatutoryProfile | null>> {
-			const profile = state.statutoryProfiles.get(input.statutoryProfileId);
-			if (
-				profile === undefined ||
-				profile.organizationId !== input.organizationId
-			) {
-				return await errorResult.ok(null);
-			}
-			return await errorResult.ok({ ...profile });
 		},
 
 		async getStatutoryProfileAsOf(input: {

@@ -220,7 +220,6 @@ export type DrizzleStatutoryProfileMethods = Pick<
 	| "findPriorEmployerYtdByTaxYear"
 	| "findStatutoryProfileByIdempotencyKey"
 	| "getStatutoryProfileAsOf"
-	| "getStatutoryProfileById"
 	| "listPriorEmployerYtd"
 	| "listStatutoryProfiles"
 	| "recordPriorEmployerYtd"
@@ -257,31 +256,6 @@ export const drizzleStatutoryProfileMethods: DrizzleStatutoryProfileMethods &
 			return mapPersistenceFailure(
 				error,
 				"Failed to find statutory profile by idempotency key",
-			);
-		}
-	},
-
-	async getStatutoryProfileById(input) {
-		try {
-			const rows = await afendaDatabase.client
-				.select()
-				.from(hrStatutoryProfile)
-				.where(
-					and(
-						eq(hrStatutoryProfile.organizationId, input.organizationId),
-						eq(hrStatutoryProfile.id, input.statutoryProfileId),
-					),
-				)
-				.limit(1);
-			const [row] = rows;
-			if (!row) {
-				return errorResult.ok(null);
-			}
-			return mapStatutoryProfile(row);
-		} catch (error) {
-			return mapPersistenceFailure(
-				error,
-				"Failed to load statutory profile by id",
 			);
 		}
 	},
@@ -697,8 +671,12 @@ export const drizzleStatutoryProfileMethods: DrizzleStatutoryProfileMethods &
 				) {
 					return errorResult.ok(existing.data.record);
 				}
+				return conflict("Prior-employer year-to-date idempotency key conflict");
 			}
-			return conflict("Prior-employer year-to-date conflict");
+			return mapPersistenceFailure(
+				error,
+				"Failed to record prior-employer year-to-date",
+			);
 		}
 	},
 };

@@ -3,7 +3,10 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { restrictEmployeeData } from "../src/features/privacy/operations";
+import {
+	liftEmployeeDataRestriction,
+	restrictEmployeeData,
+} from "../src/features/privacy/operations";
 import {
 	listPriorEmployerYtd,
 	recordPriorEmployerYtd,
@@ -23,7 +26,9 @@ import {
 	HUMAN_RESOURCES_ERROR_CONFLICT,
 	HUMAN_RESOURCES_ERROR_INVALID_INPUT,
 	HUMAN_RESOURCES_ERROR_NOT_FOUND,
+	HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
 } from "../src/kernel/execution/error-codes";
+import { mapPersistenceFailure } from "../src/kernel/execution/persistence-errors";
 import type { HumanResourcesEmployeeId } from "../src/kernel/identity/brands";
 import { createMemoryHumanResourcesStore } from "../src/testing/index";
 import { createTestHumanResourcesCommandOptions } from "./helpers/command-options";
@@ -561,6 +566,65 @@ describe("HR statutory profile restriction exclusion (D7)", () => {
 		expect(listed.data.profiles).toHaveLength(0);
 		expect(listed.data.restrictedExcluded).toBe(1);
 		expect(listed.data.total).toBe(1);
+
+		const priorYtdBlocked = await listPriorEmployerYtd(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-restrict-ytd",
+				employeeId,
+			},
+			options,
+		);
+		expect(priorYtdBlocked.ok).toBe(false);
+		if (!priorYtdBlocked.ok) {
+			expect(priorYtdBlocked.code).toBe("CONFLICT");
+		}
+
+		if (!placed.ok) {
+			throw placed.error;
+		}
+		const lifted = await liftEmployeeDataRestriction(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-restrict-lift",
+				restrictionId: placed.data.restrictionId,
+				reason: "dsar-resolved",
+				liftedAt: "2026-07-26T00:00:00.000Z",
+			},
+			options,
+		);
+		expect(lifted.ok).toBe(true);
+
+		const restored = await getStatutoryProfile(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-restrict-restored",
+				employeeId,
+			},
+			options,
+		);
+		expect(restored.ok).toBe(true);
+		if (!restored.ok) {
+			throw restored.error;
+		}
+		expect(restored.data?.id).toBe(created.data.id);
+
+		const relisted = await listStatutoryProfiles(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-restrict-relist",
+			},
+			options,
+		);
+		if (!relisted.ok) {
+			throw relisted.error;
+		}
+		expect(relisted.data.profiles).toHaveLength(1);
+		expect(relisted.data.restrictedExcluded).toBe(0);
 	});
 
 	it("fails closed when no privacy capability is composed", async () => {
@@ -595,6 +659,122 @@ describe("HR statutory profile restriction exclusion (D7)", () => {
 			options,
 		);
 		expect(read.ok).toBe(false);
+		if (!read.ok) {
+			expect(read.code).toBe("CONFLICT");
+		}
+
+		const listed = await listStatutoryProfiles(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-failclosed-list",
+			},
+			options,
+		);
+		expect(listed.ok).toBe(false);
+		if (!listed.ok) {
+			expect(listed.code).toBe("CONFLICT");
+		}
+
+		const priorYtd = await listPriorEmployerYtd(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-failclosed-ytd",
+				employeeId,
+			},
+			options,
+		);
+		expect(priorYtd.ok).toBe(false);
+		if (!priorYtd.ok) {
+			expect(priorYtd.code).toBe("CONFLICT");
+		}
+	});
+
+	it("still accepts writes for a restriction-active subject (HR-wide posture)", async () => {
+		const options = harness();
+		const employeeId = await seedEmployee(options, {
+			organizationId: ORG,
+			tag: "write-under-restriction",
+		});
+		const placed = await restrictEmployeeData(
+			{
+				organizationId: ORG,
+				actorUserId: ACTOR,
+				correlationId: "corr-write-restrict-place",
+				subjectEmployeeId: employeeId,
+				legalBasis: "data_subject_request",
+				requestedAt: "2026-07-25T00:00:00.000Z",
+				classifications: ["pay_and_benefits"],
+				restrictionReference: "dsar-write-hold",
+			},
+			options,
+		);
+		expect(placed.ok).toBe(true);
+
+		// Deliberate: HR restriction suppresses disclosure (reads/exports) and
+		// blocks anonymization; no HR write command consults evaluateRestriction.
+		// Statutory capture matches that posture rather than inventing a
+		// feature-local rule. See `src/features/statutory-profile/privacy.ts`.
+		const captured = await upsertStatutoryProfile(
+			upsertInput({
+				employeeId,
+				tag: "write-under-restriction-1",
+				effectiveFrom: "2026-01-01",
+			}),
+			options,
+		);
+		expect(captured.ok).toBe(true);
+	});
+});
+
+describe("HR statutory profile persistence-error mapping", () => {
+	function uniqueViolation(constraint: string): Error {
+		return Object.assign(
+			new Error(
+				`duplicate key value violates unique constraint "${constraint}"`,
+			),
+			{ code: "23505", constraint },
+		);
+	}
+
+	it("maps the active-identity open-segment violation to CONFLICT", () => {
+		const mapped = mapPersistenceFailure(
+			uniqueViolation("hr_statutory_profile_org_employee_open_uidx"),
+			"Failed to record statutory profile",
+		);
+		expect(mapped.ok).toBe(false);
+		if (!mapped.ok) {
+			expect(mapped.code).toBe("CONFLICT");
+			expect(humanResourcesCodeFromResult(mapped)).toBe(
+				HUMAN_RESOURCES_ERROR_CONFLICT,
+			);
+		}
+	});
+
+	it("maps the prior-employer natural-key violation to CONFLICT", () => {
+		const mapped = mapPersistenceFailure(
+			uniqueViolation("hr_prior_employer_ytd_org_employee_year_uidx"),
+			"Failed to record prior-employer year-to-date",
+		);
+		expect(mapped.ok).toBe(false);
+		if (!mapped.ok) {
+			expect(mapped.code).toBe("CONFLICT");
+		}
+	});
+
+	it("keeps infrastructure failures out of the business-conflict lane", () => {
+		const mapped = mapPersistenceFailure(
+			new Error("connection terminated unexpectedly"),
+			"Failed to record prior-employer year-to-date",
+		);
+		expect(mapped.ok).toBe(false);
+		if (!mapped.ok) {
+			expect(mapped.code).toBe("INTERNAL_ERROR");
+			expect(humanResourcesCodeFromResult(mapped)).toBe(
+				HUMAN_RESOURCES_ERROR_PERSISTENCE_FAILURE,
+			);
+		}
 	});
 });
 

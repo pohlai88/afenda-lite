@@ -101,6 +101,7 @@ import {
 	hrPolicyAcknowledgement,
 	hrPosition,
 	hrPositionDefinitionVersion,
+	hrPriorEmployerYtd,
 	hrProbationAssessment,
 	hrProbationReview,
 	hrReportingLine,
@@ -109,6 +110,7 @@ import {
 	hrShiftAssignment,
 	hrShiftAssignmentSegment,
 	hrShiftBreak,
+	hrStatutoryProfile,
 	hrSuccessionCandidate,
 	hrSuccessionPlan,
 	hrTalentCriticalRoleReadiness,
@@ -709,6 +711,12 @@ export async function cleanupHumanResourcesNeonOrgs(
 		await afendaDatabase.client
 			.delete(hrDocumentRequirement)
 			.where(eq(hrDocumentRequirement.organizationId, organizationId));
+		await afendaDatabase.client
+			.delete(hrStatutoryProfile)
+			.where(eq(hrStatutoryProfile.organizationId, organizationId));
+		await afendaDatabase.client
+			.delete(hrPriorEmployerYtd)
+			.where(eq(hrPriorEmployerYtd.organizationId, organizationId));
 		await afendaDatabase.client
 			.delete(hrUserEmployee)
 			.where(eq(hrUserEmployee.organizationId, organizationId));
