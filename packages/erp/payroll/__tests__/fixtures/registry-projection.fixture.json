@@ -38,6 +38,10 @@
 		"payroll.privacy.restriction.lift": "payroll.payslip.read-all",
 		"payroll.privacy.retention.record": "payroll.payslip.read-all",
 		"payroll.privacy.retention.expire": "payroll.payslip.read-all",
+		"payroll.jobs.calculation.enqueue": "payroll.run.calculate",
+		"payroll.jobs.work.claim": "payroll.run.calculate",
+		"payroll.jobs.work.execute": "payroll.run.calculate",
+		"payroll.jobs.dead-letter.replay": "payroll.run.calculate",
 		"payroll.workforce.ingest": "payroll.input.manage",
 		"payroll.setup.calendar.get": "payroll.setup.manage",
 		"payroll.setup.calendar.list": "payroll.setup.manage",
@@ -55,6 +59,8 @@
 		"payroll.payslip.read-all": "payroll.payslip.read-all",
 		"payroll.privacy.fields.project": "payroll.payslip.read-all",
 		"payroll.privacy.subject-access.respond": "payroll.payslip.read-own",
+		"payroll.jobs.job.get": "payroll.run.review",
+		"payroll.jobs.dead-letter.list": "payroll.run.review",
 		"payroll.reconciliation.list": "payroll.reconciliation.manage"
 	},
 	"errorCodeSets": {},
@@ -101,6 +107,48 @@
 			"owner": "variable-inputs",
 			"permission": "payroll.input.manage",
 			"publicName": "getVariableInput"
+		},
+		{
+			"id": "payroll.jobs.calculation.enqueue",
+			"kind": "command",
+			"owner": "payroll-jobs",
+			"permission": "payroll.run.calculate",
+			"publicName": "enqueuePayrollCalculationJob"
+		},
+		{
+			"id": "payroll.jobs.dead-letter.list",
+			"kind": "query",
+			"owner": "payroll-jobs",
+			"permission": "payroll.run.review",
+			"publicName": "listPayrollDeadLetters"
+		},
+		{
+			"id": "payroll.jobs.dead-letter.replay",
+			"kind": "command",
+			"owner": "payroll-jobs",
+			"permission": "payroll.run.calculate",
+			"publicName": "replayPayrollDeadLetter"
+		},
+		{
+			"id": "payroll.jobs.job.get",
+			"kind": "query",
+			"owner": "payroll-jobs",
+			"permission": "payroll.run.review",
+			"publicName": "getPayrollJob"
+		},
+		{
+			"id": "payroll.jobs.work.claim",
+			"kind": "command",
+			"owner": "payroll-jobs",
+			"permission": "payroll.run.calculate",
+			"publicName": "claimDuePayrollJobWork"
+		},
+		{
+			"id": "payroll.jobs.work.execute",
+			"kind": "command",
+			"owner": "payroll-jobs",
+			"permission": "payroll.run.calculate",
+			"publicName": "executePayrollJobWork"
 		},
 		{
 			"id": "payroll.payslip.read-all",

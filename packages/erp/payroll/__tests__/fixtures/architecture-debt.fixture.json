@@ -107,6 +107,46 @@
 					"file": "src/features/employee-assignments/recurring-earning.ts"
 				},
 				{
+					"evidence": "src/features/payroll-jobs/contract.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payroll-jobs/contract.ts"
+				},
+				{
+					"evidence": "src/features/payroll-jobs/fingerprint.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payroll-jobs/fingerprint.ts"
+				},
+				{
+					"evidence": "src/features/payroll-jobs/jobs.command.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payroll-jobs/jobs.command.ts"
+				},
+				{
+					"evidence": "src/features/payroll-jobs/jobs.drizzle.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payroll-jobs/jobs.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/payroll-jobs/jobs.memory.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payroll-jobs/jobs.memory.ts"
+				},
+				{
+					"evidence": "src/features/payroll-jobs/jobs.schema.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payroll-jobs/jobs.schema.ts"
+				},
+				{
+					"evidence": "src/features/payroll-jobs/jobs.store.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payroll-jobs/jobs.store.ts"
+				},
+				{
+					"evidence": "src/features/payroll-jobs/operation-registry.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payroll-jobs/operation-registry.ts"
+				},
+				{
+					"evidence": "src/features/payroll-jobs/production-job-ports.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payroll-jobs/production-job-ports.ts"
+				},
+				{
+					"evidence": "src/features/payroll-jobs/retry.ts exceeds src/<owner>/<file>",
+					"file": "src/features/payroll-jobs/retry.ts"
+				},
+				{
 					"evidence": "src/features/payroll-runs/exception.ts exceeds src/<owner>/<file>",
 					"file": "src/features/payroll-runs/exception.ts"
 				},
@@ -738,7 +778,7 @@
 		{
 			"items": [
 				{
-					"evidence": "src/facade/contracts.ts:36 declares an optional PayrollWorkforceCapability pull port that production wires nowhere (bridging doc B1: single push transport is live)",
+					"evidence": "src/facade/contracts.ts:42 declares an optional PayrollWorkforceCapability pull port that production wires nowhere (bridging doc B1: single push transport is live)",
 					"file": "src/facade/contracts.ts"
 				}
 			],
@@ -764,7 +804,7 @@
 	},
 	"schemaVersion": 1,
 	"summary": {
-		"featureCount": 11,
-		"sourceTypeScriptFiles": 139
+		"featureCount": 12,
+		"sourceTypeScriptFiles": 149
 	}
 }

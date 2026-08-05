@@ -319,6 +319,7 @@ describe("@afenda/payroll export surface contract", () => {
 		const requiredFeatures = [
 			"calculation",
 			"employee-assignments",
+			"payroll-jobs",
 			"payroll-runs",
 			"payroll-setup",
 			"payslips",
