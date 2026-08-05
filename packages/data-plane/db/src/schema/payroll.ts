@@ -32,7 +32,7 @@ const payrollIdempotencyColumns = {
 	createRequestFingerprint: text("create_request_fingerprint").notNull(),
 };
 
-/** Org pay calendar â€” scheduling reference for pay groups. */
+/** Org pay calendar — scheduling reference for pay groups. */
 export const payrollCalendar = pgTable(
 	"payroll_calendar",
 	{
@@ -71,7 +71,7 @@ export const payrollCalendar = pgTable(
 	],
 );
 
-/** Pay group â€” currency + calendar binding. */
+/** Pay group — currency + calendar binding. */
 export const payrollPayGroup = pgTable(
 	"payroll_pay_group",
 	{
@@ -275,7 +275,7 @@ export const payrollDeductionRule = pgTable(
 	],
 );
 
-/** Generic statutory rule registration â€” jurisdiction placeholder only (PAY-DEC-004). */
+/** Generic statutory rule registration — jurisdiction placeholder only (PAY-DEC-004). */
 export const payrollStatutoryRule = pgTable(
 	"payroll_statutory_rule",
 	{
@@ -329,7 +329,7 @@ export const payrollStatutoryRule = pgTable(
 	],
 );
 
-/** Payroll run â€” lifecycle root for calculation/finalization slices. */
+/** Payroll run — lifecycle root for calculation/finalization slices. */
 export const payrollRun = pgTable(
 	"payroll_run",
 	{
@@ -400,7 +400,7 @@ export const payrollRun = pgTable(
 	],
 );
 
-/** Run-scoped exception â€” blocking or warning. */
+/** Run-scoped exception — blocking or warning. */
 export const payrollException = pgTable(
 	"payroll_exception",
 	{
@@ -432,7 +432,7 @@ export const payrollException = pgTable(
 	],
 );
 
-/** Tracks rule versions referenced by finalized runs â€” setup immutability guard. */
+/** Tracks rule versions referenced by finalized runs — setup immutability guard. */
 export const payrollRuleFinalizedUsage = pgTable(
 	"payroll_rule_finalized_usage",
 	{
@@ -1047,7 +1047,7 @@ export const payrollReconciliation = pgTable(
 );
 
 /**
- * Immutable accepted workforce handoff â€” the canonical Payroll ingress ledger.
+ * Immutable accepted workforce handoff — the canonical Payroll ingress ledger.
  * The raw HR payload is sealed with its hash; corrections supersede, never
  * mutate. Runs read accepted records instead of pulling HR at calculation time.
  */
@@ -1101,7 +1101,7 @@ export const payrollAcceptedHandoff = pgTable(
 	],
 );
 
-/** Durable payroll batch job â€” calculation checkpoints, not HR bulk import. */
+/** Durable payroll batch job — calculation checkpoints, not HR bulk import. */
 export const payrollJob = pgTable(
 	"payroll_job",
 	{
@@ -1212,7 +1212,7 @@ export const payrollJobDeadLetter = pgTable(
 	],
 );
 
-/** Deferred correction for a sealed period â€” bridging C3/D3 retro-pay. */
+/** Deferred correction for a sealed period — bridging C3/D3 retro-pay. */
 export const payrollRetroItem = pgTable(
 	"payroll_retro_item",
 	{
@@ -1320,7 +1320,7 @@ export const payrollRetroLine = pgTable(
 	],
 );
 
-/** Termination pay capsule â€” bridging D4/C6 final settlement. */
+/** Termination pay capsule — bridging D4/C6 final settlement. */
 export const payrollFinalSettlement = pgTable(
 	"payroll_final_settlement",
 	{
@@ -1440,5 +1440,130 @@ export const payrollFinalSettlementLine = pgTable(
 			"payroll_final_settlement_line_kind_check",
 			sql`${t.kind} IN ('prorated_base', 'leave_encashment', 'notice_pay', 'notice_in_lieu', 'recovery', 'employee_statutory', 'employer_statutory')`,
 		),
+	],
+);
+
+/** Snapshot-sealed statutory filing or annual statement artifact. */
+export const payrollStatutoryFiling = pgTable(
+	"payroll_statutory_filing",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		kind: text("kind").notNull(),
+		jurisdictionCode: text("jurisdiction_code").notNull(),
+		instrumentCode: text("instrument_code").notNull(),
+		periodId: uuid("period_id"),
+		taxYear: integer("tax_year").notNull(),
+		employeeId: text("employee_id"),
+		status: text("status").notNull(),
+		sourceRunIdsJson: jsonb("source_run_ids_json").notNull(),
+		totalsJson: jsonb("totals_json").notNull(),
+		evidenceJson: jsonb("evidence_json"),
+		sealedBy: text("sealed_by"),
+		sealedAt: timestamp("sealed_at", { withTimezone: true }),
+		correlationId: text("correlation_id").notNull(),
+		...payrollIdempotencyColumns,
+		...payrollAuditColumns,
+	},
+	(t) => [
+		index("payroll_statutory_filing_org_id_idx").on(t.organizationId, t.id),
+		index("payroll_statutory_filing_org_status_idx").on(
+			t.organizationId,
+			t.status,
+		),
+		unique("payroll_statutory_filing_org_id_uidx").on(t.organizationId, t.id),
+		uniqueIndex("payroll_statutory_filing_org_create_idempotency_uidx").on(
+			t.organizationId,
+			t.createIdempotencyKey,
+		),
+		uniqueIndex("payroll_statutory_filing_org_period_natural_uidx").on(
+			t.organizationId,
+			t.jurisdictionCode,
+			t.instrumentCode,
+			t.periodId,
+		),
+		uniqueIndex("payroll_statutory_filing_org_annual_natural_uidx").on(
+			t.organizationId,
+			t.jurisdictionCode,
+			t.instrumentCode,
+			t.taxYear,
+			t.employeeId,
+		),
+		check(
+			"payroll_statutory_filing_kind_check",
+			sql`${t.kind} IN ('period_filing', 'annual_statement')`,
+		),
+		check(
+			"payroll_statutory_filing_status_check",
+			sql`${t.status} IN ('generated', 'sealed')`,
+		),
+		check(
+			"payroll_statutory_filing_period_shape_check",
+			sql`(${t.kind} <> 'period_filing') OR (${t.periodId} IS NOT NULL AND ${t.employeeId} IS NULL)`,
+		),
+		check(
+			"payroll_statutory_filing_annual_shape_check",
+			sql`(${t.kind} <> 'annual_statement') OR (${t.employeeId} IS NOT NULL AND ${t.periodId} IS NULL)`,
+		),
+		check(
+			"payroll_statutory_filing_sealed_shape_check",
+			sql`(${t.status} <> 'sealed') OR (${t.evidenceJson} IS NOT NULL AND ${t.sealedBy} IS NOT NULL AND ${t.sealedAt} IS NOT NULL)`,
+		),
+	],
+);
+
+/** Line sealed with a statutory filing artifact. */
+export const payrollStatutoryFilingLine = pgTable(
+	"payroll_statutory_filing_line",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		filingId: uuid("filing_id").notNull(),
+		runId: uuid("run_id").notNull(),
+		employeeId: text("employee_id").notNull(),
+		ruleCode: text("rule_code").notNull(),
+		ruleVersion: text("rule_version").notNull(),
+		calculatorId: text("calculator_id").notNull(),
+		baseAmount: numeric("base_amount", { precision: 24, scale: 12 }).notNull(),
+		employeeAmount: numeric("employee_amount", {
+			precision: 24,
+			scale: 12,
+		}).notNull(),
+		employerAmount: numeric("employer_amount", {
+			precision: 24,
+			scale: 12,
+		}).notNull(),
+		currencyCode: text("currency_code").notNull(),
+		sequence: integer("sequence").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("payroll_statutory_filing_line_org_id_idx").on(
+			t.organizationId,
+			t.id,
+		),
+		index("payroll_statutory_filing_line_org_filing_idx").on(
+			t.organizationId,
+			t.filingId,
+		),
+		unique("payroll_statutory_filing_line_org_id_uidx").on(
+			t.organizationId,
+			t.id,
+		),
+		uniqueIndex("payroll_statutory_filing_line_org_filing_sequence_uidx").on(
+			t.organizationId,
+			t.filingId,
+			t.sequence,
+		),
+		foreignKey({
+			columns: [t.organizationId, t.filingId],
+			foreignColumns: [
+				payrollStatutoryFiling.organizationId,
+				payrollStatutoryFiling.id,
+			],
+			name: "payroll_statutory_filing_line_org_filing_fk",
+		}),
 	],
 );

@@ -127,6 +127,14 @@
 					"file": "src/features/final-settlement/operation-registry.ts"
 				},
 				{
+					"evidence": "src/features/final-settlement/resolve-settlement-statutory.ts exceeds src/<owner>/<file>",
+					"file": "src/features/final-settlement/resolve-settlement-statutory.ts"
+				},
+				{
+					"evidence": "src/features/final-settlement/settlement-statement.ts exceeds src/<owner>/<file>",
+					"file": "src/features/final-settlement/settlement-statement.ts"
+				},
+				{
 					"evidence": "src/features/final-settlement/settlement.command.ts exceeds src/<owner>/<file>",
 					"file": "src/features/final-settlement/settlement.command.ts"
 				},
@@ -435,6 +443,38 @@
 					"file": "src/features/settlement-ingress/settlement.schema.ts"
 				},
 				{
+					"evidence": "src/features/statutory-filings/contract.ts exceeds src/<owner>/<file>",
+					"file": "src/features/statutory-filings/contract.ts"
+				},
+				{
+					"evidence": "src/features/statutory-filings/filing.command.ts exceeds src/<owner>/<file>",
+					"file": "src/features/statutory-filings/filing.command.ts"
+				},
+				{
+					"evidence": "src/features/statutory-filings/filing.drizzle.ts exceeds src/<owner>/<file>",
+					"file": "src/features/statutory-filings/filing.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/statutory-filings/filing.memory.ts exceeds src/<owner>/<file>",
+					"file": "src/features/statutory-filings/filing.memory.ts"
+				},
+				{
+					"evidence": "src/features/statutory-filings/filing.schema.ts exceeds src/<owner>/<file>",
+					"file": "src/features/statutory-filings/filing.schema.ts"
+				},
+				{
+					"evidence": "src/features/statutory-filings/filing.store.ts exceeds src/<owner>/<file>",
+					"file": "src/features/statutory-filings/filing.store.ts"
+				},
+				{
+					"evidence": "src/features/statutory-filings/fingerprint.ts exceeds src/<owner>/<file>",
+					"file": "src/features/statutory-filings/fingerprint.ts"
+				},
+				{
+					"evidence": "src/features/statutory-filings/operation-registry.ts exceeds src/<owner>/<file>",
+					"file": "src/features/statutory-filings/operation-registry.ts"
+				},
+				{
 					"evidence": "src/features/statutory-rules/calculator-registry.ts exceeds src/<owner>/<file>",
 					"file": "src/features/statutory-rules/calculator-registry.ts"
 				},
@@ -716,11 +756,23 @@
 					"file": "src/features/employee-assignments/recurring-earning.ts"
 				},
 				{
-					"evidence": "src/features/final-settlement/settlement.command.ts:19 -> src/features/payroll-runs/runs.store.ts (final-settlement -> payroll-runs)",
+					"evidence": "src/features/final-settlement/resolve-settlement-statutory.ts:6 -> src/features/statutory-rules/calculator-registry.ts (final-settlement -> statutory-rules)",
+					"file": "src/features/final-settlement/resolve-settlement-statutory.ts"
+				},
+				{
+					"evidence": "src/features/final-settlement/settlement-statement.ts:9 -> src/features/privacy/contract.ts (final-settlement -> privacy)",
+					"file": "src/features/final-settlement/settlement-statement.ts"
+				},
+				{
+					"evidence": "src/features/final-settlement/settlement.command.ts:28 -> src/features/payroll-runs/runs.store.ts (final-settlement -> payroll-runs)",
 					"file": "src/features/final-settlement/settlement.command.ts"
 				},
 				{
-					"evidence": "src/features/final-settlement/settlement.command.ts:20 -> src/features/payroll-setup/setup.store.ts (final-settlement -> payroll-setup)",
+					"evidence": "src/features/final-settlement/settlement.command.ts:29 -> src/features/payroll-setup/setup.store.ts (final-settlement -> payroll-setup)",
+					"file": "src/features/final-settlement/settlement.command.ts"
+				},
+				{
+					"evidence": "src/features/final-settlement/settlement.command.ts:30 -> src/features/workforce-ingress/normalize-workforce-handoff.ts (final-settlement -> workforce-ingress)",
 					"file": "src/features/final-settlement/settlement.command.ts"
 				},
 				{
@@ -836,6 +888,18 @@
 					"file": "src/features/settlement-ingress/settlement.command.ts"
 				},
 				{
+					"evidence": "src/features/statutory-filings/filing.command.ts:25 -> src/features/payroll-runs/runs.store.ts (statutory-filings -> payroll-runs)",
+					"file": "src/features/statutory-filings/filing.command.ts"
+				},
+				{
+					"evidence": "src/features/statutory-filings/filing.command.ts:26 -> src/features/payroll-setup/setup.store.ts (statutory-filings -> payroll-setup)",
+					"file": "src/features/statutory-filings/filing.command.ts"
+				},
+				{
+					"evidence": "src/features/statutory-filings/filing.command.ts:27 -> src/features/statutory-rules/statutory.store.ts (statutory-filings -> statutory-rules)",
+					"file": "src/features/statutory-filings/filing.command.ts"
+				},
+				{
 					"evidence": "src/features/variable-inputs/operation-store.ts:1 -> src/features/employee-assignments/assignments.store.ts (variable-inputs -> employee-assignments)",
 					"file": "src/features/variable-inputs/operation-store.ts"
 				},
@@ -908,7 +972,7 @@
 	},
 	"schemaVersion": 1,
 	"summary": {
-		"featureCount": 14,
-		"sourceTypeScriptFiles": 168
+		"featureCount": 15,
+		"sourceTypeScriptFiles": 178
 	}
 }

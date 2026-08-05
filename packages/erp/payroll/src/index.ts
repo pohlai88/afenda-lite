@@ -28,6 +28,8 @@ export {
 	expirePayrollRetention,
 	finalizeFinalSettlement,
 	finalizePayrollRun,
+	generateAnnualStatement,
+	generateStatutoryFiling,
 	getFinalSettlementStatement,
 	getOwnFinalSettlementStatement,
 	getOwnPayrollPayslip,
@@ -45,6 +47,7 @@ export {
 	ingestApprovedPayrollHandoff,
 	initiateFinalSettlement,
 	liftPayrollRestriction,
+	listFilingObligations,
 	listPayrollCalendars,
 	listPayrollDeadLetters,
 	listPayrollExceptionsForRun,
@@ -65,6 +68,7 @@ export {
 	respondToPayrollSubjectAccess,
 	restrictPayrollSubject,
 	reversePayrollRun,
+	sealFilingEvidence,
 	supersedePayrollDeductionRule,
 	supersedePayrollEarningRule,
 	supersedePayrollStatutoryRule,
@@ -140,6 +144,20 @@ export {
 	type PayrollRetroStatus,
 } from "./features/retro-pay/contract";
 export { parsePayrollDisbursementReference } from "./features/settlement-ingress/parse-payroll-disbursement-reference";
+export {
+	PAYROLL_FILING_OBLIGATION_STATUSES,
+	PAYROLL_STATUTORY_FILING_KINDS,
+	PAYROLL_STATUTORY_FILING_STATUSES,
+	type PayrollFilingObligation,
+	type PayrollFilingObligationStatus,
+	type PayrollStatutoryFiling,
+	type PayrollStatutoryFilingEvidence,
+	type PayrollStatutoryFilingKind,
+	type PayrollStatutoryFilingLine,
+	type PayrollStatutoryFilingStatus,
+	type PayrollStatutoryFilingTotals,
+	type PayrollStatutoryFilingView,
+} from "./features/statutory-filings/contract";
 export { PAYROLL_PLATFORM_EVENT_DISPATCHER_ID } from "./kernel/emissions/emission-registry";
 export type {
 	PayrollClockCapability,

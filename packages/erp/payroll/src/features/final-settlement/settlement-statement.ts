@@ -115,10 +115,8 @@ async function buildStatement(input: {
 		employeeId: current.employeeId,
 		lines: [...lines.data]
 			.sort(
-				(
-					left: PayrollFinalSettlementLine,
-					right: PayrollFinalSettlementLine,
-				) => left.sequence - right.sequence,
+				(left: PayrollFinalSettlementLine, right: PayrollFinalSettlementLine) =>
+					left.sequence - right.sequence,
 			)
 			.map((line: PayrollFinalSettlementLine) => ({
 				amount: line.amount,

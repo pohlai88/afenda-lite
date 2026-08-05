@@ -141,6 +141,7 @@ Business behavior lives under `src/features/`. Features never import `facade`,
 | `payroll-jobs` | Durable calculation batches: claim, lease, retry, dead letter, replay |
 | `retro-pay` | Deferred sealed-period corrections into an open target period |
 | `final-settlement` | Termination pay, C6 clearance, SoD finalize, terminal statement |
+| `statutory-filings` | Period/annual filing artifacts sealed from finalized statutory results |
 
 ### Composition entries
 
@@ -191,7 +192,7 @@ exists again, is an explicit maintainer action — not the README default.
 
 ## Boundaries
 
-**Mutation tables (27):** `payroll_calendar` … `payroll_final_settlement_line` — see
+**Mutation tables (29):** `payroll_calendar` … `payroll_statutory_filing_line` — see
 [`src/kernel/emissions/mutation-tables.ts`](./src/kernel/emissions/mutation-tables.ts).
 
 | Owns | Does not own |

@@ -32,6 +32,7 @@ Uniform ERP roots: `facade/` · `kernel/` · `composition/` · `features/` · `t
 | `payroll-jobs` | Durable calculation batches: claim, lease, retry, dead letter, replay, chunk merge |
 | `retro-pay` | Queue / snapshot-pinned recompute / apply into an open period / exception review |
 | `final-settlement` | Termination pay: pinned-compensation initiate / C6 clearance / calculate with fail-closed statutory / finalize SoD / terminal statement query |
+| `statutory-filings` | Period/annual filing generation + evidence seal from finalized statutory results |
 
 Entrypoints: `@afenda/payroll` (production) · `@afenda/payroll/testing` (test-only).
 
@@ -54,17 +55,18 @@ Entrypoints: `@afenda/payroll` (production) · `@afenda/payroll/testing` (test-o
 | D6 payroll jobs | **CLOSED** | Durable calculation batches + `/api/cron/payroll-jobs`; migrate `0051_payroll_jobs` remains ops-gated |
 | D3 retro pay | **CLOSED** | Queue / recompute under the sealed run snapshot / apply into an open period / exception review; migrate `0052_payroll_retro_pay` remains ops-gated |
 | D4 final settlement | **CLOSED** | Termination pay from a pinned compensation snapshot, fail-closed statutory calculator seam, C6 human clearance, C9 finalize SoD, read-own/read-all statement query; migrate `0053_payroll_final_settlement` remains ops-gated |
+| D5 statutory filings | **CLOSED** | Period/annual artifacts + SoD evidence seal from finalized `payroll_statutory_result` rows (no invented A2 rate tables); generation gated by the fail-closed statutory-calculator capability, so synth-only production refuses; migrate `0054_payroll_statutory_filings` remains ops-gated |
 
 ## 3. Open items (cite bridging, do not invent scope)
 
 | Item | Bridging | Notes |
 | --- | --- | --- |
 | Statutory calculator sourcing | A2 | No production jurisdiction until reviewer-approved calculator |
-| Statutory filings | D5 | Feature capsule not yet present |
 | HR D7 residue docs | D7 | Restriction op closed; cut-off / mid-period termination / breaking-change policy docs remain |
 | Production handoff DDL | ops | Apply `0049_payroll_accepted_handoff.sql` off PL-S9 when migrate is approved |
 | Production retro DDL | ops | Apply `0052_payroll_retro_pay.sql` when migrate is approved |
 | Production final-settlement DDL | ops | Apply `0053_payroll_final_settlement.sql` when migrate is approved |
+| Production statutory-filings DDL | ops | Apply `0054_payroll_statutory_filings.sql` when migrate is approved |
 
 ## 4. Verify loops
 

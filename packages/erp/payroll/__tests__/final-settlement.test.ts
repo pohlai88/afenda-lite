@@ -4,14 +4,14 @@ import { describe, expect, it } from "vitest";
 
 import { createRegistryPayrollStatutory } from "../src/facade/system-capabilities";
 import {
-	getFinalSettlementStatement,
-	getOwnFinalSettlementStatement,
-} from "../src/features/final-settlement/settlement-statement";
-import {
 	calculateFinalSettlement,
 	finalizeFinalSettlement,
 	initiateFinalSettlement,
 } from "../src/features/final-settlement/settlement.command";
+import {
+	getFinalSettlementStatement,
+	getOwnFinalSettlementStatement,
+} from "../src/features/final-settlement/settlement-statement";
 import {
 	closePayrollPeriod,
 	createPayrollPeriod,
@@ -237,7 +237,10 @@ async function seedOpenPeriod(
 
 type Seeded = Awaited<ReturnType<typeof seedOpenPeriod>>;
 
-function initiateInput(seeded: Seeded, overrides: Record<string, unknown> = {}) {
+function initiateInput(
+	seeded: Seeded,
+	overrides: Record<string, unknown> = {},
+) {
 	return {
 		...context(),
 		employeeId: EMPLOYEE_ID,
@@ -459,7 +462,9 @@ describe("final-settlement calculate", () => {
 			),
 		);
 
-		expect(result.settlement.compensationSnapshot.baseCompensation).toBe("3100");
+		expect(result.settlement.compensationSnapshot.baseCompensation).toBe(
+			"3100",
+		);
 		expect(result.lines[0]?.amount).toBe("1500");
 		expect(result.lines[1]?.amount).toBe("200");
 		expect(result.settlement.totals?.gross).toBe("2200");

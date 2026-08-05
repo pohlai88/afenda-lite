@@ -8,6 +8,7 @@ import { createMemoryRunsMethods } from "../features/payroll-runs/runs.memory";
 import { createMemorySetupMethods } from "../features/payroll-setup/setup.memory";
 import { createMemoryReconciliationMethods } from "../features/reconciliation/reconciliation.memory";
 import { createMemoryRetroMethods } from "../features/retro-pay/retro.memory";
+import { createMemoryStatutoryFilingMethods } from "../features/statutory-filings/filing.memory";
 import { createMemoryStatutoryMethods } from "../features/statutory-rules/statutory.memory";
 import { createMemoryInputsMethods } from "../features/variable-inputs/inputs.memory";
 import { createMemoryWorkforceIngressMethods } from "../features/workforce-ingress/accepted-handoff.memory";
@@ -42,6 +43,7 @@ export function createMemoryPayrollStore(): MemoryPayrollStore {
 		createMemoryReconciliationMethods(state),
 		createMemoryRetroMethods(state.retro),
 		createMemoryFinalSettlementMethods(state.finalSettlement),
+		createMemoryStatutoryFilingMethods(state.statutoryFilings),
 		createMemoryJobsMethods(state.jobs),
 		createMemoryWorkforceIngressMethods(state.workforceIngress),
 	) as MemoryPayrollStore;

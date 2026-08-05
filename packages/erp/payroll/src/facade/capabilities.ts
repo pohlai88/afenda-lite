@@ -6,14 +6,14 @@ import {
 import { createPayrollRecurringDeduction as createPayrollRecurringDeductionInternal } from "../features/employee-assignments/recurring-deduction";
 import { createPayrollRecurringEarning as createPayrollRecurringEarningInternal } from "../features/employee-assignments/recurring-earning";
 import {
-	getFinalSettlementStatement as getFinalSettlementStatementInternal,
-	getOwnFinalSettlementStatement as getOwnFinalSettlementStatementInternal,
-} from "../features/final-settlement/settlement-statement";
-import {
 	calculateFinalSettlement as calculateFinalSettlementInternal,
 	finalizeFinalSettlement as finalizeFinalSettlementInternal,
 	initiateFinalSettlement as initiateFinalSettlementInternal,
 } from "../features/final-settlement/settlement.command";
+import {
+	getFinalSettlementStatement as getFinalSettlementStatementInternal,
+	getOwnFinalSettlementStatement as getOwnFinalSettlementStatementInternal,
+} from "../features/final-settlement/settlement-statement";
 import {
 	claimDuePayrollJobWork as claimDuePayrollJobWorkInternal,
 	enqueuePayrollCalculationJob as enqueuePayrollCalculationJobInternal,
@@ -103,6 +103,12 @@ import {
 	recordPostingConfirmation as recordPostingConfirmationInternal,
 	resolveReconciliationDiscrepancy as resolveReconciliationDiscrepancyInternal,
 } from "../features/settlement-ingress/settlement.command";
+import {
+	generateAnnualStatement as generateAnnualStatementInternal,
+	generateStatutoryFiling as generateStatutoryFilingInternal,
+	listFilingObligations as listFilingObligationsInternal,
+	sealFilingEvidence as sealFilingEvidenceInternal,
+} from "../features/statutory-filings/filing.command";
 import {
 	createPayrollVariableInput as createPayrollVariableInputInternal,
 	getPayrollVariableInput as getPayrollVariableInputInternal,
@@ -207,6 +213,18 @@ export const getOwnFinalSettlementStatement = bindPayrollOperation(
 );
 export const getFinalSettlementStatement = bindPayrollOperation(
 	getFinalSettlementStatementInternal,
+);
+export const generateStatutoryFiling = bindPayrollOperation(
+	generateStatutoryFilingInternal,
+);
+export const generateAnnualStatement = bindPayrollOperation(
+	generateAnnualStatementInternal,
+);
+export const sealFilingEvidence = bindPayrollOperation(
+	sealFilingEvidenceInternal,
+);
+export const listFilingObligations = bindPayrollOperation(
+	listFilingObligationsInternal,
 );
 export const recordPayrollReconciliation = bindPayrollOperation(
 	recordPayrollReconciliationInternal,

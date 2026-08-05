@@ -6,6 +6,7 @@ import type { PayrollRunsStore } from "../../features/payroll-runs/runs.store";
 import type { PayrollSetupStore } from "../../features/payroll-setup/setup.store";
 import type { PayrollReconciliationStore } from "../../features/reconciliation/reconciliation.store";
 import type { PayrollRetroStore } from "../../features/retro-pay/retro.store";
+import type { PayrollStatutoryFilingStore } from "../../features/statutory-filings/filing.store";
 import type { PayrollStatutoryStore } from "../../features/statutory-rules/statutory.store";
 import type { PayrollInputsStore } from "../../features/variable-inputs/inputs.store";
 import type { PayrollWorkforceIngressStore } from "../../features/workforce-ingress/accepted-handoff.store";
@@ -19,6 +20,7 @@ export type PayrollStore = PayrollSetupStore &
 	PayrollReconciliationStore &
 	PayrollRetroStore &
 	PayrollFinalSettlementStore &
+	PayrollStatutoryFilingStore &
 	PayrollWorkforceIngressStore &
 	PayrollJobStore;
 
@@ -30,6 +32,7 @@ export type { PayrollRunsStore } from "../../features/payroll-runs/runs.store";
 export type { PayrollSetupStore } from "../../features/payroll-setup/setup.store";
 export type { PayrollReconciliationStore } from "../../features/reconciliation/reconciliation.store";
 export type { PayrollRetroStore } from "../../features/retro-pay/retro.store";
+export type { PayrollStatutoryFilingStore } from "../../features/statutory-filings/filing.store";
 export type { PayrollStatutoryStore } from "../../features/statutory-rules/statutory.store";
 export type { PayrollInputsStore } from "../../features/variable-inputs/inputs.store";
 export type { PayrollWorkforceIngressStore } from "../../features/workforce-ingress/accepted-handoff.store";

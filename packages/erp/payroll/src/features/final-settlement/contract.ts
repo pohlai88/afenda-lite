@@ -160,10 +160,10 @@ export interface PayrollFinalSettlement {
 	payGroupId: string;
 	periodId: string;
 	requestFingerprint: string;
+	status: PayrollFinalSettlementStatus;
 	statutoryEvidence:
 		| readonly PayrollFinalSettlementStatutoryEvidenceEntry[]
 		| null;
-	status: PayrollFinalSettlementStatus;
 	terminationEffectiveOn: string;
 	terminationId: string;
 	totals: PayrollFinalSettlementTotals | null;

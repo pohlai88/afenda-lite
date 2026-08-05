@@ -389,16 +389,14 @@ Leave-balance-at-termination is an **HR fact** delivered through the handoff, no
 
 ### D5 — `payroll/statutory-filings`
 
-Covers periodic and annual obligations. Absent entirely.
+**CLOSED 2026-08-05.** `statutory-filings` generates period filings and annual statements from finalized-run `payroll_statutory_result` rows (jurisdiction + instrument = `ruleCode`). Production MY/VN rate tables remain A2; this capsule does not invent them. Generation routes through the same fail-closed `PayrollStatutoryCapability` seam runs and settlements use: absent the capability, or with any sealed result whose calculator is unregistered or not production-approved, generation refuses with `CONFLICT`. While A2 is OPEN the only registered calculator is `synth.v1` (`synthetic_only`), so production filing generation fails closed and synth filings are test-only. No live statutory-rule configuration is read at generate time. Generation also fails closed when no matching sealed results exist. `sealFilingEvidence` is SoD-gated (generator ≠ sealer) and fingerprints version-pinned calculator/rule evidence already on the results. `listFilingObligations` returns existing artifacts plus optional missing keys scanned from finalized `runIds`. Production migrate remains ops-gated (`0054_payroll_statutory_filings`).
 
 | Operation | Purpose |
 | --- | --- |
 | `generateStatutoryFiling` | Period filing artifact per jurisdiction/instrument |
-| `generateAnnualStatement` | MY EA form; VN annual PIT finalization data |
-| `sealFilingEvidence` | Immutable, versioned, reproducible from the run snapshot |
-| `listFilingObligations` | Calendar of what is due when |
-
-Requires the A2 rate tables to be effective-dated and version-pinned.
+| `generateAnnualStatement` | Annual statement keyed by tax year + employee |
+| `sealFilingEvidence` | Immutable, versioned, reproducible from sealed results |
+| `listFilingObligations` | Existing plus optional missing period/annual keys |
 
 ### D6 — `payroll/payroll-jobs`
 
@@ -449,11 +447,11 @@ Requires the A2 rate tables to be effective-dated and version-pinned.
 | 11 | `settlement-ingress` | D2 | ✅ + C8 reversal-bounded-by-settlement guard |
 | 12 | `privacy` | D1 | ✅ restriction + retention evidence + DSAR; erasure still forbidden without counsel citation |
 | 13 | `payroll-jobs` | D6 | ✅ durable claim/lease/retry/DLQ + chunk merge + `/api/cron/payroll-jobs` |
-| 14 | `retro-pay`, `final-settlement`, `statutory-filings` | D3–D5 | ◐ `retro-pay` ✅ (queue / snapshot-pinned recompute / apply into an open period / review; migrate `0052_payroll_retro_pay` ops-gated); `final-settlement` ✅ (pinned-compensation settlement / fail-closed statutory seam / C6 clearance / C9 finalize / read-own–read-all statement query; migrate `0053_payroll_final_settlement` ops-gated); `statutory-filings` ⏳ open |
+| 14 | `retro-pay`, `final-settlement`, `statutory-filings` | D3–D5 | ✅ `retro-pay` (queue / snapshot-pinned recompute / apply into an open period / review; migrate `0052_payroll_retro_pay` ops-gated); `final-settlement` (pinned-compensation settlement / fail-closed statutory seam / C6 clearance / C9 finalize / read-own–read-all statement query; migrate `0053_payroll_final_settlement` ops-gated); `statutory-filings` (period + annual from finalized statutory results / fail-closed calculator seam / SoD seal / obligation list; migrate `0054_payroll_statutory_filings` ops-gated) |
 | 15 | HR D7 residue | D7 | ✅ restriction ops, PRODUCTION_READINESS promotion gate, cut-off + termination + breaking-change docs (C3/C6 enforcement rows honestly partial — payroll-side enforcement + tests pending) |
 | 16 | Phase E evidence + promotion | E | ⏳ open — gated on 2, 3, 10, 14 and D7's two partial rows |
 
-Remaining critical path: **A2 sourcing (longest lead) → D0 capture + widening → D3–D5 → Phase E.** Everything in Phases B and C is closed.
+Remaining critical path: **A2 sourcing (longest lead) → D0 capture + widening → Phase E.** Phases B, C, and D3–D5 are closed.
 
 ---
 

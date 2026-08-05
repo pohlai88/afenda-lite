@@ -328,6 +328,7 @@ describe("@afenda/payroll export surface contract", () => {
 			"reconciliation",
 			"retro-pay",
 			"settlement-ingress",
+			"statutory-filings",
 			"statutory-rules",
 			"variable-inputs",
 			"workforce-ingress",

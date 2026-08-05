@@ -43,6 +43,8 @@ export const PAYROLL_MUTATION_TABLES = [
 	"payroll_retro_line",
 	"payroll_final_settlement",
 	"payroll_final_settlement_line",
+	"payroll_statutory_filing",
+	"payroll_statutory_filing_line",
 ] as const;
 
 export const PAYROLL_AGGREGATES = [

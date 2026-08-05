@@ -11,10 +11,10 @@ import type {
 	PayrollWorkforceInputPort,
 } from "../../kernel/execution/ports";
 import {
-	parsePayrollPayGroupId,
-	parsePayrollPeriodId,
 	type PayrollPeriodId,
 	type PayrollRunId,
+	parsePayrollPayGroupId,
+	parsePayrollPeriodId,
 } from "../../kernel/identity/brands";
 import {
 	DEFAULT_PAYROLL_ROUNDING_POLICY,

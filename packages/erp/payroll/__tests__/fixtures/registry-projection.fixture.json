@@ -48,7 +48,9 @@
 		"payroll.final-settlement.initiate": "payroll.run.create",
 		"payroll.final-settlement.calculate": "payroll.run.calculate",
 		"payroll.final-settlement.finalize": "payroll.run.finalize",
-		"payroll.final-settlement.statement.issue": "payroll.run.review",
+		"payroll.statutory-filing.generate": "payroll.run.review",
+		"payroll.statutory-filing.annual.generate": "payroll.run.review",
+		"payroll.statutory-filing.evidence.seal": "payroll.run.finalize",
 		"payroll.workforce.ingest": "payroll.input.manage",
 		"payroll.setup.calendar.get": "payroll.setup.manage",
 		"payroll.setup.calendar.list": "payroll.setup.manage",
@@ -69,7 +71,10 @@
 		"payroll.jobs.job.get": "payroll.run.review",
 		"payroll.jobs.dead-letter.list": "payroll.run.review",
 		"payroll.reconciliation.list": "payroll.reconciliation.manage",
-		"payroll.retro.item.list": "payroll.run.review"
+		"payroll.retro.item.list": "payroll.run.review",
+		"payroll.final-settlement.statement.read-own": "payroll.payslip.read-own",
+		"payroll.final-settlement.statement.read-all": "payroll.payslip.read-all",
+		"payroll.statutory-filing.obligation.list": "payroll.run.review"
 	},
 	"errorCodeSets": {},
 	"eventCatalog": [],
@@ -124,11 +129,18 @@
 			"publicName": "initiateFinalSettlement"
 		},
 		{
-			"id": "payroll.final-settlement.statement.issue",
-			"kind": "command",
+			"id": "payroll.final-settlement.statement.read-all",
+			"kind": "query",
 			"owner": "final-settlement",
-			"permission": "payroll.run.review",
-			"publicName": "issueFinalSettlementStatement"
+			"permission": "payroll.payslip.read-all",
+			"publicName": "readAllFinalSettlementStatements"
+		},
+		{
+			"id": "payroll.final-settlement.statement.read-own",
+			"kind": "query",
+			"owner": "final-settlement",
+			"permission": "payroll.payslip.read-own",
+			"publicName": "readOwnFinalSettlementStatement"
 		},
 		{
 			"id": "payroll.input.variable.create",
@@ -556,6 +568,34 @@
 			"owner": "payroll-setup",
 			"permission": "payroll.setup.manage",
 			"publicName": "updateStatutoryRule"
+		},
+		{
+			"id": "payroll.statutory-filing.annual.generate",
+			"kind": "command",
+			"owner": "statutory-filings",
+			"permission": "payroll.run.review",
+			"publicName": "generateAnnualStatement"
+		},
+		{
+			"id": "payroll.statutory-filing.evidence.seal",
+			"kind": "command",
+			"owner": "statutory-filings",
+			"permission": "payroll.run.finalize",
+			"publicName": "sealFilingEvidence"
+		},
+		{
+			"id": "payroll.statutory-filing.generate",
+			"kind": "command",
+			"owner": "statutory-filings",
+			"permission": "payroll.run.review",
+			"publicName": "generateStatutoryFiling"
+		},
+		{
+			"id": "payroll.statutory-filing.obligation.list",
+			"kind": "query",
+			"owner": "statutory-filings",
+			"permission": "payroll.run.review",
+			"publicName": "listFilingObligations"
 		},
 		{
 			"id": "payroll.workforce.ingest",
