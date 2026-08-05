@@ -279,6 +279,26 @@
 					"file": "src/features/reconciliation/reconciliation.store.ts"
 				},
 				{
+					"evidence": "src/features/settlement-ingress/operation-registry.ts exceeds src/<owner>/<file>",
+					"file": "src/features/settlement-ingress/operation-registry.ts"
+				},
+				{
+					"evidence": "src/features/settlement-ingress/parse-payroll-disbursement-reference.ts exceeds src/<owner>/<file>",
+					"file": "src/features/settlement-ingress/parse-payroll-disbursement-reference.ts"
+				},
+				{
+					"evidence": "src/features/settlement-ingress/run-settlement-policy.ts exceeds src/<owner>/<file>",
+					"file": "src/features/settlement-ingress/run-settlement-policy.ts"
+				},
+				{
+					"evidence": "src/features/settlement-ingress/settlement.command.ts exceeds src/<owner>/<file>",
+					"file": "src/features/settlement-ingress/settlement.command.ts"
+				},
+				{
+					"evidence": "src/features/settlement-ingress/settlement.schema.ts exceeds src/<owner>/<file>",
+					"file": "src/features/settlement-ingress/settlement.schema.ts"
+				},
+				{
 					"evidence": "src/features/statutory-rules/calculator-registry.ts exceeds src/<owner>/<file>",
 					"file": "src/features/statutory-rules/calculator-registry.ts"
 				},
@@ -572,11 +592,23 @@
 					"file": "src/features/payroll-runs/operation-store.ts"
 				},
 				{
+					"evidence": "src/features/payroll-runs/operation-store.ts:4 -> src/features/reconciliation/reconciliation.store.ts (payroll-runs -> reconciliation)",
+					"file": "src/features/payroll-runs/operation-store.ts"
+				},
+				{
 					"evidence": "src/features/payroll-runs/payroll-period.ts:15 -> src/features/payroll-setup/setup.schema.ts (payroll-runs -> payroll-setup)",
 					"file": "src/features/payroll-runs/payroll-period.ts"
 				},
 				{
-					"evidence": "src/features/payroll-runs/reversal.ts:7 -> src/features/calculation/finalization-evidence.ts (payroll-runs -> calculation)",
+					"evidence": "src/features/payroll-runs/reversal.ts:10 -> src/features/reconciliation/reconciliation.store.ts (payroll-runs -> reconciliation)",
+					"file": "src/features/payroll-runs/reversal.ts"
+				},
+				{
+					"evidence": "src/features/payroll-runs/reversal.ts:11 -> src/features/settlement-ingress/run-settlement-policy.ts (payroll-runs -> settlement-ingress)",
+					"file": "src/features/payroll-runs/reversal.ts"
+				},
+				{
+					"evidence": "src/features/payroll-runs/reversal.ts:9 -> src/features/calculation/finalization-evidence.ts (payroll-runs -> calculation)",
 					"file": "src/features/payroll-runs/reversal.ts"
 				},
 				{
@@ -608,6 +640,22 @@
 					"file": "src/features/reconciliation/operation-store.ts"
 				},
 				{
+					"evidence": "src/features/settlement-ingress/run-settlement-policy.ts:4 -> src/features/reconciliation/reconciliation.store.ts (settlement-ingress -> reconciliation)",
+					"file": "src/features/settlement-ingress/run-settlement-policy.ts"
+				},
+				{
+					"evidence": "src/features/settlement-ingress/settlement.command.ts:10 -> src/features/reconciliation/operation-store.ts (settlement-ingress -> reconciliation)",
+					"file": "src/features/settlement-ingress/settlement.command.ts"
+				},
+				{
+					"evidence": "src/features/settlement-ingress/settlement.command.ts:11 -> src/features/reconciliation/reconciliation.command.ts (settlement-ingress -> reconciliation)",
+					"file": "src/features/settlement-ingress/settlement.command.ts"
+				},
+				{
+					"evidence": "src/features/settlement-ingress/settlement.command.ts:15 -> src/features/reconciliation/reconciliation.schema.ts (settlement-ingress -> reconciliation)",
+					"file": "src/features/settlement-ingress/settlement.command.ts"
+				},
+				{
 					"evidence": "src/features/variable-inputs/operation-store.ts:1 -> src/features/employee-assignments/assignments.store.ts (variable-inputs -> employee-assignments)",
 					"file": "src/features/variable-inputs/operation-store.ts"
 				},
@@ -628,6 +676,10 @@
 				{
 					"evidence": "reciprocal feature cycle: calculation <-> payroll-runs",
 					"file": "src/features/calculation"
+				},
+				{
+					"evidence": "reciprocal feature cycle: payroll-runs <-> reconciliation",
+					"file": "src/features/payroll-runs"
 				}
 			],
 			"key": "feature-cycle",
@@ -672,7 +724,7 @@
 	},
 	"schemaVersion": 1,
 	"summary": {
-		"featureCount": 9,
-		"sourceTypeScriptFiles": 129
+		"featureCount": 10,
+		"sourceTypeScriptFiles": 134
 	}
 }

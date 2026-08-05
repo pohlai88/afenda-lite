@@ -7,7 +7,7 @@
 | Date | 2026-08-05 |
 | Branch | `feat/hr-payroll-closure` |
 | Package lifecycle | `scaffolded` |
-| Overall outcome | **Engineering gates green including B5 Neon parity and B6 outbox drain; A2 remains open** |
+| Overall outcome | **Engineering gates green including B5 Neon parity, B6 outbox drain, and D2 settlement ingress; A2 remains open** |
 
 > Package-local verification record. Not a kernel seal, deployment record, or
 > lifecycle promotion.

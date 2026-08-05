@@ -113,6 +113,42 @@
 			"useMode": "runtime"
 		},
 		{
+			"consumerClass": "production",
+			"disposition": "allowed",
+			"entrypoint": ".",
+			"file": "apps/web/modules/platform/domain/payroll-settlement-ingress.ts",
+			"package": "@afenda/web",
+			"referenceKind": "module",
+			"resolution": "resolved",
+			"resolvedTarget": "packages/erp/payroll/src/index.ts",
+			"symbol": "parsePayrollDisbursementReference",
+			"useMode": "runtime"
+		},
+		{
+			"consumerClass": "production",
+			"disposition": "allowed",
+			"entrypoint": ".",
+			"file": "apps/web/modules/platform/domain/payroll-settlement-ingress.ts",
+			"package": "@afenda/web",
+			"referenceKind": "module",
+			"resolution": "resolved",
+			"resolvedTarget": "packages/erp/payroll/src/index.ts",
+			"symbol": "recordPaymentSettlement",
+			"useMode": "runtime"
+		},
+		{
+			"consumerClass": "production",
+			"disposition": "allowed",
+			"entrypoint": ".",
+			"file": "apps/web/modules/platform/domain/payroll-settlement-ingress.ts",
+			"package": "@afenda/web",
+			"referenceKind": "module",
+			"resolution": "resolved",
+			"resolvedTarget": "packages/erp/payroll/src/index.ts",
+			"symbol": "recordPostingConfirmation",
+			"useMode": "runtime"
+		},
+		{
 			"consumerClass": "testing",
 			"disposition": "manual-review",
 			"entrypoint": "filesystem",

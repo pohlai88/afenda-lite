@@ -17,6 +17,7 @@
 | B1 | Transport docs + testing subpath | **CLOSED** | Document single push/sync-ingest transport on both READMEs; PayrollWorkforceCapability is test-only; declare @afenda/payroll/testing. | 2026-08-05 | Payroll / HR |
 | B7 | Governance gates | **CLOSED** | Root scripts governance:erp-symmetry, governance:emission-drain, governance:cross-import, governance:architecture-debt chained from governance:packages. | 2026-08-05 | Payroll / platform governance |
 | B6 | Platform outbox drain | **CLOSED** | `apps/web` cron `/api/cron/payroll-outbox` drains payroll emissions via `PAYROLL_PLATFORM_EVENT_DISPATCHER_ID`; Payments draft intake + Accounting source posting handlers fail closed. | 2026-08-05 | Payroll / platform composition |
+| D2 | Settlement ingress | **CLOSED** | `settlement-ingress` feature + C8 reversal guard; `apps/web` drains Payments posted/reversed + Accounting journal posted into reconciliation; matched payment blocks run reversal. | 2026-08-05 | Payroll / Payments / Accounting |
 | B3 | Capability signature | **CLOSED** | Composition requires clock, currency, and statutory capabilities; production factories exported; calculator uses currency payable scale and statutory registry approval. | 2026-08-05 | Payroll |
 
 ## A1 evidence
@@ -51,6 +52,13 @@ Shipped in `src/features/payroll-runs/finalization.ts`: when status is `calculat
 - Registry: `src/kernel/emissions/emission-registry.ts` — all lifecycle emissions declare the dispatcher
 - Governance: `pnpm governance:emission-drain` passes with zero undrained debt
 
+## D2 settlement ingress
+
+- Feature: `src/features/settlement-ingress/` — `recordPaymentSettlement`, `recordPostingConfirmation`, `resolveReconciliationDiscrepancy`; `parsePayrollDisbursementReference` for `payroll-run:{runId}:employee:{employeeId}`
+- C8 guard: `assertPayrollRunUnsettledForReversal` in `run-settlement-policy.ts`; wired from `payroll-runs/reversal.ts`
+- App handlers: `apps/web/modules/platform/domain/payroll-settlement-ingress.ts` (merged into outbox drain)
+- Evidence: `__tests__/settlement-ingress.test.ts` · `pnpm check:payroll` 230/230
+
 ## Open-decision rule
 
-Do not promote either module to `active`, claim enterprise seal, or enable production statutory calculators while **A2** remains OPEN. A3/A4 closed postures still require D2 settlement-ingress and counsel-cited retention clocks before erasure or settled clawback automation.
+Do not promote either module to `active`, claim enterprise seal, or enable production statutory calculators while **A2** remains OPEN. A3/A4 closed postures still require counsel-cited retention clocks before erasure or settled clawback automation.

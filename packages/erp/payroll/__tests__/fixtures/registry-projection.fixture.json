@@ -31,6 +31,9 @@
 		"payroll.run.reverse": "payroll.run.reverse",
 		"payroll.reconciliation.record": "payroll.reconciliation.manage",
 		"payroll.reconciliation.resolve": "payroll.reconciliation.manage",
+		"payroll.settlement-ingress.payment.record": "payroll.reconciliation.manage",
+		"payroll.settlement-ingress.posting.record": "payroll.reconciliation.manage",
+		"payroll.settlement-ingress.discrepancy.resolve": "payroll.reconciliation.manage",
 		"payroll.workforce.ingest": "payroll.input.manage",
 		"payroll.setup.calendar.get": "payroll.setup.manage",
 		"payroll.setup.calendar.list": "payroll.setup.manage",
@@ -162,6 +165,27 @@
 			"owner": "payroll-runs",
 			"permission": "payroll.run.reverse",
 			"publicName": "reverseRun"
+		},
+		{
+			"id": "payroll.settlement-ingress.discrepancy.resolve",
+			"kind": "command",
+			"owner": "settlement-ingress",
+			"permission": "payroll.reconciliation.manage",
+			"publicName": "resolveReconciliationDiscrepancy"
+		},
+		{
+			"id": "payroll.settlement-ingress.payment.record",
+			"kind": "command",
+			"owner": "settlement-ingress",
+			"permission": "payroll.reconciliation.manage",
+			"publicName": "recordPaymentSettlement"
+		},
+		{
+			"id": "payroll.settlement-ingress.posting.record",
+			"kind": "command",
+			"owner": "settlement-ingress",
+			"permission": "payroll.reconciliation.manage",
+			"publicName": "recordPostingConfirmation"
 		},
 		{
 			"id": "payroll.setup.calendar.archive",

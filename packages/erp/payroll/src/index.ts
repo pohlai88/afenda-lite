@@ -37,9 +37,12 @@ export {
 	listPayrollPayGroups,
 	listPayrollPeriods,
 	listPayrollReconciliationsForRun,
+	recordPaymentSettlement,
 	recordPayrollException,
 	recordPayrollReconciliation,
+	recordPostingConfirmation,
 	resolvePayrollReconciliation,
+	resolveReconciliationDiscrepancy,
 	reversePayrollRun,
 	supersedePayrollDeductionRule,
 	supersedePayrollEarningRule,
@@ -66,6 +69,7 @@ export {
 	createRegistryPayrollStatutory,
 	createSystemPayrollClock,
 } from "./facade/system-capabilities";
+export { parsePayrollDisbursementReference } from "./features/settlement-ingress/parse-payroll-disbursement-reference";
 export { PAYROLL_PLATFORM_EVENT_DISPATCHER_ID } from "./kernel/emissions/emission-registry";
 export type {
 	PayrollClockCapability,

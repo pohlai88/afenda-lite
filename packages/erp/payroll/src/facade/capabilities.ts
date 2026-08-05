@@ -68,6 +68,11 @@ import {
 	resolvePayrollReconciliation as resolvePayrollReconciliationInternal,
 } from "../features/reconciliation/reconciliation.command";
 import {
+	recordPaymentSettlement as recordPaymentSettlementInternal,
+	recordPostingConfirmation as recordPostingConfirmationInternal,
+	resolveReconciliationDiscrepancy as resolveReconciliationDiscrepancyInternal,
+} from "../features/settlement-ingress/settlement.command";
+import {
 	createPayrollVariableInput as createPayrollVariableInputInternal,
 	getPayrollVariableInput as getPayrollVariableInputInternal,
 } from "../features/variable-inputs/variable-input";
@@ -123,6 +128,15 @@ export const resolvePayrollReconciliation = bindPayrollOperation(
 );
 export const listPayrollReconciliationsForRun = bindPayrollOperation(
 	listPayrollReconciliationsForRunInternal,
+);
+export const recordPaymentSettlement = bindPayrollOperation(
+	recordPaymentSettlementInternal,
+);
+export const recordPostingConfirmation = bindPayrollOperation(
+	recordPostingConfirmationInternal,
+);
+export const resolveReconciliationDiscrepancy = bindPayrollOperation(
+	resolveReconciliationDiscrepancyInternal,
 );
 export const recordPayrollException = bindPayrollOperation(
 	recordPayrollExceptionInternal,

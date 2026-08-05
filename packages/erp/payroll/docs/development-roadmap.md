@@ -27,6 +27,7 @@ Uniform ERP roots: `facade/` · `kernel/` · `composition/` · `features/` · `t
 | `statutory-rules` | Calculator registry + results (production activation fail-closed) |
 | `payslips` | Authorized deterministic payslip views |
 | `reconciliation` | Downstream discrepancy resolution |
+| `settlement-ingress` | Inbound Payments/Accounting settlement facts; C8 reversal guard |
 
 Entrypoints: `@afenda/payroll` (production) · `@afenda/payroll/testing` (test-only).
 
@@ -44,13 +45,14 @@ Entrypoints: `@afenda/payroll` (production) · `@afenda/payroll/testing` (test-o
 | B7 governance gates | **CLOSED** | `governance:erp-symmetry` · `emission-drain` · `cross-import` · `architecture-debt` |
 | B3 capability signature | **CLOSED** | Required `clock` · `currency` · `statutory` on composition |
 | B6 platform outbox drain | **CLOSED** | `apps/web` payroll outbox cron + platform event handlers |
+| D2 settlement ingress | **CLOSED** | `settlement-ingress` feature + app drain handlers + C8 reversal guard |
 
 ## 3. Open items (cite bridging, do not invent scope)
 
 | Item | Bridging | Notes |
 | --- | --- | --- |
 | Statutory calculator sourcing | A2 | No production jurisdiction until reviewer-approved calculator |
-| Privacy / settlement / retro / final-settlement / filings / jobs | D1–D6 | Feature capsules not yet present (A3/A4 postures closed; D2 still required for settlement ingress) |
+| Privacy / retro / final-settlement / filings / jobs | D1, D3–D6 | Feature capsules not yet present (A3 posture closed; D2 settlement ingress closed) |
 | Production handoff DDL | ops | Apply `0049_payroll_accepted_handoff.sql` off PL-S9 when migrate is approved |
 
 ## 4. Verify loops

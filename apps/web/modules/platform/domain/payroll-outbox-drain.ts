@@ -7,8 +7,14 @@ const PAYROLL_OUTBOX_CLAIM_LEASE_MS = 60_000;
 const PAYROLL_OUTBOX_MAX_ATTEMPTS = 10;
 
 import { createPayrollPlatformEventHandlers } from "@/modules/platform/domain/payroll-platform-events";
+import { createPayrollSettlementIngressHandlers } from "@/modules/platform/domain/payroll-settlement-ingress";
 
-const PAYROLL_EVENT_TYPE_PREFIX = "payroll.";
+const PAYROLL_OUTBOX_EVENT_TYPES = [
+	"payroll.%",
+	"payments.payment.posted.v1",
+	"payments.payment.reversed.v1",
+	"accounting.journal.posted.v1",
+] as const;
 
 export interface PayrollOutboxDrainSummary {
 	failed: number;
@@ -27,7 +33,12 @@ async function listOrganizationsWithPendingPayrollEvents(input: {
 			sql`
 				SELECT DISTINCT organization_id AS "organizationId"
 				FROM platform_domain_event
-				WHERE type LIKE ${`${PAYROLL_EVENT_TYPE_PREFIX}%`}
+				WHERE (
+						type LIKE ${PAYROLL_OUTBOX_EVENT_TYPES[0]}
+						OR type = ${PAYROLL_OUTBOX_EVENT_TYPES[1]}
+						OR type = ${PAYROLL_OUTBOX_EVENT_TYPES[2]}
+						OR type = ${PAYROLL_OUTBOX_EVENT_TYPES[3]}
+					)
 					AND attempts < ${PAYROLL_OUTBOX_MAX_ATTEMPTS}
 					AND (
 						status = 'pending'
@@ -53,7 +64,10 @@ async function dispatchPayrollPendingEventsForOrganization(input: {
 }): Promise<Result<EventDispatchSummary>> {
 	return await events.dispatcher
 		.create({
-			handlers: createPayrollPlatformEventHandlers(),
+			handlers: {
+				...createPayrollPlatformEventHandlers(),
+				...createPayrollSettlementIngressHandlers(),
+			},
 		})
 		.dispatchPending({
 			organizationId: input.organizationId,
@@ -114,7 +128,12 @@ export async function countPendingPayrollEvents(
 			.where(
 				and(
 					eq(platformDomainEvent.organizationId, organizationId),
-					sql`${platformDomainEvent.type} LIKE ${`${PAYROLL_EVENT_TYPE_PREFIX}%`}`,
+					or(
+						sql`${platformDomainEvent.type} LIKE ${PAYROLL_OUTBOX_EVENT_TYPES[0]}`,
+						eq(platformDomainEvent.type, PAYROLL_OUTBOX_EVENT_TYPES[1]),
+						eq(platformDomainEvent.type, PAYROLL_OUTBOX_EVENT_TYPES[2]),
+						eq(platformDomainEvent.type, PAYROLL_OUTBOX_EVENT_TYPES[3]),
+					),
 					sql`${platformDomainEvent.attempts} < ${PAYROLL_OUTBOX_MAX_ATTEMPTS}`,
 					or(
 						eq(platformDomainEvent.status, "pending"),
