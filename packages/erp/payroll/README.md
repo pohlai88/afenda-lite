@@ -188,7 +188,7 @@ exists again, is an explicit maintainer action — not the README default.
 
 ## Boundaries
 
-**Mutation tables (23):** `payroll_calendar` … `payroll_job_dead_letter` — see
+**Mutation tables (25):** `payroll_calendar` … `payroll_retro_line` — see
 [`src/kernel/emissions/mutation-tables.ts`](./src/kernel/emissions/mutation-tables.ts).
 
 | Owns | Does not own |

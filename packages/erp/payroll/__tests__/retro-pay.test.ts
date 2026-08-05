@@ -10,6 +10,7 @@ import type {
 	PayrollResultLineCreateRecord,
 	PayrollRunEmployeeCreateRecord,
 } from "../src/features/calculation/outputs.store";
+import { createPayrollEmployeeAssignment } from "../src/features/employee-assignments/employee-payroll-assignment";
 import { finalizePayrollRun } from "../src/features/payroll-runs/finalization";
 import { createPayrollPeriod } from "../src/features/payroll-runs/payroll-period";
 import { createPayrollRun } from "../src/features/payroll-runs/payroll-run";
@@ -42,6 +43,7 @@ import {
 } from "../src/kernel/money/rounding-policy";
 import { payrollJsonObjectSchema } from "../src/kernel/validation/common.schema";
 import { createMemoryPayrollStore } from "../src/testing/index";
+import { createMemoryPayrollEmployeeQueryPort } from "./helpers/memory-employee-port";
 import { createMemoryMutationPorts } from "./helpers/memory-ports";
 
 const ORGANIZATION_ID = "org-payroll-retro";
@@ -159,6 +161,16 @@ async function seedSealedPeriod() {
 		store,
 		ports,
 		authorization: authorization(RETRO_PERMISSIONS),
+		employees: createMemoryPayrollEmployeeQueryPort([
+			{
+				baseCompensation: "5000",
+				currencyCode: "USD",
+				employeeId: EMPLOYEE_ID,
+				employmentStatus: "active",
+				organizationId: ORGANIZATION_ID,
+				payGroupId: "unused-by-the-port",
+			},
+		]),
 	};
 
 	const calendar = unwrap(
@@ -235,6 +247,33 @@ async function seedSealedPeriod() {
 				runType: "regular",
 				sequence: 1,
 				idempotencyKey: "idem-run-retro-target",
+			},
+			options,
+		),
+	);
+	// A second run inside the ORIGIN period that never reaches `finalized`, so the
+	// sealed-run guard can be exercised without tripping the period-mismatch guard.
+	const originDraftRun = unwrap(
+		await createPayrollRun(
+			{
+				...context(),
+				payGroupId: payGroup.id,
+				periodId: originPeriod.id,
+				runType: "off_cycle",
+				sequence: 2,
+				idempotencyKey: "idem-run-retro-origin-draft",
+			},
+			options,
+		),
+	);
+	unwrap(
+		await createPayrollEmployeeAssignment(
+			{
+				...context(),
+				employeeId: EMPLOYEE_ID,
+				payGroupId: payGroup.id,
+				effectiveFrom: "2025-01-01",
+				idempotencyKey: "idem-assignment-retro",
 			},
 			options,
 		),
@@ -393,7 +432,9 @@ async function seedSealedPeriod() {
 
 	return {
 		bonusRuleId: sealedBonusRule.id,
+		calendarId: calendar.id,
 		options,
+		originDraftRunId: originDraftRun.id,
 		originPeriodId: originPeriod.id,
 		originRun: finalized,
 		payGroupId: payGroup.id,
@@ -420,6 +461,52 @@ function queueBaseCorrection(
 		},
 		options,
 	);
+}
+
+async function seedForeignPayGroupRun(
+	seeded: Awaited<ReturnType<typeof seedSealedPeriod>>,
+	input: { currencyCode: string; suffix: string },
+): Promise<{ periodId: PayrollPeriodId; runId: PayrollRunId }> {
+	const payGroup = unwrap(
+		await createPayrollPayGroup(
+			{
+				...context(),
+				calendarId: seeded.calendarId,
+				code: `PG-RETRO-${input.suffix.toUpperCase()}`,
+				name: `Retro ${input.suffix} pay group`,
+				currencyCode: input.currencyCode,
+				idempotencyKey: `idem-pg-retro-${input.suffix}`,
+			},
+			seeded.options,
+		),
+	);
+	const period = unwrap(
+		await createPayrollPeriod(
+			{
+				...context(),
+				payGroupId: payGroup.id,
+				periodStart: "2025-02-01",
+				periodEnd: "2025-02-28",
+				cutoffDate: "2025-02-25",
+				idempotencyKey: `idem-period-retro-${input.suffix}`,
+			},
+			seeded.options,
+		),
+	);
+	const run = unwrap(
+		await createPayrollRun(
+			{
+				...context(),
+				payGroupId: payGroup.id,
+				periodId: period.id,
+				runType: "regular",
+				sequence: 1,
+				idempotencyKey: `idem-run-retro-${input.suffix}`,
+			},
+			seeded.options,
+		),
+	);
+	return { periodId: period.id, runId: run.id };
 }
 
 describe("retro-pay", () => {
@@ -521,7 +608,30 @@ describe("retro-pay", () => {
 		expect(base?.amount).toBe("1000");
 	});
 
-	it("refuses to recompute against a run that is not finalized", async () => {
+	it("refuses to recompute against a run in the origin period that is not finalized", async () => {
+		const seeded = await seedSealedPeriod();
+		const queued = unwrap(
+			await queueBaseCorrection(seeded.options, seeded.originPeriodId),
+		);
+
+		const calculated = await calculateRetroDifference(
+			{
+				...context(),
+				// Same origin period, so only the sealed-run guard can reject this.
+				originRunId: seeded.originDraftRunId,
+				retroItemId: queued.id,
+			},
+			seeded.options,
+		);
+		expect(calculated.ok).toBe(false);
+		if (calculated.ok) {
+			return;
+		}
+		expect(calculated.code).toBe("CONFLICT");
+		expect(calculated.message).toBe("The origin payroll run is not finalized");
+	});
+
+	it("refuses to recompute against a run outside the origin period", async () => {
 		const seeded = await seedSealedPeriod();
 		const queued = unwrap(
 			await queueBaseCorrection(seeded.options, seeded.originPeriodId),
@@ -539,7 +649,82 @@ describe("retro-pay", () => {
 		if (calculated.ok) {
 			return;
 		}
+		expect(calculated.message).toBe(
+			"The payroll run does not belong to the origin period",
+		);
+	});
+
+	it("refuses to recompute when a sealed result line no longer reconciles", async () => {
+		const seeded = await seedSealedPeriod();
+		const queued = unwrap(
+			await queueBaseCorrection(seeded.options, seeded.originPeriodId),
+		);
+
+		// Storage-level divergence: one sealed amount no longer matches what the
+		// pinned snapshot recomputes to.
+		const sealedLines = [...seeded.store.state.outputs.resultLines.values()];
+		const target = sealedLines.find((line) => line.code === "BONUS");
+		expect(target).toBeDefined();
+		if (target === undefined) {
+			return;
+		}
+		seeded.store.state.outputs.resultLines.set(target.id, {
+			...target,
+			amount: "4242",
+		});
+
+		const calculated = await calculateRetroDifference(
+			{
+				...context(),
+				originRunId: seeded.originRun.id,
+				retroItemId: queued.id,
+			},
+			seeded.options,
+		);
+		expect(calculated.ok).toBe(false);
+		if (calculated.ok) {
+			return;
+		}
 		expect(calculated.code).toBe("CONFLICT");
+		expect(calculated.message).toBe(
+			"The sealed payroll period is not reproducible",
+		);
+	});
+
+	it("refuses to recompute when the sealed snapshot fails its integrity check", async () => {
+		const seeded = await seedSealedPeriod();
+		const queued = unwrap(
+			await queueBaseCorrection(seeded.options, seeded.originPeriodId),
+		);
+
+		const [sealedEmployee] = [
+			...seeded.store.state.outputs.runEmployees.values(),
+		];
+		expect(sealedEmployee).toBeDefined();
+		if (sealedEmployee === undefined) {
+			return;
+		}
+		seeded.store.state.outputs.runEmployees.set(sealedEmployee.id, {
+			...sealedEmployee,
+			snapshotHash: "0".repeat(64),
+		});
+
+		const calculated = await calculateRetroDifference(
+			{
+				...context(),
+				originRunId: seeded.originRun.id,
+				retroItemId: queued.id,
+			},
+			seeded.options,
+		);
+		expect(calculated.ok).toBe(false);
+		if (calculated.ok) {
+			return;
+		}
+		expect(calculated.code).toBe("CONFLICT");
+		expect(calculated.message).toBe(
+			"The sealed payroll snapshot failed its integrity check",
+		);
 	});
 
 	it("applies the difference into the open target period with origin labels", async () => {
@@ -639,6 +824,120 @@ describe("retro-pay", () => {
 			return;
 		}
 		expect(applied.code).toBe("CONFLICT");
+	});
+
+	it("refuses to apply into a run whose pay group uses a different currency", async () => {
+		const seeded = await seedSealedPeriod();
+		const queued = unwrap(
+			await queueBaseCorrection(seeded.options, seeded.originPeriodId),
+		);
+		unwrap(
+			await calculateRetroDifference(
+				{
+					...context(),
+					originRunId: seeded.originRun.id,
+					retroItemId: queued.id,
+				},
+				seeded.options,
+			),
+		);
+
+		const foreignRun = await seedForeignPayGroupRun(seeded, {
+			currencyCode: "EUR",
+			suffix: "eur",
+		});
+		const applied = await applyRetroToPeriod(
+			{
+				...context(),
+				retroItemId: queued.id,
+				targetPeriodId: foreignRun.periodId,
+				targetRunId: foreignRun.runId,
+			},
+			seeded.options,
+		);
+		expect(applied.ok).toBe(false);
+		if (applied.ok) {
+			return;
+		}
+		expect(applied.code).toBe("CONFLICT");
+		expect(applied.message).toBe(
+			"The retro difference currency does not match the target pay group",
+		);
+	});
+
+	it("refuses to apply into a run the employee is not assigned to", async () => {
+		const seeded = await seedSealedPeriod();
+		const queued = unwrap(
+			await queueBaseCorrection(seeded.options, seeded.originPeriodId),
+		);
+		unwrap(
+			await calculateRetroDifference(
+				{
+					...context(),
+					originRunId: seeded.originRun.id,
+					retroItemId: queued.id,
+				},
+				seeded.options,
+			),
+		);
+
+		// Same currency, but the employee holds no assignment in this pay group.
+		const unrelatedRun = await seedForeignPayGroupRun(seeded, {
+			currencyCode: "USD",
+			suffix: "usd",
+		});
+		const applied = await applyRetroToPeriod(
+			{
+				...context(),
+				retroItemId: queued.id,
+				targetPeriodId: unrelatedRun.periodId,
+				targetRunId: unrelatedRun.runId,
+			},
+			seeded.options,
+		);
+		expect(applied.ok).toBe(false);
+		if (applied.ok) {
+			return;
+		}
+		expect(applied.code).toBe("CONFLICT");
+		expect(applied.message).toBe(
+			"The employee has no active assignment in the target payroll run",
+		);
+	});
+
+	it("refuses to apply a retro item back into its own origin period", async () => {
+		const seeded = await seedSealedPeriod();
+		const queued = unwrap(
+			await queueBaseCorrection(seeded.options, seeded.originPeriodId),
+		);
+		unwrap(
+			await calculateRetroDifference(
+				{
+					...context(),
+					originRunId: seeded.originRun.id,
+					retroItemId: queued.id,
+				},
+				seeded.options,
+			),
+		);
+
+		const applied = await applyRetroToPeriod(
+			{
+				...context(),
+				retroItemId: queued.id,
+				targetPeriodId: seeded.originPeriodId,
+				targetRunId: seeded.originDraftRunId,
+			},
+			seeded.options,
+		);
+		expect(applied.ok).toBe(false);
+		if (applied.ok) {
+			return;
+		}
+		expect(applied.code).toBe("CONFLICT");
+		expect(applied.message).toBe(
+			"A retro item cannot be applied to its own origin period",
+		);
 	});
 
 	it("refuses to apply a retro item that has no calculated difference", async () => {

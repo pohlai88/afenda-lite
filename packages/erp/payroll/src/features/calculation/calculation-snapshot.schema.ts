@@ -177,7 +177,10 @@ export type PayrollEmployeeCalcSnapshotInput = z.infer<
  * Compile-time proof that the re-admission schema still projects the exact
  * snapshot the pure calculation pipeline consumes.
  */
-export type PayrollEmployeeCalcSnapshotParity =
+type PayrollEmployeeCalcSnapshotParity =
 	PayrollEmployeeCalcSnapshotInput extends PayrollEmployeeCalcSnapshot
 		? true
 		: never;
+
+/** Fails the build if the re-admission schema drifts from the pipeline input. */
+export const PAYROLL_CALC_SNAPSHOT_SCHEMA_PARITY: PayrollEmployeeCalcSnapshotParity = true;

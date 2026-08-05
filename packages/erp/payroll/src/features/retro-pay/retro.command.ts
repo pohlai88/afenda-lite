@@ -19,6 +19,7 @@ import {
 	PAYROLL_QUERY_RETRO_ITEM_LIST,
 } from "../../kernel/operations/module-ids";
 import type { PayrollOutputsStore } from "../calculation/outputs.store";
+import type { PayrollAssignmentsStore } from "../employee-assignments/assignments.store";
 import type { PayrollRunsStore } from "../payroll-runs/runs.store";
 import type { PayrollSetupStore } from "../payroll-setup/setup.store";
 import type {
@@ -36,7 +37,8 @@ import {
 } from "./retro.schema";
 import type { PayrollRetroStore } from "./retro.store";
 
-type RetroStore = PayrollOutputsStore &
+type RetroStore = PayrollAssignmentsStore &
+	PayrollOutputsStore &
 	PayrollRetroStore &
 	PayrollRunsStore &
 	PayrollSetupStore;
@@ -352,6 +354,51 @@ export function applyRetroToPeriod(
 			if (targetRun.id === originRunId) {
 				return errorResult.fail("CONFLICT", {
 					publicMessage: "A retro item cannot be applied to its origin run",
+				});
+			}
+			if (data.targetPeriodId === current.originPeriodId) {
+				return errorResult.fail("CONFLICT", {
+					publicMessage:
+						"A retro item cannot be applied to its own origin period",
+				});
+			}
+
+			const payGroup = await store.getPayGroup({
+				organizationId: data.organizationId,
+				payGroupId: targetRun.payGroupId,
+			});
+			if (!payGroup.ok) {
+				return payGroup;
+			}
+			if (payGroup.data === null) {
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage: "The payroll pay group was not found",
+				});
+			}
+			// A retro line carries money — it may not cross a currency boundary.
+			if (payGroup.data.currencyCode !== difference.currencyCode) {
+				return errorResult.fail("CONFLICT", {
+					publicMessage:
+						"The retro difference currency does not match the target pay group",
+				});
+			}
+
+			const assignments = await store.listActiveAssignmentsForPayGroup({
+				organizationId: data.organizationId,
+				payGroupId: targetRun.payGroupId,
+				effectiveDate: period.data.periodEnd,
+			});
+			if (!assignments.ok) {
+				return assignments;
+			}
+			if (
+				!assignments.data.some(
+					(assignment) => assignment.employeeId === current.employeeId,
+				)
+			) {
+				return errorResult.fail("CONFLICT", {
+					publicMessage:
+						"The employee has no active assignment in the target payroll run",
 				});
 			}
 
