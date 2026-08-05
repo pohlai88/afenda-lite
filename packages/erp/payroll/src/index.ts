@@ -19,6 +19,7 @@ export {
 	createPayrollRun,
 	createPayrollStatutoryRule,
 	createPayrollVariableInput,
+	expirePayrollRetention,
 	finalizePayrollRun,
 	getOwnPayrollPayslip,
 	getPayrollCalendar,
@@ -32,17 +33,22 @@ export {
 	getPayrollStatutoryRule,
 	getPayrollVariableInput,
 	ingestApprovedPayrollHandoff,
+	liftPayrollRestriction,
 	listPayrollCalendars,
 	listPayrollExceptionsForRun,
 	listPayrollPayGroups,
 	listPayrollPeriods,
 	listPayrollReconciliationsForRun,
+	projectPayrollFields,
 	recordPaymentSettlement,
 	recordPayrollException,
 	recordPayrollReconciliation,
+	recordPayrollRetentionEvidence,
 	recordPostingConfirmation,
 	resolvePayrollReconciliation,
 	resolveReconciliationDiscrepancy,
+	respondToPayrollSubjectAccess,
+	restrictPayrollSubject,
 	reversePayrollRun,
 	supersedePayrollDeductionRule,
 	supersedePayrollEarningRule,
@@ -61,6 +67,7 @@ export {
 export type {
 	PayrollAuthorizationCapability,
 	PayrollCapabilityComposition,
+	PayrollPrivacyCapability,
 	PayrollWorkforceCapability,
 } from "./facade/contracts";
 export {
@@ -69,6 +76,15 @@ export {
 	createRegistryPayrollStatutory,
 	createSystemPayrollClock,
 } from "./facade/system-capabilities";
+export {
+	PAYROLL_RETENTION_CLASSIFICATIONS,
+	type PayrollPrivacyPort,
+	type PayrollPrivacyRequestContext,
+	type PayrollProjectedFields,
+	type PayrollRetentionClassification,
+	type PayrollRetentionEvidence,
+	type PayrollSubjectAccessExport,
+} from "./features/privacy/contract";
 export { parsePayrollDisbursementReference } from "./features/settlement-ingress/parse-payroll-disbursement-reference";
 export { PAYROLL_PLATFORM_EVENT_DISPATCHER_ID } from "./kernel/emissions/emission-registry";
 export type {

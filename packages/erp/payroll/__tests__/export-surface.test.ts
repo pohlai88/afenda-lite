@@ -322,6 +322,7 @@ describe("@afenda/payroll export surface contract", () => {
 			"payroll-runs",
 			"payroll-setup",
 			"payslips",
+			"privacy",
 			"reconciliation",
 			"settlement-ingress",
 			"statutory-rules",

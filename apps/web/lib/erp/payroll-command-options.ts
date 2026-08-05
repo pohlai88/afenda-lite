@@ -6,6 +6,7 @@ import {
 } from "@afenda/payroll";
 
 import { createPayrollAuthorizationPort } from "@/lib/erp/payroll-authorization-port";
+import { createPayrollPrivacyPort } from "@/lib/erp/payroll-privacy-port";
 
 /**
  * Opaque composition-root context for `@afenda/payroll` capabilities.
@@ -19,5 +20,6 @@ export function createPayrollCommandOptions() {
 		clock: createSystemPayrollClock(),
 		currency: createJurisdictionPayrollCurrency(),
 		statutory: createRegistryPayrollStatutory(),
+		privacy: createPayrollPrivacyPort(),
 	});
 }

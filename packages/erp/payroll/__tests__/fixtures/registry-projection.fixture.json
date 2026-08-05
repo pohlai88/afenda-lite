@@ -34,6 +34,10 @@
 		"payroll.settlement-ingress.payment.record": "payroll.reconciliation.manage",
 		"payroll.settlement-ingress.posting.record": "payroll.reconciliation.manage",
 		"payroll.settlement-ingress.discrepancy.resolve": "payroll.reconciliation.manage",
+		"payroll.privacy.restriction.place": "payroll.payslip.read-all",
+		"payroll.privacy.restriction.lift": "payroll.payslip.read-all",
+		"payroll.privacy.retention.record": "payroll.payslip.read-all",
+		"payroll.privacy.retention.expire": "payroll.payslip.read-all",
 		"payroll.workforce.ingest": "payroll.input.manage",
 		"payroll.setup.calendar.get": "payroll.setup.manage",
 		"payroll.setup.calendar.list": "payroll.setup.manage",
@@ -49,6 +53,8 @@
 		"payroll.run.get": "payroll.run.review",
 		"payroll.payslip.read-own": "payroll.payslip.read-own",
 		"payroll.payslip.read-all": "payroll.payslip.read-all",
+		"payroll.privacy.fields.project": "payroll.payslip.read-all",
+		"payroll.privacy.subject-access.respond": "payroll.payslip.read-own",
 		"payroll.reconciliation.list": "payroll.reconciliation.manage"
 	},
 	"errorCodeSets": {},
@@ -109,6 +115,48 @@
 			"owner": "payslips",
 			"permission": "payroll.payslip.read-own",
 			"publicName": "readOwnPayslip"
+		},
+		{
+			"id": "payroll.privacy.fields.project",
+			"kind": "query",
+			"owner": "privacy",
+			"permission": "payroll.payslip.read-all",
+			"publicName": "projectPayrollFields"
+		},
+		{
+			"id": "payroll.privacy.restriction.lift",
+			"kind": "command",
+			"owner": "privacy",
+			"permission": "payroll.payslip.read-all",
+			"publicName": "liftPayrollRestriction"
+		},
+		{
+			"id": "payroll.privacy.restriction.place",
+			"kind": "command",
+			"owner": "privacy",
+			"permission": "payroll.payslip.read-all",
+			"publicName": "restrictPayrollSubject"
+		},
+		{
+			"id": "payroll.privacy.retention.expire",
+			"kind": "command",
+			"owner": "privacy",
+			"permission": "payroll.payslip.read-all",
+			"publicName": "expirePayrollRetention"
+		},
+		{
+			"id": "payroll.privacy.retention.record",
+			"kind": "command",
+			"owner": "privacy",
+			"permission": "payroll.payslip.read-all",
+			"publicName": "recordPayrollRetentionEvidence"
+		},
+		{
+			"id": "payroll.privacy.subject-access.respond",
+			"kind": "query",
+			"owner": "privacy",
+			"permission": "payroll.payslip.read-own",
+			"publicName": "respondToPayrollSubjectAccess"
 		},
 		{
 			"id": "payroll.reconciliation.list",

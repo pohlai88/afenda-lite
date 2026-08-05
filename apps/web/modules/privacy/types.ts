@@ -1,6 +1,6 @@
 import type { Result } from "@afenda/errors";
 
-export type PrivacyModuleId = "human-resources" | (string & {});
+export type PrivacyModuleId = "human-resources" | "payroll" | (string & {});
 
 export interface PrivacySubjectRecord {
 	entity: string;
@@ -87,6 +87,18 @@ export interface PrivacyRestrictionEvaluation {
 	restricted: boolean;
 }
 
+export interface PrivacyRetentionEvidenceResult {
+	classifications: readonly string[];
+	clockStartedAt: string;
+	eligibleForErasure: boolean;
+	evidenceId: string;
+	expiredAt: string | null;
+	legalBasis: string;
+	minimumRetentionMonths: number;
+	organizationId: string;
+	subjectId: string;
+}
+
 export interface PrivacyRedactDownstreamResult {
 	redactedSystemCount: number;
 }
@@ -111,6 +123,14 @@ export interface PlatformPrivacyService {
 	evaluateRestriction: (
 		input: PrivacySubjectRequestContext,
 	) => Promise<Result<PrivacyRestrictionEvaluation>>;
+	expireRetention: (input: {
+		moduleId: PrivacyModuleId;
+		organizationId: string;
+		actorUserId: string;
+		correlationId: string;
+		evidenceId: string;
+		expiredAt: string;
+	}) => Promise<Result<PrivacyRetentionEvidenceResult>>;
 	exportSubject: (
 		input: PrivacySubjectRequestContext,
 	) => Promise<Result<PrivacyExportResult>>;
@@ -132,6 +152,19 @@ export interface PlatformPrivacyService {
 			classifications: readonly string[];
 		},
 	) => Promise<Result<PrivacyLegalHoldResult>>;
+	recordRetentionEvidence: (
+		input: PrivacySubjectRequestContext & {
+			classifications: readonly string[];
+			clockStartedAt: string;
+			minimumRetentionMonths: number;
+		},
+	) => Promise<Result<PrivacyRetentionEvidenceResult>>;
+	recordSubjectAccessExport: (
+		input: PrivacySubjectRequestContext & {
+			records: readonly PrivacySubjectRecord[];
+			projectionScope: "read-own" | "read-all";
+		},
+	) => Promise<Result<PrivacyExportResult>>;
 	rectifySubject: (
 		input: PrivacySubjectRequestContext & {
 			changes: Readonly<Record<string, unknown>>;

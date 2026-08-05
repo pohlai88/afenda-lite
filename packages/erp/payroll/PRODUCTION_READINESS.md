@@ -10,6 +10,9 @@ qualified reviewer approval in the canonical calculator registry.
 - Every root command and query is mapped to an explicit Payroll permission.
 - Own-payslip and all-payslip access use separate permissions; own access derives
   employee identity from the workforce port and accepts no employee selector.
+  Privacy admin ops reuse `payroll.payslip.read-all`; subject-access DSAR reuses
+  `payroll.payslip.read-own`. Restriction excludes rows from reads and exports;
+  `expirePayrollRetention` marks eligibility only and never erases evidence.
 - Structured operation telemetry contains only operation, outcome, error code,
   duration, and one-way organization/actor tokens. Amounts, employee IDs, tax
   data, bank data, inputs, outputs, and payslip content are prohibited.

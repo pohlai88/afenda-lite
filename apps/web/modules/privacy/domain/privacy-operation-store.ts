@@ -21,6 +21,19 @@ export interface PrivacyLegalHoldRecord {
 	subjectId: string;
 }
 
+export interface PrivacyRetentionEvidenceRecord {
+	classifications: readonly string[];
+	clockStartedAt: string;
+	eligibleForErasure: boolean;
+	evidenceId: string;
+	expiredAt: string | null;
+	legalBasis: string;
+	minimumRetentionMonths: number;
+	moduleId: string;
+	organizationId: string;
+	subjectId: string;
+}
+
 export interface PrivacyRestrictionRecord {
 	classifications: readonly string[];
 	liftedAt: string | null;
@@ -44,6 +57,11 @@ export interface PrivacyOperationRecord {
 }
 
 export interface PrivacyOperationStore {
+	expireRetention: (input: {
+		organizationId: string;
+		evidenceId: string;
+		expiredAt: string;
+	}) => PrivacyRetentionEvidenceRecord | null;
 	getExport: (input: {
 		organizationId: string;
 		exportId: string;
@@ -54,6 +72,9 @@ export interface PrivacyOperationStore {
 	getRestriction: (input: {
 		restrictionId: string;
 	}) => PrivacyRestrictionRecord | null;
+	getRetentionEvidence: (input: {
+		evidenceId: string;
+	}) => PrivacyRetentionEvidenceRecord | null;
 	liftRestriction: (input: {
 		organizationId: string;
 		restrictionId: string;
@@ -87,6 +108,12 @@ export interface PrivacyOperationStore {
 	recordOperation: (
 		input: Omit<PrivacyOperationRecord, "operationId">,
 	) => PrivacyOperationRecord;
+	recordRetentionEvidence: (
+		input: Omit<
+			PrivacyRetentionEvidenceRecord,
+			"eligibleForErasure" | "expiredAt"
+		>,
+	) => PrivacyRetentionEvidenceRecord;
 	releaseLegalHold: (input: {
 		organizationId: string;
 		legalHoldId: string;
@@ -114,6 +141,7 @@ export function createPrivacyOperationStore(): PrivacyOperationStore {
 	const exports = new Map<string, PrivacyExportPackage>();
 	const legalHolds = new Map<string, PrivacyLegalHoldRecord>();
 	const restrictions = new Map<string, PrivacyRestrictionRecord>();
+	const retentionEvidence = new Map<string, PrivacyRetentionEvidenceRecord>();
 	const operations: PrivacyOperationRecord[] = [];
 	let operationSequence = 0;
 
@@ -236,6 +264,34 @@ export function createPrivacyOperationStore(): PrivacyOperationStore {
 						entry.subjectId === input.subjectId,
 				)
 				.slice(-limit);
+		},
+		recordRetentionEvidence(input) {
+			const saved: PrivacyRetentionEvidenceRecord = {
+				...input,
+				eligibleForErasure: false,
+				expiredAt: null,
+			};
+			retentionEvidence.set(input.evidenceId, saved);
+			return saved;
+		},
+		getRetentionEvidence(input) {
+			return retentionEvidence.get(input.evidenceId) ?? null;
+		},
+		expireRetention(input) {
+			const existing = retentionEvidence.get(input.evidenceId);
+			if (existing === undefined) {
+				return null;
+			}
+			if (existing.organizationId !== input.organizationId) {
+				return null;
+			}
+			const expired: PrivacyRetentionEvidenceRecord = {
+				...existing,
+				eligibleForErasure: true,
+				expiredAt: input.expiredAt,
+			};
+			retentionEvidence.set(input.evidenceId, expired);
+			return expired;
 		},
 	};
 }

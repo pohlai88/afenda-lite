@@ -63,6 +63,14 @@ import {
 	getPayrollPayslip as getPayrollPayslipInternal,
 } from "../features/payslips/payslip";
 import {
+	expirePayrollRetention as expirePayrollRetentionInternal,
+	liftPayrollRestriction as liftPayrollRestrictionInternal,
+	projectPayrollFields as projectPayrollFieldsInternal,
+	recordPayrollRetentionEvidence as recordPayrollRetentionEvidenceInternal,
+	respondToPayrollSubjectAccess as respondToPayrollSubjectAccessInternal,
+	restrictPayrollSubject as restrictPayrollSubjectInternal,
+} from "../features/privacy/privacy.command";
+import {
 	listPayrollReconciliationsForRun as listPayrollReconciliationsForRunInternal,
 	recordPayrollReconciliation as recordPayrollReconciliationInternal,
 	resolvePayrollReconciliation as resolvePayrollReconciliationInternal,
@@ -119,6 +127,24 @@ export const getOwnPayrollPayslip = bindPayrollOperation(
 );
 export const getPayrollPayslip = bindPayrollOperation(
 	getPayrollPayslipInternal,
+);
+export const restrictPayrollSubject = bindPayrollOperation(
+	restrictPayrollSubjectInternal,
+);
+export const liftPayrollRestriction = bindPayrollOperation(
+	liftPayrollRestrictionInternal,
+);
+export const recordPayrollRetentionEvidence = bindPayrollOperation(
+	recordPayrollRetentionEvidenceInternal,
+);
+export const expirePayrollRetention = bindPayrollOperation(
+	expirePayrollRetentionInternal,
+);
+export const projectPayrollFields = bindPayrollOperation(
+	projectPayrollFieldsInternal,
+);
+export const respondToPayrollSubjectAccess = bindPayrollOperation(
+	respondToPayrollSubjectAccessInternal,
 );
 export const recordPayrollReconciliation = bindPayrollOperation(
 	recordPayrollReconciliationInternal,

@@ -8,6 +8,7 @@ export const PAYROLL_OPERATION_OWNERS = [
 	"variable-inputs",
 	"payroll-runs",
 	"payslips",
+	"privacy",
 	"reconciliation",
 	"settlement-ingress",
 ] as const;

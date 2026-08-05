@@ -105,7 +105,8 @@ HR feedback (recordPayrollDeliveryFeedback: acknowledged | rejected | correction
 | Workforce | Facts arrive through the push/sync-ingest path above. No HR runtime dependency. Pay-group membership is Payroll-owned. |
 | Runs | Create/transition commits run row, audit, and outbox facts in one production DB transaction. Finalized runs emit `payroll.payment-requested.v1` and `payroll.posting-requested.v1`. |
 | Reversal | Preserves sealed original evidence; emits compensating payment/posting corrections exactly once. |
-| Payslips | Deterministic versioned views over finalized evidence. Own vs all-payslip permissions stay distinct. |
+| Payslips | Deterministic versioned views over finalized evidence. Own vs all-payslip permissions stay distinct. Restricted subjects are excluded from read models and exports until lifted (A3/C7). |
+| Privacy | Restriction, not erasure. HR privacy deletes do not cascade into payroll evidence. Retention clocks must be counsel-cited before any erasure path. |
 | Money / dates | ISO calendar dates only. Monetary parse accepts at most 12 fractional digits; excess precision fails closed. |
 | Statutory | Production activation is fail-closed. Bundled `synth.v1` is test-only — see [PRODUCTION_READINESS.md](./PRODUCTION_READINESS.md). |
 | Setup rules | Effective-dated versions with exclusion constraints; finalized versions cannot be mutated or retired. |
@@ -134,7 +135,9 @@ Business behavior lives under `src/features/`. Features never import `facade`,
 | `calculation` | Deterministic calculation, result lines, and snapshots |
 | `statutory-rules` | Statutory calculators, results, and approval policy |
 | `payslips` | Authorized deterministic payslip views |
+| `privacy` | Restriction, retention evidence, field projection, and read-own DSAR |
 | `reconciliation` | Payroll/downstream discrepancy resolution |
+| `settlement-ingress` | Payments/Accounting settlement facts into reconciliation |
 
 ### Composition entries
 

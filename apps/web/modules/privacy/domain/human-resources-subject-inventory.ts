@@ -32,14 +32,39 @@ export function createHumanResourcesSubjectInventory(): PrivacySubjectInventoryP
 	};
 }
 
-export function createModuleSubjectInventory(
-	moduleId: PrivacyModuleId,
-): PrivacySubjectInventoryPort {
-	if (moduleId === "human-resources") {
-		return createHumanResourcesSubjectInventory();
-	}
+export function createPayrollSubjectInventory(): PrivacySubjectInventoryPort {
 	return {
-		async listSubjectRecords() {
+		async listSubjectRecords(input) {
+			if (input.moduleId !== "payroll") {
+				return await errorResult.ok([]);
+			}
+			return await errorResult.ok([
+				{
+					entity: "payroll_privacy_subject",
+					organizationId: input.organizationId,
+					recordId: input.subjectId,
+				},
+			]);
+		},
+	};
+}
+
+export function createModuleSubjectInventory(
+	moduleId?: PrivacyModuleId,
+): PrivacySubjectInventoryPort {
+	const hr = createHumanResourcesSubjectInventory();
+	const payroll = createPayrollSubjectInventory();
+	return {
+		async listSubjectRecords(input) {
+			if (moduleId !== undefined && input.moduleId !== moduleId) {
+				return await errorResult.ok([]);
+			}
+			if (input.moduleId === "human-resources") {
+				return await hr.listSubjectRecords(input);
+			}
+			if (input.moduleId === "payroll") {
+				return await payroll.listSubjectRecords(input);
+			}
 			return await errorResult.ok([]);
 		},
 	};

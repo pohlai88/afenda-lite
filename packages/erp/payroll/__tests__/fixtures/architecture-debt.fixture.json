@@ -251,6 +251,26 @@
 					"file": "src/features/payslips/payslip.ts"
 				},
 				{
+					"evidence": "src/features/privacy/contract.ts exceeds src/<owner>/<file>",
+					"file": "src/features/privacy/contract.ts"
+				},
+				{
+					"evidence": "src/features/privacy/field-projection.ts exceeds src/<owner>/<file>",
+					"file": "src/features/privacy/field-projection.ts"
+				},
+				{
+					"evidence": "src/features/privacy/operation-registry.ts exceeds src/<owner>/<file>",
+					"file": "src/features/privacy/operation-registry.ts"
+				},
+				{
+					"evidence": "src/features/privacy/privacy.command.ts exceeds src/<owner>/<file>",
+					"file": "src/features/privacy/privacy.command.ts"
+				},
+				{
+					"evidence": "src/features/privacy/privacy.schema.ts exceeds src/<owner>/<file>",
+					"file": "src/features/privacy/privacy.schema.ts"
+				},
+				{
 					"evidence": "src/features/reconciliation/operation-registry.ts exceeds src/<owner>/<file>",
 					"file": "src/features/reconciliation/operation-registry.ts"
 				},
@@ -632,6 +652,22 @@
 					"file": "src/features/payslips/payslip.ts"
 				},
 				{
+					"evidence": "src/features/payslips/payslip.ts:15 -> src/features/privacy/contract.ts (payslips -> privacy)",
+					"file": "src/features/payslips/payslip.ts"
+				},
+				{
+					"evidence": "src/features/privacy/privacy.command.ts:15 -> src/features/calculation/outputs.store.ts (privacy -> calculation)",
+					"file": "src/features/privacy/privacy.command.ts"
+				},
+				{
+					"evidence": "src/features/privacy/privacy.command.ts:16 -> src/features/payroll-runs/runs.store.ts (privacy -> payroll-runs)",
+					"file": "src/features/privacy/privacy.command.ts"
+				},
+				{
+					"evidence": "src/features/privacy/privacy.command.ts:17 -> src/features/payslips/payslip.ts (privacy -> payslips)",
+					"file": "src/features/privacy/privacy.command.ts"
+				},
+				{
 					"evidence": "src/features/reconciliation/operation-store.ts:1 -> src/features/calculation/outputs.store.ts (reconciliation -> calculation)",
 					"file": "src/features/reconciliation/operation-store.ts"
 				},
@@ -680,6 +716,10 @@
 				{
 					"evidence": "reciprocal feature cycle: payroll-runs <-> reconciliation",
 					"file": "src/features/payroll-runs"
+				},
+				{
+					"evidence": "reciprocal feature cycle: payslips <-> privacy",
+					"file": "src/features/payslips"
 				}
 			],
 			"key": "feature-cycle",
@@ -698,7 +738,7 @@
 		{
 			"items": [
 				{
-					"evidence": "src/facade/contracts.ts:31 declares an optional PayrollWorkforceCapability pull port that production wires nowhere (bridging doc B1: single push transport is live)",
+					"evidence": "src/facade/contracts.ts:36 declares an optional PayrollWorkforceCapability pull port that production wires nowhere (bridging doc B1: single push transport is live)",
 					"file": "src/facade/contracts.ts"
 				}
 			],
@@ -724,7 +764,7 @@
 	},
 	"schemaVersion": 1,
 	"summary": {
-		"featureCount": 10,
-		"sourceTypeScriptFiles": 134
+		"featureCount": 11,
+		"sourceTypeScriptFiles": 139
 	}
 }

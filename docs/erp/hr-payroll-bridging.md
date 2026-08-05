@@ -132,7 +132,7 @@ Bring both packages to the same row set. Missing cells are the work — but seve
 | Reliability worker | ✅ | ❌ **add** |
 | Observability | ✅ module | partial — `PayrollObservabilityPort` in `src/kernel/execution/ports.ts`, threaded through command options; no feature module |
 | Tenant-injection doctrine in README | ✅ | ❌ **add** |
-| Privacy feature | ✅ | ❌ **add** (Phase D1) |
+| Privacy feature | ✅ | ✅ **exists** (D1) — `src/features/privacy/` restriction/retention/DSAR |
 | Durable job feature | ✅ `bulk-jobs` | ❌ **add** (Phase D6) |
 | Currency/clock/statutory injected into capability | n/a | ❌ **add** (B3 — confirmed: options accept only `authorization` required, `observability?`/`workforce?` optional) |
 
@@ -327,20 +327,20 @@ Before building calculators, widen the contract. These are required by MY/VN sta
 
 **Architectural consequence:** the statutory calculator port signature must accept year-to-date aggregates and prior-employer figures, not only current-period gross. Fix this in the port before writing any calculator, or you will rewrite all of them.
 
-### D1 — `payroll/privacy`
+### D1 — `payroll/privacy` ✅
 
-Payroll holds payslips, tax numbers, and statutory identifiers — the most sensitive rows in the workspace — with no projection, retention, restriction, or evidence workflow.
+Payroll holds payslips, tax numbers, and statutory identifiers. Shipped 2026-08-05:
 
 | Operation | Purpose |
 | --- | --- |
-| `projectPayrollFields` | Contextual field projection, mirroring HR |
+| `projectPayrollFields` | Contextual field projection (`payroll.payslip.read-all`) |
 | `restrictPayrollSubject` | Restriction, not erasure (A3/C7) |
-| `liftPayrollRestriction` | Audited legal-hold release |
-| `recordPayrollRetentionEvidence` | Evidence row per restriction decision |
-| `expirePayrollRetention` | Retention-clock expiry → eligible for erasure |
+| `liftPayrollRestriction` | Audited restriction release |
+| `recordPayrollRetentionEvidence` | Evidence row per retention decision |
+| `expirePayrollRetention` | Retention-clock expiry → eligible for erasure only — never erases |
 | `respondToPayrollSubjectAccess` | DSAR export bounded by `payroll.payslip.read-own` |
 
-Keep `payroll.payslip.read-own` and `payroll.payslip.read-all` distinct through every one of these.
+Keep `payroll.payslip.read-own` and `payroll.payslip.read-all` distinct through every one of these. Payslip reads evaluate restriction only when a privacy port is composed.
 
 ### D2 — `payroll/settlement-ingress`
 
@@ -441,7 +441,7 @@ Payroll runs are long batches over thousands of employees with no durable job in
 | 9 | Capability signature: currency, clock, statutory | B3 | Blocks all calculator work |
 | 10 | D0 fact widening | D0 | Blocks calculators; rewrite risk if skipped |
 | 11 | `settlement-ingress` | D2 | Unblocks C8 |
-| 12 | `privacy` | D1 | Legal exposure |
+| 12 | `privacy` | D1 ✅ | Restriction + retention evidence + DSAR; erasure still forbidden without counsel citation |
 | 13 | `payroll-jobs` | D6 | Needed before large-tenant runs |
 | 14 | `retro-pay`, `final-settlement`, `statutory-filings` | D3–D5 | Domain completion |
 | 15 | HR D7 residue (restriction op, PRODUCTION_READINESS, promotion gate, cut-off/termination docs) | D7 | Parallelizable throughout |

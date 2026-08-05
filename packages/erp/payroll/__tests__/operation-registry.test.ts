@@ -45,10 +45,11 @@ describe("Payroll operation registry", () => {
 			"variable-inputs",
 			"payroll-runs",
 			"payslips",
+			"privacy",
 			"reconciliation",
 			"settlement-ingress",
 		]);
-		expect(definitions).toHaveLength(50);
+		expect(definitions).toHaveLength(56);
 		expect(new Set(operationIds).size).toBe(operationIds.length);
 		for (const definition of definitions) {
 			expect(featureOwners).toContain(definition.owner);
@@ -61,15 +62,15 @@ describe("Payroll operation registry", () => {
 			definitions.map(({ id, kind, permission }) => ({ id, kind, permission })),
 		);
 		expect(createHash("sha256").update(serializedContract).digest("hex")).toBe(
-			// Reviewed 2026-08-05: adds settlement-ingress (D2) commands under
-			// payroll.reconciliation.manage; all prior ids unchanged.
-			"6035eba7aeabbe0acbe70784c95e30c81630db4449235a8a62e42357aa34bb24",
+			// Reviewed 2026-08-05: adds privacy (D1) restriction/retention/DSAR
+			// ops under payslip read-all / read-own; all prior ids unchanged.
+			"cccc8f00501159e6eba41b288378b90882f58587bb9032c9737d0c06135114d6",
 		);
 	});
 
 	it("derives exhaustive command, query, and manifest projections", () => {
-		expect(PAYROLL_COMMAND_IDS).toHaveLength(35);
-		expect(PAYROLL_QUERY_IDS).toHaveLength(15);
+		expect(PAYROLL_COMMAND_IDS).toHaveLength(39);
+		expect(PAYROLL_QUERY_IDS).toHaveLength(17);
 		expect(Object.keys(PAYROLL_COMMAND_AUTHORIZATION)).toEqual(
 			PAYROLL_COMMAND_IDS,
 		);

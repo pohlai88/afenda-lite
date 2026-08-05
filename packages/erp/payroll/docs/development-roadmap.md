@@ -26,6 +26,7 @@ Uniform ERP roots: `facade/` · `kernel/` · `composition/` · `features/` · `t
 | `calculation` | Deterministic calculation, result lines, snapshots |
 | `statutory-rules` | Calculator registry + results (production activation fail-closed) |
 | `payslips` | Authorized deterministic payslip views |
+| `privacy` | Restriction, retention evidence, field projection, and read-own DSAR |
 | `reconciliation` | Downstream discrepancy resolution |
 | `settlement-ingress` | Inbound Payments/Accounting settlement facts; C8 reversal guard |
 
@@ -46,13 +47,14 @@ Entrypoints: `@afenda/payroll` (production) · `@afenda/payroll/testing` (test-o
 | B3 capability signature | **CLOSED** | Required `clock` · `currency` · `statutory` on composition |
 | B6 platform outbox drain | **CLOSED** | `apps/web` payroll outbox cron + platform event handlers |
 | D2 settlement ingress | **CLOSED** | `settlement-ingress` feature + app drain handlers + C8 reversal guard |
+| D1 payroll privacy | **CLOSED** | Restriction / retention evidence / field projection / read-own DSAR; erasure still forbidden |
 
 ## 3. Open items (cite bridging, do not invent scope)
 
 | Item | Bridging | Notes |
 | --- | --- | --- |
 | Statutory calculator sourcing | A2 | No production jurisdiction until reviewer-approved calculator |
-| Privacy / retro / final-settlement / filings / jobs | D1, D3–D6 | Feature capsules not yet present (A3 posture closed; D2 settlement ingress closed; D7 HR restriction closed) |
+| Retro / final-settlement / filings / jobs | D3–D6 | Feature capsules not yet present (A3 posture closed; D1 privacy closed; D2 settlement ingress closed; D7 HR restriction closed) |
 | HR D7 residue docs | D7 | Restriction op closed; cut-off / mid-period termination / breaking-change policy docs remain |
 | Production handoff DDL | ops | Apply `0049_payroll_accepted_handoff.sql` off PL-S9 when migrate is approved |
 

@@ -1,3 +1,4 @@
+import type { PayrollPrivacyPort } from "../../features/privacy/contract";
 import type { PayrollAuthorizationPort } from "./authorization";
 import type {
 	PayrollClockCapability,
@@ -17,6 +18,7 @@ interface PayrollExecutionOptions<TStore> {
 	currency?: PayrollCurrencyCapability;
 	employees?: PayrollWorkforceInputPort;
 	observability?: PayrollObservabilityPort;
+	privacy?: PayrollPrivacyPort;
 	statutory?: PayrollStatutoryCapability;
 	store?: TStore;
 }

@@ -40,6 +40,9 @@ export function createPayrollCapabilityOptions(
 		...(composition.observability === undefined
 			? {}
 			: { observability: composition.observability }),
+		...(composition.privacy === undefined
+			? {}
+			: { privacy: composition.privacy }),
 		store,
 		ports: createProductionMutationPorts(),
 		calculator: createProductionPayrollRunCalculator({

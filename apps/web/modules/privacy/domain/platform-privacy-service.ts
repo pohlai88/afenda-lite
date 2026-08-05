@@ -505,6 +505,184 @@ export function createPlatformPrivacyService(
 			return errorResult.ok(undefined);
 		},
 
+		async recordRetentionEvidence(input) {
+			const records = await resolveSubjectRecords(inventory, input);
+			if (!records.ok) {
+				return records;
+			}
+
+			const evidenceId = createId();
+			const saved = store.recordRetentionEvidence({
+				evidenceId,
+				organizationId: input.organizationId,
+				moduleId: input.moduleId,
+				subjectId: input.subjectId,
+				classifications: input.classifications,
+				clockStartedAt: input.clockStartedAt,
+				minimumRetentionMonths: input.minimumRetentionMonths,
+				legalBasis: input.legalBasis,
+			});
+
+			const audited = await recordPrivacyAudit(deps.audit, {
+				organizationId: input.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: input.correlationId,
+				moduleId: input.moduleId,
+				entity: "privacy_retention_evidence",
+				entityId: evidenceId,
+				action: "CREATE",
+				metadata: {
+					subjectId: input.subjectId,
+					classifications: input.classifications,
+					clockStartedAt: input.clockStartedAt,
+					minimumRetentionMonths: input.minimumRetentionMonths,
+					legalBasis: input.legalBasis,
+				},
+			});
+			if (!audited.ok) {
+				return audited;
+			}
+
+			return errorResult.ok({
+				evidenceId: saved.evidenceId,
+				organizationId: saved.organizationId,
+				subjectId: saved.subjectId,
+				classifications: saved.classifications,
+				clockStartedAt: saved.clockStartedAt,
+				minimumRetentionMonths: saved.minimumRetentionMonths,
+				legalBasis: saved.legalBasis,
+				eligibleForErasure: saved.eligibleForErasure,
+				expiredAt: saved.expiredAt,
+			});
+		},
+
+		async expireRetention(input) {
+			const existing = store.getRetentionEvidence({
+				evidenceId: input.evidenceId,
+			});
+			if (
+				existing === null ||
+				existing.organizationId !== input.organizationId ||
+				existing.moduleId !== input.moduleId
+			) {
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage:
+						"Retention evidence was not found for this organization.",
+				});
+			}
+
+			const started = new Date(existing.clockStartedAt);
+			const eligibleAt = new Date(
+				Date.UTC(
+					started.getUTCFullYear(),
+					started.getUTCMonth() + existing.minimumRetentionMonths,
+					started.getUTCDate(),
+					started.getUTCHours(),
+					started.getUTCMinutes(),
+					started.getUTCSeconds(),
+					started.getUTCMilliseconds(),
+				),
+			);
+			if (new Date(input.expiredAt).getTime() < eligibleAt.getTime()) {
+				return errorResult.fail("CONFLICT", {
+					publicMessage:
+						"Retention clock has not expired; payroll evidence stays restricted.",
+				});
+			}
+
+			const expired = store.expireRetention({
+				organizationId: input.organizationId,
+				evidenceId: input.evidenceId,
+				expiredAt: input.expiredAt,
+			});
+			if (expired === null) {
+				return errorResult.fail("NOT_FOUND", {
+					publicMessage:
+						"Retention evidence was not found for this organization.",
+				});
+			}
+
+			const audited = await recordPrivacyAudit(deps.audit, {
+				organizationId: input.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: input.correlationId,
+				moduleId: input.moduleId,
+				entity: "privacy_retention_evidence",
+				entityId: input.evidenceId,
+				action: "UPDATE",
+				metadata: {
+					subjectId: expired.subjectId,
+					expiredAt: input.expiredAt,
+					eligibleForErasure: true,
+				},
+			});
+			if (!audited.ok) {
+				return audited;
+			}
+
+			return errorResult.ok({
+				evidenceId: expired.evidenceId,
+				organizationId: expired.organizationId,
+				subjectId: expired.subjectId,
+				classifications: expired.classifications,
+				clockStartedAt: expired.clockStartedAt,
+				minimumRetentionMonths: expired.minimumRetentionMonths,
+				legalBasis: expired.legalBasis,
+				eligibleForErasure: expired.eligibleForErasure,
+				expiredAt: expired.expiredAt,
+			});
+		},
+
+		async recordSubjectAccessExport(input) {
+			if (activeRestrictionReason(store, input) !== undefined) {
+				return errorResult.fail("CONFLICT", {
+					publicMessage: "Subject data is restricted and excluded from export.",
+				});
+			}
+
+			const records = await resolveSubjectRecords(inventory, input);
+			if (!records.ok) {
+				return records;
+			}
+
+			const exportId = createId();
+			const saved = store.saveExport({
+				exportId,
+				organizationId: input.organizationId,
+				moduleId: input.moduleId,
+				subjectId: input.subjectId,
+				recordCount: input.records.length,
+				recordIds: input.records.map((record) => record.recordId),
+				createdAt: input.requestedAt,
+			});
+
+			const audited = await recordPrivacyAudit(deps.audit, {
+				organizationId: input.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: input.correlationId,
+				moduleId: input.moduleId,
+				entity: "privacy_export",
+				entityId: exportId,
+				action: "EXPORT",
+				metadata: {
+					subjectId: input.subjectId,
+					exportReference: saved.exportReference,
+					recordCount: saved.recordCount,
+					projectionScope: input.projectionScope,
+					legalBasis: input.legalBasis,
+				},
+			});
+			if (!audited.ok) {
+				return audited;
+			}
+
+			return errorResult.ok({
+				exportReference: saved.exportReference,
+				recordCount: saved.recordCount,
+				records: input.records,
+			});
+		},
+
 		redactDownstream(input) {
 			return performAuditedSubjectOperation(
 				operationDeps,
