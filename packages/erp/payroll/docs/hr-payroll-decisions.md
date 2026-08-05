@@ -92,6 +92,16 @@ Shipped in `src/features/payroll-runs/finalization.ts`: when status is `calculat
 - Session stamps org/actor/correlation on every Action; package input schemas for statutory profile are root-exported
 - Evidence: `apps/web/__tests__/payroll-run-actions.test.ts`, `payroll-period-actions.test.ts`, `hr-statutory-profile-actions.test.ts`
 
+## Setup / retro-pay / statutory-filings / privacy / jobs app actions
+
+- Setup Actions: `apps/web/app/actions/payroll-setup.ts` — calendars (`createPayrollCalendarAction`, `updatePayrollCalendarAction`, `archivePayrollCalendarAction`, `getPayrollCalendarAction`, `listPayrollCalendarsAction`), pay groups (`createPayrollPayGroupAction`, `updatePayrollPayGroupAction`, `archivePayrollPayGroupAction`, `getPayrollPayGroupAction`, `listPayrollPayGroupsAction`), earning rules (`createPayrollEarningRuleAction`, `updatePayrollEarningRuleAction`, `archivePayrollEarningRuleAction`, `supersedePayrollEarningRuleAction`, `getPayrollEarningRuleAction`), deduction rules (same pattern + `taxTiming`), statutory rules (same pattern + `jurisdictionCode`/`configJson`). All use `payroll.setup.manage`.
+- Retro-pay Actions: `apps/web/app/actions/payroll-retro-pay.ts` — `queueRetroItemAction` (`payroll.input.manage`), `calculateRetroDifferenceAction` (`payroll.run.review`), `applyRetroToPeriodAction` (`payroll.input.manage`), `listRetroItemsAction` (`payroll.run.review`).
+- Statutory-filings Actions: `apps/web/app/actions/payroll-statutory-filings.ts` — `generateStatutoryFilingAction`, `generateAnnualStatementAction`, `listFilingObligationsAction` (`payroll.run.review`); `sealFilingEvidenceAction` (`payroll.run.finalize`).
+- Privacy Actions: `apps/web/app/actions/payroll-privacy.ts` — operator: `restrictPayrollSubjectAction`, `liftPayrollRestrictionAction`, `recordPayrollRetentionEvidenceAction`, `expirePayrollRetentionAction`, `projectPayrollFieldsAction` (`payroll.payslip.read-all` via `runOperatorPermissionAction`); member DSAR: `respondToPayrollSubjectAccessAction` (`payroll.payslip.read-own` via `runMemberPermissionAction`).
+- Jobs Actions: `apps/web/app/actions/payroll-jobs.ts` — operator surface only: `enqueuePayrollCalculationJobAction` (`payroll.run.calculate`), `getPayrollJobAction` (`payroll.run.review`), `listPayrollDeadLettersAction` (`payroll.run.review`), `replayPayrollDeadLetterAction` (`payroll.run.calculate`). Cron surfaces (`claimDuePayrollJobWork`, `executePayrollJobWork`) are intentionally absent.
+- Session stamps org/actor/correlation on every mutating Action; local Zod boundary schemas omit organizationId/actorUserId/correlationId (stamped from session).
+- Evidence: `apps/web/__tests__/payroll-setup-actions.test.ts`, `payroll-retro-pay-actions.test.ts`, `payroll-statutory-filings-actions.test.ts`, `payroll-privacy-actions.test.ts`, `payroll-jobs-actions.test.ts`, `payroll-composition-contract.test.ts`.
+
 ## Open-decision rule
 
 Do not promote either module to `active`, claim enterprise seal, or enable production statutory calculators while **A2** remains OPEN. A3/A4 closed postures still require counsel-cited retention clocks before erasure or settled clawback automation.

@@ -103,4 +103,105 @@ describe("Payroll application composition", () => {
 		expect(source).toContain("createPayrollCommandOptions()");
 		expect(source).toContain("payroll.setup.manage");
 	});
+
+	it("exposes payroll setup actions for calendars, pay groups, and all rule types", () => {
+		const source = readFileSync(
+			fileURLToPath(
+				new URL("../app/actions/payroll-setup.ts", import.meta.url),
+			),
+			"utf8",
+		);
+
+		expect(source).toContain("createPayrollCalendar");
+		expect(source).toContain("createPayrollPayGroup");
+		expect(source).toContain("createPayrollEarningRule");
+		expect(source).toContain("createPayrollDeductionRule");
+		expect(source).toContain("createPayrollStatutoryRule");
+		expect(source).toContain("supersedePayrollEarningRule");
+		expect(source).toContain("supersedePayrollDeductionRule");
+		expect(source).toContain("supersedePayrollStatutoryRule");
+		expect(source).toContain("organizationId: session.orgId");
+		expect(source).toContain("actorUserId: session.userId");
+		expect(source).toContain("createPayrollCommandOptions()");
+		expect(source).toContain("payroll.setup.manage");
+	});
+
+	it("exposes payroll retro-pay actions with correct permission boundaries", () => {
+		const source = readFileSync(
+			fileURLToPath(
+				new URL("../app/actions/payroll-retro-pay.ts", import.meta.url),
+			),
+			"utf8",
+		);
+
+		expect(source).toContain("queueRetroItem");
+		expect(source).toContain("calculateRetroDifference");
+		expect(source).toContain("applyRetroToPeriod");
+		expect(source).toContain("listRetroItems");
+		expect(source).toContain("payroll.input.manage");
+		expect(source).toContain("payroll.run.review");
+		expect(source).toContain("organizationId: session.orgId");
+		expect(source).toContain("actorUserId: session.userId");
+		expect(source).toContain("createPayrollCommandOptions()");
+	});
+
+	it("exposes statutory filing actions with correct permission boundaries", () => {
+		const source = readFileSync(
+			fileURLToPath(
+				new URL("../app/actions/payroll-statutory-filings.ts", import.meta.url),
+			),
+			"utf8",
+		);
+
+		expect(source).toContain("generateStatutoryFiling");
+		expect(source).toContain("generateAnnualStatement");
+		expect(source).toContain("listFilingObligations");
+		expect(source).toContain("sealFilingEvidence");
+		expect(source).toContain("payroll.run.review");
+		expect(source).toContain("payroll.run.finalize");
+		expect(source).toContain("organizationId: session.orgId");
+		expect(source).toContain("actorUserId: session.userId");
+		expect(source).toContain("createPayrollCommandOptions()");
+	});
+
+	it("exposes payroll privacy actions with read-all operator and read-own member surfaces", () => {
+		const source = readFileSync(
+			fileURLToPath(
+				new URL("../app/actions/payroll-privacy.ts", import.meta.url),
+			),
+			"utf8",
+		);
+
+		expect(source).toContain("restrictPayrollSubject");
+		expect(source).toContain("liftPayrollRestriction");
+		expect(source).toContain("recordPayrollRetentionEvidence");
+		expect(source).toContain("expirePayrollRetention");
+		expect(source).toContain("projectPayrollFields");
+		expect(source).toContain("respondToPayrollSubjectAccess");
+		expect(source).toContain("payroll.payslip.read-all");
+		expect(source).toContain("payroll.payslip.read-own");
+		expect(source).toContain("runMemberPermissionAction");
+		expect(source).toContain("organizationId: session.orgId");
+		expect(source).toContain("actorUserId: session.userId");
+		expect(source).toContain("createPayrollCommandOptions()");
+	});
+
+	it("exposes payroll jobs operator actions without cron-only surfaces", () => {
+		const source = readFileSync(
+			fileURLToPath(new URL("../app/actions/payroll-jobs.ts", import.meta.url)),
+			"utf8",
+		);
+
+		expect(source).toContain("enqueuePayrollCalculationJob");
+		expect(source).toContain("getPayrollJob");
+		expect(source).toContain("listPayrollDeadLetters");
+		expect(source).toContain("replayPayrollDeadLetter");
+		expect(source).not.toContain("claimDuePayrollJobWork");
+		expect(source).not.toContain("executePayrollJobWork");
+		expect(source).toContain("payroll.run.calculate");
+		expect(source).toContain("payroll.run.review");
+		expect(source).toContain("organizationId: session.orgId");
+		expect(source).toContain("actorUserId: session.userId");
+		expect(source).toContain("createPayrollCommandOptions()");
+	});
 });
