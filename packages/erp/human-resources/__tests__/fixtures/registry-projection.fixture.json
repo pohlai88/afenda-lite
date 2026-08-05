@@ -418,6 +418,8 @@
 		"human-resources.privacy.case.get": "human-resources.privacy.export",
 		"human-resources.privacy.legal-hold.place": "human-resources.privacy.legal-hold.manage",
 		"human-resources.privacy.legal-hold.release": "human-resources.privacy.legal-hold.manage",
+		"human-resources.privacy.restriction.lift": "human-resources.privacy.legal-hold.manage",
+		"human-resources.privacy.restriction.place": "human-resources.privacy.legal-hold.manage",
 		"human-resources.privacy.retention.evaluate": "human-resources.privacy.retention.evaluate",
 		"human-resources.privacy.subject-export": "human-resources.privacy.export",
 		"human-resources.privacy.subject.anonymize": "human-resources.privacy.anonymize.execute",
@@ -10200,6 +10202,48 @@
 			},
 			"publicErrorCodeSet": "a44017477f3e95cf5042ef4ea1ec9fb61d7690437b8d69eceecce6c545582e93",
 			"publicName": "releaseHumanResourcesLegalHold",
+			"temporalPolicy": "command-contract",
+			"transactionRequirement": "required"
+		},
+		{
+			"auditRequirement": "required",
+			"authorizationPolicy": "hr.privacy",
+			"authorizationPolicyMode": "privileged_only",
+			"authorizationResourceRequired": true,
+			"emissionMode": "audit_only",
+			"emissionRequirement": "required",
+			"eventTypes": [],
+			"id": "human-resources.privacy.restriction.lift",
+			"idempotencyRequirement": "required",
+			"kind": "command",
+			"owner": "privacy",
+			"permission": "human-resources.privacy.legal-hold.manage",
+			"privacyDisposition": {
+				"mode": "standard"
+			},
+			"publicErrorCodeSet": "a44017477f3e95cf5042ef4ea1ec9fb61d7690437b8d69eceecce6c545582e93",
+			"publicName": "liftEmployeeDataRestriction",
+			"temporalPolicy": "command-contract",
+			"transactionRequirement": "required"
+		},
+		{
+			"auditRequirement": "required",
+			"authorizationPolicy": "hr.privacy",
+			"authorizationPolicyMode": "privileged_only",
+			"authorizationResourceRequired": true,
+			"emissionMode": "audit_only",
+			"emissionRequirement": "required",
+			"eventTypes": [],
+			"id": "human-resources.privacy.restriction.place",
+			"idempotencyRequirement": "required",
+			"kind": "command",
+			"owner": "privacy",
+			"permission": "human-resources.privacy.legal-hold.manage",
+			"privacyDisposition": {
+				"mode": "standard"
+			},
+			"publicErrorCodeSet": "a44017477f3e95cf5042ef4ea1ec9fb61d7690437b8d69eceecce6c545582e93",
+			"publicName": "restrictEmployeeData",
 			"temporalPolicy": "command-contract",
 			"transactionRequirement": "required"
 		},

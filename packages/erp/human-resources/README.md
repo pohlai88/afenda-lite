@@ -92,7 +92,7 @@ or HTTP envelopes.
 | `workforce-planning` | Headcount plans, reservations, and availability |
 | `time` | Work calendars, shifts, attendance, timesheets, and overtime |
 | `payroll-handoff` | Approved immutable payroll inputs, delivery, acknowledgement, and correction state |
-| `privacy` | Field projection, evidence, retention, and deletion workflows |
+| `privacy` | Field projection, evidence, retention, legal-hold, restriction (`restrictEmployeeData` / `liftEmployeeDataRestriction`), and deletion workflows |
 | `reporting` | Reconciled HR read-model snapshots and feature-owned sources |
 | `bulk-import` | Resumable validated imports and row-level outcomes |
 | `bulk-export` | Field-allowlisted exports and privacy evidence |

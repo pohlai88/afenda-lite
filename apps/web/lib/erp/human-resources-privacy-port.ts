@@ -29,6 +29,7 @@ function mapPrivacyCase(
 		organizationId: data.organizationId,
 		exports: data.exports,
 		activeLegalHolds: data.activeLegalHolds,
+		activeRestrictions: data.activeRestrictions,
 		recentOperations: data.recentOperations,
 	};
 }
@@ -88,6 +89,27 @@ export function createHumanResourcesPrivacyPort(): HumanResourcesPrivacyCapabili
 				legalHoldId: input.legalHoldId,
 				reason: input.reason,
 				releasedAt: input.releasedAt,
+			});
+		},
+		evaluateRestriction(input) {
+			return service.evaluateRestriction(mapSubjectContext(input));
+		},
+		restrictSubject(input) {
+			return service.restrictSubject({
+				...mapSubjectContext(input),
+				classifications: input.classifications,
+				restrictionReference: input.restrictionReference,
+			});
+		},
+		liftRestriction(input) {
+			return service.liftRestriction({
+				moduleId: HUMAN_RESOURCES_PRIVACY_MODULE_ID,
+				organizationId: input.organizationId,
+				actorUserId: input.actorUserId,
+				correlationId: input.correlationId,
+				restrictionId: input.restrictionId,
+				reason: input.reason,
+				liftedAt: input.liftedAt,
 			});
 		},
 		redactDownstream(input) {

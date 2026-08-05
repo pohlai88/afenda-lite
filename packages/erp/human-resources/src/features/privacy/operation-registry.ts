@@ -45,6 +45,25 @@ export const HUMAN_RESOURCES_PRIVACY_COMMANDS =
 			id: "human-resources.privacy.legal-hold.release",
 			publicName: "releaseHumanResourcesLegalHold",
 		},
+		// Restriction reuses legal-hold.manage (A3/C7): both are audited
+		// place/release pairs on privacy_subject; the permission catalog does
+		// not grow for this slice.
+		restrictEmployeeData: {
+			...definition(
+				"command",
+				HUMAN_RESOURCES_PERMISSION_PRIVACY_LEGAL_HOLD_MANAGE,
+			),
+			id: "human-resources.privacy.restriction.place",
+			publicName: "restrictEmployeeData",
+		},
+		liftEmployeeDataRestriction: {
+			...definition(
+				"command",
+				HUMAN_RESOURCES_PERMISSION_PRIVACY_LEGAL_HOLD_MANAGE,
+			),
+			id: "human-resources.privacy.restriction.lift",
+			publicName: "liftEmployeeDataRestriction",
+		},
 		anonymizeHumanResourcesSubject: {
 			...definition(
 				"command",
@@ -100,6 +119,12 @@ export const {
 	},
 	releaseHumanResourcesLegalHold: {
 		id: HUMAN_RESOURCES_COMMAND_PRIVACY_LEGAL_HOLD_RELEASE,
+	},
+	restrictEmployeeData: {
+		id: HUMAN_RESOURCES_COMMAND_PRIVACY_RESTRICTION_PLACE,
+	},
+	liftEmployeeDataRestriction: {
+		id: HUMAN_RESOURCES_COMMAND_PRIVACY_RESTRICTION_LIFT,
 	},
 	anonymizeHumanResourcesSubject: {
 		id: HUMAN_RESOURCES_COMMAND_PRIVACY_SUBJECT_ANONYMIZE,

@@ -39,6 +39,12 @@ export interface PrivacySubjectCase {
 		classifications: readonly string[];
 		placedAt: string;
 	}[];
+	activeRestrictions: readonly {
+		restrictionId: string;
+		restrictionReference: string;
+		classifications: readonly string[];
+		placedAt: string;
+	}[];
 	exports: readonly {
 		exportId: string;
 		exportReference: string;
@@ -72,6 +78,15 @@ export interface PrivacyLegalHoldResult {
 	legalHoldId: string;
 }
 
+export interface PrivacyRestrictionResult {
+	restrictionId: string;
+}
+
+export interface PrivacyRestrictionEvaluation {
+	reasonCode?: string;
+	restricted: boolean;
+}
+
 export interface PrivacyRedactDownstreamResult {
 	redactedSystemCount: number;
 }
@@ -93,12 +108,24 @@ export interface PlatformPrivacyService {
 			classifications?: readonly string[];
 		},
 	) => Promise<Result<PrivacyAnonymizationEvaluation>>;
+	evaluateRestriction: (
+		input: PrivacySubjectRequestContext,
+	) => Promise<Result<PrivacyRestrictionEvaluation>>;
 	exportSubject: (
 		input: PrivacySubjectRequestContext,
 	) => Promise<Result<PrivacyExportResult>>;
 	getSubjectPrivacyCase: (
 		input: PrivacySubjectRequestContext,
 	) => Promise<Result<PrivacySubjectCase>>;
+	liftRestriction: (input: {
+		moduleId: PrivacyModuleId;
+		organizationId: string;
+		actorUserId: string;
+		correlationId: string;
+		restrictionId: string;
+		reason: string;
+		liftedAt: string;
+	}) => Promise<Result<void>>;
 	placeLegalHold: (
 		input: PrivacySubjectRequestContext & {
 			holdReference: string;
@@ -128,4 +155,10 @@ export interface PlatformPrivacyService {
 		reason: string;
 		releasedAt: string;
 	}) => Promise<Result<void>>;
+	restrictSubject: (
+		input: PrivacySubjectRequestContext & {
+			classifications: readonly string[];
+			restrictionReference: string;
+		},
+	) => Promise<Result<PrivacyRestrictionResult>>;
 }

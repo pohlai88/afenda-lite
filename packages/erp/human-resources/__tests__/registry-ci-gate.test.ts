@@ -1,6 +1,6 @@
 /**
  * Slice 3.8 — fail-closed HR mutation-emission registry CI gate.
- * Strict 360/360 — zero HR-AUD-06 exemptions.
+ * Strict 362/362 — zero HR-AUD-06 exemptions.
  */
 
 import { HumanResourcesEventSchemas } from "@afenda/events/schemas";
@@ -173,14 +173,14 @@ describe("Slice 3.8 — HR mutation-emission registry CI gate", () => {
 		}
 	});
 
-	it("locks classified count at 360 and inventory alignment with zero unclassified", () => {
+	it("locks classified count at 362 and inventory alignment with zero unclassified", () => {
 		expect(
 			Object.keys(HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD),
-		).toHaveLength(360);
-		expect(HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY).toHaveLength(360);
-		expect(mutationInventoryFixture.classifiedMutationIds).toBe(360);
+		).toHaveLength(362);
+		expect(HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY).toHaveLength(362);
+		expect(mutationInventoryFixture.classifiedMutationIds).toBe(362);
 		expect(mutationInventoryFixture.unclassifiedMutationIds).toBe(0);
 		expect(mutationInventoryFixture.unclassified).toEqual([]);
-		expect(classifiedIds.size).toBe(360);
+		expect(classifiedIds.size).toBe(362);
 	});
 });

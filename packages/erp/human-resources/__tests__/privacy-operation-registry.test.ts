@@ -27,10 +27,10 @@ const source = (relativePath: string) =>
 
 describe("Privacy operation registry", () => {
 	it("owns every public privacy operation exactly once", () => {
-		expect(definitions).toHaveLength(7);
-		expect(new Set(definitions.map(({ id }) => id)).size).toBe(7);
+		expect(definitions).toHaveLength(9);
+		expect(new Set(definitions.map(({ id }) => id)).size).toBe(9);
 		expect(new Set(definitions.map(({ publicName }) => publicName)).size).toBe(
-			7,
+			9,
 		);
 		const facade = source("src/facade/capabilities.ts");
 		for (const definition of definitions) {

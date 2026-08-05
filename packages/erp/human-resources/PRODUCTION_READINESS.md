@@ -1,7 +1,8 @@
 # Human Resources production-readiness control
 
 Human Resources is production-shaped for handoff transport, privacy legal-hold
-surfaces, and package evidence loops, but the module lifecycle remains
+and restriction surfaces, and package evidence loops, but the module lifecycle
+remains
 `scaffolded` with `activationMode: "organization_toggle"`. Green package tests
 and a living feature tree do **not** promote the module to `active` or authorize
 enterprise launch.
@@ -18,6 +19,14 @@ enterprise launch.
 - Privacy feature owns field projection, retention, and deletion workflows for
   `hr_*` only; Payroll evidence is not cascade-erased from HR privacy deletes
   (bridging A3 / C7 — counsel clocks still open).
+- Privacy feature carries an audited restriction path distinct from erasure:
+  `restrictEmployeeData` / `liftEmployeeDataRestriction`
+  (`human-resources.privacy.restriction.place` /
+  `human-resources.privacy.restriction.lift`, gated by the existing
+  `human-resources.privacy.legal-hold.manage` permission). A restricted
+  subject's rows survive — export is excluded (`CONFLICT`) and anonymization
+  is blocked — until the restriction is lifted through the audited command
+  (bridging D7 / A3 / C7).
 - Contract fixtures (public-contract, registry-projection, consumer-inventory,
   architecture-debt) and the HR parity loop exist under package tests.
 - Package lifecycle coupling: an `active` module may not require a `scaffolded`
@@ -30,7 +39,7 @@ This list is a gate statement, **not** a claim that the gates are closed.
 
 | Criterion | Bridging | Required evidence |
 | --- | --- | --- |
-| Restriction operation for privacy/retention interplay with Payroll | D7 / A3 / C7 | Named HR restriction path + counsel retention clocks recorded |
+| Restriction operation for privacy/retention interplay with Payroll — **met (HR side)** | D7 / A3 / C7 | `restrictEmployeeData` / `liftEmployeeDataRestriction` ship (export exclusion + anonymization block while active, registry/fixture-tested). Counsel retention clocks (A3) are still an external legal decision, not code, and remain open |
 | Cut-off semantics documented and tested for payroll delivery windows | D7 / C3 | Period freeze / cut-off contract + tests |
 | Mid-period termination contract documented for handoff facts | D7 / C6 | Termination-as-fact semantics in handoff + tests |
 | Breaking-change policy for `public-contract.fixture.json` | D7 / Phase E | Written consumer-impact policy + fixture governance |

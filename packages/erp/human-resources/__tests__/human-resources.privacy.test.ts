@@ -6,7 +6,9 @@ import {
 	evaluateHumanResourcesRetention,
 	exportHumanResourcesSubjectData,
 	getHumanResourcesPrivacyCase,
+	liftEmployeeDataRestriction,
 	placeHumanResourcesLegalHold,
+	restrictEmployeeData,
 } from "../src/features/privacy/operations";
 import {
 	HUMAN_RESOURCES_ERROR_DEPENDENCY_UNAVAILABLE,
@@ -23,6 +25,7 @@ import {
 	createHumanResourcesTestPrivacyPort,
 	createValidPrivacyAnonymizeInput,
 	createValidPrivacyExportInput,
+	createValidPrivacyRestrictionInput,
 	DEFAULT_PRIVACY_CLASSIFICATIONS,
 	PRIVACY_TEST_ORG_A,
 	PRIVACY_TEST_ORG_B,
@@ -300,5 +303,177 @@ describe("human-resources privacy operations", () => {
 		}
 
 		expect(result.data.anonymizedRecordCount).toBe(1);
+	});
+
+	it("places a data restriction through the privacy port", async () => {
+		const result = await restrictEmployeeData(
+			createValidPrivacyRestrictionInput(),
+			createHumanResourcesTestOptions({
+				privacy: createHumanResourcesTestPrivacyPort(),
+			}),
+		);
+
+		expect(result.ok).toBe(true);
+		if (!result.ok) {
+			throw result.error;
+		}
+
+		expect(result.data.restrictionId).toBe("test-restriction");
+	});
+
+	it("denies restriction when the legal-hold-manage permission is missing", async () => {
+		const result = await restrictEmployeeData(
+			createValidPrivacyRestrictionInput(),
+			{
+				...createHumanResourcesTestOptions({
+					privacy: createHumanResourcesTestPrivacyPort(),
+				}),
+				authorization: createGrantingHumanResourcesAuthorization([]),
+			},
+		);
+
+		expect(result.ok).toBe(false);
+		expect(humanResourcesCodeFromResult(result)).toBe(
+			HUMAN_RESOURCES_ERROR_FORBIDDEN,
+		);
+	});
+
+	it("excludes a restricted subject's data from export while restriction is active", async () => {
+		const privacy = createHumanResourcesTestPrivacyPort({
+			restriction: { active: true, reasonCode: "processing_restriction" },
+		});
+
+		const result = await exportHumanResourcesSubjectData(
+			createValidPrivacyExportInput(),
+			createHumanResourcesTestOptions({ privacy }),
+		);
+
+		expect(result.ok).toBe(false);
+		if (result.ok) {
+			throw new Error("Expected export to fail while restricted");
+		}
+		expect(result.code).toBe("CONFLICT");
+	});
+
+	it("blocks anonymization while a restriction is active", async () => {
+		const privacy = createHumanResourcesTestPrivacyPort({
+			restriction: { active: true, reasonCode: "processing_restriction" },
+		});
+
+		const result = await evaluateHumanResourcesAnonymization(
+			createValidPrivacyAnonymizeInput(),
+			createHumanResourcesTestOptions({ privacy }),
+		);
+
+		expect(result.ok).toBe(true);
+		if (!result.ok) {
+			throw result.error;
+		}
+
+		expect(result.data.allowed).toBe(false);
+		expect(result.data.reasonCode).toBe("processing_restriction");
+	});
+
+	it("rejects anonymize execution while a restriction is active", async () => {
+		const result = await anonymizeHumanResourcesSubject(
+			{
+				...createValidPrivacyAnonymizeInput(),
+				classifications: DEFAULT_PRIVACY_CLASSIFICATIONS,
+			},
+			createHumanResourcesTestOptions({
+				privacy: createHumanResourcesTestPrivacyPort({
+					restriction: { active: true, reasonCode: "processing_restriction" },
+				}),
+			}),
+		);
+
+		expect(result.ok).toBe(false);
+		if (result.ok) {
+			throw new Error("Expected anonymize to fail while restricted");
+		}
+		expect(result.code).toBe("CONFLICT");
+	});
+
+	it("reflects an active restriction on the privacy case summary", async () => {
+		const privacy = createHumanResourcesTestPrivacyPort({
+			restriction: { active: true, reasonCode: "processing_restriction" },
+		});
+
+		const result = await getHumanResourcesPrivacyCase(
+			createValidPrivacyExportInput(),
+			createHumanResourcesTestOptions({ privacy }),
+		);
+
+		expect(result.ok).toBe(true);
+		if (!result.ok) {
+			throw result.error;
+		}
+
+		expect(result.data.activeRestrictions.length).toBeGreaterThan(0);
+	});
+
+	it("lifts a restriction and restores export and anonymization eligibility", async () => {
+		const privacy = createHumanResourcesTestPrivacyPort({
+			restriction: { active: true, reasonCode: "processing_restriction" },
+		});
+		const options = createHumanResourcesTestOptions({ privacy });
+
+		const blocked = await exportHumanResourcesSubjectData(
+			createValidPrivacyExportInput(),
+			options,
+		);
+		expect(blocked.ok).toBe(false);
+
+		const lifted = await liftEmployeeDataRestriction(
+			{
+				organizationId: PRIVACY_TEST_ORG_A,
+				actorUserId: "user-1",
+				correlationId: "corr-lift-1",
+				restrictionId: "test-restriction",
+				reason: "retention_clock_expired",
+			},
+			options,
+		);
+		expect(lifted.ok).toBe(true);
+
+		const restored = await evaluateHumanResourcesAnonymization(
+			createValidPrivacyAnonymizeInput(),
+			options,
+		);
+		expect(restored.ok).toBe(true);
+		if (!restored.ok) {
+			throw restored.error;
+		}
+		expect(restored.data.allowed).toBe(true);
+	});
+
+	it("emits shared command and privacy telemetry for restriction success", async () => {
+		const recorder = createMemoryHrObservabilityRecorder();
+		const observability: HrObservabilityPorts = {
+			recorder,
+			clock: { now: () => new Date("2026-01-01T00:00:00.000Z") },
+		};
+
+		const result = await restrictEmployeeData(
+			createValidPrivacyRestrictionInput(),
+			createHumanResourcesTestOptions({
+				privacy: createHumanResourcesTestPrivacyPort(),
+				observability,
+			}),
+		);
+
+		expect(result.ok).toBe(true);
+		expect(recorder.metrics).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					name: "hr.command.total",
+					labels: { area: "privacy", outcome: "success" },
+				}),
+				expect.objectContaining({
+					name: "hr.privacy.operation.total",
+					labels: { operation: "rectify", outcome: "success" },
+				}),
+			]),
+		);
 	});
 });

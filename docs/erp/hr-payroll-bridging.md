@@ -405,7 +405,7 @@ Payroll runs are long batches over thousands of employees with no durable job in
 | Handoff event naming | ✅ **exists** | `hr.payroll-handoff.v1` schema in `@afenda/events` + platform event `platform.human-resources.payroll-delivery.requested.v1` (registered, fixture-tested). Document them in the README; no new event needed |
 | Dry run | partial | `assembleApprovedPayrollHandoff` is a read-only de facto preview called before queueing; decide whether a dedicated `previewPayrollHandoff` diff operation is still wanted, or document the existing query as the dry run |
 | Ack/correction ops | ✅ **exists** | `recordPayrollDeliveryFeedback` (`acknowledged \| rejected \| correction_required`) + correction via `queuePayrollDelivery` with `supersedesDeliveryId` and atomic `createCorrection`. Document; no new ops needed |
-| No restriction concept | ❌ real gap | `restrictEmployeeData` alongside deletion, matching C7 — privacy feature has legal-hold place/release but no Art.18-style processing restriction |
+| No restriction concept | ✅ **exists** | `restrictEmployeeData` / `liftEmployeeDataRestriction` (`human-resources.privacy.restriction.place` / `.lift`); export excluded + anonymization blocked while active; platform privacy store persists restrictions |
 | Cut-off semantics absent | ❌ (docs) | Document which period a handoff binds to and what a late approval does |
 | Mid-period termination contract absent | ❌ (docs) | Document the fact shape and the C6 exception path |
 | No promotion criteria | ❌ real gap | Explicit `scaffolded → active` gate list (Phase E) |

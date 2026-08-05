@@ -135,6 +135,12 @@ export interface HumanResourcesPrivacyCase {
 		classifications: readonly string[];
 		placedAt: string;
 	}[];
+	activeRestrictions: readonly {
+		restrictionId: string;
+		restrictionReference: string;
+		classifications: readonly string[];
+		placedAt: string;
+	}[];
 	exports: readonly {
 		exportId: string;
 		exportReference: string;
@@ -160,6 +166,16 @@ export interface HumanResourcesRetentionEvaluation {
 	policies: readonly HumanResourcesRetentionPolicy[];
 }
 
+/**
+ * Restriction ≠ erasure (A3/C7): the subject's rows survive, are excluded
+ * from read models and exports, and remain reachable only through the
+ * audited restrict/lift commands below.
+ */
+export interface HumanResourcesRestrictionEvaluation {
+	reasonCode?: string;
+	restricted: boolean;
+}
+
 export interface HumanResourcesPrivacyPort {
 	anonymizeSubject: (
 		input: HumanResourcesPrivacyRequestContext & {
@@ -171,12 +187,23 @@ export interface HumanResourcesPrivacyPort {
 			classifications?: readonly HumanResourcesRetentionClassification[];
 		},
 	) => Promise<Result<HumanResourcesAnonymizationEvaluation>>;
+	evaluateRestriction: (
+		input: HumanResourcesPrivacyRequestContext,
+	) => Promise<Result<HumanResourcesRestrictionEvaluation>>;
 	exportSubject: (
 		input: HumanResourcesPrivacyRequestContext,
 	) => Promise<Result<HumanResourcesPrivacyExportResult>>;
 	getSubjectPrivacyCase: (
 		input: HumanResourcesPrivacyRequestContext,
 	) => Promise<Result<HumanResourcesPrivacyCase>>;
+	liftRestriction: (input: {
+		organizationId: string;
+		actorUserId: string;
+		correlationId: string;
+		restrictionId: string;
+		reason: string;
+		liftedAt: string;
+	}) => Promise<Result<void>>;
 	placeLegalHold: (
 		input: HumanResourcesPrivacyRequestContext & {
 			holdReference: string;
@@ -204,4 +231,10 @@ export interface HumanResourcesPrivacyPort {
 		reason: string;
 		releasedAt: string;
 	}) => Promise<Result<void>>;
+	restrictSubject: (
+		input: HumanResourcesPrivacyRequestContext & {
+			classifications: readonly HumanResourcesRetentionClassification[];
+			restrictionReference: string;
+		},
+	) => Promise<Result<{ restrictionId: string }>>;
 }

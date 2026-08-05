@@ -52,7 +52,8 @@ Entrypoints: `@afenda/payroll` (production) · `@afenda/payroll/testing` (test-o
 | Item | Bridging | Notes |
 | --- | --- | --- |
 | Statutory calculator sourcing | A2 | No production jurisdiction until reviewer-approved calculator |
-| Privacy / retro / final-settlement / filings / jobs | D1, D3–D6 | Feature capsules not yet present (A3 posture closed; D2 settlement ingress closed) |
+| Privacy / retro / final-settlement / filings / jobs | D1, D3–D6 | Feature capsules not yet present (A3 posture closed; D2 settlement ingress closed; D7 HR restriction closed) |
+| HR D7 residue docs | D7 | Restriction op closed; cut-off / mid-period termination / breaking-change policy docs remain |
 | Production handoff DDL | ops | Apply `0049_payroll_accepted_handoff.sql` off PL-S9 when migrate is approved |
 
 ## 4. Verify loops

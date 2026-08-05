@@ -18,6 +18,7 @@
 | B7 | Governance gates | **CLOSED** | Root scripts governance:erp-symmetry, governance:emission-drain, governance:cross-import, governance:architecture-debt chained from governance:packages. | 2026-08-05 | Payroll / platform governance |
 | B6 | Platform outbox drain | **CLOSED** | `apps/web` cron `/api/cron/payroll-outbox` drains payroll emissions via `PAYROLL_PLATFORM_EVENT_DISPATCHER_ID`; Payments draft intake + Accounting source posting handlers fail closed. | 2026-08-05 | Payroll / platform composition |
 | D2 | Settlement ingress | **CLOSED** | `settlement-ingress` feature + C8 reversal guard; `apps/web` drains Payments posted/reversed + Accounting journal posted into reconciliation; matched payment blocks run reversal. | 2026-08-05 | Payroll / Payments / Accounting |
+| D7 | HR restriction operation | **CLOSED** | `restrictEmployeeData` / `liftEmployeeDataRestriction` ship with export exclusion and anonymization block; remaining D7 rows are docs/promotion (cut-off, termination contract, breaking-change policy, PRODUCTION_READINESS already present). | 2026-08-05 | Human Resources |
 | B3 | Capability signature | **CLOSED** | Composition requires clock, currency, and statutory capabilities; production factories exported; calculator uses currency payable scale and statutory registry approval. | 2026-08-05 | Payroll |
 
 ## A1 evidence

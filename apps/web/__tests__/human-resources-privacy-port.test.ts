@@ -278,6 +278,95 @@ describe("Human Resources privacy composition port", () => {
 		expect(auditCalls).toHaveLength(0);
 	});
 
+	it("excludes export and blocks anonymization while a restriction is active", async () => {
+		const store = createPrivacyOperationStore();
+		privacyServiceRef.current = createPlatformPrivacyService({
+			store,
+			inventory: createOrgScopedInventory(
+				new Map([[organizationA, subjectRecords]]),
+			),
+			audit: createAuditPort(),
+			createId: () => "restriction-1",
+		});
+		const port = createHumanResourcesPrivacyPort();
+
+		const placed = await port.restrictSubject({
+			organizationId: organizationA,
+			actorUserId,
+			correlationId,
+			subjectEmployeeId,
+			requestedAt,
+			legalBasis: "processing_restriction",
+			restrictionReference: "case-restriction-1",
+			classifications: ["workforce_core"],
+		});
+		expect(placed.ok).toBe(true);
+
+		const exported = await port.exportSubject({
+			organizationId: organizationA,
+			actorUserId,
+			correlationId,
+			subjectEmployeeId,
+			requestedAt,
+			legalBasis: "data_subject_request",
+		});
+		expect(exported.ok).toBe(false);
+
+		const evaluation = await port.evaluateAnonymization({
+			organizationId: organizationA,
+			actorUserId,
+			correlationId,
+			subjectEmployeeId,
+			requestedAt,
+			legalBasis: "anonymization_request",
+		});
+		expect(evaluation.ok).toBe(true);
+		if (evaluation.ok) {
+			expect(evaluation.data.allowed).toBe(false);
+		}
+
+		const privacyCase = await port.getSubjectPrivacyCase({
+			organizationId: organizationA,
+			actorUserId,
+			correlationId,
+			subjectEmployeeId,
+			requestedAt,
+			legalBasis: "privacy_case_read",
+		});
+		expect(privacyCase.ok).toBe(true);
+		if (privacyCase.ok) {
+			expect(privacyCase.data.activeRestrictions).toEqual([
+				expect.objectContaining({
+					restrictionId: "restriction-1",
+					restrictionReference: "case-restriction-1",
+				}),
+			]);
+		}
+
+		const lifted = await port.liftRestriction({
+			organizationId: organizationA,
+			actorUserId,
+			correlationId,
+			restrictionId: "restriction-1",
+			reason: "restriction_lifted",
+			liftedAt: requestedAt,
+		});
+		expect(lifted.ok).toBe(true);
+
+		const restored = await port.evaluateAnonymization({
+			organizationId: organizationA,
+			actorUserId,
+			correlationId,
+			subjectEmployeeId,
+			requestedAt,
+			legalBasis: "anonymization_request",
+		});
+		expect(restored.ok).toBe(true);
+		if (restored.ok) {
+			expect(restored.data.allowed).toBe(true);
+		}
+	});
+
 	it("rejects release of a legal hold owned by another tenant", async () => {
 		const store = createPrivacyOperationStore();
 		store.placeLegalHold({

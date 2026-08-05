@@ -301,6 +301,7 @@ import {
 	issueInterimEmployeeMeasure as issueInterimEmployeeMeasureInternal,
 	issueOffer as issueOfferInternal,
 	issuePolicyAcknowledgementRequirement as issuePolicyAcknowledgementRequirementInternal,
+	liftEmployeeDataRestriction as liftEmployeeDataRestrictionInternal,
 	listActiveImprovementPlans as listActiveImprovementPlansInternal,
 	listApplicationStatusHistory as listApplicationStatusHistoryInternal,
 	listApplications as listApplicationsInternal,
@@ -479,6 +480,7 @@ import {
 	resolveEmploymentCalendar as resolveEmploymentCalendarInternal,
 	resolvePrimaryManager as resolvePrimaryManagerInternal,
 	resolveTimePolicy as resolveTimePolicyInternal,
+	restrictEmployeeData as restrictEmployeeDataInternal,
 	retireCompetency as retireCompetencyInternal,
 	retireDocumentRequirement as retireDocumentRequirementInternal,
 	retirePersonContact as retirePersonContactInternal,
@@ -1424,6 +1426,9 @@ export const issueInterimEmployeeMeasure = bindHumanResourcesCapability(
 export const issueOffer = bindHumanResourcesCapability(issueOfferInternal);
 export const issuePolicyAcknowledgementRequirement =
 	bindHumanResourcesCapability(issuePolicyAcknowledgementRequirementInternal);
+export const liftEmployeeDataRestriction = bindHumanResourcesCapability(
+	liftEmployeeDataRestrictionInternal,
+);
 export const listActiveImprovementPlans = bindHumanResourcesCapability(
 	listActiveImprovementPlansInternal,
 );
@@ -1946,6 +1951,9 @@ export const resolvePrimaryManager = bindHumanResourcesCapability(
 );
 export const resolveTimePolicy = bindHumanResourcesCapability(
 	resolveTimePolicyInternal,
+);
+export const restrictEmployeeData = bindHumanResourcesCapability(
+	restrictEmployeeDataInternal,
 );
 export const retireCompetency = bindHumanResourcesCapability(
 	retireCompetencyInternal,

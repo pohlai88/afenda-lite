@@ -11,10 +11,10 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const pkgRoot = path.join(__dirname, "..");
 
 const { HUMAN_RESOURCES_COMMAND_IDS, HUMAN_RESOURCES_QUERY_IDS } = await import(
-	pathToFileURL(path.join(pkgRoot, "src/module-ids.ts")).href
+	pathToFileURL(path.join(pkgRoot, "src/kernel/operations/module-ids.ts")).href
 );
 const { HUMAN_RESOURCES_MUTATION_EMISSION_REGISTRY_RECORD } = await import(
-	pathToFileURL(path.join(pkgRoot, "src/emissions/registry.ts")).href
+	pathToFileURL(path.join(pkgRoot, "src/kernel/emissions/registry.ts")).href
 );
 
 const classifiedIds = Object.keys(
