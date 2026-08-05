@@ -235,14 +235,14 @@ gross-to-net, statutory deductions, net pay, or payslips.
   `inputs_locked` period state in the schema. A payroll **run** separately
   moves through `draft → calculating → calculated → failed → finalized →
   reversed`; that run-status lifecycle is also not consulted by ingest.
-  Also enforced today: nothing in Payroll's calculation pipeline currently
-  reads the `payroll_accepted_handoff` ledger — production calculators pull
-  employee input through an injectable `PayrollWorkforceInputPort`
-  (`packages/erp/payroll/src/features/calculation/production-run-calculator.ts`),
-  and production composition wires no workforce port (bridging B1). A
-  handoff accepted by `ingestApprovedPayrollHandoff` is durably sealed and
-  supersession-ordered, but nothing downstream currently consumes it to
-  compute a run.
+  Calculation pulls employee input through an injectable
+  `PayrollWorkforceInputPort`
+  (`packages/erp/payroll/src/features/calculation/production-run-calculator.ts`)
+  that **defaults to the accepted-handoff ledger** — when composition wires
+  no override, `createAcceptedWorkforceInputPort` resolves employees from
+  `payroll_accepted_handoff` with effective-dated exact-then-fallback lookup
+  (`packages/erp/payroll/src/facade/context.ts`). The explicit `workforce`
+  override remains a test-only seam (bridging B1).
 - **What a late approval does today:** because ingest never checks period or
   run status, a correction arriving after a period would-be "lock" point is
   accepted like any other handoff — subject only to the existing
