@@ -852,3 +852,39 @@ describe("final-settlement C6 human clearance", () => {
 		expect(current.clearanceRequiredReason).toContain("period was closed");
 	});
 });
+
+describe("final-settlement initiate replay", () => {
+	it("returns the same settlement when HR supersedes compensation between attempts", async () => {
+		const seeded = await seedOpenPeriod();
+		const first = await initiated(seeded);
+
+		await supersedeCompensation(seeded, "6200");
+
+		const retry = await initiateFinalSettlement(
+			initiateInput(seeded),
+			seeded.options,
+		);
+		expect(retry.ok).toBe(true);
+		if (!retry.ok) {
+			return;
+		}
+		expect(retry.data.id).toBe(first.id);
+		expect(retry.data.version).toBe(first.version);
+		expect(retry.data.compensationSnapshotHash).toBe(
+			first.compensationSnapshotHash,
+		);
+		expect(retry.data.compensationSnapshot).toEqual(first.compensationSnapshot);
+	});
+
+	it("refuses a caller-supplied statutory amount", async () => {
+		const seeded = await seedOpenPeriod();
+		const result = await initiateFinalSettlement(
+			initiateInput(seeded, { employeeStatutoryAmount: "120" }),
+			seeded.options,
+		);
+		expect(result.ok).toBe(false);
+		if (!result.ok) {
+			expect(result.code).toBe("VALIDATION_ERROR");
+		}
+	});
+});

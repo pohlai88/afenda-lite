@@ -137,6 +137,17 @@ export interface PayrollFinalSettlementStatement {
 	totals: PayrollFinalSettlementTotals;
 }
 
+/**
+ * A termination pay capsule.
+ *
+ * One settlement per termination: `(organizationId, terminationId)` is the
+ * natural key, enforced by `payroll_final_settlement_org_termination_uidx`. A
+ * second settlement for the same termination is a `CONFLICT`, never a second
+ * capsule — corrections move the existing settlement through its lifecycle.
+ * `(organizationId, idempotencyKey)` is a separate uniqueness axis covering
+ * request replay; a replayed initiate returns the settlement already pinned,
+ * even if HR superseded compensation in between.
+ */
 export interface PayrollFinalSettlement {
 	calculatedAt: Date | null;
 	calculatedBy: string | null;
