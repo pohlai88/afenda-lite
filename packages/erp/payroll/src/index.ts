@@ -1,12 +1,14 @@
 import "server-only";
 
 export {
+	applyRetroToPeriod,
 	archivePayrollCalendar,
 	archivePayrollDeductionRule,
 	archivePayrollEarningRule,
 	archivePayrollPayGroup,
 	archivePayrollStatutoryRule,
 	calculatePayrollRun,
+	calculateRetroDifference,
 	claimDuePayrollJobWork,
 	closePayrollPeriod,
 	createPayrollCalendar,
@@ -44,7 +46,9 @@ export {
 	listPayrollPayGroups,
 	listPayrollPeriods,
 	listPayrollReconciliationsForRun,
+	listRetroItems,
 	projectPayrollFields,
+	queueRetroItem,
 	recordPaymentSettlement,
 	recordPayrollException,
 	recordPayrollReconciliation,
@@ -98,6 +102,19 @@ export {
 	type PayrollRetentionEvidence,
 	type PayrollSubjectAccessExport,
 } from "./features/privacy/contract";
+export {
+	PAYROLL_RETRO_CORRECTION_KINDS,
+	PAYROLL_RETRO_STATUSES,
+	type PayrollRetroCorrection,
+	type PayrollRetroCorrectionKind,
+	type PayrollRetroDifference,
+	type PayrollRetroDifferenceLine,
+	type PayrollRetroDifferenceTotals,
+	type PayrollRetroItem,
+	type PayrollRetroItemView,
+	type PayrollRetroLine,
+	type PayrollRetroStatus,
+} from "./features/retro-pay/contract";
 export { parsePayrollDisbursementReference } from "./features/settlement-ingress/parse-payroll-disbursement-reference";
 export { PAYROLL_PLATFORM_EVENT_DISPATCHER_ID } from "./kernel/emissions/emission-registry";
 export type {

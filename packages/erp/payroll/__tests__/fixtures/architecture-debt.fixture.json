@@ -35,6 +35,10 @@
 					"file": "src/features/calculation/calculation-pipeline.ts"
 				},
 				{
+					"evidence": "src/features/calculation/calculation-snapshot.schema.ts exceeds src/<owner>/<file>",
+					"file": "src/features/calculation/calculation-snapshot.schema.ts"
+				},
+				{
 					"evidence": "src/features/calculation/calculation-snapshot.ts exceeds src/<owner>/<file>",
 					"file": "src/features/calculation/calculation-snapshot.ts"
 				},
@@ -337,6 +341,42 @@
 				{
 					"evidence": "src/features/reconciliation/reconciliation.store.ts exceeds src/<owner>/<file>",
 					"file": "src/features/reconciliation/reconciliation.store.ts"
+				},
+				{
+					"evidence": "src/features/retro-pay/contract.ts exceeds src/<owner>/<file>",
+					"file": "src/features/retro-pay/contract.ts"
+				},
+				{
+					"evidence": "src/features/retro-pay/fingerprint.ts exceeds src/<owner>/<file>",
+					"file": "src/features/retro-pay/fingerprint.ts"
+				},
+				{
+					"evidence": "src/features/retro-pay/operation-registry.ts exceeds src/<owner>/<file>",
+					"file": "src/features/retro-pay/operation-registry.ts"
+				},
+				{
+					"evidence": "src/features/retro-pay/recompute-retro-difference.ts exceeds src/<owner>/<file>",
+					"file": "src/features/retro-pay/recompute-retro-difference.ts"
+				},
+				{
+					"evidence": "src/features/retro-pay/retro.command.ts exceeds src/<owner>/<file>",
+					"file": "src/features/retro-pay/retro.command.ts"
+				},
+				{
+					"evidence": "src/features/retro-pay/retro.drizzle.ts exceeds src/<owner>/<file>",
+					"file": "src/features/retro-pay/retro.drizzle.ts"
+				},
+				{
+					"evidence": "src/features/retro-pay/retro.memory.ts exceeds src/<owner>/<file>",
+					"file": "src/features/retro-pay/retro.memory.ts"
+				},
+				{
+					"evidence": "src/features/retro-pay/retro.schema.ts exceeds src/<owner>/<file>",
+					"file": "src/features/retro-pay/retro.schema.ts"
+				},
+				{
+					"evidence": "src/features/retro-pay/retro.store.ts exceeds src/<owner>/<file>",
+					"file": "src/features/retro-pay/retro.store.ts"
 				},
 				{
 					"evidence": "src/features/settlement-ingress/operation-registry.ts exceeds src/<owner>/<file>",
@@ -716,6 +756,22 @@
 					"file": "src/features/reconciliation/operation-store.ts"
 				},
 				{
+					"evidence": "src/features/retro-pay/recompute-retro-difference.ts:4 -> src/features/calculation/calculation.ts (retro-pay -> calculation)",
+					"file": "src/features/retro-pay/recompute-retro-difference.ts"
+				},
+				{
+					"evidence": "src/features/retro-pay/retro.command.ts:21 -> src/features/calculation/outputs.store.ts (retro-pay -> calculation)",
+					"file": "src/features/retro-pay/retro.command.ts"
+				},
+				{
+					"evidence": "src/features/retro-pay/retro.command.ts:22 -> src/features/payroll-runs/runs.store.ts (retro-pay -> payroll-runs)",
+					"file": "src/features/retro-pay/retro.command.ts"
+				},
+				{
+					"evidence": "src/features/retro-pay/retro.command.ts:23 -> src/features/payroll-setup/setup.store.ts (retro-pay -> payroll-setup)",
+					"file": "src/features/retro-pay/retro.command.ts"
+				},
+				{
 					"evidence": "src/features/settlement-ingress/run-settlement-policy.ts:4 -> src/features/reconciliation/reconciliation.store.ts (settlement-ingress -> reconciliation)",
 					"file": "src/features/settlement-ingress/run-settlement-policy.ts"
 				},
@@ -804,7 +860,7 @@
 	},
 	"schemaVersion": 1,
 	"summary": {
-		"featureCount": 12,
-		"sourceTypeScriptFiles": 149
+		"featureCount": 13,
+		"sourceTypeScriptFiles": 159
 	}
 }

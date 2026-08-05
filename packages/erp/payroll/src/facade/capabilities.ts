@@ -84,6 +84,12 @@ import {
 	resolvePayrollReconciliation as resolvePayrollReconciliationInternal,
 } from "../features/reconciliation/reconciliation.command";
 import {
+	applyRetroToPeriod as applyRetroToPeriodInternal,
+	calculateRetroDifference as calculateRetroDifferenceInternal,
+	listRetroItems as listRetroItemsInternal,
+	queueRetroItem as queueRetroItemInternal,
+} from "../features/retro-pay/retro.command";
+import {
 	recordPaymentSettlement as recordPaymentSettlementInternal,
 	recordPostingConfirmation as recordPostingConfirmationInternal,
 	resolveReconciliationDiscrepancy as resolveReconciliationDiscrepancyInternal,
@@ -170,6 +176,14 @@ export const getPayrollJob = bindPayrollOperation(getPayrollJobInternal);
 export const listPayrollDeadLetters = bindPayrollOperation(
 	listPayrollDeadLettersInternal,
 );
+export const queueRetroItem = bindPayrollOperation(queueRetroItemInternal);
+export const calculateRetroDifference = bindPayrollOperation(
+	calculateRetroDifferenceInternal,
+);
+export const applyRetroToPeriod = bindPayrollOperation(
+	applyRetroToPeriodInternal,
+);
+export const listRetroItems = bindPayrollOperation(listRetroItemsInternal);
 export const recordPayrollReconciliation = bindPayrollOperation(
 	recordPayrollReconciliationInternal,
 );

@@ -39,6 +39,8 @@ export const PAYROLL_MUTATION_TABLES = [
 	"payroll_job",
 	"payroll_job_work_item",
 	"payroll_job_dead_letter",
+	"payroll_retro_item",
+	"payroll_retro_line",
 ] as const;
 
 export const PAYROLL_AGGREGATES = [

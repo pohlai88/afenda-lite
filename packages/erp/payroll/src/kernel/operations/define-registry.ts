@@ -11,6 +11,7 @@ export const PAYROLL_OPERATION_OWNERS = [
 	"privacy",
 	"payroll-jobs",
 	"reconciliation",
+	"retro-pay",
 	"settlement-ingress",
 ] as const;
 export type PayrollOperationOwner = (typeof PAYROLL_OPERATION_OWNERS)[number];

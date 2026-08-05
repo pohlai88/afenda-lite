@@ -42,6 +42,9 @@
 		"payroll.jobs.work.claim": "payroll.run.calculate",
 		"payroll.jobs.work.execute": "payroll.run.calculate",
 		"payroll.jobs.dead-letter.replay": "payroll.run.calculate",
+		"payroll.retro.item.queue": "payroll.input.manage",
+		"payroll.retro.difference.calculate": "payroll.run.review",
+		"payroll.retro.period.apply": "payroll.input.manage",
 		"payroll.workforce.ingest": "payroll.input.manage",
 		"payroll.setup.calendar.get": "payroll.setup.manage",
 		"payroll.setup.calendar.list": "payroll.setup.manage",
@@ -61,7 +64,8 @@
 		"payroll.privacy.subject-access.respond": "payroll.payslip.read-own",
 		"payroll.jobs.job.get": "payroll.run.review",
 		"payroll.jobs.dead-letter.list": "payroll.run.review",
-		"payroll.reconciliation.list": "payroll.reconciliation.manage"
+		"payroll.reconciliation.list": "payroll.reconciliation.manage",
+		"payroll.retro.item.list": "payroll.run.review"
 	},
 	"errorCodeSets": {},
 	"eventCatalog": [],
@@ -226,6 +230,34 @@
 			"owner": "reconciliation",
 			"permission": "payroll.reconciliation.manage",
 			"publicName": "resolveReconciliation"
+		},
+		{
+			"id": "payroll.retro.difference.calculate",
+			"kind": "command",
+			"owner": "retro-pay",
+			"permission": "payroll.run.review",
+			"publicName": "calculateRetroDifference"
+		},
+		{
+			"id": "payroll.retro.item.list",
+			"kind": "query",
+			"owner": "retro-pay",
+			"permission": "payroll.run.review",
+			"publicName": "listRetroItems"
+		},
+		{
+			"id": "payroll.retro.item.queue",
+			"kind": "command",
+			"owner": "retro-pay",
+			"permission": "payroll.input.manage",
+			"publicName": "queueRetroItem"
+		},
+		{
+			"id": "payroll.retro.period.apply",
+			"kind": "command",
+			"owner": "retro-pay",
+			"permission": "payroll.input.manage",
+			"publicName": "applyRetroToPeriod"
 		},
 		{
 			"id": "payroll.run.calculate",

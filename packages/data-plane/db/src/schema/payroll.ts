@@ -1144,7 +1144,9 @@ export const payrollJobWorkItem = pgTable(
 		jobId: uuid("job_id").notNull(),
 		status: text("status").notNull(),
 		attemptCount: integer("attempt_count").notNull().default(0),
-		nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true }).notNull(),
+		nextAttemptAt: timestamp("next_attempt_at", {
+			withTimezone: true,
+		}).notNull(),
 		lastAttemptAt: timestamp("last_attempt_at", { withTimezone: true }),
 		leaseOwner: text("lease_owner"),
 		leaseExpiresAt: timestamp("lease_expires_at", { withTimezone: true }),
@@ -1207,5 +1209,113 @@ export const payrollJobDeadLetter = pgTable(
 			foreignColumns: [payrollJob.organizationId, payrollJob.id],
 			name: "payroll_job_dead_letter_org_job_fk",
 		}),
+	],
+);
+
+/** Deferred correction for a sealed period — bridging C3/D3 retro-pay. */
+export const payrollRetroItem = pgTable(
+	"payroll_retro_item",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		originPeriodId: uuid("origin_period_id").notNull(),
+		originRunId: uuid("origin_run_id"),
+		employeeId: text("employee_id").notNull(),
+		status: text("status").notNull(),
+		reason: text("reason").notNull(),
+		correlationId: text("correlation_id").notNull(),
+		correctionJson: jsonb("correction_json").notNull(),
+		differenceJson: jsonb("difference_json"),
+		targetPeriodId: uuid("target_period_id"),
+		targetRunId: uuid("target_run_id"),
+		appliedAt: timestamp("applied_at", { withTimezone: true }),
+		...payrollIdempotencyColumns,
+		...payrollAuditColumns,
+	},
+	(t) => [
+		index("payroll_retro_item_org_id_idx").on(t.organizationId, t.id),
+		index("payroll_retro_item_org_status_idx").on(t.organizationId, t.status),
+		index("payroll_retro_item_org_origin_period_idx").on(
+			t.organizationId,
+			t.originPeriodId,
+		),
+		index("payroll_retro_item_org_target_run_idx").on(
+			t.organizationId,
+			t.targetRunId,
+		),
+		unique("payroll_retro_item_org_id_uidx").on(t.organizationId, t.id),
+		uniqueIndex("payroll_retro_item_org_create_idempotency_uidx").on(
+			t.organizationId,
+			t.createIdempotencyKey,
+		),
+		foreignKey({
+			columns: [t.organizationId, t.originPeriodId],
+			foreignColumns: [payrollPeriod.organizationId, payrollPeriod.id],
+			name: "payroll_retro_item_org_origin_period_fk",
+		}),
+		check(
+			"payroll_retro_item_status_check",
+			sql`${t.status} IN ('queued', 'calculated', 'applied')`,
+		),
+		check(
+			"payroll_retro_item_applied_shape_check",
+			sql`(${t.status} <> 'applied') OR (${t.originRunId} IS NOT NULL AND ${t.targetPeriodId} IS NOT NULL AND ${t.targetRunId} IS NOT NULL AND ${t.appliedAt} IS NOT NULL AND ${t.differenceJson} IS NOT NULL)`,
+		),
+	],
+);
+
+/** Retro result line emitted into an open target run, labelled with its origin period. */
+export const payrollRetroLine = pgTable(
+	"payroll_retro_line",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		retroItemId: uuid("retro_item_id").notNull(),
+		targetRunId: uuid("target_run_id").notNull(),
+		originPeriodId: uuid("origin_period_id").notNull(),
+		originRunId: uuid("origin_run_id").notNull(),
+		employeeId: text("employee_id").notNull(),
+		lineKind: text("line_kind").notNull(),
+		code: text("code").notNull(),
+		ruleCode: text("rule_code").notNull(),
+		ruleVersion: text("rule_version").notNull(),
+		ruleKind: text("rule_kind").notNull(),
+		amount: numeric("amount", { precision: 24, scale: 12 }).notNull(),
+		currencyCode: text("currency_code").notNull(),
+		sequence: integer("sequence").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("payroll_retro_line_org_id_idx").on(t.organizationId, t.id),
+		index("payroll_retro_line_org_target_run_idx").on(
+			t.organizationId,
+			t.targetRunId,
+		),
+		unique("payroll_retro_line_org_id_uidx").on(t.organizationId, t.id),
+		uniqueIndex("payroll_retro_line_org_item_sequence_uidx").on(
+			t.organizationId,
+			t.retroItemId,
+			t.sequence,
+		),
+		foreignKey({
+			columns: [t.organizationId, t.retroItemId],
+			foreignColumns: [payrollRetroItem.organizationId, payrollRetroItem.id],
+			name: "payroll_retro_line_org_item_fk",
+		}),
+		foreignKey({
+			columns: [t.organizationId, t.targetRunId],
+			foreignColumns: [payrollRun.organizationId, payrollRun.id],
+			name: "payroll_retro_line_org_target_run_fk",
+		}),
+		check(
+			"payroll_retro_line_kind_check",
+			sql`${t.lineKind} IN ('earning', 'pre_tax_deduction', 'employee_statutory', 'post_tax_deduction', 'employer_contribution')`,
+		),
+		check(
+			"payroll_retro_line_rule_kind_check",
+			sql`${t.ruleKind} IN ('earning', 'deduction', 'statutory', 'none')`,
+		),
 	],
 );

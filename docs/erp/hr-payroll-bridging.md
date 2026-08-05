@@ -368,6 +368,8 @@ Backdated increases, late variable inputs, and corrections arriving after `input
 
 **Critical:** recomputation must use the rule version pinned on the original run snapshot, not today's rules — otherwise a rate change silently rewrites history.
 
+**CLOSED 2026-08-05.** `retro-pay` recomputes from `payroll_run_employee.snapshot_json`, which already pins every earning, deduction, and statutory rule version the sealed run priced under; the live setup tables are never read. The unmodified recompute is reconciled against the sealed `payroll_result_line` rows before any difference is taken, so a period that is not reproducible is refused rather than approximated. Corrections land in `payroll_retro_item` (idempotent queue, C3), differences apply only into an `open` target period on an unsealed run, and emitted `payroll_retro_line` rows carry their origin period and run. Production migrate remains ops-gated (`0052_payroll_retro_pay`).
+
 ### D4 — `payroll/final-settlement`
 
 Termination pay is mandatory in both jurisdictions and absent from your nine features.
@@ -443,7 +445,7 @@ Requires the A2 rate tables to be effective-dated and version-pinned.
 | 11 | `settlement-ingress` | D2 | ✅ + C8 reversal-bounded-by-settlement guard |
 | 12 | `privacy` | D1 | ✅ restriction + retention evidence + DSAR; erasure still forbidden without counsel citation |
 | 13 | `payroll-jobs` | D6 | ✅ durable claim/lease/retry/DLQ + chunk merge + `/api/cron/payroll-jobs` |
-| 14 | `retro-pay`, `final-settlement`, `statutory-filings` | D3–D5 | ⏳ open — after D6 |
+| 14 | `retro-pay`, `final-settlement`, `statutory-filings` | D3–D5 | ◐ `retro-pay` ✅ (queue / snapshot-pinned recompute / apply into an open period / review; migrate `0052_payroll_retro_pay` ops-gated); `final-settlement` + `statutory-filings` ⏳ open |
 | 15 | HR D7 residue | D7 | ✅ restriction ops, PRODUCTION_READINESS promotion gate, cut-off + termination + breaking-change docs (C3/C6 enforcement rows honestly partial — payroll-side enforcement + tests pending) |
 | 16 | Phase E evidence + promotion | E | ⏳ open — gated on 2, 3, 10, 14 and D7's two partial rows |
 
