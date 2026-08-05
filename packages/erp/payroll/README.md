@@ -96,7 +96,7 @@ HR feedback (recordPayrollDeliveryFeedback: acknowledged | rejected | correction
   Calculation-time reads use the accepted-handoff ledger. The optional
   `workforce` field on capability options is a **test-only** seam.
 - Ingest and event publish share no transaction; safety depends on ingest
-  idempotency (payload hash / delivery identity — bridging C1).
+  idempotency (`deliveryId` + payload hash — bridging C1).
 - Retry/recovery: `recoverPendingPayrollDeliveries` + HR reliability worker.
 - Corrections: atomic supersessions with optimistic source-version locking.
 
