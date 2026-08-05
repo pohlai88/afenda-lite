@@ -84,6 +84,14 @@ Shipped in `src/features/payroll-runs/finalization.ts`: when status is `calculat
 - Session stamps org/actor/correlation; caller cannot supply `leaveBalanceDays` (handoff-pinned)
 - Evidence: `apps/web/__tests__/payroll-final-settlement-actions.test.ts`
 
+## Run / period / statutory-profile app actions
+
+- Run Actions: `apps/web/app/actions/payroll-run.ts` — `createPayrollRunAction`, `calculatePayrollRunAction`, `finalizePayrollRunAction`, `reversePayrollRunAction`, `getPayrollRunAction`
+- Period Actions: `apps/web/app/actions/payroll-period.ts` — `createPayrollPeriodAction`, `updatePayrollPeriodAction`, `lockPayrollPeriodInputsAction`, `closePayrollPeriodAction`, `getPayrollPeriodAction`, `listPayrollPeriodsAction`
+- Statutory-profile Actions: `apps/web/app/actions/hr-statutory-profile.ts` — `upsertStatutoryProfileAction`, `getStatutoryProfileAction`, `listStatutoryProfilesAction`, `recordPriorEmployerYtdAction`, `listPriorEmployerYtdAction` (sensitive-identifiers manage/read)
+- Session stamps org/actor/correlation on every Action; package input schemas for statutory profile are root-exported
+- Evidence: `apps/web/__tests__/payroll-run-actions.test.ts`, `payroll-period-actions.test.ts`, `hr-statutory-profile-actions.test.ts`
+
 ## Open-decision rule
 
 Do not promote either module to `active`, claim enterprise seal, or enable production statutory calculators while **A2** remains OPEN. A3/A4 closed postures still require counsel-cited retention clocks before erasure or settled clawback automation.

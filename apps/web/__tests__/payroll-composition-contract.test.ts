@@ -69,4 +69,38 @@ describe("Payroll application composition", () => {
 		expect(source).not.toContain("leaveBalanceDays");
 		expect(source).not.toContain("workforce:");
 	});
+
+	it("exposes payroll run lifecycle actions with session-stamped org and actor", () => {
+		const source = readFileSync(
+			fileURLToPath(new URL("../app/actions/payroll-run.ts", import.meta.url)),
+			"utf8",
+		);
+
+		expect(source).toContain("createPayrollRun");
+		expect(source).toContain("calculatePayrollRun");
+		expect(source).toContain("finalizePayrollRun");
+		expect(source).toContain("reversePayrollRun");
+		expect(source).toContain("getPayrollRun");
+		expect(source).toContain("organizationId: session.orgId");
+		expect(source).toContain("actorUserId: session.userId");
+		expect(source).toContain("createPayrollCommandOptions()");
+		expect(source).not.toContain("workforce:");
+	});
+
+	it("exposes payroll period setup actions including C3 input lock", () => {
+		const source = readFileSync(
+			fileURLToPath(
+				new URL("../app/actions/payroll-period.ts", import.meta.url),
+			),
+			"utf8",
+		);
+
+		expect(source).toContain("createPayrollPeriod");
+		expect(source).toContain("lockPayrollPeriodInputs");
+		expect(source).toContain("closePayrollPeriod");
+		expect(source).toContain("organizationId: session.orgId");
+		expect(source).toContain("actorUserId: session.userId");
+		expect(source).toContain("createPayrollCommandOptions()");
+		expect(source).toContain("payroll.setup.manage");
+	});
 });

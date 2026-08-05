@@ -1,10 +1,10 @@
 {
-	"contractDigest": "5da491b0e5ca2cd8a3e70c3671f897eed7bba7e20b24229a127744bd5d81afe5",
+	"contractDigest": "42ff8d7e615f62c946a8d7b07ad2671dcc34c1d16d69f8bc8cea1cff9ff4eac3",
 	"entrypoints": {
 		".": {
 			"capabilityCount": 23,
 			"owner": "production",
-			"symbolCount": 2832
+			"symbolCount": 2837
 		},
 		"./testing": {
 			"capabilityCount": 0,

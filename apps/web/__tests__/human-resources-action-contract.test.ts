@@ -68,6 +68,7 @@ describe("HR standard Action contract", () => {
 			"_runtime/hr-reporting-bulk.ts",
 			"hr-self-service-journeys.ts",
 			"hr-self-service.ts",
+			"hr-statutory-profile.ts",
 			"hr-talent.ts",
 			"hr-time.ts",
 			"hr-workforce-planning.ts",
