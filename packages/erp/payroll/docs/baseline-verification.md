@@ -33,6 +33,18 @@ statutory calculators, or enterprise seal while A2 remains open
 | Module validate | `pnpm validate:modules` | SKIP | No module roadmap after `docs-V2` removal |
 | Outer parity | `REQUIRE_DATABASE_TESTS=1 AFENDA_DATABASE_TEST_TARGET=preview pnpm test:payroll:parity` | PASS | 7/7 including workforce-ingress races on preview with `payroll_accepted_handoff` |
 
+### Audit-failure atomicity (B5 case 2) — proven by construction on drizzle
+
+The bridging-doc B5 case "audit insert fails → command fails closed, nothing
+persisted" is covered behaviorally on the memory adapter and **structurally on
+drizzle**: `updateRunWithVersion` commits the run transition, audit fact, and
+outbox facts inside a single SQL statement (`runs.drizzle.ts` CTE), so a failed
+audit insert fails the entire statement — no injectable seam exists in which
+audit can fail independently while the run row persists. A port-level failure
+injection here would mock a seam production does not have and prove nothing;
+the single-statement shape is the stronger guarantee and is the reviewed
+evidence for this case.
+
 ## 3. Contract surfaces
 
 | Surface | Path |
