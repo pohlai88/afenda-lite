@@ -184,7 +184,19 @@ export default mergeConfig(
 					"inventory",
 					path.join(repoRoot, "packages/erp/inventory"),
 				),
-				nodeProject("http", path.join(repoRoot, "packages/runtime/http")),
+				{
+					...nodeProject("http", path.join(repoRoot, "packages/runtime/http")),
+					test: {
+						...nodeProject("http", path.join(repoRoot, "packages/runtime/http"))
+							.test,
+						// Server-Timing dur= assertions read real Date.now(); CPU
+						// contention under full turbo parallel load can stretch the
+						// default 5s testTimeout even though the assertions are
+						// tolerant of magnitude.
+						testTimeout: 30_000,
+						hookTimeout: 30_000,
+					},
+				},
 				nodeProject(
 					"security",
 					path.join(repoRoot, "packages/runtime/security"),
