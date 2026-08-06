@@ -215,6 +215,11 @@ export default mergeConfig(
 						include: nodeProject("env", "").test.include,
 						environment: "node",
 						maxWorkers: 1,
+						// This block builds its own test object rather than spreading
+						// nodeProject(...).test, so it does not inherit that helper's
+						// 30s default; set explicitly here too.
+						testTimeout: 30_000,
+						hookTimeout: 30_000,
 						env: {
 							SKIP_ENV_VALIDATION: "true",
 						},

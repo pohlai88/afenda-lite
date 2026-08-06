@@ -84,6 +84,14 @@ export const nodeProject = (name: string, root: string) => {
 			...(exclude === undefined ? {} : { exclude }),
 			environment: "node" as const,
 			maxWorkers: 1,
+			// Default floor for CPU contention under full turbo parallel load
+			// (`pnpm exec turbo run test` across 37 packages); a different
+			// project's default 5s testTimeout intermittently trips depending
+			// on scheduling. Callers that need a different value set
+			// testTimeout/hookTimeout explicitly after spreading this test
+			// object, which wins over these defaults.
+			testTimeout: 30_000,
+			hookTimeout: 30_000,
 			env: {
 				SKIP_ENV_VALIDATION: "true",
 			},
