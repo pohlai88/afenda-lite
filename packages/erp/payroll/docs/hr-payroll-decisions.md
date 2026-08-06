@@ -110,6 +110,29 @@ Shipped in `src/features/payroll-runs/finalization.ts`: when status is `calculat
 - Tests: `__tests__/jurisdiction-statutory-calculators.test.ts`, `__tests__/production-hardening.test.ts`
 - Readiness: `PRODUCTION_READINESS.md` — pack reviewer approval still required before production activation
 
+## YTD fanout batching (closed 2026-08-06)
+
+- `PayrollYearToDateStore` reads history via `listResultLinesForEmployeeRuns` + `listStatutoryResultsForEmployeeRuns` (one pair of queries per employee across eligible finalized run ids)
+- Memory + Drizzle adapters implement the batched methods; architecture-debt category `ytd-fanout-unbatched` is at target zero
+
+## Remaining operator Action surface (closed 2026-08-06)
+
+- Payslips: `apps/web/app/actions/payroll-payslip.ts` — `getOwnPayrollPayslipAction` (`payroll.payslip.read-own` via `runMemberPermissionAction`), `getPayrollPayslipAction` (`payroll.payslip.read-all`)
+- Reconciliation: `apps/web/app/actions/payroll-reconciliation.ts` — record / resolve / list (`payroll.reconciliation.manage`)
+- Assignments: `apps/web/app/actions/payroll-assignments.ts` — create/get assignment + recurring earning/deduction (`payroll.setup.manage`)
+- Variable inputs: `apps/web/app/actions/payroll-variable-inputs.ts` — create / get (`payroll.input.manage`)
+- Run exceptions: `recordPayrollExceptionAction` / `listPayrollExceptionsForRunAction` on `payroll-run.ts` (`payroll.run.calculate` / `payroll.run.review`)
+- Settlement ingress (`recordPaymentSettlement` / `recordPostingConfirmation`) stays on the platform outbox drain path — not an operator Action surface
+- Evidence: `apps/web/__tests__/payroll-payslip-actions.test.ts`, `payroll-reconciliation-actions.test.ts`, `payroll-assignments-actions.test.ts`, `payroll-variable-inputs-actions.test.ts`, `payroll-run-actions.test.ts`, `payroll-composition-contract.test.ts`
+
+## Phase E evidence pack (engineering started 2026-08-06)
+
+- Ops runbooks: `docs/ops-runbooks.md` — outbox stall, stuck handoff, settlement failure, reversal-after-settlement, finalize SoD, statutory refuse, jobs drain
+- Sign-off matrix: `docs/phase-e-signoff.md` — E1–E12 gates; promotion forbidden until pack approval, counsel clocks, ops DDL, and independent review
+- Dry-run decision: `assembleApprovedPayrollHandoff` is the read-only preview before queueing (no separate preview command)
+- Evidence quality: local command output only (`pnpm check:hr`, `pnpm check:payroll`, `pnpm governance:packages`, `pnpm db:check`, all 2026-08-06). GitHub Actions billing is locked, so no CI run exists; `pnpm validate:modules` self-skips; the Drizzle/Neon parity lane self-skips without `DATABASE_URL` + `REQUIRE_DATABASE_TESTS=1`; migrations `0051`–`0056` are unapplied everywhere and `0049` is claimed applied on a preview branch only (unverified from this checkout)
+- Not claimed: module `active`, enterprise seal, calculator `approved`, counsel-confirmed retention basis, or any CI/Neon-backed evidence
+
 ## Open-decision rule
 
 Do not promote either module to `active`, claim enterprise seal, or mark calculators `productionApproval: approved` without named reviewer evidence. A2 sourcing is closed; pack review remains the production gate. A3/A4 closed postures still require counsel-cited retention clocks before erasure or settled clawback automation.

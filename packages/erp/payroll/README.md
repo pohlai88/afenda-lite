@@ -220,6 +220,8 @@ posting → Payments disbursement. Product boundary:
 | Development roadmap | [docs/development-roadmap.md](./docs/development-roadmap.md) |
 | Baseline verification | [docs/baseline-verification.md](./docs/baseline-verification.md) |
 | Production readiness | [PRODUCTION_READINESS.md](./PRODUCTION_READINESS.md) |
+| Ops runbooks (Phase E) | [docs/ops-runbooks.md](./docs/ops-runbooks.md) |
+| Phase E sign-off checklist | [docs/phase-e-signoff.md](./docs/phase-e-signoff.md) |
 | HR ↔ Payroll closure guideline | [hr-payroll-bridging.md](../../../docs/erp/hr-payroll-bridging.md) |
 | HR ↔ Payroll decisions register | [hr-payroll-decisions.md](./docs/hr-payroll-decisions.md) |
 | Human Resources PRD (ownership boundary) | [../human-resources/docs/PRD.md](../human-resources/docs/PRD.md) |

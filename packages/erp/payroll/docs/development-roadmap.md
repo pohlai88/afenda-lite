@@ -4,7 +4,7 @@
 | --- | --- |
 | Status | Package-local engineering roadmap; not a Living DOC-001 controlled document |
 | Product | Afenda-Lite Payroll (`@afenda/payroll`) |
-| Date | 2026-08-05 |
+| Date | 2026-08-06 |
 | Audience | Payroll maintainers, HR integrators, application composition owners |
 | Authority | [hr-payroll-bridging.md](../../../docs/erp/hr-payroll-bridging.md) · [hr-payroll-decisions.md](./hr-payroll-decisions.md) · package source |
 | Lifecycle | `scaffolded` / `organization_toggle` — green tests do not promote |
@@ -63,13 +63,12 @@ Entrypoints: `@afenda/payroll` (production) · `@afenda/payroll/testing` (test-o
 
 | Item | Bridging | Notes |
 | --- | --- | --- |
-| Statutory calculator sourcing | A2 | No production jurisdiction until reviewer-approved calculator |
+| Statutory calculator sourcing | A2 | **CLOSED** build in-house (`my.*.v1` / `vn.*.v1` `awaiting_review`). Production jurisdiction still needs pack reviewer `approved` |
+| Phase E evidence pack | E | Ops runbooks + sign-off checklist shipped under `docs/`; promotion gated on pack approval, counsel clocks, ops DDL, independent review |
+| Remaining operator Actions | app | Payslip / reconciliation / assignments / variable-inputs / run-exception Actions on `apps/web` (settlement ingress stays on outbox drain) |
 | D0 fact widening — Stage 2/3 | D0 | **CLOSED** — handoff carries statutory profile, prior-employer YTD, and termination leave balance; payroll calculator input + `PayrollYearToDateCapability` consume them; settlement leave is handoff-pinned |
 | Production handoff DDL | ops | Apply `0049_payroll_accepted_handoff.sql` off PL-S9 when migrate is approved |
-| Production retro DDL | ops | Apply `0052_payroll_retro_pay.sql` when migrate is approved |
-| Production final-settlement DDL | ops | Apply `0053_payroll_final_settlement.sql` when migrate is approved |
-| Production statutory-filings DDL | ops | Apply `0054_payroll_statutory_filings.sql` when migrate is approved |
-| Production period-lock DDL | ops | Apply `0055_payroll_period_inputs_locked.sql` when migrate is approved |
+| Production jobs / retro / settlement / filings / period-lock / HR statutory DDL | ops | Apply `0051`–`0056` when migrate is approved |
 
 ## 4. Verify loops
 

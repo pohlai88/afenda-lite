@@ -58,3 +58,19 @@ payroll/tax reviewer sets `productionApproval: approved` (reviewedBy,
 reviewedAt, jurisdictions) for the versioned calculator, its effective-dated
 pack, fixtures, and rounding policy. The production calculator fails closed
 when a statutory rule references anything without that approval.
+
+## Phase E evidence (engineering)
+
+| Artifact | Path |
+| --- | --- |
+| Ops runbooks | [docs/ops-runbooks.md](./docs/ops-runbooks.md) |
+| Sign-off checklist | [docs/phase-e-signoff.md](./docs/phase-e-signoff.md) |
+| Decisions register | [docs/hr-payroll-decisions.md](./docs/hr-payroll-decisions.md) |
+
+Promotion still requires pack reviewer approval (E4), counsel retention
+citations (E5), ops-gated DDL (E9 — `0051`–`0056` unapplied; `0049` preview-only),
+green `governance:packages` (E10), and independent review (E11). The Phase E
+evidence recorded so far is local command output only: GitHub Actions billing
+is locked, so no CI run exists for this revision, and the Drizzle/Neon parity
+lane self-skips without `DATABASE_URL` + `REQUIRE_DATABASE_TESTS=1`.
+Publishing this pack does not move `lifecycle` off `scaffolded`.

@@ -27,6 +27,7 @@ checkout-wide doctrine. This file wins only for **conflicts inside this package*
   highly sensitive. Use synthetic fixtures only; keep
   `payroll.payslip.read-own` and `payroll.payslip.read-all` distinct.
 - MY/VN jurisdiction calculators are `awaiting_review`; bundled `synth.v1` is test-only — neither is a production approval.
+- Phase E ops runbooks + sign-off checklist live under `docs/ops-runbooks.md` and `docs/phase-e-signoff.md` — not a lifecycle promotion.
 - Always-apply companions when editing this tree: `payroll-boundaries`,
   `payroll-domain`, `payroll-security`, `payroll-testing`.
 

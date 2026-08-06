@@ -51,8 +51,16 @@ Do not set Human Resources `lifecycle` to `active`, `preview`, `beta`, or
 
 ## External acceptance still required
 
-Open product decisions in
-[hr-payroll-decisions.md](../payroll/docs/hr-payroll-decisions.md) (A2–A4) block
-enterprise seal for the HR ↔ Payroll boundary even after package-local
-engineering gates are green. Statutory calculator sourcing, retention legal
-basis, and settlement authority require named owners outside this package.
+| Decision | Status | Blocks |
+| --- | --- | --- |
+| A2 calculator sourcing | **CLOSED** (build in-house) | Pack reviewer approval (`awaiting_review` → `approved`) still blocks live statutory activation |
+| A3 retention clocks | Engineering posture recorded (restriction, not erasure); counsel citations **OPEN** — no legal retention basis is confirmed anywhere in this repository | Erasure automation, and any statement that the retention basis is settled |
+| A4 settlement authority | **CLOSED** (engineering + D2 ingress) | Settled clawback automation remains Accounting-owned |
+
+Phase E sign-off matrix:
+[phase-e-signoff.md](../payroll/docs/phase-e-signoff.md).
+That file is an **evidence pack**, not a completed sign-off: E4 (pack approval),
+E5 (counsel clocks), E9 (ops DDL) and E11 (independent review) are open, and the
+evidence recorded against the closed rows is local command output — GitHub
+Actions billing is locked, so no CI run backs this revision. Do not promote
+Human Resources to `active` until that matrix is complete.

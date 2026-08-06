@@ -205,6 +205,10 @@ gross-to-net, statutory deductions, net pay, or payslips.
 
 **Cut-off semantics ([bridging C3](../../../docs/erp/hr-payroll-bridging.md#c3--period-freeze)):**
 
+- **Dry-run / preview:** `assembleApprovedPayrollHandoff` is the read-only
+  preview before `queuePayrollDelivery`. Phase E does not add a separate
+  `previewPayrollHandoff` command — compare intended facts to the assemble
+  result (see [payroll ops runbooks §2](../payroll/docs/ops-runbooks.md#2-stuck-hr-handoff--delivery)).
 - `assembleApprovedPayrollHandoff` accepts `effectiveDate` plus an optional
   `periodStart`/`periodEnd` pair
   ([`approved-payroll-handoff.ts`](./src/features/payroll-handoff/approved-payroll-handoff.ts)),
@@ -355,6 +359,8 @@ Human Resources does not import master-data persistence or adapters.
 | Development roadmap | [docs/development-roadmap.md](./docs/development-roadmap.md) |
 | Baseline verification | [docs/baseline-verification.md](./docs/baseline-verification.md) |
 | Production readiness | [PRODUCTION_READINESS.md](./PRODUCTION_READINESS.md) |
+| Phase E sign-off checklist | [../payroll/docs/phase-e-signoff.md](../payroll/docs/phase-e-signoff.md) |
+| Payroll ops runbooks | [../payroll/docs/ops-runbooks.md](../payroll/docs/ops-runbooks.md) |
 | HR ↔ Payroll closure guideline | [hr-payroll-bridging.md](../../../docs/erp/hr-payroll-bridging.md) |
 | HR ↔ Payroll decisions register | [hr-payroll-decisions.md](../payroll/docs/hr-payroll-decisions.md) |
 | Feature-first ERP method | [feature-first-erp.md](../../../.cursor/skills/afenda-semantic-registry-cutover/references/feature-first-erp.md) |
