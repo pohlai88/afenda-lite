@@ -6,6 +6,8 @@ import {
 	createPayrollRun,
 	finalizePayrollRun,
 	getPayrollRun,
+	listPayrollExceptionsForRun,
+	recordPayrollException,
 	reversePayrollRun,
 } from "@afenda/payroll";
 import { z } from "zod";
@@ -57,6 +59,18 @@ const reverseRunSchema = z
 		reason: z.string().trim().min(1).max(512),
 		reasonCode: reversalReasonCodeSchema,
 		runId: uuidSchema,
+	})
+	.strict();
+
+const exceptionSeveritySchema = z.enum(["blocking", "warning"]);
+
+const recordExceptionSchema = z
+	.object({
+		employeeRef: z.string().trim().min(1).max(128).nullable().optional(),
+		exceptionCode: z.string().trim().min(1).max(64),
+		message: z.string().trim().min(1).max(2048),
+		runId: uuidSchema,
+		severity: exceptionSeveritySchema,
 	})
 	.strict();
 
@@ -220,6 +234,74 @@ export async function getPayrollRunAction(input: {
 			}
 			return mapPackageResult(
 				await getPayrollRun(
+					{
+						organizationId: session.orgId,
+						actorUserId: session.userId,
+						runId: parsed.data.runId,
+					},
+					createPayrollCommandOptions(),
+				),
+			);
+		},
+	});
+}
+
+export async function recordPayrollExceptionAction(input: {
+	employeeRef?: string | null;
+	exceptionCode: string;
+	message: string;
+	runId: string;
+	severity: "blocking" | "warning";
+}): Promise<ActionResult<unknown>> {
+	return await runOperatorPermissionAction({
+		path: "recordPayrollExceptionAction",
+		permission: "payroll.run.calculate",
+		safeMessage: "Could not record the payroll exception.",
+		execute: async (session, correlationId) => {
+			const parsed = parseSchema(recordExceptionSchema, input);
+			if (!parsed.success) {
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid payroll exception.",
+				});
+			}
+			return mapPackageResult(
+				await recordPayrollException(
+					{
+						organizationId: session.orgId,
+						actorUserId: session.userId,
+						correlationId,
+						exceptionCode: parsed.data.exceptionCode,
+						message: parsed.data.message,
+						runId: parsed.data.runId,
+						severity: parsed.data.severity,
+						employeeRef:
+							parsed.data.employeeRef === undefined
+								? null
+								: parsed.data.employeeRef,
+					},
+					createPayrollCommandOptions(),
+				),
+			);
+		},
+	});
+}
+
+export async function listPayrollExceptionsForRunAction(input: {
+	runId: string;
+}): Promise<ActionResult<unknown>> {
+	return await runOperatorPermissionAction({
+		path: "listPayrollExceptionsForRunAction",
+		permission: "payroll.run.review",
+		safeMessage: "Could not list payroll exceptions.",
+		execute: async (session) => {
+			const parsed = parseSchema(getRunSchema, input);
+			if (!parsed.success) {
+				return errorResult.fail("VALIDATION_ERROR", {
+					publicMessage: "Enter a valid payroll-exception list request.",
+				});
+			}
+			return mapPackageResult(
+				await listPayrollExceptionsForRun(
 					{
 						organizationId: session.orgId,
 						actorUserId: session.userId,

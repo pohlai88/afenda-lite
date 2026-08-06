@@ -81,6 +81,8 @@ describe("Payroll application composition", () => {
 		expect(source).toContain("finalizePayrollRun");
 		expect(source).toContain("reversePayrollRun");
 		expect(source).toContain("getPayrollRun");
+		expect(source).toContain("recordPayrollException");
+		expect(source).toContain("listPayrollExceptionsForRun");
 		expect(source).toContain("organizationId: session.orgId");
 		expect(source).toContain("actorUserId: session.userId");
 		expect(source).toContain("createPayrollCommandOptions()");
@@ -200,6 +202,75 @@ describe("Payroll application composition", () => {
 		expect(source).not.toContain("executePayrollJobWork");
 		expect(source).toContain("payroll.run.calculate");
 		expect(source).toContain("payroll.run.review");
+		expect(source).toContain("organizationId: session.orgId");
+		expect(source).toContain("actorUserId: session.userId");
+		expect(source).toContain("createPayrollCommandOptions()");
+	});
+
+	it("exposes payslip read-own member and read-all operator actions", () => {
+		const source = readFileSync(
+			fileURLToPath(
+				new URL("../app/actions/payroll-payslip.ts", import.meta.url),
+			),
+			"utf8",
+		);
+
+		expect(source).toContain("getOwnPayrollPayslip");
+		expect(source).toContain("getPayrollPayslip");
+		expect(source).toContain("payroll.payslip.read-own");
+		expect(source).toContain("payroll.payslip.read-all");
+		expect(source).toContain("runMemberPermissionAction");
+		expect(source).toContain("organizationId: session.orgId");
+		expect(source).toContain("actorUserId: session.userId");
+		expect(source).toContain("createPayrollCommandOptions()");
+	});
+
+	it("exposes reconciliation manage actions with session stamps", () => {
+		const source = readFileSync(
+			fileURLToPath(
+				new URL("../app/actions/payroll-reconciliation.ts", import.meta.url),
+			),
+			"utf8",
+		);
+
+		expect(source).toContain("recordPayrollReconciliation");
+		expect(source).toContain("resolvePayrollReconciliation");
+		expect(source).toContain("listPayrollReconciliationsForRun");
+		expect(source).toContain("payroll.reconciliation.manage");
+		expect(source).toContain("organizationId: session.orgId");
+		expect(source).toContain("actorUserId: session.userId");
+		expect(source).toContain("createPayrollCommandOptions()");
+	});
+
+	it("exposes assignment and recurring-line setup actions", () => {
+		const source = readFileSync(
+			fileURLToPath(
+				new URL("../app/actions/payroll-assignments.ts", import.meta.url),
+			),
+			"utf8",
+		);
+
+		expect(source).toContain("createPayrollEmployeeAssignment");
+		expect(source).toContain("getPayrollEmployeeAssignment");
+		expect(source).toContain("createPayrollRecurringEarning");
+		expect(source).toContain("createPayrollRecurringDeduction");
+		expect(source).toContain("payroll.setup.manage");
+		expect(source).toContain("organizationId: session.orgId");
+		expect(source).toContain("actorUserId: session.userId");
+		expect(source).toContain("createPayrollCommandOptions()");
+	});
+
+	it("exposes variable-input manage actions with session stamps", () => {
+		const source = readFileSync(
+			fileURLToPath(
+				new URL("../app/actions/payroll-variable-inputs.ts", import.meta.url),
+			),
+			"utf8",
+		);
+
+		expect(source).toContain("createPayrollVariableInput");
+		expect(source).toContain("getPayrollVariableInput");
+		expect(source).toContain("payroll.input.manage");
 		expect(source).toContain("organizationId: session.orgId");
 		expect(source).toContain("actorUserId: session.userId");
 		expect(source).toContain("createPayrollCommandOptions()");

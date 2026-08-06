@@ -26,6 +26,8 @@ const payrollMocks = vi.hoisted(() => ({
 	finalizePayrollRun: vi.fn(),
 	reversePayrollRun: vi.fn(),
 	getPayrollRun: vi.fn(),
+	recordPayrollException: vi.fn(),
+	listPayrollExceptionsForRun: vi.fn(),
 }));
 
 vi.mock("@afenda/auth", () => ({
@@ -54,6 +56,8 @@ vi.mock("@afenda/payroll", async (importOriginal) => {
 		finalizePayrollRun: payrollMocks.finalizePayrollRun,
 		reversePayrollRun: payrollMocks.reversePayrollRun,
 		getPayrollRun: payrollMocks.getPayrollRun,
+		recordPayrollException: payrollMocks.recordPayrollException,
+		listPayrollExceptionsForRun: payrollMocks.listPayrollExceptionsForRun,
 	};
 });
 
@@ -66,6 +70,8 @@ import {
 	createPayrollRunAction,
 	finalizePayrollRunAction,
 	getPayrollRunAction,
+	listPayrollExceptionsForRunAction,
+	recordPayrollExceptionAction,
 	reversePayrollRunAction,
 } from "../app/actions/payroll-run";
 
@@ -104,6 +110,14 @@ describe("Payroll run Server Actions", () => {
 		payrollMocks.getPayrollRun.mockResolvedValue({
 			ok: true,
 			data: { id: runId, status: "draft" },
+		});
+		payrollMocks.recordPayrollException.mockResolvedValue({
+			ok: true,
+			data: { id: "exc-1", severity: "warning" },
+		});
+		payrollMocks.listPayrollExceptionsForRun.mockResolvedValue({
+			ok: true,
+			data: [],
 		});
 	});
 
@@ -238,6 +252,53 @@ describe("Payroll run Server Actions", () => {
 
 		expect(result.ok).toBe(true);
 		expect(payrollMocks.getPayrollRun).toHaveBeenCalledWith(
+			{
+				organizationId: operatorSession.orgId,
+				actorUserId: operatorSession.userId,
+				runId,
+			},
+			{ kind: "payroll-options" },
+		);
+		expect(permissionMocks.forbidUnlessPermission).toHaveBeenCalledWith(
+			operatorSession,
+			"payroll.run.review",
+		);
+	});
+
+	it("records exceptions with payroll.run.calculate", async () => {
+		const result = await recordPayrollExceptionAction({
+			runId,
+			severity: "warning",
+			exceptionCode: "RATE_MISSING",
+			message: "Missing overtime rate",
+			employeeRef: "emp-1",
+		});
+
+		expect(result.ok).toBe(true);
+		expect(payrollMocks.recordPayrollException).toHaveBeenCalledWith(
+			{
+				organizationId: operatorSession.orgId,
+				actorUserId: operatorSession.userId,
+				correlationId: "corr-payroll-run-test",
+				runId,
+				severity: "warning",
+				exceptionCode: "RATE_MISSING",
+				message: "Missing overtime rate",
+				employeeRef: "emp-1",
+			},
+			{ kind: "payroll-options" },
+		);
+		expect(permissionMocks.forbidUnlessPermission).toHaveBeenCalledWith(
+			operatorSession,
+			"payroll.run.calculate",
+		);
+	});
+
+	it("lists exceptions with payroll.run.review", async () => {
+		const result = await listPayrollExceptionsForRunAction({ runId });
+
+		expect(result.ok).toBe(true);
+		expect(payrollMocks.listPayrollExceptionsForRun).toHaveBeenCalledWith(
 			{
 				organizationId: operatorSession.orgId,
 				actorUserId: operatorSession.userId,
