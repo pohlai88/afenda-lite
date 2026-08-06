@@ -1,5 +1,6 @@
 import type { HumanResourcesCompensationStore } from "../compensation-benefits/store-contract";
 import type { HumanResourcesLeaveStore } from "../leave/store-contract";
+import type { HumanResourcesStatutoryProfileStore } from "../statutory-profile/store-contract";
 import type { HumanResourcesTimeStore } from "../time/store-contract";
 import type { HumanResourcesCoreStore } from "../workforce-records/employment/store-contract";
 
@@ -16,8 +17,15 @@ export type HumanResourcesPayrollHandoffStore = Pick<
 	Pick<
 		HumanResourcesLeaveStore,
 		| "getApprovedLeaveHandoff"
+		| "getLeaveBalance"
+		| "getLeavePolicyById"
 		| "getPrimaryManagerForEmployee"
+		| "listLeaveEntitlements"
 		| "listLeaveRequests"
+	> &
+	Pick<
+		HumanResourcesStatutoryProfileStore,
+		"getStatutoryProfileAsOf" | "listPriorEmployerYtd"
 	> &
 	Pick<
 		HumanResourcesTimeStore,

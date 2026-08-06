@@ -198,6 +198,21 @@ const governedCteWriters = new Map([
 		},
 	],
 	[
+		"packages/erp/human-resources/src/features/statutory-profile/adapters/statutory-profile.drizzle.ts",
+		{
+			expectedWrites: 2,
+			preparationCallPattern: /prepareStatutoryAudit\(\{/g,
+		},
+	],
+	[
+		"packages/erp/payroll/src/features/final-settlement/settlement.drizzle.ts",
+		{
+			expectedWrites: 3,
+			preparationCallPattern: /prepareSettlementLifecycleWrite\(\{/g,
+			failedPreparationGuardPattern: /!prepared\.ok/g,
+		},
+	],
+	[
 		"packages/erp/payroll/src/features/payroll-runs/runs.drizzle.ts",
 		{
 			expectedWrites: 4,

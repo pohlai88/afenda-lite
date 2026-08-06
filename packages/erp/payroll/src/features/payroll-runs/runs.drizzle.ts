@@ -333,6 +333,37 @@ export const drizzleRunsMethods: PayrollRunsStore = {
 		}
 	},
 
+	async listRunsForPeriod(input: {
+		organizationId: string;
+		periodId: string;
+	}): Promise<Result<PayrollRun[]>> {
+		try {
+			const rows = await afendaDatabase.client
+				.select()
+				.from(payrollRun)
+				.where(
+					and(
+						eq(payrollRun.organizationId, input.organizationId),
+						eq(payrollRun.periodId, input.periodId),
+					),
+				);
+			const runs: PayrollRun[] = [];
+			for (const row of rows) {
+				const mapped = mapRunRow(row);
+				if (!mapped.ok) {
+					return mapped;
+				}
+				runs.push(mapped.data);
+			}
+			return errorResult.ok(runs);
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to list payroll runs for period",
+			);
+		}
+	},
+
 	// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Versioned run transition keeps state validation and rollback evidence in one transaction boundary.
 	async updateRunWithVersion(
 		input: PayrollRunUpdateInput,

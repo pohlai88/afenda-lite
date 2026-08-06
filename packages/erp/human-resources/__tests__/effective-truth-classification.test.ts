@@ -9,10 +9,10 @@ import {
 } from "../src/kernel/temporal/effective-truth-classification";
 
 const EXPECTED_CATEGORY_TOTALS = {
-	"effective-definition": 20,
+	"effective-definition": 21,
 	"bounded-assignment": 16,
 	"versioned-current-fact": 32,
-	"append-only-operational-fact": 24,
+	"append-only-operational-fact": 25,
 	"transactional-state-machine": 46,
 	"derived-projection": 2,
 	"explicit-exclusion": 1,
@@ -30,7 +30,7 @@ describe("HR effective-truth classification register", () => {
 		const totals = summarizeEffectiveTruthClassificationByCategory();
 		expect(totals).toEqual(EXPECTED_CATEGORY_TOTALS);
 		expect(Object.values(totals).reduce((sum, count) => sum + count, 0)).toBe(
-			141,
+			143,
 		);
 	});
 

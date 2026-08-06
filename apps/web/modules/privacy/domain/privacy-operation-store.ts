@@ -21,6 +21,31 @@ export interface PrivacyLegalHoldRecord {
 	subjectId: string;
 }
 
+export interface PrivacyRetentionEvidenceRecord {
+	classifications: readonly string[];
+	clockStartedAt: string;
+	eligibleForErasure: boolean;
+	evidenceId: string;
+	expiredAt: string | null;
+	legalBasis: string;
+	minimumRetentionMonths: number;
+	moduleId: string;
+	organizationId: string;
+	subjectId: string;
+}
+
+export interface PrivacyRestrictionRecord {
+	classifications: readonly string[];
+	liftedAt: string | null;
+	liftReason: string | null;
+	moduleId: string;
+	organizationId: string;
+	placedAt: string;
+	restrictionId: string;
+	restrictionReference: string;
+	subjectId: string;
+}
+
 export interface PrivacyOperationRecord {
 	affectedCount: number;
 	createdAt: string;
@@ -32,6 +57,11 @@ export interface PrivacyOperationRecord {
 }
 
 export interface PrivacyOperationStore {
+	expireRetention: (input: {
+		organizationId: string;
+		evidenceId: string;
+		expiredAt: string;
+	}) => PrivacyRetentionEvidenceRecord | null;
 	getExport: (input: {
 		organizationId: string;
 		exportId: string;
@@ -39,11 +69,28 @@ export interface PrivacyOperationStore {
 	getLegalHold: (input: {
 		legalHoldId: string;
 	}) => PrivacyLegalHoldRecord | null;
+	getRestriction: (input: {
+		restrictionId: string;
+	}) => PrivacyRestrictionRecord | null;
+	getRetentionEvidence: (input: {
+		evidenceId: string;
+	}) => PrivacyRetentionEvidenceRecord | null;
+	liftRestriction: (input: {
+		organizationId: string;
+		restrictionId: string;
+		liftedAt: string;
+		reason: string;
+	}) => PrivacyRestrictionRecord | null;
 	listActiveLegalHolds: (input: {
 		organizationId: string;
 		moduleId: string;
 		subjectId: string;
 	}) => readonly PrivacyLegalHoldRecord[];
+	listActiveRestrictions: (input: {
+		organizationId: string;
+		moduleId: string;
+		subjectId: string;
+	}) => readonly PrivacyRestrictionRecord[];
 	listExportsForSubject: (input: {
 		organizationId: string;
 		moduleId: string;
@@ -61,12 +108,21 @@ export interface PrivacyOperationStore {
 	recordOperation: (
 		input: Omit<PrivacyOperationRecord, "operationId">,
 	) => PrivacyOperationRecord;
+	recordRetentionEvidence: (
+		input: Omit<
+			PrivacyRetentionEvidenceRecord,
+			"eligibleForErasure" | "expiredAt"
+		>,
+	) => PrivacyRetentionEvidenceRecord;
 	releaseLegalHold: (input: {
 		organizationId: string;
 		legalHoldId: string;
 		releasedAt: string;
 		reason: string;
 	}) => PrivacyLegalHoldRecord | null;
+	restrictSubject: (
+		input: Omit<PrivacyRestrictionRecord, "liftedAt" | "liftReason">,
+	) => PrivacyRestrictionRecord;
 	saveExport: (
 		input: Omit<PrivacyExportPackage, "exportReference"> & {
 			exportReference?: string;
@@ -84,6 +140,8 @@ function exportReferenceFor(input: {
 export function createPrivacyOperationStore(): PrivacyOperationStore {
 	const exports = new Map<string, PrivacyExportPackage>();
 	const legalHolds = new Map<string, PrivacyLegalHoldRecord>();
+	const restrictions = new Map<string, PrivacyRestrictionRecord>();
+	const retentionEvidence = new Map<string, PrivacyRetentionEvidenceRecord>();
 	const operations: PrivacyOperationRecord[] = [];
 	let operationSequence = 0;
 
@@ -150,6 +208,43 @@ export function createPrivacyOperationStore(): PrivacyOperationStore {
 			legalHolds.set(input.legalHoldId, released);
 			return released;
 		},
+		restrictSubject(input) {
+			const saved: PrivacyRestrictionRecord = {
+				...input,
+				liftedAt: null,
+				liftReason: null,
+			};
+			restrictions.set(input.restrictionId, saved);
+			return saved;
+		},
+		getRestriction(input) {
+			return restrictions.get(input.restrictionId) ?? null;
+		},
+		listActiveRestrictions(input) {
+			return [...restrictions.values()].filter(
+				(restriction) =>
+					restriction.organizationId === input.organizationId &&
+					restriction.moduleId === input.moduleId &&
+					restriction.subjectId === input.subjectId &&
+					restriction.liftedAt === null,
+			);
+		},
+		liftRestriction(input) {
+			const existing = restrictions.get(input.restrictionId);
+			if (existing === undefined) {
+				return null;
+			}
+			if (existing.organizationId !== input.organizationId) {
+				return null;
+			}
+			const lifted: PrivacyRestrictionRecord = {
+				...existing,
+				liftedAt: input.liftedAt,
+				liftReason: input.reason,
+			};
+			restrictions.set(input.restrictionId, lifted);
+			return lifted;
+		},
 		recordOperation(input) {
 			operationSequence += 1;
 			const saved: PrivacyOperationRecord = {
@@ -169,6 +264,34 @@ export function createPrivacyOperationStore(): PrivacyOperationStore {
 						entry.subjectId === input.subjectId,
 				)
 				.slice(-limit);
+		},
+		recordRetentionEvidence(input) {
+			const saved: PrivacyRetentionEvidenceRecord = {
+				...input,
+				eligibleForErasure: false,
+				expiredAt: null,
+			};
+			retentionEvidence.set(input.evidenceId, saved);
+			return saved;
+		},
+		getRetentionEvidence(input) {
+			return retentionEvidence.get(input.evidenceId) ?? null;
+		},
+		expireRetention(input) {
+			const existing = retentionEvidence.get(input.evidenceId);
+			if (existing === undefined) {
+				return null;
+			}
+			if (existing.organizationId !== input.organizationId) {
+				return null;
+			}
+			const expired: PrivacyRetentionEvidenceRecord = {
+				...existing,
+				eligibleForErasure: true,
+				expiredAt: input.expiredAt,
+			};
+			retentionEvidence.set(input.evidenceId, expired);
+			return expired;
 		},
 	};
 }

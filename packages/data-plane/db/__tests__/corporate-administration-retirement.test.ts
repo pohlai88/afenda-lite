@@ -97,11 +97,19 @@ describe("Corporate Administration scaffold boundary", () => {
 
 	it("ships only governed Corporate Administration business migrations", () => {
 		const migrationNames = readdirSync(path.join(packageRoot, "drizzle"));
+		// Migrations owned by another ERP module may legitimately carry a
+		// CA-shaped keyword (`0054_payroll_statutory_filings` contains "filing").
+		// This guard governs Corporate Administration migrations only, so other
+		// module namespaces are excluded before the keyword scan.
+		const otherModuleMigration =
+			/_(?:payroll|hr|sales|purchasing|inventory|receiving|fulfillment|receivables|payables|payments|accounting|platform)_/u;
 		expect(
-			migrationNames.filter((name) =>
-				/(?:legal[_-]company|establishment|governance|authority|capital|ownership|asset|filing|document|licence|banking)/u.test(
-					name,
-				),
+			migrationNames.filter(
+				(name) =>
+					!otherModuleMigration.test(name) &&
+					/(?:legal[_-]company|establishment|governance|authority|capital|ownership|asset|filing|document|licence|banking)/u.test(
+						name,
+					),
 			),
 		).toEqual([
 			"0034_ca_governance_bodies_memberships.sql",

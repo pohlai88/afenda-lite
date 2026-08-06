@@ -1,6 +1,6 @@
 import type { Result } from "@afenda/errors";
 
-export type PrivacyModuleId = "human-resources" | (string & {});
+export type PrivacyModuleId = "human-resources" | "payroll" | (string & {});
 
 export interface PrivacySubjectRecord {
 	entity: string;
@@ -39,6 +39,12 @@ export interface PrivacySubjectCase {
 		classifications: readonly string[];
 		placedAt: string;
 	}[];
+	activeRestrictions: readonly {
+		restrictionId: string;
+		restrictionReference: string;
+		classifications: readonly string[];
+		placedAt: string;
+	}[];
 	exports: readonly {
 		exportId: string;
 		exportReference: string;
@@ -72,6 +78,27 @@ export interface PrivacyLegalHoldResult {
 	legalHoldId: string;
 }
 
+export interface PrivacyRestrictionResult {
+	restrictionId: string;
+}
+
+export interface PrivacyRestrictionEvaluation {
+	reasonCode?: string;
+	restricted: boolean;
+}
+
+export interface PrivacyRetentionEvidenceResult {
+	classifications: readonly string[];
+	clockStartedAt: string;
+	eligibleForErasure: boolean;
+	evidenceId: string;
+	expiredAt: string | null;
+	legalBasis: string;
+	minimumRetentionMonths: number;
+	organizationId: string;
+	subjectId: string;
+}
+
 export interface PrivacyRedactDownstreamResult {
 	redactedSystemCount: number;
 }
@@ -93,18 +120,51 @@ export interface PlatformPrivacyService {
 			classifications?: readonly string[];
 		},
 	) => Promise<Result<PrivacyAnonymizationEvaluation>>;
+	evaluateRestriction: (
+		input: PrivacySubjectRequestContext,
+	) => Promise<Result<PrivacyRestrictionEvaluation>>;
+	expireRetention: (input: {
+		moduleId: PrivacyModuleId;
+		organizationId: string;
+		actorUserId: string;
+		correlationId: string;
+		evidenceId: string;
+		expiredAt: string;
+	}) => Promise<Result<PrivacyRetentionEvidenceResult>>;
 	exportSubject: (
 		input: PrivacySubjectRequestContext,
 	) => Promise<Result<PrivacyExportResult>>;
 	getSubjectPrivacyCase: (
 		input: PrivacySubjectRequestContext,
 	) => Promise<Result<PrivacySubjectCase>>;
+	liftRestriction: (input: {
+		moduleId: PrivacyModuleId;
+		organizationId: string;
+		actorUserId: string;
+		correlationId: string;
+		restrictionId: string;
+		reason: string;
+		liftedAt: string;
+	}) => Promise<Result<void>>;
 	placeLegalHold: (
 		input: PrivacySubjectRequestContext & {
 			holdReference: string;
 			classifications: readonly string[];
 		},
 	) => Promise<Result<PrivacyLegalHoldResult>>;
+	recordRetentionEvidence: (
+		input: PrivacySubjectRequestContext & {
+			classifications: readonly string[];
+			clockStartedAt: string;
+			minimumRetentionMonths: number;
+		},
+	) => Promise<Result<PrivacyRetentionEvidenceResult>>;
+	recordSubjectAccessExport: (
+		input: PrivacySubjectRequestContext & {
+			records: readonly PrivacySubjectRecord[];
+			projectionScope: "read-own" | "read-all";
+		},
+	) => Promise<Result<PrivacyExportResult>>;
 	rectifySubject: (
 		input: PrivacySubjectRequestContext & {
 			changes: Readonly<Record<string, unknown>>;
@@ -128,4 +188,10 @@ export interface PlatformPrivacyService {
 		reason: string;
 		releasedAt: string;
 	}) => Promise<Result<void>>;
+	restrictSubject: (
+		input: PrivacySubjectRequestContext & {
+			classifications: readonly string[];
+			restrictionReference: string;
+		},
+	) => Promise<Result<PrivacyRestrictionResult>>;
 }

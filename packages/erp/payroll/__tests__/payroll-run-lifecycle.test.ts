@@ -260,6 +260,7 @@ describe("payroll run lifecycle commands", () => {
 	it("runs create → calculate → finalize → reverse", async () => {
 		const organizationId = "org-run-lifecycle-happy";
 		const actorUserId = "user-run-lifecycle-happy";
+		const finalizeActorUserId = "user-run-lifecycle-happy-finalize";
 		const seeded = await seedOpenPeriod(organizationId, actorUserId, "happy");
 		const calculator = createTestPayrollRunCalculator();
 		const options = { ...seeded.options, calculator };
@@ -298,7 +299,7 @@ describe("payroll run lifecycle commands", () => {
 
 		const finalized = await finalizePayrollRun(
 			{
-				...baseContext(organizationId, actorUserId),
+				...baseContext(organizationId, finalizeActorUserId),
 				runId: calculated.data.id,
 				expectedVersion: calculated.data.version,
 			},
@@ -309,7 +310,7 @@ describe("payroll run lifecycle commands", () => {
 			return;
 		}
 		expect(finalized.data.status).toBe("finalized");
-		expect(finalized.data.finalizedBy).toBe(actorUserId);
+		expect(finalized.data.finalizedBy).toBe(finalizeActorUserId);
 
 		const lateException = await recordPayrollException(
 			{
@@ -421,6 +422,119 @@ describe("payroll run lifecycle commands", () => {
 			oldValue: null,
 			newValue: "Synthetic reversal for lifecycle test",
 		});
+	});
+
+	it("rejects finalize by the actor who calculated the run (C9 segregation of duties)", async () => {
+		const organizationId = "org-run-lifecycle-sod";
+		const actorUserId = "user-run-lifecycle-sod-calc";
+		const seeded = await seedOpenPeriod(organizationId, actorUserId, "sod");
+		const options = {
+			...seeded.options,
+			calculator: createTestPayrollRunCalculator(),
+		};
+
+		const created = await createPayrollRun(
+			{
+				...baseContext(organizationId, actorUserId),
+				payGroupId: seeded.payGroup.id,
+				periodId: seeded.period.id,
+				runType: "regular",
+				sequence: 1,
+				idempotencyKey: "idem-run-sod",
+			},
+			options,
+		);
+		expect(created.ok).toBe(true);
+		if (!created.ok) {
+			return;
+		}
+
+		const calculated = await calculatePayrollRun(
+			{
+				...baseContext(organizationId, actorUserId),
+				runId: created.data.id,
+				expectedVersion: created.data.version,
+			},
+			options,
+		);
+		expect(calculated.ok).toBe(true);
+		if (!calculated.ok) {
+			return;
+		}
+		expect(calculated.data.updatedBy).toBe(actorUserId);
+
+		const blocked = await finalizePayrollRun(
+			{
+				...baseContext(organizationId, actorUserId),
+				runId: calculated.data.id,
+				expectedVersion: calculated.data.version,
+			},
+			options,
+		);
+		expect(blocked.ok).toBe(false);
+		if (blocked.ok) {
+			return;
+		}
+		expect(blocked.code).toBe("CONFLICT");
+	});
+
+	it("allows finalize by a different actor", async () => {
+		const organizationId = "org-run-lifecycle-sod-ok";
+		const calculateActorUserId = "user-run-lifecycle-sod-calc-ok";
+		const finalizeActorUserId = "user-run-lifecycle-sod-fin-ok";
+		const seeded = await seedOpenPeriod(
+			organizationId,
+			calculateActorUserId,
+			"sod-ok",
+		);
+		const options = {
+			...seeded.options,
+			calculator: createTestPayrollRunCalculator(),
+		};
+
+		const created = await createPayrollRun(
+			{
+				...baseContext(organizationId, calculateActorUserId),
+				payGroupId: seeded.payGroup.id,
+				periodId: seeded.period.id,
+				runType: "regular",
+				sequence: 1,
+				idempotencyKey: "idem-run-sod-ok",
+			},
+			options,
+		);
+		expect(created.ok).toBe(true);
+		if (!created.ok) {
+			return;
+		}
+
+		const calculated = await calculatePayrollRun(
+			{
+				...baseContext(organizationId, calculateActorUserId),
+				runId: created.data.id,
+				expectedVersion: created.data.version,
+			},
+			options,
+		);
+		expect(calculated.ok).toBe(true);
+		if (!calculated.ok) {
+			return;
+		}
+
+		const finalized = await finalizePayrollRun(
+			{
+				...baseContext(organizationId, finalizeActorUserId),
+				runId: calculated.data.id,
+				expectedVersion: calculated.data.version,
+			},
+			options,
+		);
+		expect(finalized.ok).toBe(true);
+		if (!finalized.ok) {
+			return;
+		}
+		expect(finalized.data.status).toBe("finalized");
+		expect(finalized.data.finalizedBy).toBe(finalizeActorUserId);
 	});
 
 	it("rejects illegal transitions through commands", async () => {
@@ -565,6 +679,14 @@ describe("payroll run lifecycle commands", () => {
 			return;
 		}
 		expect(staleFinalize.code).toBe("CONFLICT");
+		// Same actor calculated and is retrying finalize with a stale version:
+		// the version-conflict wording must win over the segregation-of-duties
+		// wording so retry logic sees an optimistic-lock failure, not an
+		// authorization failure.
+		expect(staleFinalize.message).toBe(
+			"The request conflicts with current state",
+		);
+		expect(staleFinalize.message).not.toContain("Segregation of duties");
 	});
 
 	it("handles concurrent calculate attempts with one winner", async () => {
@@ -659,7 +781,7 @@ describe("payroll run lifecycle commands", () => {
 		}
 
 		const input = {
-			...baseContext(organizationId, actorUserId),
+			...baseContext(organizationId, "user-run-lifecycle-conc-fin-finalize"),
 			runId: calculated.data.id,
 			expectedVersion: calculated.data.version,
 		};
@@ -807,7 +929,7 @@ describe("payroll run lifecycle commands", () => {
 
 		const finalized = await finalizePayrollRun(
 			{
-				...baseContext(organizationId, actorUserId),
+				...baseContext(organizationId, "user-run-lifecycle-warn-finalize"),
 				runId: calculated.data.id,
 				expectedVersion: calculated.data.version,
 			},
@@ -998,7 +1120,7 @@ describe("payroll run lifecycle commands", () => {
 		const failingPorts = createMemoryMutationPorts({ outboxFailAfter: 1 });
 		const result = await finalizePayrollRun(
 			{
-				...baseContext(organizationId, actorUserId),
+				...baseContext(organizationId, "user-run-finalize-fault-finalize"),
 				runId: ready.data.id,
 				expectedVersion: ready.data.version,
 			},

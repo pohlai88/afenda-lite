@@ -48,6 +48,7 @@ function privacyPort(input?: {
 					holdReference: "legal-hold",
 					placedAt: "2026-07-01T00:00:00.000Z",
 				})),
+				activeRestrictions: [],
 				recentOperations: [],
 			}),
 		),
@@ -58,10 +59,17 @@ function privacyPort(input?: {
 			errorResult.ok({ anonymizedRecordCount: 3 }),
 		),
 		evaluateAnonymization: vi.fn(async () => errorResult.ok({ allowed: true })),
+		evaluateRestriction: vi.fn(async () =>
+			errorResult.ok({ restricted: false }),
+		),
 		placeLegalHold: vi.fn(async () =>
 			errorResult.ok({ legalHoldId: "hold-1" }),
 		),
 		releaseLegalHold: vi.fn(async () => errorResult.ok(undefined)),
+		restrictSubject: vi.fn(async () =>
+			errorResult.ok({ restrictionId: "restriction-1" }),
+		),
+		liftRestriction: vi.fn(async () => errorResult.ok(undefined)),
 		redactDownstream: vi.fn(async () =>
 			errorResult.ok({ redactedSystemCount: 0 }),
 		),

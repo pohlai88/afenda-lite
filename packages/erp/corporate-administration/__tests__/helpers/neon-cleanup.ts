@@ -391,6 +391,61 @@ export async function countCorporateAdministrationOutboxEvents(
 	return Number(rows[0]?.value ?? 0);
 }
 
+export async function countCorporateAdministrationAuditFacts(
+	organizationId: string,
+): Promise<number> {
+	const rows = await afendaDatabase.client
+		.select({ value: sql<number>`count(*)::int` })
+		.from(platformAuditLog)
+		.where(
+			and(
+				eq(platformAuditLog.organizationId, organizationId),
+				eq(platformAuditLog.module, CORPORATE_ADMINISTRATION_MODULE),
+			),
+		);
+	return Number(rows[0]?.value ?? 0);
+}
+
+export async function listCorporateAdministrationAuditFacts(
+	organizationId: string,
+): Promise<
+	ReadonlyArray<{
+		organizationId: string;
+		actorUserId: string;
+		correlationId: string;
+		module: string;
+		entity: string;
+		entityId: string;
+		action: string;
+		changes: unknown;
+		oldValue: unknown;
+		newValue: unknown;
+		metadata: unknown;
+	}>
+> {
+	return afendaDatabase.client
+		.select({
+			organizationId: platformAuditLog.organizationId,
+			actorUserId: platformAuditLog.actorUserId,
+			correlationId: platformAuditLog.correlationId,
+			module: platformAuditLog.module,
+			entity: platformAuditLog.entity,
+			entityId: platformAuditLog.entityId,
+			action: platformAuditLog.action,
+			changes: platformAuditLog.changes,
+			oldValue: platformAuditLog.oldValue,
+			newValue: platformAuditLog.newValue,
+			metadata: platformAuditLog.metadata,
+		})
+		.from(platformAuditLog)
+		.where(
+			and(
+				eq(platformAuditLog.organizationId, organizationId),
+				eq(platformAuditLog.module, CORPORATE_ADMINISTRATION_MODULE),
+			),
+		);
+}
+
 export async function countCorporateAdministrationCompanyIdentifiers(
 	organizationId: string,
 ): Promise<number> {

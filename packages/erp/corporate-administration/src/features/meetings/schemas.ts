@@ -275,6 +275,25 @@ export const scheduleGovernanceMeetingInputSchema = z
 			message: "scheduledEndAt must follow scheduledStartAt",
 		},
 	)
+	.refine(
+		(value) =>
+			value.procedureType !== "physical" ||
+			(value.locationSummary !== undefined && value.locationSummary !== null),
+		{
+			path: ["locationSummary"],
+			message: "physical meetings require a location summary",
+		},
+	)
+	.refine(
+		(value) =>
+			(value.procedureType !== "virtual" && value.procedureType !== "hybrid") ||
+			(value.remoteAccessSummary !== undefined &&
+				value.remoteAccessSummary !== null),
+		{
+			path: ["remoteAccessSummary"],
+			message: "virtual and hybrid meetings require remote access summary",
+		},
+	)
 	.readonly();
 
 export const issueMeetingNoticeInputSchema = z

@@ -12,9 +12,9 @@ describe("Human Resources operation governance manifest", () => {
 		const entries = Object.values(
 			HUMAN_RESOURCES_OPERATION_GOVERNANCE_MANIFEST,
 		);
-		expect(entries).toHaveLength(560);
-		expect(entries.filter(({ kind }) => kind === "command")).toHaveLength(360);
-		expect(entries.filter(({ kind }) => kind === "query")).toHaveLength(200);
+		expect(entries).toHaveLength(567);
+		expect(entries.filter(({ kind }) => kind === "command")).toHaveLength(364);
+		expect(entries.filter(({ kind }) => kind === "query")).toHaveLength(203);
 
 		for (const definition of HUMAN_RESOURCES_REGISTERED_OPERATION_DEFINITIONS) {
 			const governed =

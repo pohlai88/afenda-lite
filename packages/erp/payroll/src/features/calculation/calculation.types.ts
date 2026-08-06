@@ -2,7 +2,9 @@ import type {
 	HandoffApprovalEvidence,
 	HandoffLeaveFact,
 	HandoffOvertimeFact,
+	HandoffPriorEmployerYtd,
 	HandoffSourceVersion,
+	HandoffStatutoryProfile,
 	HandoffTimeFacts,
 } from "@afenda/events/schemas";
 import type { PayrollExceptionSeverity } from "../../kernel/contracts/projected-types";
@@ -11,6 +13,8 @@ import type {
 	PayrollRoundingPolicy,
 } from "../../kernel/money/rounding-policy";
 import type { PayrollJsonObject } from "../../kernel/validation/common.schema";
+import type { StatutoryYearToDateFacts } from "../statutory-rules/calculator.types";
+import type { PayrollStatutoryPeriodCadence } from "../statutory-rules/period-cadence";
 import type { ApprovedPayrollHandoffParsedComponent } from "../workforce-ingress/parse-approved-payroll-handoff";
 
 export type PayrollResultLineKind =
@@ -62,6 +66,12 @@ export interface PayrollCalcDeductionRuleSnapshot {
 	ruleType: "fixed" | "rate";
 	ruleVersion: string;
 	taxTiming: PayrollDeductionTaxTiming;
+}
+
+export interface PayrollLapsedStatutoryRule {
+	calculatorId: string;
+	jurisdictionCode: string;
+	ruleCode: string;
 }
 
 export interface PayrollCalcStatutoryRuleSnapshot {
@@ -125,14 +135,31 @@ export interface PayrollEmployeeCalcSnapshot {
 	};
 	employee: PayrollEmployeeSnapshotFacts;
 	employeeId: string;
+	/**
+	 * Statutory rules that were active in the pay group's immediately-preceding
+	 * period but have no active rule for the SAME calculator covering this one.
+	 * Derived by the production run calculator, which is the only layer that can
+	 * see the previous period, and sealed into the snapshot so a retro recompute
+	 * re-reaches the same refusal.
+	 */
+	lapsedStatutoryRules?: readonly PayrollLapsedStatutoryRule[] | undefined;
 	organizationId: string;
 	payGroupId: string;
+	/**
+	 * Where this period sits in its tax year. Supplied by the production run
+	 * calculator from the pay group's period sequence; absent only for synthetic
+	 * snapshots, in which case annualized tax packs refuse rather than guess.
+	 */
+	periodCadence?: PayrollStatutoryPeriodCadence | undefined;
 	periodId: string;
+	priorEmployerYtd?: readonly HandoffPriorEmployerYtd[] | undefined;
 	recurringDeductions: PayrollCalcRecurringDeductionSnapshot[];
 	recurringEarnings: PayrollCalcRecurringEarningSnapshot[];
 	roundingPolicy: PayrollRoundingPolicy;
+	statutoryProfile?: HandoffStatutoryProfile | null | undefined;
 	statutoryRules: PayrollCalcStatutoryRuleSnapshot[];
 	variableInputs: PayrollCalcVariableInputSnapshot[];
+	yearToDate?: StatutoryYearToDateFacts | undefined;
 }
 
 export interface PayrollCalcException {

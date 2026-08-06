@@ -57,5 +57,6 @@ export const replaceStatutoryResultsForRunInputSchema = z
 		results: z.array(payrollStatutoryResultCreateRecordSchema),
 		actorUserId: payrollActorUserIdSchema,
 		correlationId: payrollCorrelationIdSchema,
+		employeeIds: z.array(z.string().min(1)).min(1).optional(),
 	})
 	.strict();

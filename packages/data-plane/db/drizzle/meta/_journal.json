@@ -358,6 +358,48 @@
       "when": 1785978600002,
       "tag": "0050_ca_authority_mandate",
       "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "7",
+      "when": 1785978600003,
+      "tag": "0051_payroll_jobs",
+      "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "7",
+      "when": 1785978600004,
+      "tag": "0052_payroll_retro_pay",
+      "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1785978600005,
+      "tag": "0053_payroll_final_settlement",
+      "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1785978600006,
+      "tag": "0054_payroll_statutory_filings",
+      "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1785978600007,
+      "tag": "0055_payroll_period_inputs_locked",
+      "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1785978600008,
+      "tag": "0056_hr_statutory_profile",
+      "breakpoints": true
     }
   ]
 }

@@ -662,6 +662,62 @@ export async function collectHumanResourcesSubjectData(
 		);
 	}
 
+	const statutoryProfiles = await collectAllPages(
+		async (page) => {
+			const pageResult = await input.store.listStatutoryProfiles({
+				organizationId: input.organizationId,
+				employeeId: input.subjectEmployeeId,
+				page,
+				pageSize: DEFAULT_PAGE_SIZE,
+			});
+			if (!pageResult.ok) {
+				return pageResult;
+			}
+			return errorResult.ok({
+				page: pageResult.data.page,
+				pageSize: pageResult.data.pageSize,
+				profiles: pageResult.data.profiles,
+				totalCount: pageResult.data.total,
+			});
+		},
+		(page) => page.profiles,
+	);
+	if (!statutoryProfiles.ok) {
+		return statutoryProfiles;
+	}
+	for (const profile of statutoryProfiles.data) {
+		records.push(
+			exportRecord({
+				category: "compliance",
+				entityType: "hr_statutory_profile",
+				entityId: profile.id,
+				classification: "highly_sensitive",
+				retentionClass: "pay_and_benefits",
+				data: asExportData(profile),
+			}),
+		);
+	}
+
+	const priorEmployerYtd = await input.store.listPriorEmployerYtd({
+		organizationId: input.organizationId,
+		employeeId: input.subjectEmployeeId,
+	});
+	if (!priorEmployerYtd.ok) {
+		return priorEmployerYtd;
+	}
+	for (const priorYtd of priorEmployerYtd.data) {
+		records.push(
+			exportRecord({
+				category: "compliance",
+				entityType: "hr_prior_employer_ytd",
+				entityId: priorYtd.id,
+				classification: "highly_sensitive",
+				retentionClass: "pay_and_benefits",
+				data: asExportData(priorYtd),
+			}),
+		);
+	}
+
 	const relationsHistory =
 		await input.store.getEmployeeRelationsHistoryByEmployee({
 			organizationId: input.organizationId,

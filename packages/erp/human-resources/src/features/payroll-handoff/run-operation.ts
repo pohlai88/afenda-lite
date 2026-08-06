@@ -58,7 +58,10 @@ export async function runPayrollHandoffCapabilityQuery<
 	config: {
 		execute: (
 			data: z.infer<TSchema>,
-			deps: { store: HumanResourcesPayrollHandoffStoreProjection<TMethods> },
+			deps: {
+				options: HumanResourcesCommandOptions;
+				store: HumanResourcesPayrollHandoffStoreProjection<TMethods>;
+			},
 		) => Promise<Result<TOut>>;
 		invalidMessage: string;
 		query: PayrollHandoffQueryId;
@@ -70,6 +73,7 @@ export async function runPayrollHandoffCapabilityQuery<
 		TSchema,
 		{
 			authorizationResource: HumanResourcesResourceContext | undefined;
+			options: HumanResourcesCommandOptions;
 			store: HumanResourcesPayrollHandoffStoreProjection<TMethods>;
 		},
 		TOut
@@ -92,8 +96,10 @@ export async function runPayrollHandoffCapabilityQuery<
 			return errorResult.ok({
 				store: projectPayrollHandoffStore(store, config.storeMethods),
 				authorizationResource: authorizationResource.data,
+				options: resolvedOptions,
 			});
 		},
-		execute: (data, { store }) => config.execute(data, { store }),
+		execute: (data, { options: resolvedOptions, store }) =>
+			config.execute(data, { options: resolvedOptions, store }),
 	});
 }

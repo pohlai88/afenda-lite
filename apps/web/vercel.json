@@ -8,6 +8,14 @@
 		{
 			"path": "/api/cron/hr-reliability",
 			"schedule": "* * * * *"
+		},
+		{
+			"path": "/api/cron/payroll-outbox",
+			"schedule": "* * * * *"
+		},
+		{
+			"path": "/api/cron/payroll-jobs",
+			"schedule": "* * * * *"
 		}
 	]
 }

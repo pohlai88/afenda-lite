@@ -5,6 +5,7 @@ import type { AcceptedPayrollHandoff } from "../../kernel/contracts/projected-ty
 export type { AcceptedPayrollHandoff } from "../../kernel/contracts/projected-types";
 
 export interface AcceptHandoffRecord {
+	acceptanceStatus?: "accepted" | "deferred_to_next_period";
 	actorUserId: string;
 	contractVersion: string;
 	correlationId: string;
@@ -25,7 +26,9 @@ export interface PayrollWorkforceIngressStore {
 	 * an identical payload hash replays the existing record; a different hash
 	 * under the same key fails with CONFLICT. A new payload for the same
 	 * active identity (employee, effectiveDate, period) supersedes the prior
-	 * accepted record with explicit lineage.
+	 * accepted record with explicit lineage only when `sourceVersion` is
+	 * strictly newer on at least one axis and not older on any axis; otherwise
+	 * stale or equal revisions fail with CONFLICT.
 	 */
 	acceptWorkforceHandoff: (
 		record: AcceptHandoffRecord,

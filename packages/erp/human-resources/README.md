@@ -31,6 +31,47 @@ Contract evidence fixtures:
 | [`consumer-inventory.fixture.json`](./__tests__/fixtures/consumer-inventory.fixture.json) | Consumer graph |
 | [`architecture-debt.fixture.json`](./__tests__/fixtures/architecture-debt.fixture.json) | Reporting-only containment baseline (targets remain zero; not an allowlist) |
 
+### Fixture breaking-change policy
+
+Any diff to [`public-contract.fixture.json`](./__tests__/fixtures/public-contract.fixture.json)
+is a breaking-change-review event, not a routine edit ([bridging D7 / Phase E](../../../docs/erp/hr-payroll-bridging.md#d7--hr-side-gaps-verified-2026-08-05-several-rows-already-closed)):
+
+1. **Regenerate, never hand-edit.** The fixture is a projection of the live
+   TypeScript AST, produced by `buildPublicContract` +
+   `buildPublicContractFixture`
+   (`__tests__/helpers/public-contract.ts`) and asserted byte-for-byte in
+   [`public-contract-freeze.test.ts`](./__tests__/public-contract-freeze.test.ts).
+   Run the package test suite, take the value the test computed from source
+   (`buildPublicContractFixture(contract)`), and write that back to the
+   fixture file — never edit the JSON by hand.
+2. **Consumer-impact statement in the same PR.** Cross-check the diff
+   against every row in
+   [`consumer-inventory.fixture.json`](./__tests__/fixtures/consumer-inventory.fixture.json)
+   (built by the equivalent serializer in
+   `__tests__/helpers/consumer-inventory.ts`) whose `symbol` or `entrypoint`
+   touches the changed surface, and state in the PR description what each
+   affected consumer does as a result. A diff with no consumer impact still
+   states that explicitly (e.g. "no consumer references the removed
+   internal-only symbol").
+3. **Classify the diff, semver-style:**
+   - **Additive** (new exported symbol, new optional field, widened
+     acceptance) → minor, allowed on its own.
+   - **Removed or renamed** export, narrowed acceptance, or a
+     `signature-mismatch` / `missing-symbol` / `symbol-owner-mismatch` class
+     diff (the same codes `comparePublicContracts` already detects) →
+     breaking. A breaking diff requires every named consumer from step 2 to
+     be updated **in the same commit** — per this repository's one-cutover
+     rule (AGENTS.md, *semantic programming*: "one final cutover... no
+     v1/v2 consumer stacks, deprecated facades, or scheduled cleanup").
+     Splitting a breaking fixture change from its consumer updates across
+     commits or PRs is not permitted.
+4. The roadmap already states the removal-specific corollary of this rule:
+   "a later public-contract review may remove obsolete exports only through
+   an explicitly approved migration that names every affected consumer and
+   deletes the superseded surface once"
+   ([`development-roadmap.md`](./docs/development-roadmap.md)). This section
+   is the general policy that statement is an instance of.
+
 ## Requires
 
 - Node `24.x` | pnpm `>=10.33.4` (root `package.json` engines)
@@ -92,7 +133,8 @@ or HTTP envelopes.
 | `workforce-planning` | Headcount plans, reservations, and availability |
 | `time` | Work calendars, shifts, attendance, timesheets, and overtime |
 | `payroll-handoff` | Approved immutable payroll inputs, delivery, acknowledgement, and correction state |
-| `privacy` | Field projection, evidence, retention, and deletion workflows |
+| `statutory-profile` | D0 statutory-fact capture — effective-dated tax residency, nationality / expatriate flag, dependants + relief declarations, statutory identifiers, VN regional minimum-wage zone, and prior-employer hire-year figures; reads are fail-closed on the privacy capability and exclude restriction-active subjects |
+| `privacy` | Field projection, evidence, retention, legal-hold, restriction (`restrictEmployeeData` / `liftEmployeeDataRestriction`), and deletion workflows scoped to `hr_*` only — payroll evidence is restricted, not erased (A3/C7) |
 | `reporting` | Reconciled HR read-model snapshots and feature-owned sources |
 | `bulk-import` | Resumable validated imports and row-level outcomes |
 | `bulk-export` | Field-allowlisted exports and privacy evidence |
@@ -127,10 +169,113 @@ multi-DB isolation.
 | Events and audit | Audit before outbox; commands fail closed when either required fact cannot be recorded. |
 | Privacy | Contextual authorization and field projection; bulk export is definition-bound and evidence-recorded. |
 | Documents | Canonical `vault://` references only; document bytes stay outside this package. |
-| Payroll | HR publishes approved immutable handoff facts and owns delivery acknowledgement/correction. Producer dedupes by `deliveryId + payloadHash`. |
+| Payroll | Single push/sync-ingest transport (below). HR owns queue, acknowledgement, and correction; Payroll owns `payroll_accepted_handoff` ingest. |
+
+### HR ↔ Payroll transport (single path)
+
+Identical wording on both package READMEs ([bridging B1](../../../docs/erp/hr-payroll-bridging.md)):
+
+```text
+HR command (queuePayrollDelivery)
+  └─ hr_payroll_handoff_delivery row (status: pending) — one HR transaction
+        │
+apps/web producer (modules/platform/domain/human-resources-payroll-delivery.ts)
+  ├─ 1. ingestApprovedPayrollHandoff(...)  → payroll_accepted_handoff row (idempotent)
+  └─ 2. publish platform.human-resources.payroll-delivery.requested.v1
+        (fan-out telemetry only — NOT the ingest path)
+        │
+HR feedback (recordPayrollDeliveryFeedback: acknowledged | rejected | correction_required)
+```
+
+| Operation | Role |
+| --- | --- |
+| `assembleApprovedPayrollHandoff` | Pre-queue dry-run assembly of the sealed handoff payload |
+| `queuePayrollDelivery` | Persist pending delivery; corrections pass `supersedesDeliveryId` |
+| `recordPayrollDeliveryFeedback` | Acknowledge, reject, or mark correction required |
+| `recoverPendingPayrollDeliveries` | Bounded retry for pending deliveries (reliability worker) |
+
+Payroll production composition does not pull from HR at calculation time.
+Ingest and event publish share no transaction; safety depends on ingest
+idempotency (`deliveryId` + payload hash — bridging C1).
 
 Production HR source does not import `@afenda/payroll` and never calculates
 gross-to-net, statutory deductions, net pay, or payslips.
+
+### Handoff contract: cut-off and termination
+
+**Cut-off semantics ([bridging C3](../../../docs/erp/hr-payroll-bridging.md#c3--period-freeze)):**
+
+- **Dry-run / preview:** `assembleApprovedPayrollHandoff` is the read-only
+  preview before `queuePayrollDelivery`. Phase E does not add a separate
+  `previewPayrollHandoff` command — compare intended facts to the assemble
+  result (see [payroll ops runbooks §2](../payroll/docs/ops-runbooks.md#2-stuck-hr-handoff--delivery)).
+- `assembleApprovedPayrollHandoff` accepts `effectiveDate` plus an optional
+  `periodStart`/`periodEnd` pair
+  ([`approved-payroll-handoff.ts`](./src/features/payroll-handoff/approved-payroll-handoff.ts)),
+  but that window is used only to discover which approved leave and time
+  facts fall inside it — it is **not** stamped as a binding payroll period
+  identity. The assembled `ApprovedPayrollHandoff` carries no `periodId`.
+- Payroll's ingest command accepts an independent `periodStart`/`periodEnd`
+  pair that defaults to `null`
+  (`ingestApprovedPayrollHandoffInputSchema`,
+  `packages/erp/payroll/src/features/workforce-ingress/ingest.schema.ts:10-11`).
+  The production producer
+  (`apps/web/modules/platform/domain/human-resources-payroll-delivery.ts`)
+  does not populate them, so every accepted handoff row in production today
+  is sealed with `period_start = NULL` / `period_end = NULL`. Delivery
+  identity and supersession are keyed on `(organizationId, employeeId,
+  effectiveDate, periodStart, periodEnd)` — with the last two both null in
+  practice, ordering reduces to `effectiveDate` plus the `sourceVersion`
+  axes (bridging C2).
+- **Enforced today (payroll C3):** `payroll_period.status` is
+  `'open' | 'inputs_locked' | 'closed'` (migrate
+  `0055_payroll_period_inputs_locked`, ops-gated). Operators create at least
+  one run while the period is `open`, then `lockPayrollPeriodInputs`.
+  `createPayrollRun` still requires `open`. Ingest consults covering periods:
+  non-termination handoffs arriving after freeze seal as
+  `deferred_to_next_period` (ingest `ok` — not a producer retry) and are
+  excluded from `createAcceptedWorkforceInputPort`. Money-only corrections
+  still use `retro-pay` (D3); a full workforce handoff is not rewritten as a
+  fake retro line. A payroll **run** still moves through
+  `draft → calculating → calculated → failed → finalized → reversed`
+  independently of period status. Calculation defaults to the
+  accepted-handoff ledger via `PayrollWorkforceInputPort`
+  (`packages/erp/payroll/src/features/calculation/production-run-calculator.ts`);
+  the explicit `workforce` override remains a test-only seam (bridging B1).
+- **What a late approval does today:** after `inputs_locked` / `closed`, a
+  non-termination correction is deferred (C3/C4). Hash-conflict (C1) and
+  stale-revision (C2) rejects still apply. Ingest's public return type remains
+  `Result<AcceptedPayrollHandoff>` with `status` on the sealed record — not
+  the typed `HandoffAcceptance` union from the bridging sketch.
+
+**Mid-period termination ([bridging C6](../../../docs/erp/hr-payroll-bridging.md#c6--termination-is-a-fact-not-a-recalculation)):**
+
+- Offboarding records a payroll-handoff readiness fact per case:
+  `hr_offboarding_payroll_handoff` — `id`, `organizationId`,
+  `offboardingCaseId` (FK `hr_offboarding_case`, unique per org+case),
+  `employmentId` (FK `hr_employment`), `status` (`pending` \| `ready`),
+  `readyOn` (nullable date), `summary` (nullable text), plus the standard
+  version/audit columns
+  (`packages/data-plane/db/src/schema/human-resources.ts:2044-2083`). It is
+  written through `recordOffboardingPayrollHandoff`
+  (`src/features/employment-lifecycle/offboarding.ts`) as one checklist item
+  alongside clearance and access-revocation — it is a **readiness marker
+  inside the offboarding case**, not itself the payroll fact push.
+- The actual termination signal Payroll receives is the employment status on
+  the ordinary handoff: `ApprovedPayrollHandoff.employmentStatus`, resolved
+  from HR's employment-status history as of the handoff's `effectiveDate`
+  and carried by `mapApprovedPayrollHandoff`
+  (`src/features/payroll-handoff/map-approved-payroll-handoff.ts`). A
+  termination reaches Payroll through the same `queuePayrollDelivery` →
+  ingest transport as any other handoff — there is no separate termination
+  event or endpoint.
+- **Enforced today (payroll C6):** a termination / notice handoff arriving
+  after freeze still seals as `accepted` (it is a fact, not a recalculation)
+  and Payroll writes blocking `MID_PERIOD_TERMINATION` on every
+  non-finalized / non-reversed run in the covering period. Finalize already
+  refuses when `hasBlockingPayrollExceptions` is true
+  (`packages/erp/payroll/src/features/payroll-runs/finalization.ts`). HR does
+  not call `recordPayrollException` — the ordinary ingest path is the wire.
 
 ### Product composition
 
@@ -185,6 +330,9 @@ pnpm validate:modules
 pnpm governance:packages
 ```
 
+CI uses check-only `pnpm validate:modules`. Local regeneration, when a write path
+exists again, is an explicit maintainer action — not the README default.
+
 ## Boundaries
 
 | Owns | Does not own |
@@ -210,6 +358,11 @@ Human Resources does not import master-data persistence or adapters.
 | Product requirements | [docs/PRD.md](./docs/PRD.md) |
 | Development roadmap | [docs/development-roadmap.md](./docs/development-roadmap.md) |
 | Baseline verification | [docs/baseline-verification.md](./docs/baseline-verification.md) |
+| Production readiness | [PRODUCTION_READINESS.md](./PRODUCTION_READINESS.md) |
+| Phase E sign-off checklist | [../payroll/docs/phase-e-signoff.md](../payroll/docs/phase-e-signoff.md) |
+| Payroll ops runbooks | [../payroll/docs/ops-runbooks.md](../payroll/docs/ops-runbooks.md) |
+| HR ↔ Payroll closure guideline | [hr-payroll-bridging.md](../../../docs/erp/hr-payroll-bridging.md) |
+| HR ↔ Payroll decisions register | [hr-payroll-decisions.md](../payroll/docs/hr-payroll-decisions.md) |
 | Feature-first ERP method | [feature-first-erp.md](../../../.cursor/skills/afenda-semantic-registry-cutover/references/feature-first-erp.md) |
 | Payroll PRD (boundary) | [PAYROLL-PRD-MY-VN.md](../payroll/docs/PAYROLL-PRD-MY-VN.md) |
 | Package agent deltas | [AGENTS.md](./AGENTS.md) |

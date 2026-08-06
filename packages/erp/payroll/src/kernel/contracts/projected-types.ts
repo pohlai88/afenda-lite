@@ -32,6 +32,7 @@ import type {
 	payrollRunUpdateInputSchema,
 } from "../../features/payroll-runs/runs.schema";
 import type {
+	lockPayrollPeriodInputsInputSchema,
 	payrollCalendarArchiveInputSchema,
 	payrollCalendarCreateRecordSchema,
 	payrollCalendarRecordSchema,
@@ -153,6 +154,9 @@ export type PayrollPeriodUpdateInput = z.infer<
 >;
 export type PayrollPeriodCloseInput = z.infer<
 	typeof payrollPeriodCloseInputSchema
+>;
+export type PayrollPeriodLockInput = z.infer<
+	typeof lockPayrollPeriodInputsInputSchema
 >;
 export type PayrollEarningRuleUpdateInput = z.infer<
 	typeof payrollEarningRuleUpdateInputSchema
@@ -382,7 +386,7 @@ export interface AcceptedPayrollHandoff {
 	payloadHash: string;
 	periodEnd: string | null;
 	periodStart: string | null;
-	status: "accepted" | "superseded";
+	status: "accepted" | "superseded" | "deferred_to_next_period";
 	supersededByHandoffId: string | null;
 	version: number;
 }

@@ -649,6 +649,7 @@ describe("payroll setup lifecycle and versioning", () => {
 		const finalized = await finalizePayrollRun(
 			{
 				...context("corr-finalized-finalize"),
+				actorUserId: "user-setup-versioning-finalize",
 				runId: calculated.data.id,
 				expectedVersion: calculated.data.version,
 			},

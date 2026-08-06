@@ -48,6 +48,8 @@ function computeRateAmount(
 
 export const synthV1StatutoryCalculator: StatutoryRuleCalculator = {
 	calculatorId: SYNTH_V1_CALCULATOR_ID,
+	jurisdictionCode: null,
+	statutoryKind: "contribution",
 	productionApproval: { status: "synthetic_only" },
 	calculate(input: StatutoryCalculatorInput): StatutoryCalculatorOutput {
 		const parsed = synthV1ConfigSchema.safeParse(input.configJson);

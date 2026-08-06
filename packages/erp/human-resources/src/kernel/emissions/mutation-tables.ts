@@ -149,6 +149,8 @@ export const HUMAN_RESOURCES_MUTATION_TABLES = [
 	"hr_timesheet_entry",
 	"hr_overtime_request",
 	"hr_overtime_approval",
+	"hr_statutory_profile",
+	"hr_prior_employer_ytd",
 ] as const;
 
 export const HUMAN_RESOURCES_AGGREGATES = [
@@ -217,4 +219,6 @@ export const HUMAN_RESOURCES_AGGREGATES = [
 	"employee_document",
 	"work_eligibility",
 	"policy_acknowledgement",
+	"statutory_profile",
+	"prior_employer_ytd",
 ] as const;

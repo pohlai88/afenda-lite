@@ -2,19 +2,16 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import {
-	PAYROLL_PAYMENT_CORRECTION_REQUESTED_EVENT,
-	PAYROLL_PAYMENT_REQUESTED_EVENT,
-	PAYROLL_POSTING_CORRECTION_REQUESTED_EVENT,
-	PAYROLL_POSTING_REQUESTED_EVENT,
-	PAYROLL_RUN_CALCULATED_EVENT,
-	PAYROLL_RUN_FINALIZED_EVENT,
-	PAYROLL_RUN_REVERSED_EVENT,
-	PAYROLL_RUN_STARTED_EVENT,
-} from "@afenda/events/schemas";
 import { describe, expect, it } from "vitest";
 
 import { payrollModuleManifest } from "../src/composition/module.manifest";
+import { PAYROLL_FINAL_SETTLEMENT_LIFECYCLE_EVENTS } from "../src/features/final-settlement/settlement-lifecycle-events";
+import { payrollRunEventsForStatus } from "../src/features/payroll-runs/lifecycle-events";
+import {
+	PAYROLL_EMISSION_REGISTRY,
+	PAYROLL_EMITTED_EVENTS,
+	PAYROLL_PLATFORM_EVENT_DISPATCHER_ID,
+} from "../src/kernel/emissions/emission-registry";
 import { PAYROLL_MUTATION_TABLES } from "../src/kernel/emissions/mutation-tables";
 import { PAYROLL_PERMISSION_CODES } from "../src/kernel/execution/permissions";
 
@@ -25,7 +22,7 @@ const pkgPath = path.resolve(
 
 describe("payrollModuleManifest", () => {
 	it("declares scratch mutation tables and permissions", () => {
-		expect(payrollModuleManifest.lifecycle).toBe("active");
+		expect(payrollModuleManifest.lifecycle).toBe("scaffolded");
 		expect(payrollModuleManifest.persistence.mutationTables).toEqual([
 			...PAYROLL_MUTATION_TABLES,
 		]);
@@ -39,15 +36,32 @@ describe("payrollModuleManifest", () => {
 
 	it("declares only events emitted by implemented lifecycle operations", () => {
 		expect(payrollModuleManifest.events.emits).toEqual([
-			PAYROLL_RUN_STARTED_EVENT,
-			PAYROLL_RUN_CALCULATED_EVENT,
-			PAYROLL_RUN_FINALIZED_EVENT,
-			PAYROLL_RUN_REVERSED_EVENT,
-			PAYROLL_PAYMENT_REQUESTED_EVENT,
-			PAYROLL_POSTING_REQUESTED_EVENT,
-			PAYROLL_PAYMENT_CORRECTION_REQUESTED_EVENT,
-			PAYROLL_POSTING_CORRECTION_REQUESTED_EVENT,
+			...PAYROLL_EMITTED_EVENTS,
 		]);
+	});
+
+	it("keeps the emission registry in parity with the manifest and lifecycle builders", () => {
+		const registryEvents = PAYROLL_EMISSION_REGISTRY.map(({ event }) => event);
+		expect(registryEvents).toEqual([...PAYROLL_EMITTED_EVENTS]);
+		expect(payrollModuleManifest.events.emits).toEqual(registryEvents);
+
+		const lifecycleEvents = new Set([
+			...payrollRunEventsForStatus("draft"),
+			...payrollRunEventsForStatus("calculated"),
+			...payrollRunEventsForStatus("finalized"),
+			...payrollRunEventsForStatus("reversed"),
+			...PAYROLL_FINAL_SETTLEMENT_LIFECYCLE_EVENTS,
+		]);
+		expect([...lifecycleEvents].toSorted()).toEqual(
+			[...registryEvents].toSorted(),
+		);
+
+		expect(
+			PAYROLL_EMISSION_REGISTRY.every(
+				(entry) => entry.dispatcher === PAYROLL_PLATFORM_EVENT_DISPATCHER_ID,
+			),
+		).toBe(true);
+		expect(new Set(registryEvents).size).toBe(registryEvents.length);
 	});
 
 	it("keeps permission codes unique", () => {

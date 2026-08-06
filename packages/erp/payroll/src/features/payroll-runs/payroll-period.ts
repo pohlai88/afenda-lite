@@ -1,4 +1,4 @@
-import type { Result } from "@afenda/errors";
+import { errorResult, type Result } from "@afenda/errors";
 import type { PayrollPeriod } from "../../kernel/contracts/projected-types";
 import {
 	runPayrollCommand,
@@ -8,6 +8,7 @@ import { buildPayrollCreateFingerprint } from "../../kernel/identity/create-fing
 import {
 	PAYROLL_COMMAND_SETUP_PERIOD_CLOSE,
 	PAYROLL_COMMAND_SETUP_PERIOD_CREATE,
+	PAYROLL_COMMAND_SETUP_PERIOD_LOCK_INPUTS,
 	PAYROLL_COMMAND_SETUP_PERIOD_UPDATE,
 	PAYROLL_QUERY_SETUP_PERIOD_GET,
 	PAYROLL_QUERY_SETUP_PERIOD_LIST,
@@ -17,6 +18,7 @@ import {
 	createPayrollPeriodInputSchema,
 	getPayrollPeriodInputSchema,
 	listPayrollPeriodsInputSchema,
+	lockPayrollPeriodInputsInputSchema,
 	updatePayrollPeriodInputSchema,
 } from "../payroll-setup/setup.schema";
 import type { PayrollRunCommandOptions as PayrollCommandOptions } from "./operation-store";
@@ -96,6 +98,42 @@ export function closePayrollPeriod(
 				},
 				ports,
 			),
+	});
+}
+
+export function lockPayrollPeriodInputs(
+	input: unknown,
+	options: PayrollCommandOptions = {},
+): Promise<Result<PayrollPeriod>> {
+	return runPayrollCommand(input, options, {
+		schema: lockPayrollPeriodInputsInputSchema,
+		invalidMessage: "Invalid payroll period input-lock input",
+		command: PAYROLL_COMMAND_SETUP_PERIOD_LOCK_INPUTS,
+		execute: async (data, { store, ports }) => {
+			const runs = await store.listRunsForPeriod({
+				organizationId: data.organizationId,
+				periodId: data.periodId,
+			});
+			if (!runs.ok) {
+				return runs;
+			}
+			if (runs.data.length === 0) {
+				return errorResult.fail("CONFLICT", {
+					publicMessage:
+						"Lock payroll period inputs only after creating at least one run",
+				});
+			}
+			return store.lockPeriodInputs(
+				{
+					organizationId: data.organizationId,
+					periodId: data.periodId,
+					expectedVersion: data.expectedVersion,
+					actorUserId: data.actorUserId,
+					correlationId: data.correlationId,
+				},
+				ports,
+			);
+		},
 	});
 }
 

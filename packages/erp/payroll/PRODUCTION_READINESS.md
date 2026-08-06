@@ -10,6 +10,9 @@ qualified reviewer approval in the canonical calculator registry.
 - Every root command and query is mapped to an explicit Payroll permission.
 - Own-payslip and all-payslip access use separate permissions; own access derives
   employee identity from the workforce port and accepts no employee selector.
+  Privacy admin ops reuse `payroll.payslip.read-all`; subject-access DSAR reuses
+  `payroll.payslip.read-own`. Restriction excludes rows from reads and exports;
+  `expirePayrollRetention` marks eligibility only and never erases evidence.
 - Structured operation telemetry contains only operation, outcome, error code,
   duration, and one-way organization/actor tokens. Amounts, employee IDs, tax
   data, bank data, inputs, outputs, and payslip content are prohibited.
@@ -46,8 +49,54 @@ reconcile its execution in the migration ledger.
 
 ## External acceptance still required
 
-`synth.v1` is synthetic test logic and is explicitly marked `synthetic_only`.
-No production jurisdiction may be activated until qualified payroll/tax reviewers
-approve a versioned calculator, its effective dates, fixtures, and rounding
-policy. The production calculator fails closed when a statutory rule references
-anything without that approval.
+A2 sourcing is closed as **build in-house**. MY/VN calculators
+(`my.*.v1`, `vn.*.v1`) are registered as `awaiting_review` with citations in
+`src/features/statutory-rules/statutory-source-ledger.ts`. Rates belong in
+reviewed rule-pack `configJson`, not calculator source. `synth.v1` remains
+`synthetic_only`. No production jurisdiction may be activated until a qualified
+payroll/tax reviewer sets `productionApproval: approved` (reviewedBy,
+reviewedAt, jurisdictions) for the versioned calculator, its effective-dated
+pack, fixtures, and rounding policy. The production calculator fails closed
+when a statutory rule references anything without that approval.
+
+Every ledger row's `effectiveFrom`, `effectiveTo`, `documentVersion`, and
+`retrievedAt` are `{ state: "pending_review" }`. Engineering cannot honestly
+assert which gazette revision was read or when, so those four fields are the
+reviewer's to record; `listUnattestedStatutorySources()` names every row still
+outstanding and must be empty before any pack is approved.
+
+### Explicitly out of scope for v1 packs
+
+The v1 packs consume **`dependantCount` only** from the statutory profile. The
+following are NOT computed, and a pack config that appears to price them is
+mis-configured:
+
+- **MY PCB itemized reliefs** — TP1 (deduction claims) and TP3 (previous-employer
+  declarations) are not consumed, zakat is not deducted, and the EPF-relief cap
+  is not applied. `personalRelief` and `dependantRelief` in a PCB config are flat
+  annual amounts the reviewer sets; they do not vary per employee beyond the
+  dependant count.
+- **VN PIT itemized relief declarations** — dependant registrations, charitable
+  contributions, and insurance reliefs are not read from the declaration array.
+
+The D0 handoff's `reliefDeclarations` array is carried and sealed into the
+snapshot but deliberately unread by v1; it is reserved for v2 packs that price
+per-employee relief claims. Until then, an employer with employees who have
+filed TP1/TP3 or VN relief declarations will over-withhold, and that difference
+is settled at the employee's own annual filing.
+
+## Phase E evidence (engineering)
+
+| Artifact | Path |
+| --- | --- |
+| Ops runbooks | [docs/ops-runbooks.md](./docs/ops-runbooks.md) |
+| Sign-off checklist | [docs/phase-e-signoff.md](./docs/phase-e-signoff.md) |
+| Decisions register | [docs/hr-payroll-decisions.md](./docs/hr-payroll-decisions.md) |
+
+Promotion still requires pack reviewer approval (E4), counsel retention
+citations (E5), ops-gated DDL (E9 — `0051`–`0056` unapplied; `0049` preview-only),
+green `governance:packages` (E10), and independent review (E11). The Phase E
+evidence recorded so far is local command output only: GitHub Actions billing
+is locked, so no CI run exists for this revision, and the Drizzle/Neon parity
+lane self-skips without `DATABASE_URL` + `REQUIRE_DATABASE_TESTS=1`.
+Publishing this pack does not move `lifecycle` off `scaffolded`.

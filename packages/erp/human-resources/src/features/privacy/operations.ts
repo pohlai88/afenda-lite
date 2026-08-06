@@ -37,6 +37,8 @@ import {
 import {
 	HUMAN_RESOURCES_COMMAND_PRIVACY_LEGAL_HOLD_PLACE,
 	HUMAN_RESOURCES_COMMAND_PRIVACY_LEGAL_HOLD_RELEASE,
+	HUMAN_RESOURCES_COMMAND_PRIVACY_RESTRICTION_LIFT,
+	HUMAN_RESOURCES_COMMAND_PRIVACY_RESTRICTION_PLACE,
 	HUMAN_RESOURCES_COMMAND_PRIVACY_SUBJECT_ANONYMIZE,
 	HUMAN_RESOURCES_QUERY_PRIVACY_ANONYMIZATION_EVALUATE,
 	HUMAN_RESOURCES_QUERY_PRIVACY_CASE_GET,
@@ -84,6 +86,20 @@ export type AnonymizeHumanResourcesSubjectInput =
 	HumanResourcesPrivacyOperationInput & {
 		classifications: readonly HumanResourcesRetentionClassification[];
 	};
+
+export type RestrictEmployeeDataInput = HumanResourcesPrivacyOperationInput & {
+	classifications: readonly HumanResourcesRetentionClassification[];
+	restrictionReference: string;
+};
+
+export interface LiftEmployeeDataRestrictionInput {
+	actorUserId: string;
+	correlationId: string;
+	liftedAt?: string;
+	organizationId: string;
+	reason: string;
+	restrictionId: string;
+}
 
 function privacyContextFromInput(
 	input: HumanResourcesPrivacyOperationInput,
@@ -202,6 +218,25 @@ async function exportHumanResourcesSubjectDataCore(
 	const privacyResult = requirePrivacyPort(options);
 	if (!privacyResult.ok) {
 		return privacyResult;
+	}
+
+	const restrictionContext = privacyContextFromInput(
+		input,
+		"data_subject_request",
+	);
+	const restriction =
+		await privacyResult.data.evaluateRestriction(restrictionContext);
+	if (!restriction.ok) {
+		return restriction;
+	}
+	if (restriction.data.restricted) {
+		// Restriction ≠ erasure (A3/C7): the subject's rows survive but are
+		// excluded from exports/read models until the restriction is lifted
+		// through the audited liftEmployeeDataRestriction command.
+		return errorResult.fail("CONFLICT", {
+			publicMessage:
+				"This subject's data is restricted and excluded from export.",
+		});
 	}
 
 	const { store } = resolveCommandDeps(options);
@@ -362,6 +397,65 @@ async function releaseHumanResourcesLegalHoldCore(
 	});
 }
 
+async function restrictEmployeeDataCore(
+	input: RestrictEmployeeDataInput,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<{ restrictionId: string }>> {
+	const authorized = await authorizePrivacyOperation(input, options, {
+		operationId: HUMAN_RESOURCES_COMMAND_PRIVACY_RESTRICTION_PLACE,
+		operationKind: "command",
+		requiredPermission: HUMAN_RESOURCES_PERMISSION_PRIVACY_LEGAL_HOLD_MANAGE,
+		resource: subjectResourceContext(input),
+	});
+	if (!authorized.ok) {
+		return authorized;
+	}
+
+	const privacyResult = requirePrivacyPort(options);
+	if (!privacyResult.ok) {
+		return privacyResult;
+	}
+
+	const context = privacyContextFromInput(input, "processing_restriction");
+	return privacyResult.data.restrictSubject({
+		...context,
+		classifications: input.classifications,
+		restrictionReference: input.restrictionReference,
+	});
+}
+
+async function liftEmployeeDataRestrictionCore(
+	input: LiftEmployeeDataRestrictionInput,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<void>> {
+	const authorized = await authorizePrivacyOperation(input, options, {
+		operationId: HUMAN_RESOURCES_COMMAND_PRIVACY_RESTRICTION_LIFT,
+		operationKind: "command",
+		requiredPermission: HUMAN_RESOURCES_PERMISSION_PRIVACY_LEGAL_HOLD_MANAGE,
+		resource: {
+			organizationId: input.organizationId,
+			kind: "privacy_subject",
+		},
+	});
+	if (!authorized.ok) {
+		return authorized;
+	}
+
+	const privacyResult = requirePrivacyPort(options);
+	if (!privacyResult.ok) {
+		return privacyResult;
+	}
+
+	return privacyResult.data.liftRestriction({
+		organizationId: input.organizationId,
+		actorUserId: input.actorUserId,
+		correlationId: input.correlationId,
+		restrictionId: input.restrictionId,
+		reason: input.reason,
+		liftedAt: input.liftedAt ?? new Date().toISOString(),
+	});
+}
+
 async function anonymizeHumanResourcesSubjectCore(
 	input: AnonymizeHumanResourcesSubjectInput,
 	options: HumanResourcesCommandOptions = {},
@@ -382,6 +476,17 @@ async function anonymizeHumanResourcesSubjectCore(
 	}
 
 	const context = privacyContextFromInput(input, "anonymization_request");
+	const restriction = await privacyResult.data.evaluateRestriction(context);
+	if (!restriction.ok) {
+		return restriction;
+	}
+	if (restriction.data.restricted) {
+		return errorResult.fail("CONFLICT", {
+			publicMessage:
+				"Anonymization is blocked while this subject's data is restricted.",
+		});
+	}
+
 	return privacyResult.data.anonymizeSubject({
 		...context,
 		classifications: input.classifications,
@@ -475,6 +580,36 @@ export async function releaseHumanResourcesLegalHold(
 		startedAtMs,
 		observability: options.observability,
 		result: await releaseHumanResourcesLegalHoldCore(input, options),
+	});
+}
+
+export async function restrictEmployeeData(
+	input: RestrictEmployeeDataInput,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<{ restrictionId: string }>> {
+	const startedAtMs = Date.now();
+	return observePrivacyOperationResult({
+		operationId: HUMAN_RESOURCES_COMMAND_PRIVACY_RESTRICTION_PLACE,
+		operationKind: "command",
+		privacyOperation: "rectify",
+		startedAtMs,
+		observability: options.observability,
+		result: await restrictEmployeeDataCore(input, options),
+	});
+}
+
+export async function liftEmployeeDataRestriction(
+	input: LiftEmployeeDataRestrictionInput,
+	options: HumanResourcesCommandOptions = {},
+): Promise<Result<void>> {
+	const startedAtMs = Date.now();
+	return observePrivacyOperationResult({
+		operationId: HUMAN_RESOURCES_COMMAND_PRIVACY_RESTRICTION_LIFT,
+		operationKind: "command",
+		privacyOperation: "rectify",
+		startedAtMs,
+		observability: options.observability,
+		result: await liftEmployeeDataRestrictionCore(input, options),
 	});
 }
 

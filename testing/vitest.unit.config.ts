@@ -40,6 +40,18 @@ const masterDataUnitProjectWithExclude = {
 	},
 };
 
+const payrollUnitProject = nodeProjectWithServerOnly(
+	"payroll",
+	path.join(repoRoot, "packages/erp/payroll"),
+);
+const payrollUnitProjectWithExclude = {
+	...payrollUnitProject,
+	test: {
+		...payrollUnitProject.test,
+		exclude: laneIncludeForProject("payroll-parity", "packages/erp/payroll"),
+	},
+};
+
 const corporateAdministrationUnitProject = nodeProjectWithServerOnly(
 	"corporate-administration",
 	path.join(repoRoot, "packages/erp/corporate-administration"),
@@ -162,10 +174,7 @@ export default mergeConfig(
 						maxWorkers: 2,
 					},
 				},
-				nodeProjectWithServerOnly(
-					"payroll",
-					path.join(repoRoot, "packages/erp/payroll"),
-				),
+				payrollUnitProjectWithExclude,
 				corporateAdministrationUnitProjectWithExclude,
 				nodeProjectWithServerOnly(
 					"fulfillment",
@@ -175,7 +184,19 @@ export default mergeConfig(
 					"inventory",
 					path.join(repoRoot, "packages/erp/inventory"),
 				),
-				nodeProject("http", path.join(repoRoot, "packages/runtime/http")),
+				{
+					...nodeProject("http", path.join(repoRoot, "packages/runtime/http")),
+					test: {
+						...nodeProject("http", path.join(repoRoot, "packages/runtime/http"))
+							.test,
+						// Server-Timing dur= assertions read real Date.now(); CPU
+						// contention under full turbo parallel load can stretch the
+						// default 5s testTimeout even though the assertions are
+						// tolerant of magnitude.
+						testTimeout: 30_000,
+						hookTimeout: 30_000,
+					},
+				},
 				nodeProject(
 					"security",
 					path.join(repoRoot, "packages/runtime/security"),
@@ -194,6 +215,11 @@ export default mergeConfig(
 						include: nodeProject("env", "").test.include,
 						environment: "node",
 						maxWorkers: 1,
+						// This block builds its own test object rather than spreading
+						// nodeProject(...).test, so it does not inherit that helper's
+						// 30s default; set explicitly here too.
+						testTimeout: 30_000,
+						hookTimeout: 30_000,
 						env: {
 							SKIP_ENV_VALIDATION: "true",
 						},

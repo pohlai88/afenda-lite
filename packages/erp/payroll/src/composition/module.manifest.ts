@@ -1,14 +1,5 @@
 import type { AfendaModuleManifest } from "@afenda/db/module-manifest";
-import {
-	PAYROLL_PAYMENT_CORRECTION_REQUESTED_EVENT,
-	PAYROLL_PAYMENT_REQUESTED_EVENT,
-	PAYROLL_POSTING_CORRECTION_REQUESTED_EVENT,
-	PAYROLL_POSTING_REQUESTED_EVENT,
-	PAYROLL_RUN_CALCULATED_EVENT,
-	PAYROLL_RUN_FINALIZED_EVENT,
-	PAYROLL_RUN_REVERSED_EVENT,
-	PAYROLL_RUN_STARTED_EVENT,
-} from "@afenda/events/schemas";
+import { PAYROLL_EMITTED_EVENTS } from "../kernel/emissions/emission-registry";
 import {
 	PAYROLL_AGGREGATES,
 	PAYROLL_MUTATION_TABLES,
@@ -28,7 +19,7 @@ export const payrollModuleManifest = {
 	category: "erp",
 	packageName: "@afenda/payroll",
 	band: "R1-F",
-	lifecycle: "active",
+	lifecycle: "scaffolded",
 	activationMode: "organization_toggle",
 	owns: {
 		aggregates: [...PAYROLL_AGGREGATES],
@@ -43,16 +34,7 @@ export const payrollModuleManifest = {
 	},
 	events: {
 		namespace: "payroll",
-		emits: [
-			PAYROLL_RUN_STARTED_EVENT,
-			PAYROLL_RUN_CALCULATED_EVENT,
-			PAYROLL_RUN_FINALIZED_EVENT,
-			PAYROLL_RUN_REVERSED_EVENT,
-			PAYROLL_PAYMENT_REQUESTED_EVENT,
-			PAYROLL_POSTING_REQUESTED_EVENT,
-			PAYROLL_PAYMENT_CORRECTION_REQUESTED_EVENT,
-			PAYROLL_POSTING_CORRECTION_REQUESTED_EVENT,
-		],
+		emits: [...PAYROLL_EMITTED_EVENTS],
 		consumes: [],
 	},
 	permissions: {

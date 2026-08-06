@@ -11,6 +11,12 @@ import type { PayrollRunId } from "../../kernel/identity/brands";
  * Persistence only; orchestration stays in statutory-rule operations.
  */
 export interface PayrollStatutoryStore {
+	/** One read across many runs for a single employee (year-to-date history). */
+	listStatutoryResultsForEmployeeRuns: (input: {
+		organizationId: string;
+		employeeId: string;
+		runIds: readonly PayrollRunId[];
+	}) => Promise<Result<PayrollStatutoryResult[]>>;
 	listStatutoryResultsForRun: (input: {
 		organizationId: string;
 		runId: PayrollRunId;

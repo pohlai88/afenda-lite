@@ -30,6 +30,15 @@ const outputSource = readFileSync(
 	),
 	"utf8",
 );
+const settlementSource = readFileSync(
+	fileURLToPath(
+		new URL(
+			"../src/features/final-settlement/settlement.drizzle.ts",
+			import.meta.url,
+		),
+	),
+	"utf8",
+);
 
 describe("payroll run production transaction contract", () => {
 	it("commits run state, audit evidence, and lifecycle outbox together", () => {
@@ -121,5 +130,18 @@ describe("payroll run production transaction contract", () => {
 	it("never selects the memory adapter as an omitted production default", () => {
 		expect(resolverSource).toContain("createDrizzlePayrollStore");
 		expect(resolverSource).not.toContain("createMemoryPayrollStore");
+	});
+
+	it("commits final-settlement transitions with audit evidence and lifecycle outbox", () => {
+		expect(settlementSource).toContain("afendaDatabase.transaction");
+		expect(settlementSource).toContain("INSERT INTO platform_audit_log");
+		expect(settlementSource).toContain("INSERT INTO platform_domain_event");
+		expect(settlementSource).toContain("WITH mutated AS");
+		expect(settlementSource).toContain("async saveFinalSettlementTransition");
+		expect(
+			settlementSource.match(
+				/SELECT mutated.id FROM mutated, audited, outboxed/g,
+			)?.length ?? 0,
+		).toBe(3);
 	});
 });

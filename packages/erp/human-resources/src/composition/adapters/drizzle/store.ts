@@ -8,6 +8,7 @@ import { drizzleLeaveMethods } from "../../../features/leave/adapters/leave.driz
 import { drizzleOrganizationMethods } from "../../../features/organization/adapters/organization.drizzle";
 import { drizzlePerformanceMethods } from "../../../features/performance/adapters/performance.drizzle";
 import { drizzleRecruitmentMethods } from "../../../features/recruitment/adapters/recruitment.drizzle";
+import { drizzleStatutoryProfileMethods } from "../../../features/statutory-profile/adapters/statutory-profile.drizzle";
 import { drizzleTalentMethods } from "../../../features/talent/adapters/talent.drizzle";
 import { drizzleTimeMethods } from "../../../features/time/adapters/time.drizzle";
 import { drizzleWorkforcePlanningMethods } from "../../../features/workforce-planning/adapters/workforce-planning.drizzle";
@@ -36,6 +37,7 @@ export function createDrizzleHumanResourcesStore(): HumanResourcesStore {
 		drizzleWorkforceFoundationMethods,
 		drizzleHireOrchestrationMethods,
 		drizzleIdentityMethods,
+		drizzleStatutoryProfileMethods,
 	);
 
 	return store satisfies HumanResourcesStore;

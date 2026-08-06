@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -6,12 +7,15 @@ import { approvedPayrollHandoffSchema } from "@afenda/events/schemas";
 import { describe, expect, it } from "vitest";
 
 import { mapApprovedPayrollHandoff } from "../src/features/payroll-handoff/map-approved-payroll-handoff";
+import { STATUTORY_RELIEF_DECLARATION_VERSION } from "../src/features/statutory-profile/status";
 import type {
 	ApprovedCompensationHandoff,
 	ApprovedLeaveHandoff,
 	ApprovedTimeHandoff,
 	BenefitEnrollment,
 	EmployeeCompensation,
+	PriorEmployerYtd,
+	StatutoryProfile,
 	WorkAssignment,
 } from "../src/kernel/contracts";
 
@@ -133,12 +137,36 @@ const timeHandoff: ApprovedTimeHandoff = {
 	approvalReference: "approval-ref-1",
 };
 
+/** Mirrors the delivery workflow's canonicalize + sha256 payload digest. */
+function canonicalDigest(value: unknown): string {
+	const canonicalize = (input: unknown): unknown => {
+		if (Array.isArray(input)) {
+			return input.map(canonicalize);
+		}
+		if (input !== null && typeof input === "object") {
+			return Object.fromEntries(
+				Object.entries(input as Record<string, unknown>)
+					.filter(([, entry]) => entry !== undefined)
+					.toSorted(([left], [right]) => left.localeCompare(right))
+					.map(([key, entry]) => [key, canonicalize(entry)]),
+			);
+		}
+		return input;
+	};
+	return createHash("sha256")
+		.update(JSON.stringify(canonicalize(value)))
+		.digest("hex");
+}
+
 describe("mapApprovedPayrollHandoff", () => {
 	it("maps domain handoffs into the shared contract with all Slice 8.7 fields", () => {
 		const mapped = mapApprovedPayrollHandoff({
 			employmentStatus: "active",
 			compensationHandoff,
+			leaveBalanceAtTermination: null,
 			leaveHandoffs: [leaveHandoff],
+			priorEmployerYtd: [],
+			statutoryProfile: null,
 			timeHandoff,
 			assignment,
 			assignmentContext: {
@@ -175,6 +203,11 @@ describe("mapApprovedPayrollHandoff", () => {
 		expect(mapped.data.payFrequency).toBe("monthly");
 		expect(mapped.data.components).toHaveLength(3);
 		expect(mapped.data.leaveFacts).toHaveLength(1);
+		// Absent D0 optionals are omitted, not emitted as null/[] — a pre-widening
+		// fact hashes identically before and after the widening.
+		expect(mapped.data.leaveBalanceAtTermination).toBeUndefined();
+		expect(mapped.data.priorEmployerYtd).toBeUndefined();
+		expect(mapped.data.statutoryProfile).toBeUndefined();
 		expect(mapped.data.timeFacts?.timesheetId).toBe(timeHandoff.timesheetId);
 		expect(mapped.data.overtimeFacts).toHaveLength(1);
 		expect(mapped.data.overtimeFacts[0]?.payrollApprovedMinutes).toBe(90);
@@ -182,6 +215,138 @@ describe("mapApprovedPayrollHandoff", () => {
 		expect(mapped.data.sourceVersion.leavePolicyVersion).toBe(3);
 		expect(mapped.data.sourceVersion.timesheetVersion).toBe(4);
 		expect(mapped.data.approvalEvidence.correlationId).toBe("corr-handoff");
+	});
+
+	it("maps statutory profile, prior-employer YTD, and termination leave balance", () => {
+		const statutoryProfile = {
+			createdAt: new Date("2025-01-01T00:00:00.000Z"),
+			createdBy: "actor-1",
+			createIdempotencyKey: "idem-stat",
+			createRequestFingerprint: "fp-stat",
+			dependantCount: 1,
+			effectiveFrom: "2025-01-01",
+			effectiveTo: null,
+			employeeId: compensation.employeeId,
+			employeeProvidentFundNumber: "EPF-1",
+			expatriate: false,
+			id: "stat-1" as StatutoryProfile["id"],
+			jurisdictionCode: "MY",
+			minimumWageZone: null,
+			nationalityCountryCode: "MY",
+			organizationId: "org-1",
+			reliefDeclarationVersion: STATUTORY_RELIEF_DECLARATION_VERSION,
+			reliefDeclarations: [
+				{
+					amount: "100.00",
+					currencyCode: "MYR",
+					dependantReference: null,
+					evidenceRef: null,
+					reliefCode: "spouse",
+				},
+			],
+			socialInsuranceBookNumber: null,
+			socialSecurityNumber: null,
+			status: "active",
+			supersedesStatutoryProfileId: null,
+			taxFileNumber: "TFN-1",
+			taxResidencyStatus: "resident",
+			updatedAt: new Date("2025-01-01T00:00:00.000Z"),
+			updatedBy: "actor-1",
+			version: 3,
+		} satisfies StatutoryProfile;
+		const priorEmployerYtd = {
+			createdAt: new Date("2025-01-02T00:00:00.000Z"),
+			createdBy: "actor-1",
+			createIdempotencyKey: "idem-ytd",
+			createRequestFingerprint: "fp-ytd",
+			currencyCode: "MYR",
+			employeeId: compensation.employeeId,
+			grossAmount: "12000.00",
+			id: "ytd-1" as PriorEmployerYtd["id"],
+			jurisdictionCode: "MY",
+			organizationId: "org-1",
+			priorEmployerName: "Prior Co",
+			recordedOn: "2025-01-02",
+			statutoryContributionAmount: "400.00",
+			taxWithheldAmount: "800.00",
+			taxYear: 2025,
+			updatedAt: new Date("2025-01-02T00:00:00.000Z"),
+			updatedBy: "actor-1",
+			version: 1,
+		} satisfies PriorEmployerYtd;
+
+		const mapped = mapApprovedPayrollHandoff({
+			assignment,
+			compensationHandoff,
+			correlationId: "corr-handoff",
+			effectiveDate: "2025-03-15",
+			employmentStatus: "terminated",
+			leaveBalanceAtTermination: { asOf: "2025-03-15", days: "4.5" },
+			leaveHandoffs: [],
+			priorEmployerYtd: [priorEmployerYtd],
+			statutoryProfile,
+			timeHandoff: null,
+		});
+
+		expect(mapped.ok).toBe(true);
+		if (!mapped.ok) {
+			return;
+		}
+		expect(mapped.data.leaveBalanceAtTermination).toEqual({
+			asOf: "2025-03-15",
+			days: "4.5",
+		});
+		expect(mapped.data.priorEmployerYtd).toEqual([
+			{
+				currencyCode: "MYR",
+				grossAmount: "12000.00",
+				jurisdictionCode: "MY",
+				priorEmployerName: "Prior Co",
+				recordedOn: "2025-01-02",
+				statutoryContributionAmount: "400.00",
+				taxWithheldAmount: "800.00",
+				taxYear: 2025,
+			},
+		]);
+		expect(mapped.data.statutoryProfile?.profileId).toBe("stat-1");
+		expect(mapped.data.statutoryProfile?.jurisdictionCode).toBe("MY");
+		expect(mapped.data.sourceVersion.statutoryProfileVersion).toBe(3);
+	});
+
+	it("hashes identically to the pre-widening shape when D0 optionals are absent", () => {
+		const mapped = mapApprovedPayrollHandoff({
+			assignment,
+			compensationHandoff,
+			correlationId: "corr-handoff",
+			effectiveDate: "2025-01-01",
+			employmentStatus: "active",
+			leaveBalanceAtTermination: null,
+			leaveHandoffs: [leaveHandoff],
+			priorEmployerYtd: [],
+			statutoryProfile: null,
+			timeHandoff,
+		});
+
+		expect(mapped.ok).toBe(true);
+		if (!mapped.ok) {
+			return;
+		}
+
+		// The delivery workflow hashes with JSON.stringify over a canonicalized
+		// payload, which drops `undefined` but keeps `null` / `[]`. Emitting the
+		// three D0 keys explicitly would therefore have shifted `payloadHash` for
+		// facts that never changed. Constructing the pre-widening shape by
+		// omission must reproduce the identical digest.
+		const preWidening = {
+			...mapped.data,
+			leaveBalanceAtTermination: undefined,
+			priorEmployerYtd: undefined,
+			statutoryProfile: undefined,
+		};
+		expect(canonicalDigest(mapped.data)).toBe(canonicalDigest(preWidening));
+		expect(Object.hasOwn(mapped.data, "leaveBalanceAtTermination")).toBe(false);
+		expect(Object.hasOwn(mapped.data, "priorEmployerYtd")).toBe(false);
+		expect(Object.hasOwn(mapped.data, "statutoryProfile")).toBe(false);
 	});
 
 	it("does not import @afenda/payroll from handoff modules", () => {

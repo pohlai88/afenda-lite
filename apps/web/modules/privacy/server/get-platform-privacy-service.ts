@@ -10,7 +10,7 @@ export function getPlatformPrivacyService(): PlatformPrivacyService {
 	if (cached === undefined) {
 		cached = createPlatformPrivacyService({
 			audit: afendaAudit.recorder(),
-			inventory: createModuleSubjectInventory("human-resources"),
+			inventory: createModuleSubjectInventory(),
 		});
 	}
 	return cached;

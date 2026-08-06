@@ -6,6 +6,23 @@ import {
 import { createPayrollRecurringDeduction as createPayrollRecurringDeductionInternal } from "../features/employee-assignments/recurring-deduction";
 import { createPayrollRecurringEarning as createPayrollRecurringEarningInternal } from "../features/employee-assignments/recurring-earning";
 import {
+	calculateFinalSettlement as calculateFinalSettlementInternal,
+	finalizeFinalSettlement as finalizeFinalSettlementInternal,
+	initiateFinalSettlement as initiateFinalSettlementInternal,
+} from "../features/final-settlement/settlement.command";
+import {
+	getFinalSettlementStatement as getFinalSettlementStatementInternal,
+	getOwnFinalSettlementStatement as getOwnFinalSettlementStatementInternal,
+} from "../features/final-settlement/settlement-statement";
+import {
+	claimDuePayrollJobWork as claimDuePayrollJobWorkInternal,
+	enqueuePayrollCalculationJob as enqueuePayrollCalculationJobInternal,
+	executePayrollJobWork as executePayrollJobWorkInternal,
+	getPayrollJob as getPayrollJobInternal,
+	listPayrollDeadLetters as listPayrollDeadLettersInternal,
+	replayPayrollDeadLetter as replayPayrollDeadLetterInternal,
+} from "../features/payroll-jobs/jobs.command";
+import {
 	listPayrollExceptionsForRun as listPayrollExceptionsForRunInternal,
 	recordPayrollException as recordPayrollExceptionInternal,
 } from "../features/payroll-runs/exception";
@@ -15,6 +32,7 @@ import {
 	createPayrollPeriod as createPayrollPeriodInternal,
 	getPayrollPeriod as getPayrollPeriodInternal,
 	listPayrollPeriods as listPayrollPeriodsInternal,
+	lockPayrollPeriodInputs as lockPayrollPeriodInputsInternal,
 	updatePayrollPeriod as updatePayrollPeriodInternal,
 } from "../features/payroll-runs/payroll-period";
 import {
@@ -63,10 +81,35 @@ import {
 	getPayrollPayslip as getPayrollPayslipInternal,
 } from "../features/payslips/payslip";
 import {
+	expirePayrollRetention as expirePayrollRetentionInternal,
+	liftPayrollRestriction as liftPayrollRestrictionInternal,
+	projectPayrollFields as projectPayrollFieldsInternal,
+	recordPayrollRetentionEvidence as recordPayrollRetentionEvidenceInternal,
+	respondToPayrollSubjectAccess as respondToPayrollSubjectAccessInternal,
+	restrictPayrollSubject as restrictPayrollSubjectInternal,
+} from "../features/privacy/privacy.command";
+import {
 	listPayrollReconciliationsForRun as listPayrollReconciliationsForRunInternal,
 	recordPayrollReconciliation as recordPayrollReconciliationInternal,
 	resolvePayrollReconciliation as resolvePayrollReconciliationInternal,
 } from "../features/reconciliation/reconciliation.command";
+import {
+	applyRetroToPeriod as applyRetroToPeriodInternal,
+	calculateRetroDifference as calculateRetroDifferenceInternal,
+	listRetroItems as listRetroItemsInternal,
+	queueRetroItem as queueRetroItemInternal,
+} from "../features/retro-pay/retro.command";
+import {
+	recordPaymentSettlement as recordPaymentSettlementInternal,
+	recordPostingConfirmation as recordPostingConfirmationInternal,
+	resolveReconciliationDiscrepancy as resolveReconciliationDiscrepancyInternal,
+} from "../features/settlement-ingress/settlement.command";
+import {
+	generateAnnualStatement as generateAnnualStatementInternal,
+	generateStatutoryFiling as generateStatutoryFilingInternal,
+	listFilingObligations as listFilingObligationsInternal,
+	sealFilingEvidence as sealFilingEvidenceInternal,
+} from "../features/statutory-filings/filing.command";
 import {
 	createPayrollVariableInput as createPayrollVariableInputInternal,
 	getPayrollVariableInput as getPayrollVariableInputInternal,
@@ -115,6 +158,75 @@ export const getOwnPayrollPayslip = bindPayrollOperation(
 export const getPayrollPayslip = bindPayrollOperation(
 	getPayrollPayslipInternal,
 );
+export const restrictPayrollSubject = bindPayrollOperation(
+	restrictPayrollSubjectInternal,
+);
+export const liftPayrollRestriction = bindPayrollOperation(
+	liftPayrollRestrictionInternal,
+);
+export const recordPayrollRetentionEvidence = bindPayrollOperation(
+	recordPayrollRetentionEvidenceInternal,
+);
+export const expirePayrollRetention = bindPayrollOperation(
+	expirePayrollRetentionInternal,
+);
+export const projectPayrollFields = bindPayrollOperation(
+	projectPayrollFieldsInternal,
+);
+export const respondToPayrollSubjectAccess = bindPayrollOperation(
+	respondToPayrollSubjectAccessInternal,
+);
+export const enqueuePayrollCalculationJob = bindPayrollOperation(
+	enqueuePayrollCalculationJobInternal,
+);
+export const claimDuePayrollJobWork = bindPayrollOperation(
+	claimDuePayrollJobWorkInternal,
+);
+export const executePayrollJobWork = bindPayrollOperation(
+	executePayrollJobWorkInternal,
+);
+export const replayPayrollDeadLetter = bindPayrollOperation(
+	replayPayrollDeadLetterInternal,
+);
+export const getPayrollJob = bindPayrollOperation(getPayrollJobInternal);
+export const listPayrollDeadLetters = bindPayrollOperation(
+	listPayrollDeadLettersInternal,
+);
+export const queueRetroItem = bindPayrollOperation(queueRetroItemInternal);
+export const calculateRetroDifference = bindPayrollOperation(
+	calculateRetroDifferenceInternal,
+);
+export const applyRetroToPeriod = bindPayrollOperation(
+	applyRetroToPeriodInternal,
+);
+export const listRetroItems = bindPayrollOperation(listRetroItemsInternal);
+export const initiateFinalSettlement = bindPayrollOperation(
+	initiateFinalSettlementInternal,
+);
+export const calculateFinalSettlement = bindPayrollOperation(
+	calculateFinalSettlementInternal,
+);
+export const finalizeFinalSettlement = bindPayrollOperation(
+	finalizeFinalSettlementInternal,
+);
+export const getOwnFinalSettlementStatement = bindPayrollOperation(
+	getOwnFinalSettlementStatementInternal,
+);
+export const getFinalSettlementStatement = bindPayrollOperation(
+	getFinalSettlementStatementInternal,
+);
+export const generateStatutoryFiling = bindPayrollOperation(
+	generateStatutoryFilingInternal,
+);
+export const generateAnnualStatement = bindPayrollOperation(
+	generateAnnualStatementInternal,
+);
+export const sealFilingEvidence = bindPayrollOperation(
+	sealFilingEvidenceInternal,
+);
+export const listFilingObligations = bindPayrollOperation(
+	listFilingObligationsInternal,
+);
 export const recordPayrollReconciliation = bindPayrollOperation(
 	recordPayrollReconciliationInternal,
 );
@@ -123,6 +235,15 @@ export const resolvePayrollReconciliation = bindPayrollOperation(
 );
 export const listPayrollReconciliationsForRun = bindPayrollOperation(
 	listPayrollReconciliationsForRunInternal,
+);
+export const recordPaymentSettlement = bindPayrollOperation(
+	recordPaymentSettlementInternal,
+);
+export const recordPostingConfirmation = bindPayrollOperation(
+	recordPostingConfirmationInternal,
+);
+export const resolveReconciliationDiscrepancy = bindPayrollOperation(
+	resolveReconciliationDiscrepancyInternal,
 );
 export const recordPayrollException = bindPayrollOperation(
 	recordPayrollExceptionInternal,
@@ -141,6 +262,9 @@ export const updatePayrollPeriod = bindPayrollOperation(
 );
 export const closePayrollPeriod = bindPayrollOperation(
 	closePayrollPeriodInternal,
+);
+export const lockPayrollPeriodInputs = bindPayrollOperation(
+	lockPayrollPeriodInputsInternal,
 );
 export const getPayrollPeriod = bindPayrollOperation(getPayrollPeriodInternal);
 export const listPayrollPeriods = bindPayrollOperation(

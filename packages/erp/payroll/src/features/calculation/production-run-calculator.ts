@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { errorResult } from "@afenda/errors";
+import { errorResult, type Result } from "@afenda/errors";
 import type {
 	PayrollDeductionRule,
 	PayrollEarningRule,
@@ -10,24 +10,34 @@ import type {
 	PayrollStatutoryRule,
 } from "../../kernel/contracts/projected-types";
 import type {
+	PayrollClockCapability,
+	PayrollCurrencyCapability,
+	PayrollStatutoryCapability,
+	PayrollYearToDateCapability,
+} from "../../kernel/execution/capability-ports";
+import type {
 	PayrollRunCalculatorPort,
 	PayrollWorkforceInputPort,
 } from "../../kernel/execution/ports";
 import {
+	type PayrollPayGroupId,
 	parsePayrollResultLineId,
 	parsePayrollRunEmployeeId,
 	parsePayrollStatutoryResultId,
 } from "../../kernel/identity/brands";
 import {
-	DEFAULT_PAYROLL_ROUNDING_POLICY,
 	PAYROLL_CALCULATION_VERSION,
 	type PayrollRoundingPolicy,
 } from "../../kernel/money/rounding-policy";
 import { payrollJsonObjectSchema } from "../../kernel/validation/common.schema";
 import type { PayrollAssignmentsStore } from "../employee-assignments/assignments.store";
 import type { PayrollSetupStore } from "../payroll-setup/setup.store";
-import { isStatutoryCalculatorProductionApproved } from "../statutory-rules/calculator-registry";
+import { resolveTaxYearCadence } from "../statutory-rules/period-cadence";
 import type { PayrollStatutoryStore } from "../statutory-rules/statutory.store";
+import {
+	resolveYearToDate,
+	taxYearFromIsoDate,
+} from "../statutory-rules/year-to-date-capability";
 import type { PayrollInputsStore } from "../variable-inputs/inputs.store";
 import { normalizePayrollWorkforceHandoff } from "../workforce-ingress/normalize-workforce-handoff";
 import {
@@ -41,8 +51,11 @@ import type {
 	PayrollCalcEarningRuleSnapshot,
 	PayrollCalcStatutoryRuleSnapshot,
 	PayrollEmployeeCalcSnapshot,
+	PayrollLapsedStatutoryRule,
 } from "./calculation.types";
 import type { PayrollOutputsStore } from "./outputs.store";
+
+const ISO_CALENDAR_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 type PayrollCalculationStore = PayrollAssignmentsStore &
 	PayrollInputsStore &
@@ -105,13 +118,79 @@ function compareCanonicalRecords(
 	return code === 0 ? left.id.localeCompare(right.id) : code;
 }
 
+function ruleCalculatorId(rule: PayrollStatutoryRule): string | null {
+	const { calculatorId } = rule.configJson;
+	return typeof calculatorId === "string" ? calculatorId : null;
+}
+
+/**
+ * Statutory rules that covered the previous period but cover no longer.
+ *
+ * A whole-jurisdiction outage is easy to see; a partial one is not. When EPF is
+ * still active and PCB expired at the year boundary, the period still resolves
+ * statutory rules for the jurisdiction and every check that asks "are there
+ * any?" passes, while the subject is withheld zero tax. Comparing this period's
+ * active calculators against the previous period's is what makes the missing one
+ * visible, and it is a comparison only this layer can make.
+ */
+async function resolveLapsedStatutoryRules(input: {
+	currentRules: readonly PayrollStatutoryRule[];
+	organizationId: string;
+	payGroupId: PayrollPayGroupId;
+	previousPeriodEnd: string | undefined;
+	store: Pick<PayrollSetupStore, "listActiveStatutoryRulesForPayGroup">;
+}): Promise<Result<PayrollLapsedStatutoryRule[]>> {
+	if (input.previousPeriodEnd === undefined) {
+		return errorResult.ok([]);
+	}
+	const previousRules = await input.store.listActiveStatutoryRulesForPayGroup({
+		organizationId: input.organizationId,
+		payGroupId: input.payGroupId,
+		effectiveDate: input.previousPeriodEnd,
+	});
+	if (!previousRules.ok) {
+		return previousRules;
+	}
+	const currentCalculatorIds = new Set(
+		input.currentRules.flatMap((rule) => {
+			const calculatorId = ruleCalculatorId(rule);
+			return calculatorId === null ? [] : [calculatorId];
+		}),
+	);
+	const lapsed = new Map<string, PayrollLapsedStatutoryRule>();
+	for (const rule of previousRules.data) {
+		const calculatorId = ruleCalculatorId(rule);
+		if (calculatorId === null || currentCalculatorIds.has(calculatorId)) {
+			continue;
+		}
+		lapsed.set(calculatorId, {
+			calculatorId,
+			jurisdictionCode: rule.jurisdictionCode,
+			ruleCode: rule.code,
+		});
+	}
+	return errorResult.ok(
+		[...lapsed.values()].sort((left, right) =>
+			left.calculatorId.localeCompare(right.calculatorId),
+		),
+	);
+}
+
 export function createProductionPayrollRunCalculator(input: {
 	store: PayrollCalculationStore;
 	employees: PayrollWorkforceInputPort;
+	currency: PayrollCurrencyCapability;
+	statutory: PayrollStatutoryCapability;
+	clock: PayrollClockCapability;
 	roundingPolicy?: PayrollRoundingPolicy;
+	yearToDate?: PayrollYearToDateCapability;
 }): PayrollRunCalculatorPort {
-	const roundingPolicy =
-		input.roundingPolicy ?? DEFAULT_PAYROLL_ROUNDING_POLICY;
+	const today = input.clock.today();
+	if (!ISO_CALENDAR_DATE.test(today)) {
+		throw new TypeError(
+			"PayrollClockCapability.today() must return an ISO calendar date (YYYY-MM-DD).",
+		);
+	}
 
 	return {
 		// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: This fail-closed coordinator keeps load, calculation, evidence aggregation, and replacement persistence visibly ordered.
@@ -142,8 +221,53 @@ export function createProductionPayrollRunCalculator(input: {
 					publicMessage: "Pay group not found",
 				});
 			}
+			const payGroupRecord = payGroup.data;
+
+			const currencyRounding = input.currency.payableRounding({
+				currencyCode: payGroupRecord.currencyCode,
+			});
+			if (!currencyRounding.ok) {
+				return currencyRounding;
+			}
+			const roundingPolicy = input.roundingPolicy ?? currencyRounding.data;
 
 			const effectiveDate = payrollPeriod.periodEnd;
+
+			// Period cadence for annualized tax packs, classified from the pay
+			// group's WHOLE tax-year sequence. A single period's length cannot
+			// carry it: a 28-day February would read as thirteen periods a year.
+			const payGroupPeriods = await input.store.listPeriodsForPayGroup({
+				organizationId: calcInput.organizationId,
+				payGroupId: calcInput.payGroupId,
+			});
+			if (!payGroupPeriods.ok) {
+				return payGroupPeriods;
+			}
+			const periodTaxYear = taxYearFromIsoDate(payrollPeriod.periodStart);
+			const cadence = resolveTaxYearCadence({
+				periodStart: payrollPeriod.periodStart,
+				taxYearPeriods: payGroupPeriods.data.filter(
+					(candidate) =>
+						taxYearFromIsoDate(candidate.periodStart) === periodTaxYear,
+				),
+			});
+			if (!cadence.ok) {
+				return cadence;
+			}
+			const periodCadence = cadence.data;
+
+			// Immediately-preceding period of this pay group, in any tax year. It
+			// is the only evidence of what the pay group's statutory configuration
+			// looked like before this period, and therefore of what has since
+			// lapsed.
+			const previousPeriod = payGroupPeriods.data
+				.filter(
+					(candidate) => candidate.periodStart < payrollPeriod.periodStart,
+				)
+				.sort((left, right) =>
+					left.periodStart.localeCompare(right.periodStart),
+				)
+				.at(-1);
 
 			const [
 				assignments,
@@ -203,9 +327,12 @@ export function createProductionPayrollRunCalculator(input: {
 			if (
 				statutoryRules.data.some((rule) => {
 					const { calculatorId } = rule.configJson;
-					return (
-						typeof calculatorId !== "string" ||
-						!isStatutoryCalculatorProductionApproved(calculatorId)
+					if (typeof calculatorId !== "string") {
+						return true;
+					}
+					const registered = input.statutory.requireCalculator(calculatorId);
+					return !(
+						registered.ok && input.statutory.isProductionApproved(calculatorId)
 					);
 				})
 			) {
@@ -213,6 +340,17 @@ export function createProductionPayrollRunCalculator(input: {
 					publicMessage:
 						"Payroll statutory calculation is not approved for production",
 				});
+			}
+
+			const lapsedStatutoryRules = await resolveLapsedStatutoryRules({
+				currentRules: statutoryRules.data,
+				organizationId: calcInput.organizationId,
+				payGroupId: calcInput.payGroupId,
+				previousPeriodEnd: previousPeriod?.periodEnd,
+				store: input.store,
+			});
+			if (!lapsedStatutoryRules.ok) {
+				return lapsedStatutoryRules;
 			}
 
 			const employeeFilter =
@@ -264,11 +402,36 @@ export function createProductionPayrollRunCalculator(input: {
 								effectiveDate,
 							}),
 						]);
+					const normalizedEmployee =
+						employeeFacts.ok && employeeFacts.data !== null
+							? normalizePayrollWorkforceHandoff(employeeFacts.data, {
+									organizationId: calcInput.organizationId,
+									employeeId: assignment.employeeId,
+									effectiveDate,
+									periodStart: payrollPeriod.periodStart,
+									periodEnd: payrollPeriod.periodEnd,
+								})
+							: null;
+					const yearToDate = await resolveYearToDate({
+						capability: input.yearToDate,
+						currencyCode: payGroupRecord.currencyCode,
+						employeeId: assignment.employeeId,
+						organizationId: calcInput.organizationId,
+						priorEmployerYtd:
+							normalizedEmployee?.ok === true
+								? (normalizedEmployee.data.approvedHandoff.priorEmployerYtd ??
+									[])
+								: [],
+						taxYear: taxYearFromIsoDate(payrollPeriod.periodStart),
+						throughDate: payrollPeriod.periodStart,
+					});
 					return {
 						assignment,
 						employeeFacts,
-						recurringEarnings,
+						normalizedEmployee,
 						recurringDeductions,
+						recurringEarnings,
+						yearToDate,
 					};
 				}),
 			);
@@ -285,8 +448,10 @@ export function createProductionPayrollRunCalculator(input: {
 				const {
 					assignment,
 					employeeFacts,
-					recurringEarnings,
+					normalizedEmployee,
 					recurringDeductions,
+					recurringEarnings,
+					yearToDate,
 				} = context;
 				if (!employeeFacts.ok) {
 					return employeeFacts;
@@ -300,16 +465,11 @@ export function createProductionPayrollRunCalculator(input: {
 					});
 					continue;
 				}
-				const normalizedEmployee = normalizePayrollWorkforceHandoff(
-					employeeFacts.data,
-					{
-						organizationId: calcInput.organizationId,
-						employeeId: assignment.employeeId,
-						effectiveDate,
-						periodStart: payrollPeriod.periodStart,
-						periodEnd: payrollPeriod.periodEnd,
-					},
-				);
+				if (normalizedEmployee === null) {
+					return errorResult.fail("CONFLICT", {
+						publicMessage: "Payroll workforce facts are unavailable",
+					});
+				}
 				if (!normalizedEmployee.ok) {
 					return normalizedEmployee;
 				}
@@ -319,6 +479,9 @@ export function createProductionPayrollRunCalculator(input: {
 				}
 				if (!recurringDeductions.ok) {
 					return recurringDeductions;
+				}
+				if (!yearToDate.ok) {
+					return yearToDate;
 				}
 
 				const employeeVariableInputs = variableInputs.data.filter(
@@ -345,15 +508,23 @@ export function createProductionPayrollRunCalculator(input: {
 					organizationId: calcInput.organizationId,
 					employeeId: assignment.employeeId,
 					assignmentId: assignment.id,
+					lapsedStatutoryRules: lapsedStatutoryRules.data,
 					payGroupId: calcInput.payGroupId,
+					periodCadence,
 					periodId: calcInput.periodId,
-					currencyCode: payGroup.data.currencyCode,
+					currencyCode: payGroupRecord.currencyCode,
 					calculationVersion: PAYROLL_CALCULATION_VERSION,
+					priorEmployerYtd: [
+						...(payrollEmployee.approvedHandoff.priorEmployerYtd ?? []),
+					],
 					roundingPolicy,
+					statutoryProfile:
+						payrollEmployee.approvedHandoff.statutoryProfile ?? null,
+					yearToDate: yearToDate.data,
 					eligibility: {
 						eligible:
 							payrollEmployee.employmentStatus !== "terminated" &&
-							payrollEmployee.currencyCode === payGroup.data.currencyCode,
+							payrollEmployee.currencyCode === payGroupRecord.currencyCode,
 						reason: null,
 					},
 					employee: {
@@ -523,20 +694,23 @@ export function createProductionPayrollRunCalculator(input: {
 				snapshotHashes: [...snapshotHashes].sort(),
 			});
 
-			const clearedOutputs = await input.store.deleteCalculationOutputsForRun(
-				{
-					organizationId: calcInput.organizationId,
-					runId: calcInput.runId,
-					actorUserId: calcInput.actorUserId,
-					correlationId: calcInput.correlationId,
-				},
-				ports,
-			);
-			if (!clearedOutputs.ok) {
-				return clearedOutputs;
+			const chunkEmployeeIds = calcInput.employeeIds;
+			if (chunkEmployeeIds === undefined) {
+				const clearedOutputs = await input.store.deleteCalculationOutputsForRun(
+					{
+						organizationId: calcInput.organizationId,
+						runId: calcInput.runId,
+						actorUserId: calcInput.actorUserId,
+						correlationId: calcInput.correlationId,
+					},
+					ports,
+				);
+				if (!clearedOutputs.ok) {
+					return clearedOutputs;
+				}
 			}
 
-			if (runEmployees.length > 0) {
+			if (runEmployees.length > 0 || chunkEmployeeIds !== undefined) {
 				const persisted = await input.store.replaceRunCalculationOutputs(
 					{
 						organizationId: calcInput.organizationId,
@@ -545,6 +719,9 @@ export function createProductionPayrollRunCalculator(input: {
 						resultLines,
 						actorUserId: calcInput.actorUserId,
 						correlationId: calcInput.correlationId,
+						...(chunkEmployeeIds === undefined
+							? {}
+							: { employeeIds: chunkEmployeeIds }),
 					},
 					ports,
 				);
@@ -561,6 +738,9 @@ export function createProductionPayrollRunCalculator(input: {
 						results: statutoryResults,
 						actorUserId: calcInput.actorUserId,
 						correlationId: calcInput.correlationId,
+						...(chunkEmployeeIds === undefined
+							? {}
+							: { employeeIds: chunkEmployeeIds }),
 					},
 					ports,
 				);

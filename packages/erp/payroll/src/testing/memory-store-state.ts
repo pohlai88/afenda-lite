@@ -1,20 +1,44 @@
 import type { OutputsMemoryState } from "../features/calculation/outputs.memory";
 import type { AssignmentsMemoryState } from "../features/employee-assignments/assignments.memory";
+import {
+	createFinalSettlementMemoryState,
+	type FinalSettlementMemoryState,
+	resetFinalSettlementMemoryState,
+} from "../features/final-settlement/settlement.memory";
+import {
+	createJobsMemoryState,
+	type JobsMemoryState,
+	resetJobsMemoryState,
+} from "../features/payroll-jobs/jobs.memory";
 import type { RunsMemoryState } from "../features/payroll-runs/runs.memory";
 import type { SetupMemoryState } from "../features/payroll-setup/setup.memory";
 import type { ReconciliationMemoryState } from "../features/reconciliation/reconciliation.memory";
+import {
+	createRetroMemoryState,
+	type RetroMemoryState,
+	resetRetroMemoryState,
+} from "../features/retro-pay/retro.memory";
+import {
+	createStatutoryFilingMemoryState,
+	resetStatutoryFilingMemoryState,
+	type StatutoryFilingMemoryState,
+} from "../features/statutory-filings/filing.memory";
 import type { StatutoryMemoryState } from "../features/statutory-rules/statutory.memory";
 import type { InputsMemoryState } from "../features/variable-inputs/inputs.memory";
 import type { WorkforceIngressMemoryState } from "../features/workforce-ingress/accepted-handoff.memory";
 
 export interface MemoryPayrollStoreState {
 	assignments: AssignmentsMemoryState;
+	finalSettlement: FinalSettlementMemoryState;
 	inputs: InputsMemoryState;
+	jobs: JobsMemoryState;
 	outputs: OutputsMemoryState;
 	reconciliation: ReconciliationMemoryState;
+	retro: RetroMemoryState;
 	runs: RunsMemoryState;
 	setup: SetupMemoryState;
 	statutory: StatutoryMemoryState;
+	statutoryFilings: StatutoryFilingMemoryState;
 	workforceIngress: WorkforceIngressMemoryState;
 }
 
@@ -146,6 +170,10 @@ export function createMemoryPayrollStoreState(): MemoryPayrollStoreState {
 		outputs: createOutputsMemoryState(),
 		statutory: createStatutoryMemoryState(),
 		reconciliation: createReconciliationMemoryState(),
+		retro: createRetroMemoryState(),
+		finalSettlement: createFinalSettlementMemoryState(),
+		statutoryFilings: createStatutoryFilingMemoryState(),
+		jobs: createJobsMemoryState(),
 		workforceIngress: { acceptedHandoffs: new Map() },
 	};
 }
@@ -160,5 +188,9 @@ export function resetMemoryPayrollStoreState(
 	resetOutputsMemoryState(state.outputs);
 	resetStatutoryMemoryState(state.statutory);
 	resetReconciliationMemoryState(state.reconciliation);
+	resetRetroMemoryState(state.retro);
+	resetFinalSettlementMemoryState(state.finalSettlement);
+	resetStatutoryFilingMemoryState(state.statutoryFilings);
+	resetJobsMemoryState(state.jobs);
 	state.workforceIngress.acceptedHandoffs.clear();
 }

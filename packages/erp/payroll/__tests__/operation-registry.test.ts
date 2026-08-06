@@ -45,9 +45,15 @@ describe("Payroll operation registry", () => {
 			"variable-inputs",
 			"payroll-runs",
 			"payslips",
+			"privacy",
+			"payroll-jobs",
 			"reconciliation",
+			"retro-pay",
+			"final-settlement",
+			"statutory-filings",
+			"settlement-ingress",
 		]);
-		expect(definitions).toHaveLength(47);
+		expect(definitions).toHaveLength(76);
 		expect(new Set(operationIds).size).toBe(operationIds.length);
 		for (const definition of definitions) {
 			expect(featureOwners).toContain(definition.owner);
@@ -60,15 +66,14 @@ describe("Payroll operation registry", () => {
 			definitions.map(({ id, kind, permission }) => ({ id, kind, permission })),
 		);
 		expect(createHash("sha256").update(serializedContract).digest("hex")).toBe(
-			// Reviewed 2026-08-03: adds payroll.workforce.ingest (PRD R1 canonical
-			// workforce ingress) under payroll.input.manage; all prior ids unchanged.
-			"f8c9b183623f556138d09b0616b06eba1920808817e6213fdbdfad18f7d9c658",
+			// Reviewed 2026-08-05: C3 lockPeriodInputs command.
+			"24da3bfdd15f78f4dda903303c3a21a2b4aa3606ab57cb074743c0591a2c68ca",
 		);
 	});
 
 	it("derives exhaustive command, query, and manifest projections", () => {
-		expect(PAYROLL_COMMAND_IDS).toHaveLength(32);
-		expect(PAYROLL_QUERY_IDS).toHaveLength(15);
+		expect(PAYROLL_COMMAND_IDS).toHaveLength(53);
+		expect(PAYROLL_QUERY_IDS).toHaveLength(23);
 		expect(Object.keys(PAYROLL_COMMAND_AUTHORIZATION)).toEqual(
 			PAYROLL_COMMAND_IDS,
 		);

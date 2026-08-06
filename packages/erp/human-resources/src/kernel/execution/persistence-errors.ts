@@ -22,9 +22,9 @@ const HR_REGEX_3 = /_org_create_idempotency_uidx|create_idempotency_key/i;
 const HR_REGEX_4 = /hr_worker_org_person_uidx/i;
 const HR_REGEX_5 = /hr_worker_org_employee_uidx/i;
 const HR_REGEX_6 =
-	/hr_employment_org_employee_open_uidx|hr_work_assignment_org_employment_open_uidx/i;
+	/hr_employment_org_employee_open_uidx|hr_work_assignment_org_employment_open_uidx|hr_statutory_profile_org_employee_open_uidx/i;
 const HR_REGEX_7 =
-	/hr_position_org_code_uidx|hr_employment_contract_org_employment_ref(?:_active)?_uidx/i;
+	/hr_position_org_code_uidx|hr_employment_contract_org_employment_ref(?:_active)?_uidx|hr_prior_employer_ytd_org_employee_year_uidx/i;
 const HR_REGEX_8 = /date_range_check/i;
 
 function isRecord(value: unknown): value is Record<string, unknown> {

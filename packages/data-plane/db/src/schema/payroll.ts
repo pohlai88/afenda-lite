@@ -147,7 +147,7 @@ export const payrollPeriod = pgTable(
 		}),
 		check(
 			"payroll_period_status_check",
-			sql`${t.status} IN ('open', 'closed')`,
+			sql`${t.status} IN ('open', 'inputs_locked', 'closed')`,
 		),
 		check(
 			"payroll_period_range_check",
@@ -1092,11 +1092,483 @@ export const payrollAcceptedHandoff = pgTable(
 			.where(sql`${t.status} = 'accepted'`),
 		check(
 			"payroll_accepted_handoff_status_check",
-			sql`${t.status} IN ('accepted', 'superseded')`,
+			sql`${t.status} IN ('accepted', 'superseded', 'deferred_to_next_period')`,
 		),
 		check(
 			"payroll_accepted_handoff_supersession_check",
-			sql`(${t.status} = 'superseded' AND ${t.supersededByHandoffId} IS NOT NULL) OR (${t.status} = 'accepted' AND ${t.supersededByHandoffId} IS NULL)`,
+			sql`(${t.status} = 'superseded' AND ${t.supersededByHandoffId} IS NOT NULL) OR (${t.status} IN ('accepted', 'deferred_to_next_period') AND ${t.supersededByHandoffId} IS NULL)`,
 		),
+	],
+);
+
+/** Durable payroll batch job — calculation checkpoints, not HR bulk import. */
+export const payrollJob = pgTable(
+	"payroll_job",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		kind: text("kind").notNull(),
+		status: text("status").notNull(),
+		targetRunId: uuid("target_run_id").notNull(),
+		actorUserId: text("actor_user_id").notNull(),
+		correlationId: text("correlation_id").notNull(),
+		checkpointJson: jsonb("checkpoint_json").notNull(),
+		lastErrorCode: text("last_error_code"),
+		lastErrorMessage: text("last_error_message"),
+		completedAt: timestamp("completed_at", { withTimezone: true }),
+		...payrollIdempotencyColumns,
+		...payrollAuditColumns,
+	},
+	(t) => [
+		index("payroll_job_org_id_idx").on(t.organizationId, t.id),
+		index("payroll_job_org_status_idx").on(t.organizationId, t.status),
+		index("payroll_job_org_run_idx").on(t.organizationId, t.targetRunId),
+		unique("payroll_job_org_id_uidx").on(t.organizationId, t.id),
+		uniqueIndex("payroll_job_org_create_idempotency_uidx").on(
+			t.organizationId,
+			t.createIdempotencyKey,
+		),
+		check("payroll_job_kind_check", sql`${t.kind} IN ('calculate-run')`),
+		check(
+			"payroll_job_status_check",
+			sql`${t.status} IN ('queued', 'running', 'completed', 'failed', 'dead_lettered')`,
+		),
+	],
+);
+
+export const payrollJobWorkItem = pgTable(
+	"payroll_job_work_item",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		jobId: uuid("job_id").notNull(),
+		status: text("status").notNull(),
+		attemptCount: integer("attempt_count").notNull().default(0),
+		nextAttemptAt: timestamp("next_attempt_at", {
+			withTimezone: true,
+		}).notNull(),
+		lastAttemptAt: timestamp("last_attempt_at", { withTimezone: true }),
+		leaseOwner: text("lease_owner"),
+		leaseExpiresAt: timestamp("lease_expires_at", { withTimezone: true }),
+		lastErrorCode: text("last_error_code"),
+		lastErrorMessage: text("last_error_message"),
+		idempotencyKey: text("idempotency_key").notNull(),
+		requestFingerprint: text("request_fingerprint").notNull(),
+		version: integer("version").notNull().default(1),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("payroll_job_work_item_org_id_idx").on(t.organizationId, t.id),
+		index("payroll_job_work_item_org_job_idx").on(t.organizationId, t.jobId),
+		index("payroll_job_work_item_org_due_idx").on(
+			t.organizationId,
+			t.status,
+			t.nextAttemptAt,
+		),
+		unique("payroll_job_work_item_org_id_uidx").on(t.organizationId, t.id),
+		uniqueIndex("payroll_job_work_item_org_idempotency_uidx").on(
+			t.organizationId,
+			t.idempotencyKey,
+		),
+		foreignKey({
+			columns: [t.organizationId, t.jobId],
+			foreignColumns: [payrollJob.organizationId, payrollJob.id],
+			name: "payroll_job_work_item_org_job_fk",
+		}),
+		check(
+			"payroll_job_work_item_status_check",
+			sql`${t.status} IN ('pending', 'processing', 'succeeded', 'dead_lettered')`,
+		),
+	],
+);
+
+export const payrollJobDeadLetter = pgTable(
+	"payroll_job_dead_letter",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		jobId: uuid("job_id").notNull(),
+		workItemId: uuid("work_item_id").notNull(),
+		errorCode: text("error_code").notNull(),
+		errorMessage: text("error_message").notNull(),
+		attemptCount: integer("attempt_count").notNull(),
+		failedAt: timestamp("failed_at", { withTimezone: true }).notNull(),
+		replayedByWorkItemId: uuid("replayed_by_work_item_id"),
+	},
+	(t) => [
+		index("payroll_job_dead_letter_org_id_idx").on(t.organizationId, t.id),
+		index("payroll_job_dead_letter_org_job_idx").on(t.organizationId, t.jobId),
+		unique("payroll_job_dead_letter_org_id_uidx").on(t.organizationId, t.id),
+		foreignKey({
+			columns: [t.organizationId, t.jobId],
+			foreignColumns: [payrollJob.organizationId, payrollJob.id],
+			name: "payroll_job_dead_letter_org_job_fk",
+		}),
+	],
+);
+
+/** Deferred correction for a sealed period — bridging C3/D3 retro-pay. */
+export const payrollRetroItem = pgTable(
+	"payroll_retro_item",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		originPeriodId: uuid("origin_period_id").notNull(),
+		originRunId: uuid("origin_run_id"),
+		employeeId: text("employee_id").notNull(),
+		status: text("status").notNull(),
+		reason: text("reason").notNull(),
+		correlationId: text("correlation_id").notNull(),
+		correctionJson: jsonb("correction_json").notNull(),
+		differenceJson: jsonb("difference_json"),
+		targetPeriodId: uuid("target_period_id"),
+		targetRunId: uuid("target_run_id"),
+		appliedAt: timestamp("applied_at", { withTimezone: true }),
+		...payrollIdempotencyColumns,
+		...payrollAuditColumns,
+	},
+	(t) => [
+		index("payroll_retro_item_org_id_idx").on(t.organizationId, t.id),
+		index("payroll_retro_item_org_status_idx").on(t.organizationId, t.status),
+		index("payroll_retro_item_org_origin_period_idx").on(
+			t.organizationId,
+			t.originPeriodId,
+		),
+		index("payroll_retro_item_org_target_run_idx").on(
+			t.organizationId,
+			t.targetRunId,
+		),
+		unique("payroll_retro_item_org_id_uidx").on(t.organizationId, t.id),
+		uniqueIndex("payroll_retro_item_org_create_idempotency_uidx").on(
+			t.organizationId,
+			t.createIdempotencyKey,
+		),
+		foreignKey({
+			columns: [t.organizationId, t.originPeriodId],
+			foreignColumns: [payrollPeriod.organizationId, payrollPeriod.id],
+			name: "payroll_retro_item_org_origin_period_fk",
+		}),
+		check(
+			"payroll_retro_item_status_check",
+			sql`${t.status} IN ('queued', 'calculated', 'applied')`,
+		),
+		check(
+			"payroll_retro_item_applied_shape_check",
+			sql`(${t.status} <> 'applied') OR (${t.originRunId} IS NOT NULL AND ${t.targetPeriodId} IS NOT NULL AND ${t.targetRunId} IS NOT NULL AND ${t.appliedAt} IS NOT NULL AND ${t.differenceJson} IS NOT NULL)`,
+		),
+	],
+);
+
+/** Retro result line emitted into an open target run, labelled with its origin period. */
+export const payrollRetroLine = pgTable(
+	"payroll_retro_line",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		retroItemId: uuid("retro_item_id").notNull(),
+		targetRunId: uuid("target_run_id").notNull(),
+		originPeriodId: uuid("origin_period_id").notNull(),
+		originRunId: uuid("origin_run_id").notNull(),
+		employeeId: text("employee_id").notNull(),
+		lineKind: text("line_kind").notNull(),
+		code: text("code").notNull(),
+		ruleCode: text("rule_code").notNull(),
+		ruleVersion: text("rule_version").notNull(),
+		ruleKind: text("rule_kind").notNull(),
+		amount: numeric("amount", { precision: 24, scale: 12 }).notNull(),
+		currencyCode: text("currency_code").notNull(),
+		sequence: integer("sequence").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("payroll_retro_line_org_id_idx").on(t.organizationId, t.id),
+		index("payroll_retro_line_org_target_run_idx").on(
+			t.organizationId,
+			t.targetRunId,
+		),
+		unique("payroll_retro_line_org_id_uidx").on(t.organizationId, t.id),
+		uniqueIndex("payroll_retro_line_org_item_sequence_uidx").on(
+			t.organizationId,
+			t.retroItemId,
+			t.sequence,
+		),
+		foreignKey({
+			columns: [t.organizationId, t.retroItemId],
+			foreignColumns: [payrollRetroItem.organizationId, payrollRetroItem.id],
+			name: "payroll_retro_line_org_item_fk",
+		}),
+		foreignKey({
+			columns: [t.organizationId, t.targetRunId],
+			foreignColumns: [payrollRun.organizationId, payrollRun.id],
+			name: "payroll_retro_line_org_target_run_fk",
+		}),
+		check(
+			"payroll_retro_line_kind_check",
+			sql`${t.lineKind} IN ('earning', 'pre_tax_deduction', 'employee_statutory', 'post_tax_deduction', 'employer_contribution')`,
+		),
+		check(
+			"payroll_retro_line_rule_kind_check",
+			sql`${t.ruleKind} IN ('earning', 'deduction', 'statutory', 'none')`,
+		),
+	],
+);
+
+/** Termination pay capsule — bridging D4/C6 final settlement. */
+export const payrollFinalSettlement = pgTable(
+	"payroll_final_settlement",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		employeeId: text("employee_id").notNull(),
+		terminationId: text("termination_id").notNull(),
+		terminationEffectiveOn: date("termination_effective_on", {
+			mode: "string",
+		}).notNull(),
+		periodId: uuid("period_id").notNull(),
+		payGroupId: uuid("pay_group_id").notNull(),
+		originRunId: uuid("origin_run_id"),
+		status: text("status").notNull(),
+		factsJson: jsonb("facts_json").notNull(),
+		compensationSnapshotJson: jsonb("compensation_snapshot_json").notNull(),
+		compensationSnapshotHash: text("compensation_snapshot_hash").notNull(),
+		totalsJson: jsonb("totals_json"),
+		statutoryEvidenceJson: jsonb("statutory_evidence_json"),
+		clearanceRequiredReason: text("clearance_required_reason"),
+		clearanceReason: text("clearance_reason"),
+		clearanceBy: text("clearance_by"),
+		clearanceAt: timestamp("clearance_at", { withTimezone: true }),
+		calculatedBy: text("calculated_by"),
+		calculatedAt: timestamp("calculated_at", { withTimezone: true }),
+		finalizedBy: text("finalized_by"),
+		finalizedAt: timestamp("finalized_at", { withTimezone: true }),
+		correlationId: text("correlation_id").notNull(),
+		...payrollIdempotencyColumns,
+		...payrollAuditColumns,
+	},
+	(t) => [
+		index("payroll_final_settlement_org_id_idx").on(t.organizationId, t.id),
+		index("payroll_final_settlement_org_status_idx").on(
+			t.organizationId,
+			t.status,
+		),
+		index("payroll_final_settlement_org_employee_idx").on(
+			t.organizationId,
+			t.employeeId,
+		),
+		unique("payroll_final_settlement_org_id_uidx").on(t.organizationId, t.id),
+		uniqueIndex("payroll_final_settlement_org_create_idempotency_uidx").on(
+			t.organizationId,
+			t.createIdempotencyKey,
+		),
+		uniqueIndex("payroll_final_settlement_org_termination_uidx").on(
+			t.organizationId,
+			t.terminationId,
+		),
+		foreignKey({
+			columns: [t.organizationId, t.periodId],
+			foreignColumns: [payrollPeriod.organizationId, payrollPeriod.id],
+			name: "payroll_final_settlement_org_period_fk",
+		}),
+		foreignKey({
+			columns: [t.organizationId, t.payGroupId],
+			foreignColumns: [payrollPayGroup.organizationId, payrollPayGroup.id],
+			name: "payroll_final_settlement_org_pay_group_fk",
+		}),
+		foreignKey({
+			columns: [t.organizationId, t.originRunId],
+			foreignColumns: [payrollRun.organizationId, payrollRun.id],
+			name: "payroll_final_settlement_org_origin_run_fk",
+		}),
+		check(
+			"payroll_final_settlement_status_check",
+			sql`${t.status} IN ('initiated', 'clearance_required', 'calculated', 'finalized')`,
+		),
+		check(
+			"payroll_final_settlement_calculated_shape_check",
+			sql`(${t.status} NOT IN ('calculated', 'finalized')) OR (${t.totalsJson} IS NOT NULL AND ${t.statutoryEvidenceJson} IS NOT NULL AND ${t.calculatedBy} IS NOT NULL AND ${t.calculatedAt} IS NOT NULL)`,
+		),
+		check(
+			"payroll_final_settlement_finalized_shape_check",
+			sql`(${t.status} <> 'finalized') OR (${t.finalizedBy} IS NOT NULL AND ${t.finalizedAt} IS NOT NULL)`,
+		),
+	],
+);
+
+/** Calculated final-settlement line sealed with the settlement case. */
+export const payrollFinalSettlementLine = pgTable(
+	"payroll_final_settlement_line",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		settlementId: uuid("settlement_id").notNull(),
+		kind: text("kind").notNull(),
+		code: text("code").notNull(),
+		amount: numeric("amount", { precision: 24, scale: 12 }).notNull(),
+		currencyCode: text("currency_code").notNull(),
+		sequence: integer("sequence").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("payroll_final_settlement_line_org_id_idx").on(
+			t.organizationId,
+			t.id,
+		),
+		index("payroll_final_settlement_line_org_settlement_idx").on(
+			t.organizationId,
+			t.settlementId,
+		),
+		unique("payroll_final_settlement_line_org_id_uidx").on(
+			t.organizationId,
+			t.id,
+		),
+		uniqueIndex(
+			"payroll_final_settlement_line_org_settlement_sequence_uidx",
+		).on(t.organizationId, t.settlementId, t.sequence),
+		foreignKey({
+			columns: [t.organizationId, t.settlementId],
+			foreignColumns: [
+				payrollFinalSettlement.organizationId,
+				payrollFinalSettlement.id,
+			],
+			name: "payroll_final_settlement_line_org_settlement_fk",
+		}),
+		check(
+			"payroll_final_settlement_line_kind_check",
+			sql`${t.kind} IN ('prorated_base', 'leave_encashment', 'notice_pay', 'notice_in_lieu', 'recovery', 'employee_statutory', 'employer_statutory')`,
+		),
+	],
+);
+
+/** Snapshot-sealed statutory filing or annual statement artifact. */
+export const payrollStatutoryFiling = pgTable(
+	"payroll_statutory_filing",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		kind: text("kind").notNull(),
+		jurisdictionCode: text("jurisdiction_code").notNull(),
+		instrumentCode: text("instrument_code").notNull(),
+		periodId: uuid("period_id"),
+		taxYear: integer("tax_year").notNull(),
+		employeeId: text("employee_id"),
+		status: text("status").notNull(),
+		sourceRunIdsJson: jsonb("source_run_ids_json").notNull(),
+		totalsJson: jsonb("totals_json").notNull(),
+		evidenceJson: jsonb("evidence_json"),
+		sealedBy: text("sealed_by"),
+		sealedAt: timestamp("sealed_at", { withTimezone: true }),
+		correlationId: text("correlation_id").notNull(),
+		...payrollIdempotencyColumns,
+		...payrollAuditColumns,
+	},
+	(t) => [
+		index("payroll_statutory_filing_org_id_idx").on(t.organizationId, t.id),
+		index("payroll_statutory_filing_org_status_idx").on(
+			t.organizationId,
+			t.status,
+		),
+		unique("payroll_statutory_filing_org_id_uidx").on(t.organizationId, t.id),
+		uniqueIndex("payroll_statutory_filing_org_create_idempotency_uidx").on(
+			t.organizationId,
+			t.createIdempotencyKey,
+		),
+		uniqueIndex("payroll_statutory_filing_org_period_natural_uidx").on(
+			t.organizationId,
+			t.jurisdictionCode,
+			t.instrumentCode,
+			t.periodId,
+		),
+		uniqueIndex("payroll_statutory_filing_org_annual_natural_uidx").on(
+			t.organizationId,
+			t.jurisdictionCode,
+			t.instrumentCode,
+			t.taxYear,
+			t.employeeId,
+		),
+		check(
+			"payroll_statutory_filing_kind_check",
+			sql`${t.kind} IN ('period_filing', 'annual_statement')`,
+		),
+		check(
+			"payroll_statutory_filing_status_check",
+			sql`${t.status} IN ('generated', 'sealed')`,
+		),
+		check(
+			"payroll_statutory_filing_period_shape_check",
+			sql`(${t.kind} <> 'period_filing') OR (${t.periodId} IS NOT NULL AND ${t.employeeId} IS NULL)`,
+		),
+		check(
+			"payroll_statutory_filing_annual_shape_check",
+			sql`(${t.kind} <> 'annual_statement') OR (${t.employeeId} IS NOT NULL AND ${t.periodId} IS NULL)`,
+		),
+		check(
+			"payroll_statutory_filing_sealed_shape_check",
+			sql`(${t.status} <> 'sealed') OR (${t.evidenceJson} IS NOT NULL AND ${t.sealedBy} IS NOT NULL AND ${t.sealedAt} IS NOT NULL)`,
+		),
+	],
+);
+
+/** Line sealed with a statutory filing artifact. */
+export const payrollStatutoryFilingLine = pgTable(
+	"payroll_statutory_filing_line",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		filingId: uuid("filing_id").notNull(),
+		runId: uuid("run_id").notNull(),
+		employeeId: text("employee_id").notNull(),
+		ruleCode: text("rule_code").notNull(),
+		ruleVersion: text("rule_version").notNull(),
+		calculatorId: text("calculator_id").notNull(),
+		baseAmount: numeric("base_amount", { precision: 24, scale: 12 }).notNull(),
+		employeeAmount: numeric("employee_amount", {
+			precision: 24,
+			scale: 12,
+		}).notNull(),
+		employerAmount: numeric("employer_amount", {
+			precision: 24,
+			scale: 12,
+		}).notNull(),
+		currencyCode: text("currency_code").notNull(),
+		sequence: integer("sequence").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("payroll_statutory_filing_line_org_id_idx").on(
+			t.organizationId,
+			t.id,
+		),
+		index("payroll_statutory_filing_line_org_filing_idx").on(
+			t.organizationId,
+			t.filingId,
+		),
+		unique("payroll_statutory_filing_line_org_id_uidx").on(
+			t.organizationId,
+			t.id,
+		),
+		uniqueIndex("payroll_statutory_filing_line_org_filing_sequence_uidx").on(
+			t.organizationId,
+			t.filingId,
+			t.sequence,
+		),
+		foreignKey({
+			columns: [t.organizationId, t.filingId],
+			foreignColumns: [
+				payrollStatutoryFiling.organizationId,
+				payrollStatutoryFiling.id,
+			],
+			name: "payroll_statutory_filing_line_org_filing_fk",
+		}),
 	],
 );

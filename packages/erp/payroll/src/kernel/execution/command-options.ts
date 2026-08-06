@@ -1,4 +1,15 @@
+import type {
+	PayrollJobChunkExecutorPort,
+	PayrollJobEmployeeDirectoryPort,
+} from "../../features/payroll-jobs/contract";
+import type { PayrollPrivacyPort } from "../../features/privacy/contract";
 import type { PayrollAuthorizationPort } from "./authorization";
+import type {
+	PayrollClockCapability,
+	PayrollCurrencyCapability,
+	PayrollStatutoryCapability,
+	PayrollYearToDateCapability,
+} from "./capability-ports";
 import type {
 	MutationPorts,
 	PayrollObservabilityPort,
@@ -8,9 +19,16 @@ import type {
 
 interface PayrollExecutionOptions<TStore> {
 	authorization?: PayrollAuthorizationPort;
+	clock?: PayrollClockCapability;
+	currency?: PayrollCurrencyCapability;
 	employees?: PayrollWorkforceInputPort;
+	jobChunkExecutor?: PayrollJobChunkExecutorPort;
+	jobEmployees?: PayrollJobEmployeeDirectoryPort;
 	observability?: PayrollObservabilityPort;
+	privacy?: PayrollPrivacyPort;
+	statutory?: PayrollStatutoryCapability;
 	store?: TStore;
+	yearToDate?: PayrollYearToDateCapability;
 }
 
 export interface PayrollCommandOptions<TStore>

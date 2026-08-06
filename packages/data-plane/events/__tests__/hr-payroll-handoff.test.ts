@@ -71,6 +71,57 @@ describe("hr payroll handoff contract", () => {
 		expect(parsed.success).toBe(false);
 	});
 
+	it("accepts D0 statutory profile, prior-employer YTD, and leave balance", () => {
+		const parsed = approvedPayrollHandoffSchema.safeParse({
+			...validHandoff,
+			statutoryProfile: {
+				profileId: "stat-1",
+				jurisdictionCode: "MY",
+				taxResidencyStatus: "resident",
+				nationalityCountryCode: "MY",
+				expatriate: false,
+				minimumWageZone: null,
+				taxFileNumber: "SG123",
+				employeeProvidentFundNumber: "EPF-1",
+				socialSecurityNumber: "SOCSO-1",
+				socialInsuranceBookNumber: null,
+				dependantCount: 1,
+				reliefDeclarations: [
+					{
+						reliefCode: "child",
+						amount: "2000.00",
+						currencyCode: "MYR",
+						dependantReference: "dep-1",
+						evidenceRef: null,
+					},
+				],
+				reliefDeclarationVersion: "hr.statutory-relief.v1",
+				sourceVersion: 3,
+			},
+			priorEmployerYtd: [
+				{
+					taxYear: 2025,
+					jurisdictionCode: "MY",
+					priorEmployerName: "Acme Sdn Bhd",
+					grossAmount: "12000.00",
+					taxWithheldAmount: "800.00",
+					statutoryContributionAmount: "600.00",
+					currencyCode: "MYR",
+					recordedOn: "2025-03-15",
+				},
+			],
+			leaveBalanceAtTermination: {
+				days: "4.5",
+				asOf: "2025-06-30",
+			},
+			sourceVersion: {
+				compensationVersion: 1,
+				statutoryProfileVersion: 3,
+			},
+		});
+		expect(parsed.success).toBe(true);
+	});
+
 	it("registers typed payload for payroll handoff ready event", () => {
 		expect(
 			AllEventSchemas[HUMAN_RESOURCES_TIME_PAYROLL_HANDOFF_READY_EVENT],

@@ -2,6 +2,7 @@ import {
 	database as afendaDatabase,
 	and,
 	eq,
+	inArray,
 	payrollResultLine,
 	payrollRunEmployee,
 } from "@afenda/db";
@@ -176,6 +177,7 @@ export const drizzleOutputsMethods: PayrollOutputsStore = {
 		try {
 			const employeeRowsJson = JSON.stringify(input.runEmployees);
 			const resultLineRowsJson = JSON.stringify(input.resultLines);
+			const mergeEmployeeIds = input.employeeIds ?? null;
 			const [lockedRows] = await afendaDatabase.transaction((sqlValue) => [
 				sqlValue`
 					SELECT status FROM payroll_run
@@ -185,12 +187,20 @@ export const drizzleOutputsMethods: PayrollOutputsStore = {
 				sqlValue`
 					DELETE FROM payroll_result_line
 					WHERE payroll_result_line.organization_id = ${input.organizationId} AND run_id = ${input.runId}
+						AND (
+							${mergeEmployeeIds}::text[] IS NULL
+							OR payroll_result_line.employee_id = ANY(${mergeEmployeeIds}::text[])
+						)
 						AND EXISTS (SELECT 1 FROM payroll_run WHERE payroll_run.organization_id = ${input.organizationId}
 							AND id = ${input.runId} AND status NOT IN ('calculated', 'finalized', 'reversed'))
 				`,
 				sqlValue`
 					DELETE FROM payroll_run_employee
 					WHERE payroll_run_employee.organization_id = ${input.organizationId} AND run_id = ${input.runId}
+						AND (
+							${mergeEmployeeIds}::text[] IS NULL
+							OR payroll_run_employee.employee_id = ANY(${mergeEmployeeIds}::text[])
+						)
 						AND EXISTS (SELECT 1 FROM payroll_run WHERE payroll_run.organization_id = ${input.organizationId}
 							AND id = ${input.runId} AND status NOT IN ('calculated', 'finalized', 'reversed'))
 				`,
@@ -336,6 +346,38 @@ export const drizzleOutputsMethods: PayrollOutputsStore = {
 			return mapPersistenceFailure(
 				error,
 				"Failed to list payroll result lines",
+			);
+		}
+	},
+
+	async listResultLinesForEmployeeRuns(input) {
+		if (input.runIds.length === 0) {
+			return errorResult.ok([]);
+		}
+		try {
+			const rows = await afendaDatabase.client
+				.select()
+				.from(payrollResultLine)
+				.where(
+					and(
+						eq(payrollResultLine.organizationId, input.organizationId),
+						eq(payrollResultLine.employeeId, input.employeeId),
+						inArray(payrollResultLine.runId, [...input.runIds]),
+					),
+				);
+			const resultLines: PayrollResultLine[] = [];
+			for (const row of rows) {
+				const mapped = mapResultLineRow(row);
+				if (!mapped.ok) {
+					return mapped;
+				}
+				resultLines.push(mapped.data);
+			}
+			return errorResult.ok(resultLines);
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to list payroll result lines for employee runs",
 			);
 		}
 	},

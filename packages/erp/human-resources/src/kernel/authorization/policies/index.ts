@@ -18,6 +18,7 @@ import { organizationPolicy } from "../../../features/organization/authorization
 import { performancePolicy } from "../../../features/performance/authorization/performance";
 import { privacyPolicy } from "../../../features/privacy/authorization/privacy";
 import { recruitmentPolicy } from "../../../features/recruitment/authorization/recruitment";
+import { statutoryProfilePolicy } from "../../../features/statutory-profile/authorization/statutory-profile";
 import {
 	successionPolicy,
 	talentAssessmentPolicy,
@@ -50,6 +51,7 @@ export { organizationPolicy } from "../../../features/organization/authorization
 export { performancePolicy } from "../../../features/performance/authorization/performance";
 export { privacyPolicy } from "../../../features/privacy/authorization/privacy";
 export { recruitmentPolicy } from "../../../features/recruitment/authorization/recruitment";
+export { statutoryProfilePolicy } from "../../../features/statutory-profile/authorization/statutory-profile";
 export {
 	successionPolicy,
 	talentAssessmentPolicy,
@@ -86,4 +88,5 @@ export const HUMAN_RESOURCES_AUTHORIZATION_POLICIES = [
 	learningPolicy,
 	lifecyclePolicy,
 	organizationPolicy,
+	statutoryProfilePolicy,
 ] as const satisfies readonly HumanResourcesAuthorizationPolicy[];

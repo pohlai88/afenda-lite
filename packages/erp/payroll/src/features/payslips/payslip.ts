@@ -12,6 +12,7 @@ import {
 import { hashSnapshot } from "../calculation/calculation-snapshot";
 import type { PayrollOutputsStore } from "../calculation/outputs.store";
 import type { PayrollRunsStore } from "../payroll-runs/runs.store";
+import type { PayrollPrivacyPort } from "../privacy/contract";
 import {
 	getOwnPayrollPayslipInputSchema,
 	getPayrollPayslipInputSchema,
@@ -19,7 +20,37 @@ import {
 
 type PayrollPayslipStore = Pick<PayrollRunsStore, "getRun"> &
 	Pick<PayrollOutputsStore, "listResultLinesForRun" | "listRunEmployeesForRun">;
-type PayrollCommandOptions = GenericPayrollQueryOptions<PayrollPayslipStore>;
+type PayrollCommandOptions = GenericPayrollQueryOptions<PayrollPayslipStore> & {
+	privacy?: PayrollPrivacyPort;
+};
+
+async function enforcePayslipRestriction(input: {
+	actorUserId: string;
+	employeeId: string;
+	organizationId: string;
+	privacy: PayrollPrivacyPort | undefined;
+}): Promise<Result<void>> {
+	if (input.privacy === undefined) {
+		return errorResult.ok(undefined);
+	}
+	const evaluation = await input.privacy.evaluateRestriction({
+		organizationId: input.organizationId,
+		actorUserId: input.actorUserId,
+		correlationId: `payroll-payslip:${input.employeeId}`,
+		subjectEmployeeId: input.employeeId,
+		requestedAt: new Date().toISOString(),
+		legalBasis: "payslip_read",
+	});
+	if (!evaluation.ok) {
+		return evaluation;
+	}
+	if (evaluation.data.restricted) {
+		return errorResult.fail("CONFLICT", {
+			publicMessage: "Payroll subject data is restricted.",
+		});
+	}
+	return errorResult.ok(undefined);
+}
 
 async function buildPayslip(input: {
 	organizationId: string;
@@ -119,6 +150,15 @@ export function getOwnPayrollPayslip(
 					publicMessage: "Employee identity not found",
 				});
 			}
+			const restricted = await enforcePayslipRestriction({
+				organizationId: data.organizationId,
+				actorUserId: data.actorUserId,
+				employeeId: employeeId.data,
+				privacy: options.privacy,
+			});
+			if (!restricted.ok) {
+				return restricted;
+			}
 			return buildPayslip({ ...data, employeeId: employeeId.data, store });
 		},
 	});
@@ -132,6 +172,17 @@ export function getPayrollPayslip(
 		schema: getPayrollPayslipInputSchema,
 		invalidMessage: "Invalid payroll payslip input",
 		query: PAYROLL_QUERY_PAYSLIP_READ_ALL,
-		execute: (data, { store }) => buildPayslip({ ...data, store }),
+		execute: async (data, { store }) => {
+			const restricted = await enforcePayslipRestriction({
+				organizationId: data.organizationId,
+				actorUserId: data.actorUserId,
+				employeeId: data.employeeId,
+				privacy: options.privacy,
+			});
+			if (!restricted.ok) {
+				return restricted;
+			}
+			return buildPayslip({ ...data, store });
+		},
 	});
 }

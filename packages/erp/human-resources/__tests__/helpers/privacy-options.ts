@@ -7,6 +7,7 @@ import type {
 import type {
 	EvaluateHumanResourcesAnonymizationInput,
 	ExportHumanResourcesSubjectDataInput,
+	RestrictEmployeeDataInput,
 } from "../../src/features/privacy/operations";
 import { createEmployee } from "../../src/features/workforce-records/employment/employee";
 import { createPerson } from "../../src/features/workforce-records/identity/person";
@@ -136,6 +137,10 @@ export interface CreateHumanResourcesTestPrivacyPortInput {
 		reasonCode: string;
 	};
 	records?: readonly HumanResourcesPrivacySubjectRecord[];
+	restriction?: {
+		active: boolean;
+		reasonCode: string;
+	};
 }
 
 export function createHumanResourcesTestPrivacyPort(
@@ -143,6 +148,7 @@ export function createHumanResourcesTestPrivacyPort(
 ): HumanResourcesPrivacyPort {
 	const records = input.records ?? [];
 	const { legalHold } = input;
+	let { restriction } = input;
 
 	return {
 		async exportSubject(context) {
@@ -162,13 +168,28 @@ export function createHumanResourcesTestPrivacyPort(
 					reasonCode: legalHold.reasonCode,
 				});
 			}
+			if (restriction?.active === true) {
+				return await errorResult.ok({
+					allowed: false,
+					reasonCode: restriction.reasonCode,
+				});
+			}
 			return await errorResult.ok({ allowed: true });
+		},
+		async evaluateRestriction(_context) {
+			if (restriction?.active === true) {
+				return await errorResult.ok({
+					restricted: true,
+					reasonCode: restriction.reasonCode,
+				});
+			}
+			return await errorResult.ok({ restricted: false });
 		},
 		async rectifySubject() {
 			return await errorResult.ok({ rectifiedRecordCount: 0 });
 		},
 		async anonymizeSubject(context) {
-			if (legalHold?.active === true) {
+			if (legalHold?.active === true || restriction?.active === true) {
 				return await errorResult.ok({ anonymizedRecordCount: 0 });
 			}
 			const tenantRecords = records.filter(
@@ -182,6 +203,14 @@ export function createHumanResourcesTestPrivacyPort(
 			return await errorResult.ok({ legalHoldId: "test-hold" });
 		},
 		async releaseLegalHold() {
+			return await errorResult.ok(undefined);
+		},
+		async restrictSubject() {
+			restriction = { active: true, reasonCode: "processing_restriction" };
+			return await errorResult.ok({ restrictionId: "test-restriction" });
+		},
+		async liftRestriction() {
+			restriction = undefined;
 			return await errorResult.ok(undefined);
 		},
 		async redactDownstream() {
@@ -198,6 +227,17 @@ export function createHumanResourcesTestPrivacyPort(
 								{
 									legalHoldId: "test-hold",
 									holdReference: legalHold.reasonCode,
+									classifications: ["employee_relations_and_legal"],
+									placedAt: context.requestedAt,
+								},
+							]
+						: [],
+				activeRestrictions:
+					restriction?.active === true
+						? [
+								{
+									restrictionId: "test-restriction",
+									restrictionReference: restriction.reasonCode,
 									classifications: ["employee_relations_and_legal"],
 									placedAt: context.requestedAt,
 								},
@@ -272,6 +312,22 @@ export function createValidPrivacyAnonymizeInput(
 		personId: PRIVACY_TEST_PERSON_A,
 		requestedAt: PRIVACY_TEST_REQUESTED_AT,
 		legalBasis: "anonymization_request",
+		...overrides,
+	};
+}
+
+export function createValidPrivacyRestrictionInput(
+	overrides: Partial<RestrictEmployeeDataInput> = {},
+): RestrictEmployeeDataInput {
+	return {
+		organizationId: PRIVACY_TEST_ORG_A,
+		actorUserId: PRIVACY_TEST_ACTOR_USER_ID,
+		correlationId: PRIVACY_TEST_CORRELATION_ID,
+		personId: PRIVACY_TEST_PERSON_A,
+		requestedAt: PRIVACY_TEST_REQUESTED_AT,
+		legalBasis: "processing_restriction",
+		restrictionReference: "case-restriction-1",
+		classifications: DEFAULT_PRIVACY_CLASSIFICATIONS,
 		...overrides,
 	};
 }

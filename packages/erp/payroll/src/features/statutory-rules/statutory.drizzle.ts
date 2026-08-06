@@ -2,6 +2,7 @@ import {
 	database as afendaDatabase,
 	and,
 	eq,
+	inArray,
 	payrollRun,
 	payrollStatutoryResult,
 } from "@afenda/db";
@@ -111,6 +112,11 @@ export const drizzleStatutoryMethods: PayrollStatutoryStore = {
 					and(
 						eq(payrollStatutoryResult.organizationId, input.organizationId),
 						eq(payrollStatutoryResult.runId, input.runId),
+						...(input.employeeIds === undefined
+							? []
+							: [
+									inArray(payrollStatutoryResult.employeeId, input.employeeIds),
+								]),
 					),
 				);
 
@@ -191,6 +197,38 @@ export const drizzleStatutoryMethods: PayrollStatutoryStore = {
 			return mapPersistenceFailure(
 				error,
 				"Failed to list payroll statutory results",
+			);
+		}
+	},
+
+	async listStatutoryResultsForEmployeeRuns(input) {
+		if (input.runIds.length === 0) {
+			return errorResult.ok([]);
+		}
+		try {
+			const rows = await afendaDatabase.client
+				.select()
+				.from(payrollStatutoryResult)
+				.where(
+					and(
+						eq(payrollStatutoryResult.organizationId, input.organizationId),
+						eq(payrollStatutoryResult.employeeId, input.employeeId),
+						inArray(payrollStatutoryResult.runId, [...input.runIds]),
+					),
+				);
+			const results: PayrollStatutoryResult[] = [];
+			for (const row of rows) {
+				const mapped = mapStatutoryResultRow(row);
+				if (!mapped.ok) {
+					return mapped;
+				}
+				results.push(mapped.data);
+			}
+			return errorResult.ok(results);
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to list payroll statutory results for employee runs",
 			);
 		}
 	},

@@ -1,0 +1,138 @@
+# HR ↔ Payroll decisions register
+
+**Scope:** `@afenda/human-resources` and `@afenda/payroll`  
+**Closure guideline:** [docs/erp/hr-payroll-bridging.md](../../../docs/erp/hr-payroll-bridging.md)  
+**Placement:** package-local under `packages/erp/payroll/docs/` (not a `decisions/` directory).
+
+| ID | Topic | Status | Decision | Date | Owner |
+| --- | --- | --- | --- | --- | --- |
+| A1 | Lifecycle coupling | **CLOSED** | Demote Payroll to `lifecycle: "scaffolded"` until HR promotion evidence exists. Enforce with `pnpm governance:packages` → `governance-lifecycle-coupling.mjs` (active module must not require a scaffolded module). | 2026-08-05 | Payroll / platform governance |
+| A2 | Statutory calculator sourcing | **CLOSED (build in-house)** | Build in-house table-driven calculators for all MY/VN instruments (`my.epf.v1`, `my.socso.v1`, `my.eis.v1`, `my.pcb.v1`, `vn.si.v1`, `vn.hi.v1`, `vn.ui.v1`, `vn.pit.v1`). Authoritative citations live in `statutory-source-ledger.ts` (KWSP / PERKESO / LHDN / VSS / PIT Law). Rates stay in effective-dated rule-pack `configJson`, never hard-coded gazetted numbers. Packs register as `awaiting_review` — production activation still fail-closed until a named reviewer sets `productionApproval: approved` with jurisdictions + dates. `synth.v1` remains `synthetic_only`. | 2026-08-06 | Payroll |
+| A3 | Retention vs privacy erasure | **CLOSED** | Adopted bridging posture: Payroll evidence uses **restriction**, not cascade erasure from HR privacy deletes, until counsel cites statutory retention clocks. Erasure automation stays forbidden without that citation. | 2026-08-05 | Payroll (counsel citation still required before erasure) |
+| A4 | Settlement authority | **CLOSED** | Adopted bridging posture: payroll reversal only while disbursement is un-settled; settled recovery is Accounting clawback. Settlement-ingress (D2) is a delivery dependency, not an open product fork. | 2026-08-05 | Payroll / Payments / Accounting |
+| C9 | Finalize segregation of duties | **CLOSED** | Maker-checker is calculate-actor ≠ finalize-actor (`run.updatedBy` vs finalize `actorUserId` → `CONFLICT`). No distinct `payroll.run.approve` yet; break-glass lands with the approval-workflow slice. | 2026-08-05 | Payroll |
+| B5 | Neon parity loop | **CLOSED** | `pnpm test:payroll:parity` green on preview target with `payroll_accepted_handoff` present (7/7). Supersession uses advisory xact lock + UPDATE-then-INSERT so the active-identity unique index holds under concurrent ingest. Production migrate remains ops-gated (PL-S9). | 2026-08-05 | Payroll |
+| B2 | Governance fixtures | **CLOSED** | Four fixtures + `governance-fixtures.test.ts` (public-contract, registry-projection, consumer-inventory, architecture-debt). | 2026-08-05 | Payroll |
+| B4 | Emission registry | **CLOSED** | `PAYROLL_EMISSION_REGISTRY` owns command→event→dispatcher mapping; manifest `events.emits` derives from it; retired `docs-V2` citation removed from `mutation-tables.ts`. | 2026-08-05 | Payroll |
+| B1 | Transport docs + testing subpath | **CLOSED** | Document single push/sync-ingest transport on both READMEs; production `PayrollCapabilityComposition` has no pull-workforce override and always reads the accepted-handoff ledger; `PayrollWorkforceCapability` remains the port type; declare `@afenda/payroll/testing`. | 2026-08-05 | Payroll / HR |
+| B7 | Governance gates | **CLOSED** | Root scripts governance:erp-symmetry, governance:emission-drain, governance:cross-import, governance:architecture-debt chained from governance:packages. | 2026-08-05 | Payroll / platform governance |
+| B6 | Platform outbox drain | **CLOSED** | `apps/web` cron `/api/cron/payroll-outbox` drains payroll emissions via `PAYROLL_PLATFORM_EVENT_DISPATCHER_ID`; Payments draft intake + Accounting source posting handlers fail closed. | 2026-08-05 | Payroll / platform composition |
+| D2 | Settlement ingress | **CLOSED** | `settlement-ingress` feature + C8 reversal guard; `apps/web` drains Payments posted/reversed + Accounting journal posted into reconciliation; matched payment blocks run reversal. | 2026-08-05 | Payroll / Payments / Accounting |
+| D7 | HR restriction operation | **CLOSED** | `restrictEmployeeData` / `liftEmployeeDataRestriction` ship with export exclusion and anonymization block; cut-off / termination / breaking-change / PRODUCTION_READINESS docs updated for payroll C3/C6 enforcement. | 2026-08-05 | Human Resources |
+| C3 | Period freeze | **CLOSED** | Period status `open → inputs_locked → closed`. Operators create a run while open, then `lockPayrollPeriodInputs`. Non-termination ingest after freeze seals `deferred_to_next_period` (success, no producer retry) and is excluded from the accepted-handoff reader. Money corrections stay on `retro-pay`. Schema `0055_payroll_period_inputs_locked` (ops-gated migrate). | 2026-08-05 | Payroll |
+| C6 | Mid-period termination | **CLOSED** | After freeze, `employmentStatus ∈ {notice, terminated}` still accepts the fact and writes blocking `MID_PERIOD_TERMINATION` on non-finalized / non-reversed runs in the covering period. Finalize already refuses blocking exceptions. | 2026-08-05 | Payroll |
+| B3 | Capability signature | **CLOSED** | Composition requires clock, currency, and statutory capabilities; production factories exported; calculator uses currency payable scale and statutory registry approval. | 2026-08-05 | Payroll |
+| D1 | Payroll privacy | **CLOSED** | `payroll/privacy` ships restriction, retention evidence, field projection, and read-own DSAR. Admin ops use `payroll.payslip.read-all`; subject access uses `payroll.payslip.read-own`. `expirePayrollRetention` marks eligible only — no erasure without A3 counsel citation. | 2026-08-05 | Payroll |
+| D6 | Payroll jobs | **CLOSED** | `payroll-jobs` durable calculation batches: claim/lease/retry/DLQ/replay + chunk merge persistence. Web cron `/api/cron/payroll-jobs`. Schema `0051_payroll_jobs` (ops-gated migrate). | 2026-08-05 | Payroll |
+| D3 | Retro pay | **CLOSED** | `retro-pay` queues C3 corrections, recomputes under the sealed run snapshot (never live setup tables), refuses unreproducible periods, and applies origin-labelled lines into an open target period. Schema `0052_payroll_retro_pay` (ops-gated migrate). | 2026-08-05 | Payroll |
+| D4 | Final settlement | **CLOSED** | `final-settlement` initiates from the accepted handoff's HR termination fact and pins that handoff's compensation into a hashed snapshot; calculation prices only from the pin, so a later compensation revision cannot restate a settlement. Caller input is non-statutory only (notice/in-lieu, recoveries). Leave-balance days are pinned from `leaveBalanceAtTermination` on the accepted handoff (D0 Stage 2/3). Statutory treatment routes through the same fail-closed calculator capability payroll runs use — unregistered or unapproved calculators refuse with `CONFLICT`, so synth-only production fails closed. C6 locked-run or closed-period cases require human clearance before calculate; finalize is SoD-gated (C9). The terminal statement is a derived query preserving `payroll.payslip.read-own` vs `read-all`. Create, calculate, and finalize persist with the same audit + outbox CTE payroll runs use and emit `payroll.final-settlement.{initiated,calculated,finalized}.v1` through `PAYROLL_PLATFORM_EVENT_DISPATCHER_ID`. Schema `0053_payroll_final_settlement` (ops-gated migrate). | 2026-08-05 | Payroll |
+| D5 | Statutory filings | **CLOSED** | `statutory-filings` generates period filings and annual statements from finalized-run `payroll_statutory_result` rows only (jurisdiction + instrument = ruleCode). No live statutory-rule read happens at generation time. Generation routes through the same fail-closed `PayrollStatutoryCapability` seam runs and settlements use — MY/VN packs are `awaiting_review` and `synth.v1` is `synthetic_only`, so production generation refuses with `CONFLICT` until pack reviewer approval; synth filings stay test-only. Replay is keyed on caller-supplied identity, so a retry returns the identical artifact even after the source runs move on. Seal is SoD-gated (generator ≠ sealer) and stores version-pinned calculator/rule evidence already on the results. Schema `0054_payroll_statutory_filings` (ops-gated migrate). | 2026-08-05 | Payroll |
+| D0 | Statutory-fact capture — regional minimum-wage zone ownership | **CLOSED (Stage 1–3)** | The VN regional minimum-wage zone (I–IV) is an **HR-owned employment fact derived from work location**, not payroll setup: it changes when the employee moves, it is captured with the rest of the statutory profile, and payroll consumes it through the handoff rather than deriving or configuring it. Stage 1 ships the HR capture surface `@afenda/human-resources` `src/features/statutory-profile/` — effective-dated `hr_statutory_profile` (tax residency, nationality + expatriate flag, dependant count + closed relief-declaration array pinned to `hr.statutory-relief.v1`, statutory identifiers, VN zone) with open-segment supersession, plus `hr_prior_employer_ytd` for mid-year joiners (money-as-string + currency). Stage 2 widens `hr.payroll-handoff.v1` with `statutoryProfile`, `priorEmployerYtd`, and `leaveBalanceAtTermination`, populated by HR assemble. Stage 3: `PayrollYearToDateCapability` is the single hire-year merge (this-employer finalized history + same-year/same-currency prior-employer figures); calculators receive only the merged `yearToDate` plus `statutoryProfile`, not a second prior-employer money channel. Settlement leave balance is pinned from the handoff. Assemble stays on `compensation.read` but records privileged-identifier sensitivity and fails `CONFLICT` when `isStatutorySubjectRestricted`; absent D0 optional keys are omitted for `payloadHash` stability. Schema `0056_hr_statutory_profile` (ops-gated migrate). | 2026-08-06 | Human Resources / Payroll |
+
+## A1 evidence
+
+- Manifest: `packages/erp/payroll/src/composition/module.manifest.ts` → `lifecycle: "scaffolded"`
+- Gate: `scripts/governance-lifecycle-coupling.mjs` (wired from `scripts/governance-packages.mjs`)
+- Commit: `5f08676b`
+
+## C2 ordering (closed alongside this register)
+
+Wire `contractVersion` is the schema literal (`hr.payroll-handoff.v1`). Supersession ordering uses payload `sourceVersion` axes. Stale or equal revisions under a new idempotency key return `CONFLICT` ("Stale workforce handoff revision is rejected"). Evidence: `src/features/workforce-ingress/handoff-revision.ts` + `__tests__/workforce-ingest.test.ts`.
+
+## C9 segregation of duties
+
+Shipped in `src/features/payroll-runs/finalization.ts`: when status is `calculated` and `run.updatedBy === actorUserId`, finalize returns `CONFLICT` with public message "Segregation of duties: the actor who calculated a payroll run cannot finalize it". Evidence: `__tests__/payroll-run-lifecycle.test.ts`.
+
+## B5 parity loop
+
+- Gate helpers: `__tests__/helpers/payroll-neon-parity.ts`, `__tests__/helpers/payroll-neon-cleanup.ts`
+- Failure injection: `__tests__/failure-injection/run-finalize-atomicity.test.ts`, `__tests__/failure-injection/workforce-ingress-atomicity.test.ts`
+- Adapter: `accepted-handoff.drizzle.ts` — `pg_advisory_xact_lock` on identity, supersede prior accepted row, then insert
+- Lane: `testing/vitest.payroll-parity.config.ts` · root `pnpm test:payroll:parity` · package `pnpm --filter @afenda/payroll test:parity`
+- Verify: `REQUIRE_DATABASE_TESTS=1` + `AFENDA_DATABASE_TEST_TARGET=preview|test` + non-prod `DATABASE_URL` with migration `0049_payroll_accepted_handoff.sql` applied
+- Inner loop (no Neon): `pnpm check:payroll`
+
+## B6 platform outbox drain
+
+- Dispatcher: `apps/web:payroll-platform-events` (`PAYROLL_PLATFORM_EVENT_DISPATCHER_ID`)
+- Drain worker: `apps/web/modules/platform/domain/payroll-outbox-drain.ts`
+- Handlers: `apps/web/modules/platform/domain/payroll-platform-events.ts`
+- Cron: `apps/web/app/api/cron/payroll-outbox/route.ts` (gated by `PAYROLL_OUTBOX_DRAIN_ENABLED` + `CRON_SECRET`)
+- Registry: `src/kernel/emissions/emission-registry.ts` — run and final-settlement lifecycle emissions declare the dispatcher
+- Governance: `pnpm governance:emission-drain` passes with zero undrained debt
+
+## D2 settlement ingress
+
+- Feature: `src/features/settlement-ingress/` — `recordPaymentSettlement`, `recordPostingConfirmation`, `resolveReconciliationDiscrepancy`; `parsePayrollDisbursementReference` for `payroll-run:{runId}:employee:{employeeId}`
+- C8 guard: `assertPayrollRunUnsettledForReversal` in `run-settlement-policy.ts`; wired from `payroll-runs/reversal.ts`
+- App handlers: `apps/web/modules/platform/domain/payroll-settlement-ingress.ts` (merged into outbox drain)
+- Evidence: `__tests__/settlement-ingress.test.ts` · `pnpm check:payroll` 230/230
+
+## D0 hire-year merge + assemble disclosure
+
+- Capability: `PayrollYearToDateCapability.employeeTotals` merges prior-employer YTD; `resolveYearToDate` refuses when the capability is absent
+- Calculators: `StatutoryCalculatorInput.yearToDate` is the merged total; `priorEmployerYtd` stays on snapshots for audit only
+- Tax year: HR assemble attributes prior-employer records by handoff `effectiveDate`; run YTD uses `periodStart`; settlement uses `terminationEffectiveOn`
+- Assemble: `human-resources.approved-payroll-handoff.get` permission remains `compensation.read`; sensitivity is `privileged_only` / `personal_identifiers`; restriction-active subjects fail `CONFLICT`
+- Hash stability: mapper omits absent `statutoryProfile` / `priorEmployerYtd` / `leaveBalanceAtTermination` rather than emitting `null` / `[]`
+- Leave arithmetic: `addLeaveQuantity` in `@afenda/human-resources` `features/leave/balance.ts` is the only leave-quantity adder used by assemble
+
+## D4 final-settlement app actions
+
+- Operator Actions: `apps/web/app/actions/payroll-final-settlement.ts` — `initiateFinalSettlementAction`, `calculateFinalSettlementAction`, `finalizeFinalSettlementAction`, `getFinalSettlementStatementAction`
+- Subject Action: `getOwnFinalSettlementStatementAction` via `runMemberPermissionAction` + `payroll.payslip.read-own`
+- Session stamps org/actor/correlation; caller cannot supply `leaveBalanceDays` (handoff-pinned)
+- Evidence: `apps/web/__tests__/payroll-final-settlement-actions.test.ts`
+
+## Run / period / statutory-profile app actions
+
+- Run Actions: `apps/web/app/actions/payroll-run.ts` — `createPayrollRunAction`, `calculatePayrollRunAction`, `finalizePayrollRunAction`, `reversePayrollRunAction`, `getPayrollRunAction`
+- Period Actions: `apps/web/app/actions/payroll-period.ts` — `createPayrollPeriodAction`, `updatePayrollPeriodAction`, `lockPayrollPeriodInputsAction`, `closePayrollPeriodAction`, `getPayrollPeriodAction`, `listPayrollPeriodsAction`
+- Statutory-profile Actions: `apps/web/app/actions/hr-statutory-profile.ts` — `upsertStatutoryProfileAction`, `getStatutoryProfileAction`, `listStatutoryProfilesAction`, `recordPriorEmployerYtdAction`, `listPriorEmployerYtdAction` (sensitive-identifiers manage/read)
+- Session stamps org/actor/correlation on every Action; package input schemas for statutory profile are root-exported
+- Evidence: `apps/web/__tests__/payroll-run-actions.test.ts`, `payroll-period-actions.test.ts`, `hr-statutory-profile-actions.test.ts`
+
+## Setup / retro-pay / statutory-filings / privacy / jobs app actions
+
+- Setup Actions: `apps/web/app/actions/payroll-setup.ts` — calendars (`createPayrollCalendarAction`, `updatePayrollCalendarAction`, `archivePayrollCalendarAction`, `getPayrollCalendarAction`, `listPayrollCalendarsAction`), pay groups (`createPayrollPayGroupAction`, `updatePayrollPayGroupAction`, `archivePayrollPayGroupAction`, `getPayrollPayGroupAction`, `listPayrollPayGroupsAction`), earning rules (`createPayrollEarningRuleAction`, `updatePayrollEarningRuleAction`, `archivePayrollEarningRuleAction`, `supersedePayrollEarningRuleAction`, `getPayrollEarningRuleAction`), deduction rules (same pattern + `taxTiming`), statutory rules (same pattern + `jurisdictionCode`/`configJson`). All use `payroll.setup.manage`.
+- Retro-pay Actions: `apps/web/app/actions/payroll-retro-pay.ts` — `queueRetroItemAction` (`payroll.input.manage`), `calculateRetroDifferenceAction` (`payroll.run.review`), `applyRetroToPeriodAction` (`payroll.input.manage`), `listRetroItemsAction` (`payroll.run.review`).
+- Statutory-filings Actions: `apps/web/app/actions/payroll-statutory-filings.ts` — `generateStatutoryFilingAction`, `generateAnnualStatementAction`, `listFilingObligationsAction` (`payroll.run.review`); `sealFilingEvidenceAction` (`payroll.run.finalize`).
+- Privacy Actions: `apps/web/app/actions/payroll-privacy.ts` — operator: `restrictPayrollSubjectAction`, `liftPayrollRestrictionAction`, `recordPayrollRetentionEvidenceAction`, `expirePayrollRetentionAction`, `projectPayrollFieldsAction` (`payroll.payslip.read-all` via `runOperatorPermissionAction`); member DSAR: `respondToPayrollSubjectAccessAction` (`payroll.payslip.read-own` via `runMemberPermissionAction`).
+- Jobs Actions: `apps/web/app/actions/payroll-jobs.ts` — operator surface only: `enqueuePayrollCalculationJobAction` (`payroll.run.calculate`), `getPayrollJobAction` (`payroll.run.review`), `listPayrollDeadLettersAction` (`payroll.run.review`), `replayPayrollDeadLetterAction` (`payroll.run.calculate`). Cron surfaces (`claimDuePayrollJobWork`, `executePayrollJobWork`) are intentionally absent.
+- Session stamps org/actor/correlation on every mutating Action; local Zod boundary schemas omit organizationId/actorUserId/correlationId (stamped from session).
+- Evidence: `apps/web/__tests__/payroll-setup-actions.test.ts`, `payroll-retro-pay-actions.test.ts`, `payroll-statutory-filings-actions.test.ts`, `payroll-privacy-actions.test.ts`, `payroll-jobs-actions.test.ts`, `payroll-composition-contract.test.ts`.
+
+## A2 build-in-house evidence
+
+- Source ledger: `src/features/statutory-rules/statutory-source-ledger.ts` (8 MY/VN instruments + citation URLs)
+- Calculators: `calculator-jurisdiction-packs.ts` + table-driven helpers (`calculator-helpers.ts` / `calculator-config.ts`)
+- Registry: `calculator-registry.ts` — packs `awaiting_review`; `synth.v1` `synthetic_only`; `isStatutoryProductionReady()` false until `approved`
+- Tests: `__tests__/jurisdiction-statutory-calculators.test.ts`, `__tests__/production-hardening.test.ts`
+- Readiness: `PRODUCTION_READINESS.md` — pack reviewer approval still required before production activation
+
+## YTD fanout batching (closed 2026-08-06)
+
+- `PayrollYearToDateStore` reads history via `listResultLinesForEmployeeRuns` + `listStatutoryResultsForEmployeeRuns` (one pair of queries per employee across eligible finalized run ids)
+- Memory + Drizzle adapters implement the batched methods; architecture-debt category `ytd-fanout-unbatched` is at target zero
+
+## Remaining operator Action surface (closed 2026-08-06)
+
+- Payslips: `apps/web/app/actions/payroll-payslip.ts` — `getOwnPayrollPayslipAction` (`payroll.payslip.read-own` via `runMemberPermissionAction`), `getPayrollPayslipAction` (`payroll.payslip.read-all`)
+- Reconciliation: `apps/web/app/actions/payroll-reconciliation.ts` — record / resolve / list (`payroll.reconciliation.manage`)
+- Assignments: `apps/web/app/actions/payroll-assignments.ts` — create/get assignment + recurring earning/deduction (`payroll.setup.manage`)
+- Variable inputs: `apps/web/app/actions/payroll-variable-inputs.ts` — create / get (`payroll.input.manage`)
+- Run exceptions: `recordPayrollExceptionAction` / `listPayrollExceptionsForRunAction` on `payroll-run.ts` (`payroll.run.calculate` / `payroll.run.review`)
+- Settlement ingress (`recordPaymentSettlement` / `recordPostingConfirmation`) stays on the platform outbox drain path — not an operator Action surface
+- Evidence: `apps/web/__tests__/payroll-payslip-actions.test.ts`, `payroll-reconciliation-actions.test.ts`, `payroll-assignments-actions.test.ts`, `payroll-variable-inputs-actions.test.ts`, `payroll-run-actions.test.ts`, `payroll-composition-contract.test.ts`
+
+## Phase E evidence pack (engineering started 2026-08-06)
+
+- Ops runbooks: `docs/ops-runbooks.md` — outbox stall, stuck handoff, settlement failure, reversal-after-settlement, finalize SoD, statutory refuse, jobs drain
+- Sign-off matrix: `docs/phase-e-signoff.md` — E1–E12 gates; promotion forbidden until pack approval, counsel clocks, ops DDL, and independent review
+- Dry-run decision: `assembleApprovedPayrollHandoff` is the read-only preview before queueing (no separate preview command)
+- Evidence quality: local command output only (`pnpm check:hr`, `pnpm check:payroll`, `pnpm governance:packages`, `pnpm db:check`, all 2026-08-06). GitHub Actions billing is locked, so no CI run exists; `pnpm validate:modules` self-skips; the Drizzle/Neon parity lane self-skips without `DATABASE_URL` + `REQUIRE_DATABASE_TESTS=1`; migrations `0051`–`0056` are unapplied everywhere and `0049` is claimed applied on a preview branch only (unverified from this checkout)
+- Not claimed: module `active`, enterprise seal, calculator `approved`, counsel-confirmed retention basis, or any CI/Neon-backed evidence
+
+## Open-decision rule
+
+Do not promote either module to `active`, claim enterprise seal, or mark calculators `productionApproval: approved` without named reviewer evidence. A2 sourcing is closed; pack review remains the production gate. A3/A4 closed postures still require counsel-cited retention clocks before erasure or settled clawback automation.

@@ -167,6 +167,12 @@ export const PAYROLL_POSTING_CORRECTION_REQUESTED_EVENT =
 	"payroll.posting-correction-requested.v1" as const;
 export const PAYROLL_PAYSLIP_PUBLISHED_EVENT =
 	"payroll.payslip.published.v1" as const;
+export const PAYROLL_FINAL_SETTLEMENT_INITIATED_EVENT =
+	"payroll.final-settlement.initiated.v1" as const;
+export const PAYROLL_FINAL_SETTLEMENT_CALCULATED_EVENT =
+	"payroll.final-settlement.calculated.v1" as const;
+export const PAYROLL_FINAL_SETTLEMENT_FINALIZED_EVENT =
+	"payroll.final-settlement.finalized.v1" as const;
 
 export const PayrollEventSchemas = {
 	[PAYROLL_RUN_STARTED_EVENT]: payrollEntityPayloadSchema,
@@ -180,6 +186,9 @@ export const PayrollEventSchemas = {
 	[PAYROLL_POSTING_CORRECTION_REQUESTED_EVENT]:
 		payrollPostingCorrectionRequestedPayloadSchema,
 	[PAYROLL_PAYSLIP_PUBLISHED_EVENT]: payrollEntityPayloadSchema,
+	[PAYROLL_FINAL_SETTLEMENT_INITIATED_EVENT]: payrollEntityPayloadSchema,
+	[PAYROLL_FINAL_SETTLEMENT_CALCULATED_EVENT]: payrollEntityPayloadSchema,
+	[PAYROLL_FINAL_SETTLEMENT_FINALIZED_EVENT]: payrollEntityPayloadSchema,
 } as const;
 
 export type PayrollEventType = keyof typeof PayrollEventSchemas;
@@ -194,4 +203,7 @@ export const PAYROLL_EVENT_IDS = [
 	PAYROLL_PAYMENT_CORRECTION_REQUESTED_EVENT,
 	PAYROLL_POSTING_CORRECTION_REQUESTED_EVENT,
 	PAYROLL_PAYSLIP_PUBLISHED_EVENT,
+	PAYROLL_FINAL_SETTLEMENT_INITIATED_EVENT,
+	PAYROLL_FINAL_SETTLEMENT_CALCULATED_EVENT,
+	PAYROLL_FINAL_SETTLEMENT_FINALIZED_EVENT,
 ] as const satisfies readonly PayrollEventType[];

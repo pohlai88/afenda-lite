@@ -61,10 +61,15 @@ export function createMemoryStatutoryMethods(input: {
 				return allowed;
 			}
 
+			const mergeIds =
+				replaceInput.employeeIds === undefined
+					? null
+					: new Set(replaceInput.employeeIds);
 			for (const [id, result] of statutory.statutoryResults.entries()) {
 				if (
 					result.organizationId === replaceInput.organizationId &&
-					result.runId === replaceInput.runId
+					result.runId === replaceInput.runId &&
+					(mergeIds === null || mergeIds.has(result.employeeId))
 				) {
 					statutory.statutoryResults.delete(id);
 				}
@@ -115,6 +120,20 @@ export function createMemoryStatutoryMethods(input: {
 				(result) =>
 					result.organizationId === listInput.organizationId &&
 					result.runId === listInput.runId,
+			);
+			return errorResult.ok(results.map(cloneStatutoryResult));
+		},
+
+		async listStatutoryResultsForEmployeeRuns(listInput) {
+			if (listInput.runIds.length === 0) {
+				return errorResult.ok([]);
+			}
+			const runIdSet = new Set(listInput.runIds);
+			const results = Array.from(statutory.statutoryResults.values()).filter(
+				(result) =>
+					result.organizationId === listInput.organizationId &&
+					result.employeeId === listInput.employeeId &&
+					runIdSet.has(result.runId),
 			);
 			return errorResult.ok(results.map(cloneStatutoryResult));
 		},

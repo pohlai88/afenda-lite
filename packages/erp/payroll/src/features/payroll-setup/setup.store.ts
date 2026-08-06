@@ -22,6 +22,7 @@ import type {
 	PayrollPeriod,
 	PayrollPeriodCloseInput,
 	PayrollPeriodCreateRecord,
+	PayrollPeriodLockInput,
 	PayrollPeriodUpdateInput,
 	PayrollRuleSupersedeResult,
 	PayrollStatutoryRule,
@@ -196,11 +197,20 @@ export interface PayrollSetupStore {
 		status?: "active" | "archived" | undefined;
 	}) => Promise<Result<PayrollPayGroup[]>>;
 
+	listPeriodsForOrganization: (input: {
+		organizationId: string;
+	}) => Promise<Result<PayrollPeriod[]>>;
+
 	listPeriodsForPayGroup: (input: {
 		organizationId: string;
 		payGroupId: PayrollPayGroupId;
-		status?: "open" | "closed" | undefined;
+		status?: PayrollPeriod["status"] | undefined;
 	}) => Promise<Result<PayrollPeriod[]>>;
+
+	lockPeriodInputs: (
+		input: PayrollPeriodLockInput,
+		ports: MutationPorts,
+	) => Promise<Result<PayrollPeriod>>;
 
 	recordRuleVersionUsedByFinalizedRun: (
 		input: PayrollRuleFinalizedUsageInput,
@@ -269,6 +279,7 @@ export type {
 	PayrollPayGroupUpdateInput,
 	PayrollPeriodCloseInput,
 	PayrollPeriodCreateRecord,
+	PayrollPeriodLockInput,
 	PayrollPeriodUpdateInput,
 	PayrollStatutoryRuleArchiveInput,
 	PayrollStatutoryRuleCreateRecord,

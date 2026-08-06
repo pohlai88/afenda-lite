@@ -66,6 +66,19 @@ export function computeLeaveBalance(
 	return fromScaled(total, scale);
 }
 
+/**
+ * Exact addition of two leave quantities.
+ *
+ * Leave owns quantity arithmetic for the whole package: any consumer that needs
+ * to total leave quantities (including the payroll handoff's termination
+ * balance) calls this rather than re-deriving decimal scaling, which is how
+ * negative operands were mis-rendered before D0's review.
+ */
+export function addLeaveQuantity(left: string, right: string): string {
+	const scale = resolveScale(left, right);
+	return fromScaled(toScaled(left, scale) + toScaled(right, scale), scale);
+}
+
 export function sortLeaveAdjustmentsForLedger<
 	T extends { id: string; createdAt: Date },
 >(adjustments: readonly T[]): T[] {

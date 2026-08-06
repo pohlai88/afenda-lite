@@ -68,6 +68,10 @@ export * from "../features/recruitment/interview-field-projection";
 export * from "../features/recruitment/offer";
 export * from "../features/recruitment/requisition";
 export * from "../features/reporting/index";
+export * from "../features/statutory-profile/prior-employer-ytd";
+export * from "../features/statutory-profile/schema";
+export * from "../features/statutory-profile/status";
+export * from "../features/statutory-profile/statutory-profile";
 // Store resolver removed - internal only
 export * from "../features/talent/career-plan";
 export * from "../features/talent/competency";

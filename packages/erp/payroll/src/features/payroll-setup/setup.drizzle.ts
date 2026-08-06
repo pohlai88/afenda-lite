@@ -969,10 +969,32 @@ const drizzleSetupCore = {
 		}
 	},
 
+	async listPeriodsForOrganization(input: {
+		organizationId: string;
+	}): Promise<Result<PayrollPeriod[]>> {
+		try {
+			const rows = await afendaDatabase.client
+				.select()
+				.from(payrollPeriod)
+				.where(eq(payrollPeriod.organizationId, input.organizationId));
+			const periods: PayrollPeriod[] = [];
+			for (const row of rows) {
+				const mapped = mapPeriodRow(row);
+				if (!mapped.ok) {
+					return mapped;
+				}
+				periods.push(mapped.data);
+			}
+			return errorResult.ok(periods);
+		} catch (error) {
+			return mapPersistenceFailure(error, "Failed to list payroll periods");
+		}
+	},
+
 	async listPeriodsForPayGroup(input: {
 		organizationId: string;
 		payGroupId: PayrollPayGroupId;
-		status?: "open" | "closed" | undefined;
+		status?: PayrollPeriod["status"] | undefined;
 	}): Promise<Result<PayrollPeriod[]>> {
 		try {
 			const rows = await afendaDatabase.client

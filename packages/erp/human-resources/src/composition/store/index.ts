@@ -9,6 +9,7 @@ import type { HumanResourcesLearningStore } from "../../features/learning/store-
 import type { HumanResourcesLeaveStore } from "../../features/leave/store-contract";
 import type { HumanResourcesPerformanceStore } from "../../features/performance/store-contract";
 import type { HumanResourcesRecruitmentStore } from "../../features/recruitment/store-contract";
+import type { HumanResourcesStatutoryProfileStore } from "../../features/statutory-profile/store-contract";
 import type { HumanResourcesTalentStore } from "../../features/talent/store-contract";
 import type { HumanResourcesTimeStore } from "../../features/time/store-contract";
 import type { HumanResourcesWorkforcePlanningStore } from "../../features/workforce-planning/store-contract";
@@ -32,6 +33,7 @@ export type HumanResourcesStore = HumanResourcesCoreStore &
 	HumanResourcesTimeStore &
 	HumanResourcesWorkforcePlanningStore &
 	HumanResourcesIdentityStore &
+	HumanResourcesStatutoryProfileStore &
 	HumanResourcesWorkforceFoundationStore;
 
 export type { HumanResourcesCompensationStore } from "../../features/compensation-benefits/store-contract";
@@ -52,6 +54,8 @@ export type { HumanResourcesPerformanceStore } from "../../features/performance/
 export * from "../../features/performance/store-contract";
 export type { HumanResourcesRecruitmentStore } from "../../features/recruitment/store-contract";
 export * from "../../features/recruitment/store-contract";
+export type { HumanResourcesStatutoryProfileStore } from "../../features/statutory-profile/store-contract";
+export * from "../../features/statutory-profile/store-contract";
 export type { HumanResourcesTalentStore } from "../../features/talent/store-contract";
 export * from "../../features/talent/store-contract";
 export type { HumanResourcesTimeStore } from "../../features/time/store-contract";

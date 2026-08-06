@@ -7,12 +7,17 @@
 		".": {
 			"types": "./src/index.ts",
 			"default": "./src/index.ts"
+		},
+		"./testing": {
+			"types": "./src/testing/index.ts",
+			"default": "./src/testing/index.ts"
 		}
 	},
 	"scripts": {
 		"lint": "biome check .",
 		"typecheck": "tsc --noEmit -p tsconfig.json",
 		"test": "vitest run --config ../../../testing/vitest.unit.config.ts --project payroll",
+		"test:parity": "vitest run --config ../../../testing/vitest.payroll-parity.config.ts --project payroll-parity",
 		"check": "pnpm lint && pnpm typecheck && pnpm test"
 	},
 	"dependencies": {

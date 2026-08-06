@@ -162,8 +162,6 @@ describe("assertMigrationJournal", () => {
 		);
 		const result = assertMigrationJournal(dir);
 		expect(result.ok).toBe(false);
-		expect(
-			result.issues.some((i) => i.includes("orphan snapshot")),
-		).toBe(true);
+		expect(result.issues.some((i) => i.includes("orphan snapshot"))).toBe(true);
 	});
 });

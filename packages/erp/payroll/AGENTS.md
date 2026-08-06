@@ -15,8 +15,10 @@ checkout-wide doctrine. This file wins only for **conflicts inside this package*
 ## Deltas (only)
 
 - Sole mutator of `payroll_*`. Do not dual-write payroll tables from `apps/web`.
-- Do not import `@afenda/human-resources` or peer ERP packages. Workforce facts
-  cross `PayrollWorkforceCapability` supplied by the app composition root.
+- Do not import `@afenda/human-resources` or peer ERP packages. Production
+  workforce facts arrive via push/sync ingest into `payroll_accepted_handoff`;
+  `PayrollWorkforceCapability` is a test-only override, never wired in
+  `apps/web` composition.
 - Do not insert or update `payment*`, `journal*`, or `hr_*` tables from this package.
 - Keep uniform ERP roots only: `facade/`, `kernel/`, `composition/`, `features/`,
   `testing/`, plus root `index.ts`. Features never import `facade`, `composition`,
@@ -24,19 +26,21 @@ checkout-wide doctrine. This file wins only for **conflicts inside this package*
 - Treat compensation, tax, deductions, payslips, and statutory identifiers as
   highly sensitive. Use synthetic fixtures only; keep
   `payroll.payslip.read-own` and `payroll.payslip.read-all` distinct.
-- Bundled `synth.v1` statutory calculator is test-only — not a jurisdiction approval.
+- MY/VN jurisdiction calculators are `awaiting_review`; bundled `synth.v1` is test-only — neither is a production approval.
+- Phase E ops runbooks + sign-off checklist live under `docs/ops-runbooks.md` and `docs/phase-e-signoff.md` — not a lifecycle promotion.
 - Always-apply companions when editing this tree: `payroll-boundaries`,
   `payroll-domain`, `payroll-security`, `payroll-testing`.
 
 ## Verify
 
-```bash
-pnpm --filter @afenda/payroll check
-```
+| Loop | Command |
+| --- | --- |
+| Inner | `pnpm check:payroll` (lint + typecheck + unit) |
+| Package | `pnpm --filter @afenda/payroll test` |
+| Outer (Neon) | `REQUIRE_DATABASE_TESTS=1 pnpm test:payroll:parity` |
 
-Prefer `pnpm --filter @afenda/payroll lint|typecheck|test` over broad root suites.
-After manifest or register changes: `pnpm validate:modules` and
-`pnpm governance:packages`.
+Prefer package-local gates over broad root suites. After manifest or register
+changes: `pnpm validate:modules` and `pnpm governance:packages`.
 
 ## Authority
 

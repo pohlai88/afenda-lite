@@ -6744,3 +6744,159 @@ export const hrConnectorCursor = pgTable(
 		check("hr_connector_cursor_version_check", sql`${t.version} > 0`),
 	],
 );
+
+/**
+ * D0 statutory-fact capture — HR-owned inputs the payroll statutory math needs.
+ * Effective-dated with supersession; one open active profile per employee.
+ */
+export const hrStatutoryProfile = pgTable(
+	"hr_statutory_profile",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		employeeId: uuid("employee_id").notNull(),
+		jurisdictionCode: text("jurisdiction_code").notNull(),
+		taxResidencyStatus: text("tax_residency_status").notNull(),
+		nationalityCountryCode: text("nationality_country_code").notNull(),
+		expatriate: boolean("expatriate").notNull().default(false),
+		minimumWageZone: text("minimum_wage_zone"),
+		taxFileNumber: text("tax_file_number"),
+		employeeProvidentFundNumber: text("employee_provident_fund_number"),
+		socialSecurityNumber: text("social_security_number"),
+		socialInsuranceBookNumber: text("social_insurance_book_number"),
+		dependantCount: integer("dependant_count").notNull().default(0),
+		reliefDeclarationVersion: text("relief_declaration_version").notNull(),
+		reliefDeclarations: jsonb("relief_declarations").notNull(),
+		effectiveFrom: date("effective_from").notNull(),
+		effectiveTo: date("effective_to"),
+		status: text("status").notNull().default("active"),
+		supersedesStatutoryProfileId: uuid("supersedes_statutory_profile_id"),
+		createIdempotencyKey: text("create_idempotency_key").notNull(),
+		createRequestFingerprint: text("create_request_fingerprint").notNull(),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_statutory_profile_org_id_idx").on(t.organizationId, t.id),
+		index("hr_statutory_profile_org_employee_idx").on(
+			t.organizationId,
+			t.employeeId,
+			t.effectiveFrom,
+		),
+		unique("hr_statutory_profile_org_id_uidx").on(t.organizationId, t.id),
+		uniqueIndex("hr_statutory_profile_org_create_idempotency_uidx").on(
+			t.organizationId,
+			t.createIdempotencyKey,
+		),
+		uniqueIndex("hr_statutory_profile_org_employee_open_uidx")
+			.on(t.organizationId, t.employeeId)
+			.where(sql`${t.effectiveTo} IS NULL AND ${t.status} = 'active'`),
+		foreignKey({
+			columns: [t.organizationId, t.employeeId],
+			foreignColumns: [hrEmployee.organizationId, hrEmployee.id],
+			name: "hr_statutory_profile_org_employee_fk",
+		}),
+		check(
+			"hr_statutory_profile_jurisdiction_check",
+			sql`${t.jurisdictionCode} IN ('MY', 'VN')`,
+		),
+		check(
+			"hr_statutory_profile_residency_check",
+			sql`${t.taxResidencyStatus} IN ('resident', 'non_resident')`,
+		),
+		check(
+			"hr_statutory_profile_status_check",
+			sql`${t.status} IN ('active', 'superseded')`,
+		),
+		check(
+			"hr_statutory_profile_minimum_wage_zone_check",
+			sql`${t.minimumWageZone} IS NULL OR (${t.jurisdictionCode} = 'VN' AND ${t.minimumWageZone} IN ('I', 'II', 'III', 'IV'))`,
+		),
+		check(
+			"hr_statutory_profile_dependant_count_check",
+			sql`${t.dependantCount} >= 0`,
+		),
+		check(
+			"hr_statutory_profile_date_range_check",
+			sql`${t.effectiveTo} IS NULL OR ${t.effectiveTo} >= ${t.effectiveFrom}`,
+		),
+		check(
+			"hr_statutory_profile_supersession_check",
+			sql`(${t.status} = 'superseded' AND ${t.effectiveTo} IS NOT NULL) OR ${t.status} = 'active'`,
+		),
+	],
+);
+
+/** Prior-employer year-to-date figures for a mid-year joiner's hire year. */
+export const hrPriorEmployerYtd = pgTable(
+	"hr_prior_employer_ytd",
+	{
+		id: uuid("id").primaryKey().defaultRandom(),
+		organizationId: text("organization_id").notNull(),
+		employeeId: uuid("employee_id").notNull(),
+		jurisdictionCode: text("jurisdiction_code").notNull(),
+		taxYear: integer("tax_year").notNull(),
+		priorEmployerName: text("prior_employer_name"),
+		grossAmount: text("gross_amount").notNull(),
+		taxWithheldAmount: text("tax_withheld_amount").notNull(),
+		statutoryContributionAmount: text(
+			"statutory_contribution_amount",
+		).notNull(),
+		currencyCode: text("currency_code").notNull(),
+		recordedOn: date("recorded_on").notNull(),
+		createIdempotencyKey: text("create_idempotency_key").notNull(),
+		createRequestFingerprint: text("create_request_fingerprint").notNull(),
+		version: integer("version").notNull().default(1),
+		createdBy: text("created_by").notNull(),
+		updatedBy: text("updated_by").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => [
+		index("hr_prior_employer_ytd_org_id_idx").on(t.organizationId, t.id),
+		index("hr_prior_employer_ytd_org_employee_idx").on(
+			t.organizationId,
+			t.employeeId,
+			t.taxYear,
+		),
+		unique("hr_prior_employer_ytd_org_id_uidx").on(t.organizationId, t.id),
+		uniqueIndex("hr_prior_employer_ytd_org_create_idempotency_uidx").on(
+			t.organizationId,
+			t.createIdempotencyKey,
+		),
+		uniqueIndex("hr_prior_employer_ytd_org_employee_year_uidx").on(
+			t.organizationId,
+			t.employeeId,
+			t.taxYear,
+			t.jurisdictionCode,
+		),
+		foreignKey({
+			columns: [t.organizationId, t.employeeId],
+			foreignColumns: [hrEmployee.organizationId, hrEmployee.id],
+			name: "hr_prior_employer_ytd_org_employee_fk",
+		}),
+		check(
+			"hr_prior_employer_ytd_jurisdiction_check",
+			sql`${t.jurisdictionCode} IN ('MY', 'VN')`,
+		),
+		check(
+			"hr_prior_employer_ytd_tax_year_check",
+			sql`${t.taxYear} BETWEEN 1900 AND 9999`,
+		),
+		check(
+			"hr_prior_employer_ytd_currency_check",
+			sql`char_length(${t.currencyCode}) = 3`,
+		),
+	],
+);

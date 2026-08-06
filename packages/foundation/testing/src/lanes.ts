@@ -165,6 +165,22 @@ const TESTING_LANE_DEFINITIONS = [
 		hookTimeoutMs: 90_000,
 	},
 	{
+		id: "payroll-parity",
+		runner: "vitest",
+		owner: "testing",
+		controlFile: "testing/vitest.payroll-parity.config.ts",
+		rootCommand: "pnpm test:payroll:parity",
+		packageCommands: ["pnpm --filter @afenda/payroll test:parity"],
+		include: [
+			"packages/erp/payroll/__tests__/failure-injection/**/*.test.ts",
+		],
+		cache: "uncached",
+		requiresDatabase: true,
+		requiresBrowser: false,
+		timeoutMs: 30_000,
+		hookTimeoutMs: 90_000,
+	},
+	{
 		id: "master-data-parity",
 		runner: "vitest",
 		owner: "testing",

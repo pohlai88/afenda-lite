@@ -159,7 +159,7 @@ describe("Canonical Human Resources operation registry", () => {
 			HUMAN_RESOURCES_REGISTERED_OPERATION_DEFINITIONS.filter(
 				(definition) => definition.sensitivity !== null,
 			);
-		expect(sensitiveDefinitions).toHaveLength(278);
+		expect(sensitiveDefinitions).toHaveLength(284);
 		expect(new Set(HUMAN_RESOURCES_SENSITIVE_OPERATION_IDS)).toEqual(
 			new Set(sensitiveDefinitions.map(({ id }) => id)),
 		);

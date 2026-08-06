@@ -282,6 +282,7 @@ import {
 	getSession as getSessionInternal,
 	getShiftAssignment as getShiftAssignmentInternal,
 	getShift as getShiftInternal,
+	getStatutoryProfile as getStatutoryProfileInternal,
 	getSuccessionPlanById as getSuccessionPlanByIdInternal,
 	getTalentProfileByEmployee as getTalentProfileByEmployeeInternal,
 	getTermination as getTerminationInternal,
@@ -301,6 +302,7 @@ import {
 	issueInterimEmployeeMeasure as issueInterimEmployeeMeasureInternal,
 	issueOffer as issueOfferInternal,
 	issuePolicyAcknowledgementRequirement as issuePolicyAcknowledgementRequirementInternal,
+	liftEmployeeDataRestriction as liftEmployeeDataRestrictionInternal,
 	listActiveImprovementPlans as listActiveImprovementPlansInternal,
 	listApplicationStatusHistory as listApplicationStatusHistoryInternal,
 	listApplications as listApplicationsInternal,
@@ -365,6 +367,7 @@ import {
 	listPersonContacts as listPersonContactsInternal,
 	listPersonIdentifiers as listPersonIdentifiersInternal,
 	listPositions as listPositionsInternal,
+	listPriorEmployerYtd as listPriorEmployerYtdInternal,
 	listProbationAssessments as listProbationAssessmentsInternal,
 	listProbationReviewsByEmployment as listProbationReviewsByEmploymentInternal,
 	listRequisitions as listRequisitionsInternal,
@@ -375,6 +378,7 @@ import {
 	listShiftAssignments as listShiftAssignmentsInternal,
 	listShiftBreaks as listShiftBreaksInternal,
 	listShifts as listShiftsInternal,
+	listStatutoryProfiles as listStatutoryProfilesInternal,
 	listSuccessionCandidates as listSuccessionCandidatesInternal,
 	listSuccessionPlans as listSuccessionPlansInternal,
 	listTalentPoolMembers as listTalentPoolMembersInternal,
@@ -434,6 +438,7 @@ import {
 	recordOnboardingEquipmentHandoff as recordOnboardingEquipmentHandoffInternal,
 	recordOnboardingOrientation as recordOnboardingOrientationInternal,
 	recordOvertimeActual as recordOvertimeActualInternal,
+	recordPriorEmployerYtd as recordPriorEmployerYtdInternal,
 	recordProbationAssessment as recordProbationAssessmentInternal,
 	recordProbationOutcome as recordProbationOutcomeInternal,
 	recordTalentProfileAssessment as recordTalentProfileAssessmentInternal,
@@ -479,6 +484,7 @@ import {
 	resolveEmploymentCalendar as resolveEmploymentCalendarInternal,
 	resolvePrimaryManager as resolvePrimaryManagerInternal,
 	resolveTimePolicy as resolveTimePolicyInternal,
+	restrictEmployeeData as restrictEmployeeDataInternal,
 	retireCompetency as retireCompetencyInternal,
 	retireDocumentRequirement as retireDocumentRequirementInternal,
 	retirePersonContact as retirePersonContactInternal,
@@ -549,6 +555,7 @@ import {
 	updateTalentProfile as updateTalentProfileInternal,
 	updateTimesheetEntry as updateTimesheetEntryInternal,
 	updateWorkCalendar as updateWorkCalendarInternal,
+	upsertStatutoryProfile as upsertStatutoryProfileInternal,
 	verifyEmployeeDocument as verifyEmployeeDocumentInternal,
 	verifyOvertimeRequest as verifyOvertimeRequestInternal,
 	verifyWorkEligibility as verifyWorkEligibilityInternal,
@@ -1372,6 +1379,9 @@ export const getShift = bindHumanResourcesCapability(getShiftInternal);
 export const getShiftAssignment = bindHumanResourcesCapability(
 	getShiftAssignmentInternal,
 );
+export const getStatutoryProfile = bindHumanResourcesCapability(
+	getStatutoryProfileInternal,
+);
 export const getSuccessionPlanById = bindHumanResourcesCapability(
 	getSuccessionPlanByIdInternal,
 );
@@ -1424,6 +1434,9 @@ export const issueInterimEmployeeMeasure = bindHumanResourcesCapability(
 export const issueOffer = bindHumanResourcesCapability(issueOfferInternal);
 export const issuePolicyAcknowledgementRequirement =
 	bindHumanResourcesCapability(issuePolicyAcknowledgementRequirementInternal);
+export const liftEmployeeDataRestriction = bindHumanResourcesCapability(
+	liftEmployeeDataRestrictionInternal,
+);
 export const listActiveImprovementPlans = bindHumanResourcesCapability(
 	listActiveImprovementPlansInternal,
 );
@@ -1609,6 +1622,9 @@ export const listPersonIdentifiers = bindHumanResourcesCapability(
 export const listPositions = bindHumanResourcesCapability(
 	listPositionsInternal,
 );
+export const listPriorEmployerYtd = bindHumanResourcesCapability(
+	listPriorEmployerYtdInternal,
+);
 export const listProbationAssessments = bindHumanResourcesCapability(
 	listProbationAssessmentsInternal,
 );
@@ -1635,6 +1651,9 @@ export const listShiftBreaks = bindHumanResourcesCapability(
 	listShiftBreaksInternal,
 );
 export const listShifts = bindHumanResourcesCapability(listShiftsInternal);
+export const listStatutoryProfiles = bindHumanResourcesCapability(
+	listStatutoryProfilesInternal,
+);
 export const listSuccessionCandidates = bindHumanResourcesCapability(
 	listSuccessionCandidatesInternal,
 );
@@ -1812,6 +1831,9 @@ export const recordOnboardingOrientation = bindHumanResourcesCapability(
 export const recordOvertimeActual = bindHumanResourcesCapability(
 	recordOvertimeActualInternal,
 );
+export const recordPriorEmployerYtd = bindHumanResourcesCapability(
+	recordPriorEmployerYtdInternal,
+);
 export const recordProbationAssessment = bindHumanResourcesCapability(
 	recordProbationAssessmentInternal,
 );
@@ -1946,6 +1968,9 @@ export const resolvePrimaryManager = bindHumanResourcesCapability(
 );
 export const resolveTimePolicy = bindHumanResourcesCapability(
 	resolveTimePolicyInternal,
+);
+export const restrictEmployeeData = bindHumanResourcesCapability(
+	restrictEmployeeDataInternal,
 );
 export const retireCompetency = bindHumanResourcesCapability(
 	retireCompetencyInternal,
@@ -2148,6 +2173,9 @@ export const updateTimesheetEntry = bindHumanResourcesCapability(
 );
 export const updateWorkCalendar = bindHumanResourcesCapability(
 	updateWorkCalendarInternal,
+);
+export const upsertStatutoryProfile = bindHumanResourcesCapability(
+	upsertStatutoryProfileInternal,
 );
 export const verifyEmployeeDocument = bindHumanResourcesCapability(
 	verifyEmployeeDocumentInternal,

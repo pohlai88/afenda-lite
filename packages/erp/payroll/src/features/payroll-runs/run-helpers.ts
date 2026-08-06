@@ -12,6 +12,13 @@ import type { PayrollRunId } from "../../kernel/identity/brands";
 import type { PayrollRunsStore } from "./runs.store";
 import { assertPayrollRunTransition } from "./transitions";
 
+// Single semantic owner for the optimistic-lock version-conflict wording, so
+// callers that need to short-circuit before delegating to the store's own
+// `updateRunWithVersion` version check (see `assertExpectedVersion` in
+// `kernel/execution/concurrency.ts`) surface the identical message.
+export const PAYROLL_RUN_VERSION_CONFLICT_MESSAGE =
+	"The request conflicts with current state";
+
 export async function loadPayrollRun(
 	store: PayrollRunsStore,
 	input: { organizationId: string; runId: PayrollRunId },

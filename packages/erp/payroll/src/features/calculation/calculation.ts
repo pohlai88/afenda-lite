@@ -55,3 +55,4 @@ export { verifyAccountingIdentities } from "./calculation-identities";
 export { normalizeCalcOutput } from "./calculation-normalize";
 export { calculateEmployeePayroll } from "./calculation-pipeline";
 export { canonicalizeSnapshot, hashSnapshot } from "./calculation-snapshot";
+export { payrollEmployeeCalcSnapshotSchema } from "./calculation-snapshot.schema";

@@ -62,12 +62,20 @@ describe("payroll production hardening", () => {
 		expect(serialized).not.toContain("employee-sensitive-value");
 	});
 
-	it("fails the production-readiness claim while only synthetic statutory logic exists", () => {
+	it("fails the production-readiness claim until a jurisdiction pack is reviewer-approved", () => {
 		expectTypeOf<
 			Parameters<typeof createProductionPayrollRunCalculator>[0]
 		>().not.toHaveProperty("allowSyntheticCalculators");
 		expect(getStatutoryCalculatorReadiness()).toEqual([
+			{ calculatorId: "my.eis.v1", status: "awaiting_review" },
+			{ calculatorId: "my.epf.v1", status: "awaiting_review" },
+			{ calculatorId: "my.pcb.v1", status: "awaiting_review" },
+			{ calculatorId: "my.socso.v1", status: "awaiting_review" },
 			{ calculatorId: "synth.v1", status: "synthetic_only" },
+			{ calculatorId: "vn.hi.v1", status: "awaiting_review" },
+			{ calculatorId: "vn.pit.v1", status: "awaiting_review" },
+			{ calculatorId: "vn.si.v1", status: "awaiting_review" },
+			{ calculatorId: "vn.ui.v1", status: "awaiting_review" },
 		]);
 		expect(isStatutoryProductionReady()).toBe(false);
 	});

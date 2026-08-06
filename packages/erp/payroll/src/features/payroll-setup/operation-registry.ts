@@ -67,6 +67,13 @@ export const PAYROLL_SETUP_COMMANDS = definePayrollOperationRegistry({
 		permission: PAYROLL_PERMISSION_SETUP_MANAGE,
 		publicName: "closePeriod",
 	},
+	lockPeriodInputs: {
+		id: "payroll.setup.period.lock-inputs",
+		kind: "command",
+		owner: OWNER,
+		permission: PAYROLL_PERMISSION_SETUP_MANAGE,
+		publicName: "lockPeriodInputs",
+	},
 	createEarningRule: {
 		id: "payroll.setup.earning-rule.create",
 		kind: "command",

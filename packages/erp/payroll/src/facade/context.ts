@@ -1,6 +1,11 @@
 import { createDrizzlePayrollStore } from "../composition/adapters/drizzle";
 import { createProductionMutationPorts } from "../composition/production/ports";
 import { createProductionPayrollRunCalculator } from "../features/calculation/production-run-calculator";
+import {
+	createProductionPayrollJobChunkExecutor,
+	createProductionPayrollJobEmployeeDirectory,
+} from "../features/payroll-jobs/production-job-ports";
+import { createPayrollHistoryYearToDateCapability } from "../features/statutory-rules/year-to-date-capability";
 import { createAcceptedWorkforceInputPort } from "../features/workforce-ingress/accepted-workforce-input-port";
 import type { PayrollCommandOptions } from "../kernel/execution/command-options";
 import type { PayrollCapabilityComposition } from "./contracts";
@@ -25,8 +30,17 @@ export function createPayrollCapabilityOptions(
 	composition: PayrollCapabilityComposition,
 ): PayrollCapabilityOptions {
 	const store = createDrizzlePayrollStore();
-	const workforce =
-		composition.workforce ?? createAcceptedWorkforceInputPort(store);
+	const workforce = createAcceptedWorkforceInputPort(store);
+	const ports = createProductionMutationPorts();
+	const yearToDate = createPayrollHistoryYearToDateCapability(store);
+	const calculator = createProductionPayrollRunCalculator({
+		store,
+		employees: workforce,
+		currency: composition.currency,
+		statutory: composition.statutory,
+		clock: composition.clock,
+		yearToDate,
+	});
 	const context = Object.freeze({
 		[PAYROLL_CONTEXT]: true,
 	} satisfies PayrollCapabilityOptions);
@@ -34,15 +48,29 @@ export function createPayrollCapabilityOptions(
 	internalOptions.set(context, {
 		authorization: composition.authorization,
 		employees: workforce,
+		clock: composition.clock,
+		currency: composition.currency,
+		statutory: composition.statutory,
+		yearToDate,
 		...(composition.observability === undefined
 			? {}
 			: { observability: composition.observability }),
+		...(composition.privacy === undefined
+			? {}
+			: { privacy: composition.privacy }),
+		jobChunkExecutor:
+			composition.jobChunkExecutor ??
+			createProductionPayrollJobChunkExecutor({
+				store,
+				calculator,
+				ports,
+			}),
+		jobEmployees:
+			composition.jobEmployees ??
+			createProductionPayrollJobEmployeeDirectory(store),
 		store,
-		ports: createProductionMutationPorts(),
-		calculator: createProductionPayrollRunCalculator({
-			store,
-			employees: workforce,
-		}),
+		ports,
+		calculator,
 	});
 
 	return context;
