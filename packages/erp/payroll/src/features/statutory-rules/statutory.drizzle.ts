@@ -200,4 +200,36 @@ export const drizzleStatutoryMethods: PayrollStatutoryStore = {
 			);
 		}
 	},
+
+	async listStatutoryResultsForEmployeeRuns(input) {
+		if (input.runIds.length === 0) {
+			return errorResult.ok([]);
+		}
+		try {
+			const rows = await afendaDatabase.client
+				.select()
+				.from(payrollStatutoryResult)
+				.where(
+					and(
+						eq(payrollStatutoryResult.organizationId, input.organizationId),
+						eq(payrollStatutoryResult.employeeId, input.employeeId),
+						inArray(payrollStatutoryResult.runId, [...input.runIds]),
+					),
+				);
+			const results: PayrollStatutoryResult[] = [];
+			for (const row of rows) {
+				const mapped = mapStatutoryResultRow(row);
+				if (!mapped.ok) {
+					return mapped;
+				}
+				results.push(mapped.data);
+			}
+			return errorResult.ok(results);
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to list payroll statutory results for employee runs",
+			);
+		}
+	},
 };

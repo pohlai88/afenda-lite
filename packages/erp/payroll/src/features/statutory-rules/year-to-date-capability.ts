@@ -26,17 +26,19 @@ export interface PayrollYearToDateStore {
 	listPeriodsForOrganization: (input: {
 		organizationId: string;
 	}) => Promise<Result<PayrollPeriod[]>>;
-	listResultLinesForRun: (input: {
+	listResultLinesForEmployeeRuns: (input: {
 		organizationId: string;
-		runId: PayrollRunId;
+		employeeId: string;
+		runIds: readonly PayrollRunId[];
 	}) => Promise<Result<PayrollResultLine[]>>;
 	listRunsForPeriod: (input: {
 		organizationId: string;
 		periodId: string;
 	}) => Promise<Result<PayrollRun[]>>;
-	listStatutoryResultsForRun: (input: {
+	listStatutoryResultsForEmployeeRuns: (input: {
 		organizationId: string;
-		runId: PayrollRunId;
+		employeeId: string;
+		runIds: readonly PayrollRunId[];
 	}) => Promise<Result<PayrollStatutoryResult[]>>;
 }
 
@@ -183,40 +185,6 @@ function mergePriorEmployerYtd(
 	});
 }
 
-function mergeTotals(
-	left: PayrollYearToDateTotals,
-	right: PayrollYearToDateTotals,
-): PayrollYearToDateTotals {
-	return {
-		currencyCode: left.currencyCode,
-		employeeStatutory: formatScaledToDecimal(
-			addScaled(
-				parseDecimalToScaled(left.employeeStatutory),
-				parseDecimalToScaled(right.employeeStatutory),
-			),
-		),
-		employerStatutory: formatScaledToDecimal(
-			addScaled(
-				parseDecimalToScaled(left.employerStatutory),
-				parseDecimalToScaled(right.employerStatutory),
-			),
-		),
-		gross: formatScaledToDecimal(
-			addScaled(
-				parseDecimalToScaled(left.gross),
-				parseDecimalToScaled(right.gross),
-			),
-		),
-		taxYear: left.taxYear,
-		taxableBase: formatScaledToDecimal(
-			addScaled(
-				parseDecimalToScaled(left.taxableBase),
-				parseDecimalToScaled(right.taxableBase),
-			),
-		),
-	};
-}
-
 /**
  * The one fail-closed consumer seam for year-to-date facts.
  *
@@ -281,50 +249,58 @@ export function createPayrollHistoryYearToDateCapability(
 				);
 			}
 
-			const histories = await Promise.all(
-				finalizedRuns.map(async (run) => {
-					const runId = parsePayrollRunId(run.id);
-					if (!runId.ok) {
-						return runId;
-					}
-					const [lines, statutoryResults] = await Promise.all([
-						store.listResultLinesForRun({
-							organizationId: input.organizationId,
-							runId: runId.data,
-						}),
-						store.listStatutoryResultsForRun({
-							organizationId: input.organizationId,
-							runId: runId.data,
-						}),
-					]);
-					if (!lines.ok) {
-						return lines;
-					}
-					if (!statutoryResults.ok) {
-						return statutoryResults;
-					}
-					return sumEmployeeHistory({
-						currencyCode: input.currencyCode,
-						employeeId: input.employeeId,
-						lines: lines.data,
-						statutoryResults: statutoryResults.data,
-						taxYear: input.taxYear,
-					});
-				}),
-			);
-
-			let totals = emptyPayrollYearToDateTotals({
-				currencyCode: input.currencyCode,
-				taxYear: input.taxYear,
-			});
-			for (const history of histories) {
-				if (!history.ok) {
-					return history;
+			const runIds: PayrollRunId[] = [];
+			for (const finalizedRun of finalizedRuns) {
+				const runId = parsePayrollRunId(finalizedRun.id);
+				if (!runId.ok) {
+					return runId;
 				}
-				totals = mergeTotals(totals, history.data);
+				runIds.push(runId.data);
 			}
 
-			return mergePriorEmployerYtd(totals, input.priorEmployerYtd);
+			if (runIds.length === 0) {
+				return mergePriorEmployerYtd(
+					emptyPayrollYearToDateTotals({
+						currencyCode: input.currencyCode,
+						taxYear: input.taxYear,
+					}),
+					input.priorEmployerYtd,
+				);
+			}
+
+			// Two batched reads for the employee across all eligible finalized runs
+			// (not N×2 full-run loads).
+			const [lines, statutoryResults] = await Promise.all([
+				store.listResultLinesForEmployeeRuns({
+					organizationId: input.organizationId,
+					employeeId: input.employeeId,
+					runIds,
+				}),
+				store.listStatutoryResultsForEmployeeRuns({
+					organizationId: input.organizationId,
+					employeeId: input.employeeId,
+					runIds,
+				}),
+			]);
+			if (!lines.ok) {
+				return lines;
+			}
+			if (!statutoryResults.ok) {
+				return statutoryResults;
+			}
+
+			const history = sumEmployeeHistory({
+				currencyCode: input.currencyCode,
+				employeeId: input.employeeId,
+				lines: lines.data,
+				statutoryResults: statutoryResults.data,
+				taxYear: input.taxYear,
+			});
+			if (!history.ok) {
+				return history;
+			}
+
+			return mergePriorEmployerYtd(history.data, input.priorEmployerYtd);
 		},
 	};
 }

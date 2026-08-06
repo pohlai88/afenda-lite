@@ -2,6 +2,7 @@ import {
 	database as afendaDatabase,
 	and,
 	eq,
+	inArray,
 	payrollResultLine,
 	payrollRunEmployee,
 } from "@afenda/db";
@@ -345,6 +346,38 @@ export const drizzleOutputsMethods: PayrollOutputsStore = {
 			return mapPersistenceFailure(
 				error,
 				"Failed to list payroll result lines",
+			);
+		}
+	},
+
+	async listResultLinesForEmployeeRuns(input) {
+		if (input.runIds.length === 0) {
+			return errorResult.ok([]);
+		}
+		try {
+			const rows = await afendaDatabase.client
+				.select()
+				.from(payrollResultLine)
+				.where(
+					and(
+						eq(payrollResultLine.organizationId, input.organizationId),
+						eq(payrollResultLine.employeeId, input.employeeId),
+						inArray(payrollResultLine.runId, [...input.runIds]),
+					),
+				);
+			const resultLines: PayrollResultLine[] = [];
+			for (const row of rows) {
+				const mapped = mapResultLineRow(row);
+				if (!mapped.ok) {
+					return mapped;
+				}
+				resultLines.push(mapped.data);
+			}
+			return errorResult.ok(resultLines);
+		} catch (error) {
+			return mapPersistenceFailure(
+				error,
+				"Failed to list payroll result lines for employee runs",
 			);
 		}
 	},

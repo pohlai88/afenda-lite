@@ -1009,12 +1009,7 @@
 			"target": 0
 		},
 		{
-			"items": [
-				{
-					"evidence": "src/features/statutory-rules/year-to-date-capability.ts:291 loads result lines and statutory results once per finalized run per employee — N x M reads with no memoization or batch (D0 review; target: batched year-to-date reads)",
-					"file": "src/features/statutory-rules/year-to-date-capability.ts"
-				}
-			],
+			"items": [],
 			"key": "ytd-fanout-unbatched",
 			"target": 0
 		}

@@ -22,6 +22,13 @@ export interface PayrollOutputsStore {
 		ports: MutationPorts,
 	) => Promise<Result<{ deleted: true }>>;
 
+	/** One read across many runs for a single employee (year-to-date history). */
+	listResultLinesForEmployeeRuns: (input: {
+		organizationId: string;
+		employeeId: string;
+		runIds: readonly PayrollRunId[];
+	}) => Promise<Result<PayrollResultLine[]>>;
+
 	listResultLinesForRun: (input: {
 		organizationId: string;
 		runId: PayrollRunId;

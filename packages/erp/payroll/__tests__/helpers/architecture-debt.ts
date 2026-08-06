@@ -21,10 +21,11 @@ import { buildConsumerInventory } from "./consumer-inventory";
  *  - `settlement-transition-audit-gap` (closed — final-settlement create /
  *    calculate / finalize persist with the run audit + outbox CTE and emit
  *    settlement lifecycle events drained by B6)
- *  - `ytd-fanout-unbatched` (D0 review — the history year-to-date capability
- *    loads result lines and statutory results per finalized run, per employee,
- *    so a run of M employees over N finalized runs issues N x M store reads;
- *    target is a memoized/batched read)
+ *  - `ytd-fanout-unbatched` (closed — history year-to-date issues two batched
+ *    reads, `listResultLinesForEmployeeRuns` +
+ *    `listStatutoryResultsForEmployeeRuns`, across every eligible finalized
+ *    run instead of N x 2 per-run loads; the per-run detector stays live so a
+ *    regression re-raises the item)
  * The mechanical categories are computed from the real source tree, same as
  * HR; HR's package-specific categories (`feature-composite-store`,
  * `adapter-composite-store`, `retired-path-reading-test`) reference HR-only
@@ -338,11 +339,19 @@ function narrativeDebtItems(
 	packageRoot: string,
 ): readonly MutableDebtItem[] {
 	if (key === "ytd-fanout-unbatched") {
+		// Live detector, not a hand-cleared entry: the capability is only clear of
+		// this debt for as long as it stops reading result lines / statutory
+		// results one finalized run at a time. Reintroducing a per-run read here
+		// re-raises the item and fails the target-zero assertion.
 		const file = "src/features/statutory-rules/year-to-date-capability.ts";
 		const content = readFileSync(path.join(packageRoot, file), "utf8");
 		const lineIndex = content
 			.split("\n")
-			.findIndex((line) => line.includes("store.listResultLinesForRun({"));
+			.findIndex(
+				(line) =>
+					line.includes("store.listResultLinesForRun({") ||
+					line.includes("store.listStatutoryResultsForRun({"),
+			);
 		if (lineIndex === -1) {
 			return [];
 		}

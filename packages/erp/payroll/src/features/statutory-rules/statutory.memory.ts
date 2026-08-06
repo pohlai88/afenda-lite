@@ -123,5 +123,19 @@ export function createMemoryStatutoryMethods(input: {
 			);
 			return errorResult.ok(results.map(cloneStatutoryResult));
 		},
+
+		async listStatutoryResultsForEmployeeRuns(listInput) {
+			if (listInput.runIds.length === 0) {
+				return errorResult.ok([]);
+			}
+			const runIdSet = new Set(listInput.runIds);
+			const results = Array.from(statutory.statutoryResults.values()).filter(
+				(result) =>
+					result.organizationId === listInput.organizationId &&
+					result.employeeId === listInput.employeeId &&
+					runIdSet.has(result.runId),
+			);
+			return errorResult.ok(results.map(cloneStatutoryResult));
+		},
 	};
 }

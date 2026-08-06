@@ -227,5 +227,19 @@ export function createMemoryOutputsMethods(input: {
 			);
 			return errorResult.ok(resultLines.map(cloneResultLine));
 		},
+
+		async listResultLinesForEmployeeRuns(listInput) {
+			if (listInput.runIds.length === 0) {
+				return errorResult.ok([]);
+			}
+			const runIdSet = new Set(listInput.runIds);
+			const resultLines = Array.from(outputs.resultLines.values()).filter(
+				(line) =>
+					line.organizationId === listInput.organizationId &&
+					line.employeeId === listInput.employeeId &&
+					runIdSet.has(line.runId),
+			);
+			return errorResult.ok(resultLines.map(cloneResultLine));
+		},
 	};
 }

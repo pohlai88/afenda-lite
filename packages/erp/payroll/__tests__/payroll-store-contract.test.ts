@@ -1,13 +1,21 @@
+import type { Result } from "@afenda/errors";
 import { testingDatabase } from "@afenda/testing";
 import { describe, expect, it } from "vitest";
+import type {
+	PayrollPayGroup,
+	PayrollPeriod,
+} from "../src/kernel/contracts/projected-types";
+import type { PayrollRunId } from "../src/kernel/identity/brands";
 import {
 	parsePayrollEarningRuleId,
 	parsePayrollResultLineId,
 	parsePayrollRunEmployeeId,
+	parsePayrollStatutoryResultId,
 } from "../src/kernel/identity/brands";
 
 import {
 	createPayrollParityHarness,
+	type PayrollParityHarness,
 	type PayrollStoreAdapter,
 	seedDraftRun,
 	seedPayrollRunChain,
@@ -43,6 +51,140 @@ const EMPTY_REVERSAL_PROJECTION = {
 		},
 	],
 } as const;
+
+/** Stable, collision-free ids for the year-to-date batched-read contract test. */
+function ytdUuid(prefix: string, sequence: number, index: number): string {
+	return `${prefix.repeat(8)}-000${sequence}-4000-8000-00000000000${index}`;
+}
+
+function unwrapId<T>(parsed: Result<T>): T {
+	if (!parsed.ok) {
+		throw new Error(`expected a valid payroll id: ${parsed.message}`);
+	}
+	return parsed.data;
+}
+
+/**
+ * Seeds one run carrying result lines and statutory results for each employee,
+ * so the batched year-to-date reads have several runs to span.
+ */
+async function seedFinalizedRunOutputs(input: {
+	employeeIds: readonly string[];
+	harness: PayrollParityHarness;
+	payGroupId: PayrollPayGroup["id"];
+	periodId: PayrollPeriod["id"];
+	sequence: number;
+}): Promise<PayrollRunId> {
+	const { harness, sequence } = input;
+	const { adapter } = harness;
+	const created = await harness.store.createRun(
+		{
+			organizationId: harness.organizationId,
+			payGroupId: input.payGroupId,
+			periodId: input.periodId,
+			runType: "regular",
+			sequence,
+			idempotencyKey: `idem-run-ytd-${sequence}-${adapter}`,
+			createRequestFingerprint: `fp-run-ytd-${sequence}`,
+			createdBy: harness.actorUserId,
+			correlationId: `corr-run-ytd-${sequence}-${adapter}`,
+		},
+		harness.ports,
+	);
+	if (!created.ok) {
+		throw new Error(`seed year-to-date run failed: ${created.message}`);
+	}
+
+	const entries = input.employeeIds.map((employeeId, employeeIndex) => ({
+		employeeId,
+		resultLineId: unwrapId(
+			parsePayrollResultLineId(ytdUuid("b", sequence, employeeIndex + 1)),
+		),
+		runEmployeeId: unwrapId(
+			parsePayrollRunEmployeeId(ytdUuid("a", sequence, employeeIndex + 1)),
+		),
+		statutoryResultId: unwrapId(
+			parsePayrollStatutoryResultId(ytdUuid("c", sequence, employeeIndex + 1)),
+		),
+	}));
+
+	const persisted = await harness.store.replaceRunCalculationOutputs(
+		{
+			organizationId: harness.organizationId,
+			runId: created.data.id,
+			runEmployees: entries.map((entry) => ({
+				id: entry.runEmployeeId,
+				employeeId: entry.employeeId,
+				assignmentId: null,
+				currencyCode: "USD",
+				gross: "1000",
+				employeeDeductions: "0",
+				employeeStatutory: "100",
+				employerCost: "50",
+				net: "900",
+				snapshotJson: { synthetic: true },
+				snapshotHash: `hash-ytd-${sequence}-${entry.employeeId}`,
+				calculationVersion: "payroll.calc.v1",
+				status: "calculated" as const,
+			})),
+			resultLines: entries.map((entry, index) => ({
+				id: entry.resultLineId,
+				runEmployeeId: entry.runEmployeeId,
+				employeeId: entry.employeeId,
+				lineKind: "earning" as const,
+				code: "BASE_COMPENSATION",
+				ruleCode: "BASE_COMPENSATION",
+				ruleVersion: "snapshot",
+				ruleKind: "none" as const,
+				amount: "1000",
+				currencyCode: "USD",
+				sourceType: "employee_snapshot" as const,
+				sourceId: entry.employeeId,
+				sequence: index + 1,
+				traceRef: `${index + 1}`,
+			})),
+			actorUserId: harness.actorUserId,
+			correlationId: `corr-ytd-outputs-${sequence}-${adapter}`,
+		},
+		harness.ports,
+	);
+	if (!persisted.ok) {
+		throw new Error(
+			`seed year-to-date calculation outputs failed: ${persisted.message}`,
+		);
+	}
+
+	const statutory = await harness.store.replaceStatutoryResultsForRun(
+		{
+			organizationId: harness.organizationId,
+			runId: created.data.id,
+			results: entries.map((entry) => ({
+				id: entry.statutoryResultId,
+				runEmployeeId: entry.runEmployeeId,
+				employeeId: entry.employeeId,
+				jurisdictionCode: "SYNTH",
+				ruleCode: "SYNTH_TAX",
+				ruleVersion: "1",
+				calculatorId: "synth.v1",
+				baseAmount: "1000",
+				employeeAmount: "100",
+				employerAmount: "50",
+				currencyCode: "USD",
+				configSnapshotJson: { synthetic: true },
+			})),
+			actorUserId: harness.actorUserId,
+			correlationId: `corr-ytd-statutory-${sequence}-${adapter}`,
+		},
+		harness.ports,
+	);
+	if (!statutory.ok) {
+		throw new Error(
+			`seed year-to-date statutory results failed: ${statutory.message}`,
+		);
+	}
+
+	return created.data.id;
+}
 
 function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 	describe(`@afenda/payroll store contract (${adapter})`, () => {
@@ -1507,6 +1649,112 @@ function defineStoreContractSuite(adapter: PayrollStoreAdapter): void {
 				return;
 			}
 			expect(crossOrg.data).toBeNull();
+		});
+
+		it("reads result lines and statutory results for one employee across many runs", async () => {
+			const harness = createPayrollParityHarness(adapter);
+			const seeded = await seedPayrollRunChain(harness);
+			const subjectEmployeeId = `emp-ytd-subject-${adapter}`;
+			const otherEmployeeId = `emp-ytd-other-${adapter}`;
+
+			const employeeIds = [subjectEmployeeId, otherEmployeeId] as const;
+			const runIds: readonly PayrollRunId[] = [
+				await seedFinalizedRunOutputs({
+					employeeIds,
+					harness,
+					payGroupId: seeded.payGroup.id,
+					periodId: seeded.period.id,
+					sequence: 1,
+				}),
+				await seedFinalizedRunOutputs({
+					employeeIds,
+					harness,
+					payGroupId: seeded.payGroup.id,
+					periodId: seeded.period.id,
+					sequence: 2,
+				}),
+			];
+
+			const lines = await harness.store.listResultLinesForEmployeeRuns({
+				organizationId: harness.organizationId,
+				employeeId: subjectEmployeeId,
+				runIds,
+			});
+			expect(lines.ok).toBe(true);
+			if (!lines.ok) {
+				return;
+			}
+			expect(lines.data).toHaveLength(2);
+			expect(
+				lines.data.every((line) => line.employeeId === subjectEmployeeId),
+			).toBe(true);
+			expect([...lines.data].map((line) => line.runId).sort()).toEqual(
+				[...runIds].sort(),
+			);
+
+			const statutoryResults =
+				await harness.store.listStatutoryResultsForEmployeeRuns({
+					organizationId: harness.organizationId,
+					employeeId: subjectEmployeeId,
+					runIds,
+				});
+			expect(statutoryResults.ok).toBe(true);
+			if (!statutoryResults.ok) {
+				return;
+			}
+			expect(statutoryResults.data).toHaveLength(2);
+			expect(
+				statutoryResults.data.every(
+					(result) => result.employeeId === subjectEmployeeId,
+				),
+			).toBe(true);
+
+			const [firstRunId] = runIds;
+			if (firstRunId === undefined) {
+				throw new Error("expected a seeded run id");
+			}
+			const narrowed = await harness.store.listResultLinesForEmployeeRuns({
+				organizationId: harness.organizationId,
+				employeeId: subjectEmployeeId,
+				runIds: [firstRunId],
+			});
+			expect(narrowed.ok).toBe(true);
+			if (narrowed.ok) {
+				expect(narrowed.data).toHaveLength(1);
+				expect(narrowed.data[0]?.runId).toBe(firstRunId);
+			}
+
+			const noRuns = await harness.store.listStatutoryResultsForEmployeeRuns({
+				organizationId: harness.organizationId,
+				employeeId: subjectEmployeeId,
+				runIds: [],
+			});
+			expect(noRuns.ok).toBe(true);
+			if (noRuns.ok) {
+				expect(noRuns.data).toHaveLength(0);
+			}
+
+			const foreignHarness = createPayrollParityHarness(adapter);
+			const crossOrgLines =
+				await foreignHarness.store.listResultLinesForEmployeeRuns({
+					organizationId: foreignHarness.organizationId,
+					employeeId: subjectEmployeeId,
+					runIds,
+				});
+			expect(crossOrgLines.ok).toBe(true);
+			if (crossOrgLines.ok) {
+				expect(crossOrgLines.data).toHaveLength(0);
+			}
+			const crossOrgStatutory =
+				await foreignHarness.store.listStatutoryResultsForEmployeeRuns({
+					organizationId: foreignHarness.organizationId,
+					employeeId: subjectEmployeeId,
+					runIds,
+				});
+			expect(crossOrgStatutory.ok).toBe(true);
+			if (crossOrgStatutory.ok) {
+				expect(crossOrgStatutory.data).toHaveLength(0);
+			}
 		});
 	});
 }

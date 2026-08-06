@@ -11,6 +11,13 @@ import type {
 	PayrollRun,
 	PayrollStatutoryResult,
 } from "../src/kernel/contracts/projected-types";
+import type { PayrollYearToDateTotals } from "../src/kernel/execution/capability-ports";
+import {
+	addScaled,
+	formatScaledToDecimal,
+	parseDecimalToScaled,
+	subScaled,
+} from "../src/kernel/money/money";
 
 const ORGANIZATION_ID = "org-ytd";
 const EMPLOYEE_ID = "emp-ytd";
@@ -20,6 +27,85 @@ const PRIOR_YEAR_PERIOD_ID = "33333333-3333-4333-8333-333333333333";
 const JANUARY_RUN_ID = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const FEBRUARY_RUN_ID = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
 const PRIOR_YEAR_RUN_ID = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
+const MARCH_PERIOD_ID = "55555555-5555-4555-8555-555555555555";
+const MARCH_RUN_ID = "66666666-6666-4666-8666-666666666666";
+
+/**
+ * The retired per-run fan-out, reproduced in the test as the reference the
+ * batched capability must still agree with: one summation per finalized run,
+ * merged field by field, then the hire-year prior-employer merge.
+ */
+function perRunFanOutTotals(input: {
+	currencyCode: string;
+	employeeId: string;
+	linesByRun: ReadonlyMap<string, readonly PayrollResultLine[]>;
+	priorEmployerYtd: readonly HandoffPriorEmployerYtd[];
+	runIds: readonly string[];
+	statutoryByRun: ReadonlyMap<string, readonly PayrollStatutoryResult[]>;
+	taxYear: number;
+}): PayrollYearToDateTotals {
+	let gross = 0n;
+	let taxableBase = 0n;
+	let employeeStatutory = 0n;
+	let employerStatutory = 0n;
+
+	for (const runId of input.runIds) {
+		let runGross = 0n;
+		let runPreTax = 0n;
+		for (const line of input.linesByRun.get(runId) ?? []) {
+			if (line.employeeId !== input.employeeId) {
+				continue;
+			}
+			const amount = parseDecimalToScaled(line.amount);
+			if (line.lineKind === "earning") {
+				runGross = addScaled(runGross, amount);
+			}
+			if (line.lineKind === "pre_tax_deduction") {
+				runPreTax = addScaled(runPreTax, amount);
+			}
+		}
+		for (const result of input.statutoryByRun.get(runId) ?? []) {
+			if (result.employeeId !== input.employeeId) {
+				continue;
+			}
+			employeeStatutory = addScaled(
+				employeeStatutory,
+				parseDecimalToScaled(result.employeeAmount),
+			);
+			employerStatutory = addScaled(
+				employerStatutory,
+				parseDecimalToScaled(result.employerAmount),
+			);
+		}
+		gross = addScaled(gross, runGross);
+		taxableBase = addScaled(taxableBase, subScaled(runGross, runPreTax));
+	}
+
+	for (const record of input.priorEmployerYtd) {
+		if (record.taxYear !== input.taxYear) {
+			continue;
+		}
+		const priorGross = parseDecimalToScaled(record.grossAmount);
+		gross = addScaled(gross, priorGross);
+		taxableBase = addScaled(taxableBase, priorGross);
+		employeeStatutory = addScaled(
+			employeeStatutory,
+			addScaled(
+				parseDecimalToScaled(record.statutoryContributionAmount),
+				parseDecimalToScaled(record.taxWithheldAmount),
+			),
+		);
+	}
+
+	return {
+		currencyCode: input.currencyCode,
+		employeeStatutory: formatScaledToDecimal(employeeStatutory),
+		employerStatutory: formatScaledToDecimal(employerStatutory),
+		gross: formatScaledToDecimal(gross),
+		taxYear: input.taxYear,
+		taxableBase: formatScaledToDecimal(taxableBase),
+	};
+}
 
 function period(input: {
 	id: string;
@@ -199,41 +285,55 @@ describe("createPayrollHistoryYearToDateCapability", () => {
 					}),
 				]);
 			},
-			listResultLinesForRun: ({ runId }) => {
-				if (runId === JANUARY_RUN_ID) {
-					return errorResult.ok([
-						earning({ amount: "3100", runId }),
-						earning({
-							amount: "100",
-							lineKind: "pre_tax_deduction",
-							runId,
-						}),
-						earning({
-							amount: "500",
-							employeeId: "emp-other",
-							runId,
-						}),
-					]);
+			listResultLinesForEmployeeRuns: ({ employeeId, runIds }) => {
+				const lines: PayrollResultLine[] = [];
+				for (const runId of runIds) {
+					if (runId === JANUARY_RUN_ID) {
+						lines.push(
+							earning({ amount: "3100", runId }),
+							earning({
+								amount: "100",
+								lineKind: "pre_tax_deduction",
+								runId,
+							}),
+							earning({
+								amount: "500",
+								employeeId: "emp-other",
+								runId,
+							}),
+						);
+						continue;
+					}
+					lines.push(earning({ amount: "4000", runId }));
 				}
-				return errorResult.ok([earning({ amount: "4000", runId })]);
+				return errorResult.ok(
+					lines.filter((line) => line.employeeId === employeeId),
+				);
 			},
-			listStatutoryResultsForRun: ({ runId }) => {
-				if (runId === JANUARY_RUN_ID) {
-					return errorResult.ok([
+			listStatutoryResultsForEmployeeRuns: ({ employeeId, runIds }) => {
+				const results: PayrollStatutoryResult[] = [];
+				for (const runId of runIds) {
+					if (runId === JANUARY_RUN_ID) {
+						results.push(
+							statutory({
+								employeeAmount: "80",
+								employerAmount: "40",
+								runId,
+							}),
+						);
+						continue;
+					}
+					results.push(
 						statutory({
-							employeeAmount: "80",
-							employerAmount: "40",
+							employeeAmount: "90",
+							employerAmount: "45",
 							runId,
 						}),
-					]);
+					);
 				}
-				return errorResult.ok([
-					statutory({
-						employeeAmount: "90",
-						employerAmount: "45",
-						runId,
-					}),
-				]);
+				return errorResult.ok(
+					results.filter((result) => result.employeeId === employeeId),
+				);
 			},
 		});
 
@@ -278,9 +378,9 @@ describe("createPayrollHistoryYearToDateCapability", () => {
 						status: "calculated",
 					}),
 				]),
-			listResultLinesForRun: () =>
+			listResultLinesForEmployeeRuns: () =>
 				errorResult.ok([earning({ amount: "3100", runId: JANUARY_RUN_ID })]),
-			listStatutoryResultsForRun: () => errorResult.ok([]),
+			listStatutoryResultsForEmployeeRuns: () => errorResult.ok([]),
 		});
 
 		const totals = await capability.employeeTotals({
@@ -324,7 +424,7 @@ describe("createPayrollHistoryYearToDateCapability", () => {
 						status: "finalized",
 					}),
 				]),
-			listResultLinesForRun: () =>
+			listResultLinesForEmployeeRuns: () =>
 				errorResult.ok([
 					earning({ amount: "3100", runId: JANUARY_RUN_ID }),
 					earning({
@@ -333,7 +433,7 @@ describe("createPayrollHistoryYearToDateCapability", () => {
 						runId: JANUARY_RUN_ID,
 					}),
 				]),
-			listStatutoryResultsForRun: () => errorResult.ok([]),
+			listStatutoryResultsForEmployeeRuns: () => errorResult.ok([]),
 		});
 
 		const totals = await capability.employeeTotals({
@@ -369,7 +469,7 @@ describe("createPayrollHistoryYearToDateCapability", () => {
 						status: "finalized",
 					}),
 				]),
-			listResultLinesForRun: () =>
+			listResultLinesForEmployeeRuns: () =>
 				errorResult.ok([
 					earning({ amount: "3100", runId: JANUARY_RUN_ID }),
 					earning({
@@ -378,7 +478,7 @@ describe("createPayrollHistoryYearToDateCapability", () => {
 						runId: JANUARY_RUN_ID,
 					}),
 				]),
-			listStatutoryResultsForRun: () =>
+			listStatutoryResultsForEmployeeRuns: () =>
 				errorResult.ok([
 					statutory({
 						employeeAmount: "80",
@@ -423,12 +523,180 @@ describe("createPayrollHistoryYearToDateCapability", () => {
 		});
 	});
 
+	it("returns the per-run fan-out totals from two batched reads", async () => {
+		// The retired shape summed each finalized run separately (N x 2 store
+		// reads). The batched shape must agree with it exactly, and must issue one
+		// result-line read plus one statutory read no matter how many runs qualify.
+		const periods = [
+			{
+				id: JANUARY_PERIOD_ID,
+				periodEnd: "2025-01-31",
+				periodStart: "2025-01-01",
+				runId: JANUARY_RUN_ID,
+			},
+			{
+				id: FEBRUARY_PERIOD_ID,
+				periodEnd: "2025-02-28",
+				periodStart: "2025-02-01",
+				runId: FEBRUARY_RUN_ID,
+			},
+			{
+				id: MARCH_PERIOD_ID,
+				periodEnd: "2025-03-31",
+				periodStart: "2025-03-01",
+				runId: MARCH_RUN_ID,
+			},
+		] as const;
+		const linesByRun = new Map<string, PayrollResultLine[]>([
+			[
+				JANUARY_RUN_ID,
+				[
+					earning({ amount: "3100.55", runId: JANUARY_RUN_ID }),
+					earning({
+						amount: "100.05",
+						lineKind: "pre_tax_deduction",
+						runId: JANUARY_RUN_ID,
+					}),
+					earning({
+						amount: "777",
+						employeeId: "emp-other",
+						runId: JANUARY_RUN_ID,
+					}),
+				],
+			],
+			[
+				FEBRUARY_RUN_ID,
+				[
+					earning({ amount: "4000.45", runId: FEBRUARY_RUN_ID }),
+					earning({
+						amount: "250.95",
+						lineKind: "pre_tax_deduction",
+						runId: FEBRUARY_RUN_ID,
+					}),
+				],
+			],
+			[MARCH_RUN_ID, [earning({ amount: "1234.56", runId: MARCH_RUN_ID })]],
+		]);
+		const statutoryByRun = new Map<string, PayrollStatutoryResult[]>([
+			[
+				JANUARY_RUN_ID,
+				[
+					statutory({
+						employeeAmount: "80.10",
+						employerAmount: "40.05",
+						runId: JANUARY_RUN_ID,
+					}),
+				],
+			],
+			[
+				FEBRUARY_RUN_ID,
+				[
+					statutory({
+						employeeAmount: "90.90",
+						employerAmount: "45.95",
+						runId: FEBRUARY_RUN_ID,
+					}),
+				],
+			],
+			[
+				MARCH_RUN_ID,
+				[
+					statutory({
+						employeeAmount: "12.34",
+						employerAmount: "5.66",
+						runId: MARCH_RUN_ID,
+					}),
+				],
+			],
+		]);
+
+		const listPeriodsForOrganization = () =>
+			errorResult.ok(
+				periods.map((entry) =>
+					period({
+						id: entry.id,
+						periodEnd: entry.periodEnd,
+						periodStart: entry.periodStart,
+					}),
+				),
+			);
+		const listRunsForPeriod = ({ periodId }: { periodId: string }) => {
+			const entry = periods.find((candidate) => candidate.id === periodId);
+			if (entry === undefined) {
+				return errorResult.ok([]);
+			}
+			return errorResult.ok([
+				run({ id: entry.runId, periodId, status: "finalized" }),
+			]);
+		};
+
+		let resultLineReads = 0;
+		let statutoryReads = 0;
+		const batched = createPayrollHistoryYearToDateCapability({
+			listPeriodsForOrganization,
+			listRunsForPeriod,
+			listResultLinesForEmployeeRuns: ({ employeeId, runIds }) => {
+				resultLineReads += 1;
+				return errorResult.ok(
+					runIds
+						.flatMap((runId) => linesByRun.get(runId) ?? [])
+						.filter((line) => line.employeeId === employeeId),
+				);
+			},
+			listStatutoryResultsForEmployeeRuns: ({ employeeId, runIds }) => {
+				statutoryReads += 1;
+				return errorResult.ok(
+					runIds
+						.flatMap((runId) => statutoryByRun.get(runId) ?? [])
+						.filter((result) => result.employeeId === employeeId),
+				);
+			},
+		});
+
+		const request = {
+			currencyCode: "USD",
+			employeeId: EMPLOYEE_ID,
+			organizationId: ORGANIZATION_ID,
+			priorEmployerYtd: [
+				priorEmployer({
+					grossAmount: "1000",
+					statutoryContributionAmount: "50",
+					taxWithheldAmount: "30",
+				}),
+			],
+			taxYear: 2025,
+			throughDate: "2025-04-01",
+		};
+
+		const totals = await batched.employeeTotals(request);
+		expect(totals.ok).toBe(true);
+		if (!totals.ok) {
+			return;
+		}
+
+		// One read per store method for three finalized runs — the fan-out is gone.
+		expect(resultLineReads).toBe(1);
+		expect(statutoryReads).toBe(1);
+
+		expect(totals.data).toEqual(
+			perRunFanOutTotals({
+				currencyCode: request.currencyCode,
+				employeeId: request.employeeId,
+				linesByRun,
+				priorEmployerYtd: request.priorEmployerYtd,
+				runIds: periods.map((entry) => entry.runId),
+				statutoryByRun,
+				taxYear: request.taxYear,
+			}),
+		);
+	});
+
 	it("refuses a cross-currency prior-employer record", async () => {
 		const capability = createPayrollHistoryYearToDateCapability({
 			listPeriodsForOrganization: () => errorResult.ok([]),
 			listRunsForPeriod: () => errorResult.ok([]),
-			listResultLinesForRun: () => errorResult.ok([]),
-			listStatutoryResultsForRun: () => errorResult.ok([]),
+			listResultLinesForEmployeeRuns: () => errorResult.ok([]),
+			listStatutoryResultsForEmployeeRuns: () => errorResult.ok([]),
 		});
 
 		const totals = await capability.employeeTotals({
