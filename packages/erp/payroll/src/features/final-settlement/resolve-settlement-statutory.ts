@@ -1,9 +1,14 @@
 import { errorResult, type Result } from "@afenda/errors";
+import { handoffPayFrequencySchema } from "@afenda/events/schemas";
 
 import type { PayrollStatutoryRule } from "../../kernel/contracts/projected-types";
 import type { PayrollStatutoryCapability } from "../../kernel/execution/capability-ports";
 import { addScaled, formatScaledToDecimal } from "../../kernel/money/money";
 import { getStatutoryCalculator } from "../statutory-rules/calculator-registry";
+import {
+	cadenceFromPayFrequency,
+	type PayrollStatutoryPeriodCadence,
+} from "../statutory-rules/period-cadence";
 import type { PayrollFinalSettlementStatutoryResolver } from "./compute-final-settlement";
 import type {
 	PayrollFinalSettlementCompensationSnapshot,
@@ -29,12 +34,32 @@ function notApprovedForProduction(): Result<never> {
  * `synthetic_only`, so production activation fails closed until a pack is
  * reviewer-approved.
  */
+/**
+ * The settlement has no period row, so its cadence comes from the sealed
+ * compensation snapshot's declared pay frequency and effective date. A frequency
+ * outside the handoff vocabulary yields no cadence at all, and an annualized tax
+ * pack then refuses rather than settling on an invented position in the year.
+ */
+function settlementCadence(
+	snapshot: PayrollFinalSettlementCompensationSnapshot,
+): PayrollStatutoryPeriodCadence | null {
+	const parsed = handoffPayFrequencySchema.safeParse(snapshot.payFrequency);
+	if (!parsed.success) {
+		return null;
+	}
+	return cadenceFromPayFrequency({
+		effectiveDate: snapshot.effectiveDate,
+		payFrequency: parsed.data,
+	});
+}
+
 export function createFinalSettlementStatutoryResolver(input: {
+	compensationSnapshot: PayrollFinalSettlementCompensationSnapshot;
 	rules: readonly PayrollStatutoryRule[];
 	statutory: PayrollStatutoryCapability | undefined;
-	statutoryProfile: PayrollFinalSettlementCompensationSnapshot["statutoryProfile"];
-	yearToDate: PayrollFinalSettlementCompensationSnapshot["yearToDate"];
 }): PayrollFinalSettlementStatutoryResolver {
+	const { statutoryProfile, yearToDate } = input.compensationSnapshot;
+	const cadence = settlementCadence(input.compensationSnapshot);
 	return ({ currencyCode, grossScaled, roundingPolicy }) => {
 		const { statutory } = input;
 		if (statutory === undefined) {
@@ -74,12 +99,14 @@ export function createFinalSettlementStatutoryResolver(input: {
 					currencyCode,
 					gross: grossScaled,
 					jurisdictionCode: rule.jurisdictionCode,
+					periodOrdinal: cadence?.periodOrdinal ?? null,
+					periodsPerYear: cadence?.periodsPerYear ?? null,
 					roundingPolicy,
 					ruleCode: rule.code,
 					ruleVersion: rule.ruleVersion,
-					statutoryProfile: input.statutoryProfile,
+					statutoryProfile,
 					taxableBase: grossScaled,
-					yearToDate: input.yearToDate,
+					yearToDate,
 				});
 			} catch {
 				return errorResult.fail("CONFLICT", {

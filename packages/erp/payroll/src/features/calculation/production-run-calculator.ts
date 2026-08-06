@@ -31,6 +31,7 @@ import {
 import { payrollJsonObjectSchema } from "../../kernel/validation/common.schema";
 import type { PayrollAssignmentsStore } from "../employee-assignments/assignments.store";
 import type { PayrollSetupStore } from "../payroll-setup/setup.store";
+import { cadenceFromPeriodSequence } from "../statutory-rules/period-cadence";
 import type { PayrollStatutoryStore } from "../statutory-rules/statutory.store";
 import {
 	resolveYearToDate,
@@ -171,6 +172,28 @@ export function createProductionPayrollRunCalculator(input: {
 			const roundingPolicy = input.roundingPolicy ?? currencyRounding.data;
 
 			const effectiveDate = payrollPeriod.periodEnd;
+
+			// Period cadence for annualized tax packs. The pay group's own period
+			// sequence is the only place the ordinal is a fact rather than a guess;
+			// periods-per-year is inferred from this period's length because the
+			// payroll calendar stores no frequency.
+			const payGroupPeriods = await input.store.listPeriodsForPayGroup({
+				organizationId: calcInput.organizationId,
+				payGroupId: calcInput.payGroupId,
+			});
+			if (!payGroupPeriods.ok) {
+				return payGroupPeriods;
+			}
+			const periodTaxYear = taxYearFromIsoDate(payrollPeriod.periodStart);
+			const periodCadence = cadenceFromPeriodSequence({
+				periodEnd: payrollPeriod.periodEnd,
+				periodStart: payrollPeriod.periodStart,
+				priorPeriodsInTaxYear: payGroupPeriods.data.filter(
+					(candidate) =>
+						taxYearFromIsoDate(candidate.periodStart) === periodTaxYear &&
+						candidate.periodStart < payrollPeriod.periodStart,
+				).length,
+			});
 
 			const [
 				assignments,
@@ -401,6 +424,7 @@ export function createProductionPayrollRunCalculator(input: {
 					employeeId: assignment.employeeId,
 					assignmentId: assignment.id,
 					payGroupId: calcInput.payGroupId,
+					periodCadence,
 					periodId: calcInput.periodId,
 					currencyCode: payGroupRecord.currencyCode,
 					calculationVersion: PAYROLL_CALCULATION_VERSION,

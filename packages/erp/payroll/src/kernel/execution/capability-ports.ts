@@ -39,10 +39,13 @@ export interface PayrollStatutoryCapability {
  */
 export interface PayrollYearToDateTotals {
 	currencyCode: string;
+	/** Employee-side statutory CONTRIBUTIONS only; tax lives in `taxWithheld`. */
 	employeeStatutory: string;
 	employerStatutory: string;
 	gross: string;
 	taxableBase: string;
+	/** Employee-side statutory TAX withheld, prior employers included. */
+	taxWithheld: string;
 	taxYear: number;
 }
 

@@ -162,6 +162,13 @@ export const payrollEmployeeCalcSnapshotSchema = z
 		employeeId: payrollEmployeeIdSchema,
 		organizationId: payrollOrganizationIdSchema,
 		payGroupId: identifierSchema,
+		periodCadence: z
+			.object({
+				periodOrdinal: z.number().int().min(1).max(366),
+				periodsPerYear: z.number().int().min(1).max(366),
+			})
+			.strict()
+			.optional(),
 		periodId: identifierSchema,
 		recurringDeductions: z.array(calcRecurringDeductionSnapshotSchema),
 		recurringEarnings: z.array(calcRecurringEarningSnapshotSchema),
@@ -176,6 +183,7 @@ export const payrollEmployeeCalcSnapshotSchema = z
 				employeeStatutory: payrollDecimalStringSchema,
 				employerStatutory: payrollDecimalStringSchema,
 				gross: payrollDecimalStringSchema,
+				taxWithheld: payrollDecimalStringSchema,
 				taxYear: z.number().int().min(1900).max(9999),
 				taxableBase: payrollDecimalStringSchema,
 			})

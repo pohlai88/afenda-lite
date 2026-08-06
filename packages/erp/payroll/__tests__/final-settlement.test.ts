@@ -360,6 +360,7 @@ describe("final-settlement initiate", () => {
 			employeeStatutory: "0",
 			employerStatutory: "0",
 			gross: "0",
+			taxWithheld: "0",
 			taxYear: 2025,
 			taxableBase: "0",
 		});

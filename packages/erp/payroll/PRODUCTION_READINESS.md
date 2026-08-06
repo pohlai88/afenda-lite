@@ -59,6 +59,32 @@ reviewedAt, jurisdictions) for the versioned calculator, its effective-dated
 pack, fixtures, and rounding policy. The production calculator fails closed
 when a statutory rule references anything without that approval.
 
+Every ledger row's `effectiveFrom`, `effectiveTo`, `documentVersion`, and
+`retrievedAt` are `{ state: "pending_review" }`. Engineering cannot honestly
+assert which gazette revision was read or when, so those four fields are the
+reviewer's to record; `listUnattestedStatutorySources()` names every row still
+outstanding and must be empty before any pack is approved.
+
+### Explicitly out of scope for v1 packs
+
+The v1 packs consume **`dependantCount` only** from the statutory profile. The
+following are NOT computed, and a pack config that appears to price them is
+mis-configured:
+
+- **MY PCB itemized reliefs** — TP1 (deduction claims) and TP3 (previous-employer
+  declarations) are not consumed, zakat is not deducted, and the EPF-relief cap
+  is not applied. `personalRelief` and `dependantRelief` in a PCB config are flat
+  annual amounts the reviewer sets; they do not vary per employee beyond the
+  dependant count.
+- **VN PIT itemized relief declarations** — dependant registrations, charitable
+  contributions, and insurance reliefs are not read from the declaration array.
+
+The D0 handoff's `reliefDeclarations` array is carried and sealed into the
+snapshot but deliberately unread by v1; it is reserved for v2 packs that price
+per-employee relief claims. Until then, an employer with employees who have
+filed TP1/TP3 or VN relief declarations will over-withhold, and that difference
+is settled at the employee's own annual filing.
+
 ## Phase E evidence (engineering)
 
 | Artifact | Path |

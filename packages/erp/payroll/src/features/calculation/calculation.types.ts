@@ -14,6 +14,7 @@ import type {
 } from "../../kernel/money/rounding-policy";
 import type { PayrollJsonObject } from "../../kernel/validation/common.schema";
 import type { StatutoryYearToDateFacts } from "../statutory-rules/calculator.types";
+import type { PayrollStatutoryPeriodCadence } from "../statutory-rules/period-cadence";
 import type { ApprovedPayrollHandoffParsedComponent } from "../workforce-ingress/parse-approved-payroll-handoff";
 
 export type PayrollResultLineKind =
@@ -130,6 +131,12 @@ export interface PayrollEmployeeCalcSnapshot {
 	employeeId: string;
 	organizationId: string;
 	payGroupId: string;
+	/**
+	 * Where this period sits in its tax year. Supplied by the production run
+	 * calculator from the pay group's period sequence; absent only for synthetic
+	 * snapshots, in which case annualized tax packs refuse rather than guess.
+	 */
+	periodCadence?: PayrollStatutoryPeriodCadence | undefined;
 	periodId: string;
 	priorEmployerYtd?: readonly HandoffPriorEmployerYtd[] | undefined;
 	recurringDeductions: PayrollCalcRecurringDeductionSnapshot[];

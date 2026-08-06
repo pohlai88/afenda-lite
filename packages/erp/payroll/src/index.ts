@@ -159,6 +159,12 @@ export {
 	type PayrollStatutoryFilingTotals,
 	type PayrollStatutoryFilingView,
 } from "./features/statutory-filings/contract";
+export {
+	listStatutorySourceLedger,
+	listUnattestedStatutorySources,
+	type PayrollStatutorySourceLedgerEntry,
+	type StatutorySourceAttestation,
+} from "./features/statutory-rules/statutory-source-ledger";
 export { PAYROLL_PLATFORM_EVENT_DISPATCHER_ID } from "./kernel/emissions/emission-registry";
 export type {
 	PayrollClockCapability,

@@ -602,10 +602,9 @@ async function executeCalculate(
 		periodEnd: period.data.periodEnd,
 		periodStart: period.data.periodStart,
 		resolveStatutory: createFinalSettlementStatutoryResolver({
+			compensationSnapshot: current.data.compensationSnapshot,
 			rules: rules.data,
 			statutory: options.statutory,
-			statutoryProfile: current.data.compensationSnapshot.statutoryProfile,
-			yearToDate: current.data.compensationSnapshot.yearToDate,
 		}),
 		settlementId: current.data.id,
 		terminationEffectiveOn: current.data.terminationEffectiveOn,

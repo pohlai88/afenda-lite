@@ -21,6 +21,7 @@ import {
 	parseDecimalToScaled,
 	subScaled,
 } from "../../kernel/money/money";
+import { resolveStatutoryCalculatorKind } from "./calculator-registry";
 
 export interface PayrollYearToDateStore {
 	listPeriodsForOrganization: (input: {
@@ -46,6 +47,7 @@ export const EMPTY_PAYROLL_YEAR_TO_DATE = {
 	employeeStatutory: "0",
 	employerStatutory: "0",
 	gross: "0",
+	taxWithheld: "0",
 	taxableBase: "0",
 } as const;
 
@@ -108,6 +110,7 @@ function sumEmployeeHistory(input: {
 
 	let employeeStatutory = 0n;
 	let employerStatutory = 0n;
+	let taxWithheld = 0n;
 	for (const result of input.statutoryResults) {
 		if (result.employeeId !== input.employeeId) {
 			continue;
@@ -115,10 +118,19 @@ function sumEmployeeHistory(input: {
 		if (result.currencyCode !== input.currencyCode) {
 			return crossCurrencyConflict("finalized statutory result");
 		}
-		employeeStatutory = addScaled(
-			employeeStatutory,
-			parseDecimalToScaled(result.employeeAmount),
-		);
+		// The registry — not a rule-code list here — owns whether a persisted
+		// result was a tax withholding or a contribution. Every statutory result
+		// row already carries the `calculatorId` that produced it.
+		const kind = resolveStatutoryCalculatorKind(result.calculatorId);
+		if (!kind.ok) {
+			return kind;
+		}
+		const employeeAmount = parseDecimalToScaled(result.employeeAmount);
+		if (kind.data === "tax") {
+			taxWithheld = addScaled(taxWithheld, employeeAmount);
+		} else {
+			employeeStatutory = addScaled(employeeStatutory, employeeAmount);
+		}
 		employerStatutory = addScaled(
 			employerStatutory,
 			parseDecimalToScaled(result.employerAmount),
@@ -130,6 +142,7 @@ function sumEmployeeHistory(input: {
 		employeeStatutory: formatScaledToDecimal(employeeStatutory),
 		employerStatutory: formatScaledToDecimal(employerStatutory),
 		gross: formatScaledToDecimal(gross),
+		taxWithheld: formatScaledToDecimal(taxWithheld),
 		taxYear: input.taxYear,
 		taxableBase: formatScaledToDecimal(subScaled(gross, preTax)),
 	});
@@ -140,13 +153,14 @@ function sumEmployeeHistory(input: {
  *
  * Prior-employer figures are HR-declared facts for a subject who joined
  * mid-year; from the statutory calculators' point of view they are simply more
- * year-to-date. Both employee-side prior figures (`statutoryContributionAmount`
- * and `taxWithheldAmount`) fold into `employeeStatutory` because that is what
- * this employer's own `employeeStatutory` already aggregates — every
- * employee-side statutory result, tax rules included. `employerStatutory` is
- * untouched: the prior employer's own liability is not this employer's.
- * Records for another tax year are not part of this year's totals; a record in
- * another currency refuses rather than being dropped.
+ * year-to-date. The handoff already separates the two employee-side figures, so
+ * each lands in its own channel: `statutoryContributionAmount` in
+ * `employeeStatutory`, `taxWithheldAmount` in `taxWithheld`. Folding the prior
+ * employer's tax into the contribution total would make a tax pack net off money
+ * that was never tax. `employerStatutory` is untouched: the prior employer's own
+ * liability is not this employer's. Records for another tax year are not part of
+ * this year's totals; a record in another currency refuses rather than being
+ * dropped.
  */
 function mergePriorEmployerYtd(
 	totals: PayrollYearToDateTotals,
@@ -155,6 +169,7 @@ function mergePriorEmployerYtd(
 	let gross = parseDecimalToScaled(totals.gross);
 	let taxableBase = parseDecimalToScaled(totals.taxableBase);
 	let employeeStatutory = parseDecimalToScaled(totals.employeeStatutory);
+	let taxWithheld = parseDecimalToScaled(totals.taxWithheld);
 
 	for (const record of priorEmployerYtd) {
 		if (record.taxYear !== totals.taxYear) {
@@ -168,10 +183,11 @@ function mergePriorEmployerYtd(
 		taxableBase = addScaled(taxableBase, priorGross);
 		employeeStatutory = addScaled(
 			employeeStatutory,
-			addScaled(
-				parseDecimalToScaled(record.statutoryContributionAmount),
-				parseDecimalToScaled(record.taxWithheldAmount),
-			),
+			parseDecimalToScaled(record.statutoryContributionAmount),
+		);
+		taxWithheld = addScaled(
+			taxWithheld,
+			parseDecimalToScaled(record.taxWithheldAmount),
 		);
 	}
 
@@ -180,6 +196,7 @@ function mergePriorEmployerYtd(
 		employeeStatutory: formatScaledToDecimal(employeeStatutory),
 		employerStatutory: totals.employerStatutory,
 		gross: formatScaledToDecimal(gross),
+		taxWithheld: formatScaledToDecimal(taxWithheld),
 		taxYear: totals.taxYear,
 		taxableBase: formatScaledToDecimal(taxableBase),
 	});

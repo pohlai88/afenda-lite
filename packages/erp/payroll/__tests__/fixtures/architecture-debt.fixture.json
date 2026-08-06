@@ -503,6 +503,10 @@
 					"file": "src/features/statutory-rules/calculator.types.ts"
 				},
 				{
+					"evidence": "src/features/statutory-rules/period-cadence.ts exceeds src/<owner>/<file>",
+					"file": "src/features/statutory-rules/period-cadence.ts"
+				},
+				{
 					"evidence": "src/features/statutory-rules/statutory-source-ledger.ts exceeds src/<owner>/<file>",
 					"file": "src/features/statutory-rules/statutory-source-ledger.ts"
 				},
@@ -724,7 +728,11 @@
 		{
 			"items": [
 				{
-					"evidence": "src/features/calculation/calculation-pipeline.ts:11 -> src/features/statutory-rules/calculator-registry.ts (calculation -> statutory-rules)",
+					"evidence": "src/features/calculation/calculation-pipeline.ts:11 -> src/features/statutory-rules/calculator-helpers.ts (calculation -> statutory-rules)",
+					"file": "src/features/calculation/calculation-pipeline.ts"
+				},
+				{
+					"evidence": "src/features/calculation/calculation-pipeline.ts:12 -> src/features/statutory-rules/calculator-registry.ts (calculation -> statutory-rules)",
 					"file": "src/features/calculation/calculation-pipeline.ts"
 				},
 				{
@@ -744,7 +752,11 @@
 					"file": "src/features/calculation/calculation.types.ts"
 				},
 				{
-					"evidence": "src/features/calculation/calculation.types.ts:17 -> src/features/workforce-ingress/parse-approved-payroll-handoff.ts (calculation -> workforce-ingress)",
+					"evidence": "src/features/calculation/calculation.types.ts:17 -> src/features/statutory-rules/period-cadence.ts (calculation -> statutory-rules)",
+					"file": "src/features/calculation/calculation.types.ts"
+				},
+				{
+					"evidence": "src/features/calculation/calculation.types.ts:18 -> src/features/workforce-ingress/parse-approved-payroll-handoff.ts (calculation -> workforce-ingress)",
 					"file": "src/features/calculation/calculation.types.ts"
 				},
 				{
@@ -760,19 +772,23 @@
 					"file": "src/features/calculation/production-run-calculator.ts"
 				},
 				{
-					"evidence": "src/features/calculation/production-run-calculator.ts:34 -> src/features/statutory-rules/statutory.store.ts (calculation -> statutory-rules)",
+					"evidence": "src/features/calculation/production-run-calculator.ts:34 -> src/features/statutory-rules/period-cadence.ts (calculation -> statutory-rules)",
 					"file": "src/features/calculation/production-run-calculator.ts"
 				},
 				{
-					"evidence": "src/features/calculation/production-run-calculator.ts:35 -> src/features/statutory-rules/year-to-date-capability.ts (calculation -> statutory-rules)",
+					"evidence": "src/features/calculation/production-run-calculator.ts:35 -> src/features/statutory-rules/statutory.store.ts (calculation -> statutory-rules)",
 					"file": "src/features/calculation/production-run-calculator.ts"
 				},
 				{
-					"evidence": "src/features/calculation/production-run-calculator.ts:39 -> src/features/variable-inputs/inputs.store.ts (calculation -> variable-inputs)",
+					"evidence": "src/features/calculation/production-run-calculator.ts:36 -> src/features/statutory-rules/year-to-date-capability.ts (calculation -> statutory-rules)",
 					"file": "src/features/calculation/production-run-calculator.ts"
 				},
 				{
-					"evidence": "src/features/calculation/production-run-calculator.ts:40 -> src/features/workforce-ingress/normalize-workforce-handoff.ts (calculation -> workforce-ingress)",
+					"evidence": "src/features/calculation/production-run-calculator.ts:40 -> src/features/variable-inputs/inputs.store.ts (calculation -> variable-inputs)",
+					"file": "src/features/calculation/production-run-calculator.ts"
+				},
+				{
+					"evidence": "src/features/calculation/production-run-calculator.ts:41 -> src/features/workforce-ingress/normalize-workforce-handoff.ts (calculation -> workforce-ingress)",
 					"file": "src/features/calculation/production-run-calculator.ts"
 				},
 				{
@@ -792,7 +808,11 @@
 					"file": "src/features/employee-assignments/recurring-earning.ts"
 				},
 				{
-					"evidence": "src/features/final-settlement/resolve-settlement-statutory.ts:6 -> src/features/statutory-rules/calculator-registry.ts (final-settlement -> statutory-rules)",
+					"evidence": "src/features/final-settlement/resolve-settlement-statutory.ts:7 -> src/features/statutory-rules/calculator-registry.ts (final-settlement -> statutory-rules)",
+					"file": "src/features/final-settlement/resolve-settlement-statutory.ts"
+				},
+				{
+					"evidence": "src/features/final-settlement/resolve-settlement-statutory.ts:8 -> src/features/statutory-rules/period-cadence.ts (final-settlement -> statutory-rules)",
 					"file": "src/features/final-settlement/resolve-settlement-statutory.ts"
 				},
 				{
@@ -991,7 +1011,7 @@
 		{
 			"items": [
 				{
-					"evidence": "src/features/statutory-rules/calculator-registry.ts:2 registers MY/VN jurisdiction packs as awaiting_review plus synth.v1 as synthetic_only — no calculator is production-approved yet (bridging doc A2 pack review)",
+					"evidence": "src/features/statutory-rules/calculator-registry.ts:7 registers MY/VN jurisdiction packs as awaiting_review plus synth.v1 as synthetic_only — no calculator is production-approved yet (bridging doc A2 pack review)",
 					"file": "src/features/statutory-rules/calculator-registry.ts"
 				}
 			],
@@ -1023,6 +1043,6 @@
 	"schemaVersion": 1,
 	"summary": {
 		"featureCount": 15,
-		"sourceTypeScriptFiles": 185
+		"sourceTypeScriptFiles": 186
 	}
 }

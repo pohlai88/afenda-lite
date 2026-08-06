@@ -8,6 +8,7 @@ import {
 	subScaled,
 } from "../../kernel/money/money";
 import type { PayrollRoundingPolicy } from "../../kernel/money/rounding-policy";
+import { StatutoryCalculationError } from "../statutory-rules/calculator-helpers";
 import { getStatutoryCalculator } from "../statutory-rules/calculator-registry";
 import type {
 	PayrollCalcDeductionRuleSnapshot,
@@ -26,6 +27,7 @@ const CURRENCY_MISMATCH_CODE = "CURRENCY_MISMATCH";
 const UNKNOWN_CALCULATOR_CODE = "UNKNOWN_CALCULATOR";
 const MISSING_YEAR_TO_DATE_CODE = "MISSING_YEAR_TO_DATE";
 const STATUTORY_CALCULATION_FAILED_CODE = "STATUTORY_CALCULATION_FAILED";
+const MISSING_STATUTORY_RULES_CODE = "MISSING_STATUTORY_RULES";
 
 interface CalculationContext {
 	exceptions: PayrollCalcException[];
@@ -625,6 +627,19 @@ function applyApprovedEmployerBenefitContributions(
 	}
 }
 
+function statutoryFailureMessage(
+	error: unknown,
+	isUnknownCalculator: boolean,
+): string {
+	if (isUnknownCalculator && error instanceof Error) {
+		return error.message;
+	}
+	if (error instanceof StatutoryCalculationError) {
+		return `Statutory calculation failed: ${error.message}`;
+	}
+	return "Statutory calculation failed";
+}
+
 interface PendingEmployerContribution {
 	amount: bigint;
 	code: string;
@@ -645,6 +660,29 @@ function calculateStatutory(input: {
 	let employeeStatutory = 0n;
 	const employerContributions: PendingEmployerContribution[] = [];
 	const { yearToDate } = input.ctx.snapshot;
+
+	// Fail closed on a lapsed statutory configuration (A2 I7). The subject's own
+	// statutory profile names the jurisdiction they are liable in; if no active
+	// rule for that jurisdiction resolved for this period, the run would pay a
+	// Malaysian or Vietnamese employee with zero EPF/SOCSO/PCB and look correct.
+	// A period whose rules simply expired is indistinguishable from one that
+	// never had any, so the profile — not the empty list — is the signal.
+	const declaredJurisdiction =
+		input.ctx.snapshot.statutoryProfile?.jurisdictionCode;
+	if (
+		declaredJurisdiction !== undefined &&
+		declaredJurisdiction !== null &&
+		!input.ctx.snapshot.statutoryRules.some(
+			(rule) => rule.jurisdictionCode === declaredJurisdiction,
+		)
+	) {
+		addException(input.ctx, {
+			exceptionCode: MISSING_STATUTORY_RULES_CODE,
+			message: `No active statutory rule resolved for jurisdiction ${declaredJurisdiction} in this period`,
+			sourceRef: input.ctx.snapshot.employeeId,
+		});
+		return { employeeStatutory, employerContributions };
+	}
 
 	if (input.ctx.snapshot.statutoryRules.length === 0) {
 		return { employeeStatutory, employerContributions };
@@ -683,6 +721,9 @@ function calculateStatutory(input: {
 				configJson: rule.configJson,
 				currencyCode: input.ctx.snapshot.currencyCode,
 				gross: input.gross,
+				periodOrdinal: input.ctx.snapshot.periodCadence?.periodOrdinal ?? null,
+				periodsPerYear:
+					input.ctx.snapshot.periodCadence?.periodsPerYear ?? null,
 				roundingPolicy: input.ctx.policy,
 				statutoryProfile: input.ctx.snapshot.statutoryProfile ?? null,
 				taxableBase,
@@ -755,9 +796,10 @@ function calculateStatutory(input: {
 			const isUnknownCalculator =
 				error instanceof RangeError &&
 				error.message.startsWith("Unknown statutory calculator");
-			const message = isUnknownCalculator
-				? error.message
-				: "Statutory calculation failed";
+			// A pack's own refusal already names the offending config path and
+			// zod issue; swallowing it left a reviewer with "failed" and nothing
+			// to fix. Only genuinely foreign throws stay generic.
+			const message = statutoryFailureMessage(error, isUnknownCalculator);
 			addException(input.ctx, {
 				exceptionCode: isUnknownCalculator
 					? UNKNOWN_CALCULATOR_CODE
