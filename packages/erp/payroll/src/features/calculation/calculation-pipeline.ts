@@ -28,6 +28,7 @@ const UNKNOWN_CALCULATOR_CODE = "UNKNOWN_CALCULATOR";
 const MISSING_YEAR_TO_DATE_CODE = "MISSING_YEAR_TO_DATE";
 const STATUTORY_CALCULATION_FAILED_CODE = "STATUTORY_CALCULATION_FAILED";
 const MISSING_STATUTORY_RULES_CODE = "MISSING_STATUTORY_RULES";
+const LAPSED_STATUTORY_RULE_CODE = "LAPSED_STATUTORY_RULE";
 
 interface CalculationContext {
 	exceptions: PayrollCalcException[];
@@ -669,19 +670,38 @@ function calculateStatutory(input: {
 	// never had any, so the profile — not the empty list — is the signal.
 	const declaredJurisdiction =
 		input.ctx.snapshot.statutoryProfile?.jurisdictionCode;
-	if (
-		declaredJurisdiction !== undefined &&
-		declaredJurisdiction !== null &&
-		!input.ctx.snapshot.statutoryRules.some(
+	if (declaredJurisdiction !== undefined && declaredJurisdiction !== null) {
+		if (
+			!input.ctx.snapshot.statutoryRules.some(
+				(rule) => rule.jurisdictionCode === declaredJurisdiction,
+			)
+		) {
+			addException(input.ctx, {
+				exceptionCode: MISSING_STATUTORY_RULES_CODE,
+				message: `No active statutory rule resolved for jurisdiction ${declaredJurisdiction} in this period`,
+				sourceRef: input.ctx.snapshot.employeeId,
+			});
+			return { employeeStatutory, employerContributions };
+		}
+
+		// PARTIAL lapse. A whole-jurisdiction outage is the loud case; the
+		// dangerous one is EPF still active while PCB quietly expired, which the
+		// check above waves through because SOME rule for the jurisdiction
+		// resolved. Withholding zero tax for a liable subject is not a smaller
+		// error than withholding nothing at all.
+		const lapsed = (input.ctx.snapshot.lapsedStatutoryRules ?? []).filter(
 			(rule) => rule.jurisdictionCode === declaredJurisdiction,
-		)
-	) {
-		addException(input.ctx, {
-			exceptionCode: MISSING_STATUTORY_RULES_CODE,
-			message: `No active statutory rule resolved for jurisdiction ${declaredJurisdiction} in this period`,
-			sourceRef: input.ctx.snapshot.employeeId,
-		});
-		return { employeeStatutory, employerContributions };
+		);
+		if (lapsed.length > 0) {
+			for (const rule of lapsed) {
+				addException(input.ctx, {
+					exceptionCode: LAPSED_STATUTORY_RULE_CODE,
+					message: `Statutory rule ${rule.ruleCode} (${rule.calculatorId}) was active in the previous period but has no active rule covering this one`,
+					sourceRef: input.ctx.snapshot.employeeId,
+				});
+			}
+			return { employeeStatutory, employerContributions };
+		}
 	}
 
 	if (input.ctx.snapshot.statutoryRules.length === 0) {
@@ -720,6 +740,9 @@ function calculateStatutory(input: {
 				jurisdictionCode: rule.jurisdictionCode,
 				configJson: rule.configJson,
 				currencyCode: input.ctx.snapshot.currencyCode,
+				// A payroll run is never the last withholding occasion of the year;
+				// only a final settlement is.
+				finalPeriod: false,
 				gross: input.gross,
 				periodOrdinal: input.ctx.snapshot.periodCadence?.periodOrdinal ?? null,
 				periodsPerYear:

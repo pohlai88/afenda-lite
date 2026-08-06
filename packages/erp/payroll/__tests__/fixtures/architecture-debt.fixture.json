@@ -764,31 +764,31 @@
 					"file": "src/features/calculation/outputs.schema.ts"
 				},
 				{
-					"evidence": "src/features/calculation/production-run-calculator.ts:32 -> src/features/employee-assignments/assignments.store.ts (calculation -> employee-assignments)",
+					"evidence": "src/features/calculation/production-run-calculator.ts:33 -> src/features/employee-assignments/assignments.store.ts (calculation -> employee-assignments)",
 					"file": "src/features/calculation/production-run-calculator.ts"
 				},
 				{
-					"evidence": "src/features/calculation/production-run-calculator.ts:33 -> src/features/payroll-setup/setup.store.ts (calculation -> payroll-setup)",
+					"evidence": "src/features/calculation/production-run-calculator.ts:34 -> src/features/payroll-setup/setup.store.ts (calculation -> payroll-setup)",
 					"file": "src/features/calculation/production-run-calculator.ts"
 				},
 				{
-					"evidence": "src/features/calculation/production-run-calculator.ts:34 -> src/features/statutory-rules/period-cadence.ts (calculation -> statutory-rules)",
+					"evidence": "src/features/calculation/production-run-calculator.ts:35 -> src/features/statutory-rules/period-cadence.ts (calculation -> statutory-rules)",
 					"file": "src/features/calculation/production-run-calculator.ts"
 				},
 				{
-					"evidence": "src/features/calculation/production-run-calculator.ts:35 -> src/features/statutory-rules/statutory.store.ts (calculation -> statutory-rules)",
+					"evidence": "src/features/calculation/production-run-calculator.ts:36 -> src/features/statutory-rules/statutory.store.ts (calculation -> statutory-rules)",
 					"file": "src/features/calculation/production-run-calculator.ts"
 				},
 				{
-					"evidence": "src/features/calculation/production-run-calculator.ts:36 -> src/features/statutory-rules/year-to-date-capability.ts (calculation -> statutory-rules)",
+					"evidence": "src/features/calculation/production-run-calculator.ts:37 -> src/features/statutory-rules/year-to-date-capability.ts (calculation -> statutory-rules)",
 					"file": "src/features/calculation/production-run-calculator.ts"
 				},
 				{
-					"evidence": "src/features/calculation/production-run-calculator.ts:40 -> src/features/variable-inputs/inputs.store.ts (calculation -> variable-inputs)",
+					"evidence": "src/features/calculation/production-run-calculator.ts:41 -> src/features/variable-inputs/inputs.store.ts (calculation -> variable-inputs)",
 					"file": "src/features/calculation/production-run-calculator.ts"
 				},
 				{
-					"evidence": "src/features/calculation/production-run-calculator.ts:41 -> src/features/workforce-ingress/normalize-workforce-handoff.ts (calculation -> workforce-ingress)",
+					"evidence": "src/features/calculation/production-run-calculator.ts:42 -> src/features/workforce-ingress/normalize-workforce-handoff.ts (calculation -> workforce-ingress)",
 					"file": "src/features/calculation/production-run-calculator.ts"
 				},
 				{
@@ -808,11 +808,7 @@
 					"file": "src/features/employee-assignments/recurring-earning.ts"
 				},
 				{
-					"evidence": "src/features/final-settlement/resolve-settlement-statutory.ts:7 -> src/features/statutory-rules/calculator-registry.ts (final-settlement -> statutory-rules)",
-					"file": "src/features/final-settlement/resolve-settlement-statutory.ts"
-				},
-				{
-					"evidence": "src/features/final-settlement/resolve-settlement-statutory.ts:8 -> src/features/statutory-rules/period-cadence.ts (final-settlement -> statutory-rules)",
+					"evidence": "src/features/final-settlement/resolve-settlement-statutory.ts:6 -> src/features/statutory-rules/calculator-registry.ts (final-settlement -> statutory-rules)",
 					"file": "src/features/final-settlement/resolve-settlement-statutory.ts"
 				},
 				{

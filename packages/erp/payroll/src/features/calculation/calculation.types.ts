@@ -68,6 +68,12 @@ export interface PayrollCalcDeductionRuleSnapshot {
 	taxTiming: PayrollDeductionTaxTiming;
 }
 
+export interface PayrollLapsedStatutoryRule {
+	calculatorId: string;
+	jurisdictionCode: string;
+	ruleCode: string;
+}
+
 export interface PayrollCalcStatutoryRuleSnapshot {
 	code: string;
 	configJson: PayrollJsonObject;
@@ -129,6 +135,14 @@ export interface PayrollEmployeeCalcSnapshot {
 	};
 	employee: PayrollEmployeeSnapshotFacts;
 	employeeId: string;
+	/**
+	 * Statutory rules that were active in the pay group's immediately-preceding
+	 * period but have no active rule for the SAME calculator covering this one.
+	 * Derived by the production run calculator, which is the only layer that can
+	 * see the previous period, and sealed into the snapshot so a retro recompute
+	 * re-reaches the same refusal.
+	 */
+	lapsedStatutoryRules?: readonly PayrollLapsedStatutoryRule[] | undefined;
 	organizationId: string;
 	payGroupId: string;
 	/**

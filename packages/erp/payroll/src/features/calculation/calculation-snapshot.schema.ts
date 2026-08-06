@@ -161,6 +161,17 @@ export const payrollEmployeeCalcSnapshotSchema = z
 		employee: calcEmployeeFactsSchema,
 		employeeId: payrollEmployeeIdSchema,
 		organizationId: payrollOrganizationIdSchema,
+		lapsedStatutoryRules: z
+			.array(
+				z
+					.object({
+						calculatorId: z.string().trim().min(1).max(64),
+						jurisdictionCode: z.string().trim().min(1).max(16),
+						ruleCode: z.string().trim().min(1).max(64),
+					})
+					.strict(),
+			)
+			.optional(),
 		payGroupId: identifierSchema,
 		periodCadence: z
 			.object({

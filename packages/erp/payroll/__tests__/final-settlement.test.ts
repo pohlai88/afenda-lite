@@ -159,6 +159,7 @@ async function seedOpenPeriod(
 	seedOptions: {
 		handoff?: ApprovedPayrollHandoff;
 		statutory?: PayrollStatutoryCapability;
+		statutoryConfigJson?: Record<string, unknown>;
 	} = {},
 ) {
 	const store = createMemoryPayrollStore();
@@ -221,7 +222,7 @@ async function seedOpenPeriod(
 				code: "SOC",
 				name: "Social contribution",
 				jurisdictionCode: "MY",
-				configJson: {
+				configJson: seedOptions.statutoryConfigJson ?? {
 					calculatorId: "synth.v1",
 					baseKind: "gross",
 					employeeRate: "0.05",
@@ -489,6 +490,47 @@ describe("final-settlement initiate", () => {
 });
 
 describe("final-settlement calculate", () => {
+	/**
+	 * A settlement is the subject's LAST withholding occasion of the tax year, so
+	 * an annualized pack projects nothing forward and collects what is owed whole.
+	 *   gross / taxable   = 2200 (1500 pro-rated + 200 leave + 300 notice + 200 in lieu)
+	 *   projected annual  = 0 year to date + 1 × 2200 = 2200
+	 *   chargeable        = 2200 − 200 personal relief = 2000
+	 *   annual tax        = 0 × 1000 + 0.1 × (2000 − 1000) = 100
+	 *   less withheld     = 100 − 0 = 100, over 1 remaining period = 100
+	 * Deriving twelve monthly periods from the declared pay frequency instead
+	 * would project 26400 of income the terminated employee never earns, and then
+	 * hand over only a twelfth of the tax it computed on it.
+	 */
+	it("collects annualized tax in full at the final settlement, projecting no future period", async () => {
+		const seeded = await seedOpenPeriod({
+			statutoryConfigJson: {
+				calculatorId: "my.pcb.v1",
+				baseKind: "taxable",
+				basis: "cumulative_annualized",
+				brackets: [
+					{ fromInclusive: "0", toExclusive: "1000", rate: "0" },
+					{ fromInclusive: "1000", toExclusive: null, rate: "0.1" },
+				],
+				personalRelief: "200",
+			},
+		});
+		const current = await calculated(seeded);
+
+		expect(current.settlement.statutoryEvidence).toEqual([
+			{
+				baseAmount: "2200",
+				calculatorId: "my.pcb.v1",
+				employeeAmount: "100",
+				employerAmount: "0",
+				jurisdictionCode: "MY",
+				ruleCode: "SOC",
+				ruleVersion: "v1",
+			},
+		]);
+		expect(current.settlement.totals?.employeeStatutory).toBe("100");
+	});
+
 	it("prices pro-ration, delivered leave encashment, and calculator statutory", async () => {
 		const seeded = await seedOpenPeriod();
 		const current = await calculated(seeded);

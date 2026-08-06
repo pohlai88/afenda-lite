@@ -1,14 +1,9 @@
 import { errorResult, type Result } from "@afenda/errors";
-import { handoffPayFrequencySchema } from "@afenda/events/schemas";
 
 import type { PayrollStatutoryRule } from "../../kernel/contracts/projected-types";
 import type { PayrollStatutoryCapability } from "../../kernel/execution/capability-ports";
 import { addScaled, formatScaledToDecimal } from "../../kernel/money/money";
 import { getStatutoryCalculator } from "../statutory-rules/calculator-registry";
-import {
-	cadenceFromPayFrequency,
-	type PayrollStatutoryPeriodCadence,
-} from "../statutory-rules/period-cadence";
 import type { PayrollFinalSettlementStatutoryResolver } from "./compute-final-settlement";
 import type {
 	PayrollFinalSettlementCompensationSnapshot,
@@ -33,33 +28,19 @@ function notApprovedForProduction(): Result<never> {
  * run does. Jurisdiction packs are `awaiting_review` and `synth.v1` is
  * `synthetic_only`, so production activation fails closed until a pack is
  * reviewer-approved.
+ *
+ * Every rule is priced as the subject's FINAL withholding occasion of the tax
+ * year. Deriving a position-in-the-year from the declared pay frequency, as this
+ * once did, made an annualized pack project pay for periods the terminated
+ * employee will never work and then collect only a fraction of the outstanding
+ * tax at the last moment it could collect any.
  */
-/**
- * The settlement has no period row, so its cadence comes from the sealed
- * compensation snapshot's declared pay frequency and effective date. A frequency
- * outside the handoff vocabulary yields no cadence at all, and an annualized tax
- * pack then refuses rather than settling on an invented position in the year.
- */
-function settlementCadence(
-	snapshot: PayrollFinalSettlementCompensationSnapshot,
-): PayrollStatutoryPeriodCadence | null {
-	const parsed = handoffPayFrequencySchema.safeParse(snapshot.payFrequency);
-	if (!parsed.success) {
-		return null;
-	}
-	return cadenceFromPayFrequency({
-		effectiveDate: snapshot.effectiveDate,
-		payFrequency: parsed.data,
-	});
-}
-
 export function createFinalSettlementStatutoryResolver(input: {
 	compensationSnapshot: PayrollFinalSettlementCompensationSnapshot;
 	rules: readonly PayrollStatutoryRule[];
 	statutory: PayrollStatutoryCapability | undefined;
 }): PayrollFinalSettlementStatutoryResolver {
 	const { statutoryProfile, yearToDate } = input.compensationSnapshot;
-	const cadence = settlementCadence(input.compensationSnapshot);
 	return ({ currencyCode, grossScaled, roundingPolicy }) => {
 		const { statutory } = input;
 		if (statutory === undefined) {
@@ -99,8 +80,13 @@ export function createFinalSettlementStatutoryResolver(input: {
 					currencyCode,
 					gross: grossScaled,
 					jurisdictionCode: rule.jurisdictionCode,
-					periodOrdinal: cadence?.periodOrdinal ?? null,
-					periodsPerYear: cadence?.periodsPerYear ?? null,
+					// A settlement is the last withholding occasion of the tax year
+					// for this subject. Annualized packs therefore project no future
+					// income and collect the outstanding liability whole; the
+					// settlement needs no position-in-the-year at all.
+					finalPeriod: true,
+					periodOrdinal: null,
+					periodsPerYear: null,
 					roundingPolicy,
 					ruleCode: rule.code,
 					ruleVersion: rule.ruleVersion,

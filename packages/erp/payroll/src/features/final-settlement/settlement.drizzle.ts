@@ -22,7 +22,7 @@ import type {
 	PayrollFinalSettlementLine,
 } from "./contract";
 import {
-	payrollFinalSettlementCompensationSnapshotSchema,
+	payrollFinalSettlementCompensationSnapshotReadSchema,
 	payrollFinalSettlementFactsSchema,
 	payrollFinalSettlementLineKindSchema,
 	payrollFinalSettlementStatusSchema,
@@ -106,7 +106,7 @@ function mapSettlement(
 	const status = payrollFinalSettlementStatusSchema.safeParse(row.status);
 	const facts = payrollFinalSettlementFactsSchema.safeParse(row.factsJson);
 	const compensationSnapshot =
-		payrollFinalSettlementCompensationSnapshotSchema.safeParse(
+		payrollFinalSettlementCompensationSnapshotReadSchema.safeParse(
 			row.compensationSnapshotJson,
 		);
 	if (!(status.success && facts.success && compensationSnapshot.success)) {

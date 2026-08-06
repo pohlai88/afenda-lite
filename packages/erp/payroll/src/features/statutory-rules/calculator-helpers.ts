@@ -331,10 +331,21 @@ function chargeable(base: bigint, relief: bigint): bigint {
 	return value < 0n ? 0n : value;
 }
 
-function requireCadence(
+/**
+ * Withholding occasions left in the tax year, this one included.
+ *
+ * A final settlement has exactly one: it is the last moment this employer can
+ * withhold anything, and there is no future period whose pay could be projected
+ * or over which an outstanding liability could be spread. A running period must
+ * know its cadence and refuses without it.
+ */
+function remainingPeriods(
 	input: StatutoryCalculatorInput,
 	calculatorId: string,
-): { periodOrdinal: number; periodsPerYear: number } {
+): number {
+	if (input.finalPeriod) {
+		return 1;
+	}
 	const { periodOrdinal, periodsPerYear } = input;
 	if (periodOrdinal === null || periodsPerYear === null) {
 		throw new StatutoryCalculationError(
@@ -350,7 +361,7 @@ function requireCadence(
 			`${calculatorId}: rule ${input.ruleCode} received an impossible period cadence (${periodOrdinal} of ${periodsPerYear})`,
 		);
 	}
-	return { periodOrdinal, periodsPerYear };
+	return periodsPerYear - periodOrdinal + 1;
 }
 
 function nonResidentOutput(input: {
@@ -427,10 +438,23 @@ function cumulativeBasisTax(input: {
  * Annualized withholding (Malaysian PCB shape).
  *
  * remaining        = periodsPerYear - periodOrdinal + 1   (this period included)
+ *                    or 1 on a final settlement
  * projectedAnnual  = taxableYearToDate + remaining × currentTaxable
  * annualChargeable = max(0, projectedAnnual - annualReliefs)
  * annualTax        = brackets(annualChargeable)
  * periodTax        = max(0, annualTax - taxWithheldYearToDate) / remaining
+ *
+ * On a final settlement `remaining` collapses to 1, so the projection becomes
+ * year-to-date plus what is actually being paid — no invented future income —
+ * and the whole outstanding liability is collected at the last moment this
+ * employer can withhold it.
+ *
+ * Reliefs are NOT pro-rated, on either path. `personalRelief` and
+ * `dependantRelief` are annual figures on this basis, and the running path
+ * already subtracts them whole from a full-year projection at every ordinal; the
+ * settlement subtracts the same whole annual relief from the year's actual
+ * income. Pro-rating at settlement only would make the same employee's relief
+ * depend on whether their last period was a run or a termination.
  *
  * The netting uses the DISTINCT tax-withheld channel, never the commingled
  * employee statutory total: netting contributions off a tax liability would
@@ -442,8 +466,7 @@ function annualizedBasisTax(input: {
 	input: StatutoryCalculatorInput;
 	periodBase: bigint;
 }): { amount: bigint; trace: string } {
-	const cadence = requireCadence(input.input, input.calculatorId);
-	const remaining = cadence.periodsPerYear - cadence.periodOrdinal + 1;
+	const remaining = remainingPeriods(input.input, input.calculatorId);
 	const remainingScaled = parseDecimalToScaled(String(remaining));
 
 	const projectedAnnual =

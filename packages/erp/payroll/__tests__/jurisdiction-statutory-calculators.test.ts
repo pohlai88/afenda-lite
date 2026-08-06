@@ -10,8 +10,8 @@ import {
 import type { PayrollEmployeeCalcOutput } from "../src/features/calculation/calculation.types";
 import { getStatutoryCalculator } from "../src/features/statutory-rules/calculator-registry";
 import {
-	cadenceFromPayFrequency,
-	cadenceFromPeriodSequence,
+	classifyPeriodsPerYear,
+	resolveTaxYearCadence,
 } from "../src/features/statutory-rules/period-cadence";
 import {
 	listStatutorySourceLedger,
@@ -824,6 +824,7 @@ describe("pack config is rejected at parse with the offending issue named", () =
 					],
 				},
 				currencyCode: "MYR",
+				finalPeriod: false,
 				gross: 0n,
 				jurisdictionCode: "MY",
 				periodOrdinal: null,
@@ -898,68 +899,117 @@ describe("a lapsed statutory configuration blocks the run", () => {
 	});
 });
 
-describe("period cadence derivation", () => {
-	it("counts the pay group's own earlier periods for the ordinal and infers 12 from a monthly length", () => {
-		expect(
-			cadenceFromPeriodSequence({
-				periodEnd: "2026-03-31",
-				periodStart: "2026-03-01",
-				priorPeriodsInTaxYear: 2,
-			}),
-		).toEqual({ periodOrdinal: 3, periodsPerYear: 12 });
+describe("period cadence is classified from the whole tax-year sequence", () => {
+	const monthly2026 = [
+		{ periodStart: "2026-01-01", periodEnd: "2026-01-31" },
+		{ periodStart: "2026-02-01", periodEnd: "2026-02-28" },
+		{ periodStart: "2026-03-01", periodEnd: "2026-03-31" },
+	];
+
+	function cadence(periodStart: string, taxYearPeriods: typeof monthly2026) {
+		const resolved = resolveTaxYearCadence({ periodStart, taxYearPeriods });
+		if (!resolved.ok) {
+			throw new Error(`${resolved.code}: ${resolved.message}`);
+		}
+		return resolved.data;
+	}
+
+	function refusal(periodStart: string, taxYearPeriods: typeof monthly2026) {
+		const resolved = resolveTaxYearCadence({ periodStart, taxYearPeriods });
+		if (resolved.ok) {
+			throw new Error(
+				`expected a refusal, got ${JSON.stringify(resolved.data)}`,
+			);
+		}
+		return resolved;
+	}
+
+	it("reads a 28-day February as the second of TWELVE monthly periods, never thirteen", () => {
+		expect(cadence("2026-02-01", monthly2026)).toEqual({
+			periodOrdinal: 2,
+			periodsPerYear: 12,
+		});
 	});
 
-	it("infers 52 from a seven-day period and 26 from a fourteen-day period", () => {
+	it("reads a 31-day January and a 30-day April as the same monthly twelve", () => {
+		expect(cadence("2026-01-01", monthly2026).periodsPerYear).toBe(12);
 		expect(
-			cadenceFromPeriodSequence({
-				periodEnd: "2026-01-07",
-				periodStart: "2026-01-01",
-				priorPeriodsInTaxYear: 0,
-			}).periodsPerYear,
-		).toBe(52);
-		expect(
-			cadenceFromPeriodSequence({
-				periodEnd: "2026-01-14",
-				periodStart: "2026-01-01",
-				priorPeriodsInTaxYear: 0,
-			}).periodsPerYear,
-		).toBe(26);
+			cadence("2026-03-01", [
+				...monthly2026,
+				{ periodStart: "2026-04-01", periodEnd: "2026-04-30" },
+			]).periodsPerYear,
+		).toBe(12);
 	});
 
-	it("never leaves a run with zero periods remaining when the sequence outruns the inference", () => {
-		expect(
-			cadenceFromPeriodSequence({
-				periodEnd: "2026-03-31",
-				periodStart: "2026-03-01",
-				priorPeriodsInTaxYear: 13,
-			}),
-		).toEqual({ periodOrdinal: 14, periodsPerYear: 14 });
+	it("reads semimonthly halves of 13, 15, and 16 days as twenty-four", () => {
+		const semimonthly = [
+			{ periodStart: "2026-01-01", periodEnd: "2026-01-15" },
+			{ periodStart: "2026-01-16", periodEnd: "2026-01-31" },
+			{ periodStart: "2026-02-01", periodEnd: "2026-02-15" },
+			{ periodStart: "2026-02-16", periodEnd: "2026-02-28" },
+		];
+		// First half of a 31-day month is 15 days, second half 16; February's
+		// second half is 13. All three are one cadence.
+		expect(cadence("2026-01-01", semimonthly)).toEqual({
+			periodOrdinal: 1,
+			periodsPerYear: 24,
+		});
+		expect(cadence("2026-01-16", semimonthly)).toEqual({
+			periodOrdinal: 2,
+			periodsPerYear: 24,
+		});
+		expect(cadence("2026-02-16", semimonthly)).toEqual({
+			periodOrdinal: 4,
+			periodsPerYear: 24,
+		});
 	});
 
-	it("places a settlement by its declared pay frequency", () => {
+	it("separates biweekly from semimonthly by every period being exactly fourteen days", () => {
+		const biweekly = [
+			{ periodStart: "2026-01-01", periodEnd: "2026-01-14" },
+			{ periodStart: "2026-01-15", periodEnd: "2026-01-28" },
+		];
+		expect(cadence("2026-01-15", biweekly)).toEqual({
+			periodOrdinal: 2,
+			periodsPerYear: 26,
+		});
+	});
+
+	it("reads seven-day periods as fifty-two", () => {
+		const weekly = [
+			{ periodStart: "2026-01-01", periodEnd: "2026-01-07" },
+			{ periodStart: "2026-01-08", periodEnd: "2026-01-14" },
+		];
+		expect(cadence("2026-01-08", weekly)).toEqual({
+			periodOrdinal: 2,
+			periodsPerYear: 52,
+		});
+	});
+
+	it("refuses a pay calendar whose periods match no cadence rather than picking a number", () => {
 		expect(
-			cadenceFromPayFrequency({
-				effectiveDate: "2026-03-15",
-				payFrequency: "monthly",
-			}),
-		).toEqual({ periodOrdinal: 3, periodsPerYear: 12 });
-		expect(
-			cadenceFromPayFrequency({
-				effectiveDate: "2026-03-20",
-				payFrequency: "semimonthly",
-			}),
-		).toEqual({ periodOrdinal: 6, periodsPerYear: 24 });
-		expect(
-			cadenceFromPayFrequency({
-				effectiveDate: "2026-01-08",
-				payFrequency: "weekly",
-			}),
-		).toEqual({ periodOrdinal: 2, periodsPerYear: 52 });
-		expect(
-			cadenceFromPayFrequency({
-				effectiveDate: "2026-11-02",
-				payFrequency: "annual",
-			}),
-		).toEqual({ periodOrdinal: 1, periodsPerYear: 1 });
+			refusal("2026-02-01", [
+				{ periodStart: "2026-01-01", periodEnd: "2026-01-31" },
+				{ periodStart: "2026-02-01", periodEnd: "2026-02-10" },
+			]).code,
+		).toBe("CONFLICT");
+	});
+
+	it("refuses a sequence that runs past the cadence it claims", () => {
+		const thirteenMonths = Array.from({ length: 13 }, (_, index) => {
+			const month = String(index + 1).padStart(2, "0");
+			return index < 12
+				? { periodStart: `2026-${month}-01`, periodEnd: `2026-${month}-28` }
+				: { periodStart: "2026-12-29", periodEnd: "2026-12-31" };
+		});
+		expect(refusal("2026-12-29", thirteenMonths).code).toBe("CONFLICT");
+	});
+
+	it("refuses when the period is absent from its own tax year's sequence", () => {
+		expect(refusal("2026-06-01", monthly2026).code).toBe("CONFLICT");
+	});
+
+	it("refuses a tax year with no periods at all", () => {
+		expect(classifyPeriodsPerYear([]).ok).toBe(false);
 	});
 });

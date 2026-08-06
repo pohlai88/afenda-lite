@@ -217,13 +217,14 @@ function priorEmployer(input: {
 }
 
 function statutory(input: {
+	calculatorId?: string;
 	employeeAmount: string;
 	employerAmount: string;
 	runId: string;
 }): PayrollStatutoryResult {
 	return {
 		baseAmount: "3100",
-		calculatorId: "synth.v1",
+		calculatorId: input.calculatorId ?? "synth.v1",
 		configSnapshotJson: {},
 		createdAt: new Date("2025-01-01T00:00:00.000Z"),
 		currencyCode: "USD",
@@ -725,6 +726,109 @@ describe("createPayrollHistoryYearToDateCapability", () => {
 		if (!totals.ok) {
 			expect(totals.code).toBe("CONFLICT");
 		}
+	});
+
+	it("routes a tax pack's history to taxWithheld and a contribution pack's to employeeStatutory", async () => {
+		const capability = createPayrollHistoryYearToDateCapability({
+			listPeriodsForOrganization: () =>
+				errorResult.ok([
+					period({
+						id: JANUARY_PERIOD_ID,
+						periodEnd: "2025-01-31",
+						periodStart: "2025-01-01",
+					}),
+				]),
+			listRunsForPeriod: ({ periodId }) =>
+				errorResult.ok([
+					run({ id: JANUARY_RUN_ID, periodId, status: "finalized" }),
+				]),
+			listResultLinesForEmployeeRuns: ({ runIds }) =>
+				errorResult.ok(
+					runIds.map((runId) => earning({ amount: "3100", runId })),
+				),
+			listStatutoryResultsForEmployeeRuns: ({ runIds }) =>
+				errorResult.ok(
+					runIds.flatMap((runId) => [
+						statutory({
+							calculatorId: "my.epf.v1",
+							employeeAmount: "550",
+							employerAmount: "650",
+							runId,
+						}),
+						statutory({
+							calculatorId: "my.pcb.v1",
+							employeeAmount: "120",
+							employerAmount: "0",
+							runId,
+						}),
+					]),
+				),
+		});
+
+		const totals = await capability.employeeTotals({
+			currencyCode: "USD",
+			employeeId: EMPLOYEE_ID,
+			organizationId: ORGANIZATION_ID,
+			priorEmployerYtd: [],
+			taxYear: 2025,
+			throughDate: "2025-02-15",
+		});
+
+		expect(totals.ok).toBe(true);
+		if (!totals.ok) {
+			return;
+		}
+		// The registry, not a rule-code list here, is what says my.pcb.v1 is tax.
+		expect(totals.data.employeeStatutory).toBe("550");
+		expect(totals.data.taxWithheld).toBe("120");
+	});
+
+	it("refuses history produced by a calculator the registry no longer knows", async () => {
+		const capability = createPayrollHistoryYearToDateCapability({
+			listPeriodsForOrganization: () =>
+				errorResult.ok([
+					period({
+						id: JANUARY_PERIOD_ID,
+						periodEnd: "2025-01-31",
+						periodStart: "2025-01-01",
+					}),
+				]),
+			listRunsForPeriod: ({ periodId }) =>
+				errorResult.ok([
+					run({ id: JANUARY_RUN_ID, periodId, status: "finalized" }),
+				]),
+			listResultLinesForEmployeeRuns: ({ runIds }) =>
+				errorResult.ok(
+					runIds.map((runId) => earning({ amount: "3100", runId })),
+				),
+			listStatutoryResultsForEmployeeRuns: ({ runIds }) =>
+				errorResult.ok(
+					runIds.map((runId) =>
+						statutory({
+							calculatorId: "my.retired.v0",
+							employeeAmount: "80",
+							employerAmount: "40",
+							runId,
+						}),
+					),
+				),
+		});
+
+		const totals = await capability.employeeTotals({
+			currencyCode: "USD",
+			employeeId: EMPLOYEE_ID,
+			organizationId: ORGANIZATION_ID,
+			priorEmployerYtd: [],
+			taxYear: 2025,
+			throughDate: "2025-02-15",
+		});
+
+		// Dropping it out of both channels would silently under-report the year.
+		expect(totals.ok).toBe(false);
+		if (totals.ok) {
+			return;
+		}
+		expect(totals.code).toBe("CONFLICT");
 	});
 });
 

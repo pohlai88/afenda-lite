@@ -52,37 +52,79 @@ export const payrollFinalSettlementFactsSchema = z
 	})
 	.strict();
 
+const settlementCompensationSnapshotShape = {
+	baseCompensation: payrollDecimalStringSchema,
+	currencyCode: z.string().trim().length(3),
+	decimalScale: z.number().int().min(0).max(4),
+	effectiveDate: isoDateSchema,
+	employeeId: payrollEmployeeIdSchema,
+	employmentId: z.string().trim().min(1).max(128),
+	employmentStatus: z.enum(PAYROLL_FINAL_SETTLEMENT_TERMINAL_STATUSES),
+	payFrequency: z.string().trim().min(1).max(32),
+	roundingMode: z.string().trim().min(1).max(32),
+	priorEmployerYtd: z.array(handoffPriorEmployerYtdSchema).max(16),
+	roundingPolicy: payrollRoundingPolicySchema,
+	sourceVersion: z
+		.object({
+			compensationVersion: z.number().int().positive().optional(),
+			leavePolicyVersion: z.number().int().positive().optional(),
+			statutoryProfileVersion: z.number().int().positive().optional(),
+			timesheetVersion: z.number().int().positive().optional(),
+		})
+		.strict(),
+	statutoryProfile: handoffStatutoryProfileSchema.nullable(),
+} as const;
+
+const settlementYearToDateShape = {
+	currencyCode: z.string().trim().length(3),
+	employeeStatutory: payrollDecimalStringSchema,
+	employerStatutory: payrollDecimalStringSchema,
+	gross: payrollDecimalStringSchema,
+	taxYear: z.number().int().min(1900).max(9999),
+	taxableBase: payrollDecimalStringSchema,
+} as const;
+
+/**
+ * Construction shape. A settlement sealed from now on MUST carry the distinct
+ * `taxWithheld` channel; the year-to-date capability always produces it.
+ */
 export const payrollFinalSettlementCompensationSnapshotSchema = z
 	.object({
-		baseCompensation: payrollDecimalStringSchema,
-		currencyCode: z.string().trim().length(3),
-		decimalScale: z.number().int().min(0).max(4),
-		effectiveDate: isoDateSchema,
-		employeeId: payrollEmployeeIdSchema,
-		employmentId: z.string().trim().min(1).max(128),
-		employmentStatus: z.enum(PAYROLL_FINAL_SETTLEMENT_TERMINAL_STATUSES),
-		payFrequency: z.string().trim().min(1).max(32),
-		roundingMode: z.string().trim().min(1).max(32),
-		priorEmployerYtd: z.array(handoffPriorEmployerYtdSchema).max(16),
-		roundingPolicy: payrollRoundingPolicySchema,
-		sourceVersion: z
-			.object({
-				compensationVersion: z.number().int().positive().optional(),
-				leavePolicyVersion: z.number().int().positive().optional(),
-				statutoryProfileVersion: z.number().int().positive().optional(),
-				timesheetVersion: z.number().int().positive().optional(),
-			})
-			.strict(),
-		statutoryProfile: handoffStatutoryProfileSchema.nullable(),
+		...settlementCompensationSnapshotShape,
 		yearToDate: z
 			.object({
-				currencyCode: z.string().trim().length(3),
-				employeeStatutory: payrollDecimalStringSchema,
-				employerStatutory: payrollDecimalStringSchema,
-				gross: payrollDecimalStringSchema,
+				...settlementYearToDateShape,
 				taxWithheld: payrollDecimalStringSchema,
-				taxYear: z.number().int().min(1900).max(9999),
-				taxableBase: payrollDecimalStringSchema,
+			})
+			.strict(),
+	})
+	.strict();
+
+/**
+ * RE-ADMISSION shape, for loading an already-sealed row.
+ *
+ * `taxWithheld` split out of the commingled `employeeStatutory` after the first
+ * settlements could have been sealed, and a `.strict()` required field would
+ * make every pre-split row unreadable. On re-admission only, an absent
+ * `taxWithheld` re-admits as "0" — the honest reading of a row written before
+ * the channel existed, where any tax withheld is still sitting inside
+ * `employeeStatutory` and there is no way to separate it after the fact.
+ * Construction is unchanged: nothing new can be sealed without the field.
+ *
+ * As of this commit no such row exists anywhere — migration `0053` is unapplied,
+ * so the settlement table holds no production data and the compatibility is
+ * theoretical. `compensationSnapshotHash` is fingerprinted once at initiate and
+ * thereafter only carried, never recomputed from the re-admitted value, so a
+ * defaulted field cannot drift a stored hash: the hash always describes the
+ * shape as stored.
+ */
+export const payrollFinalSettlementCompensationSnapshotReadSchema = z
+	.object({
+		...settlementCompensationSnapshotShape,
+		yearToDate: z
+			.object({
+				...settlementYearToDateShape,
+				taxWithheld: payrollDecimalStringSchema.default("0"),
 			})
 			.strict(),
 	})

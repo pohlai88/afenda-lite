@@ -1,4 +1,4 @@
-import type { HandoffPayFrequency } from "@afenda/events/schemas";
+import { errorResult, type Result } from "@afenda/errors";
 
 /**
  * Where a pay period sits in its tax year.
@@ -14,117 +14,121 @@ export interface PayrollStatutoryPeriodCadence {
 	periodsPerYear: number;
 }
 
-const DAYS_PER_YEAR = 365;
-const MILLISECONDS_PER_DAY = 86_400_000;
+export interface PayrollCadencePeriod {
+	periodEnd: string;
+	periodStart: string;
+}
 
-/**
- * Periods per year for the closed handoff pay-frequency vocabulary. Semimonthly
- * is 24 by construction (two per calendar month), not 365/15.
- */
-export const PAY_FREQUENCY_PERIODS_PER_YEAR: Record<
-	HandoffPayFrequency,
-	number
-> = {
-	weekly: 52,
-	biweekly: 26,
-	semimonthly: 24,
-	monthly: 12,
-	annual: 1,
-};
+const MILLISECONDS_PER_DAY = 86_400_000;
 
 function utcDays(isoDate: string): number {
 	return Math.floor(Date.parse(`${isoDate}T00:00:00Z`) / MILLISECONDS_PER_DAY);
 }
 
-function dayOfYear(isoDate: string): number {
-	const year = isoDate.slice(0, 4);
-	return utcDays(isoDate) - utcDays(`${year}-01-01`) + 1;
+function inclusiveLengthDays(period: PayrollCadencePeriod): number {
+	return utcDays(period.periodEnd) - utcDays(period.periodStart) + 1;
+}
+
+function unclassifiable(detail: string): Result<never> {
+	return errorResult.fail("CONFLICT", {
+		publicMessage: `Payroll pay-period cadence cannot be established for this tax year (${detail})`,
+	});
+}
+
+function every(lengths: readonly number[], low: number, high: number): boolean {
+	return lengths.every((length) => length >= low && length <= high);
 }
 
 /**
- * Periods per year inferred from the period's own length.
+ * Periods per year, classified from the SHAPE OF THE WHOLE TAX YEAR's periods.
  *
- * The payroll calendar records timezone and effective dates, not a frequency
- * enum, so periods-per-year is not a stored fact for a run. Inferring it from
- * the period's inclusive day count is the honest derivation available: a 28–31
- * day period rounds to 12, 14 to 26, 7 to 52, 15 to 24. It is an inference, and
- * a pay group whose periods are irregular in length will infer differently
- * period to period — which is why the ordinal below comes from the actual
- * period sequence rather than from this number.
+ * A single period's length cannot carry this. `round(365 / length)` reads a
+ * 28-day February as 13 periods a year and the second half of a 31-day month as
+ * 23 — both of which over- or under-withhold every annualized tax line in that
+ * period. The pay group's own sequence of periods is the evidence: a cadence is
+ * recognizable from the SET of lengths it produces across the year, never from
+ * one sample.
+ *
+ * Classes are exactly the handoff pay-frequency vocabulary, because that is the
+ * only cadence vocabulary this system admits anywhere:
+ *
+ * | lengths across the tax year | cadence     | periods/year |
+ * |-----------------------------|-------------|--------------|
+ * | all 6–8 days                | weekly      | 52           |
+ * | all exactly 14 days         | biweekly    | 26           |
+ * | all 13–16 days              | semimonthly | 24           |
+ * | all 28–31 days              | monthly     | 12           |
+ * | all 364–366 days            | annual      | 1            |
+ *
+ * 14 sits in both the biweekly and the semimonthly window; "all exactly 14"
+ * resolves it, since semimonthly halves are 13, 14, 15, and 16 across a year and
+ * cannot all be 14. Anything else is a pay calendar this code cannot read, and
+ * it refuses instead of picking a number.
  */
-export function periodsPerYearFromPeriodLength(input: {
-	periodEnd: string;
+export function classifyPeriodsPerYear(
+	taxYearPeriods: readonly PayrollCadencePeriod[],
+): Result<number> {
+	if (taxYearPeriods.length === 0) {
+		return unclassifiable("the tax year holds no periods");
+	}
+	const lengths = taxYearPeriods.map(inclusiveLengthDays);
+	if (lengths.some((length) => !Number.isFinite(length) || length < 1)) {
+		return unclassifiable("a period has no positive length");
+	}
+	if (every(lengths, 6, 8)) {
+		return errorResult.ok(52);
+	}
+	if (every(lengths, 14, 14)) {
+		return errorResult.ok(26);
+	}
+	if (every(lengths, 13, 16)) {
+		return errorResult.ok(24);
+	}
+	if (every(lengths, 28, 31)) {
+		return errorResult.ok(12);
+	}
+	if (every(lengths, 364, 366)) {
+		return errorResult.ok(1);
+	}
+	return unclassifiable(
+		`period lengths ${[...new Set(lengths)].sort((left, right) => left - right).join("/")} days match no known pay cadence`,
+	);
+}
+
+/**
+ * Cadence for a payroll run's period, from the pay group's own tax-year sequence.
+ *
+ * The ordinal counts the periods that start earlier in the same tax year, which
+ * is exact rather than inferred. Periods per year comes from classifying the
+ * whole sequence. A sequence that runs past its own class (a thirteenth monthly
+ * period) is a calendar defect and refuses, rather than being widened into a
+ * silently different cadence.
+ */
+export function resolveTaxYearCadence(input: {
 	periodStart: string;
-}): number {
-	const lengthDays = utcDays(input.periodEnd) - utcDays(input.periodStart) + 1;
-	if (!Number.isFinite(lengthDays) || lengthDays < 1) {
-		throw new RangeError(
-			`Payroll period ${input.periodStart}..${input.periodEnd} has no positive length`,
+	taxYearPeriods: readonly PayrollCadencePeriod[];
+}): Result<PayrollStatutoryPeriodCadence> {
+	if (
+		!input.taxYearPeriods.some(
+			(period) => period.periodStart === input.periodStart,
+		)
+	) {
+		return unclassifiable(
+			`the period starting ${input.periodStart} is not in its own tax year's sequence`,
 		);
 	}
-	// 15-day periods are semimonthly (24), which round-to-nearest would call 24
-	// anyway; the clamp only guards degenerate lengths.
-	return Math.min(Math.max(Math.round(DAYS_PER_YEAR / lengthDays), 1), 366);
-}
-
-/**
- * Cadence for a payroll run's period.
- *
- * The ordinal is the period's position in the pay group's own sequence of
- * periods within the tax year (periods are created in date order, so counting
- * the earlier ones is exact). Periods per year is inferred from length and then
- * widened if the sequence has already exceeded it, so "periods remaining" is
- * never zero or negative for a real run.
- */
-export function cadenceFromPeriodSequence(input: {
-	periodEnd: string;
-	periodStart: string;
-	priorPeriodsInTaxYear: number;
-}): PayrollStatutoryPeriodCadence {
-	const periodOrdinal = input.priorPeriodsInTaxYear + 1;
-	const inferred = periodsPerYearFromPeriodLength({
-		periodEnd: input.periodEnd,
-		periodStart: input.periodStart,
-	});
-	return {
-		periodOrdinal,
-		periodsPerYear: Math.max(inferred, periodOrdinal),
-	};
-}
-
-/**
- * Cadence for a final settlement, which has a declared pay frequency and an
- * effective date but no period row. Each frequency maps its own way because a
- * uniform days/period division is off by one for calendar-aligned cadences: 1
- * March is the start of month 3, but only day 60 of 365.
- */
-export function cadenceFromPayFrequency(input: {
-	effectiveDate: string;
-	payFrequency: HandoffPayFrequency;
-}): PayrollStatutoryPeriodCadence {
-	const periodsPerYear = PAY_FREQUENCY_PERIODS_PER_YEAR[input.payFrequency];
-	const month = Number(input.effectiveDate.slice(5, 7));
-	const day = Number(input.effectiveDate.slice(8, 10));
-	const ordinal = ((): number => {
-		switch (input.payFrequency) {
-			case "annual":
-				return 1;
-			case "monthly":
-				return month;
-			case "semimonthly":
-				return (month - 1) * 2 + (day <= 15 ? 1 : 2);
-			case "biweekly":
-				return Math.ceil(dayOfYear(input.effectiveDate) / 14);
-			case "weekly":
-				return Math.ceil(dayOfYear(input.effectiveDate) / 7);
-			default: {
-				const exhaustive: never = input.payFrequency;
-				return exhaustive;
-			}
-		}
-	})();
-	return {
-		periodOrdinal: Math.min(Math.max(ordinal, 1), periodsPerYear),
-		periodsPerYear,
-	};
+	const periodsPerYear = classifyPeriodsPerYear(input.taxYearPeriods);
+	if (!periodsPerYear.ok) {
+		return periodsPerYear;
+	}
+	const periodOrdinal =
+		input.taxYearPeriods.filter(
+			(period) => period.periodStart < input.periodStart,
+		).length + 1;
+	if (periodOrdinal > periodsPerYear.data) {
+		return unclassifiable(
+			`period ${periodOrdinal} exceeds the ${periodsPerYear.data} periods this cadence holds`,
+		);
+	}
+	return errorResult.ok({ periodOrdinal, periodsPerYear: periodsPerYear.data });
 }

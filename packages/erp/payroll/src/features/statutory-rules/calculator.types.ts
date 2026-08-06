@@ -17,7 +17,13 @@ import type { PayrollRoundingPolicy } from "../../kernel/money/rounding-policy";
  */
 export interface StatutoryYearToDateFacts {
 	currencyCode: string;
-	/** Employee-side statutory CONTRIBUTIONS year to date — never includes tax. */
+	/**
+	 * Employee-side statutory CONTRIBUTIONS year to date — never includes tax.
+	 * No registered pack reads this today: contributions are priced from the
+	 * period's own base, and only the tax packs look backwards (at `taxWithheld`).
+	 * It is carried because a contribution with an ANNUAL ceiling — which several
+	 * real schemes have — cannot be capped without it.
+	 */
 	employeeStatutory: string;
 	employerStatutory: string;
 	gross: string;
@@ -30,6 +36,13 @@ export interface StatutoryYearToDateFacts {
 export interface StatutoryCalculatorInput {
 	configJson: Record<string, unknown>;
 	currencyCode: string;
+	/**
+	 * This is the subject's LAST withholding occasion of the tax year — a final
+	 * settlement. An annualized pack must not project income the employee will
+	 * never earn, so the projection stops at what is actually in hand and the
+	 * outstanding liability is collected whole rather than spread forward.
+	 */
+	finalPeriod: boolean;
 	gross: bigint;
 	jurisdictionCode: string;
 	/**

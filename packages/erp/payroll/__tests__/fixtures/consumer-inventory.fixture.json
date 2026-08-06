@@ -1476,6 +1476,17 @@
 			"package": "@afenda/audit",
 			"referenceKind": "filesystem",
 			"resolution": "not-applicable",
+			"symbol": "packages/erp/payroll/src/features/final-settlement/settlement.drizzle.ts",
+			"useMode": "filesystem"
+		},
+		{
+			"consumerClass": "testing",
+			"disposition": "manual-review",
+			"entrypoint": "filesystem",
+			"file": "packages/data-plane/audit/__tests__/direct-writer-boundary.test.ts",
+			"package": "@afenda/audit",
+			"referenceKind": "filesystem",
+			"resolution": "not-applicable",
 			"symbol": "packages/erp/payroll/src/features/payroll-runs/runs.drizzle.ts",
 			"useMode": "filesystem"
 		},

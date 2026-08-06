@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { errorResult } from "@afenda/errors";
+import { errorResult, type Result } from "@afenda/errors";
 import type {
 	PayrollDeductionRule,
 	PayrollEarningRule,
@@ -20,6 +20,7 @@ import type {
 	PayrollWorkforceInputPort,
 } from "../../kernel/execution/ports";
 import {
+	type PayrollPayGroupId,
 	parsePayrollResultLineId,
 	parsePayrollRunEmployeeId,
 	parsePayrollStatutoryResultId,
@@ -31,7 +32,7 @@ import {
 import { payrollJsonObjectSchema } from "../../kernel/validation/common.schema";
 import type { PayrollAssignmentsStore } from "../employee-assignments/assignments.store";
 import type { PayrollSetupStore } from "../payroll-setup/setup.store";
-import { cadenceFromPeriodSequence } from "../statutory-rules/period-cadence";
+import { resolveTaxYearCadence } from "../statutory-rules/period-cadence";
 import type { PayrollStatutoryStore } from "../statutory-rules/statutory.store";
 import {
 	resolveYearToDate,
@@ -50,6 +51,7 @@ import type {
 	PayrollCalcEarningRuleSnapshot,
 	PayrollCalcStatutoryRuleSnapshot,
 	PayrollEmployeeCalcSnapshot,
+	PayrollLapsedStatutoryRule,
 } from "./calculation.types";
 import type { PayrollOutputsStore } from "./outputs.store";
 
@@ -116,6 +118,64 @@ function compareCanonicalRecords(
 	return code === 0 ? left.id.localeCompare(right.id) : code;
 }
 
+function ruleCalculatorId(rule: PayrollStatutoryRule): string | null {
+	const { calculatorId } = rule.configJson;
+	return typeof calculatorId === "string" ? calculatorId : null;
+}
+
+/**
+ * Statutory rules that covered the previous period but cover no longer.
+ *
+ * A whole-jurisdiction outage is easy to see; a partial one is not. When EPF is
+ * still active and PCB expired at the year boundary, the period still resolves
+ * statutory rules for the jurisdiction and every check that asks "are there
+ * any?" passes, while the subject is withheld zero tax. Comparing this period's
+ * active calculators against the previous period's is what makes the missing one
+ * visible, and it is a comparison only this layer can make.
+ */
+async function resolveLapsedStatutoryRules(input: {
+	currentRules: readonly PayrollStatutoryRule[];
+	organizationId: string;
+	payGroupId: PayrollPayGroupId;
+	previousPeriodEnd: string | undefined;
+	store: Pick<PayrollSetupStore, "listActiveStatutoryRulesForPayGroup">;
+}): Promise<Result<PayrollLapsedStatutoryRule[]>> {
+	if (input.previousPeriodEnd === undefined) {
+		return errorResult.ok([]);
+	}
+	const previousRules = await input.store.listActiveStatutoryRulesForPayGroup({
+		organizationId: input.organizationId,
+		payGroupId: input.payGroupId,
+		effectiveDate: input.previousPeriodEnd,
+	});
+	if (!previousRules.ok) {
+		return previousRules;
+	}
+	const currentCalculatorIds = new Set(
+		input.currentRules.flatMap((rule) => {
+			const calculatorId = ruleCalculatorId(rule);
+			return calculatorId === null ? [] : [calculatorId];
+		}),
+	);
+	const lapsed = new Map<string, PayrollLapsedStatutoryRule>();
+	for (const rule of previousRules.data) {
+		const calculatorId = ruleCalculatorId(rule);
+		if (calculatorId === null || currentCalculatorIds.has(calculatorId)) {
+			continue;
+		}
+		lapsed.set(calculatorId, {
+			calculatorId,
+			jurisdictionCode: rule.jurisdictionCode,
+			ruleCode: rule.code,
+		});
+	}
+	return errorResult.ok(
+		[...lapsed.values()].sort((left, right) =>
+			left.calculatorId.localeCompare(right.calculatorId),
+		),
+	);
+}
+
 export function createProductionPayrollRunCalculator(input: {
 	store: PayrollCalculationStore;
 	employees: PayrollWorkforceInputPort;
@@ -173,10 +233,9 @@ export function createProductionPayrollRunCalculator(input: {
 
 			const effectiveDate = payrollPeriod.periodEnd;
 
-			// Period cadence for annualized tax packs. The pay group's own period
-			// sequence is the only place the ordinal is a fact rather than a guess;
-			// periods-per-year is inferred from this period's length because the
-			// payroll calendar stores no frequency.
+			// Period cadence for annualized tax packs, classified from the pay
+			// group's WHOLE tax-year sequence. A single period's length cannot
+			// carry it: a 28-day February would read as thirteen periods a year.
 			const payGroupPeriods = await input.store.listPeriodsForPayGroup({
 				organizationId: calcInput.organizationId,
 				payGroupId: calcInput.payGroupId,
@@ -185,15 +244,30 @@ export function createProductionPayrollRunCalculator(input: {
 				return payGroupPeriods;
 			}
 			const periodTaxYear = taxYearFromIsoDate(payrollPeriod.periodStart);
-			const periodCadence = cadenceFromPeriodSequence({
-				periodEnd: payrollPeriod.periodEnd,
+			const cadence = resolveTaxYearCadence({
 				periodStart: payrollPeriod.periodStart,
-				priorPeriodsInTaxYear: payGroupPeriods.data.filter(
+				taxYearPeriods: payGroupPeriods.data.filter(
 					(candidate) =>
-						taxYearFromIsoDate(candidate.periodStart) === periodTaxYear &&
-						candidate.periodStart < payrollPeriod.periodStart,
-				).length,
+						taxYearFromIsoDate(candidate.periodStart) === periodTaxYear,
+				),
 			});
+			if (!cadence.ok) {
+				return cadence;
+			}
+			const periodCadence = cadence.data;
+
+			// Immediately-preceding period of this pay group, in any tax year. It
+			// is the only evidence of what the pay group's statutory configuration
+			// looked like before this period, and therefore of what has since
+			// lapsed.
+			const previousPeriod = payGroupPeriods.data
+				.filter(
+					(candidate) => candidate.periodStart < payrollPeriod.periodStart,
+				)
+				.sort((left, right) =>
+					left.periodStart.localeCompare(right.periodStart),
+				)
+				.at(-1);
 
 			const [
 				assignments,
@@ -266,6 +340,17 @@ export function createProductionPayrollRunCalculator(input: {
 					publicMessage:
 						"Payroll statutory calculation is not approved for production",
 				});
+			}
+
+			const lapsedStatutoryRules = await resolveLapsedStatutoryRules({
+				currentRules: statutoryRules.data,
+				organizationId: calcInput.organizationId,
+				payGroupId: calcInput.payGroupId,
+				previousPeriodEnd: previousPeriod?.periodEnd,
+				store: input.store,
+			});
+			if (!lapsedStatutoryRules.ok) {
+				return lapsedStatutoryRules;
 			}
 
 			const employeeFilter =
@@ -423,6 +508,7 @@ export function createProductionPayrollRunCalculator(input: {
 					organizationId: calcInput.organizationId,
 					employeeId: assignment.employeeId,
 					assignmentId: assignment.id,
+					lapsedStatutoryRules: lapsedStatutoryRules.data,
 					payGroupId: calcInput.payGroupId,
 					periodCadence,
 					periodId: calcInput.periodId,
